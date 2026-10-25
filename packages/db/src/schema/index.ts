@@ -160,6 +160,11 @@ export const projectApiKeys = pgTable("project_api_keys", {
     .references(() => projects.id),
   keyHash: text("key_hash").notNull().unique(),
   permission: text("permission", { enum: ["write", "read"] }).notNull(),
+  name: text("name").notNull().default("API key"),
+  keyPrefix: text("key_prefix").notNull().default("fm_••••"),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
 })
 
 export const projectBrowserKeys = pgTable("project_browser_keys", {
@@ -168,6 +173,11 @@ export const projectBrowserKeys = pgTable("project_browser_keys", {
     .notNull()
     .references(() => projects.id),
   keyHash: text("key_hash").notNull().unique(),
+  name: text("name").notNull().default("Browser key"),
+  keyPrefix: text("key_prefix").notNull().default("fm_••••"),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
   allowedOrigins: jsonb("allowed_origins").$type<string[]>().notNull(),
   rateWindowStartedAt: timestamp("rate_window_started_at", {
     withTimezone: true,

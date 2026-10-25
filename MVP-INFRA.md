@@ -33,7 +33,7 @@ The local harness remains internal, loopback-only, and never a deployment target
 | Database      | PostgreSQL, Drizzle schema, versioned migrations, `pnpm db:migrate`        | Documented hosted deploy process                                             |
 | Setup         | `pnpm db:setup` migrates then seeds; seed refuses production/non-loopback and creates `local@dev` | Production onboarding without demo mode                                      |
 | Auth          | Better Auth email/password; session-scoped dashboard reads; register creates owner, project, and first write key | Hosted auth URL/cookie setup, password reset, and key-management UI          |
-| Credentials   | Hashed project read/write keys and separate browser keys                   | Key creation, revocation, rotation, and understandable UI                    |
+| Credentials   | Hashed project read/write keys, browser keys, and dashboard create/revoke/rotate | Hosted rotation after a leak is still an operator process                    |
 | Environment   | Effect Schema API settings, dashboard server-env checks, production demo refusal | Auth secrets and hosted URL validation in later increments                   |
 | SDK release   | `@flowmark/node`, its `@flowmark/core` dependency, built ESM/types/exports | Tarball verification, external-install tests, registry setup, and release CI |
 | Data browsing | Useful workflow and run views                                              | Server-side pagination beyond the latest-100-run snapshot                    |
@@ -414,7 +414,7 @@ An existing `0.1.0` version in a manifest does not mean a release exists.
 | 1     | Confirm deployment, owner/auth-provider and browser scope decisions | Done: [ADR 0006](./docs/decisions/0006-mvp-0.1-infrastructure.md)           |
 | 2     | Standardize env boundaries and split migration/seed/setup           | Done: `db:migrate` / `db:seed` / `db:setup`, production seed refusal, and existing Effect Schema env checks. T3 Env was not added. |
 | 3     | Add Better Auth, owner/project authorization and onboarding         | Done: anonymous reads fail; `local@dev` and new registrations get project-scoped sessions |
-| 4     | Add ingestion-key management                                        | Create/revoke/rotate works; sessions and SDK credentials stay separate. Session reads already replaced the demo read-key proxy. |
+| 4     | Add ingestion-key management                                        | Done: dashboard create/revoke/rotate for write and browser keys; sessions and SDK credentials stay separate. |
 | 5     | Deploy isolated preview with managed PostgreSQL                     | Auth, SDK ingestion and run investigation work outside localhost           |
 | 6     | Add server-side run pagination and minimal data lifecycle           | Older runs remain findable; retention/delete/restore documented and tested |
 | 7     | Verify packages and publish prerelease                              | Clean external consumers install and deliver telemetry successfully        |

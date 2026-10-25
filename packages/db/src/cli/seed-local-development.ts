@@ -60,11 +60,15 @@ export const seedLocalDevelopment = Effect.fn("seedLocalDevelopment")(
                   projectId: DEMO_PROJECT_ID,
                   keyHash: hashApiKey(DEMO_WRITE_KEY),
                   permission: "write",
+                  name: "Local write key",
+                  keyPrefix: DEMO_WRITE_KEY.slice(0, 16),
                 },
                 {
                   projectId: DEMO_PROJECT_ID,
                   keyHash: hashApiKey(DEMO_READ_KEY),
                   permission: "read",
+                  name: "Local read key",
+                  keyPrefix: DEMO_READ_KEY.slice(0, 16),
                 },
               ])
               .onConflictDoNothing()
@@ -82,6 +86,8 @@ export const seedLocalDevelopment = Effect.fn("seedLocalDevelopment")(
                 projectId: DIAGNOSTICS_PROJECT_ID,
                 keyHash: hashApiKey(DIAGNOSTICS_WRITE_KEY),
                 permission: "write",
+                name: "Diagnostics write key",
+                keyPrefix: DIAGNOSTICS_WRITE_KEY.slice(0, 16),
               })
               .onConflictDoNothing()
             await tx
@@ -89,6 +95,8 @@ export const seedLocalDevelopment = Effect.fn("seedLocalDevelopment")(
               .values({
                 projectId: DIAGNOSTICS_PROJECT_ID,
                 keyHash: hashApiKey(DIAGNOSTICS_BROWSER_KEY),
+                name: "Diagnostics browser key",
+                keyPrefix: DIAGNOSTICS_BROWSER_KEY.slice(0, 16),
                 allowedOrigins: DEMO_BROWSER_ORIGINS,
               })
               .onConflictDoNothing()
@@ -97,6 +105,8 @@ export const seedLocalDevelopment = Effect.fn("seedLocalDevelopment")(
               .values({
                 projectId: DEMO_PROJECT_ID,
                 keyHash: hashApiKey(DEMO_BROWSER_KEY),
+                name: "Local browser key",
+                keyPrefix: DEMO_BROWSER_KEY.slice(0, 16),
                 allowedOrigins: DEMO_BROWSER_ORIGINS,
               })
               .onConflictDoNothing()

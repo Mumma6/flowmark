@@ -18,8 +18,16 @@ export {
   type RegisterOwnerService,
 } from "./features/project-access/use-cases/register-owner.js"
 export {
+  ManageProject,
+  type ManageProjectService,
+} from "./features/project-access/use-cases/manage-project.js"
+export {
   ProjectCredentials,
+  type ApiKeySummary,
+  type BrowserKeySummary,
+  type CreatedSecret,
   type ProjectCredentialsService,
+  type ProjectSummary,
 } from "./features/project-access/ports/project-credentials.js"
 export { ProjectCredentialsLive } from "./features/project-access/adapters/project-credentials.js"
 export {

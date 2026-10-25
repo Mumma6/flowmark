@@ -20,9 +20,9 @@ creates a project and the first write key. Seed `local@dev` /
 - **Run detail:** outcome first; separate timeline, context and related-run tabs.
   Timeline pages contain 15 events with expandable payloads. Related-run tables
   contain at most 10 rows each.
-- **Settings:** shows the signed-in account and how the SDK write key connects
-  to this dashboard. New accounts see their first write key once after
-  registration.
+- **Settings:** rename or create a project, create/revoke/rotate server write
+  keys and browser keys (secret shown once), and update the signed-in name
+  or password. The sidebar switches between projects the account owns.
 
 Filtering and pagination of run summaries are client-side over the latest 100
 project runs, not full-history server queries. The workflow list and aggregate

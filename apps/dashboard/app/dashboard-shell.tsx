@@ -13,7 +13,6 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { authClient } from "../lib/auth-client"
 import {
-  Badge,
   Breadcrumb,
   BreadcrumbItem,
   BreadcrumbLink,
@@ -22,6 +21,8 @@ import {
   BreadcrumbSeparator,
   Button,
   FlowmarkMark,
+  NativeSelect,
+  NativeSelectOption,
   Separator,
   Sheet,
   SheetContent,
@@ -29,6 +30,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@flowmark/ui"
+import { ProjectProvider, useProject } from "./project-context"
 import { ThemeSelect } from "./theme-select"
 
 const navigation = [
@@ -81,9 +83,7 @@ function Navigation({
           flowmark<span className="text-primary">.</span>
         </strong>
       </Link>
-      <Badge variant="secondary" className="self-start">
-        Local development project
-      </Badge>
+      <ProjectSwitcher />
       <Separator className="my-5" />
       <nav aria-label="Main navigation" className="grid gap-1">
         {navigation.map(({ href, label, icon: Icon }) => {
@@ -174,6 +174,45 @@ function PageBreadcrumbs() {
   )
 }
 
+function ProjectSwitcher() {
+  const { projects, current, pending, select } = useProject()
+  if (pending && projects.length === 0) {
+    return (
+      <p className="text-xs text-muted-foreground" role="status">
+        Loading projects…
+      </p>
+    )
+  }
+  if (projects.length === 0) {
+    return (
+      <p className="text-xs text-muted-foreground">No project yet</p>
+    )
+  }
+  if (projects.length === 1) {
+    return (
+      <p className="truncate text-sm font-medium text-foreground">
+        {current?.name ?? projects[0]?.name}
+      </p>
+    )
+  }
+  return (
+    <label className="grid gap-1.5">
+      <span className="text-xs text-muted-foreground">Project</span>
+      <NativeSelect
+        aria-label="Project"
+        value={current?.id ?? projects[0]?.id}
+        onChange={(event) => select(event.target.value)}
+      >
+        {projects.map((project) => (
+          <NativeSelectOption key={project.id} value={project.id}>
+            {project.name}
+          </NativeSelectOption>
+        ))}
+      </NativeSelect>
+    </label>
+  )
+}
+
 export function DashboardShell({
   children,
   email,
@@ -183,7 +222,8 @@ export function DashboardShell({
 }) {
   const [open, setOpen] = useState(false)
   return (
-    <div className="min-h-screen">
+    <ProjectProvider>
+      <div className="min-h-screen">
       <a
         href="#dashboard-main"
         className="sr-only z-[100] rounded-md bg-card px-4 py-3 focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:ring-2 focus:ring-ring"
@@ -228,6 +268,7 @@ export function DashboardShell({
           {children}
         </main>
       </div>
-    </div>
+      </div>
+    </ProjectProvider>
   )
 }

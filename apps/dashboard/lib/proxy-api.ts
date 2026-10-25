@@ -23,6 +23,7 @@ const proxyToApi = Effect.fn("proxyToApi")(function* (
     "referer",
     "user-agent",
     "authorization",
+    "x-flowmark-project-id",
   ]) {
     const value = request.headers.get(name)
     if (value) {

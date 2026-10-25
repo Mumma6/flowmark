@@ -36,9 +36,11 @@ export interface GetProjectWorkflowDataService {
   ) => Effect.Effect<RunComparison, Unauthorized | PersistenceError>
   readonly snapshotForUser: (
     userId: string,
+    projectId?: string,
   ) => Effect.Effect<ProjectSnapshot, Unauthorized | PersistenceError>
   readonly workflowsForUser: (
     userId: string,
+    projectId?: string,
   ) => Effect.Effect<
     ProjectSnapshot["workflows"],
     Unauthorized | PersistenceError
@@ -46,6 +48,7 @@ export interface GetProjectWorkflowDataService {
   readonly timelineForUser: (
     userId: string,
     runId: string,
+    projectId?: string,
   ) => Effect.Effect<
     ReadonlyArray<RunTimelineEvent>,
     Unauthorized | PersistenceError
@@ -53,10 +56,12 @@ export interface GetProjectWorkflowDataService {
   readonly relatedForUser: (
     userId: string,
     runId: string,
+    projectId?: string,
   ) => Effect.Effect<RelatedRuns, Unauthorized | PersistenceError>
   readonly compareForUser: (
     userId: string,
     runId: string,
+    projectId?: string,
   ) => Effect.Effect<RunComparison, Unauthorized | PersistenceError>
 }
 
@@ -103,30 +108,56 @@ export class GetProjectWorkflowData extends Context.Tag(
 
       const snapshotForUser = Effect.fn(
         "GetProjectWorkflowData.snapshotForUser",
-      )(function* (userId: string) {
-        const projectId = yield* authorization.authorizeUser(userId)
+      )(function* (userId: string, requestedProjectId?: string) {
+        const projectId = yield* authorization.authorizeUser(
+          userId,
+          requestedProjectId,
+        )
         return yield* repository.snapshot(projectId)
       })
       const workflowsForUser = Effect.fn(
         "GetProjectWorkflowData.workflowsForUser",
-      )((userId: string) =>
-        snapshotForUser(userId).pipe(Effect.map((data) => data.workflows)),
+      )((userId: string, requestedProjectId?: string) =>
+        snapshotForUser(userId, requestedProjectId).pipe(
+          Effect.map((data) => data.workflows),
+        ),
       )
       const timelineForUser = Effect.fn(
         "GetProjectWorkflowData.timelineForUser",
-      )(function* (userId: string, runId: string) {
-        const projectId = yield* authorization.authorizeUser(userId)
+      )(function* (
+        userId: string,
+        runId: string,
+        requestedProjectId?: string,
+      ) {
+        const projectId = yield* authorization.authorizeUser(
+          userId,
+          requestedProjectId,
+        )
         return yield* repository.timeline(projectId, runId)
       })
       const relatedForUser = Effect.fn("GetProjectWorkflowData.relatedForUser")(
-        function* (userId: string, runId: string) {
-          const projectId = yield* authorization.authorizeUser(userId)
+        function* (
+          userId: string,
+          runId: string,
+          requestedProjectId?: string,
+        ) {
+          const projectId = yield* authorization.authorizeUser(
+            userId,
+            requestedProjectId,
+          )
           return yield* repository.related(projectId, runId)
         },
       )
       const compareForUser = Effect.fn("GetProjectWorkflowData.compareForUser")(
-        function* (userId: string, runId: string) {
-          const projectId = yield* authorization.authorizeUser(userId)
+        function* (
+          userId: string,
+          runId: string,
+          requestedProjectId?: string,
+        ) {
+          const projectId = yield* authorization.authorizeUser(
+            userId,
+            requestedProjectId,
+          )
           return yield* repository.compare(projectId, runId)
         },
       )

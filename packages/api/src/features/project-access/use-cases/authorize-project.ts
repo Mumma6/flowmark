@@ -15,6 +15,7 @@ export interface AuthorizeProjectService {
   ) => Effect.Effect<string, Unauthorized | PersistenceError>
   readonly authorizeUser: (
     userId: string,
+    projectId?: string,
   ) => Effect.Effect<string, Unauthorized | PersistenceError>
 }
 
@@ -54,7 +55,19 @@ export class AuthorizeProject extends Context.Tag(
       })
 
       const authorizeUser = Effect.fn("AuthorizeProject.authorizeUser")(
-        function* (userId: string) {
+        function* (userId: string, requestedProjectId?: string) {
+          if (requestedProjectId) {
+            const projectId = yield* credentials.memberProject(
+              userId,
+              requestedProjectId,
+            )
+            if (!projectId) {
+              return yield* Effect.fail(
+                new Unauthorized({ permission: "read" }),
+              )
+            }
+            return projectId
+          }
           const projectId = yield* credentials.projectForUser(userId)
           if (!projectId) {
             return yield* Effect.fail(new Unauthorized({ permission: "read" }))

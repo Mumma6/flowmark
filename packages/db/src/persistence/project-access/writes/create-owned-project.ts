@@ -1,4 +1,3 @@
-import { randomBytes } from "node:crypto"
 import { Effect } from "effect"
 import {
   projectApiKeys,
@@ -6,20 +5,18 @@ import {
   projects,
   workspaces,
 } from "../../../schema/index.js"
-import { Database, hashApiKey } from "../../database.js"
+import { Database } from "../../database.js"
 import { DatabaseOperation } from "../../database-operation.js"
 import { runQuery } from "../../run-query.js"
-
-const projectKey = (permission: "read" | "write") =>
-  `fm_${permission}_${randomBytes(24).toString("base64url")}`
+import { generateProjectKey } from "./generate-project-key.js"
 
 export const createOwnedProject = Effect.fn("createOwnedProject")(function* (
   userId: string,
   names: { readonly workspace: string; readonly project: string },
 ) {
   const db = yield* Database
-  const writeKey = projectKey("write")
-  const readKey = projectKey("read")
+  const writeKey = generateProjectKey("write")
+  const readKey = generateProjectKey("read")
   const projectId = yield* runQuery(DatabaseOperation.CreateOwnedProject, () =>
     db.transaction(async (tx) => {
       const [workspace] = await tx
@@ -36,13 +33,17 @@ export const createOwnedProject = Effect.fn("createOwnedProject")(function* (
       await tx.insert(projectApiKeys).values([
         {
           projectId: project.id,
-          keyHash: hashApiKey(writeKey),
+          keyHash: writeKey.hash,
           permission: "write",
+          name: "Write key",
+          keyPrefix: writeKey.prefix,
         },
         {
           projectId: project.id,
-          keyHash: hashApiKey(readKey),
+          keyHash: readKey.hash,
           permission: "read",
+          name: "Read key",
+          keyPrefix: readKey.prefix,
         },
       ])
       await tx.insert(projectMembers).values({
@@ -53,5 +54,5 @@ export const createOwnedProject = Effect.fn("createOwnedProject")(function* (
       return project.id
     }),
   )
-  return { projectId, writeKey, readKey }
+  return { projectId, writeKey: writeKey.secret, readKey: readKey.secret }
 })

@@ -21,6 +21,15 @@ export function Providers({ children }: { children: ReactNode }) {
       links: [
         httpBatchLink({
           url: apiUrl,
+          headers() {
+            if (typeof window === "undefined") {
+              return {}
+            }
+            const projectId = window.localStorage.getItem("flowmark.projectId")
+            return projectId
+              ? { "x-flowmark-project-id": projectId }
+              : {}
+          },
           fetch(url, options) {
             return fetch(url, { ...options, credentials: "include" })
           },

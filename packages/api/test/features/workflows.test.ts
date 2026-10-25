@@ -85,7 +85,39 @@ function projectCredentials(
     consumeBrowserQuota: () => Effect.succeed(false),
     authenticate: () => Effect.succeed("project-from-key"),
     projectForUser: () => Effect.succeed("project-from-key"),
+    memberProject: () => Effect.succeed("project-from-key"),
+    listProjects: () => Effect.succeed([]),
+    workspaceForUser: () => Effect.succeed("workspace-from-key"),
     addOwner: () => Effect.void,
+    createProject: () =>
+      Effect.succeed({
+        projectId: "project-from-key",
+        writeKey: {
+          id: "key-1",
+          name: "Write key",
+          prefix: "fm_write_test123",
+          secret: "fm_write_test_secret",
+        },
+      }),
+    renameProject: () => Effect.void,
+    listApiKeys: () => Effect.succeed([]),
+    listBrowserKeys: () => Effect.succeed([]),
+    createApiKey: () =>
+      Effect.succeed({
+        id: "key-1",
+        name: "Write key",
+        prefix: "fm_write_test123",
+        secret: "fm_write_test_secret",
+      }),
+    revokeApiKey: () => Effect.succeed(true),
+    createBrowserKey: () =>
+      Effect.succeed({
+        id: "key-2",
+        name: "Browser key",
+        prefix: "fm_browser_test12",
+        secret: "fm_browser_test_secret",
+      }),
+    revokeBrowserKey: () => Effect.succeed(true),
     createOwnedProject: () =>
       Effect.succeed({
         projectId: "project-from-key",
@@ -254,6 +286,44 @@ describe("API Effect services", () => {
     )
     expect(result).toBe("owned-project")
     expect(projectForUser).toHaveBeenCalledWith("user-1")
+  })
+
+  it("authorizes a requested project only when the user is a member", async () => {
+    const memberProject = vi.fn(() => Effect.succeed("requested-project"))
+    const result = await Effect.runPromise(
+      Effect.flatMap(AuthorizeProject, (service) =>
+        service.authorizeUser("user-1", "requested-project"),
+      ).pipe(
+        Effect.provide(
+          dependencies(
+            repository(),
+            true,
+            projectCredentials({ memberProject }),
+          ),
+        ),
+      ),
+    )
+    expect(result).toBe("requested-project")
+    expect(memberProject).toHaveBeenCalledWith("user-1", "requested-project")
+  })
+
+  it("rejects a requested project the user does not belong to", async () => {
+    const result = await Effect.runPromise(
+      Effect.flatMap(AuthorizeProject, (service) =>
+        Effect.either(service.authorizeUser("user-1", "other-project")),
+      ).pipe(
+        Effect.provide(
+          dependencies(
+            repository(),
+            true,
+            projectCredentials({
+              memberProject: () => Effect.succeed(undefined),
+            }),
+          ),
+        ),
+      ),
+    )
+    expectLeft(result, { _tag: "Unauthorized", permission: "read" })
   })
 
   it("rejects a signed-in user without project membership", async () => {

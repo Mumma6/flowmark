@@ -25,6 +25,8 @@ import { WorkflowDirectory } from "./workflow-directory"
 import { RunInvestigation } from "./run-investigation"
 import { DataState, PageHeading, ViewLink } from "./dashboard-components"
 import { formatDuration, type WorkflowSummary } from "./dashboard-data"
+import { EmptyProject } from "./empty-project"
+import { useProject } from "./project-context"
 import {
   DailyDurationPanel,
   DailyVolumePanel,
@@ -36,7 +38,11 @@ import { RunExplorer, RunsTable } from "./runs-table"
 
 function useSnapshot() {
   const trpc = useTRPC()
-  return useQuery(trpc.project.snapshot.queryOptions())
+  const { current } = useProject()
+  return useQuery({
+    ...trpc.project.snapshot.queryOptions(),
+    enabled: Boolean(current),
+  })
 }
 
 function Refresh({
@@ -172,7 +178,8 @@ export function DashboardOverview() {
         error={error}
         retry={() => void refetch()}
       />
-      {data && (
+      {data && data.metrics.totalRuns === 0 ? <EmptyProject /> : null}
+      {data && data.metrics.totalRuns > 0 && (
         <>
           <section
             className="grid grid-cols-2 gap-3 xl:grid-cols-5"
@@ -340,11 +347,19 @@ export function ProjectWorkflows() {
 
 export function RunDetail({ id }: { id: string }) {
   const trpc = useTRPC()
-  const { data, isPending, error, refetch } = useQuery(
-    trpc.run.detail.queryOptions({ id }),
-  )
-  const relationships = useQuery(trpc.run.related.queryOptions({ id }))
-  const comparison = useQuery(trpc.run.compare.queryOptions({ id }))
+  const { current } = useProject()
+  const { data, isPending, error, refetch } = useQuery({
+    ...trpc.run.detail.queryOptions({ id }),
+    enabled: Boolean(current),
+  })
+  const relationships = useQuery({
+    ...trpc.run.related.queryOptions({ id }),
+    enabled: Boolean(current),
+  })
+  const comparison = useQuery({
+    ...trpc.run.compare.queryOptions({ id }),
+    enabled: Boolean(current),
+  })
   return (
     <div className="grid min-w-0 gap-6">
       <PageHeading

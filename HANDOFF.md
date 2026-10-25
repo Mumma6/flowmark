@@ -12,11 +12,11 @@ product is not deployed or published on npm merely because package manifests
 say `0.1.0`.
 
 The workspace is a Git repository with a private GitHub remote
-(`https://github.com/Mumma6/flowmark.git`) and an MIT `LICENSE`. Increments 1–3
+(`https://github.com/Mumma6/flowmark.git`) and an MIT `LICENSE`. Increments 1–4
 from [MVP-INFRA.md](./MVP-INFRA.md) have landed: confirmed provider/auth
-decisions, split migrate/seed, and Better Auth email/password with a seeded
-`local@dev` account. Hosted Neon/Vercel, key-management UI, and npm release
-are still open.
+decisions, split migrate/seed, Better Auth email/password with a seeded
+`local@dev` account, and dashboard project/key management. Hosted Neon/Vercel
+and npm release are still open.
 
 ### Read in this order
 
@@ -106,8 +106,10 @@ Better Auth with email and password, session-scoped dashboard access, keep
 browser ingestion, 30-day telemetry retention, MIT, and `flowmark.dev`.
 
 Email/password dashboard auth and the seeded `local@dev` account are
-implemented. Increment 4 is ingestion-key management in the dashboard. Do not
-silently implement the rest of the infra plan or provision paid services.
+implemented. Increment 4 is in the dashboard: create/revoke/rotate ingestion
+keys, rename or create a project, and switch projects. Password reset still
+needs email delivery. Do not silently implement hosted Neon/Vercel or npm
+release.
 
 ## 5. Local commands and verification
 
