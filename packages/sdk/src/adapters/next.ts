@@ -28,17 +28,16 @@ export type {
 export { defineConfig } from "../config/define-config.js"
 
 /**
- * Creates a server-side Next.js client that automatically drains each workflow via after().
- * Use inside Route Handlers or Server Actions, not Client Components, middleware, or render.
- * Reads FLOWMARK_API_KEY and FLOWMARK_API_URL unless overridden. No config file is required.
- * Each workflow has its own request-scoped client; delivery errors are logged after the response.
- * @param config Server-only credentials, API origin, and optional error callback.
+ * Next.js server client. Import from `@flowmark/node/next` only.
+ * Use in Route Handlers or Server Actions. Not Client Components, middleware, or render.
+ * Reads FLOWMARK_API_KEY and FLOWMARK_API_URL. Never NEXT_PUBLIC_*.
+ * Drains via after() — do not call shutdown() yourself.
+ * One shared module-level client; wrap the places the developer named.
  * @example
  * import { createFlowmark } from "@flowmark/node/next"
- * const flowmark = createFlowmark()
- * // In a Route Handler or Server Action:
- * const flow = flowmark.workflow("todo.add")
- * flow.done()
+ * export const flowmark = createFlowmark()
+ * const flow = flowmark.workflow("checkout.order")
+ * flow.done({ result: { ok: true } })
  */
 export function createFlowmark(
   config: FlowmarkConfig = {},

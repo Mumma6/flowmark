@@ -74,7 +74,7 @@ export function defineConfig<const T extends BrowserFlowmarkConfig>(
  * Creates a browser client. Works in ordinary React/Vite apps as well as Next.js.
  * Pass publicKey and apiUrl to send directly to Flowmark without your own backend.
  * Without these options, uses your same-origin backend proxy at /api/flowmark.
- * Never pass a secret server write key.
+ * Never pass a secret server write key or import `@flowmark/node` / `@flowmark/node/next` here.
  * Safe to create during SSR, but call workflow() only in browser event handlers or effects.
  * Delivery starts automatically and uses keepalive; offline/unload delivery is not guaranteed.
  * No config file, React provider, or Next.js dependency is required.

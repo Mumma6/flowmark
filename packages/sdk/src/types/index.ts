@@ -24,7 +24,10 @@ export type InstrumentationErrorHandler = (
 
 /** Server-only client options. Omit values to read FLOWMARK_* environment variables. */
 export interface FlowmarkConfig {
-  /** Secret project write key. Defaults to FLOWMARK_API_KEY; never expose in browser code. */
+  /**
+   * Secret project write key. Defaults to FLOWMARK_API_KEY.
+   * Server only — never NEXT_PUBLIC_* or a browser bundle.
+   */
   readonly apiKey?: string
   /**
    * Flowmark API origin, not an ingestion path.
@@ -44,7 +47,8 @@ export interface FlowmarkConfig {
 export interface WorkflowRunOptions {
   /**
    * ID for this execution. A UUID is generated if omitted.
-   * Pass the same id and workflow name on a later request to continue the run.
+   * Same name + same id on a later request continues this run (second started is ignored).
+   * Do not call done() until that whole process ends.
    * Do not reuse a durable entity id that outlives one execution; put those in properties.
    */
   readonly id?: WorkflowRunId
@@ -127,16 +131,14 @@ export interface Flow {
    */
   step(name: WorkflowStepName, options?: WorkflowStepOptions): void
   /**
-   * Requests successful completion, optionally recording a bounded JSON-safe result.
-   * If operations are open, completion is deferred until the final operation closes.
-   * The first completion request wins; subsequent run markers are ignored, but
-   * already-open operations may still close. An explicit fail() can supersede
-   * a pending completion.
+   * Ends the run as successful. Call only when the whole process is finished —
+   * not in the first handler of a multi-request flow.
+   * If operations are open, completion waits until they close. First terminal wins.
    */
   done(options?: WorkflowDoneOptions): void
   /**
-   * Marks the run failed without throwing an application error.
-   * Accepts a required failure code and an optional bounded business result.
+   * Ends the run as failed without throwing. Call only when the whole process
+   * is finished. `code` is required. Can supersede a pending done().
    */
   fail(options: WorkflowFailOptions): void
   /**
@@ -171,18 +173,15 @@ export interface Flow {
 /** Ordinary TypeScript client; Effect execution is managed internally. */
 export interface FlowmarkClient {
   /**
-   * Starts a run and immediately schedules its start event.
-   * Every call generates a new run ID unless options.id is supplied.
-   * The same id and workflow name continues that run across later requests.
-   * @param name Stable workflow name used to group runs in the dashboard.
-   * @param options Execution ID, bounded JSON properties, deployment metadata,
-   * and optional explicit correlation/parent run identifiers.
+   * Starts a run, or continues one when `options.id` matches an existing run
+   * of the same workflow name. Omit `id` for a new execution.
+   * Persist `flow.runId` if a later request should append to this run.
+   * @param name Stable process name, such as "checkout.order" or "expedition.run".
    * @throws FlowmarkConfigError If configuration/context is invalid or the client was shut down.
    * @example
-   * const flow = flowmark.workflow("checkout", { properties: { orderId } })
-   * flow.step("payment-created", { properties: { provider: "stripe" } })
-   * flow.error({ code: "inventory-retry", handled: true, retryable: true })
-   * flow.done({ result: { receiptId: "receipt_123" } })
+   * const flow = flowmark.workflow("checkout.order", { properties: { orderId } })
+   * flow.step("payment-captured")
+   * flow.done({ result: { shipmentId } })
    */
   workflow(name: WorkflowName, options?: WorkflowRunOptions): Flow
   /**

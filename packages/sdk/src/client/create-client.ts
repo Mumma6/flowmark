@@ -22,16 +22,12 @@ import type {
 } from "@flowmark/core"
 
 /**
- * Creates a server-side Node.js client using explicit options or FLOWMARK_* environment variables.
- * No specially named configuration file is required; export the instance from any server module.
- * Drain with shutdown() before process exit, or use @flowmark/node/next for automatic request lifetime.
- * For React/browser code, import createFlowmark from @flowmark/node/browser instead.
+ * Node server client. Import this from `@flowmark/node` in workers and scripts.
+ * Next.js Route Handlers must import createFlowmark from `@flowmark/node/next`.
+ * Browser code must import it from `@flowmark/node/browser`.
+ * Reads FLOWMARK_API_KEY and FLOWMARK_API_URL; never put those in NEXT_PUBLIC_*.
+ * Call shutdown() before process exit. Create one shared client.
  * @throws FlowmarkConfigError If credentials or API origin are invalid.
- * @example
- * const flowmark = createFlowmark()
- * const flow = flowmark.workflow("checkout")
- * flow.done()
- * await flowmark.shutdown()
  */
 export function createFlowmark(config: FlowmarkConfig = {}): FlowmarkClient {
   const settings = resolveSettings(config)
