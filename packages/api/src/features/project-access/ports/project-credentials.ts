@@ -21,6 +21,24 @@ export interface ProjectCredentialsService {
     key: Redacted.Redacted<string>,
     permission: "read" | "write",
   ) => Effect.Effect<string | undefined, PersistenceError>
+  readonly projectForUser: (
+    userId: string,
+  ) => Effect.Effect<string | undefined, PersistenceError>
+  readonly addOwner: (
+    userId: string,
+    projectId: string,
+  ) => Effect.Effect<void, PersistenceError>
+  readonly createOwnedProject: (
+    userId: string,
+    names: { readonly workspace: string; readonly project: string },
+  ) => Effect.Effect<
+    {
+      readonly projectId: string
+      readonly writeKey: string
+      readonly readKey: string
+    },
+    PersistenceError
+  >
 }
 
 export class ProjectCredentials extends Context.Tag(

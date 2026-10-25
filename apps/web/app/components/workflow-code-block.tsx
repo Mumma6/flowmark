@@ -16,7 +16,7 @@ function HighlightedCode({ value }: { value: string }) {
   const sourceLines = value.split("\n")
 
   return (
-    <CodeBlockContent className="workflow-code-content" lineNumbers>
+    <CodeBlockContent className="overflow-auto text-xs leading-[1.9]" lineNumbers>
       {lines.map((line, index) => (
         <CodeBlockLine
           key={index}
@@ -24,7 +24,7 @@ function HighlightedCode({ value }: { value: string }) {
             /\b(?:flowmark\.workflow|run\.(?:step|done|fail|progress))\(/.test(
               sourceLines[index] ?? "",
             )
-              ? "instrumentation-line"
+              ? "bg-primary/10 shadow-[inset_2px_0_0_var(--accent)]"
               : undefined
           }
         >
@@ -43,13 +43,13 @@ export function WorkflowCodeBlock({
   value: string
 }) {
   return (
-    <CodeBlock className="workflow-code-block">
-      <CodeBlockHeader className="workflow-code-header">
+    <CodeBlock className="w-full border-white/15 bg-[#080d0e]">
+      <CodeBlockHeader className="min-h-12 px-3 sm:px-3.5">
         <CodeBlockTitle>{title}</CodeBlockTitle>
         <CodeBlockActions>
-          <span className="code-language">TypeScript</span>
+          <span className="text-[10px] text-muted-foreground">TypeScript</span>
           <CodeBlockCopyButton
-            className="code-copy-button"
+            className="border border-border text-[#c6d2c9]"
             value={value}
             variant="ghost"
           />

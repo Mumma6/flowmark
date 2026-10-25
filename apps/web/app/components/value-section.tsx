@@ -1,57 +1,73 @@
+import { Card, CardContent } from "@flowmark/ui"
+import { overlineClassName, sectionTitleClassName, shellClassName } from "./layout"
+
+const steps = [
+  {
+    index: "01 / In Flowmark",
+    title: "See the incomplete outcome",
+    evidence: (
+      <>
+        <strong className="font-medium text-primary">988 succeeded</strong>
+        <span>12 failed</span>
+      </>
+    ),
+    copy: "“Completed” is not the same as the result operations needed. Open the process that needs attention.",
+  },
+  {
+    index: "02 / In your tools",
+    title: "Follow the business id",
+    evidence: <code>orderId: ord_2049</code>,
+    copy: "Use the identifier you attached — an order, a source, a job — to look up the rest in logs and systems you already have.",
+  },
+  {
+    index: "03 / In the process",
+    title: "Close the gap",
+    evidence: <span>12 items to investigate—not 1,000</span>,
+    copy: "Fix what failed. If the process can retry a subset, do that and check the new outcome.",
+  },
+] as const
+
 export function ValueSection() {
   return (
     <section
-      className="value-section section-space"
+      className="border-t border-border py-16 sm:py-[6.25rem]"
       aria-labelledby="value-title"
     >
-      <div className="shell">
-        <div className="section-intro">
-          <p className="overline">FROM A RUN TO A NEXT STEP</p>
-          <h2 id="value-title">12 invoices skipped. Now what?</h2>
-          <p>
-            Find the affected batch, check why it happened, and fix what was
-            missed—not the 988 invoices already imported.
+      <div className={shellClassName}>
+        <div className="max-w-[800px]">
+          <p className={overlineClassName}>From insight to a next step</p>
+          <h2 id="value-title" className={`${sectionTitleClassName} mt-4`}>
+            See what operations actually produced.
+          </h2>
+          <p className="mt-4 max-w-[650px] text-sm leading-7 text-muted-foreground">
+            Healthy infrastructure is not a business result. Open the process
+            that needs attention, understand what it reported, and fix the gap
+            — not everything that already worked.
           </p>
         </div>
-        <ol className="value-grid">
-          <li>
-            <span className="value-index">01 / IN FLOWMARK</span>
-            <h3>Spot the incomplete import</h3>
-            <div className="action-evidence">
-              <strong>988 imported</strong>
-              <span>12 skipped</span>
-            </div>
-            <p>
-              “Completed” is not the same as “everything imported.” Open the run
-              that needs attention.
-            </p>
-          </li>
-          <li>
-            <span className="value-index">02 / IN YOUR LOGS</span>
-            <h3>Find the rejected records</h3>
-            <div className="action-evidence">
-              <code>batchId: batch_2049</code>
-            </div>
-            <p>
-              Use the batch ID recorded on the run to look up rejection details
-              in your importer’s logs.
-            </p>
-          </li>
-          <li>
-            <span className="value-index">03 / IN YOUR APP</span>
-            <h3>Correct, then reprocess</h3>
-            <div className="action-evidence">
-              <span>12 records to investigate—not 1,000</span>
-            </div>
-            <p>
-              Fix the rejected data. If your importer supports selective
-              retries, reprocess those records and check the new run.
-            </p>
-          </li>
+        <ol className="mt-10 grid gap-6 border-t border-border pt-6 sm:grid-cols-3 sm:gap-8">
+          {steps.map((step) => (
+            <li key={step.title}>
+              <span className="font-mono text-[11px] tracking-wide text-primary">
+                {step.index}
+              </span>
+              <h3 className="mt-4 text-[17px] font-medium tracking-tight">
+                {step.title}
+              </h3>
+              <Card className="mt-4 rounded-lg border-border bg-primary/[0.02]">
+                <CardContent className="flex min-h-16 flex-wrap items-center gap-x-3 gap-y-1.5 p-3.5 font-mono text-xs text-[#dce8d8]">
+                  {step.evidence}
+                </CardContent>
+              </Card>
+              <p className="mt-2.5 text-[13px] leading-7 text-muted-foreground">
+                {step.copy}
+              </p>
+            </li>
+          ))}
         </ol>
-        <p className="action-boundary">
-          Flowmark gives you the run and its reported result. Your logs explain
-          the rejection; your application handles the fix.
+        <p className="mt-7 text-xs leading-7 text-muted-foreground">
+          Flowmark gives operations the reported result. Your logs explain the
+          details; your application handles the fix.
         </p>
       </div>
     </section>

@@ -74,6 +74,7 @@ import the config and pass it explicitly to `createFlowmark()`.
 
 ## Secrets and data
 
-Never expose private write or dashboard-read keys in `NEXT_PUBLIC_*`, frontend
-config, or copied client code. Use a separate browser key for public delivery.
+Never expose private write keys in `NEXT_PUBLIC_*`, frontend config, or copied
+client code. Use a separate browser key for public delivery. Dashboard access
+uses a signed-in session, not a write key.
 Read [security and privacy](/docs/security-privacy) before recording real data.

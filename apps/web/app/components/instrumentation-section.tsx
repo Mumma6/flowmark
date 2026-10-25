@@ -1,31 +1,42 @@
+import { Button } from "@flowmark/ui"
+import { Arrow } from "./brand"
 import { CodeShowcase } from "./code-showcase"
+import { overlineClassName, sectionTitleClassName, shellClassName } from "./layout"
 import { docsUrl } from "./site-links"
 
 export function InstrumentationSection() {
   return (
     <section
       id="how-it-works"
-      className="how-section section-space"
+      className="border-y border-border bg-[#0d1112] bg-[radial-gradient(ellipse_at_16%_0%,#b9f59705,transparent_55%)] py-16 sm:py-[6.25rem]"
       aria-labelledby="how-title"
     >
-      <div className="shell">
-        <div className="section-heading">
+      <div className={shellClassName}>
+        <div className="mb-8 flex flex-col items-start justify-between gap-4 sm:mb-10 sm:flex-row sm:items-end sm:gap-8">
           <div>
-            <p className="overline">A LITTLE CODE. A CLEARER ANSWER.</p>
-            <h2 id="how-title">Keep the logic. See the outcome.</h2>
+            <p className={overlineClassName}>A little code. A clearer answer.</p>
+            <h2 id="how-title" className={`${sectionTitleClassName} mt-4`}>
+              Keep the logic. See the outcome.
+            </h2>
           </div>
-          <p>
-            Start a run, mark what matters, report the result. Your functions
-            stay your functions—no job runner, workflow rewrite, or custom
-            dashboard to build.
+          <p className="max-w-md text-[13px] leading-7 text-muted-foreground">
+            Developers mark existing business logic. Operations gets a
+            readable outcome — no job runner, rewrite, or custom dashboard
+            to build.
           </p>
         </div>
         <CodeShowcase />
-        <p className="instrumentation-setup">
+        <p className="mt-5 border-t border-border pt-5 text-xs leading-7 text-muted-foreground">
           One shared server client:{" "}
-          <code>const flowmark = createFlowmark()</code>. Business helpers
-          belong to your app.{" "}
-          <a href={docsUrl}>SDK setup and framework guides →</a>
+          <code className="font-mono text-[0.92em]">
+            const flowmark = createFlowmark()
+          </code>
+          . Business helpers belong to your app.{" "}
+          <Button asChild variant="link" className="h-auto p-0 text-xs">
+            <a href={docsUrl}>
+              SDK setup and framework guides <Arrow diagonal />
+            </a>
+          </Button>
         </p>
       </div>
     </section>

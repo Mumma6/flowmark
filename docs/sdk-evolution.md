@@ -120,7 +120,7 @@ different workflows can yield multiple matches.
 The `run.related({ id })` read query accepts a dashboard-internal run UUID and
 returns `{ parentMatches, related }`. `related` includes all other runs with
 the same correlation ID, beyond the overview's latest-100 snapshot. Both
-collections remain scoped to the read-key project; the dashboard labels
+collections remain scoped to the authorized project; the dashboard labels
 browser-vs-server origin from the workflow namespace.
 
 ## Later proposals

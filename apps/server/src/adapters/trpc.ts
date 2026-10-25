@@ -1,20 +1,38 @@
 import { initTRPC, TRPCError } from "@trpc/server"
-import { Effect, Exit, Match, Schema } from "effect"
+import { Effect, Exit, Match, Option, Schema } from "effect"
 import {
+  ConfigurationError,
   GetProjectWorkflowData,
+  PersistenceError,
   logFailure,
   runApi,
-  type PersistenceError,
   type Unauthorized,
 } from "@flowmark/api"
+import { getAuth } from "../auth"
 
 const t = initTRPC.context<{ request: Request }>().create()
+
+const sessionUserId = Effect.fn("sessionUserId")(function* (request: Request) {
+  if (!request.headers.get("cookie") || !process.env.DATABASE_URL) {
+    return Option.none<string>()
+  }
+  const auth = yield* getAuth()
+  const session = yield* Effect.tryPromise({
+    try: () =>
+      auth.api.getSession({
+        headers: request.headers,
+      }),
+    catch: (cause) =>
+      new PersistenceError({ operation: "auth-session", cause }),
+  })
+  return Option.fromNullable(session?.user.id)
+})
 
 async function executeQuery<A>(
   request: Request,
   operation: Effect.Effect<
     A,
-    Unauthorized | PersistenceError,
+    Unauthorized | PersistenceError | ConfigurationError,
     GetProjectWorkflowData
   >,
 ) {
@@ -24,7 +42,7 @@ async function executeQuery<A>(
         Effect.fail(
           new TRPCError({
             code: "UNAUTHORIZED",
-            message: "Invalid dashboard read key.",
+            message: "Sign in required.",
           }),
         ),
       ),
@@ -56,6 +74,36 @@ async function executeQuery<A>(
   })
 }
 
+function readQuery<A>(
+  request: Request,
+  forUser: (
+    userId: string,
+  ) => Effect.Effect<
+    A,
+    Unauthorized | PersistenceError,
+    GetProjectWorkflowData
+  >,
+  forKey: (
+    header: string | null,
+  ) => Effect.Effect<
+    A,
+    Unauthorized | PersistenceError,
+    GetProjectWorkflowData
+  >,
+) {
+  return executeQuery(
+    request,
+    sessionUserId(request).pipe(
+      Effect.flatMap(
+        Option.match({
+          onNone: () => forKey(request.headers.get("authorization")),
+          onSome: (userId) => forUser(userId),
+        }),
+      ),
+    ),
+  )
+}
+
 export const appRouter = t.router({
   health: t.router({
     check: t.procedure.query(() => ({
@@ -65,21 +113,31 @@ export const appRouter = t.router({
   }),
   project: t.router({
     snapshot: t.procedure.query(({ ctx }) =>
-      executeQuery(
+      readQuery(
         ctx.request,
-        Effect.flatMap(GetProjectWorkflowData, (queries) =>
-          queries.snapshot(ctx.request.headers.get("authorization")),
-        ),
+        (userId) =>
+          Effect.flatMap(GetProjectWorkflowData, (queries) =>
+            queries.snapshotForUser(userId),
+          ),
+        (header) =>
+          Effect.flatMap(GetProjectWorkflowData, (queries) =>
+            queries.snapshot(header),
+          ),
       ),
     ),
   }),
   workflow: t.router({
     list: t.procedure.query(({ ctx }) =>
-      executeQuery(
+      readQuery(
         ctx.request,
-        Effect.flatMap(GetProjectWorkflowData, (queries) =>
-          queries.workflows(ctx.request.headers.get("authorization")),
-        ),
+        (userId) =>
+          Effect.flatMap(GetProjectWorkflowData, (queries) =>
+            queries.workflowsForUser(userId),
+          ),
+        (header) =>
+          Effect.flatMap(GetProjectWorkflowData, (queries) =>
+            queries.workflows(header),
+          ),
       ),
     ),
   }),
@@ -87,24 +145,31 @@ export const appRouter = t.router({
     detail: t.procedure
       .input(Schema.standardSchemaV1(Schema.Struct({ id: Schema.UUID })))
       .query(({ ctx, input }) =>
-        executeQuery(
+        readQuery(
           ctx.request,
-          Effect.flatMap(GetProjectWorkflowData, (queries) =>
-            queries.timeline(
-              ctx.request.headers.get("authorization"),
-              input.id,
+          (userId) =>
+            Effect.flatMap(GetProjectWorkflowData, (queries) =>
+              queries.timelineForUser(userId, input.id),
             ),
-          ),
+          (header) =>
+            Effect.flatMap(GetProjectWorkflowData, (queries) =>
+              queries.timeline(header, input.id),
+            ),
         ),
       ),
     related: t.procedure
       .input(Schema.standardSchemaV1(Schema.Struct({ id: Schema.UUID })))
       .query(({ ctx, input }) =>
-        executeQuery(
+        readQuery(
           ctx.request,
-          Effect.flatMap(GetProjectWorkflowData, (queries) =>
-            queries.related(ctx.request.headers.get("authorization"), input.id),
-          ),
+          (userId) =>
+            Effect.flatMap(GetProjectWorkflowData, (queries) =>
+              queries.relatedForUser(userId, input.id),
+            ),
+          (header) =>
+            Effect.flatMap(GetProjectWorkflowData, (queries) =>
+              queries.related(header, input.id),
+            ),
         ),
       ),
   }),

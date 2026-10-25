@@ -16,7 +16,11 @@
     "format:check": "prettier --check .",
     "db:generate": "pnpm --filter @flowmark/db db:generate",
     "db:studio": "pnpm --filter @flowmark/db db:studio",
-    "db:setup-demo": "pnpm --filter @flowmark/db db:setup-demo",
+    "db:migrate": "pnpm --filter @flowmark/db db:migrate",
+    "db:seed": "pnpm --filter @flowmark/db db:seed",
+    "db:setup": "pnpm --filter @flowmark/db db:setup",
+    "db:setup-demo": "pnpm --filter @flowmark/db db:setup",
+    "db:reset-local-telemetry": "pnpm --filter @flowmark/db db:reset-local-telemetry",
     "test": "node --test scripts/prepare-dev.test.mjs && turbo test",
     "typecheck": "turbo typecheck"
   },

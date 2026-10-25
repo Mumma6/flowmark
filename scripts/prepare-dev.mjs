@@ -27,5 +27,5 @@ for (const app of ["server", "dashboard", "dev-harness"]) {
 }
 
 console.log(
-  "[Flowmark dev] PostgreSQL must be running. Check DATABASE_URL in apps/server/.env.local and run pnpm db:setup-demo once before recording data.",
+  "[Flowmark dev] PostgreSQL must be running. Check DATABASE_URL in apps/server/.env.local and run pnpm db:setup once before recording data.",
 )

@@ -2,6 +2,10 @@
 
 ## Pages and data
 
+Anonymous visitors are redirected to sign in. Email/password registration
+creates a project and the first write key. Seed `local@dev` /
+`local-dev-only` after `pnpm db:setup` to open the operations project.
+
 - **Overview:** project metrics, recent daily volume, five workflow summaries,
   and five recent runs.
 - **Workflows:** name-prefix groups, namespace/search filters, and 12 workflow
@@ -15,14 +19,15 @@
 - **Run detail:** outcome first; separate timeline, context and related-run tabs.
   Timeline pages contain 15 events with expandable payloads. Related-run tables
   contain at most 10 rows each.
-- **Settings/account previews:** explain the fixed development account. Account
-  forms are explicitly disabled previews, not implemented authentication.
+- **Settings:** shows the signed-in account and how the SDK write key connects
+  to this dashboard. New accounts see their first write key once after
+  registration.
 
 Filtering and pagination of run summaries are client-side over the latest 100
 project runs, not full-history server queries. The workflow list and aggregate
 metrics retain their existing backend scope. Namespace grouping is inferred
 from names, not trusted event provenance. No workflow execution, retry,
-business-result verification, or authentication was added.
+or business-result verification was added.
 
 ## UI and theme
 
@@ -39,7 +44,7 @@ add app-local copies, custom selector stylesheets, or another UI kit.
 
 `dashboard-data.ts` owns pure filtering/grouping/pagination helpers;
 `dashboard-components.tsx` composes shared controls. Data queries retain
-project scoping, the server-held read key, and existing automatic refresh.
+project scoping from the signed-in session, and existing automatic refresh.
 
 ## Validation
 

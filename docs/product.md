@@ -49,7 +49,7 @@ application explicitly reports.
 ## Stage 1 delivered
 
 The first explainable-run slice is implemented in the SDK, ingestion,
-persistence, dashboard, and example app.
+persistence, dashboard, and local operations harness.
 
 ```ts
 const flow = flowmark.workflow("invoice.import", {
@@ -97,18 +97,20 @@ business result.
 
 ## Current boundaries
 
-There is no hosted Flowmark API, customer signup, production key-management
-service, or production dashboard authentication. Self-hosted deployments must
-provide their own authentication, authorization, key lifecycle, retention,
-deletion, backups, and operations. Delivery is best-effort and bounded in
-memory, not a durable offline queue.
+There is no operated hosted Flowmark API. Local and self-hosted dashboard
+sign-in is Better Auth email and password; registration creates a project and
+the first write key. Applications still authenticate with a project write key.
+Key rotation UI, retention cleanup, and an operated production service are
+not implemented. Self-hosted deployments still own backups, deletion, and
+operations. Delivery is best-effort and bounded in memory, not a durable
+offline queue.
 
 ## Proposed next work
 
-Stages 2 and 3 also ship measured operations, absolute progress snapshots and
-explicit run correlation/parent links. See the [SDK evolution plan](./sdk-evolution)
-for their current contracts and measurement rules. Explicit cancellation,
-business retry APIs and further analytics remain proposals.
+Measured operations, absolute progress snapshots, and explicit run
+correlation/parent links are already in the SDK. See the
+[SDK evolution plan](./sdk-evolution) for their contracts. Explicit
+cancellation, business retry APIs, and further analytics remain proposals.
 
 The stable product purpose and decision filter live in the repository-root
 [north star](../NORTH-STAR.md). This document and the roadmap describe the

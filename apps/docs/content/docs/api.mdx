@@ -12,6 +12,9 @@ requires PostgreSQL for event ingestion and workflow queries.
 | Endpoint                        | Purpose                                      |
 | ------------------------------- | -------------------------------------------- |
 | `GET /api/health`               | Database-independent API liveness check      |
+| `GET /api/auth/*`               | Better Auth session lookup                   |
+| `POST /api/auth/*`              | Better Auth sign-in, sign-out, and callbacks |
+| `POST /api/register`            | Create an owner, project, and first write key |
 | `GET /api/trpc/{procedure}`     | Typed read/query API used by the dashboard   |
 | `POST /api/trpc/{procedure}`    | tRPC transport; no mutations currently exist |
 | `OPTIONS /api/trpc/{procedure}` | Dashboard CORS preflight                     |
@@ -55,9 +58,11 @@ or differently scoped run returns an empty array, not a 404.
 `run.related` takes the same internal run UUID and returns project-scoped
 parent matches and correlated runs.
 
-Dashboard reads use a separate server-held read key. Query results and run
-lookups are scoped to the project resolved from that key. The dashboard's
-same-origin proxy keeps the key out of browser code.
+Dashboard reads use the signed-in Better Auth session. Query results and run
+lookups are scoped to a project the user belongs to. The dashboard's
+same-origin proxy forwards the session cookie; it does not put a read key in
+browser code. Programmatic callers without a session may still send a project
+read key in the `Authorization` header.
 
 `run.detail` returns the append-only event timeline, including measured
 operations (`operation_started`, `operation_completed`, `operation_failed`)
@@ -69,7 +74,8 @@ summaries and timeline rows include optional `correlationId` and `parentRunId`
 declared at start.
 
 `run.related({ id })` accepts the internal UUID of a run and returns
-`{ parentMatches, related }`. Both lists are project-scoped to the read key;
+`{ parentMatches, related }`. Both lists are project-scoped to the authorized
+project;
 `related` includes every other run sharing the explicit correlation ID, not
 only overview rows in the latest-100 snapshot. Parent matches resolve the
 provided external `parentRunId` only within the same project. These are
@@ -82,6 +88,7 @@ the database package. Metrics are computed by the backend rather than accepted
 as client-submitted aggregates. The dashboard currently shows the latest 100
 runs, with metrics across recorded runs and a 30-day chart.
 
-The fixed local demo account is not production login or workspace
-authentication. Customer provisioning, key management, hosted API operations,
-alerting, and durable offline delivery are not implemented.
+The seeded `local@dev` account is a loopback fixture for the operations
+project, not a hosted owner. Registration creates a real local account and
+project. Hosted API operations, key-rotation UI, alerting, and durable
+offline delivery are not implemented.

@@ -6,13 +6,17 @@
 
 ## 1. Current position
 
-Flowmark has a working local POC of workflow observability and is beginning
-MVP 0.1 preparation. The founder has reviewed the run experience and wants to
-proceed. The product is not deployed, authenticated for production, or confirmed
-published on npm merely because package manifests say `0.1.0`.
+Flowmark has a working local POC of workflow observability and is preparing
+MVP 0.1. The founder has reviewed the run experience and wants to proceed. The
+product is not deployed or published on npm merely because package manifests
+say `0.1.0`.
 
-The workspace was not a Git repository at handoff. No GitHub repository,
-deployment, npm publication, or provider account was created by this preparation.
+The workspace is a Git repository with a private GitHub remote
+(`https://github.com/Mumma6/flowmark.git`) and an MIT `LICENSE`. Increments 1–3
+from [MVP-INFRA.md](./MVP-INFRA.md) have landed: confirmed provider/auth
+decisions, split migrate/seed, and Better Auth email/password with a seeded
+`local@dev` account. Hosted Neon/Vercel, key-management UI, and npm release
+are still open.
 
 ### Read in this order
 
@@ -61,10 +65,10 @@ integration remains valuable; do not rebuild the harness merely to prepare infra
 
 ## 3. Important limitations and traps
 
-- Dashboard reads currently use a fixed local read key behind a demo-mode proxy.
-  Demo mode off intentionally blocks it. This is not production auth.
-- Login/account screens are honest disabled previews. The Supabase browser helper
-  is unused scaffolding, not evidence of working authentication.
+- Dashboard reads require a Better Auth session and project membership.
+  Anonymous reads fail. Applications still write with a project key.
+- Dashboard sign-in is email and password. Local seed creates `local@dev`.
+  Password reset is not available until email delivery exists.
 - Read tables filter/page the latest 100 project runs client-side; this is not
   complete historical pagination.
 - Results are shown per run; there is no validated cross-run business aggregate.
@@ -79,8 +83,10 @@ integration remains valuable; do not rebuild the harness merely to prepare infra
 - Public local keys are intentional fixtures, gated by demo mode. Never reuse
   them as deployed credentials. Keep private server and public browser keys
   separate; Better Auth sessions do not replace unattended SDK authentication.
-- `db:setup-demo` currently combines migrations and local seed provisioning.
-  The cleaner commands in the MVP plan are proposals, not existing scripts.
+- `pnpm db:migrate`, `pnpm db:seed`, and `pnpm db:setup` now split migration
+  and local fixture provisioning. `db:setup-demo` remains as an alias for
+  `db:setup`. Seed refuses production and non-loopback databases. The local
+  Better Auth account `local@dev` is provisioned by the same seed.
 
 The phase still lacks independent developer/non-technical reader validation,
 a modest logs/trace comparison, and a useful validated across-run insight.
@@ -92,21 +98,14 @@ Founder enthusiasm is positive feedback, not evidence those steps happened.
 Effect-first internals, current SDK surface, PostgreSQL/Drizzle, shared UI,
 local-only harness, and custom telemetry model for now.
 
-**Not approved just by being written in the infra plan:**
+**Confirmed for MVP 0.1** in
+[ADR 0006](./docs/decisions/0006-mvp-0.1-infrastructure.md): Neon PostgreSQL,
+Better Auth with email and password, session-scoped dashboard access, keep
+browser ingestion, 30-day telemetry retention, MIT, and `flowmark.dev`.
 
-- Neon versus Supabase as PostgreSQL provider.
-- GitHub-only auth versus another Better Auth sign-in option.
-- Single owner versus shared access, and public registration policy.
-- Browser-ingestion scope for the initial release.
-- Retention duration and license selection.
-
-The selected public domain is `flowmark.dev`; the infrastructure plan maps
-landing/docs/dashboard/API to it and its subdomains. Registration and deployment
-still need verification in the maintainer's account.
-
-The maintainer wants to begin with infrastructure and GitHub preparation.
-Do not silently implement all of the MVP plan, migrate auth, or provision paid
-services before those choices are confirmed.
+Email/password dashboard auth and the seeded `local@dev` account are
+implemented. Increment 4 is ingestion-key management in the dashboard. Do not
+silently implement the rest of the infra plan or provision paid services.
 
 ## 5. Local commands and verification
 
@@ -116,13 +115,14 @@ Use Node >=20.19 (24 LTS recommended) and the pinned pnpm 10.18.1.
 pnpm install
 pnpm dev:setup
 # Configure a dedicated local PostgreSQL DATABASE_URL in apps/server/.env.local.
-pnpm db:setup-demo
+pnpm db:setup
 pnpm dev
 ```
 
-`dev:setup` currently prepares missing local env templates, not PostgreSQL.
-`db:setup-demo` applies migrations and seeds local configuration. Do not run
-either against production. Do not overwrite existing env files.
+`dev:setup` prepares missing local env templates, not PostgreSQL, so
+`pnpm dev` can start landing and docs without a database.
+`db:setup` applies committed migrations and seeds local fixture projects.
+Do not run seed or setup against production. Do not overwrite existing env files.
 
 Typical app ports:
 
@@ -171,6 +171,8 @@ Open the repository root, not an individual app. Project rules are in root
 Portable skills live in:
 
 - [.agents/skills/flowmark-architecture/SKILL.md](./.agents/skills/flowmark-architecture/SKILL.md)
+- [.agents/skills/flowmark-effect/SKILL.md](./.agents/skills/flowmark-effect/SKILL.md)
+- [.agents/skills/flowmark-persistence/SKILL.md](./.agents/skills/flowmark-persistence/SKILL.md)
 - [.agents/skills/flowmark-ui-components/SKILL.md](./.agents/skills/flowmark-ui-components/SKILL.md)
 
 Current Cursor documentation supports `AGENTS.md` and `.agents/skills/`.
@@ -182,27 +184,17 @@ There is no need to transfer editor accounts, private chat history, personal
 agent settings, or MCP credentials. Configure tools under the maintainer's
 personal account only when needed; this repository contains the durable context.
 
-## 7. First GitHub preparation
+## 7. Repository status
 
 The ignore file excludes env files except `.env.example`, build/dependency
 artifacts, local Vercel metadata, common private-key files, package tarballs,
 and named dump/backup directories. Ignore rules are protection, not a secret
 audit; arbitrary filenames and hard-coded secrets can still be committed.
 
-Before the first commit:
-
-1. Confirm this is personal code and no employer-owned material/account config
-   is being transferred. Choose the intended personal Git identity.
-2. Review templates, npm configuration, editor configuration, and any dumps or
-   exports. Do not print secret values into chat/logs.
-3. Confirm the license. Existing MIT manifest fields are not a repository license.
-4. After explicit approval to initialize Git, inspect `git status --short
---untracked-files=all` and the exact staged diff; do not blindly stage everything.
-5. Run an appropriate secret check before publishing. Ignore rules do not remove
-   files already tracked in Git.
-6. Create/push to the intended GitHub account only with explicit approval.
-
-No full secret scan or publication approval is implied by this handoff.
+Git, the MIT license file, and the private GitHub remote already exist. Do not
+re-initialize the repository. Ask before pushing, publishing, deploying, or
+running destructive database commands. Ignore rules do not remove files already
+tracked in Git.
 
 ## 8. Suggested first message in Cursor
 
@@ -211,12 +203,8 @@ Read AGENTS.md and HANDOFF.md, then BUSINESS-PLAN.md, MVP-INFRA.md and the
 current status in NEXT-PHASE-PLAN.md. Inspect actual code where necessary.
 
 We are preparing Flowmark MVP 0.1, not building a public multi-tenant SaaS.
-Start with GitHub/repository readiness: inspect ignore rules, package metadata,
-license status and existing tooling. Do not expose secrets or upload anything.
-Summarize what is ready, what needs a decision, and the smallest next increment.
-Do not initialize/push a repository, deploy, publish packages, reset data,
-or start an auth/database migration without my explicit approval.
-
-Infrastructure provider, auth-provider and ownership decisions in MVP-INFRA.md
-are recommendations, not already accepted decisions.
+Increments 1–3 are in: ADR 0006, migrate/seed split, and Better Auth
+email/password with local@dev. Next planned increment is dashboard key
+management. Do not expose secrets, deploy, publish packages, reset data,
+or start a new auth/database migration without my explicit approval.
 ```

@@ -25,6 +25,15 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
+const expectLeft = <E>(
+  result: Either.Either<unknown, E>,
+  expected: unknown,
+) =>
+  Either.match(result, {
+    onLeft: (error) => expect(error).toMatchObject(expected as object),
+    onRight: () => expect.fail("expected a failure"),
+  })
+
 const input = {
   eventId: "00000000-0000-4000-8000-000000000003",
   event: {
@@ -64,6 +73,14 @@ function projectCredentials(
     browserOriginAllowed: () => Effect.succeed(false),
     consumeBrowserQuota: () => Effect.succeed(false),
     authenticate: () => Effect.succeed("project-from-key"),
+    projectForUser: () => Effect.succeed("project-from-key"),
+    addOwner: () => Effect.void,
+    createOwnedProject: () =>
+      Effect.succeed({
+        projectId: "project-from-key",
+        writeKey: "fm_write_test",
+        readKey: "fm_read_test",
+      }),
     ...overrides,
   })
 }
@@ -107,10 +124,7 @@ describe("API Effect services", () => {
         ),
       ),
     )
-    expect(result).toMatchObject({
-      _tag: "Left",
-      left: { _tag: "Unauthorized" },
-    })
+    expectLeft(result, { _tag: "Unauthorized" })
     expect(authenticate).not.toHaveBeenCalled()
   })
 
@@ -146,10 +160,7 @@ describe("API Effect services", () => {
         ),
       ),
     )
-    expect(result).toMatchObject({
-      _tag: "Left",
-      left: { _tag: "BrowserUnauthorized" },
-    })
+    expectLeft(result, { _tag: "BrowserUnauthorized" })
     expect(authenticateBrowser).not.toHaveBeenCalled()
     expect(body).not.toHaveBeenCalled()
   })
@@ -191,10 +202,7 @@ describe("API Effect services", () => {
         ),
       ),
     )
-    expect(result).toMatchObject({
-      _tag: "Left",
-      left: { _tag: "Unauthorized", permission: "write" },
-    })
+    expectLeft(result, { _tag: "Unauthorized", permission: "write" })
     expect(body).not.toHaveBeenCalled()
     expect(append).not.toHaveBeenCalled()
   })
@@ -214,11 +222,46 @@ describe("API Effect services", () => {
         ),
       ),
     )
-    expect(result).toMatchObject({
-      _tag: "Left",
-      left: { _tag: "Unauthorized" },
-    })
+    expectLeft(result, { _tag: "Unauthorized" })
     expect(authenticate).not.toHaveBeenCalled()
+  })
+
+  it("authorizes dashboard sessions from project membership", async () => {
+    const projectForUser = vi.fn(() => Effect.succeed("owned-project"))
+    const result = await Effect.runPromise(
+      Effect.flatMap(AuthorizeProject, (service) =>
+        service.authorizeUser("user-1"),
+      ).pipe(
+        Effect.provide(
+          dependencies(
+            repository(),
+            true,
+            projectCredentials({ projectForUser }),
+          ),
+        ),
+      ),
+    )
+    expect(result).toBe("owned-project")
+    expect(projectForUser).toHaveBeenCalledWith("user-1")
+  })
+
+  it("rejects a signed-in user without project membership", async () => {
+    const result = await Effect.runPromise(
+      Effect.flatMap(AuthorizeProject, (service) =>
+        Effect.either(service.authorizeUser("user-1")),
+      ).pipe(
+        Effect.provide(
+          dependencies(
+            repository(),
+            true,
+            projectCredentials({
+              projectForUser: () => Effect.succeed(undefined),
+            }),
+          ),
+        ),
+      ),
+    )
+    expectLeft(result, { _tag: "Unauthorized", permission: "read" })
   })
 
   it("passes redacted keys and required permissions to storage", async () => {
@@ -261,10 +304,7 @@ describe("API Effect services", () => {
         ),
       ),
     )
-    expect(result).toMatchObject({
-      _tag: "Left",
-      left: { _tag: "InvalidInput", cause: expect.anything() },
-    })
+    expectLeft(result, { _tag: "InvalidInput", cause: expect.anything() })
     expect(append).not.toHaveBeenCalled()
   })
 
@@ -306,7 +346,7 @@ describe("API Effect services", () => {
         ),
       ),
     )
-    expect(result).toMatchObject({ _tag: "Left", left: error })
+    expectLeft(result, error)
   })
 
   it("uses read authorization and project-scoped query methods", async () => {
@@ -354,10 +394,7 @@ describe("API Effect services", () => {
         ),
       ),
     )
-    expect(result).toMatchObject({
-      _tag: "Left",
-      left: { _tag: "Unauthorized" },
-    })
+    expectLeft(result, { _tag: "Unauthorized" })
     expect(timeline).not.toHaveBeenCalled()
   })
 })

@@ -9,7 +9,11 @@ import {
   projects,
   workspaces,
 } from "@flowmark/db"
-import { consumeBrowserQuota, Database, hashApiKey } from "@flowmark/db/store"
+import {
+  consumeBrowserQuota,
+  Database,
+  hashApiKey,
+} from "@flowmark/db/persistence"
 import { DEMO_BROWSER_KEY } from "@flowmark/db/demo"
 import { POST, OPTIONS } from "../../app/v1/browser-events/route"
 import { POST as serverIngestion } from "../../app/v1/events/route"

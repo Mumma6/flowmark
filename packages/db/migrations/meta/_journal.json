@@ -43,6 +43,13 @@
       "when": 1792789181196,
       "tag": "0005_faithful_azazel",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792946491986,
+      "tag": "0006_flashy_korvac",
+      "breakpoints": true
     }
   ]
 }

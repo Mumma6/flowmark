@@ -1,13 +1,14 @@
 import { defineConfig } from "drizzle-kit"
-import { loadApiEnvironment } from "./src/load-environment"
+import { Effect } from "effect"
+import { loadApiEnvironment } from "./src/environment/load"
 
-loadApiEnvironment()
+Effect.runSync(loadApiEnvironment)
 
 export default defineConfig({
-  schema: "./src/schema.ts",
+  schema: "./src/schema/index.ts",
   out: "./migrations",
   dialect: "postgresql",
   dbCredentials: {
-    url: process.env.DATABASE_URL ?? "",
+    url: process.env.DATABASE_MIGRATION_URL ?? process.env.DATABASE_URL ?? "",
   },
 })

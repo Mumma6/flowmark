@@ -1,3 +1,6 @@
+"use client"
+
+import { useEffect, useState } from "react"
 import {
   Alert,
   AlertDescription,
@@ -9,38 +12,62 @@ import {
   Separator,
 } from "@flowmark/ui"
 import { PageHeading } from "../../dashboard-components"
+import { LOCAL_DEV_EMAIL } from "@flowmark/db/demo"
+import { authClient } from "../../../lib/auth-client"
 
 export default function SettingsPage() {
+  const session = authClient.useSession()
+  const email = session.data?.user.email ?? ""
+  const [writeKey, setWriteKey] = useState<string | null>(null)
+
+  useEffect(() => {
+    const created = sessionStorage.getItem("flowmark.newWriteKey")
+    if (created) {
+      setWriteKey(created)
+      sessionStorage.removeItem("flowmark.newWriteKey")
+    }
+  }, [])
+
   return (
     <div className="grid min-w-0 gap-6">
       <PageHeading
         title="Project settings"
-        description="Configuration boundaries for this development workspace."
+        description="How this dashboard account connects to your application."
       />
       <Card>
         <CardHeader>
-          <CardTitle>Local development project</CardTitle>
+          <CardTitle>Signed-in account</CardTitle>
           <CardDescription>
-            Fixed account and project for contributor testing.
+            Dashboard access uses your email and password. The SDK uses a
+            project write key.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <p>
-            Instrumented server applications send events with{" "}
-            <code>FLOWMARK_API_KEY</code>. The dashboard reads project-scoped
-            data using a separate server-held read key.
+            Signed in as <code>{email || "…"}</code>.
           </p>
           <Separator />
-          <p>
-            The development harness is local-only. It is not a public demo,
-            customer application, or deployment target.
-          </p>
-          <Alert>
-            <AlertDescription>
-              Production login, registration and API key management are not
-              implemented. Do not expose this development workspace publicly.
-            </AlertDescription>
-          </Alert>
+          {email === LOCAL_DEV_EMAIL ? (
+            <p>
+              The local harness already sends events with{" "}
+              <code>FLOWMARK_API_KEY=fm_demo_write_local_only</code>. Sign-in
+              only unlocks this project in the dashboard.
+            </p>
+          ) : (
+            <p>
+              Put the project write key in your app as{" "}
+              <code>FLOWMARK_API_KEY</code>. It is shown once after
+              registration.
+            </p>
+          )}
+          {writeKey ? (
+            <Alert>
+              <AlertDescription>
+                Your first write key is <code>{writeKey}</code>. Store it in
+                the server environment. It will not be shown again.
+              </AlertDescription>
+            </Alert>
+          ) : null}
         </CardContent>
       </Card>
     </div>

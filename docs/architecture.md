@@ -12,7 +12,8 @@ Browser application
   -> project-scoped PostgreSQL records
 
 Dashboard
-  -> /api/trpc (typed query boundary)
+  -> /api/auth, /api/register, /api/trpc (same-origin proxy)
+  -> Better Auth session or project read key
   -> project-scoped API queries
   -> runs, metrics, workflows, timelines
 ```
@@ -199,13 +200,17 @@ The API follows feature-first ports-and-adapters:
   describe the domain responsibility rather than locking the API layout to one
   database vendor.
 - `AuthorizeProject` resolves the project from a redacted key and required
-  permission; demo-mode policy is injected through `ApiSettings`.
+  permission, or from a signed-in user and project membership.
+  Demo-mode policy is injected through `ApiSettings`.
 - `IngestWorkflowEvents` authorizes before reading the lazy request payload,
   validates the event envelope with Effect Schema, then persists through
   `WorkflowRepository`. Browser event ingestion is a separate use case with
   browser-key, origin, and quota policy.
+- `RegisterOwner` creates a Better Auth user plus workspace, project, owner
+  membership, and the first write key.
 - `GetProjectWorkflowData` performs read authorization and project-scoped
-  snapshot, workflow-list, and timeline queries.
+  snapshot, workflow-list, and timeline queries. Dashboard calls use the
+  `*ForUser` variants; programmatic callers may still use a project read key.
 - `WorkflowRepository` exposes typed storage operations backed by the existing
   database package. Tests inject implementations without PostgreSQL or HTTP.
 
@@ -216,12 +221,14 @@ files only export handlers. Tests live in a package-level `test/` tree and
 inject port implementations. The HTTP body reader limits streamed input to 64 KiB and
 releases its reader on success, invalid input, or interruption.
 
-The HTTP API exposes `GET /api/health`, `GET|POST|OPTIONS /api/trpc`, private
-`POST /v1/events`, and browser `POST|OPTIONS /v1/browser-events`. tRPC provides
-`health.check`, `project.snapshot`, `workflow.list`, and `run.detail`. Read
-queries use a separate read key and remain project-scoped. Browser ingestion
-uses CORS preflight and the browser-key origin allowlist; it does not grant
-read access or authorize a private-key write.
+The HTTP API exposes `GET /api/health`, Better Auth `GET|POST /api/auth/*`,
+`POST /api/register`, `GET|POST|OPTIONS /api/trpc`, private `POST /v1/events`,
+and browser `POST|OPTIONS /v1/browser-events`. tRPC provides `health.check`,
+`project.snapshot`, `workflow.list`, `run.detail`, and `run.related`. Dashboard
+reads use a signed-in session cookie forwarded by the dashboard proxy;
+programmatic reads may still use a project read key when no session is
+present. Browser ingestion uses CORS preflight and the browser-key origin
+allowlist; it does not grant read access or authorize a private-key write.
 
 `runtime.ts` composes the live layers and executes effects at the request
 boundary. Database acquisition/release belongs to a scoped database adapter,
@@ -232,36 +239,47 @@ The health endpoint remains a database-independent liveness check.
 
 ## Persistence and isolation
 
-The `@flowmark/db/store` entry point is a compatibility barrel over focused
-modules: database service/error definitions, credential operations, event
-writes, and run queries. Drizzle and PostgreSQL types stay inside this persistence package;
-the API consumes its own repository ports and read models.
+The `@flowmark/db/persistence` entry point is a barrel over Effect
+persistence services: `WorkflowStore` for append/snapshot/timeline/related
+reads, and `ProjectCredentialsStore` for key authentication, browser quota,
+and project membership. Feature folders split `queries/`, `writes/`, and raw
+`sql/` beside those services. Auth tables and the Better Auth factory live
+under `packages/db/src/{schema,auth}`. Drizzle and PostgreSQL types stay
+inside this persistence package; the API consumes its own repository ports
+and read models.
 
-Versioned Drizzle migrations create workspaces, projects, hashed project API
-keys, workflow definitions, runs and append-only events. Unique constraints
-prevent duplicate workflow definitions, runs and retried events. Event ingestion
-requires a write key; dashboard queries require a separate read key. The project
-is resolved from the key, never accepted from the request body. Queries and run
-detail lookups always include that project.
+Versioned Drizzle migrations create Better Auth users/sessions, workspaces,
+projects, project members, hashed project API keys, workflow definitions,
+runs and append-only events. Unique constraints prevent duplicate workflow
+definitions, runs and retried events. Event ingestion requires a write key;
+dashboard queries require a signed-in session and project membership. The
+project is resolved from the session or key, never accepted from the request
+body. Queries and run detail lookups always include that project.
 
 The database is an injected Effect service. Driver promises are converted at the
 driver boundary; typed errors preserve operation/cause. HTTP/tRPC boundaries
 execute the effects and return explicit errors. Ingestion acknowledges a write
 only after the database transaction commits.
 
-## Demo account, not production auth
+## Local auth and demo fixtures
 
-`db:setup-demo` provisions one workspace/project and development-only read,
-server-write, and browser-write credentials. It requires
-`FLOWMARK_DEMO_MODE=true`. The API rejects demo credentials unless demo mode is
-explicitly enabled. The browser key is public by design; the read and server
-write keys must remain server-side.
+`pnpm db:setup` applies committed migrations and provisions the operations and
+diagnostics projects plus development-only read, server-write, and
+browser-write credentials. `pnpm db:migrate` applies schema only;
+`pnpm db:seed` provisions fixtures only. Seed requires
+`FLOWMARK_DEMO_MODE=true` and a loopback database, and it refuses production.
+The API rejects demo credentials unless demo mode is explicitly enabled, and
+it rejects demo mode when `NODE_ENV` or `VERCEL_ENV` is production. The
+browser key is public by design; the read and server write keys must remain
+server-side.
 
-The dashboard's same-origin proxy represents the fixed demo account and keeps
-its read credential server-side. It is disabled without explicit demo mode.
-All visitors to an enabled demo dashboard intentionally see the same project.
-Login/registration screens remain visual only; no real user/session authentication
-or workspace membership exists. Do not enable this mode for real customer data.
+Dashboard sign-in is Better Auth email and password. The dashboard's
+same-origin proxy forwards `/api/auth/*`, `/api/register`, and `/api/trpc/*`
+to the API so the session cookie stays first-party. Anonymous dashboard reads
+are rejected. Seed creates `local@dev` on the operations project. New
+registrations get their own project and first write key. Password reset is
+off until email delivery exists. Do not enable demo mode for real customer
+data.
 
 ## Limits
 
@@ -271,7 +289,7 @@ all recorded runs; daily volume covers the last 30 UTC days. The local harness
 simulates invoice, inventory and order work per execution, while workflow history
 is persistent. Technical SDK diagnostics use a separate local project.
 
-Production authentication, customer provisioning/key rotation, alerting,
-retention, durable delivery, and an operated hosted service are not implemented.
+Hosted deployment, dashboard key rotation, alerting, retention cleanup,
+durable delivery, and an operated hosted service are not implemented.
 The direct browser-key quota is a basic per-key limit, not production-grade
 abuse prevention. No offline queue or durable delivery guarantee exists.

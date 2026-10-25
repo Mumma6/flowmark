@@ -5,8 +5,9 @@
 > It does not claim that these capabilities are implemented.
 >
 > Scope: a small open-source tool and a maintainable reference deployment, not a
-> public multi-tenant SaaS. Provider, auth-provider, and access-model choices below
-> must be confirmed before implementing them.
+> public multi-tenant SaaS. Provider, auth-provider, and access-model choices are
+> confirmed in [ADR 0006](./docs/decisions/0006-mvp-0.1-infrastructure.md).
+> Remaining sections still describe work that is not implemented.
 
 ## 1. What 0.1 should make possible
 
@@ -29,17 +30,16 @@ The local harness remains internal, loopback-only, and never a deployment target
 | Area          | What exists                                                                | What is missing for 0.1                                                      |
 | ------------- | -------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
 | Hosting       | Separate Next.js landing, docs, dashboard, and server apps                 | Deployment configuration, domains, environment isolation, operational checks |
-| Database      | PostgreSQL, Drizzle schema, versioned migrations                           | Independent migration command and a documented deploy process                |
-| Setup         | `db:setup-demo` migrates and provisions fixed local projects/keys          | Clear separation of migrations, development seed, and production onboarding  |
-| Auth          | Disabled preview screens and a demo-mode dashboard proxy                   | Real sessions, project access checks, and onboarding                         |
+| Database      | PostgreSQL, Drizzle schema, versioned migrations, `pnpm db:migrate`        | Documented hosted deploy process                                             |
+| Setup         | `pnpm db:setup` migrates then seeds; seed refuses production/non-loopback and creates `local@dev` | Production onboarding without demo mode                                      |
+| Auth          | Better Auth email/password; session-scoped dashboard reads; register creates owner, project, and first write key | Hosted auth URL/cookie setup, password reset, and key-management UI          |
 | Credentials   | Hashed project read/write keys and separate browser keys                   | Key creation, revocation, rotation, and understandable UI                    |
-| Environment   | Some Effect Schema validation, per-app templates, custom DB env loading    | Consistent typed app boundaries and production-safe validation               |
+| Environment   | Effect Schema API settings, dashboard server-env checks, production demo refusal | Auth secrets and hosted URL validation in later increments                   |
 | SDK release   | `@flowmark/node`, its `@flowmark/core` dependency, built ESM/types/exports | Tarball verification, external-install tests, registry setup, and release CI |
 | Data browsing | Useful workflow and run views                                              | Server-side pagination beyond the latest-100-run snapshot                    |
 
-The unused Supabase browser helper and template variables are scaffolding, not
-working authentication. Choosing Supabase for PostgreSQL would not require
-choosing Supabase Auth.
+Supabase Auth and the unused browser helper are gone. Choosing Supabase later
+for PostgreSQL would not require choosing Supabase Auth.
 
 ## 3. Hosting: Vercel for the reference deployment
 
@@ -156,8 +156,9 @@ dashboard read requests through the dashboard's same-origin boundary so browser
 code does not need cross-site session cookies. The API validates the session and
 project access; a client-supplied project ID or forwarded user ID is not authority.
 
-Replace the current fixed demo read-key proxy. Do not make every signed-in user
-share an unrestricted backend read key.
+Dashboard reads already use the signed-in session, not a shared demo read key.
+Keep that split: do not make every signed-in user share an unrestricted
+backend read key.
 
 Forward only required headers/cookies to the configured trusted backend and
 preserve required `Set-Cookie` headers. Configure canonical public auth URL,
@@ -212,26 +213,24 @@ Generate its auth schema using the supported CLI, review it, and commit ordinary
 Drizzle migrations. Do not hand-invent user/session tables or auto-migrate during
 requests.
 
-### Proposed initial access model
+### Confirmed initial access model
 
-- Start with one explicitly configured owner for a private instance.
-- Recommend GitHub OAuth for a developer-focused first release.
-- Disable unrestricted registration by default; owner access is an explicit
-  bootstrap/allowlist decision, not "first anonymous visitor wins."
-- An authenticated owner creates a project and its first ingestion key.
-- Check project ownership/access on every read and credential-management action.
-- Keep workspaces as internal grouping if useful; no organization/invitation UI
-  or Better Auth organization plugin without a demonstrated need.
+[ADR 0006](./docs/decisions/0006-mvp-0.1-infrastructure.md) chose email and
+password. Sign-up creates a workspace, project, owner membership, and the first
+write key. Password reset stays off until email delivery exists. Do not add
+GitHub or Google OAuth in this increment.
 
-GitHub-only versus email/password and single-owner versus a small shared-reader
-model are decisions to confirm before implementation. Email/password would also
-require recovery and email-delivery decisions; it is not just another button.
+- A signed-in owner sees only projects they belong to.
+- Check project membership on every dashboard read and credential-management
+  action.
+- Keep workspaces as internal grouping; no organization/invitation UI or Better
+  Auth organization plugin without a demonstrated need.
 
 Authentication verifies the person; project authorization decides what that person
 may access. Neither replaces authentication of an unattended SDK.
 
-Remove the unused Supabase auth scaffold when Better Auth is implemented. Show
-real loading/error states; do not restore fake sign-in or account controls.
+The unused Supabase auth scaffold is already removed. Keep real loading/error
+states; do not restore fake sign-in or account controls.
 
 ### Local development account and harness project
 
@@ -251,9 +250,8 @@ Local harness -> SDK + project ingestion key -> Fieldwork Operations telemetry
 Local account -> Better Auth session -> authorized dashboard project and runs
 ```
 
-Use the real session and project-authorization path locally, replacing the fixed
-demo read-key proxy rather than adding another authentication bypass. Keep SDK
-diagnostics in their separate project.
+The local path already uses the real session and project authorization rather
+than a demo read-key proxy. Keep SDK diagnostics in their separate project.
 
 The local dashboard project should link back to the loopback-only harness, and
 the harness should link to its recorded runs in the dashboard. These development
@@ -303,20 +301,17 @@ This scope choice must be confirmed before schema changes.
 
 ## 7. Migrations, seeds, and onboarding are three different things
 
-Today `db:setup-demo` both migrates and inserts known fixture projects/keys. Split
-those responsibilities, retaining a simple contributor setup command.
+`pnpm db:setup` now splits into migrate and seed while keeping one contributor
+command. `db:setup-demo` remains an alias. The local Better Auth account is
+created by the same seed.
 
-Proposed commands below are **not implemented yet**:
-
-| Command                                                   | Responsibility                                                                      |
-| --------------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| `pnpm db:migrate`                                         | Apply committed migrations only                                                     |
-| `pnpm db:seed`                                            | Idempotently provision the local account, project access, and fixture projects/keys |
-| `pnpm dev:setup`                                          | Prepare local env files, migrate, and seed for development                          |
-| `pnpm db:reset-local-telemetry --confirm-local-telemetry` | Explicitly delete only the local operations telemetry                               |
-
-The last command currently exists under `pnpm --filter @flowmark/db`; a root alias
-is proposed. Keep its explicit confirmation and project-scoped deletion.
+| Command                                                      | Responsibility                                                                      |
+| ------------------------------------------------------------ | ----------------------------------------------------------------------------------- |
+| `pnpm db:migrate`                                            | Apply committed migrations only                                                     |
+| `pnpm db:seed`                                               | Idempotently provision fixture projects/keys after explicit local-mode checks       |
+| `pnpm db:setup`                                              | Migrate, then seed                                                                  |
+| `pnpm dev:setup`                                             | Prepare missing local env files only, so `pnpm dev` does not require PostgreSQL     |
+| `pnpm db:reset-local-telemetry -- --confirm-local-telemetry` | Explicitly delete only the local operations telemetry                               |
 
 Rules:
 
@@ -343,15 +338,10 @@ can be migrated and onboarded without editing tables manually.
 
 ## 8. Environment variables: typed, explicit, and isolated
 
-The library being considered is **T3 Env**:
-`@t3-oss/env-nextjs` for Next.js apps and `@t3-oss/env-core` where needed.
-It validates variables and separates server/client access; it does not store
-secrets or replace Vercel's environment configuration.
-
-Recommend it at app boundaries, subject to a small compatibility check with the
-repository's validators. Use one supported Standard Schema implementation rather
-than adding multiple validation libraries just for envs. Preserve Effect's
-redacted database settings and typed configuration errors inside API code.
+Increment 2 uses the repository's existing Effect Schema settings and small
+app-boundary checks instead of adding T3 Env. Preserve Effect's redacted
+database settings and typed configuration errors inside API code. Revisit T3
+Env only if those checks become hard to keep consistent across apps.
 
 | Scope                | Expected variables                                                                             |
 | -------------------- | ---------------------------------------------------------------------------------------------- |
@@ -369,9 +359,8 @@ bundles. Do not require database/auth secrets in landing or docs builds.
 
 Keep per-app `.env.example` files with placeholders and public local-only values.
 Use ignored local files for development, Vercel environment scopes for deployment,
-and CI secrets for migrations/release. Remove stale Supabase auth variables when
-that scaffold is removed. Give DB commands explicit env loading rather than
-implicitly depending on the server app's directory.
+and CI secrets for migrations/release. Give DB commands explicit env loading
+rather than implicitly depending on the server app's directory.
 
 Acceptance: missing/invalid configuration fails clearly, unrelated apps build
 without backend secrets, and built client assets contain no private credentials.
@@ -422,10 +411,10 @@ An existing `0.1.0` version in a manifest does not mean a release exists.
 
 | Order | Increment                                                           | Done when                                                                  |
 | ----- | ------------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| 1     | Confirm deployment, owner/auth-provider and browser scope decisions | Small written decisions; no accidental public SaaS scope                   |
-| 2     | Standardize env boundaries and split migration/seed/setup           | Fresh local setup and explicit production refusal tested                   |
-| 3     | Add Better Auth, owner/project authorization and onboarding         | Anonymous/unauthorized reads fail; owner can create a project              |
-| 4     | Add ingestion-key management and remove demo read-proxy dependency  | Create/revoke/rotate works; sessions and SDK credentials stay separate     |
+| 1     | Confirm deployment, owner/auth-provider and browser scope decisions | Done: [ADR 0006](./docs/decisions/0006-mvp-0.1-infrastructure.md)           |
+| 2     | Standardize env boundaries and split migration/seed/setup           | Done: `db:migrate` / `db:seed` / `db:setup`, production seed refusal, and existing Effect Schema env checks. T3 Env was not added. |
+| 3     | Add Better Auth, owner/project authorization and onboarding         | Done: anonymous reads fail; `local@dev` and new registrations get project-scoped sessions |
+| 4     | Add ingestion-key management                                        | Create/revoke/rotate works; sessions and SDK credentials stay separate. Session reads already replaced the demo read-key proxy. |
 | 5     | Deploy isolated preview with managed PostgreSQL                     | Auth, SDK ingestion and run investigation work outside localhost           |
 | 6     | Add server-side run pagination and minimal data lifecycle           | Older runs remain findable; retention/delete/restore documented and tested |
 | 7     | Verify packages and publish prerelease                              | Clean external consumers install and deliver telemetry successfully        |

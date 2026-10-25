@@ -156,9 +156,10 @@ Drizzle Studio provides a local database browser.
 ## Current limitations
 
 This is self-hosted/local-development software, not an operated hosted SaaS.
-The dashboard currently has a fixed demo account, not production user/session
-authentication. Production customer provisioning, key lifecycle, retention,
-alerting and an operational service are not provided.
+The dashboard uses Better Auth email and password; local seed creates
+`local@dev` for the operations project, and registration creates a separate
+project. Hosted deployment, key lifecycle UI, retention cleanup, alerting,
+and an operational service are not provided.
 
 Delivery is best-effort and bounded in memory: no durable queue or offline
 guarantee. Transport retries do not retry business work.

@@ -10,7 +10,8 @@ import {
   Workflow,
 } from "lucide-react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
+import { authClient } from "../lib/auth-client"
 import {
   Badge,
   Breadcrumb,
@@ -42,7 +43,31 @@ const docsUrl =
     ? "http://localhost:3002/docs/introduction"
     : "/docs/introduction")
 
-function Navigation({ onNavigate }: { onNavigate?: () => void }) {
+function SignOutButton() {
+  const router = useRouter()
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      className="w-full justify-start"
+      onClick={async () => {
+        await authClient.signOut()
+        router.push("/sign-in")
+        router.refresh()
+      }}
+    >
+      Sign out
+    </Button>
+  )
+}
+
+function Navigation({
+  email,
+  onNavigate,
+}: {
+  email: string
+  onNavigate?: () => void
+}) {
   const pathname = usePathname()
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -94,8 +119,9 @@ function Navigation({ onNavigate }: { onNavigate?: () => void }) {
           </a>
         </Button>
         <p className="mx-2 mt-3 text-xs leading-6 text-muted-foreground">
-          Fixed development account. No production authentication.
+          Signed in as {email}
         </p>
+        <SignOutButton />
       </div>
     </div>
   )
@@ -148,7 +174,13 @@ function PageBreadcrumbs() {
   )
 }
 
-export function DashboardShell({ children }: { children: ReactNode }) {
+export function DashboardShell({
+  children,
+  email,
+}: {
+  children: ReactNode
+  email: string
+}) {
   const [open, setOpen] = useState(false)
   return (
     <div className="min-h-screen">
@@ -159,7 +191,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
         Skip to content
       </a>
       <aside className="fixed inset-y-0 left-0 z-20 hidden w-56 border-r border-border bg-card px-4 py-6 lg:block">
-        <Navigation />
+        <Navigation email={email} />
       </aside>
       <div className="min-w-0 lg:ml-56">
         <header className="flex min-h-16 items-center justify-between gap-3 border-b border-border bg-card px-4 py-3 sm:px-8">
@@ -182,7 +214,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
                 <SheetDescription className="sr-only">
                   Browse workflows, runs and project settings.
                 </SheetDescription>
-                <Navigation onNavigate={() => setOpen(false)} />
+                <Navigation email={email} onNavigate={() => setOpen(false)} />
               </SheetContent>
             </Sheet>
             <PageBreadcrumbs />

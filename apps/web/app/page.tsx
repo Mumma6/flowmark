@@ -3,6 +3,7 @@ import { ClosingSection } from "./components/closing-section"
 import { FaqSection } from "./components/faq-section"
 import { HeroSection } from "./components/hero-section"
 import { InstrumentationSection } from "./components/instrumentation-section"
+import { ProductSection } from "./components/product-section"
 import { SiteFooter } from "./components/site-footer"
 import { SiteHeader } from "./components/site-header"
 import { ValueSection } from "./components/value-section"
@@ -10,14 +11,18 @@ import { ValueSection } from "./components/value-section"
 export default function HomePage() {
   return (
     <>
-      <a className="skip-link" href="#main">
+      <a
+        className="fixed top-2.5 left-4 z-50 -translate-y-[150%] rounded-sm bg-primary px-5 py-3 text-sm font-medium text-primary-foreground focus:translate-y-0"
+        href="#main"
+      >
         Skip to content
       </a>
       <SiteHeader />
       <main id="main">
         <HeroSection />
-        <ValueSection />
         <InstrumentationSection />
+        <ProductSection />
+        <ValueSection />
         <ArchitectureSection />
         <FaqSection />
         <ClosingSection />

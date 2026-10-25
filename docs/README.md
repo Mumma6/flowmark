@@ -14,7 +14,7 @@ second copy in the app.
 - [Development setup](./development): workspace commands, local demo, database,
   and checks.
 - [Architecture](./architecture): service boundaries, persistence,
-  authentication limits, and current system constraints.
+  local auth, and current system constraints.
 - [Product definition](./product): positioning, principles, delivered
   capabilities, and product boundaries.
 - [SDK evolution](./sdk-evolution): Stage 1 implementation and explicitly

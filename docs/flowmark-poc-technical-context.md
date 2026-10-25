@@ -5,6 +5,10 @@
 > The implementation and vocabulary are experiments, not commitments. This is
 > context for questioning and redesigning the product, not a readiness review
 > or implementation roadmap.
+>
+> **Later note (October 25, 2026):** dashboard sign-in is now Better Auth
+> email/password with a seeded `local@dev` account. Treat auth claims below as
+> the original POC snapshot; current setup is in `docs/development.md`.
 
 ## How to read the evidence
 
@@ -45,7 +49,7 @@ directory, aggregate metrics, a recent-run table, and a per-run timeline and
 evidence view. See the actual implementations in
 `packages/sdk/src/features/workflows/workflow-engine.ts`,
 `packages/api/src/features/workflows/use-cases/ingest-events.ts`,
-`packages/db/src/store/events.ts`, and
+`packages/db/src/persistence/workflows/writes/append-event.ts`, and
 `apps/dashboard/app/run-investigation.tsx`.
 
 **Interpretation.** The product hypothesis is not that logs, traces, or
@@ -375,8 +379,8 @@ fields such as properties, error, and result are also reflected in run summary
 columns.
 
 The schema is in
-`packages/db/src/schema.ts`, the persistence
-transaction in `packages/db/src/store/events.ts`,
+`packages/db/src/schema/index.ts`, the persistence
+transaction in `packages/db/src/persistence/workflows/writes/append-event.ts`,
 and the API repository port in
 `packages/api/src/features/workflows/ports/workflow-repository.ts`.
 
@@ -391,9 +395,9 @@ and the API repository port in
 - **Experimental UI/product:** dashboard screens and metrics are real code,
   but the current demo data and fixed demo project do not amount to an operated
   multi-customer product.
-- **Documented but absent:** no hosted Flowmark API, production user
-  provisioning/auth, alerting, native external log-platform integration, or
-  durable offline queue is described as existing.
+- **Documented but absent at the original snapshot:** no hosted Flowmark API,
+  alerting, native external log-platform integration, or durable offline
+  queue. Dashboard email/password auth landed after this report.
 - **Not established by repository evidence:** whether the current event model
   represents real production workflows well, whether the dashboard answers
   users' questions, or how it compares empirically with existing tools.
@@ -418,7 +422,7 @@ a limit of 100. Workflow summaries and aggregate metrics are calculated across
 the project data, rather than being limited to that 100-row table. The rate
 denominator is finished runs only; running runs are excluded. See
 `apps/dashboard/app/project-data.tsx` and
-`packages/db/src/store/queries.ts`.
+`packages/db/src/persistence/workflows/queries`.
 
 The workflow directory supports text search, grouping by a name prefix,
 filtering browser versus application namespace, and sorting by name or volume.
@@ -683,7 +687,7 @@ These are questions, not recommendations or answers:
 | Shared event schemas                   | `packages/core/src/events.ts`, `packages/core/src/json.ts`, `packages/core/src/telemetry.ts`                                     |
 | API use cases and composition          | `packages/api/src/index.ts`, `packages/api/src/runtime.ts`, `packages/api/src/features`                                          |
 | HTTP and tRPC adapters                 | `apps/server/src/adapters`, `apps/server/app`                                                                                    |
-| DB schema, writes, queries             | `packages/db/src/schema.ts`, `packages/db/src/store/events.ts`, `packages/db/src/store/queries.ts`                               |
+| DB schema, writes, queries             | `packages/db/src/schema`, `packages/db/src/persistence`                                                                          |
 | Dashboard overview and run UI          | `apps/dashboard/app/project-data.tsx`, `apps/dashboard/app/workflow-directory.tsx`, `apps/dashboard/app/run-investigation.tsx`   |
 | Runnable local development harness     | `apps/dev-harness/app/operations-app.tsx`, `apps/dev-harness/lib/business-scenarios.ts`, `apps/dev-harness/lib/sdk-scenarios.ts` |
 
@@ -751,8 +755,8 @@ inspection; they are an inventory, not a recommendation.
 **Documented/implemented limits.**
 
 - No hosted API or operated SaaS service.
-- No production customer provisioning or finished production authentication;
-  the dashboard is explicitly a local demo with a fixed demo project.
+- No operated SaaS provisioning. Local dashboard auth is now Better Auth
+  email/password; the original POC used a fixed demo project.
 - No alerting or native external log/APM integrations.
 - Telemetry delivery is best-effort and memory-backed, not durable/offline.
 - Browser telemetry is untrusted. Origin checks and quotas do not make it

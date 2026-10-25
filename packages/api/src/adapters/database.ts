@@ -1,6 +1,10 @@
 import { Effect, Layer, Redacted } from "effect"
 import { createDatabase } from "@flowmark/db"
-import { Database, DatabaseError } from "@flowmark/db/store"
+import {
+  Database,
+  DatabaseError,
+  DatabaseOperation,
+} from "@flowmark/db/persistence"
 import { ApiSettings } from "../config.js"
 
 export const DatabaseLive = Layer.scoped(
@@ -10,12 +14,14 @@ export const DatabaseLive = Layer.scoped(
     const connection = yield* Effect.acquireRelease(
       Effect.try({
         try: () => createDatabase(Redacted.value(settings.databaseUrl)),
-        catch: (cause) => new DatabaseError({ operation: "connect", cause }),
+        catch: (cause) =>
+          new DatabaseError({ operation: DatabaseOperation.Connect, cause }),
       }),
       ({ close }) =>
         Effect.tryPromise({
           try: close,
-          catch: (cause) => new DatabaseError({ operation: "close", cause }),
+          catch: (cause) =>
+            new DatabaseError({ operation: DatabaseOperation.Close, cause }),
         }).pipe(Effect.orDie),
     )
     return connection.db

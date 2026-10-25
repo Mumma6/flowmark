@@ -1,3 +1,5 @@
+import { FlowmarkWordmark } from "@flowmark/ui"
+
 export function Arrow({ diagonal = false }: { diagonal?: boolean }) {
   return (
     <svg
@@ -18,7 +20,10 @@ export function Arrow({ diagonal = false }: { diagonal?: boolean }) {
   )
 }
 
-export function Mark() {
-  return <FlowmarkMark className="brand-mark" />
+export function BrandLink({ href = "/" }: { href?: string }) {
+  return (
+    <a href={href} aria-label="Flowmark home">
+      <FlowmarkWordmark />
+    </a>
+  )
 }
-import { FlowmarkMark } from "@flowmark/ui"

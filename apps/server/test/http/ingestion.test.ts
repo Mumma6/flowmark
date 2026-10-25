@@ -9,7 +9,7 @@ import {
   workflows,
 } from "@flowmark/db"
 import { and, eq } from "drizzle-orm"
-import { hashApiKey } from "@flowmark/db/store"
+import { hashApiKey } from "@flowmark/db/persistence"
 import { DEMO_READ_KEY, DEMO_WRITE_KEY } from "@flowmark/db/demo"
 import { POST } from "../../app/v1/events/route"
 import { appRouter } from "../../src/adapters/trpc"

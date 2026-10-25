@@ -1,16 +1,12 @@
 import { Effect, Layer, Redacted } from "effect"
-import {
-  authenticateBrowserKey,
-  authenticateKey,
-  browserOriginAllowed,
-  consumeBrowserQuota,
-  DatabaseError,
-  Database,
-} from "@flowmark/db/store"
+import { ProjectCredentialsStore } from "@flowmark/db/persistence"
 import { PersistenceError } from "../../../errors.js"
 import { ProjectCredentials } from "../ports/project-credentials.js"
 
-const mapDatabaseError = (error: DatabaseError) =>
+const toPersistenceError = (error: {
+  readonly operation: string
+  readonly cause: unknown
+}) =>
   new PersistenceError({
     operation: error.operation,
     cause: error.cause,
@@ -19,38 +15,51 @@ const mapDatabaseError = (error: DatabaseError) =>
 export const ProjectCredentialsLive = Layer.effect(
   ProjectCredentials,
   Effect.gen(function* () {
-    const db = yield* Database
+    const store = yield* ProjectCredentialsStore
     return ProjectCredentials.of({
       authenticateBrowser: Effect.fn(
         "PostgresProjectCredentials.authenticateBrowser",
       )((key) =>
-        authenticateBrowserKey(Redacted.value(key)).pipe(
-          Effect.provideService(Database, db),
-          Effect.mapError(mapDatabaseError),
-        ),
+        store
+          .authenticateBrowser(Redacted.value(key))
+          .pipe(Effect.mapError(toPersistenceError)),
       ),
       browserOriginAllowed: Effect.fn(
         "PostgresProjectCredentials.browserOriginAllowed",
       )((origin) =>
-        browserOriginAllowed(origin).pipe(
-          Effect.provideService(Database, db),
-          Effect.mapError(mapDatabaseError),
-        ),
+        store
+          .browserOriginAllowed(origin)
+          .pipe(Effect.mapError(toPersistenceError)),
       ),
       consumeBrowserQuota: Effect.fn(
         "PostgresProjectCredentials.consumeBrowserQuota",
       )((keyId) =>
-        consumeBrowserQuota(keyId).pipe(
-          Effect.provideService(Database, db),
-          Effect.mapError(mapDatabaseError),
-        ),
+        store
+          .consumeBrowserQuota(keyId)
+          .pipe(Effect.mapError(toPersistenceError)),
       ),
       authenticate: Effect.fn("PostgresProjectCredentials.authenticate")(
         (key, permission) =>
-          authenticateKey(Redacted.value(key), permission).pipe(
-            Effect.provideService(Database, db),
-            Effect.mapError(mapDatabaseError),
-          ),
+          store
+            .authenticate(Redacted.value(key), permission)
+            .pipe(Effect.mapError(toPersistenceError)),
+      ),
+      projectForUser: Effect.fn("PostgresProjectCredentials.projectForUser")(
+        (userId) =>
+          store.projectForUser(userId).pipe(Effect.mapError(toPersistenceError)),
+      ),
+      addOwner: Effect.fn("PostgresProjectCredentials.addOwner")(
+        (userId, projectId) =>
+          store
+            .addOwner(userId, projectId)
+            .pipe(Effect.mapError(toPersistenceError)),
+      ),
+      createOwnedProject: Effect.fn(
+        "PostgresProjectCredentials.createOwnedProject",
+      )((userId, names) =>
+        store
+          .createOwnedProject(userId, names)
+          .pipe(Effect.mapError(toPersistenceError)),
       ),
     })
   }),

@@ -1,4 +1,4 @@
-import { Effect } from "effect"
+import { Effect, Either } from "effect"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { InvalidInput } from "@flowmark/api"
 import { readJsonBody } from "../../src/adapters/request-body"
@@ -42,9 +42,9 @@ describe("HTTP boundaries", () => {
         ),
       ),
     )
-    expect(result).toMatchObject({
-      _tag: "Left",
-      left: { _tag: "InvalidInput" },
+    Either.match(result, {
+      onLeft: (error) => expect(error).toMatchObject({ _tag: "InvalidInput" }),
+      onRight: () => expect.fail("expected invalid JSON"),
     })
   })
 
@@ -62,11 +62,24 @@ describe("HTTP boundaries", () => {
     const result = await Effect.runPromise(
       Effect.either(readJsonBody(new Request("http://localhost", options))),
     )
-    expect(result).toMatchObject({
-      _tag: "Left",
-      left: new InvalidInput({ cause }),
+    Either.match(result, {
+      onLeft: (error) => expect(error).toEqual(new InvalidInput({ cause })),
+      onRight: () => expect.fail("expected a streamed read failure"),
     })
     expect(body.locked).toBe(false)
+  })
+
+  it("rejects anonymous tRPC reads", async () => {
+    vi.stubEnv("DATABASE_URL", "postgresql://localhost:5432/flowmark")
+    vi.stubEnv("FLOWMARK_DEMO_MODE", "true")
+    await expect(
+      appRouter.createCaller({
+        request: new Request("http://localhost"),
+      }).project.snapshot(),
+    ).rejects.toMatchObject({
+      code: "UNAUTHORIZED",
+      message: "Sign in required.",
+    })
   })
 
   it("reports missing storage configuration explicitly for HTTP and tRPC", async () => {
@@ -78,7 +91,13 @@ describe("HTTP boundaries", () => {
     })
     expect((await POST(request)).status).toBe(503)
     await expect(
-      appRouter.createCaller({ request }).project.snapshot(),
+      appRouter
+        .createCaller({
+          request: new Request("http://localhost", {
+            headers: { authorization: "Bearer read-key" },
+          }),
+        })
+        .project.snapshot(),
     ).rejects.toMatchObject({
       code: "INTERNAL_SERVER_ERROR",
     })

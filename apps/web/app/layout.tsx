@@ -1,24 +1,45 @@
 import type { Metadata } from "next"
+import { Geist, Geist_Mono } from "next/font/google"
 import "./globals.css"
 
+const sans = Geist({
+  subsets: ["latin"],
+  variable: "--font-geist-sans",
+})
+
+const mono = Geist_Mono({
+  subsets: ["latin"],
+  variable: "--font-geist-mono",
+})
+
+const title = "Flowmark — Turn business processes into data-driven insight"
+const description =
+  "Operations insight for TypeScript applications. Mark existing business logic and understand what a process produced: operations, progress, errors, and the reported result."
+
 export const metadata: Metadata = {
-  title: "Flowmark — Understand what each workflow run did",
-  description:
-    "An open-source TypeScript SDK and run-focused dashboard for understanding what application workflows did: their steps, errors, progress, and reported business results.",
+  metadataBase: new URL("https://flowmark.dev"),
+  title,
+  description,
   applicationName: "Flowmark",
+  keywords: [
+    "workflow observability",
+    "operations insight",
+    "TypeScript",
+    "SDK",
+    "open source",
+    "dashboard",
+  ],
   openGraph: {
-    title: "Flowmark — Understand what each workflow run did",
-    description:
-      "Add a few TypeScript markers to existing application work. See run steps, errors, progress, and reported business results together.",
+    title,
+    description,
     siteName: "Flowmark",
     type: "website",
     locale: "en_US",
   },
   twitter: {
-    card: "summary",
-    title: "Flowmark — Understand what each workflow run did",
-    description:
-      "Add a few TypeScript markers to existing application work. See run steps, errors, progress, and reported business results together.",
+    card: "summary_large_image",
+    title,
+    description,
   },
 }
 
@@ -26,7 +47,7 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${sans.variable} ${mono.variable}`}>
       <body>{children}</body>
     </html>
   )

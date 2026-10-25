@@ -48,10 +48,12 @@ telemetry, and is restricted by allowed origins and a quota. Never put a server
 write key in browser code or a `NEXT_PUBLIC_*` variable. Browser telemetry is
 untrusted and must not be treated as proof of a business outcome.
 
-There is no hosted Flowmark API. The repository's local demo uses development
-credentials and a shared demo project; it is not production authentication or
-customer provisioning. There is no alerting, SaaS key provisioning, durable
-offline delivery, or production operational service.
+There is no hosted Flowmark API. Local dashboard sign-in is Better Auth email
+and password; seed creates `local@dev` for the shared operations project, and
+registration creates a separate project with its first write key. Applications
+still authenticate with a project write key. The local demo credentials are
+not production secrets. There is no alerting, hosted key rotation, durable
+offline delivery, or operated production service.
 
 ## Repository
 
@@ -78,7 +80,7 @@ Requirements: Node.js 20.19+ (24 LTS recommended) and pnpm 10.
 pnpm install
 pnpm dev:setup
 # Set DATABASE_URL in apps/server/.env.local to a running development database.
-pnpm db:setup-demo
+pnpm db:setup
 pnpm dev
 pnpm test
 pnpm typecheck
@@ -104,15 +106,15 @@ publicly. See the [internal documentation index](./docs/README.md) and
 
 ## MVP 0.1 and contributor handoff
 
-The local product core works; deployment, real authentication, and npm release
-preparation are the next phase, not completed capabilities.
+The local product core works, including email/password dashboard auth. Hosted
+deployment, key-management UI, and npm release are the remaining MVP 0.1 work.
 
 - [MVP infrastructure plan](./MVP-INFRA.md): hosting, PostgreSQL, Better Auth,
   environment validation, migration/seed separation, and SDK distribution.
-  Provider recommendations still need confirmation.
+  Confirmed choices are in [ADR 0006](./docs/decisions/0006-mvp-0.1-infrastructure.md).
 - [Phase status](./NEXT-PHASE-PLAN.md): delivered increments and outstanding
   product validation.
 - [Contributor/agent handoff](./HANDOFF.md): current limitations, commands,
-  previous verification, and the first GitHub preparation task.
+  and previous verification.
 - [Agent guidelines](./AGENTS.md): persistent project rules. Portable architecture
   and UI skills live in [`.agents/skills/`](./.agents/skills/).

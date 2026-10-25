@@ -14,6 +14,10 @@ export {
   type AuthorizeProjectService,
 } from "./features/project-access/use-cases/authorize-project.js"
 export {
+  RegisterOwner,
+  type RegisterOwnerService,
+} from "./features/project-access/use-cases/register-owner.js"
+export {
   ProjectCredentials,
   type ProjectCredentialsService,
 } from "./features/project-access/ports/project-credentials.js"

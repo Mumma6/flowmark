@@ -29,6 +29,7 @@ export { highlightCode } from "./highlighter"
 export { useHighlightedCode } from "./hooks/use-highlighted-code"
 export { cn } from "./utils"
 export { FlowmarkMark } from "./flowmark-mark"
+export { FlowmarkLockup, FlowmarkWordmark } from "./flowmark-wordmark"
 export {
   Table,
   TableHeader,

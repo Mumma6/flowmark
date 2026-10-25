@@ -1,8 +1,8 @@
 import { inspect } from "node:util"
-import { Effect, Either, Layer, Redacted } from "effect"
+import { Effect, Either, Layer, Match, Redacted } from "effect"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import * as database from "@flowmark/db"
-import { Database } from "@flowmark/db/store"
+import { Database, DatabaseOperation } from "@flowmark/db/persistence"
 import { DatabaseLive } from "../../src/adapters/database"
 import { ApiSettings } from "../../src/config"
 
@@ -28,16 +28,14 @@ describe("API request resource scope", () => {
         .spyOn(database, "createDatabase")
         .mockReturnValue({ db: connection.db, close })
       const layer = DatabaseLive.pipe(Layer.provide(settings))
-      const operation = Effect.flatMap(Database, () => {
-        switch (outcome) {
-          case "success":
-            return Effect.void
-          case "failure":
-            return Effect.fail("expected")
-          case "interruption":
-            return Effect.interrupt
-        }
-      }).pipe(Effect.provide(layer))
+      const operation = Effect.flatMap(Database, () =>
+        Match.value(outcome).pipe(
+          Match.when("success", () => Effect.void),
+          Match.when("failure", () => Effect.fail("expected")),
+          Match.when("interruption", () => Effect.interrupt),
+          Match.exhaustive,
+        ),
+      ).pipe(Effect.provide(layer))
 
       expect(create).not.toHaveBeenCalled()
       await Effect.runPromiseExit(operation)
@@ -58,9 +56,14 @@ describe("API request resource scope", () => {
         ),
       ),
     )
-    expect(result).toMatchObject({
-      _tag: "Left",
-      left: { _tag: "DatabaseError", operation: "connect", cause },
+    Either.match(result, {
+      onLeft: (error) =>
+        expect(error).toMatchObject({
+          _tag: "DatabaseError",
+          operation: DatabaseOperation.Connect,
+          cause,
+        }),
+      onRight: () => expect.fail("expected a database connect failure"),
     })
   })
 
@@ -83,10 +86,16 @@ describe("API request resource scope", () => {
         }),
       ),
     )
-    expect(result).toMatchObject({
-      _tag: "Die",
-      defect: { _tag: "DatabaseError", operation: "close", cause },
-    })
+    Match.value(result).pipe(
+      Match.tag("Die", ({ defect }) =>
+        expect(defect).toMatchObject({
+          _tag: "DatabaseError",
+          operation: DatabaseOperation.Close,
+          cause,
+        }),
+      ),
+      Match.orElse(() => expect.fail("expected a connection cleanup defect")),
+    )
   })
 
   it("redacts the database URL and rejects invalid settings", async () => {
@@ -105,6 +114,19 @@ describe("API request resource scope", () => {
     Either.match(result, {
       onLeft: (error) => expect(error._tag).toBe("ConfigurationError"),
       onRight: () => expect.fail("Empty database URL must fail"),
+    })
+  })
+
+  it("rejects demo mode in production", async () => {
+    vi.stubEnv("DATABASE_URL", "postgresql://localhost:5432/flowmark")
+    vi.stubEnv("FLOWMARK_DEMO_MODE", "true")
+    vi.stubEnv("NODE_ENV", "production")
+    const result = await Effect.runPromise(
+      Effect.either(ApiSettings.pipe(Effect.provide(ApiSettings.layer))),
+    )
+    Either.match(result, {
+      onLeft: (error) => expect(error._tag).toBe("ConfigurationError"),
+      onRight: () => expect.fail("Production demo mode must fail"),
     })
   })
 })

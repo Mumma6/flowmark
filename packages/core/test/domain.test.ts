@@ -171,7 +171,7 @@ describe("workflow event schema", () => {
       { parentRunId: "p".repeat(201) },
       { parentRunId: "child-run" },
     ]) {
-      expect(
+      Either.match(
         Effect.runSync(
           Effect.either(
             decodeWorkflowEvent({
@@ -179,8 +179,12 @@ describe("workflow event schema", () => {
               ...metadata,
             }),
           ),
-        )._tag,
-      ).toBe("Left")
+        ),
+        {
+          onLeft: () => undefined,
+          onRight: () => expect.fail("expected invalid run metadata"),
+        },
+      )
     }
   })
 
@@ -325,6 +329,9 @@ describe("workflow event schema", () => {
     const result = Effect.runSync(
       Effect.either(decodeWorkflowEvent(event)),
     )
-    expect(result._tag).toBe("Left")
+    Either.match(result, {
+      onLeft: () => undefined,
+      onRight: () => expect.fail("expected an invalid workflow event"),
+    })
   })
 })

@@ -1,7 +1,150 @@
 @import "tailwindcss";
-@import "./styles/base.css";
-@import "./styles/dashboard-illustration.css";
-@import "./styles/sections.css";
-@import "./styles/code-showcase.css";
-@import "./styles/responsive.css";
 @source "../../../packages/ui/src";
+
+@theme inline {
+  --color-background: var(--bg);
+  --color-foreground: var(--text);
+  --color-card: var(--surface);
+  --color-card-foreground: var(--text);
+  --color-primary: var(--accent);
+  --color-primary-foreground: #10180d;
+  --color-secondary: var(--surface-raised);
+  --color-secondary-foreground: var(--text);
+  --color-muted: var(--surface-raised);
+  --color-muted-foreground: var(--muted);
+  --color-accent: var(--surface-raised);
+  --color-accent-foreground: var(--text);
+  --color-border: var(--border);
+  --color-input: var(--border);
+  --color-ring: var(--accent);
+  --color-destructive: #dc2626;
+  --color-destructive-foreground: #ffffff;
+  --font-sans: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Consolas,
+    monospace;
+  --animate-spotlight: spotlight-in 2.4s ease-out 0.3s 1 both;
+  --animate-dashboard: dashboard-arrive 950ms cubic-bezier(0.2, 0.75, 0.25, 1)
+    both;
+  --animate-orbit: orbit 28s linear infinite;
+  --animate-meteor: meteor 8s linear infinite;
+  --animate-beam-travel: beam-travel 9s linear infinite;
+  --animate-spotlight-pan: spotlight-pan 9s ease-in-out infinite;
+  --animate-spotlight-pan-reverse: spotlight-pan-reverse 9s ease-in-out infinite;
+}
+
+:root {
+  color-scheme: dark;
+  --bg: #090c0e;
+  --surface: #101517;
+  --surface-raised: #141b1b;
+  --text: #edf2ef;
+  --muted: #9ba8a3;
+  --accent: #b9f597;
+  --border: #ffffff15;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 6.25rem;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+  }
+
+  body {
+    @apply m-0 bg-background font-sans text-foreground antialiased;
+  }
+
+  ::selection {
+    background: #b9f59738;
+    color: #fff;
+  }
+
+  :focus-visible {
+    @apply rounded-sm outline-2 outline-offset-[5px] outline-primary;
+  }
+}
+
+@keyframes spotlight-in {
+  from {
+    opacity: 0;
+    transform: translateY(-14px) scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes dashboard-arrive {
+  from {
+    transform: translateY(18px) rotateY(-3deg);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0) rotateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes orbit {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes meteor {
+  0% {
+    transform: rotate(215deg) translateX(0);
+    opacity: 1;
+  }
+
+  70% {
+    opacity: 1;
+  }
+
+  100% {
+    transform: rotate(215deg) translateX(-32rem);
+    opacity: 0;
+  }
+}
+
+@keyframes beam-travel {
+  0% {
+    stroke-dasharray: 48 720;
+    stroke-dashoffset: 768;
+  }
+
+  100% {
+    stroke-dasharray: 48 720;
+    stroke-dashoffset: -768;
+  }
+}
+
+@keyframes spotlight-pan {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  50% {
+    transform: translateX(5rem);
+  }
+}
+
+@keyframes spotlight-pan-reverse {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  50% {
+    transform: translateX(-5rem);
+  }
+}

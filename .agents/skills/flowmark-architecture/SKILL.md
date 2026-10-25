@@ -6,7 +6,9 @@ description: "Use when adding or refactoring Flowmark SDK, API, core, or persist
 # Flowmark Architecture
 
 Apply this skill when implementing or refactoring Flowmark's internal SDK, API,
-core, or persistence architecture.
+core, or persistence architecture. For Effect API style (pipe, Match,
+Either.match, catchTags, Layers, Scope, services), also apply
+[flowmark-effect](../flowmark-effect/SKILL.md).
 
 ## Architectural goals
 
@@ -159,7 +161,9 @@ test/
 - Keep authorization/project scoping in use cases and enforce project scoping
   in every persistence query.
 - Keep SQL, schema mappings, transactions, and driver lifecycle inside the
-  persistence package or its concrete adapter.
+  persistence package or its concrete adapter. For `packages/db` folder
+  layout, naming, `DatabaseOperation`, and store wiring, apply
+  [flowmark-persistence](../flowmark-persistence/SKILL.md).
 - Treat tRPC as an adapter, not as the application service layer. The use cases
   should remain callable without tRPC or Next.js.
 

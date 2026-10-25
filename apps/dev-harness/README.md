@@ -9,7 +9,7 @@ carrier calls. Nothing is charged, imported into a real system, or shipped.
 
 1. Follow the [local PostgreSQL setup](../../docs/development.md#local-demo-with-postgresql).
 2. Run `pnpm dev:setup`, configure the server's local database, then run
-   `pnpm db:setup-demo`. Setup provisions separate operations and SDK
+   `pnpm db:setup`. Setup migrates and provisions separate operations and SDK
    diagnostics projects; existing credentials are retained.
 3. Start the API on 3003, dashboard on 3001, and harness on 3004:
    `pnpm --filter @flowmark/dev-harness dev`.
@@ -17,7 +17,8 @@ carrier calls. Nothing is charged, imported into a real system, or shipped.
    **Run all six scenarios**. Each click calls the harness's application
    endpoint, which executes ordinary SDK-instrumented work. There are no
    database-inserted fake telemetry fixtures.
-5. Open [the dashboard](http://localhost:3001). Telemetry delivery may finish
+5. Open [the dashboard](http://localhost:3001) and sign in as `local@dev` /
+   `local-dev-only` after `pnpm db:setup`. Telemetry delivery may finish
    shortly after the application response, using the Next.js `after()` adapter.
 
 ## Operations
@@ -66,7 +67,7 @@ the operations app; diagnostic cases retain the SDK coverage.
 ## Reset only the operations history
 
 ```sh
-pnpm --filter @flowmark/db db:reset-local-telemetry --confirm-local-telemetry
+pnpm db:reset-local-telemetry -- --confirm-local-telemetry
 ```
 
 This destructive command requires `FLOWMARK_DEMO_MODE=true`, a loopback

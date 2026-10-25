@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@flowmark/ui"
 import { examples } from "./code-examples"
+import { overlineClassName } from "./layout"
 import { RunPreview } from "./run-preview"
 import { WorkflowCodeBlock } from "./workflow-code-block"
 
@@ -12,16 +13,22 @@ function ExamplePanel({ example }: { example: (typeof examples)[number] }) {
     example.code.split("\n").length - example.existingCode.split("\n").length
 
   return (
-    <TabsContent className="code-tab-content" value={example.id}>
-      <div className="scenario-intro">
-        <h3>{example.question}</h3>
-        <p>{example.description}</p>
+    <TabsContent className="min-w-0 w-full" value={example.id}>
+      <div className="max-w-[760px] py-8">
+        <h3 className="text-[clamp(1.4rem,2.4vw,1.875rem)] font-medium leading-snug tracking-tight">
+          {example.question}
+        </h3>
+        <p className="mt-3 max-w-[650px] text-sm leading-7 text-muted-foreground">
+          {example.description}
+        </p>
       </div>
-      <div className="scenario-workspace">
-        <div className="scenario-code">
-          <div className="scenario-column-heading">
-            <span className="overline">YOUR CODE</span>
-            <span>{addedLines} added lines. Same business logic.</span>
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1.12fr)_minmax(0,1fr)]">
+        <div className="min-w-0 w-full">
+          <div className="mb-3 flex min-h-8 flex-wrap items-baseline justify-between gap-2">
+            <span className={overlineClassName}>Your code</span>
+            <span className="text-[11px] text-muted-foreground">
+              {addedLines} added lines. Same business logic.
+            </span>
           </div>
           <Tabs
             value={version}
@@ -33,7 +40,7 @@ function ExamplePanel({ example }: { example: (typeof examples)[number] }) {
           >
             <TabsList
               aria-label={`Compare ${example.label} code`}
-              className="code-tabs comparison-tabs"
+              className="mb-2.5 h-auto flex-wrap justify-start gap-1 bg-transparent p-1"
             >
               <TabsTrigger value="existing">Before</TabsTrigger>
               <TabsTrigger value="instrumented">With Flowmark</TabsTrigger>
@@ -48,7 +55,7 @@ function ExamplePanel({ example }: { example: (typeof examples)[number] }) {
               <WorkflowCodeBlock title={example.title} value={example.code} />
             </TabsContent>
           </Tabs>
-          <p className="scenario-code-note">
+          <p className="mt-3 text-xs leading-7 text-muted-foreground">
             {version === "existing"
               ? "The application already does the work. Flowmark adds visibility, not a new execution model."
               : "Highlighted lines are Flowmark calls. Existing return values, logs, and thrown errors stay intact."}
@@ -61,28 +68,37 @@ function ExamplePanel({ example }: { example: (typeof examples)[number] }) {
 }
 
 export function CodeShowcase() {
+  const [scenario, setScenario] = useState(examples[0]!.id)
+  const example =
+    examples.find((item) => item.id === scenario) ?? examples[0]!
+
   return (
-    <div className="code-showcase">
-      <Tabs defaultValue="import">
+    <div className="min-w-0 w-full">
+      <Tabs
+        value={scenario}
+        onValueChange={(value) => {
+          if (examples.some((item) => item.id === value)) {
+            setScenario(value)
+          }
+        }}
+      >
         <TabsList
           aria-label="Explore a real-world scenario"
-          className="code-tabs scenario-tabs"
+          className="h-auto flex-wrap justify-start gap-1 border border-border bg-white/[0.02] p-1"
         >
-          {examples.map((example) => (
+          {examples.map((item) => (
             <TabsTrigger
-              className="code-tab"
-              key={example.id}
-              value={example.id}
+              className="min-h-10 flex-none px-4"
+              key={item.id}
+              value={item.id}
             >
-              {example.label}
+              {item.label}
             </TabsTrigger>
           ))}
         </TabsList>
-        {examples.map((example) => (
-          <ExamplePanel key={example.id} example={example} />
-        ))}
+        <ExamplePanel example={example} />
       </Tabs>
-      <p className="walkthrough-note">
+      <p className="mt-5 text-xs leading-7 text-muted-foreground">
         Interactive walkthrough with sample data. Results and checkpoints are
         reported by application code.
       </p>

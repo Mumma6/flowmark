@@ -1,4 +1,4 @@
-import { Schema, Either } from "effect"
+import { Effect, Either, Schema } from "effect"
 import { createFlowmark } from "@flowmark/node"
 import { createFlowmark as createNextFlowmark } from "@flowmark/node/next"
 import { runScenario, scenarioIds } from "../../../lib/sdk-scenarios"
@@ -8,17 +8,18 @@ const RequestSchema = Schema.Struct({
   runtime: Schema.Literal("next", "node"),
 })
 
+const decodeRequest = Effect.fn("decodeSdkTestRequest")(function* (
+  request: Request,
+) {
+  const body = yield* Effect.tryPromise({
+    try: () => request.json(),
+    catch: () => new Error("invalid-json"),
+  })
+  return yield* Schema.decodeUnknown(RequestSchema)(body)
+})
+
 export async function POST(request: Request) {
-  let body: unknown
-  try {
-    body = await request.json()
-  } catch {
-    return Response.json(
-      { error: "Request body must be valid JSON." },
-      { status: 400 },
-    )
-  }
-  const decoded = Schema.decodeUnknownEither(RequestSchema)(body)
+  const decoded = await Effect.runPromise(Effect.either(decodeRequest(request)))
   return Either.match(decoded, {
     onLeft: () =>
       Response.json(

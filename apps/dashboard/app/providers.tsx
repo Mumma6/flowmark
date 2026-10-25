@@ -18,7 +18,14 @@ export function Providers({ children }: { children: ReactNode }) {
   )
   const [trpcClient] = useState(() =>
     createTRPCClient<AppRouter>({
-      links: [httpBatchLink({ url: apiUrl })],
+      links: [
+        httpBatchLink({
+          url: apiUrl,
+          fetch(url, options) {
+            return fetch(url, { ...options, credentials: "include" })
+          },
+        }),
+      ],
     }),
   )
 

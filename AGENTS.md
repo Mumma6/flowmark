@@ -6,8 +6,10 @@
 - Product direction: [BUSINESS-PLAN.md](./BUSINESS-PLAN.md) and
   [NORTH-STAR.md](./NORTH-STAR.md).
 - Phase status: [NEXT-PHASE-PLAN.md](./NEXT-PHASE-PLAN.md).
-- MVP infrastructure proposals: [MVP-INFRA.md](./MVP-INFRA.md). Recommendations
-  there are not automatically approved implementation decisions.
+- MVP infrastructure proposals: [MVP-INFRA.md](./MVP-INFRA.md). Confirmed
+  provider and auth choices are in
+  [ADR 0006](./docs/decisions/0006-mvp-0.1-infrastructure.md). Remaining
+  increments are not automatically approved implementation decisions.
 - Read applicable nested `AGENTS.md` files. Next.js apps require checking the
   installed Next.js documentation before framework changes.
 
@@ -26,10 +28,16 @@
 
 ## Architecture and UI
 
-- Before SDK/API/core/persistence changes, read and apply
+- Before TypeScript, Effect, SDK, API, core, or persistence changes, read and
+  apply
+  [flowmark-effect](./.agents/skills/flowmark-effect/SKILL.md) and
   [flowmark-architecture](./.agents/skills/flowmark-architecture/SKILL.md).
-  Use Effect-first functional internals, typed errors, small ports/adapters,
-  and an ordinary ergonomic TypeScript/Promise SDK boundary.
+  Use modern Effect as the default (pipe, Match, Either.match, catchTags,
+  Layers, Scope, services). Keep typed errors, small ports/adapters, and an
+  ordinary TypeScript/Promise SDK boundary.
+- Before `@flowmark/db`, Drizzle, SQL, query, migration, or seed changes, read
+  and apply
+  [flowmark-persistence](./.agents/skills/flowmark-persistence/SKILL.md).
 - Keep API use cases in `packages/api`; `apps/server` is the framework/protocol
   shell. Keep database-specific work behind persistence boundaries.
 - Before frontend changes, read and apply

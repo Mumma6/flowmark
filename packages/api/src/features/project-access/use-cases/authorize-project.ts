@@ -13,6 +13,9 @@ export interface AuthorizeProjectService {
     header: string | null,
     permission: "read" | "write",
   ) => Effect.Effect<string, Unauthorized | PersistenceError>
+  readonly authorizeUser: (
+    userId: string,
+  ) => Effect.Effect<string, Unauthorized | PersistenceError>
 }
 
 export class AuthorizeProject extends Context.Tag(
@@ -50,7 +53,17 @@ export class AuthorizeProject extends Context.Tag(
         return projectId
       })
 
-      return AuthorizeProject.of({ authorize })
+      const authorizeUser = Effect.fn("AuthorizeProject.authorizeUser")(
+        function* (userId: string) {
+          const projectId = yield* credentials.projectForUser(userId)
+          if (!projectId) {
+            return yield* Effect.fail(new Unauthorized({ permission: "read" }))
+          }
+          return projectId
+        },
+      )
+
+      return AuthorizeProject.of({ authorize, authorizeUser })
     }),
   )
 }

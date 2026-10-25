@@ -1,17 +1,9 @@
 import { Effect, Layer } from "effect"
-import {
-  appendEvent,
-  Database,
-  DatabaseError,
-  MissingRunError as DbMissingRunError,
-  readRelatedRuns,
-  readRun,
-  readSnapshot,
-} from "@flowmark/db/store"
+import { DatabaseError, WorkflowStore } from "@flowmark/db/persistence"
 import { PersistenceError, RunNotFound } from "../../../errors.js"
 import { WorkflowRepository } from "../ports/workflow-repository.js"
 
-const mapDatabaseError = (error: DatabaseError) =>
+const toPersistenceError = (error: DatabaseError) =>
   new PersistenceError({
     operation: error.operation,
     cause: error.cause,
@@ -20,38 +12,32 @@ const mapDatabaseError = (error: DatabaseError) =>
 export const WorkflowRepositoryLive = Layer.effect(
   WorkflowRepository,
   Effect.gen(function* () {
-    const db = yield* Database
+    const store = yield* WorkflowStore
     return WorkflowRepository.of({
       append: Effect.fn("PostgresWorkflowRepository.append")(
         (projectId, eventId, event) =>
-          appendEvent(projectId, eventId, event).pipe(
-            Effect.provideService(Database, db),
-            Effect.mapError((error) =>
-              error instanceof DbMissingRunError
-                ? new RunNotFound({ runId: error.runId })
-                : mapDatabaseError(error),
-            ),
+          store.append(projectId, eventId, event).pipe(
+            Effect.catchTags({
+              DatabaseError: toPersistenceError,
+              MissingRunError: (error) =>
+                new RunNotFound({ runId: error.runId }),
+            }),
           ),
       ),
       snapshot: Effect.fn("PostgresWorkflowRepository.snapshot")((projectId) =>
-        readSnapshot(projectId).pipe(
-          Effect.provideService(Database, db),
-          Effect.mapError(mapDatabaseError),
-        ),
+        store.snapshot(projectId).pipe(Effect.mapError(toPersistenceError)),
       ),
       timeline: Effect.fn("PostgresWorkflowRepository.timeline")(
         (projectId, runId) =>
-          readRun(projectId, runId).pipe(
-            Effect.provideService(Database, db),
-            Effect.mapError(mapDatabaseError),
-          ),
+          store
+            .timeline(projectId, runId)
+            .pipe(Effect.mapError(toPersistenceError)),
       ),
       related: Effect.fn("PostgresWorkflowRepository.related")(
         (projectId, runId) =>
-          readRelatedRuns(projectId, runId).pipe(
-            Effect.provideService(Database, db),
-            Effect.mapError(mapDatabaseError),
-          ),
+          store
+            .related(projectId, runId)
+            .pipe(Effect.mapError(toPersistenceError)),
       ),
     })
   }),

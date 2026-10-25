@@ -10,7 +10,8 @@ anonymous or harmless metadata.
 ## Keep credentials on the right side
 
 - Use the private server-write key only in Node.js or server-only modules.
-- Use the separate read key only on the dashboard server.
+- Dashboard readers sign in with email and password. A project read key is
+  only for programmatic API queries, not for the dashboard UI.
 - Browser keys are public by design and can submit browser telemetry only.
   They cannot read data or authorize private server writes.
 - Configure exact browser origins and rate limits. CORS and origin checks are
@@ -38,8 +39,9 @@ the run.
 
 ## Data ownership and operation
 
-The current project is self-hosted and has no hosted Flowmark data service or
-customer account provisioning. Your deployment owns database access, backups,
-retention, deletion, key rotation, and authorization. The product does not yet
-provide a complete retention/deletion control plane or production user login.
-See [self-hosting Flowmark](./local-development) for deployment boundaries.
+The current project is self-hosted and has no operated Flowmark data service.
+Your deployment owns database access, backups, retention, deletion, key
+rotation, and authorization. Dashboard sign-in is Better Auth email and
+password; the product does not yet provide a complete retention/deletion
+control plane or hosted key rotation UI. See
+[self-hosting Flowmark](./local-development) for deployment boundaries.

@@ -162,8 +162,9 @@ The architecture is TypeScript with Next.js/React applications, Effect/Schema
 services, HTTP ingestion, tRPC/TanStack Query reads, PostgreSQL/Drizzle,
 shared shadcn UI, Fumadocs, pnpm/Turborepo and Vitest.
 
-Today there is no hosted production service, production user authentication,
-customer provisioning/key lifecycle, alerting or durable offline delivery.
+Today there is no hosted production service, key-rotation UI, alerting, or
+durable offline delivery. Local dashboard sign-in is Better Auth email and
+password; applications still use project write keys.
 Delivery is best-effort with bounded in-memory buffering. Browser reports are
 untrusted. Correlation is explicitly propagated by application code.
 

@@ -3,35 +3,39 @@ title: Self-hosting Flowmark
 description: Understand the services and safeguards required to operate Flowmark.
 ---
 
-There is no hosted Flowmark API or customer account service yet. The API,
+There is no hosted Flowmark API or operated customer account service. The API,
 PostgreSQL database, and dashboard must run in infrastructure you control; this
-project does not yet provide a turnkey production deployment or customer
-provisioning flow.
+project does not yet provide a turnkey production deployment.
 
 ## Services to operate
 
-- **Flowmark API:** accepts private server events and public browser events.
-  Configure its PostgreSQL `DATABASE_URL` and provision project-scoped keys.
-  Instrumented applications use `FLOWMARK_API_URL` and `FLOWMARK_API_KEY` to
-  connect to this API; these are SDK client settings, not a provisioning flow.
-- **PostgreSQL:** stores projects, hashed keys, workflows, runs, and append-only
-  event history. Back up and protect this database as telemetry data.
-- **Dashboard:** reads project-scoped run data using a separate server-only read
-  key. Put it behind your own authentication and authorization boundary; the
-  repository's fixed local demo account is not customer authentication.
+- **Flowmark API:** accepts private server events and public browser events,
+  hosts Better Auth, and authorizes dashboard reads. Configure its PostgreSQL
+  `DATABASE_URL` and a `BETTER_AUTH_SECRET` for hosted use. Instrumented
+  applications use `FLOWMARK_API_URL` and `FLOWMARK_API_KEY` to connect to this
+  API; those are SDK client settings, not a dashboard login.
+- **PostgreSQL:** stores users, sessions, projects, hashed keys, workflows,
+  runs, and append-only event history. Back up and protect this database as
+  telemetry data.
+- **Dashboard:** people sign in with email and password. The dashboard
+  same-origin-proxies `/api/auth/*`, `/api/register`, and `/api/trpc/*` so the
+  session cookie stays first-party. Reads are scoped to projects the signed-in
+  user belongs to.
 
-The API currently supports project-scoped keys and query authorization, but
-does not provide customer signup, key management, or a production dashboard
-login. Do not expose a dashboard configured with demo mode or a shared demo
-credential to the public internet.
+Sign-up creates a workspace, project, and the first server write key. The
+repository's seeded `local@dev` account is a loopback fixture for the
+operations project, not a production owner. Password reset is not available
+until you add email delivery. Do not expose a dashboard configured with demo
+mode or a shared demo credential to the public internet.
 
 ## Configure keys safely
 
-Keep private server-write and dashboard-read keys in server-side secret
-storage. Never place them in browser bundles, frontend environment variables,
-or build logs. Browser instrumentation requires a separate public browser key,
-restricted to exact origins and rate limited per key; its events remain
-untrusted input.
+Keep private server-write keys in server-side secret storage. Never place them
+in browser bundles, frontend environment variables, or build logs. Browser
+instrumentation requires a separate public browser key, restricted to exact
+origins and rate limited per key; its events remain untrusted input.
+Programmatic API reads may use a project read key; the dashboard itself uses
+the signed-in session.
 
 Before handling real data, add your own authentication, rate limiting,
 provisioning, backups, retention and deletion policy, monitoring, and key

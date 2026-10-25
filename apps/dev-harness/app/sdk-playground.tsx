@@ -85,7 +85,7 @@ export function SdkPlayground() {
         <p className="mt-3 max-w-3xl text-sm leading-7 text-muted-foreground">
           These technical checks write to a separate SDK diagnostics project,
           never the operations dashboard. Intentional failures are expected. Run
-          pnpm db:setup-demo to provision both local projects.
+          pnpm db:setup to provision both local projects.
         </p>
       </header>
       <Tabs

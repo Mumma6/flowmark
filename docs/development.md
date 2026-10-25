@@ -48,11 +48,13 @@ not an SDK fallback or production credential provisioning.
 
 Starting development apps does not start PostgreSQL or apply migrations.
 Set `DATABASE_URL` in `apps/server/.env.local` to an existing development database,
-then run `pnpm db:setup-demo`. The setup command reads the server app's environment
-files so migrations and the API use the same database. Shell environment values
-take precedence. The relevant exported environment variables are forwarded into
-Turbo's dev tasks; Next.js loads each app's own `.env.local`.
-At present the fixed demo setup is not per-user authentication or provisioning.
+then run `pnpm db:setup`. That command reads the server app's environment
+files, applies committed migrations, and seeds local fixture projects so the API
+uses the same database. `pnpm db:migrate` and `pnpm db:seed` are available
+separately. Seed refuses production and non-loopback databases. Shell environment
+values take precedence. The relevant exported environment variables are forwarded
+into Turbo's dev tasks; Next.js loads each app's own `.env.local`.
+Seed also creates `local@dev` so you can sign in to the operations project.
 
 ### Database browser: Drizzle Studio
 
@@ -72,14 +74,15 @@ Never expose its local server publicly or share connection credentials.
 The browser UI is served by Drizzle, separately from our local API; follow
 your team's data-access policy before connecting sensitive databases.
 
-This works with PostgreSQL now and Supabase PostgreSQL later: update
-`DATABASE_URL` to the intended database connection string (with the provider's
-required TLS settings), then restart Studio. Supabase authentication, Storage
+This works with any PostgreSQL, including local, Neon, or Supabase PostgreSQL:
+update `DATABASE_URL` to the intended connection string (with the provider's
+required TLS settings), then restart Studio. Provider-specific auth, Storage,
 and other services are not configured by Studio.
 
-The dashboard uses a same-origin server proxy for tRPC. Its server-side
-`FLOWMARK_API_URL` defaults to `http://localhost:3003`. The dashboard's read
-key stays server-side; workflow queries read PostgreSQL, not mock data.
+The dashboard uses a same-origin server proxy for tRPC and Better Auth. Its
+server-side `FLOWMARK_API_URL` defaults to `http://localhost:3003`. Dashboard
+reads use the signed-in session; workflow queries read PostgreSQL, not mock
+data.
 
 The local dev harness records server workflows through the private
 `POST /v1/events` endpoint and browser workflows through direct
@@ -104,7 +107,7 @@ Each case lists its SDK methods, expected telemetry, external run IDs and
 workflow names. Browser and plain Node cases use a fresh client,
 `flush()`, then `shutdown()`; Next cases use request-scoped `after()` delivery.
 Intentional failures remain in a separate SDK diagnostics project's history,
-never the operations dashboard. Re-run `pnpm db:setup-demo` to provision that
+never the operations dashboard. Re-run `pnpm db:setup` to provision that
 project and its loopback-only browser/write credentials.
 
 The editable cases live in `apps/dev-harness/lib/sdk-scenarios.ts`; browser
@@ -169,11 +172,13 @@ integration coverage additionally needs `TEST_DATABASE_URL` as described below.
 
 Run `pnpm dev:setup` (or copy the relevant `.env.example`) to configure local demo
 mode. The API needs `DATABASE_URL` and `FLOWMARK_DEMO_MODE=true`; the dashboard
-uses the same demo-mode flag and its server-side API URL. The dev harness's
-`FLOWMARK_API_KEY` is used by its server route only. Supabase credentials are
-not required for the fixed demo account.
+uses the same demo-mode flag and its server-side `FLOWMARK_API_URL`. The dev
+harness's `FLOWMARK_API_KEY` is used by its server route only. Demo mode defaults
+off and is rejected when `NODE_ENV` or `VERCEL_ENV` is production. Set
+`BETTER_AUTH_SECRET` in the API environment for hosted use; local demo mode
+falls back to a documented development secret.
 
-Database schema lives in `packages/db/src/schema.ts`. Set `DATABASE_URL` when generating Drizzle migrations:
+Database schema lives in `packages/db/src/schema`. Set `DATABASE_URL` when generating Drizzle migrations:
 
 ```sh
 pnpm db:generate
@@ -184,25 +189,28 @@ Versioned migrations are in `packages/db/migrations`. The API requires
 
 ## Local demo with PostgreSQL
 
-Use a dedicated PostgreSQL database (local PostgreSQL or a development Supabase
-database). No real login or registration is required: everyone sees one fixed
-demo account/project.
+Use a dedicated PostgreSQL database. Dashboard sign-in is email and password.
+The seed creates `local@dev` / `local-dev-only` and attaches it to the local
+operations project. Applications still use a project write key, not that
+password.
 
 ```sh
 createdb flowmark
 pnpm dev:setup
 # Set DATABASE_URL in apps/server/.env.local to the database you just created.
-pnpm db:setup-demo
+pnpm db:setup
 pnpm dev
 ```
 
-This applies migrations and provisions the operations and SDK diagnostics
-projects idempotently. It creates development-only read, server-write, and
-browser-write keys. Diagnostics use separate write/browser credentials and do
-not appear in the operations dashboard. Do not run
-it against a database that already has these tables from an unmanaged schema
-push; reconcile/migrate that schema first. Set the same `DATABASE_URL` in the API
-environment. The three local development app configurations are:
+This applies committed migrations and provisions the operations and SDK
+diagnostics projects idempotently. It creates development-only read,
+server-write, and browser-write keys. Diagnostics use separate write/browser
+credentials and do not appear in the operations dashboard. Do not run seed or
+setup against production or a non-loopback database. Do not run it against a
+database that already has these tables from an unmanaged schema push;
+reconcile/migrate that schema first. Set the same `DATABASE_URL` in the API
+environment. Optional `DATABASE_MIGRATION_URL` is used only by migrate
+commands. The three local development app configurations are:
 
 - API: `DATABASE_URL`, `FLOWMARK_DEMO_MODE=true`.
 - Dashboard: `FLOWMARK_DEMO_MODE=true`, optional server-only `FLOWMARK_API_URL`.
@@ -214,15 +222,18 @@ environment. The three local development app configurations are:
   config sets its own public API origin.
 
 Then start API (3003), dashboard (3001) and the local dev harness (3004), using the commands
-above. Click **Run all six scenarios** in the harness and open the dashboard's
+above. Sign in to the dashboard as `local@dev` with password `local-dev-only`.
+Click **Run all six scenarios** in the harness and open the dashboard's
 Workflows page. You should see `invoices.import`, `inventory.sync` and
 `orders.fulfill`, with two runs each. The dashboard refreshes every three seconds.
 Click a run to inspect its business result, progress, errors and operations.
+Registering a new email creates a separate project; it does not see the seeded
+harness data.
 
 To discard the operations project's old local telemetry explicitly:
 
 ```sh
-pnpm --filter @flowmark/db db:reset-local-telemetry --confirm-local-telemetry
+pnpm db:reset-local-telemetry -- --confirm-local-telemetry
 ```
 
 The reset requires demo mode and a loopback database. It deletes only that
@@ -236,9 +247,8 @@ The browser credential (`fm_demo_browser_local_only`) is intentionally public;
 the API restricts it to loopback origins on ports 3004 and 5173 (`localhost`
 and `127.0.0.1`).
 Only hashes of credentials are stored. The API rejects demo credentials unless
-explicitly in demo mode; disabling demo mode also disables the dashboard's
-fixed-account proxy. This is not production user authentication. Never store
-real customer data in this shared demo project.
+explicitly in demo mode. Dashboard reads use the signed-in session, not the
+demo read key. Never store real customer data in this shared demo project.
 
 SDK delivery handles timeout/retries and idempotent event UUIDs. The Next.js
 server adapter drains delivery after the response; direct browser delivery uses
@@ -265,10 +275,10 @@ failed runs, and cross-project read isolation.
   `FLOWMARK_API_KEY`. Run `pnpm dev:setup` and restart the dev command if the
   process predates the local environment files. Never fix this with a public
   browser key or a production default credential.
-- Dashboard returns 403: enable `FLOWMARK_DEMO_MODE=true` in the dashboard's
-  server environment for this fixed local development project. Keep it disabled in production.
+- Dashboard asks you to sign in: use `local@dev` / `local-dev-only` after
+  `pnpm db:setup`, or register a new account. Anonymous reads are rejected.
 - API returns storage/configuration errors: check `DATABASE_URL`, PostgreSQL
-  reachability, and run `pnpm db:setup-demo` against that same database.
+  reachability, and run `pnpm db:setup` against that same database.
 - A browser key works only from its configured origin. The local harness allows
   loopback ports 3004 and 5173; a different port requires an explicit allowlist
   change, not a wildcard CORS bypass.

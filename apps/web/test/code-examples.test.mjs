@@ -23,15 +23,15 @@ runInNewContext(
 )
 const { examples } = exports
 const functions = {
-  import: "importInvoices",
-  sync: "syncInventory",
-  order: "fulfillOrder",
+  checkout: "checkoutOrder",
+  sync: "syncRecords",
+  job: "runNightlyJob",
 }
 
 function execute(example, code, failure) {
   const events = []
   const businessCalls = []
-  const result = { imported: 988, skipped: 12 }
+  const result = { succeeded: 988, failed: 12 }
   const shipment = { id: "shipment-001" }
   const run = {
     step: (...args) => events.push(["step", ...args]),
@@ -50,22 +50,22 @@ function execute(example, code, failure) {
       error: (data, message) =>
         businessCalls.push(["log", { ...data }, message]),
     },
-    loadInvoices: async () => {
+    loadWork: async () => {
       businessCalls.push("load")
       return Array(1000).fill({})
     },
-    saveValidInvoices: async () => {
-      businessCalls.push("save")
+    processWork: async () => {
+      businessCalls.push("process")
       if (failure) throw failure
       return result
     },
-    countProducts: async () => 1000,
-    fetchProductPages: async function* () {
+    countRecords: async () => 1000,
+    fetchRecordPages: async function* () {
       yield Array(300).fill({})
       yield Array(300).fill({})
       if (failure) throw failure
     },
-    updateStock: async (page) => businessCalls.push(["stock", page.length]),
+    updateRecords: async (page) => businessCalls.push(["update", page.length]),
     capturePayment: async () => businessCalls.push("payment"),
     createShipment: async () => {
       businessCalls.push("shipment")
@@ -103,8 +103,8 @@ for (const example of examples) {
     assert.deepEqual(instrumented, original)
     assert.deepEqual(after.businessCalls, before.businessCalls)
     assert.equal(after.events.at(-1)[0], "done")
-    if (example.id === "import") assert.equal(instrumented, after.result)
-    if (example.id === "order") assert.equal(instrumented, after.shipment)
+    if (example.id === "job") assert.equal(instrumented, after.result)
+    if (example.id === "checkout") assert.equal(instrumented, after.shipment)
   })
 
   test(`${example.label}: preserves original error and logging`, async () => {
