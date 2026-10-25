@@ -32,7 +32,7 @@ export default function Layout({
           text: "Operate Flowmark",
           on: "nav",
           items: [
-            { text: "Self-hosting", url: "/docs/local-development" },
+            { text: "Local development", url: "/docs/local-development" },
             { text: "HTTP API", url: "/docs/api" },
             { text: "Security and privacy", url: "/docs/security-privacy" },
             { text: "Troubleshooting", url: "/docs/troubleshooting" },

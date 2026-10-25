@@ -6,7 +6,7 @@ description: Explicitly associate executions across requests and services.
 ## Group by correlation ID
 
 Pass the same `correlationId` to runs that belong to the same application-defined
-process. Flowmark does not generate or propagate this value for you.
+process. You choose and pass the value.
 
 ```ts
 const run = flowmark.workflow("order.fulfill", {
@@ -27,8 +27,8 @@ const child = flowmark.workflow("shipment.create", {
 })
 ```
 
-The SDK does not add headers or create trace trees. `parentRunId` is not the
-dashboard's internal run UUID.
+Pass `parentRunId` through your own request or job payload. Use the parent's
+external SDK `runId`, not the dashboard's internal UUID.
 
 ## Lookup behavior
 

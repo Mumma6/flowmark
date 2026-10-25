@@ -71,7 +71,9 @@ integration remains valuable; do not rebuild the harness merely to prepare infra
   Password reset is not available until email delivery exists.
 - Read tables filter/page the latest 100 project runs client-side; this is not
   complete historical pagination.
-- Results are shown per run; there is no validated cross-run business aggregate.
+- Results are shown per run. Cross-run insight is volume, success rate,
+  median/p95 duration, operation timing, failure codes, and comparison to the
+  last 20 peers — not a generic aggregate of result JSON.
 - Results attach to `done()` or `fail()`. They are application-reported
   summaries, not verified correctness.
 - `error({ handled: true })` does not fail a run. Neither an observed error nor

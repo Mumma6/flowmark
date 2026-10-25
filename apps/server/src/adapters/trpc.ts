@@ -172,6 +172,21 @@ export const appRouter = t.router({
             ),
         ),
       ),
+    compare: t.procedure
+      .input(Schema.standardSchemaV1(Schema.Struct({ id: Schema.UUID })))
+      .query(({ ctx, input }) =>
+        readQuery(
+          ctx.request,
+          (userId) =>
+            Effect.flatMap(GetProjectWorkflowData, (queries) =>
+              queries.compareForUser(userId, input.id),
+            ),
+          (header) =>
+            Effect.flatMap(GetProjectWorkflowData, (queries) =>
+              queries.compare(header, input.id),
+            ),
+        ),
+      ),
   }),
 })
 

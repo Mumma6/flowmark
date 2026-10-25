@@ -1,13 +1,8 @@
 # Product definition
 
-Flowmark is **workflow observability for application code**. It helps a
-developer investigate what happened inside an important business run: which
-milestones were reached, what context was known, where a reported problem was
-recovered or terminal, and what result the application recorded.
-
-Developers add explicit semantic markers around business logic. Flowmark
-records those observations and builds run timelines; the host application
-remains responsible for executing work, handling errors, and deciding outcomes.
+Flowmark is **workflow observability for application code**. Mark a process
+and see volume, duration, success rate, and the result of each execution:
+milestones, measured operations, progress, errors, and the reported outcome.
 
 ## Core language
 
@@ -28,23 +23,20 @@ browser tab, or telemetry request may stop before a terminal marker is stored.
 **Primary interface:** a run investigation that starts with a workflow and its
 specific execution.
 
-> Your code runs the workflow. Flowmark helps explain what happened.
+> Mark a process. See the numbers, then open the run.
 
-Flowmark complements logs, traces, error tracking, product analytics, and
-infrastructure monitoring. It does not claim to replace their general-purpose
-capabilities; its unit of context is the business run and the milestones its
-application explicitly reports.
+The unit of context is the business process and the evidence your application
+reports.
 
 ## Product principles
 
 1. Instrumentation fits around application code.
-2. Flowmark observes workflows; it does not execute them.
+2. Flowmark records the process the application already runs.
 3. The SDK stays small and resilient.
-4. Workflow semantics are explicit, not inferred.
-5. Existing observability tools remain useful and complementary.
-6. The backend owns analytics; SDK inputs are observations, not trusted facts.
-7. Do not collect identity, request bodies, or raw exception data by default.
-8. Do not build features without a useful, honest run-level interpretation.
+4. Workflow semantics are explicit.
+5. The backend owns analytics; SDK inputs are observations.
+6. Do not collect identity, request bodies, or raw exception data by default.
+7. Every feature needs a useful run-level interpretation.
 
 ## Stage 1 delivered
 
@@ -89,10 +81,9 @@ and 16 KiB UTF-8 encoded per object. Raw `Error` instances and class instances
 are not serialized. Step properties remain local to their event; run context
 combines the start properties with later `setProperties()` amendments.
 
-The dashboard can inspect run context, step details, error codes, reported
-results, and terminal outcomes. Metrics are derived from persisted events;
-browser events remain untrusted reports and are not authoritative proof of a
-business result.
+The dashboard shows volume, success rate, median duration, run context, step
+details, error codes, reported results, and terminal outcomes. Metrics are
+derived from persisted events.
 
 ## Current boundaries
 

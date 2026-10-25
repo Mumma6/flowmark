@@ -14,7 +14,7 @@ const mono = Geist_Mono({
 
 const title = "Flowmark — Turn business processes into data-driven insight"
 const description =
-  "Operations insight for TypeScript applications. Mark existing business logic and understand what a process produced: operations, progress, errors, and the reported result."
+  "Operations insight for TypeScript. Mark a checkout, sync, or job and see volume, duration, success rate, and the reported result."
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://flowmark.dev"),

@@ -8,38 +8,27 @@ progress, errors and result.**
 
 Category: **workflow observability**. The data we collect: **workflow telemetry**.
 
-> Your application does the work. Flowmark records what your code reports and
-> makes it understandable as workflow history.
+> Mark a process in your application. Flowmark turns each execution into
+> volume, duration, success rate, and a reported result you can open.
 
 ## The problem we are solving
 
-An application can return successful HTTP responses and have healthy servers
-while a particular import, checkout or background job produces an unexpected
-result. Investigating that execution can require reconstructing it from
-scattered log messages, requests and events.
+Operations need to know how often a process runs, how often it succeeds, how
+long it takes, and what a specific execution produced.
 
-Developers need both:
+Flowmark answers both:
 
-- **An overview of a process:** how often it runs, how often it succeeds and how
-  long its recorded executions take.
-- **Evidence for one execution:** which milestones it reached, what work took
-  place, how progress changed, what errors were reported and what result it
-  produced.
-
-Our purpose is not simply to record start and stop timestamps. It is to make
-those questions accessible through a consistent SDK and a run-first interface,
-without requiring teams to build and maintain that entire view themselves.
+- **Process insight:** volume, success rate, and median duration.
+- **Run evidence:** milestones, measured operations, progress, errors, and
+  the reported result.
 
 ## What we mean by workflow
 
-A workflow is a named process a developer chooses to track. It does **not**
-require a workflow engine, job framework, predefined graph or multiple steps.
+A workflow is a named process a developer chooses to track — a form
+submission, payment, file upload, invoice import, account onboarding or
+scheduled job. A run is one execution of that process.
 
-Examples include a form submission, payment, file upload, invoice import,
-account onboarding or scheduled job. A run is one execution of that process.
-
-Instrumentation is explicit. Flowmark does not automatically discover processes
-or know whether the application achieved its business goal.
+Instrumentation is explicit: you name the process and report the result.
 
 ## How Flowmark fits into existing code
 
@@ -69,8 +58,7 @@ async function importInvoices(batchId: string, rows: Invoice[]) {
 ```
 
 `Invoice`, `saveInvoiceRows` and the configured `flowmark` client belong to the
-application. The SDK observes the callback's duration and outcome; it does not
-schedule it, retry its business logic or change its error into a success.
+application. The SDK records the callback's duration and outcome.
 
 ## Our vocabulary
 
@@ -108,30 +96,16 @@ A feature is not complete because a new SDK method exists. It needs a sound
 event contract, validation, persistence, useful read APIs, understandable
 visualization, documentation and successful/failing-path tests.
 
-## How we differ from adjacent tools
+## What we collect
 
-We choose a focused default model: **workflow → run → recorded evidence**.
+The model is **workflow → run → recorded evidence**.
 
-- Cloud metrics and infrastructure monitoring explain service/resource health.
-  We add the application-defined process and its reported outcome.
-- Log platforms and custom loggers capture diagnostic messages. We provide
-  explicit run lifecycle, domain events and a ready-made run investigation.
-- Tracing and APM describe requests, spans and dependencies. We organize the
-  processes the developer names, including business context and results.
-- Error tracking organizes failures. A useful workflow history also explains
-  successful executions, handled problems and partial results.
-- Product analytics examines user behavior and aggregate events. We focus on
-  an individual application execution, including background work.
+From that evidence we derive volume, success rate, and duration for a process,
+and a timeline plus result for one execution. Named operations add their own
+timing. Progress snapshots show how far a long job got.
 
-These categories overlap. Datadog, Grafana, Axiom, Better Stack, PostHog and
-other platforms may already support similar views or can be configured to do
-so. Structured logs and shared IDs can reproduce much of our data model.
-Our differentiation is a **product and DX hypothesis**, not an exclusive
-technical capability: does our focused SDK and interface make this job
-meaningfully easier? Validate that with users rather than asserting it.
-
-Keep existing tools. Do not claim native integrations, automatic log linking,
-performance superiority or lower cost without implementation and evidence.
+Do not claim native integrations, automatic log linking, or cost comparisons
+without implementation and evidence.
 
 ## Non-negotiable principles
 
@@ -162,15 +136,16 @@ The architecture is TypeScript with Next.js/React applications, Effect/Schema
 services, HTTP ingestion, tRPC/TanStack Query reads, PostgreSQL/Drizzle,
 shared shadcn UI, Fumadocs, pnpm/Turborepo and Vitest.
 
-Today there is no hosted production service, key-rotation UI, alerting, or
-durable offline delivery. Local dashboard sign-in is Better Auth email and
+Hosted production, key-rotation UI, alerting, and durable offline delivery
+are still upcoming. Local dashboard sign-in is Better Auth email and
 password; applications still use project write keys.
 Delivery is best-effort with bounded in-memory buffering. Browser reports are
 untrusted. Correlation is explicitly propagated by application code.
 
-The main run list shows the latest 100 runs; related-run queries are not tied
-to that window. Current aggregate metrics are not a promise of arbitrary
-analytics, percentile analysis or automatic bottleneck detection.
+The main run list shows the latest 100 runs; related-run and compare queries
+are not tied to that window. Aggregates include volume, success rate, median
+and p95 duration, daily trends, week-over-week change, slowest operations,
+failure codes, and comparison of one run to the last 20 of the same workflow.
 
 This section must evolve with the implementation. The purpose above should
 remain stable unless we consciously change the product direction.

@@ -17,9 +17,8 @@ export const flowmark = createFlowmark()
 ```
 
 Set the private `FLOWMARK_API_KEY` in the server environment. Set `FLOWMARK_API_URL`
-when your self-hosted API is not the development default
-`http://localhost:3003`. Never put a private write key in client code or a
-`NEXT_PUBLIC_*` variable.
+when the API is not the development default `http://localhost:3003`. Never put
+a private write key in client code or a `NEXT_PUBLIC_*` variable.
 
 ## Instrument a handler
 
@@ -62,8 +61,7 @@ changes.
 unchanged. Explicitly import and pass the configuration to the client; no
 configuration file is loaded automatically.
 
-This package does not provide a hosted API or production authentication. See
-[self-hosting](/docs/local-development) for deployment boundaries and
+See [local development](/docs/local-development) for the current stack and
 [configuration](/docs/configuration) for all client options.
 
 ## Request lifecycle

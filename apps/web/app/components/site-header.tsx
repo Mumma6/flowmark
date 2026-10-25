@@ -14,8 +14,8 @@ export function SiteHeader() {
           className="flex shrink-0 items-center gap-2 whitespace-nowrap text-[13px] text-muted-foreground sm:gap-4"
           aria-label="Main navigation"
         >
-          <a className="hidden hover:text-primary sm:inline" href="#product">
-            Product
+          <a className="hidden hover:text-primary sm:inline" href="#insights">
+            Insights
           </a>
           <a className="hidden hover:text-primary sm:inline" href="#how-it-works">
             How it works

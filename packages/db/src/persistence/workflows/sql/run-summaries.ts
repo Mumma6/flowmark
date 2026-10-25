@@ -71,7 +71,11 @@ export const workflowSummariesSql = (projectId: string) => sql`
     coalesce(
       percentile_cont(0.5) WITHIN GROUP (ORDER BY "durationMs"),
       0
-    )::float8 AS "medianDurationMs"
+    )::float8 AS "medianDurationMs",
+    coalesce(
+      percentile_cont(0.95) WITHIN GROUP (ORDER BY "durationMs"),
+      0
+    )::float8 AS "p95DurationMs"
   FROM runs
   GROUP BY workflow
   ORDER BY workflow
@@ -90,15 +94,30 @@ export const projectMetricsSql = (projectId: string) => sql`
     coalesce(
       percentile_cont(0.5) WITHIN GROUP (ORDER BY "durationMs"),
       0
-    )::float8 AS "medianDurationMs"
+    )::float8 AS "medianDurationMs",
+    coalesce(
+      percentile_cont(0.95) WITHIN GROUP (ORDER BY "durationMs"),
+      0
+    )::float8 AS "p95DurationMs"
   FROM runs
 `
 
-export const dailyVolumeSql = (projectId: string) => sql`
+export const dailyInsightsSql = (projectId: string) => sql`
   ${projectRunSummaries(projectId)}
   SELECT
     to_char(day, 'YYYY-MM-DD') AS date,
-    count(runs.id)::int AS count
+    count(runs.id)::int AS count,
+    count(runs.id) FILTER (WHERE status = 'Completed')::int AS completed,
+    count(runs.id) FILTER (WHERE status = 'Failed')::int AS failed,
+    round(
+      100.0 * count(runs.id) FILTER (WHERE status = 'Completed')
+      / nullif(count(runs.id) FILTER (WHERE status != 'Running'), 0),
+      1
+    )::float8 AS "successRate",
+    percentile_cont(0.5) WITHIN GROUP (ORDER BY "durationMs")::float8
+      AS "medianDurationMs",
+    percentile_cont(0.95) WITHIN GROUP (ORDER BY "durationMs")::float8
+      AS "p95DurationMs"
   FROM generate_series(
     current_date - 29,
     current_date,
@@ -107,4 +126,44 @@ export const dailyVolumeSql = (projectId: string) => sql`
   LEFT JOIN runs ON ("startedAt" AT TIME ZONE 'UTC')::date = day::date
   GROUP BY day
   ORDER BY day
+`
+
+export const currentRunSql = (projectId: string, runId: string) => sql`
+  ${projectRunSummaries(projectId)}
+  SELECT
+    id,
+    "externalId",
+    workflow,
+    "startedAt"::text AS "startedAt",
+    status,
+    "durationMs",
+    step,
+    result,
+    "correlationId",
+    "parentRunId"
+  FROM runs
+  WHERE id = ${runId}
+`
+
+export const peerRunsSql = (projectId: string, runId: string) => sql`
+  ${projectRunSummaries(projectId)},
+  current_run AS (
+    SELECT workflow, id FROM runs WHERE id = ${runId}
+  )
+  SELECT
+    runs.id,
+    runs."externalId",
+    runs.workflow,
+    runs."startedAt"::text AS "startedAt",
+    runs.status,
+    runs."durationMs",
+    runs.step,
+    runs.result,
+    runs."correlationId",
+    runs."parentRunId"
+  FROM runs
+  JOIN current_run ON current_run.workflow = runs.workflow
+  WHERE runs.id != current_run.id
+  ORDER BY runs."startedAt" DESC
+  LIMIT 20
 `

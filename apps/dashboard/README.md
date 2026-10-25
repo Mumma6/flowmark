@@ -6,7 +6,8 @@ Anonymous visitors are redirected to sign in. Email/password registration
 creates a project and the first write key. Seed `local@dev` /
 `local-dev-only` after `pnpm db:setup` to open the operations project.
 
-- **Overview:** project metrics, recent daily volume, five workflow summaries,
+- **Overview:** project metrics, week-over-week change, 30-day volume and
+  duration charts, slowest operations, failure codes, five workflow summaries,
   and five recent runs.
 - **Workflows:** name-prefix groups, namespace/search filters, and 12 workflow
   rows per page.
@@ -38,7 +39,8 @@ Dark is the default; saved appearance preferences still take precedence.
 
 Reusable shadcn-style controls live in `@flowmark/ui`: tables, badges, inputs,
 native selects, breadcrumbs, pagination, alerts, skeletons, separators, sheet,
-cards, tabs, accordion, buttons and code blocks. The mobile navigation sheet
+cards, tabs, accordion, buttons, charts and code blocks. Insight charts compose
+Recharts through the shared `ChartContainer` primitive. The mobile navigation sheet
 uses the existing Base UI dialog for focus management and dismissal. Do not
 add app-local copies, custom selector stylesheets, or another UI kit.
 

@@ -123,7 +123,8 @@ export function WorkflowDirectory({
                   <TableHead>Namespace</TableHead>
                   <TableHead>Recorded runs</TableHead>
                   <TableHead>Success rate</TableHead>
-                  <TableHead>Median duration</TableHead>
+                  <TableHead>Median</TableHead>
+                  <TableHead>p95</TableHead>
                   <TableHead>
                     <span className="sr-only">View workflow</span>
                   </TableHead>
@@ -156,6 +157,7 @@ export function WorkflowDirectory({
                     <TableCell>
                       {formatDuration(item.medianDurationMs)}
                     </TableCell>
+                    <TableCell>{formatDuration(item.p95DurationMs)}</TableCell>
                     <TableCell>
                       <Button asChild variant="ghost" size="icon">
                         <Link

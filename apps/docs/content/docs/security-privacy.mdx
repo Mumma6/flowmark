@@ -15,8 +15,7 @@ anonymous or harmless metadata.
 - Browser keys are public by design and can submit browser telemetry only.
   They cannot read data or authorize private server writes.
 - Configure exact browser origins and rate limits. CORS and origin checks are
-  not user authentication; browser events are forgeable and must not be used as
-  proof of a payment or other business outcome.
+  not user authentication. Treat browser events as untrusted telemetry.
 
 Never place a private key in a `NEXT_PUBLIC_*` variable, browser config file, or
 client bundle.
@@ -29,8 +28,7 @@ unnecessary personal data. A safe example is `{ provider: "backup" }`; an
 order ID can still be personal data in your context and retention model.
 
 Use stable error codes with an optional message that you have reviewed. Do not
-send the full error object. Set `handled: true` only when your application has
-recovered; Flowmark does not infer recovery or retry the operation.
+send the full error object. Set `handled: true` when your application recovered.
 
 Workflow properties and results are bounded to depth 5, 128 keys, 128
 characters per key, 2,048 characters per string, and 16 KiB encoded per object.
@@ -39,9 +37,6 @@ the run.
 
 ## Data ownership and operation
 
-The current project is self-hosted and has no operated Flowmark data service.
-Your deployment owns database access, backups, retention, deletion, key
-rotation, and authorization. Dashboard sign-in is Better Auth email and
-password; the product does not yet provide a complete retention/deletion
-control plane or hosted key rotation UI. See
-[self-hosting Flowmark](./local-development) for deployment boundaries.
+Dashboard sign-in is Better Auth email and password. Retention cleanup and
+key rotation in the UI are still upcoming. See
+[local development](./local-development) for the current stack.

@@ -1,5 +1,5 @@
 {
   "title": "Core concepts",
   "defaultOpen": true,
-  "pages": ["runs", "results", "dashboard", "related-runs"]
+  "pages": ["runs", "insights", "results", "dashboard", "related-runs"]
 }

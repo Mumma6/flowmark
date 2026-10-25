@@ -34,8 +34,8 @@ export const flowmark = createFlowmark()
 Set `FLOWMARK_API_KEY` in your server environment. For this repository's local
 demo it is `fm_demo_write_local_only`; the API must explicitly enable demo mode.
 `FLOWMARK_API_URL` defaults to `http://localhost:3003` in development. Set it to
-your API origin when self-hosting elsewhere; production requires an explicit
-URL. There is no hosted Flowmark endpoint yet.
+your API origin when it is not the development default; production requires
+an explicit URL.
 
 ```ts
 import { flowmark } from "./lib/flowmark"

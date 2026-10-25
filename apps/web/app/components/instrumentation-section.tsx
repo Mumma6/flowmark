@@ -20,9 +20,8 @@ export function InstrumentationSection() {
             </h2>
           </div>
           <p className="max-w-md text-[13px] leading-7 text-muted-foreground">
-            Developers mark existing business logic. Operations gets a
-            readable outcome — no job runner, rewrite, or custom dashboard
-            to build.
+            Developers mark existing business logic. Operations gets volume,
+            duration, success rate, and the reported result for that process.
           </p>
         </div>
         <CodeShowcase />

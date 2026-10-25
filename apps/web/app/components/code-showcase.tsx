@@ -57,8 +57,8 @@ function ExamplePanel({ example }: { example: (typeof examples)[number] }) {
           </Tabs>
           <p className="mt-3 text-xs leading-7 text-muted-foreground">
             {version === "existing"
-              ? "The application already does the work. Flowmark adds visibility, not a new execution model."
-              : "Highlighted lines are Flowmark calls. Existing return values, logs, and thrown errors stay intact."}
+              ? "Your existing function. Add a few markers to report the process."
+              : "Highlighted lines are Flowmark calls. Return values and thrown errors stay yours."}
           </p>
         </div>
         <RunPreview preview={example.preview} />

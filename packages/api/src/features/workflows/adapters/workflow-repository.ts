@@ -39,6 +39,12 @@ export const WorkflowRepositoryLive = Layer.effect(
             .related(projectId, runId)
             .pipe(Effect.mapError(toPersistenceError)),
       ),
+      compare: Effect.fn("PostgresWorkflowRepository.compare")(
+        (projectId, runId) =>
+          store
+            .compare(projectId, runId)
+            .pipe(Effect.mapError(toPersistenceError)),
+      ),
     })
   }),
 )

@@ -28,6 +28,33 @@ export interface WorkflowSummary {
   readonly runs: number
   readonly successRate: number | null
   readonly medianDurationMs: number
+  readonly p95DurationMs: number
+}
+
+export interface DailyInsight {
+  readonly date: string
+  readonly count: number
+  readonly completed: number
+  readonly failed: number
+  readonly successRate: number | null
+  readonly medianDurationMs: number | null
+  readonly p95DurationMs: number | null
+}
+
+export interface OperationInsight {
+  readonly name: string
+  readonly workflow: string
+  readonly count: number
+  readonly failed: number
+  readonly medianDurationMs: number
+  readonly p95DurationMs: number
+  readonly totalDurationMs: number
+}
+
+export interface FailureCodeInsight {
+  readonly code: string
+  readonly workflow: string
+  readonly count: number
 }
 
 export interface ProjectSnapshot {
@@ -38,11 +65,19 @@ export interface ProjectSnapshot {
     readonly failedRuns: number
     readonly successRate: number | null
     readonly medianDurationMs: number
+    readonly p95DurationMs: number
   }
-  readonly daily: ReadonlyArray<{
-    readonly date: string
-    readonly count: number
-  }>
+  readonly daily: ReadonlyArray<DailyInsight>
+  readonly operations: ReadonlyArray<OperationInsight>
+  readonly failureCodes: ReadonlyArray<FailureCodeInsight>
+}
+
+export interface RunComparison {
+  readonly current: StoredRun | null
+  readonly peers: ReadonlyArray<StoredRun>
+  readonly peerSuccessRate: number | null
+  readonly peerMedianDurationMs: number | null
+  readonly peerP95DurationMs: number | null
 }
 
 export interface RunTimelineEvent {
@@ -93,6 +128,10 @@ export interface WorkflowRepositoryService {
     projectId: string,
     runId: string,
   ) => Effect.Effect<RelatedRuns, PersistenceError>
+  readonly compare: (
+    projectId: string,
+    runId: string,
+  ) => Effect.Effect<RunComparison, PersistenceError>
 }
 
 export class WorkflowRepository extends Context.Tag(

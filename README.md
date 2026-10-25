@@ -17,13 +17,9 @@
   <a href="https://flowmark.dev"><img alt="flowmark.dev" src="https://img.shields.io/badge/flowmark.dev-0d1311" /></a>
 </p>
 
-Healthy servers are not a picture of operations. Mark the checkout, sync, or
-job you already run. Flowmark records the operations, progress, errors, and
-reported result — so you can see what the process produced, not reconstruct it
-from logs.
-
-Your application does the work. Flowmark observes it. It does not execute,
-schedule, or retry that work.
+Mark the checkout, sync, or job you already run. Flowmark records operations,
+progress, errors, and the reported result — then turns each process into
+volume, duration, success rate, and an outcome you can open.
 
 ```ts
 const flow = flowmark.workflow("checkout.order", { properties: { orderId } })
@@ -63,29 +59,27 @@ flowchart TB
   fail -.->|can supersede| done
 ```
 
-A handled error or a failed operation does not fail the run. Only `done()` or
-`fail()` ends it. Attach a bounded result on either — including partial work
-on failure.
+`done()` or `fail()` ends the run. Attach a bounded result on either —
+including partial work on failure. A handled error or a failed operation stays
+on the timeline until you complete or fail the run.
 
 ## What you get
 
-- A small TypeScript SDK for Node.js, Next.js, and the browser
+- A TypeScript SDK for Node.js, Next.js, and the browser
 - An API that validates and stores workflow events
-- A dashboard that groups executions by process and opens one run as evidence
-- Explicit links between related runs — you pass IDs, Flowmark does not invent a trace
-
-Flowmark is not a job runner, APM, log bucket, or product-analytics tool. Keep
-those. Use Flowmark for the process and its reported outcome.
+- A dashboard with volume, success rate, median and p95 duration, trends,
+  slowest operations, failure codes, and run comparison
+- Explicit links between related runs via IDs you pass
 
 ## Status
 
-The local product works: instrument a process, ingest events, sign in to the
-dashboard, and inspect a run. The SDK is not on npm yet. Hosted Flowmark,
-key management in the UI, and a published package are the next product steps.
+Instrument a process, ingest events, sign in to the dashboard, and inspect a
+run. The SDK is not on npm yet. Hosted Flowmark, key management in the UI,
+and a published package are next.
 
 - Product: [flowmark.dev](https://flowmark.dev)
 - SDK reference (this repo): [`apps/docs`](./apps/docs)
-- Purpose and limits: [north star](./NORTH-STAR.md)
+- Purpose: [north star](./NORTH-STAR.md)
 
 ## Local development
 
@@ -99,8 +93,8 @@ pnpm db:setup
 pnpm dev
 ```
 
-`pnpm dev` starts the apps and watches SDK/core. It does not start PostgreSQL
-or apply migrations. For a working local pipeline, follow the
+`pnpm dev` starts the apps and watches SDK/core. Start PostgreSQL and apply
+migrations separately. For a working local pipeline, follow the
 [development guide](./docs/development.md#local-demo-with-postgresql), then
 open the dashboard at `http://127.0.0.1:3001`.
 

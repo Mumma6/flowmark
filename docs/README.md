@@ -24,9 +24,10 @@ second copy in the app.
 
 ## Customer documentation
 
-SDK installation and usage, integrations, API behavior, security/privacy,
-self-hosting, and troubleshooting belong in the separate customer-facing docs
-app at [http://localhost:3002](http://localhost:3002) when running locally. Do
+SDK installation and usage, integrations, insights, API behavior,
+security/privacy, local development, and troubleshooting belong in the
+separate customer-facing docs app at
+[http://localhost:3002](http://localhost:3002) when running locally. Do
 not add contributor-only workspace setup or internal architectural material
 to those customer guides.
 

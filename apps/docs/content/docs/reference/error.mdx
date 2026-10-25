@@ -34,8 +34,7 @@ run.setProperties({ provider: "backup" })
 run.done({ result: { imported: 988, skipped: 12 } })
 ```
 
-An error event does not execute recovery. Use `handled: true` only if your code
-really handles the problem.
+Use `handled: true` when your code recovered from the problem.
 
 ## Terminal problem
 

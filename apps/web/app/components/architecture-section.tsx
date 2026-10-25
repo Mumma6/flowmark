@@ -62,16 +62,14 @@ export function ArchitectureSection() {
         className={`${shellClassName} grid items-center gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:gap-20`}
       >
         <div>
-          <p className={overlineClassName}>
-            Complements your observability stack
-          </p>
+          <p className={overlineClassName}>From code to insight</p>
           <h2 className={`${sectionTitleClassName} mt-4`}>
-            Review business operations alongside your tools.
+            Mark a process. See the numbers.
           </h2>
           <p className="mt-5 max-w-[420px] text-[13px] leading-8 text-muted-foreground">
-            Flowmark stores the operations, progress, errors, and results you
-            explicitly record. Keep your logs, traces, and analytics — this is
-            the business picture those tools do not organize for you.
+            Your application reports context, operations, progress, errors, and
+            a result. Flowmark stores that evidence and turns it into volume,
+            duration, and outcomes you can open.
           </p>
           <Button asChild className="mt-6" size="lg" variant="outline">
             <a href={docsUrl}>

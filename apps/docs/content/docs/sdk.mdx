@@ -1,25 +1,21 @@
 ---
 title: Quickstart
-description: Add your first workflow run without changing how your application executes.
+description: Add your first workflow run around the business logic you already have.
 ---
 
 ## Before you start
 
-Flowmark observes work your application already runs. You need a running
-Flowmark API, a project server-write key, and the SDK available to your project.
-There is no hosted API.
+You need a running Flowmark API, a project server-write key, and the SDK
+available to your project.
 
-**The SDK is not published to a package registry yet.** Do not run
-`pnpm add @flowmark/node` expecting a supported release. The current package
+**The SDK is not published to a package registry yet.** The current package
 is in `packages/sdk` in this repository. Existing workspace apps consume it as
 `"@flowmark/node": "workspace:*"` and build it with
 `pnpm --filter @flowmark/node build`. External installation instructions will
 be added when a release is available.
 
 The following example assumes the package and an API have been configured.
-For infrastructure requirements, read [self-hosting](/docs/local-development).
-For contributor-only setup, use the repository's internal contributor guide;
-the local development harness is never a public deployment.
+For local services, read [local development](/docs/local-development).
 
 ## 1. Configure the server
 

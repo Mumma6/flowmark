@@ -159,6 +159,8 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         totalRuns: 1,
         failedRuns: 0,
         successRate: 100,
+        medianDurationMs: expect.any(Number),
+        p95DurationMs: expect.any(Number),
       })
       expect(snapshot.runs[0]).toMatchObject({
         workflow: "todo.add",
@@ -166,6 +168,22 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         step: "saved",
       })
       expect(snapshot.daily).toHaveLength(30)
+      expect(snapshot.daily[0]).toMatchObject({
+        date: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
+        count: expect.any(Number),
+        completed: expect.any(Number),
+        failed: expect.any(Number),
+      })
+      expect(snapshot.operations).toEqual([])
+      expect(snapshot.failureCodes).toEqual([])
+      const comparison = await caller(readKey).run.compare({
+        id: snapshot.runs[0].id,
+      })
+      expect(comparison.current).toMatchObject({
+        workflow: "todo.add",
+        status: "Completed",
+      })
+      expect(comparison.peers).toEqual([])
       const timeline = await caller(readKey).run.detail({
         id: snapshot.runs[0].id,
       })
@@ -444,6 +462,22 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         (item) => item.externalId === operationRun,
       )!
       expect(run.status).toBe("Completed")
+      expect(snapshot.operations).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            name: "charge-payment",
+            workflow: "checkout.operations",
+            count: 1,
+            failed: 0,
+          }),
+          expect.objectContaining({
+            name: "reserve-stock",
+            workflow: "checkout.operations",
+            count: 1,
+            failed: 1,
+          }),
+        ]),
+      )
       const timeline = await caller(readKey).run.detail({ id: run.id })
       expect(timeline.map((event) => event.type)).toEqual([
         "started",
@@ -533,6 +567,20 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
       })
       const snapshot = await caller(readKey).project.snapshot()
       expect(snapshot.metrics.failedRuns).toBe(2)
+      expect(snapshot.failureCodes).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            code: "test-failure",
+            workflow: "todo.fail",
+            count: 1,
+          }),
+          expect.objectContaining({
+            code: "payment-declined",
+            workflow: "todo.fail.structured",
+            count: 1,
+          }),
+        ]),
+      )
       const failedSummary = snapshot.runs.find(
         (run) => run.externalId === failedRun,
       )!

@@ -18,8 +18,9 @@ run.step("source-loaded", {
 })
 ```
 
-`loadInvoices` is your application's helper. The marker only records that
-your code reached this checkpoint. It does not execute, wrap, or measure it.
+`loadInvoices` is your application's helper. The marker records that your
+code reached this checkpoint. Use [`operation()`](/docs/reference/operation)
+when you need a measured duration.
 
 ## Parameters
 

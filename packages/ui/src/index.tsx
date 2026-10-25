@@ -52,6 +52,15 @@ export {
 } from "./breadcrumb"
 export { Pagination, PaginationPrevious, PaginationNext } from "./pagination"
 export { Alert, AlertTitle, AlertDescription } from "./alert"
+export {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  ChartLegend,
+  ChartLegendContent,
+  ChartStyle,
+} from "./chart"
+export type { ChartConfig } from "./chart"
 export { Separator } from "./separator"
 export { Skeleton } from "./skeleton"
 export {

@@ -1,6 +1,6 @@
 ---
 title: operation
-description: Measure work without transferring execution ownership to Flowmark.
+description: Measure a named unit of work and record its duration.
 ---
 
 ## Signatures
@@ -30,8 +30,8 @@ failures.
 `options.properties` attach bounded JSON to the operation start event, the
 same way step properties stay on that step.
 
-An operation failure does not automatically fail the run. Your application
-decides whether to recover or call [`fail()`](/docs/reference/completion).
+If the operation fails, decide whether to recover or call
+[`fail()`](/docs/reference/completion) for the run.
 
 ## Explicit handle
 
@@ -69,4 +69,4 @@ An unclosed handle can leave the run open indefinitely.
 `run.fail()` supersedes pending completion.
 
 Calling an operation callback after the run is terminal still executes your
-callback, but does not reopen telemetry. Flowmark is not an execution guard.
+callback. The run stays closed.

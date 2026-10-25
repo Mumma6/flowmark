@@ -11,7 +11,7 @@ Network failures, queue overflow, browser shutdown, or process exit can lose
 events. Events in a run are delivered in order; separate runs may deliver
 concurrently.
 
-Flowmark is not a transaction boundary for your application.
+Delivery is best-effort. Application work continues regardless of telemetry.
 
 ## Failure boundaries
 

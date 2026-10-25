@@ -53,13 +53,22 @@ const snapshotSchema = `{
   }>,
   workflows: Array<{
     name: string, runs: number, successRate: number | null,
-    medianDurationMs: number
+    medianDurationMs: number, p95DurationMs: number
   }>,
   metrics: {
     totalRuns: number, failedRuns: number,
-    successRate: number | null, medianDurationMs: number
+    successRate: number | null, medianDurationMs: number, p95DurationMs: number
   },
-  daily: Array<{ date: string, count: number }>
+  daily: Array<{
+    date: string, count: number, completed: number, failed: number,
+    successRate: number | null, medianDurationMs: number | null,
+    p95DurationMs: number | null
+  }>,
+  operations: Array<{
+    name: string, workflow: string, count: number, failed: number,
+    medianDurationMs: number, p95DurationMs: number, totalDurationMs: number
+  }>,
+  failureCodes: Array<{ code: string, workflow: string, count: number }>
 }`
 
 const endpoints: Endpoint[] = [
@@ -201,7 +210,7 @@ Vary: Origin`,
     title: "Read the project overview",
     auth: "Private read key",
     description:
-      "No input. Returns the latest 100 runs, workflow summaries, aggregate metrics across recorded runs, and a 30-day daily chart. Project scope comes from the read key, never a client-supplied project ID.",
+      "No input. Returns the latest 100 runs, workflow summaries, volume/success/duration metrics, 30-day daily insight, slowest operations, and failure codes. Project scope comes from the read key, never a client-supplied project ID.",
     request: `curl "$FLOWMARK_API_URL/api/trpc/project.snapshot" \\
   -H "Authorization: Bearer $FLOWMARK_READ_KEY"`,
     response: `// Schema of result.data (not a literal JSON response)
@@ -225,7 +234,8 @@ Array<{
   name: string,
   runs: number,
   successRate: number | null,
-  medianDurationMs: number
+  medianDurationMs: number,
+  p95DurationMs: number
 }>`,
     codes: queryCodes,
   },
@@ -292,6 +302,30 @@ Array<{
     ],
     notes:
       "Unknown or cross-project run IDs return empty arrays. Empty parentMatches means no same-project parent run is currently recorded; multiple matches are possible because external IDs are unique within a workflow. Shared correlation IDs group application-declared runs and do not prove causation or create a distributed trace.",
+  },
+  {
+    id: "run-compare",
+    method: "GET",
+    path: "/api/trpc/run.compare",
+    title: "Compare a run to recent peers",
+    auth: "Private read key",
+    description:
+      "Input: { id: UUID }. Returns the current run and the last 20 finished or recorded peers of the same workflow, plus peer success rate, median duration, and p95 duration.",
+    request: `curl --get "$FLOWMARK_API_URL/api/trpc/run.compare" \\
+  -H "Authorization: Bearer $FLOWMARK_READ_KEY" \\
+  --data-urlencode 'input={"id":"11111111-1111-4111-8111-111111111111"}'`,
+    response: `// Schema of result.data
+{
+  current: StoredRun | null,
+  peers: StoredRun[],
+  peerSuccessRate: number | null,
+  peerMedianDurationMs: number | null,
+  peerP95DurationMs: number | null
+}`,
+    codes: [
+      ...queryCodes,
+      ["400", "Missing input or id is not a UUID (BAD_REQUEST)."],
+    ],
   },
 ]
 

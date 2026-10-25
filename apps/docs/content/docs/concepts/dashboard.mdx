@@ -5,10 +5,10 @@ description: Move from workflow outcomes to the evidence behind a specific execu
 
 ## Start with the workflow overview
 
-The overview shows aggregate metrics, recent daily volume, five workflows
-ordered by success rate, and five recent runs with business-result highlights.
-Use it to find a process that needs investigation, not just check whether
-the API is healthy.
+The overview shows volume, success rate, median and p95 duration, failed-run
+count, week-over-week change, 30-day volume and duration charts, slowest
+operations, failure codes, five workflows ordered by success rate, and five
+recent runs. Use it to find a process that needs investigation.
 
 ## Browse workflows and runs
 
@@ -21,10 +21,9 @@ correlation IDs or parent IDs. Combine workflow, status and naming-namespace
 filters; sort by start time or duration; optionally group rows by workflow.
 Each page contains at most 15 runs.
 
-Run browsing filters and paginates the project's latest **100 runs**, not its
-entire history. Metrics cover recorded runs and daily volume covers 30 days.
-Naming namespace is a convenience inferred from names, not verified event
-provenance.
+Run browsing filters and paginates the project's latest **100 runs**.
+Metrics cover recorded runs and daily volume covers 30 days. Naming
+namespace is inferred from workflow name prefixes.
 
 ## Open an execution
 
@@ -36,6 +35,8 @@ Run details open on **Outcome**. Separate tabs keep investigation focused:
   times, operation timing, properties, progress and safe error details.
   Each page contains at most 15 events.
 - **Context:** properties, environment, release and the external SDK run ID.
+- **Compare:** this run versus the last 20 of the same workflow — duration
+  against the peer median and p95, plus each peer's outcome.
 - **Related runs:** explicitly declared parent matches and correlated runs,
   paginated independently at 10 rows per table.
 
@@ -43,18 +44,15 @@ For an import, check the imported/skipped result first. For an interrupted sync,
 inspect the last-reported progress and the failure. For an order failure,
 inspect checkpoints before retrying work that may already have side effects.
 
-## Interpret the evidence honestly
+## How to read a run
 
-Completed means the application reported completion, not that every record was
-accepted. Failed means the application called `fail()`, not that nothing
-happened. A handled error can coexist with a completed run.
-
-Missing terminal events or stale progress are not proof of current activity.
-Flowmark does not automatically mark abandoned runs as business failures.
+Completed means the application called `done()`. Failed means it called
+`fail()`. A handled error can sit next to a completed run. Last-reported
+progress is the latest snapshot your code sent.
 
 ## Connect to deeper investigation
 
-Use stable, non-sensitive business identifiers in properties to correlate with
-your existing logs and provider tools. [Related runs](/docs/concepts/related-runs)
-are explicit associations, not automatically discovered distributed traces.
-The [API guide](/docs/api) explains internal IDs and project-scoped queries.
+Use stable, non-sensitive business identifiers in properties when you want to
+look up the same work in your logs. [Related runs](/docs/concepts/related-runs)
+use the IDs you pass. The [API guide](/docs/api) explains internal IDs and
+project-scoped queries.

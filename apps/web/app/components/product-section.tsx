@@ -17,7 +17,7 @@ const surfaces = [
   {
     title: "Operations dashboard",
     detail:
-      "Open a process and understand what it produced — the timeline, the gaps, and the reported outcome. No custom queries to write.",
+      "Volume, success rate, and duration for each process — then open one run for its timeline, progress, and reported result.",
     mark: "UI",
   },
 ] as const

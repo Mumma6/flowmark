@@ -5,6 +5,7 @@ import {
   WorkflowRepository,
   type ProjectSnapshot,
   type RelatedRuns,
+  type RunComparison,
   type RunTimelineEvent,
 } from "../ports/workflow-repository.js"
 
@@ -29,6 +30,10 @@ export interface GetProjectWorkflowDataService {
     header: string | null,
     runId: string,
   ) => Effect.Effect<RelatedRuns, Unauthorized | PersistenceError>
+  readonly compare: (
+    header: string | null,
+    runId: string,
+  ) => Effect.Effect<RunComparison, Unauthorized | PersistenceError>
   readonly snapshotForUser: (
     userId: string,
   ) => Effect.Effect<ProjectSnapshot, Unauthorized | PersistenceError>
@@ -49,6 +54,10 @@ export interface GetProjectWorkflowDataService {
     userId: string,
     runId: string,
   ) => Effect.Effect<RelatedRuns, Unauthorized | PersistenceError>
+  readonly compareForUser: (
+    userId: string,
+    runId: string,
+  ) => Effect.Effect<RunComparison, Unauthorized | PersistenceError>
 }
 
 export class GetProjectWorkflowData extends Context.Tag(
@@ -84,6 +93,13 @@ export class GetProjectWorkflowData extends Context.Tag(
         const projectId = yield* authorization.authorize(header, "read")
         return yield* repository.related(projectId, runId)
       })
+      const compare = Effect.fn("GetProjectWorkflowData.compare")(function* (
+        header: string | null,
+        runId: string,
+      ) {
+        const projectId = yield* authorization.authorize(header, "read")
+        return yield* repository.compare(projectId, runId)
+      })
 
       const snapshotForUser = Effect.fn(
         "GetProjectWorkflowData.snapshotForUser",
@@ -108,16 +124,24 @@ export class GetProjectWorkflowData extends Context.Tag(
           return yield* repository.related(projectId, runId)
         },
       )
+      const compareForUser = Effect.fn("GetProjectWorkflowData.compareForUser")(
+        function* (userId: string, runId: string) {
+          const projectId = yield* authorization.authorizeUser(userId)
+          return yield* repository.compare(projectId, runId)
+        },
+      )
 
       return GetProjectWorkflowData.of({
         snapshot,
         workflows,
         timeline,
         related,
+        compare,
         snapshotForUser,
         workflowsForUser,
         timelineForUser,
         relatedForUser,
+        compareForUser,
       })
     }),
   )

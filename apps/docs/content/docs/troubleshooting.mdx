@@ -29,8 +29,8 @@ then add a marker at the decision point you need to inspect.
 ## A run is failed
 
 `fail()` is an outcome reported by your application code. Inspect its error
-code, safe message, retryable flag, and preceding milestones. A retryable flag
-is descriptive; Flowmark does not retry business work.
+code, safe message, retryable flag, and preceding milestones. Your application
+decides whether to retry.
 
 ## Completion is waiting on an operation
 
@@ -60,5 +60,6 @@ terminal error and `fail(...)`.
   warning logs. Explicit `flush()` and `shutdown()` can also reject; handle them
   without masking the application's result. See [delivery](/docs/delivery).
 
-For deployment and authentication limits, see [self-hosting Flowmark](./local-development)
-and [security and privacy](./security-privacy).
+For the current stack and authentication, see
+[local development](./local-development) and
+[security and privacy](./security-privacy).

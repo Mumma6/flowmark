@@ -3,9 +3,9 @@ title: API and dashboard data
 description: Current ingestion endpoints, authorization, and typed queries.
 ---
 
-The repository API is a self-hosted Next.js application. There is no hosted
-Flowmark API. In local development it runs at `http://localhost:3003` and
-requires PostgreSQL for event ingestion and workflow queries.
+The API is a Next.js application. In local development it runs at
+`http://localhost:3003` and requires PostgreSQL for event ingestion and
+workflow queries.
 
 ## HTTP endpoints
 
@@ -49,6 +49,7 @@ The API router exposes these procedures at `/api/trpc`:
 - `workflow.list`
 - `run.detail` (requires a run UUID)
 - `run.related` (requires a run UUID)
+- `run.compare` (requires a run UUID)
 
 Use GET for these queries; the exported POST transport does not enable
 query-over-POST. `run.detail` accepts `{ "id": "<UUID>" }` as the URL-encoded
@@ -56,7 +57,9 @@ query-over-POST. `run.detail` accepts `{ "id": "<UUID>" }` as the URL-encoded
 `project.snapshot`, not the external `runId` sent during ingestion. A missing
 or differently scoped run returns an empty array, not a 404.
 `run.related` takes the same internal run UUID and returns project-scoped
-parent matches and correlated runs.
+parent matches and correlated runs. `run.compare` returns the current run
+and the last 20 peers of the same workflow, with peer success rate, median
+duration, and p95 duration.
 
 Dashboard reads use the signed-in Better Auth session. Query results and run
 lookups are scoped to a project the user belongs to. The dashboard's
@@ -86,7 +89,8 @@ application-declared associations, not causal proof or an OpenTelemetry trace.
 Events, runs, workflow definitions, and keys are stored in PostgreSQL through
 the database package. Metrics are computed by the backend rather than accepted
 as client-submitted aggregates. The dashboard currently shows the latest 100
-runs, with metrics across recorded runs and a 30-day chart.
+runs, with volume, success rate, median and p95 duration, daily trends,
+slowest operations, failure codes, and run comparison.
 
 The seeded `local@dev` account is a loopback fixture for the operations
 project, not a hosted owner. Registration creates a real local account and

@@ -1,0 +1,61 @@
+---
+title: Insights
+description: Volume, duration, success rate, slow operations, failure codes, and run comparison.
+---
+
+Flowmark turns marked processes into numbers operations can act on, then
+lets you open one execution for the story behind those numbers.
+
+## Process-level insight
+
+The dashboard overview and each workflow page summarize recorded runs:
+
+| Insight           | What it measures                                              |
+| ----------------- | ------------------------------------------------------------- |
+| Volume            | How many times the process ran                                |
+| Daily trend       | 30-day charts of completed vs failed volume and median/p95 duration |
+| Week over week    | Last 7 days versus the previous 7                             |
+| Success rate      | Completed share of finished runs                              |
+| Failed runs       | How many executions called `fail()`                           |
+| Median duration   | Typical time from start to `done()` or `fail()`               |
+| p95 duration      | How long the slower finished runs take                        |
+| Slow operations   | Named `operation()` work ranked by total recorded time        |
+| Failure codes     | Which `fail({ code })` values appear most                     |
+
+Duration is workflow performance: how long the business process took.
+Named [`operation()`](/docs/reference/operation) calls add their own start,
+end, and monotonic duration, so you can see which unit of work was slow.
+
+## Run-level insight
+
+Open one execution when the numbers need a story:
+
+| Insight        | Where it comes from                                      |
+| -------------- | -------------------------------------------------------- |
+| Outcome        | `done()` or `fail()`                                     |
+| Result         | The JSON summary attached to that terminal call          |
+| Progress       | The last `progress()` snapshot                           |
+| Operations     | Each named unit of work, with duration                   |
+| Compare        | This run versus the last 20 of the same workflow         |
+| Errors         | `error({ handled })` events and operation failures       |
+| Related runs   | `correlationId` and `parentRunId` you passed             |
+
+Compare shows this run's duration against the peer median and p95, plus
+each earlier run's status and duration delta.
+
+Use a result when someone needs counts or identifiers:
+`{ imported: 988, skipped: 12 }` or `{ shipmentId, paid: true }`.
+Use progress while work is still moving:
+`{ completed: 600, total: 1000, unit: "records" }`.
+
+## What to report so the numbers stay useful
+
+- Give each process a **stable name**, such as `checkout.order`.
+- Put the order or batch id in **properties**.
+- Wrap the work that can be slow in **`operation()`**.
+- Attach a small **result** on both success and failure.
+- Call **`fail({ code })`** with a stable code when the process fails.
+
+See [workflows and runs](/docs/concepts/runs) for the lifecycle, and
+[reading the dashboard](/docs/concepts/dashboard) for where these numbers
+appear.

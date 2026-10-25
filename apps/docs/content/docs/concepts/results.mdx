@@ -3,7 +3,7 @@ title: Business results
 description: Separate successful execution from what the process accomplished.
 ---
 
-## Status is not the whole outcome
+## Status and result together
 
 An import can complete and still skip records. A failed order can have already
 captured payment. Report the facts someone needs to decide what happens next.
@@ -28,8 +28,7 @@ reviewing what it contains.
 | Result: what the run produced               | 988 imported, 12 skipped         | `done({ result })` / `fail({ result })` |
 
 A failed run can still report what it produced before stopping. Use that
-summary together with checkpoints, progress, and the failure code. Do not
-synthesize a successful result from missing telemetry.
+summary together with checkpoints, progress, and the failure code.
 
 ## Make summaries useful to people
 
@@ -37,9 +36,8 @@ Prefer domain names and small counts: `imported`, `skipped`, `booked`, or
 `shipmentId`. Technical status codes alone rarely explain the outcome to
 someone outside engineering.
 
-Flowmark displays what your code reports; it does not verify the external
-payment provider or database. Keep this distinction when interpreting results,
-especially for browser instrumentation.
+Flowmark displays the summary your code attaches. Review what you put in
+`result`, especially for browser instrumentation.
 
 ## Bounds and privacy
 

@@ -1,8 +1,7 @@
 # Flowmark documentation
 
 The public documentation app uses Next.js, Fumadocs, and MDX. It documents
-the current SDK and self-hosted product, not a hosted service or a public
-development harness.
+the SDK, dashboard insights, and how to run the stack locally.
 
 ## Run and validate
 
@@ -25,7 +24,7 @@ Existing documentation URLs are preserved.
 - **Integrations:** Next.js and browser guides.
 - **SDK reference:** client creation/configuration, delivery lifecycle, run
   markers, types/bounds, proxy, advanced transports/errors.
-- **Operations:** self-hosting, HTTP API, security/privacy, troubleshooting.
+- **Operations:** local development, HTTP API, security/privacy, troubleshooting.
 
 MDX lives in `content/docs`. Each folder's `meta.json` controls sidebar order
 and grouping. The SDK reference has its own nested navigation with client,

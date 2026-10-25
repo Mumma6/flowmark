@@ -1,24 +1,10 @@
 ---
 title: Introduction
-description: Know what your application actually does.
+description: Turn business processes into data-driven insight.
 ---
 
-Track the processes that matter. See their executions, progress, errors, and
-business outcomes in one place, using explicit TypeScript markers.
-Your application runs the work; Flowmark records what your code reports.
-
-## Start here
-
-| Your goal                                | Read this                               |
-| ---------------------------------------- | --------------------------------------- |
-| Record your first execution              | [Quickstart](/docs/sdk)                 |
-| Understand workflows, runs, and outcomes | [Core concepts](/docs/concepts/runs)    |
-| Instrument a Next.js server              | [Next.js integration](/docs/nextjs)     |
-| Track browser interactions               | [Browser integration](/docs/browser)    |
-| Look up a method or type                 | [SDK reference](/docs/reference)        |
-| Operate your own instance                | [Self-hosting](/docs/local-development) |
-
-## A small instrumentation surface
+Mark a process in TypeScript. See its volume, duration, success rate, and
+the result each execution reported.
 
 ```ts
 const run = flowmark.workflow("invoice.import", { properties: { batchId } })
@@ -26,32 +12,38 @@ run.step("source-loaded", { properties: { count: 1000 } })
 run.done({ result: { imported: 988, skipped: 12 } })
 ```
 
-This is an instrumentation sketch, not a complete importer. The
-[quickstart](/docs/sdk) shows where the markers belong around real work,
-including failure handling and delivery.
+This is an instrumentation sketch. The [quickstart](/docs/sdk) shows where
+the markers belong around real work, including failure handling and delivery.
 
-## What you can learn
+## Start here
 
-- **What happened:** each run has a reported status, duration, and timeline.
-- **What it accomplished:** business summaries such as imported and skipped counts.
-- **Where to investigate:** checkpoints, measured operations, progress snapshots,
-  safe error details, and explicitly linked runs.
+| Your goal                                | Read this                               |
+| ---------------------------------------- | --------------------------------------- |
+| Record your first execution              | [Quickstart](/docs/sdk)                 |
+| Understand workflows, runs, and outcomes | [Core concepts](/docs/concepts/runs)    |
+| See what the dashboard measures          | [Insights](/docs/concepts/insights)     |
+| Instrument a Next.js server              | [Next.js integration](/docs/nextjs)     |
+| Track browser interactions               | [Browser integration](/docs/browser)    |
+| Look up a method or type                 | [SDK reference](/docs/reference)        |
+| Run the stack locally                    | [Local development](/docs/local-development) |
+
+## Insights you can use
+
+- **Volume:** how often a process runs, including daily counts for 30 days.
+- **Outcomes:** success rate among finished runs, plus failed-run count.
+- **Performance:** median duration from start to `done()` or `fail()`, and
+  per-operation timing on the timeline.
+- **Progress:** the last reported snapshot, such as 600 of 1,000 records.
+- **Result:** the business summary your code attached — imported, skipped,
+  shipped, paid.
 
 A completed import can still have skipped records. A failed order can already
-have captured a payment. Flowmark keeps those facts near the same execution
-instead of asking you to reconstruct them from unrelated log lines.
-
-## What Flowmark does not do
-
-It does not discover workflows, execute jobs, schedule work, retry business
-operations, or independently verify reported outcomes. It complements logs
-and traces rather than replacing them. Browser events are untrusted reports.
+have captured a payment. Those facts sit on the same execution.
 
 ## Current project status
 
-Flowmark is an early, self-hosted open-source project. The SDK is not yet
-published to a registry. There is no hosted API or turnkey production
-deployment. Self-hosted dashboard sign-in is email and password; sign-up
-creates a project and the first write key. Start with [quickstart](/docs/sdk)
-for package availability and [self-hosting](/docs/local-development) for
-deployment boundaries.
+The local product works: instrument a process, ingest events, sign in, and
+inspect a run. The SDK is not yet published to a registry. Hosted Flowmark
+and a published package are next. Dashboard sign-in is email and password;
+sign-up creates a project and the first write key. Start with
+[quickstart](/docs/sdk) for package availability.

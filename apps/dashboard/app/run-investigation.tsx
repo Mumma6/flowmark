@@ -37,9 +37,11 @@ import {
 } from "./run-presentation"
 import { StatusBadge, TablePagination, ViewLink } from "./dashboard-components"
 import { formatDuration, formatTimestamp, paginate } from "./dashboard-data"
+import { RunCompareChart } from "./insight-charts"
 import { EventTable, JsonData, type RunEvent } from "./run-event-table"
 
 type RunRelationships = inferRouterOutputs<AppRouter>["run"]["related"]
+type RunComparison = inferRouterOutputs<AppRouter>["run"]["compare"]
 type RelatedRun = RunRelationships["related"][number]
 
 function RelatedRunsTable({
@@ -105,16 +107,164 @@ function RelatedRunsTable({
   )
 }
 
+function durationDelta(current: number | null, peer: number | null) {
+  if (current == null || peer == null) {
+    return null
+  }
+  return current - peer
+}
+
+function RunComparisonPanel({
+  comparison,
+  loading,
+  error,
+}: {
+  comparison?: RunComparison
+  loading: boolean
+  error?: string
+}) {
+  const current = comparison?.current
+  const vsMedian = durationDelta(
+    current?.durationMs ?? null,
+    comparison?.peerMedianDurationMs ?? null,
+  )
+  const vsP95 = durationDelta(
+    current?.durationMs ?? null,
+    comparison?.peerP95DurationMs ?? null,
+  )
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Compared with the last 20 runs</CardTitle>
+        <CardDescription>
+          Same workflow. Duration and outcome against recent peers.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {error ? (
+          <Alert variant="destructive">
+            <AlertDescription>Could not load comparison: {error}</AlertDescription>
+          </Alert>
+        ) : loading ? (
+          <p role="status">Loading comparison…</p>
+        ) : !current || (comparison?.peers.length ?? 0) === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            No earlier runs of this workflow to compare yet.
+          </p>
+        ) : (
+          <>
+            <RunCompareChart
+              currentMs={current.durationMs}
+              peerMedianMs={comparison.peerMedianDurationMs}
+              peerP95Ms={comparison.peerP95DurationMs}
+            />
+            <dl className="grid gap-4 text-sm sm:grid-cols-3 [&_dt]:text-xs [&_dt]:text-muted-foreground [&_dd]:mt-1 [&_dd]:font-medium">
+              <div>
+                <dt>This run</dt>
+                <dd>{formatDuration(current.durationMs)}</dd>
+              </div>
+              <div>
+                <dt>Peer median</dt>
+                <dd>
+                  {formatDuration(comparison.peerMedianDurationMs)}
+                  {vsMedian != null && (
+                    <p className="mt-1 text-xs font-normal text-muted-foreground">
+                      {vsMedian === 0
+                        ? "Same as median"
+                        : vsMedian > 0
+                          ? `${formatDuration(vsMedian)} slower`
+                          : `${formatDuration(Math.abs(vsMedian))} faster`}
+                    </p>
+                  )}
+                </dd>
+              </div>
+              <div>
+                <dt>Peer p95</dt>
+                <dd>
+                  {formatDuration(comparison.peerP95DurationMs)}
+                  {vsP95 != null && (
+                    <p className="mt-1 text-xs font-normal text-muted-foreground">
+                      {vsP95 > 0
+                        ? "Slower than p95"
+                        : "Within the usual range"}
+                    </p>
+                  )}
+                </dd>
+              </div>
+            </dl>
+            <p className="text-xs text-muted-foreground">
+              Peer success rate:{" "}
+              {comparison.peerSuccessRate == null
+                ? "No finished peers"
+                : `${comparison.peerSuccessRate}%`}
+              . {comparison.peers.length} earlier runs.
+            </p>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Run</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Duration</TableHead>
+                  <TableHead>Delta vs this run</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {comparison.peers.map((peer) => {
+                  const delta = durationDelta(
+                    current.durationMs,
+                    peer.durationMs,
+                  )
+                  return (
+                    <TableRow key={peer.id}>
+                      <TableCell>
+                        <Link
+                          className="font-medium hover:text-primary hover:underline"
+                          href={`/runs/${peer.id}`}
+                        >
+                          <code>{peer.externalId}</code>
+                        </Link>
+                      </TableCell>
+                      <TableCell>
+                        <StatusBadge status={peer.status} />
+                      </TableCell>
+                      <TableCell>{formatDuration(peer.durationMs)}</TableCell>
+                      <TableCell>
+                        {delta == null
+                          ? "—"
+                          : delta === 0
+                            ? "Same"
+                            : delta > 0
+                              ? `${formatDuration(delta)} faster than this run`
+                              : `${formatDuration(Math.abs(delta))} slower than this run`}
+                      </TableCell>
+                    </TableRow>
+                  )
+                })}
+              </TableBody>
+            </Table>
+          </>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
 export function RunInvestigation({
   events,
   relationships,
   relationshipsLoading = false,
   relationshipsError,
+  comparison,
+  comparisonLoading = false,
+  comparisonError,
 }: {
   events: readonly RunEvent[]
   relationships?: RunRelationships
   relationshipsLoading?: boolean
   relationshipsError?: string
+  comparison?: RunComparison
+  comparisonLoading?: boolean
+  comparisonError?: string
 }) {
   const first = events[0]
   if (!first) {
@@ -178,6 +328,7 @@ export function RunInvestigation({
           <TabsTrigger value="outcome">Outcome</TabsTrigger>
           <TabsTrigger value="timeline">Timeline ({events.length})</TabsTrigger>
           <TabsTrigger value="context">Context</TabsTrigger>
+          <TabsTrigger value="compare">Compare</TabsTrigger>
           <TabsTrigger value="related">Related runs</TabsTrigger>
         </TabsList>
         <TabsContent value="outcome" className="mt-4 grid min-w-0 gap-5">
@@ -344,6 +495,13 @@ export function RunInvestigation({
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+        <TabsContent value="compare" className="mt-4 grid min-w-0 gap-5">
+          <RunComparisonPanel
+            comparison={comparison}
+            loading={comparisonLoading}
+            error={comparisonError}
+          />
         </TabsContent>
         <TabsContent value="related" className="mt-4 grid min-w-0 gap-5">
           <Card>

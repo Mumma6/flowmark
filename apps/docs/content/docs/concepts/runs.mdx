@@ -3,11 +3,11 @@ title: Workflows and runs
 description: Use stable process names and independent execution IDs.
 ---
 
-## A workflow is a name, not an executor
+## A workflow is a named process
 
 A workflow identifies a process your code already runs, such as
-`invoice.import` or `order.fulfill`. Flowmark does not register or execute a
-workflow definition. Calling `flowmark.workflow(name)` starts a new observed run.
+`invoice.import` or `order.fulfill`. Calling `flowmark.workflow(name)` starts
+a new observed run.
 
 Use a stable semantic name. Put the order ID or batch ID in properties, not
 in the workflow name; otherwise every order becomes a different workflow.
@@ -76,19 +76,17 @@ sequenceDiagram
   end
 ```
 
-`error({ handled: false })` alone does **not** fail the run. An operation failure
-does not either. Your code must call `fail()` for a terminal failed outcome.
+Call `fail()` when the run should count as failed. A handled `error()` or a
+failed operation stays on the timeline until you complete or fail the run.
 
 After `done()` is requested, new run markers are ignored. Existing open
 operations may still close; completion waits for the last one. An explicit
-`fail()` can supersede pending completion. After terminal completion/failure,
-later markers do not reopen the run.
+`fail()` can supersede pending completion.
 
-## Missing completion is uncertainty
+## Last reported evidence
 
-The run view describes recorded telemetry. If the process or delivery stops,
-the last event may be all that is available. A started run is not proof that
-work is still active; last-reported progress is not a verified database state.
+The run view shows recorded telemetry. If the process or delivery stops, the
+last event is what operations can see — including last-reported progress.
 Compare with application logs before deciding whether to retry.
 
 Next: [business results](/docs/concepts/results) and the

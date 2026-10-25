@@ -20,6 +20,7 @@ export type WorkflowSummary = {
   runs: number
   successRate: number | null
   medianDurationMs: number
+  p95DurationMs: number
 }
 
 export type ProjectMetrics = {
@@ -27,11 +28,41 @@ export type ProjectMetrics = {
   failedRuns: number
   successRate: number | null
   medianDurationMs: number
+  p95DurationMs: number
 }
 
-export type DailyVolume = {
+export type DailyInsight = {
   date: string
   count: number
+  completed: number
+  failed: number
+  successRate: number | null
+  medianDurationMs: number | null
+  p95DurationMs: number | null
+}
+
+export type OperationInsight = {
+  name: string
+  workflow: string
+  count: number
+  failed: number
+  medianDurationMs: number
+  p95DurationMs: number
+  totalDurationMs: number
+}
+
+export type FailureCodeInsight = {
+  code: string
+  workflow: string
+  count: number
+}
+
+export type RunComparison = {
+  readonly current: StoredRun | null
+  readonly peers: ReadonlyArray<StoredRun>
+  readonly peerSuccessRate: number | null
+  readonly peerMedianDurationMs: number | null
+  readonly peerP95DurationMs: number | null
 }
 
 export type RelatedRun = {
@@ -48,7 +79,9 @@ export type ProjectSnapshot = {
   readonly runs: ReadonlyArray<StoredRun>
   readonly workflows: ReadonlyArray<WorkflowSummary>
   readonly metrics: ProjectMetrics
-  readonly daily: ReadonlyArray<DailyVolume>
+  readonly daily: ReadonlyArray<DailyInsight>
+  readonly operations: ReadonlyArray<OperationInsight>
+  readonly failureCodes: ReadonlyArray<FailureCodeInsight>
 }
 
 export type RelatedRuns = {

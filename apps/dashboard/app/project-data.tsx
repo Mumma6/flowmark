@@ -25,6 +25,13 @@ import { WorkflowDirectory } from "./workflow-directory"
 import { RunInvestigation } from "./run-investigation"
 import { DataState, PageHeading, ViewLink } from "./dashboard-components"
 import { formatDuration, type WorkflowSummary } from "./dashboard-data"
+import {
+  DailyDurationPanel,
+  DailyVolumePanel,
+  FailureCodeTable,
+  OperationInsightsTable,
+  WeekOverWeek,
+} from "./insights-panels"
 import { RunExplorer, RunsTable } from "./runs-table"
 
 function useSnapshot() {
@@ -77,6 +84,7 @@ function WorkflowHealth({
               <TableHead>Workflow</TableHead>
               <TableHead>Runs</TableHead>
               <TableHead>Success</TableHead>
+              <TableHead>p95</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -96,12 +104,13 @@ function WorkflowHealth({
                     ? "Not reported"
                     : `${item.successRate}%`}
                 </TableCell>
+                <TableCell>{formatDuration(item.p95DurationMs)}</TableCell>
               </TableRow>
             ))}
             {attention.length === 0 && (
               <TableRow>
                 <TableCell
-                  colSpan={3}
+                  colSpan={4}
                   className="px-5 py-8 text-center text-sm text-muted-foreground"
                 >
                   No workflows recorded yet.
@@ -135,7 +144,13 @@ export function DashboardOverview() {
       label: "Median duration",
       value: metrics ? formatDuration(metrics.medianDurationMs) : "—",
       icon: Clock3,
-      note: "Recorded duration",
+      note: "Typical finished run",
+    },
+    {
+      label: "p95 duration",
+      value: metrics ? formatDuration(metrics.p95DurationMs) : "—",
+      icon: Clock3,
+      note: "Slow finished runs",
     },
     {
       label: "Failed runs",
@@ -148,7 +163,7 @@ export function DashboardOverview() {
     <div className="grid min-w-0 gap-6">
       <PageHeading
         title="Overview"
-        description="Workflow outcomes and recent application activity. Refreshes every 3 seconds."
+        description="Volume, success rate, duration, operations, and failure codes. Refreshes every 3 seconds."
       >
         <Refresh fetching={isFetching} onClick={() => void refetch()} />
       </PageHeading>
@@ -160,7 +175,7 @@ export function DashboardOverview() {
       {data && (
         <>
           <section
-            className="grid grid-cols-2 gap-3 xl:grid-cols-4"
+            className="grid grid-cols-2 gap-3 xl:grid-cols-5"
             aria-label="Project metrics"
           >
             {cards.map(({ label, value, icon: Icon, note }) => (
@@ -180,40 +195,21 @@ export function DashboardOverview() {
               </Card>
             ))}
           </section>
+          <WeekOverWeek daily={data.daily} runs={data.runs} />
+          <DailyVolumePanel daily={data.daily} />
           <div className="grid min-w-0 gap-5 xl:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>Run volume</CardTitle>
-                <CardDescription>
-                  {data?.daily.reduce((sum, day) => sum + day.count, 0) ?? "—"}{" "}
-                  runs in the last 30 days · UTC
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="p-0">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Latest 7 days</TableHead>
-                      <TableHead className="text-right">Runs</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {data?.daily
-                      .slice(-7)
-                      .reverse()
-                      .map((day) => (
-                        <TableRow key={day.date}>
-                          <TableCell>{day.date}</TableCell>
-                          <TableCell className="text-right tabular-nums">
-                            {day.count}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-            <WorkflowHealth workflows={data?.workflows ?? []} />
+            <DailyDurationPanel daily={data.daily} />
+            <WorkflowHealth workflows={data.workflows} />
+          </div>
+          <div className="grid min-w-0 gap-5 xl:grid-cols-2">
+            <OperationInsightsTable
+              operations={data.operations}
+              empty="No measured operations yet. Wrap slow work in operation()."
+            />
+            <FailureCodeTable
+              codes={data.failureCodes}
+              empty="No fail({ code }) reports yet."
+            />
           </div>
           <Card>
             <CardHeader className="flex-row flex-wrap items-start justify-between gap-4 space-y-0">
@@ -275,6 +271,25 @@ export function ProjectRuns({
           <Badge variant="outline">
             Median {formatDuration(summary.medianDurationMs)}
           </Badge>
+          <Badge variant="outline">
+            p95 {formatDuration(summary.p95DurationMs)}
+          </Badge>
+        </div>
+      )}
+      {workflow && data && (
+        <div className="grid min-w-0 gap-5 xl:grid-cols-2">
+          <OperationInsightsTable
+            operations={data.operations.filter(
+              (item) => item.workflow === workflow,
+            )}
+            empty="No measured operations on this workflow yet."
+          />
+          <FailureCodeTable
+            codes={data.failureCodes.filter(
+              (item) => item.workflow === workflow,
+            )}
+            empty="No fail({ code }) reports on this workflow yet."
+          />
         </div>
       )}
       <Alert>
@@ -329,6 +344,7 @@ export function RunDetail({ id }: { id: string }) {
     trpc.run.detail.queryOptions({ id }),
   )
   const relationships = useQuery(trpc.run.related.queryOptions({ id }))
+  const comparison = useQuery(trpc.run.compare.queryOptions({ id }))
   return (
     <div className="grid min-w-0 gap-6">
       <PageHeading
@@ -353,6 +369,9 @@ export function RunDetail({ id }: { id: string }) {
           relationships={relationships.data}
           relationshipsLoading={relationships.isPending}
           relationshipsError={relationships.error?.message}
+          comparison={comparison.data}
+          comparisonLoading={comparison.isPending}
+          comparisonError={comparison.error?.message}
         />
       )}
     </div>

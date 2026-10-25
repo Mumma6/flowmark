@@ -23,6 +23,93 @@ export function formatTimestamp(value: string) {
   return new Date(value).toISOString().replace("T", " ").slice(0, 19)
 }
 
+export function percentile(values: readonly number[], p: number) {
+  if (values.length === 0) {
+    return null
+  }
+  const sorted = [...values].sort((left, right) => left - right)
+  const index = (sorted.length - 1) * p
+  const low = Math.floor(index)
+  const high = Math.ceil(index)
+  const lower = sorted[low]
+  if (lower === undefined) {
+    return null
+  }
+  const upper = sorted[high]
+  if (upper === undefined || low === high) {
+    return lower
+  }
+  return lower + (upper - lower) * (index - low)
+}
+
+export type DayInsight = Snapshot["daily"][number]
+
+export function summarizeDays(days: readonly DayInsight[]) {
+  const count = days.reduce((sum, day) => sum + day.count, 0)
+  const completed = days.reduce((sum, day) => sum + day.completed, 0)
+  const failed = days.reduce((sum, day) => sum + day.failed, 0)
+  const finished = completed + failed
+  return {
+    count,
+    failed,
+    successRate:
+      finished === 0 ? null : Math.round((1000 * completed) / finished) / 10,
+  }
+}
+
+export function weekOverWeek(daily: readonly DayInsight[]) {
+  return {
+    current: summarizeDays(daily.slice(-7)),
+    previous: summarizeDays(daily.slice(-14, -7)),
+  }
+}
+
+export function durationInRange(
+  runs: readonly Run[],
+  startDate: string,
+  endDate: string,
+) {
+  const values = runs.flatMap((run) => {
+    const day = run.startedAt.slice(0, 10)
+    return day >= startDate && day <= endDate && run.durationMs != null
+      ? [run.durationMs]
+      : []
+  })
+  return {
+    median: percentile(values, 0.5),
+    p95: percentile(values, 0.95),
+  }
+}
+
+export function percentChange(current: number | null, previous: number | null) {
+  if (current == null || previous == null || previous === 0) {
+    return null
+  }
+  return Math.round((1000 * (current - previous)) / previous) / 10
+}
+
+const shareWidths = {
+  0: "w-0",
+  10: "w-[10%]",
+  20: "w-[20%]",
+  30: "w-[30%]",
+  40: "w-[40%]",
+  50: "w-[50%]",
+  60: "w-[60%]",
+  70: "w-[70%]",
+  80: "w-[80%]",
+  90: "w-[90%]",
+  100: "w-full",
+} as const
+
+export function shareWidthClass(percent: number) {
+  const bucket = Math.min(
+    100,
+    Math.max(0, Math.round(percent / 10) * 10),
+  ) as keyof typeof shareWidths
+  return shareWidths[bucket]
+}
+
 export interface RunFilters {
   search: string
   status: string

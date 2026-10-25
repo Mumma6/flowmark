@@ -11,7 +11,7 @@ const steps = [
         <span>12 failed</span>
       </>
     ),
-    copy: "“Completed” is not the same as the result operations needed. Open the process that needs attention.",
+    copy: "A completed job can still leave skipped work. Open the process and read the reported result.",
   },
   {
     index: "02 / In your tools",
@@ -40,9 +40,8 @@ export function ValueSection() {
             See what operations actually produced.
           </h2>
           <p className="mt-4 max-w-[650px] text-sm leading-7 text-muted-foreground">
-            Healthy infrastructure is not a business result. Open the process
-            that needs attention, understand what it reported, and fix the gap
-            — not everything that already worked.
+            Start from success rate and duration. Open the process that needs
+            attention, read what it reported, and fix the gap.
           </p>
         </div>
         <ol className="mt-10 grid gap-6 border-t border-border pt-6 sm:grid-cols-3 sm:gap-8">
@@ -66,8 +65,8 @@ export function ValueSection() {
           ))}
         </ol>
         <p className="mt-7 text-xs leading-7 text-muted-foreground">
-          Flowmark gives operations the reported result. Your logs explain the
-          details; your application handles the fix.
+          Flowmark gives operations the reported result. Your application
+          handles the fix.
         </p>
       </div>
     </section>

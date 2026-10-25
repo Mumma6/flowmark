@@ -31,7 +31,7 @@ export const examples: ReadonlyArray<CodeExample> = [
     label: "Checkout",
     question: "Payment succeeded. What did operations still need to do?",
     description:
-      "Mark the business steps you already run. Operations can see which ones completed — and what is still missing — without asking an engineer to reconstruct the trail.",
+      "Mark the business steps you already run. Operations can see which ones completed, how long they took, and what is still missing.",
     title: "checkout/complete-order.ts",
     existingCode: `async function checkoutOrder(orderId: string) {
   try {
@@ -75,7 +75,7 @@ export const examples: ReadonlyArray<CodeExample> = [
           title: "Payment captured",
           summary: "Business step reached",
           detail:
-            "The application reported this step after capturePayment returned. Flowmark records that report; it does not verify the payment with the provider.",
+            "The application reported this step after capturePayment returned. Operations can see that payment was captured before the failure.",
           kind: "step",
         },
         {
@@ -83,7 +83,7 @@ export const examples: ReadonlyArray<CodeExample> = [
           title: "Checkout failed",
           summary: "CHECKOUT_FAILED",
           detail:
-            "The catch block reported failure without a shipment result. Missing telemetry is not proof that no shipment exists. Check the application and provider before retrying.",
+            "The catch block reported CHECKOUT_FAILED. Payment is on the timeline; no shipment result was attached.",
           kind: "error",
         },
       ],
@@ -94,7 +94,7 @@ export const examples: ReadonlyArray<CodeExample> = [
     label: "Sync",
     question: "The integration stopped. How far did operations get?",
     description:
-      "Keep the sync you already have. Report progress so operations can see the last known point — not guess from a failed job status.",
+      "Keep the sync you already have. Report progress so operations can see how far it got, and how long the run took.",
     title: "jobs/sync-records.ts",
     existingCode: `async function syncRecords(sourceId: string) {
   try {
@@ -129,7 +129,7 @@ export const examples: ReadonlyArray<CodeExample> = [
       status: "Failed",
       headline: "Last reported: 600 of 1,000 records.",
       explanation:
-        "The sync failed. Do not assume the remaining records were updated.",
+        "The sync failed after 600 of 1,000 records. The last snapshot is on the run.",
       duration: "8.7 s",
       metrics: [
         { label: "Last reported", value: "600" },
@@ -142,7 +142,7 @@ export const examples: ReadonlyArray<CodeExample> = [
           title: "Progress reported",
           summary: "600 / 1,000 records",
           detail:
-            "The application reported this absolute progress snapshot after updateRecords returned. It is the last recorded progress, not a guarantee of the final database state.",
+            "The application reported 600 of 1,000 records after updateRecords returned. That is the last snapshot on this run.",
           kind: "step",
         },
         {
@@ -150,7 +150,7 @@ export const examples: ReadonlyArray<CodeExample> = [
           title: "Sync failed",
           summary: "SYNC_FAILED",
           detail:
-            "The catch block marked the process failed and rethrew the original error. Flowmark does not retry the sync. The original exception remains in your existing logs.",
+            "The catch block reported SYNC_FAILED with result { updated: 600 } and rethrew the original error.",
           kind: "error",
         },
       ],
@@ -161,7 +161,7 @@ export const examples: ReadonlyArray<CodeExample> = [
     label: "Scheduled job",
     question: "The nightly job completed. What did it actually produce?",
     description:
-      "A green job is not the same as the business result. Report what the job accomplished so operations can see succeeded, failed, and skipped work.",
+      "Report what the job accomplished so operations can see succeeded, failed, and skipped work — and how long the job ran.",
     title: "jobs/nightly.ts",
     existingCode: `async function runNightlyJob(jobId: string) {
   try {
@@ -192,7 +192,7 @@ export const examples: ReadonlyArray<CodeExample> = [
       status: "Completed",
       headline: "988 succeeded. 12 need attention.",
       explanation:
-        "The job completed, but the reported result is not a full success.",
+        "The job completed with 988 succeeded and 12 that need attention.",
       duration: "2.4 s",
       metrics: [
         { label: "Loaded", value: "1,000" },

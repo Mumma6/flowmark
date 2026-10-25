@@ -1,11 +1,10 @@
 ---
-title: Self-hosting Flowmark
-description: Understand the services and safeguards required to operate Flowmark.
+title: Local development
+description: Run the Flowmark API, database, and dashboard on your machine.
 ---
 
-There is no hosted Flowmark API or operated customer account service. The API,
-PostgreSQL database, and dashboard must run in infrastructure you control; this
-project does not yet provide a turnkey production deployment.
+Use this stack while you instrument an application locally. Hosted Flowmark
+is the product path; these services are what the repository runs today.
 
 ## Services to operate
 
@@ -42,12 +41,9 @@ provisioning, backups, retention and deletion policy, monitoring, and key
 rotation. Test these controls in a non-production project. Do not use the
 repository's public local-demo credentials with customer data.
 
-## The local development harness is not a deployment recipe
+## Local development harness
 
-The repository's invoice, inventory and order operations harness exists only
-for local development, with SDK diagnostics isolated in a separate project.
-It intentionally uses fixed development projects and
-development-only credentials. Its setup scripts, repository commands, ports,
-and PostgreSQL workflow are for contributors and are documented in the
-separate internal contributor guide. The harness is not a public demo,
-customer example, or deployment target.
+The repository's invoice, inventory and order operations harness is a
+loopback fixture for contributors. It uses fixed development projects and
+development-only credentials. Setup, ports, and PostgreSQL workflow live in
+the internal contributor guide.

@@ -2,6 +2,7 @@ import { ArchitectureSection } from "./components/architecture-section"
 import { ClosingSection } from "./components/closing-section"
 import { FaqSection } from "./components/faq-section"
 import { HeroSection } from "./components/hero-section"
+import { InsightsSection } from "./components/insights-section"
 import { InstrumentationSection } from "./components/instrumentation-section"
 import { ProductSection } from "./components/product-section"
 import { SiteFooter } from "./components/site-footer"
@@ -22,6 +23,7 @@ export default function HomePage() {
         <HeroSection />
         <InstrumentationSection />
         <ProductSection />
+        <InsightsSection />
         <ValueSection />
         <ArchitectureSection />
         <FaqSection />

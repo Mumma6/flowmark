@@ -49,9 +49,9 @@ export function HeroSection() {
             Turn business processes into data-driven insight.
           </p>
           <p className="mt-5 max-w-[40rem] text-pretty text-[15px] leading-7 text-muted-foreground sm:text-base sm:leading-8">
-            Healthy servers are not a picture of operations. Mark the business
-            logic you already run — then see operations, progress, errors, and
-            the reported result as insight, not a log trail to reconstruct.
+            Mark the checkout, sync, or job you already run. Flowmark turns
+            each execution into volume, duration, success rate, and a reported
+            result operations can open.
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             {facts.map((fact) => (
@@ -77,8 +77,8 @@ export function HeroSection() {
             </Button>
           </div>
           <p className="mt-5 text-[12px] text-muted-foreground">
-            Flowmark observes. It does not execute, schedule, or retry the
-            work.
+            TypeScript SDK. Hosted API and dashboard. Your application keeps
+            the business logic.
           </p>
         </div>
 
