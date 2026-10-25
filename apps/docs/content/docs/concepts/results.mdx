@@ -14,7 +14,7 @@ run.done({
 })
 ```
 
-`result` is an optional bounded JSON-safe object on the completion event.
+`result` is an optional bounded JSON-safe object on `done()` or `fail()`.
 Choose a small, explicit summary from your application's return value. Never
 pass an entire response, invoice collection, or raw function result without
 reviewing what it contains.
@@ -25,11 +25,11 @@ reviewing what it contains.
 | ------------------------------------------- | -------------------------------- | -------------------------------- |
 | Context: what this execution concerns       | `batchId`, provider, environment | `workflow()` / `setProperties()` |
 | Progress: what was last reported so far     | 600 of 1,000 products updated    | `progress()`                     |
-| Result: what the completed run accomplished | 988 imported, 12 skipped         | `done({ result })`               |
+| Result: what the run produced               | 988 imported, 12 skipped         | `done({ result })` / `fail({ result })` |
 
-A failed run has no completion result. Use its checkpoints, progress, and
-failure details to investigate partial work. Do not synthesize a successful
-result from missing telemetry.
+A failed run can still report what it produced before stopping. Use that
+summary together with checkpoints, progress, and the failure code. Do not
+synthesize a successful result from missing telemetry.
 
 ## Make summaries useful to people
 
@@ -45,4 +45,4 @@ especially for browser instrumentation.
 
 Results share the same [JSON bounds](/docs/reference/types#json-properties-and-results)
 as properties. Avoid credentials, personal data, raw errors, and payment details.
-See [`done()`](/docs/reference/completion) for completion behavior.
+See [`done()` and `fail()`](/docs/reference/completion) for terminal behavior.

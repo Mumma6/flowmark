@@ -17,8 +17,10 @@ export type {
   WorkflowOptions,
   WorkflowRunOptions,
   WorkflowDoneOptions,
+  WorkflowFailOptions,
   WorkflowStepOptions,
   WorkflowOperation,
+  WorkflowOperationOptions,
 } from "./types/index.js"
 export type {
   JsonValue,

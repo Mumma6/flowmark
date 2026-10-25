@@ -7,8 +7,10 @@ export type {
   FlowmarkClient,
   FlowmarkConfig,
   WorkflowDoneOptions,
+  WorkflowFailOptions,
   WorkflowOptions,
   WorkflowOperation,
+  WorkflowOperationOptions,
   WorkflowRunOptions,
   WorkflowStepOptions,
 } from "../types/index.js"

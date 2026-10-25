@@ -72,8 +72,8 @@ integration remains valuable; do not rebuild the harness merely to prepare infra
 - Read tables filter/page the latest 100 project runs client-side; this is not
   complete historical pagination.
 - Results are shown per run; there is no validated cross-run business aggregate.
-- Current results attach to completion, not terminal failure. Do not silently
-  alter the SDK/event contract to fix this without a real requirement.
+- Results attach to `done()` or `fail()`. They are application-reported
+  summaries, not verified correctness.
 - `error({ handled: true })` does not fail a run. Neither an observed error nor
   an operation failure automatically terminates its parent; `fail()` does.
 - Reported progress is absolute, not a delta or heartbeat. Related run metadata

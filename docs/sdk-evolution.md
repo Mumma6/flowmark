@@ -15,6 +15,33 @@ Flowmark should complement existing logs, tracing, error tracking, product
 analytics, and infrastructure monitoring. Do not become a generic log bucket,
 an infrastructure tracing replacement, or a workflow execution engine.
 
+## Flow API map
+
+The public run handle records a process execution. It does not execute,
+schedule, or retry application work.
+
+```mermaid
+flowchart TB
+  start["flowmark.workflow(name, options)"] --> flow[Flow]
+  flow --> runId[runId]
+  flow --> during[During the run]
+  flow --> terminal[Terminal - first wins]
+  during --> step["step(name, properties?)"]
+  during --> operation["operation(name, properties?)"]
+  during --> progress["progress snapshot"]
+  during --> error["error({ code, handled })"]
+  during --> setProperties["setProperties(properties)"]
+  operation --> handle["handle.done() / handle.fail({ code })"]
+  operation --> callback["or callback Promise"]
+  terminal --> done["done({ result? })"]
+  terminal --> fail["fail({ code, result? })"]
+  fail -.->|can supersede| done
+```
+
+Start options belong to `workflow()`: `id`, `properties`, `environment`,
+`release`, `correlationId`, and `parentRunId`. `cancel()` remains a later
+proposal, not a current method.
+
 ## Stage 1 delivered: explainable runs
 
 The current public entry points are `@flowmark/node`,
@@ -43,7 +70,7 @@ flow.done({ result: { saved: 1236, skipped: 4 } })
 | --------------------------- | -------------------------------------------------------------------------------------------- |
 | `step(name, options?)`      | Instant milestone. `options` may contain `properties`; step properties belong to that event. |
 | `done(options?)`            | Terminal success. `options` may contain an explicit `result` object.                         |
-| `fail(reason?)`             | Terminal failure; accepts no argument, a legacy string, or `{ code, message?, retryable? }`. |
+| `fail(options)`             | Terminal failure. Requires `{ code, message?, retryable?, result? }`.                        |
 | `error(error)`              | Non-terminal error marker `{ code, message?, retryable?, handled }`; `handled` is required.  |
 | `setProperties(properties)` | Append run context discovered after the run starts.                                          |
 
@@ -55,8 +82,9 @@ context; step-local properties remain attached to their own events.
 to depth 5, 128 total keys, 128 characters per key, 2,048 characters per
 string, and 16 KiB UTF-8 encoded per object. Raw `Error` objects and class
 instances are rejected rather than serialized. Failure codes are limited to
-128 characters and messages/reasons to 2,048 characters; legacy strings longer
-than the code limit are retained as message text under code `failed`.
+128 characters and messages to 2,048 characters. `done()` and `fail()` share
+the same optional result object. Ingested `failed` events may still carry a
+legacy `reason` field for older payloads.
 
 The event, persistence, and dashboard layers support these fields. A handled
 error can precede a successful terminal result; an unhandled error may be
@@ -73,20 +101,25 @@ start and terminal events. Durations use a monotonic clock; event timestamps
 are for ordering/display only.
 
 ```ts
-const payment = flow.operation("charge-payment")
+const payment = flow.operation("charge-payment", {
+  properties: { provider: "stripe" },
+})
 const stock = flow.operation("reserve-stock")
 payment.done()
 stock.fail({ code: "OUT_OF_STOCK", retryable: false })
 
-const receipt = await flow.operation("charge-payment", () =>
-  chargeCustomer(),
+const receipt = await flow.operation(
+  "charge-payment",
+  () => chargeCustomer(),
+  { properties: { provider: "stripe" } },
 )
 flow.progress({ completed: 125, total: 500, unit: "rows" })
 ```
 
 The callback overload returns the callback result or rethrows its exact
-original rejection. It records operation failure without implicitly failing
-the workflow. Explicit operations must be closed with `done()` or `fail()`;
+original rejection. A thrown structured failure is copied into telemetry; an
+`Error` is recorded as `operation_failed` plus its message. It records
+operation failure without implicitly failing the workflow. Explicit operations must be closed with `done()` or `fail()`;
 `flow.done()` with open operations defers completion until the final operation
 closes. The first completion request wins and preserves its result; other run
 markers are ignored after the request, but already-open operations may close.

@@ -13,7 +13,9 @@ import type {
   WorkflowRunOptions,
   WorkflowStepOptions,
   WorkflowDoneOptions,
+  WorkflowFailOptions,
   WorkflowOperation,
+  WorkflowOperationOptions,
   WorkflowProperties,
   WorkflowResult,
   WorkflowProgress,
@@ -52,6 +54,14 @@ type WorkflowFailure = {
   readonly code: string
   readonly message?: string
   readonly retryable?: boolean
+}
+
+type WorkflowFailOptions = WorkflowFailure & {
+  readonly result?: WorkflowResult
+}
+
+type WorkflowOperationOptions = {
+  readonly properties?: WorkflowProperties
 }
 
 type WorkflowError = WorkflowFailure & {

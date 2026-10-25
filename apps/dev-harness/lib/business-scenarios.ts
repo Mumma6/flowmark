@@ -100,9 +100,16 @@ export async function runBusinessScenario(
     })
     flow.progress({ completed: 0, total: stockRows.length, unit: "products" })
     for (const page of [1, 2, 3]) {
-      const operation = flow.operation("fetch-supplier-page")
+      const operation = flow.operation("fetch-supplier-page", {
+        properties: { page, supplier: "Studio Supply" },
+      })
       await pause(320)
       if (interrupted && page === 3) {
+        const result = {
+          updated,
+          expected: stockRows.length,
+          lastSavedPage: 2,
+        }
         operation.fail({
           code: "SUPPLIER_TIMEOUT",
           message: "Studio Supply timed out on page 3.",
@@ -112,20 +119,25 @@ export async function runBusinessScenario(
           code: "SUPPLIER_TIMEOUT",
           message: "Updated 8 products. Page 3 was not received.",
           retryable: true,
+          result,
         })
         return {
           ...base,
           status: "failed",
-          result: { updated, expected: stockRows.length, lastSavedPage: 2 },
+          result,
           summary: "8 updated · 4 not confirmed",
           nextAction:
             "Check supplier availability. Resume from page 3 using the saved checkpoint; pages 1 and 2 already changed stock.",
         }
       }
       operation.done()
-      await flow.operation("save-stock-levels", async () => {
-        await pause(110)
-      })
+      await flow.operation(
+        "save-stock-levels",
+        async () => {
+          await pause(110)
+        },
+        { properties: { page } },
+      )
       updated += stockRows.filter((item) => item.page === page).length
       flow.step("supplier-page-saved", { properties: { page, updated } })
       flow.progress({
@@ -166,6 +178,7 @@ export async function runBusinessScenario(
   const label = flow.operation("create-shipping-label")
   await pause(480)
   if (scenario === "order-carrier-down") {
+    const result = { stockReserved: true, labelCreated: false }
     label.fail({
       code: "CARRIER_UNAVAILABLE",
       message: "Parcel Express returned HTTP 503.",
@@ -175,11 +188,12 @@ export async function runBusinessScenario(
       code: "SHIPPING_LABEL_FAILED",
       message: "Stock is reserved, but no shipping label was created.",
       retryable: true,
+      result,
     })
     return {
       ...base,
       status: "failed",
-      result: { stockReserved: true, labelCreated: false },
+      result,
       summary: "Stock reserved · shipping blocked",
       nextAction:
         "Check the carrier and retry label creation against the existing reservation. Do not rerun the entire order or reserve stock again.",

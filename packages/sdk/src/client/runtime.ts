@@ -4,17 +4,15 @@ import { DeliveryQueue } from "../features/delivery/delivery-queue.js"
 import { WorkflowTransport } from "../features/delivery/ports/workflow-transport.js"
 import { WorkflowEngine } from "../features/workflows/workflow-engine.js"
 import { withOperationCallback } from "../utils/operation-callback.js"
+import { splitOperationArgs } from "../utils/operation-args.js"
 import type {
   FlowmarkClient,
   InstrumentationErrorHandler,
   WorkflowOperation,
+  WorkflowOperationOptions,
   WorkflowRunOptions,
 } from "../types/index.js"
-import type {
-  WorkflowFailure,
-  WorkflowStepName,
-  WorkflowProgress,
-} from "@flowmark/core"
+import type { WorkflowStepName, WorkflowProgress } from "@flowmark/core"
 
 /** Shared execution boundary; this module has no Node.js or framework imports. */
 export function makeClient(
@@ -51,38 +49,45 @@ export function makeClient(
           release: options.release ?? defaults.release,
         }),
       )
-      function operation(name: WorkflowStepName): WorkflowOperation
+      function operation(
+        name: WorkflowStepName,
+        options?: WorkflowOperationOptions,
+      ): WorkflowOperation
       function operation<T>(
         name: WorkflowStepName,
         callback: () => PromiseLike<T>,
+        options?: WorkflowOperationOptions,
       ): Promise<T>
       function operation<T>(
         name: WorkflowStepName,
-        callback?: () => PromiseLike<T>,
+        callbackOrOptions?:
+          | (() => PromiseLike<T>)
+          | WorkflowOperationOptions,
+        options?: WorkflowOperationOptions,
       ): WorkflowOperation | Promise<T> {
+        const args = splitOperationArgs(callbackOrOptions, options)
         const effectHandle = shutdownResult
           ? {
               operationId: globalThis.crypto.randomUUID(),
               done: Effect.void,
               fail: () => Effect.void,
             }
-          : runtime.runSync(handle.operation(name))
+          : runtime.runSync(handle.operation(name, args.options))
         const operationHandle: WorkflowOperation = {
           operationId: effectHandle.operationId,
           done: () => runMarker(effectHandle.done),
-          fail: (reason?: string | WorkflowFailure) =>
-            runMarker(effectHandle.fail(reason)),
+          fail: (failure) => runMarker(effectHandle.fail(failure)),
         }
-        if (callback === undefined) {
+        if (args.callback === undefined) {
           return operationHandle
         }
-        return withOperationCallback(operationHandle, callback)
+        return withOperationCallback(operationHandle, args.callback)
       }
       return {
         runId: handle.runId,
         step: (name, stepOptions) => runMarker(handle.step(name, stepOptions)),
         done: (doneOptions) => runMarker(handle.done(doneOptions)),
-        fail: (reason) => runMarker(handle.fail(reason)),
+        fail: (options) => runMarker(handle.fail(options)),
         error: (error) => runMarker(handle.error(error)),
         setProperties: (properties) =>
           runMarker(handle.setProperties(properties)),

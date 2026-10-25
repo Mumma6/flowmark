@@ -1,3 +1,4 @@
+import { Match } from "effect"
 import type { WorkflowEvent } from "@flowmark/core"
 import type { StoredWorkflowError } from "../../../schema/index.js"
 
@@ -6,33 +7,38 @@ const shortReason = (reason: string) =>
 
 export const eventFailure = (
   event: WorkflowEvent,
-): StoredWorkflowError | null => {
-  if (event.type === "failed") {
-    if (event.failure) {
-      return event.failure
-    }
-    if (event.reason === undefined) {
-      return null
-    }
-    return shortReason(event.reason)
-      ? { code: event.reason }
-      : { code: "failed", message: event.reason }
-  }
-  if (event.type === "operation_failed") {
-    return event.failure
-  }
-  return null
-}
+): StoredWorkflowError | null =>
+  Match.value(event).pipe(
+    Match.when({ type: "failed" }, ({ failure, reason }) => {
+      if (failure) {
+        return failure
+      }
+      if (reason === undefined) {
+        return null
+      }
+      return shortReason(reason)
+        ? { code: reason }
+        : { code: "failed", message: reason }
+    }),
+    Match.when({ type: "operation_failed" }, ({ failure }) => failure),
+    Match.orElse(() => null),
+  )
 
 export const eventProperties = (event: WorkflowEvent) =>
-  event.type === "started" ||
-  event.type === "step" ||
-  event.type === "properties"
-    ? event.properties
-    : undefined
+  Match.value(event).pipe(
+    Match.when({ type: "started" }, ({ properties }) => properties),
+    Match.when({ type: "step" }, ({ properties }) => properties),
+    Match.when({ type: "properties" }, ({ properties }) => properties),
+    Match.when({ type: "operation_started" }, ({ properties }) => properties),
+    Match.orElse(() => undefined),
+  )
 
 export const eventResult = (event: WorkflowEvent) =>
-  event.type === "completed" ? event.result : undefined
+  Match.value(event).pipe(
+    Match.when({ type: "completed" }, ({ result }) => result),
+    Match.when({ type: "failed" }, ({ result }) => result),
+    Match.orElse(() => undefined),
+  )
 
 export const eventError = (
   event: WorkflowEvent,

@@ -43,7 +43,7 @@ The delivered public API is ordinary TypeScript: create a client, create a
 workflow, record instantaneous `step()` milestones, report non-terminal
 `error()` markers, append discovered context with `setProperties()`, measure
 independently identified `operation()` units, report absolute `progress()`
-snapshots, and complete with `done({ result })` or terminal `fail()`. An
+snapshots, and complete with `done({ result })` or `fail({ code, result? })`. An
 error's required `handled` flag records whether application code recovered; it
 does not end the run. Optional `environment` and `release` metadata are
 accepted in client configuration or per-run options. `defineConfig()` is a

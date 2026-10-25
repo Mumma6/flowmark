@@ -1,80 +1,95 @@
-# Flowmark
+<p align="center">
+  <img src="docs/assets/flowmark-mark.svg" width="72" height="72" alt="Flowmark" />
+</p>
 
-**Workflow observability for application code.**
+<h1 align="center">flowmark.</h1>
 
-Start with [the north star](./NORTH-STAR.md) for the product's purpose,
-principles and decision filter. Use the [independent review prompt](./REVIEW-PROMPT.md)
-to challenge its value, architecture and developer experience.
+<p align="center">
+  <strong>Turn business processes into data-driven insight.</strong>
+</p>
 
-Flowmark lets developers instrument important business workflows and
-investigate what happened in a specific run: which milestones it reached, what
-context was known, whether an error was recovered or terminal, and what result
-the application recorded. It adds semantic workflow events around existing
-application code; it is not an execution engine or a replacement for logs,
-tracing, or error tracking.
+<p align="center">
+  Open source · Operations insight · TypeScript SDK
+</p>
+
+<p align="center">
+  <a href="./LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/License-MIT-b9f597?labelColor=0d1311" /></a>
+  <a href="https://flowmark.dev"><img alt="flowmark.dev" src="https://img.shields.io/badge/flowmark.dev-0d1311" /></a>
+</p>
+
+Healthy servers are not a picture of operations. Mark the checkout, sync, or
+job you already run. Flowmark records the operations, progress, errors, and
+reported result — so you can see what the process produced, not reconstruct it
+from logs.
+
+Your application does the work. Flowmark observes it. It does not execute,
+schedule, or retry that work.
 
 ```ts
-const flow = flowmark.workflow("checkout")
-flow.step("payment-created")
-flow.step("order-created")
-flow.done({ result: { orderId: "ord_123", total: 42.5 } })
+const flow = flowmark.workflow("checkout.order", { properties: { orderId } })
+
+try {
+  await capturePayment(orderId)
+  flow.step("payment-captured")
+  const shipment = await flow.operation("create-shipment", () =>
+    createShipment(orderId),
+  )
+  flow.done({ result: { shipmentId: shipment.id } })
+  return shipment
+} catch (error) {
+  flow.fail({
+    code: "CHECKOUT_FAILED",
+    result: { paid: true, shipped: false },
+  })
+  throw error
+}
 ```
 
-Each workflow call records a separate run. A run's name, steps, outcome, and
-optional properties are instrumentation supplied by your application. Keep
-sensitive values out of telemetry. Delivery is best-effort, so a telemetry
-failure does not roll back business work.
+```mermaid
+flowchart TB
+  start["flowmark.workflow(name, options)"] --> flow[Flow]
+  flow --> runId[runId]
+  flow --> during[During the run]
+  flow --> terminal[Terminal - first wins]
+  during --> step["step(name, properties?)"]
+  during --> operation["operation(name, properties?)"]
+  during --> progress["progress snapshot"]
+  during --> error["error({ code, handled })"]
+  during --> setProperties["setProperties(properties)"]
+  operation --> handle["handle.done() / handle.fail({ code })"]
+  operation --> callback["or callback Promise"]
+  terminal --> done["done({ result? })"]
+  terminal --> fail["fail({ code, result? })"]
+  fail -.->|can supersede| done
+```
 
-`flow.runId` exposes the SDK run identifier. Per-run `correlationId` and
-`parentRunId` let application code explicitly link browser, server, and job
-runs; the SDK does not propagate IDs automatically. Shared correlation groups
-application-declared runs but does not prove causation. Run links are project-
-scoped, and browser-provided metadata remains untrusted.
+A handled error or a failed operation does not fail the run. Only `done()` or
+`fail()` ends it. Attach a bounded result on either — including partial work
+on failure.
 
-## Current capabilities
+## What you get
 
-- A TypeScript SDK for server/Node.js, Next.js, and browser instrumentation.
-- An ingestion API that validates and persists events in PostgreSQL.
-- A dashboard that shows project-scoped runs, summaries, and timelines.
-- A local-only operations harness with invoice imports, inventory syncs and order fulfillment, plus isolated SDK diagnostics.
+- A small TypeScript SDK for Node.js, Next.js, and the browser
+- An API that validates and stores workflow events
+- A dashboard that groups executions by process and opens one run as evidence
+- Explicit links between related runs — you pass IDs, Flowmark does not invent a trace
 
-The SDK's `defineConfig()` is a typed identity helper: it returns its argument
-unchanged. You explicitly import that config and pass it to `createFlowmark()`;
-Flowmark does not search for or auto-load a `flowmark.config.ts` file.
+Flowmark is not a job runner, APM, log bucket, or product-analytics tool. Keep
+those. Use Flowmark for the process and its reported outcome.
 
-Server integrations use a private write key. Direct browser delivery uses a
-public browser key that is intentionally visible, can only write browser
-telemetry, and is restricted by allowed origins and a quota. Never put a server
-write key in browser code or a `NEXT_PUBLIC_*` variable. Browser telemetry is
-untrusted and must not be treated as proof of a business outcome.
+## Status
 
-There is no hosted Flowmark API. Local dashboard sign-in is Better Auth email
-and password; seed creates `local@dev` for the shared operations project, and
-registration creates a separate project with its first write key. Applications
-still authenticate with a project write key. The local demo credentials are
-not production secrets. There is no alerting, hosted key rotation, durable
-offline delivery, or operated production service.
+The local product works: instrument a process, ingest events, sign in to the
+dashboard, and inspect a run. The SDK is not on npm yet. Hosted Flowmark,
+key management in the UI, and a published package are the next product steps.
 
-## Repository
+- Product: [flowmark.dev](https://flowmark.dev)
+- SDK reference (this repo): [`apps/docs`](./apps/docs)
+- Purpose and limits: [north star](./NORTH-STAR.md)
 
-| Path                 | Purpose                                                          |
-| -------------------- | ---------------------------------------------------------------- |
-| `apps/server`        | Next.js server app, HTTP routes, and tRPC orchestration          |
-| `packages/api`       | Framework-independent API use cases, ports, and adapters         |
-| `apps/dashboard`     | Workflow runs, summaries, and timelines                          |
-| `apps/dev-harness`   | Loopback-only local harness for SDK and workflow development     |
-| `apps/docs`          | Customer-facing SDK and self-hosting documentation               |
-| `apps/internal-docs` | Unauthenticated, loopback-only contributor documentation         |
-| `apps/web`           | Product landing page                                             |
-| `packages/core`      | Workflow domain and event contract                               |
-| `packages/db`        | Drizzle schema, migrations, and database boundary                |
-| `packages/sdk`       | `@flowmark/node` server, Next.js, and browser SDK                |
-| `packages/ui`        | Shared UI primitives                                             |
-| `docs/`              | Canonical internal architecture, development, and product guides |
+## Local development
 
-## Development
-
-Requirements: Node.js 20.19+ (24 LTS recommended) and pnpm 10.
+Node.js 20.19+ (24 LTS recommended) and pnpm 10.
 
 ```sh
 pnpm install
@@ -82,39 +97,36 @@ pnpm dev:setup
 # Set DATABASE_URL in apps/server/.env.local to a running development database.
 pnpm db:setup
 pnpm dev
-pnpm test
-pnpm typecheck
 ```
 
-`pnpm dev` starts the six apps and watches the SDK/core build tasks through
-Turborepo's terminal UI; `pnpm dev:stream` is available without the
-interactive UI. Startup prepares missing local-demo environment files without
-overwriting existing configuration. It does not start PostgreSQL or apply migrations. For
-a working local data pipeline, configure PostgreSQL and demo mode as described
-in the [development guide](./docs/development.md#local-demo-with-postgresql),
-then open the [local dev harness](http://127.0.0.1:3004) and
-[dashboard](http://127.0.0.1:3001). The harness is for local development only
-and must never be deployed or exposed publicly.
+`pnpm dev` starts the apps and watches SDK/core. It does not start PostgreSQL
+or apply migrations. For a working local pipeline, follow the
+[development guide](./docs/development.md#local-demo-with-postgresql), then
+open the dashboard at `http://127.0.0.1:3001`.
 
-The SDK quickstart, integration examples, security/privacy guidance, and
-self-hosting guide are in the [customer documentation](http://localhost:3002/docs/introduction)
-when the docs app is running. Contributor setup, architecture, product
-decisions, and roadmap are in [internal docs](http://127.0.0.1:3005) when that
-local-only app is running; it has no authentication and must not be exposed
-publicly. See the [internal documentation index](./docs/README.md) and
-[development commands and app URLs](./docs/development.md).
+`apps/dev-harness` and `apps/internal-docs` are loopback-only. Do not deploy
+them.
 
-## MVP 0.1 and contributor handoff
+## Repository
 
-The local product core works, including email/password dashboard auth. Hosted
-deployment, key-management UI, and npm release are the remaining MVP 0.1 work.
+| Path | Purpose |
+| --- | --- |
+| `packages/sdk` | `@flowmark/node` — Node, Next.js, and browser SDK |
+| `packages/core` | Workflow domain and event contract |
+| `packages/api` | Use cases, ports, and adapters |
+| `packages/db` | Schema, migrations, and persistence |
+| `packages/ui` | Shared UI primitives |
+| `apps/server` | HTTP/tRPC shell |
+| `apps/dashboard` | Operations dashboard |
+| `apps/web` | Product landing |
+| `apps/docs` | Customer documentation |
+| `docs/` | Contributor architecture, decisions, and product guides |
 
-- [MVP infrastructure plan](./MVP-INFRA.md): hosting, PostgreSQL, Better Auth,
-  environment validation, migration/seed separation, and SDK distribution.
-  Confirmed choices are in [ADR 0006](./docs/decisions/0006-mvp-0.1-infrastructure.md).
-- [Phase status](./NEXT-PHASE-PLAN.md): delivered increments and outstanding
-  product validation.
-- [Contributor/agent handoff](./HANDOFF.md): current limitations, commands,
-  and previous verification.
-- [Agent guidelines](./AGENTS.md): persistent project rules. Portable architecture
-  and UI skills live in [`.agents/skills/`](./.agents/skills/).
+## Contributing
+
+- [Development commands](./docs/development.md)
+- [Architecture](./docs/architecture.md)
+- [Agent guidelines](./AGENTS.md)
+- [Handoff](./HANDOFF.md)
+
+License: [MIT](./LICENSE).

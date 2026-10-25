@@ -1,12 +1,12 @@
 import { notFound, redirect } from "next/navigation"
 import type { Metadata } from "next"
-import defaultMdxComponents from "fumadocs-ui/mdx"
 import {
   DocsBody,
   DocsDescription,
   DocsPage,
   DocsTitle,
 } from "fumadocs-ui/page"
+import { mdxComponents } from "../../mdx-components"
 import { source } from "@/lib/source"
 
 export default async function Page({
@@ -29,7 +29,7 @@ export default async function Page({
       <DocsTitle>{page.data.title}</DocsTitle>
       <DocsDescription>{page.data.description}</DocsDescription>
       <DocsBody>
-        <MDX components={defaultMdxComponents} />
+        <MDX components={mdxComponents} />
       </DocsBody>
     </DocsPage>
   )

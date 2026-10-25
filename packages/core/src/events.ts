@@ -60,6 +60,7 @@ const FailedEventSchema = Schema.Struct({
   timestamp: Schema.String,
   reason: Schema.optional(Schema.String.pipe(Schema.maxLength(2048))),
   failure: Schema.optional(WorkflowFailureSchema),
+  result: Schema.optional(WorkflowResultSchema),
 })
 
 const ErrorEventSchema = Schema.Struct({
@@ -86,6 +87,7 @@ const OperationStartedEventSchema = Schema.Struct({
   timestamp: Schema.String,
   operationId: Schema.UUID,
   operationName: OperationNameSchema,
+  properties: Schema.optional(WorkflowPropertiesSchema),
 })
 
 const OperationCompletedEventSchema = Schema.Struct({

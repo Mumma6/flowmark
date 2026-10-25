@@ -106,11 +106,10 @@ flow.done({ result: { receiptId: "receipt_123" } })
 `setProperties(properties)` appends a shallow context amendment; it does not
 rewrite earlier events. `error({ code, message?, retryable?, handled })` records
 an error without terminating the run, including when `handled` is false. Only
-`fail(...)` marks the run failed. It accepts a structured
-`{ code, message?, retryable? }` or the legacy string reason; `fail()` with no
-argument remains supported. Structured codes are limited to 128 characters,
-messages and legacy reasons to 2,048 characters. A legacy string over 128
-characters is retained as the message with the generic code `failed`.
+`fail({ code, message?, retryable?, result? })` marks the run failed. `code`
+is required. The optional `result` is the same bounded business summary
+accepted by `done()`. Structured codes are limited to 128 characters and
+messages to 2,048 characters.
 `done({ result })` records an optional result object. Terminal calls are
 idempotent. The first `done()` request wins: when operations remain open, the
 run waits and completes automatically after the last open operation closes,
@@ -174,16 +173,18 @@ measured with a monotonic clock, not by subtracting event timestamps. Sibling
 operations may overlap and complete in any order:
 
 ```ts
-const payment = flow.operation("charge-payment")
+const payment = flow.operation("charge-payment", {
+  properties: { provider: "stripe" },
+})
 const stock = flow.operation("reserve-stock")
 payment.done()
 stock.fail({ code: "out-of-stock", retryable: false })
 ```
 
 For Promise-based work, the callback overload closes the operation automatically.
-It returns the callback's result unchanged, and on rejection records a generic
-operation failure then rethrows the exact original cause. It does not fail the
-workflow:
+It returns the callback's result unchanged, and on rejection records the thrown
+structured failure or `operation_failed` plus an `Error` message, then rethrows
+the exact original cause. It does not fail the workflow:
 
 ```ts
 const receipt = await flow.operation("charge-payment", () => chargeCustomer())
@@ -272,7 +273,7 @@ In an event handler:
 const flow = flowmark.workflow("checkout.ui")
 flow.step("payment-form-submitted")
 // Your application code
-flow.done() // Or flow.fail("payment-failed")
+flow.done() // Or flow.fail({ code: "payment-failed" })
 ```
 
 Add a same-origin server route once:

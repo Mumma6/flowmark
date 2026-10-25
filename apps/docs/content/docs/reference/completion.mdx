@@ -7,7 +7,7 @@ description: Report a terminal outcome without returning or throwing on behalf o
 
 ```ts
 run.done(options?: WorkflowDoneOptions): void
-run.fail(reason?: string | WorkflowFailure): void
+run.fail(options: WorkflowFailOptions): void
 ```
 
 ## Completion
@@ -32,20 +32,21 @@ run.fail({
   code: "SUPPLIER_SYNC_FAILED",
   message: "Supplier inventory could not be synchronized",
   retryable: true,
+  result: { updated: 8, remaining: 4 },
 })
 ```
 
-| Structured field | Meaning                                              |
-| ---------------- | ---------------------------------------------------- |
-| `code`           | Required non-empty stable code, max 128 characters   |
-| `message`        | Optional safe description, max 2,048 characters      |
-| `retryable`      | Optional application policy, not a retry instruction |
+| Field        | Meaning                                              |
+| ------------ | ---------------------------------------------------- |
+| `code`       | Required non-empty stable code, max 128 characters   |
+| `message`    | Optional safe description, max 2,048 characters      |
+| `retryable`  | Optional application policy, not a retry instruction |
+| `result`     | Optional bounded business summary, same as `done()`  |
 
-`run.fail()` without a reason and `run.fail("legacy description")` remain
-supported. Prefer structured reasons for new instrumentation.
-
-Failure has no completion result. Use prior progress/checkpoints to investigate
-partial work.
+`code` is required. Do not pass a bare string. Attach `result` when the
+application already knows what was produced before the failure — partial
+counts, reserved work, or identifiers needed to continue. Progress is not a
+substitute for that summary.
 
 ## Your function is still in charge
 

@@ -74,9 +74,8 @@ The delivered public API includes:
 
 - `step(name, options?: { properties?: WorkflowProperties })`
 - `done(options?: { result?: WorkflowResult })`
-- `fail(reason?: string | WorkflowFailure)`, where a structured failure has
-  `{ code, message?, retryable? }`; the legacy no-argument and string forms
-  remain supported.
+- `fail({ code, message?, retryable?, result? })`. `code` is required. The
+  optional `result` is the same bounded business summary accepted by `done()`.
 - `error(error: WorkflowError)`, where the required `handled` boolean
   distinguishes a recovered problem from an unhandled one. This marker does
   not itself end the run.

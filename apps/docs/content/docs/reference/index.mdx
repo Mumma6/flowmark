@@ -15,6 +15,25 @@ description: The public TypeScript API, organized by what you want to record.
 
 Get a run handle with `flowmark.workflow(name, options?)`.
 All marker methods below return `void` except `operation()`.
+See [workflows and runs](/docs/concepts/runs) for the lifecycle map.
+
+```mermaid
+flowchart TB
+  start["flowmark.workflow(name, options)"] --> flow[Flow]
+  flow --> runId[runId]
+  flow --> during[During the run]
+  flow --> terminal[Terminal - first wins]
+  during --> step["step(name, properties?)"]
+  during --> operation["operation(name, properties?)"]
+  during --> progress["progress snapshot"]
+  during --> error["error({ code, handled })"]
+  during --> setProperties["setProperties(properties)"]
+  operation --> handle["handle.done() / handle.fail({ code })"]
+  operation --> callback["or callback Promise"]
+  terminal --> done["done({ result? })"]
+  terminal --> fail["fail({ code, result? })"]
+  fail -.->|can supersede| done
+```
 
 | API                                                | Purpose                                             |
 | -------------------------------------------------- | --------------------------------------------------- |

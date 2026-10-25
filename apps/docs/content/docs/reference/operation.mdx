@@ -6,8 +6,12 @@ description: Measure work without transferring execution ownership to Flowmark.
 ## Signatures
 
 ```ts
-run.operation(name: string): WorkflowOperation
-run.operation<T>(name: string, callback: () => PromiseLike<T>): Promise<T>
+run.operation(name: string, options?: WorkflowOperationOptions): WorkflowOperation
+run.operation<T>(
+  name: string,
+  callback: () => PromiseLike<T>,
+  options?: WorkflowOperationOptions,
+): Promise<T>
 ```
 
 ## Promise callback
@@ -18,8 +22,13 @@ const receipt = await run.operation("charge-payment", () => chargeCustomer())
 
 The SDK starts an operation, closes it when the callback settles, and preserves
 its return value. If it rejects, the operation is marked failed and the
-**same original cause is rethrown**. Synchronous callback throws are also
-recorded as operation failures.
+**same original cause is rethrown**. A thrown `{ code, message?, retryable? }`
+is copied into telemetry. An `Error` is recorded as `operation_failed` plus
+its message. Synchronous callback throws are also recorded as operation
+failures.
+
+`options.properties` attach bounded JSON to the operation start event, the
+same way step properties stay on that step.
 
 An operation failure does not automatically fail the run. Your application
 decides whether to recover or call [`fail()`](/docs/reference/completion).
@@ -27,7 +36,9 @@ decides whether to recover or call [`fail()`](/docs/reference/completion).
 ## Explicit handle
 
 ```ts
-const operation = run.operation("reserve-stock")
+const operation = run.operation("reserve-stock", {
+  properties: { warehouse: "eu-west" },
+})
 try {
   await reserveStock()
   operation.done()
@@ -41,10 +52,10 @@ try {
 | --------------------- | --------------------------------------- |
 | `operationId`         | Unique UUID for this operation's events |
 | `done(): void`        | Record success and monotonic duration   |
-| `fail(reason?): void` | Record failure and monotonic duration   |
+| `fail(failure): void` | Record a structured failure and monotonic duration |
 
-`reason` may be a structured `WorkflowFailure`, legacy string, or omitted.
-Do not include sensitive exception messages.
+`failure` is `{ code, message?, retryable? }`. `code` is required. Do not
+include sensitive exception messages.
 
 ## Overlap and completion
 

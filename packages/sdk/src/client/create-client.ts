@@ -10,9 +10,11 @@ import type {
   FlowmarkClient,
   FlowmarkConfig,
   WorkflowOperation,
+  WorkflowOperationOptions,
   WorkflowOptions,
 } from "../types/index.js"
 import { withOperationCallback } from "../utils/operation-callback.js"
+import { splitOperationArgs } from "../utils/operation-args.js"
 import type {
   WorkflowName,
   WorkflowProgress,
@@ -79,26 +81,32 @@ export function workflow(name: WorkflowName, options: WorkflowOptions): Flow {
       )
     })
   }
-  function operation(name: WorkflowStepName): WorkflowOperation
+  function operation(
+    name: WorkflowStepName,
+    options?: WorkflowOperationOptions,
+  ): WorkflowOperation
   function operation<T>(
     name: WorkflowStepName,
     callback: () => PromiseLike<T>,
+    options?: WorkflowOperationOptions,
   ): Promise<T>
   function operation<T>(
     name: WorkflowStepName,
-    callback?: () => PromiseLike<T>,
+    callbackOrOptions?: (() => PromiseLike<T>) | WorkflowOperationOptions,
+    options?: WorkflowOperationOptions,
   ): WorkflowOperation | Promise<T> {
+    const args = splitOperationArgs(callbackOrOptions, options)
     if (finished || completionRequested) {
       const ignored: WorkflowOperation = {
         operationId: globalThis.crypto.randomUUID(),
         done: () => undefined,
         fail: () => undefined,
       }
-      return callback === undefined
+      return args.callback === undefined
         ? ignored
-        : withOperationCallback(ignored, callback)
+        : withOperationCallback(ignored, args.callback)
     }
-    const handle = flow.operation(name)
+    const handle = flow.operation(name, args.options)
     activeOperations.add(handle.operationId)
     let closed = false
     const operationHandle: WorkflowOperation = {
@@ -114,21 +122,21 @@ export function workflow(name: WorkflowName, options: WorkflowOptions): Flow {
           finish(() => undefined)
         }
       },
-      fail: (reason) => {
+      fail: (failure) => {
         if (finished || closed) {
           return
         }
         closed = true
         activeOperations.delete(handle.operationId)
-        handle.fail(reason)
+        handle.fail(failure)
         if (completionRequested && activeOperations.size === 0) {
           finish(() => undefined)
         }
       },
     }
-    return callback === undefined
+    return args.callback === undefined
       ? operationHandle
-      : withOperationCallback(operationHandle, callback)
+      : withOperationCallback(operationHandle, args.callback)
   }
   return {
     runId: flow.runId,
@@ -148,7 +156,7 @@ export function workflow(name: WorkflowName, options: WorkflowOptions): Flow {
       }
       finish(() => flow.done(options))
     },
-    fail: (reason) => finish(() => flow.fail(reason)),
+    fail: (options) => finish(() => flow.fail(options)),
     error: (error) => {
       if (!finished && !completionRequested) {
         flow.error(error)

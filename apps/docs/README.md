@@ -20,8 +20,8 @@ Existing documentation URLs are preserved.
 ## Content structure
 
 - **Getting started:** introduction, quickstart, configuration.
-- **Core concepts:** workflows/runs, business results, dashboard interpretation,
-  explicit run links.
+- **Core concepts:** workflows/runs (including the Flow lifecycle diagrams),
+  business results, dashboard interpretation, explicit run links.
 - **Integrations:** Next.js and browser guides.
 - **SDK reference:** client creation/configuration, delivery lifecycle, run
   markers, types/bounds, proxy, advanced transports/errors.

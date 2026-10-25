@@ -529,6 +529,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
           message: "Payment was declined",
           retryable: false,
         },
+        result: { captured: false, reserved: true },
       })
       const snapshot = await caller(readKey).project.snapshot()
       expect(snapshot.metrics.failedRuns).toBe(2)
@@ -544,6 +545,10 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         (run) => run.externalId === structuredFailureRun,
       )!
       expect(structuredFailureSummary.status).toBe("Failed")
+      expect(structuredFailureSummary.result).toEqual({
+        captured: false,
+        reserved: true,
+      })
       const structuredTimeline = await caller(readKey).run.detail({
         id: structuredFailureSummary.id,
       })
@@ -551,6 +556,10 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         code: "payment-declined",
         message: "Payment was declined",
         retryable: false,
+      })
+      expect(structuredTimeline[1].result).toEqual({
+        captured: false,
+        reserved: true,
       })
       vi.stubEnv("FLOWMARK_DEMO_MODE", "false")
       expect(

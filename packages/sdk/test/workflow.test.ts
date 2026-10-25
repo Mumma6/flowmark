@@ -68,7 +68,10 @@ describe("workflow", () => {
     const transport = new MemoryTransport()
     const flow = workflow("checkout", { id: "order_456", transport })
 
-    flow.fail("payment-declined")
+    flow.fail({
+      code: "payment-declined",
+      result: { charged: false },
+    })
     flow.step("should-not-be-recorded")
     flow.done()
 
@@ -79,8 +82,10 @@ describe("workflow", () => {
     ])
     expect(transport.events[1]).toMatchObject({
       type: "failed",
-      reason: "payment-declined",
+      failure: { code: "payment-declined" },
+      result: { charged: false },
     })
+    expect(transport.events[1]).not.toHaveProperty("reason")
   })
 
   it("records amended context, recoverable errors and a structured result", async () => {
@@ -106,7 +111,7 @@ describe("workflow", () => {
     flow.step("ignored")
     flow.setProperties({ ignored: true })
     flow.error({ code: "ignored", handled: false })
-    flow.fail("ignored")
+    flow.fail({ code: "ignored" })
 
     await vi.waitFor(() => expect(transport.events).toHaveLength(6))
     expect(transport.events.map(({ type }) => type)).toEqual([
@@ -146,43 +151,30 @@ describe("workflow", () => {
     })
   })
 
-  it("records object failures and retains the legacy string failure event shape", async () => {
-    const structuredTransport = new MemoryTransport()
-    const structured = workflow("checkout", {
+  it("records structured failures with an optional business result", async () => {
+    const transport = new MemoryTransport()
+    const flow = workflow("checkout", {
       id: "order_structured_failure",
-      transport: structuredTransport,
+      transport,
     })
-    structured.fail({
+    flow.fail({
       code: "payment-declined",
       message: "Payment was declined",
       retryable: false,
+      result: { captured: false, reserved: true },
     })
 
-    const legacyTransport = new MemoryTransport()
-    const legacy = workflow("checkout", {
-      id: "order_legacy_failure",
-      transport: legacyTransport,
-    })
-    legacy.fail("payment-declined")
-
-    await vi.waitFor(() => {
-      expect(structuredTransport.events).toHaveLength(2)
-      expect(legacyTransport.events).toHaveLength(2)
-    })
-    expect(structuredTransport.events[1]).toMatchObject({
+    await vi.waitFor(() => expect(transport.events).toHaveLength(2))
+    expect(transport.events[1]).toMatchObject({
       type: "failed",
       failure: {
         code: "payment-declined",
         message: "Payment was declined",
         retryable: false,
       },
-      reason: "Payment was declined",
+      result: { captured: false, reserved: true },
     })
-    expect(legacyTransport.events[1]).toMatchObject({
-      type: "failed",
-      reason: "payment-declined",
-      failure: { code: "payment-declined" },
-    })
+    expect(transport.events[1]).not.toHaveProperty("reason")
   })
 
   it("tracks concurrent operations with unique IDs and monotonic durations", async () => {
@@ -191,7 +183,9 @@ describe("workflow", () => {
       id: "order_operations",
       transport,
     })
-    const payment = flow.operation("charge-payment")
+    const payment = flow.operation("charge-payment", {
+      properties: { provider: "stripe" },
+    })
     const inventory = flow.operation("reserve-stock")
     expect(payment.operationId).not.toBe(inventory.operationId)
     flow.done({ result: { outcome: "first-request" } })
@@ -226,6 +220,13 @@ describe("workflow", () => {
         event.type === "operation_failed",
     )
     expect(new Set(starts.map((event) => event.operationId)).size).toBe(2)
+    expect(starts).toMatchObject([
+      {
+        operationName: "charge-payment",
+        properties: { provider: "stripe" },
+      },
+      { operationName: "reserve-stock" },
+    ])
     expect(terminals).toMatchObject([
       {
         type: "operation_failed",
@@ -277,7 +278,10 @@ describe("workflow", () => {
     expect(transport.events[4]).toMatchObject({
       type: "operation_failed",
       operationName: "charge-payment",
-      failure: { code: "operation_callback_failed" },
+      failure: {
+        code: "operation_failed",
+        message: "application callback failed",
+      },
     })
     expect(transport.events[5]).toMatchObject({ type: "completed" })
   })
@@ -305,7 +309,35 @@ describe("workflow", () => {
     ])
     expect(transport.events[2]).toMatchObject({
       type: "operation_failed",
-      failure: { code: "operation_callback_failed" },
+      failure: {
+        code: "operation_failed",
+        message: "synchronous callback failure",
+      },
+    })
+  })
+
+  it("records a structured callback rejection as the operation failure", async () => {
+    const transport = new MemoryTransport()
+    const flow = workflow("checkout", {
+      id: "order_structured_operation_callback",
+      transport,
+    })
+    const original = {
+      code: "OUT_OF_STOCK",
+      message: "SKU-9 is unavailable",
+      retryable: false,
+    }
+    await expect(
+      flow.operation("reserve-stock", async () => {
+        throw original
+      }),
+    ).rejects.toBe(original)
+    flow.done()
+
+    await vi.waitFor(() => expect(transport.events).toHaveLength(4))
+    expect(transport.events[2]).toMatchObject({
+      type: "operation_failed",
+      failure: original,
     })
   })
 

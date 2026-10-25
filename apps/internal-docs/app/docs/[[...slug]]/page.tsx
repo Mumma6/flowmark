@@ -7,6 +7,7 @@ import {
 } from "fumadocs-ui/page"
 import { source } from "@/lib/source"
 import { ArchitectureOverview } from "../../architecture-overview"
+import { mdxComponents } from "../../mdx-components"
 
 export default async function Page({
   params,
@@ -33,11 +34,11 @@ export default async function Page({
               <summary>
                 Detailed contracts, security boundaries and storage behavior
               </summary>
-              <MDX />
+              <MDX components={mdxComponents} />
             </details>
           </>
         ) : (
-          <MDX />
+          <MDX components={mdxComponents} />
         )}
       </DocsBody>
     </DocsPage>

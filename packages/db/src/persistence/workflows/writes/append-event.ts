@@ -44,7 +44,10 @@ const runUpdates = (
   if (error !== null && isTerminalError(event)) {
     changes.error = error
   }
-  if (event.type === "completed" && result !== undefined) {
+  if (
+    (event.type === "completed" || event.type === "failed") &&
+    result !== undefined
+  ) {
     changes.result = result
   }
   return changes

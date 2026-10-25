@@ -2,7 +2,6 @@ import { Clock, Context, Effect, Layer, Ref } from "effect"
 import type {
   WorkflowError,
   WorkflowEvent,
-  WorkflowFailure,
   WorkflowName,
   WorkflowOperationFailure,
   WorkflowProperties,
@@ -11,6 +10,8 @@ import type {
 } from "@flowmark/core"
 import type {
   WorkflowDoneOptions,
+  WorkflowFailOptions,
+  WorkflowOperationOptions,
   WorkflowRunOptions,
   WorkflowStepOptions,
 } from "../../types/index.js"
@@ -19,9 +20,7 @@ import { DeliveryQueue } from "../delivery/delivery-queue.js"
 export interface WorkflowOperationHandle {
   readonly operationId: string
   readonly done: Effect.Effect<void>
-  readonly fail: (
-    reason?: string | WorkflowOperationFailure,
-  ) => Effect.Effect<void>
+  readonly fail: (failure: WorkflowOperationFailure) => Effect.Effect<void>
 }
 
 export interface WorkflowHandle {
@@ -31,13 +30,14 @@ export interface WorkflowHandle {
     options?: WorkflowStepOptions,
   ) => Effect.Effect<void>
   readonly done: (options?: WorkflowDoneOptions) => Effect.Effect<void>
-  readonly fail: (reason?: string | WorkflowFailure) => Effect.Effect<void>
+  readonly fail: (options: WorkflowFailOptions) => Effect.Effect<void>
   readonly error: (error: WorkflowError) => Effect.Effect<void>
   readonly setProperties: (
     properties: WorkflowProperties,
   ) => Effect.Effect<void>
   readonly operation: (
     name: WorkflowStepName,
+    options?: WorkflowOperationOptions,
   ) => Effect.Effect<WorkflowOperationHandle>
   readonly progress: (progress: WorkflowProgress) => Effect.Effect<void>
 }
@@ -158,7 +158,7 @@ export class WorkflowEngine extends Context.Tag(
           yield* complete(doneOptions)
         })
         const fail = Effect.fn("Flowmark.WorkflowEngine.fail")(function* (
-          reason?: string | WorkflowFailure,
+          options: WorkflowFailOptions,
         ) {
           if (yield* Ref.getAndSet(finished, true)) {
             return
@@ -166,29 +166,14 @@ export class WorkflowEngine extends Context.Tag(
           yield* Ref.set(completionRequested, false)
           yield* Ref.set(pendingCompletion, undefined)
           yield* Ref.set(activeOperations, new Set())
-          const failure: WorkflowFailure | undefined =
-            typeof reason === "string"
-              ? {
-                  code:
-                    reason.length > 0 && reason.length <= 128
-                      ? reason
-                      : "failed",
-                  ...(reason.length > 0 && reason.length <= 128
-                    ? {}
-                    : { message: reason }),
-                }
-              : reason
+          const { result, ...failure } = options
           yield* record((timestamp) => ({
             type: "failed",
             workflow,
             runId,
             timestamp,
-            ...(failure === undefined ? {} : { failure }),
-            ...(typeof reason === "string"
-              ? { reason }
-              : failure?.message === undefined
-                ? {}
-                : { reason: failure.message }),
+            failure,
+            ...(result === undefined ? {} : { result }),
           }))
         })
 
@@ -245,7 +230,10 @@ export class WorkflowEngine extends Context.Tag(
         )
 
         const operation = Effect.fn("Flowmark.WorkflowEngine.operation")(
-          function* (operationName: WorkflowStepName) {
+          function* (
+            operationName: WorkflowStepName,
+            operationOptions?: WorkflowOperationOptions,
+          ) {
             const operationId = yield* Effect.sync(() =>
               globalThis.crypto.randomUUID(),
             )
@@ -265,6 +253,9 @@ export class WorkflowEngine extends Context.Tag(
                 timestamp,
                 operationId,
                 operationName,
+                ...(operationOptions?.properties === undefined
+                  ? {}
+                  : { properties: operationOptions.properties }),
               }))
             }
             const duration = Effect.sync(() =>
@@ -300,7 +291,7 @@ export class WorkflowEngine extends Context.Tag(
               }
             })
             const fail = Effect.fn("Flowmark.WorkflowEngine.operation.fail")(
-              function* (reason?: string | WorkflowOperationFailure) {
+              function* (failure: WorkflowOperationFailure) {
                 if (yield* Ref.getAndSet(operationFinished, true)) {
                   return
                 }
@@ -314,18 +305,6 @@ export class WorkflowEngine extends Context.Tag(
                     return next
                   })
                 }
-                const failure =
-                  typeof reason === "string"
-                    ? {
-                        code:
-                          reason.length > 0 && reason.length <= 128
-                            ? reason
-                            : "operation_failed",
-                        ...(reason.length > 0 && reason.length <= 128
-                          ? {}
-                          : { message: reason }),
-                      }
-                    : (reason ?? { code: "operation_failed" })
                 const durationMs = yield* duration
                 yield* record((timestamp) => ({
                   type: "operation_failed",

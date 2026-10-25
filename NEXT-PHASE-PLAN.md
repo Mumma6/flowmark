@@ -58,7 +58,7 @@ deployment, authentication, or npm distribution already work.
 The POC report describes:
 
 - `createFlowmark()` and `client.workflow(name, options)` producing a run handle.
-- `step()`, `operation()`, `progress()`, `error()`, `setProperties()`, `done({ result })`, `fail()`.
+- `step()`, `operation()`, `progress()`, `error()`, `setProperties()`, `done({ result })`, `fail({ code, result? })`.
 - Event-based ingestion into a PostgreSQL-backed API.
 - A workflow directory, overview metrics, run-investigation timeline, context, errors, result JSON, and recent per-run outcome highlights.
 - A loopback-only operations harness with invoice import, inventory sync and order fulfillment, plus SDK diagnostics isolated in a separate project.

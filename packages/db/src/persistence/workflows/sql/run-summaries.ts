@@ -30,7 +30,7 @@ export const projectRunSummaries = (projectId: string) => sql`
       )[1] AS step,
       (
         array_agg(e.result ORDER BY e.occurred_at DESC, e.created_at DESC)
-        FILTER (WHERE e.type = 'completed' AND e.result IS NOT NULL)
+        FILTER (WHERE e.type IN ('completed', 'failed') AND e.result IS NOT NULL)
       )[1] AS result
     FROM workflow_runs r
     JOIN workflows w ON w.id = r.workflow_id

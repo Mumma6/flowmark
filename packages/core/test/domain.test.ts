@@ -70,6 +70,7 @@ describe("workflow event schema", () => {
         runId: "run-1",
         timestamp: "2026-10-23T12:03:00.000Z",
         failure: { code: "payment-declined", retryable: false },
+        result: { captured: false },
       },
       {
         type: "completed",
@@ -93,6 +94,7 @@ describe("workflow event schema", () => {
         timestamp: "2026-10-23T12:00:00.000Z",
         operationId: "00000000-0000-4000-8000-000000000011",
         operationName: "charge-payment",
+        properties: { provider: "stripe" },
       },
       {
         type: "operation_completed",

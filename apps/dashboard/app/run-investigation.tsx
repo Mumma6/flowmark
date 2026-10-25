@@ -134,7 +134,8 @@ export function RunInvestigation({
     .find((event) => event.type === "completed")
   const state = failure ? "Failed" : completed ? "Completed" : "Running"
   const progress = latestReportedProgress(events)
-  const highlights = getRunResultHighlights(completed?.result ?? {})
+  const reportedResult = failure?.result ?? completed?.result
+  const highlights = getRunResultHighlights(reportedResult ?? {})
   const errors = events.filter((event) => event.type === "error")
   const operations = events.filter(
     (event) => event.type === "operation_started",
@@ -224,19 +225,21 @@ export function RunInvestigation({
                 </dl>
               ) : (
                 <p className="text-xs leading-6 text-muted-foreground">
-                  {completed?.result != null
+                  {reportedResult != null
                     ? "Result recorded. Expand raw result data to inspect it."
-                    : completed
-                      ? "No business result was attached to completion."
-                      : "No completed business result recorded."}
+                    : failure
+                      ? "No business result was attached to the failure."
+                      : completed
+                        ? "No business result was attached to completion."
+                        : "No business result recorded."}
                 </p>
               )}
-              {completed?.result != null && (
+              {reportedResult != null && (
                 <Accordion>
                   <AccordionItem value="raw-result">
                     <AccordionTrigger>Raw result data</AccordionTrigger>
                     <AccordionContent>
-                      <JsonData value={completed.result} />
+                      <JsonData value={reportedResult} />
                     </AccordionContent>
                   </AccordionItem>
                 </Accordion>

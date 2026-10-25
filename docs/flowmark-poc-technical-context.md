@@ -140,8 +140,8 @@ describe the current experiment only; any can be altered or removed.
 | **Progress**             | An absolute snapshot (`completed`, optional `total`, optional `unit`), not a delta. Values must be safe nonnegative integers, and `completed <= total` when total is supplied.                                                             | `flow.progress({ completed, total, unit })`.                                                                       | Each snapshot is displayed as a timeline event. There is no separate progress chart or computed current-progress panel.                |
 | **Context / properties** | JSON-safe key/value data. Initial properties and later shallow amendments form run context; step properties stay attached to that step. Repeated top-level keys are replaced in the current context view, while the event history remains. | Initial `workflow(name, { properties })`, `flow.setProperties(properties)`, or step-local properties.              | Merged run context shown as JSON, plus the original properties/amendments in timeline events.                                          |
 | **Error**                | A non-terminal observed error with `code`, optional `message` and `retryable`, plus required `handled`. It does not determine the run outcome.                                                                                             | `flow.error({ code, handled, ... })`.                                                                              | Error event with handled/retryable labels and summary counts.                                                                          |
-| **Result**               | A small JSON-safe summary explicitly supplied by the application when it reports successful completion. It is not an automatically captured response/body.                                                                                 | `flow.done({ result })`.                                                                                           | Business result JSON panel and associated completion event.                                                                            |
-| **Outcome**              | Application-reported terminal success or failure. The database/dashboard derive status from terminal events. An operation failure alone is not a failed run.                                                                               | `flow.done()` or `flow.fail(reason?)`.                                                                             | `Completed`, `Failed`, or `Running` status; terminal failure detail when present.                                                      |
+| **Result**               | A small JSON-safe summary explicitly supplied by the application on `done()` or `fail()`. It is not an automatically captured response/body.                                                                                 | `flow.done({ result })` or `flow.fail({ code, result? })`.                                                          | Business result JSON panel on the terminal event.                                                                                      |
+| **Outcome**              | Application-reported terminal success or failure. The database/dashboard derive status from terminal events. An operation failure alone is not a failed run.                                                                               | `flow.done()` or `flow.fail({ code, message?, retryable?, result? })`.                                              | `Completed`, `Failed`, or `Running` status; terminal failure detail when present.                                                      |
 | **Correlation**          | Optional shared `correlationId` or explicit `parentRunId` metadata. It is user-propagated, not automatic distributed tracing or proof of causality.                                                                                        | Pass metadata to each run; use `flow.runId` to explicitly propagate a parent ID.                                   | Shared-correlation and parent-match sections with links to other runs in the project.                                                  |
 
 ### Overlaps and open distinctions
@@ -213,13 +213,17 @@ interface Flow {
   readonly runId: WorkflowRunId
   step(name: WorkflowStepName, options?: WorkflowStepOptions): void
   done(options?: WorkflowDoneOptions): void
-  fail(reason?: string | WorkflowFailure): void
+  fail(options: WorkflowFailOptions): void
   error(error: WorkflowError): void
   setProperties(properties: WorkflowProperties): void
-  operation(name: WorkflowStepName): WorkflowOperation
+  operation(
+    name: WorkflowStepName,
+    options?: WorkflowOperationOptions,
+  ): WorkflowOperation
   operation<T>(
     name: WorkflowStepName,
     callback: () => PromiseLike<T>,
+    options?: WorkflowOperationOptions,
   ): Promise<T>
   progress(progress: WorkflowProgress): void
 }
@@ -715,11 +719,18 @@ interface Flow {
   readonly runId: WorkflowRunId
   step(name: WorkflowStepName, options?: WorkflowStepOptions): void
   done(options?: { result?: WorkflowResult }): void
-  fail(reason?: string | WorkflowFailure): void
+  fail(options: WorkflowFailOptions): void
   error(error: WorkflowError): void
   setProperties(properties: WorkflowProperties): void
-  operation(name: WorkflowStepName): WorkflowOperation
-  operation<T>(name: WorkflowStepName, callback: () => PromiseLike<T>): Promise<T>
+  operation(
+    name: WorkflowStepName,
+    options?: WorkflowOperationOptions,
+  ): WorkflowOperation
+  operation<T>(
+    name: WorkflowStepName,
+    callback: () => PromiseLike<T>,
+    options?: WorkflowOperationOptions,
+  ): Promise<T>
   progress(progress: WorkflowProgress): void
 }
 ```

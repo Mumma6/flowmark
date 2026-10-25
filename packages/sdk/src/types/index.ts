@@ -76,6 +76,19 @@ export interface WorkflowDoneOptions {
   readonly result?: WorkflowResult
 }
 
+/**
+ * Structured terminal failure. `code` is required; `result` is the same kind of
+ * bounded business summary accepted by done().
+ */
+export interface WorkflowFailOptions extends WorkflowFailure {
+  readonly result?: WorkflowResult
+}
+
+/** Optional context attached when an operation starts. */
+export interface WorkflowOperationOptions {
+  readonly properties?: WorkflowProperties
+}
+
 /** Explicit lifecycle handle for a single independently identified operation. */
 export interface WorkflowOperation {
   /** Unique UUID identifying this operation event family. */
@@ -83,7 +96,7 @@ export interface WorkflowOperation {
   /** Marks the operation successful and records its monotonic duration. */
   done(): void
   /** Marks the operation failed and records its monotonic duration. */
-  fail(reason?: string | WorkflowFailure): void
+  fail(failure: WorkflowFailure): void
 }
 
 /** Advanced custom-transport options. Normal consumers should use createFlowmark(). */
@@ -122,9 +135,9 @@ export interface Flow {
   done(options?: WorkflowDoneOptions): void
   /**
    * Marks the run failed without throwing an application error.
-   * @param reason A legacy description, or structured failure information.
+   * Accepts a required failure code and an optional bounded business result.
    */
-  fail(reason?: string | WorkflowFailure): void
+  fail(options: WorkflowFailOptions): void
   /**
    * Records an error without terminating the run.
    * `handled` describes application handling; only fail() makes the run failed.
@@ -141,10 +154,14 @@ export interface Flow {
    * An operation callback reports its own success/failure and preserves the
    * callback's result or original rejection; it never fails the workflow.
    */
-  operation(name: WorkflowStepName): WorkflowOperation
+  operation(
+    name: WorkflowStepName,
+    options?: WorkflowOperationOptions,
+  ): WorkflowOperation
   operation<T>(
     name: WorkflowStepName,
     callback: () => PromiseLike<T>,
+    options?: WorkflowOperationOptions,
   ): Promise<T>
   /** Records an absolute progress snapshot; invalid values are rejected by validation. */
   progress(progress: WorkflowProgress): void

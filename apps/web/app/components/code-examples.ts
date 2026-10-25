@@ -109,9 +109,9 @@ export const examples: ReadonlyArray<CodeExample> = [
 }`,
     code: `async function syncRecords(sourceId: string) {
   const run = flowmark.workflow("records.sync", { properties: { sourceId } })
+  let updated = 0
   try {
     const total = await countRecords(sourceId)
-    let updated = 0
     for await (const page of fetchRecordPages(sourceId)) {
       await updateRecords(page)
       updated += page.length
@@ -119,7 +119,7 @@ export const examples: ReadonlyArray<CodeExample> = [
     }
     run.done({ result: { updated } })
   } catch (error) {
-    run.fail({ code: "SYNC_FAILED" })
+    run.fail({ code: "SYNC_FAILED", result: { updated } })
     logger.error({ sourceId, error }, "Sync failed")
     throw error
   }

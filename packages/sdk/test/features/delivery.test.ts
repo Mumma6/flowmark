@@ -193,7 +193,7 @@ describe("workflow delivery feature", () => {
       yield* flow.step("saved")
       yield* flow.done()
       yield* flow.step("ignored")
-      yield* flow.fail("ignored")
+      yield* flow.fail({ code: "ignored" })
     }).pipe(Effect.provide(WorkflowEngine.layer.pipe(Layer.provide(delivery))))
 
     expect(events).toHaveLength(0)

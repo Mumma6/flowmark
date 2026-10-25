@@ -44,7 +44,10 @@ describe("operations application scenarios", () => {
         expect(terminal).toMatchObject({ result: execution.result })
       } else {
         expect(events.some((event) => event.type === "completed")).toBe(false)
-        expect(terminal).toMatchObject({ failure: { retryable: true } })
+        expect(terminal).toMatchObject({
+          failure: { retryable: true },
+          result: execution.result,
+        })
       }
       if (scenario.id === "invoices-rejected") {
         expect(execution.result).toEqual({ total: 5, imported: 3, skipped: 2 })

@@ -1,4 +1,5 @@
 import type { WorkflowOperation } from "../types/index.js"
+import { failureFromUnknown } from "./failure-from-unknown.js"
 
 export function withOperationCallback<T>(
   operation: WorkflowOperation,
@@ -8,7 +9,7 @@ export function withOperationCallback<T>(
   try {
     result = callback()
   } catch (cause) {
-    operation.fail({ code: "operation_callback_failed" })
+    operation.fail(failureFromUnknown(cause))
     return Promise.reject(cause)
   }
   return Promise.resolve(result).then(
@@ -17,7 +18,7 @@ export function withOperationCallback<T>(
       return value
     },
     (cause: unknown) => {
-      operation.fail({ code: "operation_callback_failed" })
+      operation.fail(failureFromUnknown(cause))
       throw cause
     },
   )
