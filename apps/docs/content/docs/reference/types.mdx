@@ -1,0 +1,85 @@
+---
+title: Types and payload bounds
+description: Public types for run markers and the values safe to send.
+---
+
+## Import types
+
+```ts
+import type {
+  Flow,
+  FlowmarkClient,
+  FlowmarkConfig,
+  WorkflowRunOptions,
+  WorkflowStepOptions,
+  WorkflowDoneOptions,
+  WorkflowOperation,
+  WorkflowProperties,
+  WorkflowResult,
+  WorkflowProgress,
+  WorkflowError,
+  WorkflowFailure,
+} from "@flowmark/node"
+```
+
+The Next.js entry exports the common run/configuration types; the browser
+entry exports `BrowserFlowmarkConfig` instead of `FlowmarkConfig`.
+The Next.js client itself exposes only `workflow()`, not the full
+`FlowmarkClient` lifecycle.
+
+## JSON properties and results
+
+`WorkflowProperties` and `WorkflowResult` are plain JSON-safe objects.
+Values can contain strings, finite numbers, booleans, null, arrays, and nested
+plain objects. Do not pass `undefined`, functions, dates, bigint, class
+instances, cyclic objects, or raw errors.
+
+| Bound                  | Maximum          |
+| ---------------------- | ---------------- |
+| Nested levels          | 5                |
+| Keys across the object | 128              |
+| Key length             | 128 characters   |
+| String value length    | 2,048 characters |
+| Encoded object size    | 16 KiB           |
+
+Keep payloads well below these limits. Validation failures on markers are sent
+to instrumentation diagnostics; invalid start context can throw.
+
+## Structured telemetry types
+
+```ts
+type WorkflowFailure = {
+  readonly code: string
+  readonly message?: string
+  readonly retryable?: boolean
+}
+
+type WorkflowError = WorkflowFailure & {
+  readonly handled: boolean
+}
+
+type WorkflowProgress = {
+  readonly completed: number
+  readonly total?: number
+  readonly unit?: string
+}
+```
+
+`WorkflowOperationFailure` has the same structured fields as a workflow
+failure. Error codes are 1-128 characters; messages are at most 2,048.
+[Progress](/docs/reference/progress) has safe-integer and total constraints.
+
+## Identifiers
+
+`WorkflowRunId` and `WorkflowCorrelationId` are string types, not business
+identity or authorization. Use fresh run IDs and stable workflow names.
+Correlation IDs are nonblank and at most 128 characters; parent run IDs are
+nonblank and at most 200. Ingestion identifiers such as workflow names and
+run IDs must be nonblank and at most 200 characters.
+
+## Advanced types
+
+The Node entry additionally exports `WorkflowEvent`, `JsonValue`,
+`WorkflowOptions`, and `InstrumentationErrorHandler`.
+See [advanced exports](/docs/reference/advanced) for Effect-based transports
+and diagnostics errors. Ordinary consumers do not need to use Effect.

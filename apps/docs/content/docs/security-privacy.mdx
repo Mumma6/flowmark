@@ -1,0 +1,45 @@
+---
+title: Security and privacy
+description: Protect keys and choose safe workflow telemetry.
+---
+
+Flowmark stores the workflow names, steps, context, errors, and result summaries
+that your application explicitly sends. Treat them as application data, not as
+anonymous or harmless metadata.
+
+## Keep credentials on the right side
+
+- Use the private server-write key only in Node.js or server-only modules.
+- Use the separate read key only on the dashboard server.
+- Browser keys are public by design and can submit browser telemetry only.
+  They cannot read data or authorize private server writes.
+- Configure exact browser origins and rate limits. CORS and origin checks are
+  not user authentication; browser events are forgeable and must not be used as
+  proof of a payment or other business outcome.
+
+Never place a private key in a `NEXT_PUBLIC_*` variable, browser config file, or
+client bundle.
+
+## Choose what to record
+
+Use stable names and small JSON-safe properties. Avoid secrets, credentials,
+payment information, request bodies, raw exception objects, stack traces, and
+unnecessary personal data. A safe example is `{ provider: "backup" }`; an
+order ID can still be personal data in your context and retention model.
+
+Use stable error codes with an optional message that you have reviewed. Do not
+send the full error object. Set `handled: true` only when your application has
+recovered; Flowmark does not infer recovery or retry the operation.
+
+Workflow properties and results are bounded to depth 5, 128 keys, 128
+characters per key, 2,048 characters per string, and 16 KiB encoded per object.
+Keep payloads well below these limits and send only fields that help investigate
+the run.
+
+## Data ownership and operation
+
+The current project is self-hosted and has no hosted Flowmark data service or
+customer account provisioning. Your deployment owns database access, backups,
+retention, deletion, key rotation, and authorization. The product does not yet
+provide a complete retention/deletion control plane or production user login.
+See [self-hosting Flowmark](./local-development) for deployment boundaries.

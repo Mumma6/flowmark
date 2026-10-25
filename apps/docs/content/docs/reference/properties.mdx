@@ -1,0 +1,40 @@
+---
+title: setProperties
+description: Append context discovered after a run starts without rewriting history.
+---
+
+## Signature
+
+```ts
+run.setProperties(properties: WorkflowProperties): void
+```
+
+## Example
+
+```ts
+const run = flowmark.workflow("invoice.import", {
+  properties: { batchId },
+})
+run.setProperties({ provider: "backup", sourceFormat: "csv" })
+```
+
+Initial context belongs in `workflow(name, { properties })`. Use this marker
+for facts discovered while the run is executing.
+
+## Merge behavior
+
+Each call appends a context amendment event. The run's current properties use
+a **shallow merge**; when a top-level key repeats, the newest value wins.
+Nested objects are replaced, not deeply merged. Previous event history remains
+unchanged.
+
+Step-local context instead belongs in
+[`step(name, { properties })`](/docs/reference/step). A completed business
+outcome belongs in [`done({ result })`](/docs/reference/completion).
+
+## Bounds and lifecycle
+
+Only bounded JSON-safe plain objects are supported; see
+[data types and bounds](/docs/reference/types). Invalid payloads are reported
+through instrumentation diagnostics. Amendments after completion request or
+terminal failure are ignored.

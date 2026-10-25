@@ -1,0 +1,112 @@
+---
+title: Quickstart
+description: Add your first workflow run without changing how your application executes.
+---
+
+## Before you start
+
+Flowmark observes work your application already runs. You need a running
+Flowmark API, a project server-write key, and the SDK available to your project.
+There is no hosted API.
+
+**The SDK is not published to a package registry yet.** Do not run
+`pnpm add @flowmark/node` expecting a supported release. The current package
+is in `packages/sdk` in this repository. Existing workspace apps consume it as
+`"@flowmark/node": "workspace:*"` and build it with
+`pnpm --filter @flowmark/node build`. External installation instructions will
+be added when a release is available.
+
+The following example assumes the package and an API have been configured.
+For infrastructure requirements, read [self-hosting](/docs/local-development).
+For contributor-only setup, use the repository's internal contributor guide;
+the local development harness is never a public deployment.
+
+## 1. Configure the server
+
+Set these in your server environment, not in browser-visible variables:
+
+```bash
+FLOWMARK_API_KEY=<your-project-server-write-key>
+FLOWMARK_API_URL=https://your-flowmark-api.example
+```
+
+The URL is the API origin, not `/v1/events`. Use your own deployment address.
+Production requires an explicit URL. See [configuration](/docs/configuration)
+for defaults and overrides.
+
+## 2. Create one shared client
+
+```ts
+// lib/flowmark.ts (server only)
+import { createFlowmark } from "@flowmark/node"
+
+export const flowmark = createFlowmark()
+```
+
+Using Next.js? Import from `@flowmark/node/next` instead and follow the
+[Next.js guide](/docs/nextjs) for automatic request-lifecycle delivery.
+
+## 3. Add markers to an existing function
+
+`loadInvoices`, `saveValidInvoices`, and `logger` below are your application's
+existing helpers, not SDK APIs. No business work moves into Flowmark.
+
+```ts
+import { flowmark } from "./lib/flowmark"
+
+async function importInvoices(batchId: string) {
+  const run = flowmark.workflow("invoice.import", {
+    properties: { batchId },
+  })
+  try {
+    const invoices = await loadInvoices(batchId)
+    run.step("source-loaded", { properties: { count: invoices.length } })
+    const result = await saveValidInvoices(invoices)
+    run.done({ result: { imported: result.imported, skipped: result.skipped } })
+    return result
+  } catch (error) {
+    run.fail({ code: "IMPORT_FAILED" })
+    logger.error({ batchId, error }, "Import failed")
+    throw error
+  }
+}
+```
+
+Four markers: start, checkpoint, completion, failure. `workflow()` starts an
+independent run; `step()` records a milestone; `done()` attaches a bounded
+business summary; `fail()` reports failure without throwing. Your function
+keeps ownership of its return value and original exception.
+
+## 4. Drain delivery at a process boundary
+
+Markers queue delivery automatically. In a plain Node.js script or worker,
+drain the client before the process exits:
+
+```ts
+try {
+  await flowmark.shutdown()
+} catch (error) {
+  console.error("Flowmark delivery failed", error)
+}
+```
+
+Do this once at the job/process boundary, not inside every shared function.
+For a long-running process, use `flush()` without closing the client.
+An explicit drain can reject; handle that separately from the business result.
+The [Next.js adapter](/docs/nextjs) handles draining after the response.
+
+## 5. Inspect the run
+
+Open your dashboard connected to the same project. Find `invoice.import`,
+then open the run. You should see the source checkpoint, a completed or failed
+outcome, and a result summary on successful completion.
+
+If it is missing, follow [troubleshooting](/docs/troubleshooting). A missing
+terminal event is not proof the business operation failed.
+
+## Where to go next
+
+- [Workflows and runs](/docs/concepts/runs): names, IDs, and lifecycle.
+- [Business results](/docs/concepts/results): choose useful outcome summaries.
+- [SDK reference](/docs/reference): signatures, parameters, and behavior.
+- [Delivery and diagnostics](/docs/delivery): shutdown, errors, and limits.

@@ -1,0 +1,35 @@
+{
+  "name": "@flowmark/server",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --port 3003",
+    "build": "next build",
+    "start": "next start --port 3003",
+    "lint": "eslint app src test next.config.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "exports": {
+    "./trpc": {
+      "types": "./src/trpc.ts",
+      "default": "./src/trpc.ts"
+    }
+  },
+  "dependencies": {
+    "@flowmark/api": "workspace:*",
+    "@trpc/server": "^11.19.0",
+    "effect": "^3.22.4",
+    "next": "^16.4.2",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
+  },
+  "devDependencies": {
+    "@flowmark/db": "workspace:*",
+    "drizzle-orm": "^0.44.5",
+    "vitest": "^3.2.4",
+    "@types/node": "^22.18.6",
+    "@types/react": "^19.1.13",
+    "typescript": "^5.9.2"
+  }
+}

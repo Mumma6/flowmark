@@ -1,0 +1,51 @@
+---
+title: error
+description: Record a problem separately from the run's terminal outcome.
+---
+
+## Signature
+
+```ts
+run.error(error: WorkflowError): void
+```
+
+## Fields
+
+| Field       | Type      | Meaning                                                |
+| ----------- | --------- | ------------------------------------------------------ |
+| `code`      | `string`  | Required stable code, 1-128 characters                 |
+| `message`   | `string`  | Optional safe description, max 2,048 characters        |
+| `handled`   | `boolean` | Required; whether application code handled the problem |
+| `retryable` | `boolean` | Optional application-reported retry policy             |
+
+Do not send raw exception objects, stacks, credentials, or provider response
+bodies. Review messages for sensitive data.
+
+## Recovered problem
+
+```ts
+run.error({
+  code: "PRIMARY_PROVIDER_UNAVAILABLE",
+  handled: true,
+  retryable: true,
+})
+run.setProperties({ provider: "backup" })
+// After your application's recovery succeeds:
+run.done({ result: { imported: 988, skipped: 12 } })
+```
+
+An error event does not execute recovery. Use `handled: true` only if your code
+really handles the problem.
+
+## Terminal problem
+
+```ts
+run.error({ code: "PAYMENT_DECLINED", handled: false, retryable: false })
+run.fail({ code: "PAYMENT_DECLINED", retryable: false })
+```
+
+Even `handled: false` does **not** terminate the run. Only `fail()` reports a
+failed run. You can call `fail()` alone if a separate error event adds no useful
+detail. Retryability is descriptive; Flowmark never retries your business work.
+
+Error markers after completion request or terminal failure are ignored.

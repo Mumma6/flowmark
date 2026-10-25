@@ -1,0 +1,84 @@
+---
+title: Next.js server integration
+description: Record workflows in Route Handlers and Server Actions.
+---
+
+## Configure a server client
+
+Use the `@flowmark/node/next` entry point from a server-only module. This is an
+ordinary module; neither the module name nor `flowmark.config.ts` is
+automatically discovered.
+
+```ts
+// lib/flowmark.ts
+import { createFlowmark } from "@flowmark/node/next"
+
+export const flowmark = createFlowmark()
+```
+
+Set the private `FLOWMARK_API_KEY` in the server environment. Set `FLOWMARK_API_URL`
+when your self-hosted API is not the development default
+`http://localhost:3003`. Never put a private write key in client code or a
+`NEXT_PUBLIC_*` variable.
+
+## Instrument a handler
+
+Use the shared client in a Route Handler or Server Action. `importInvoices`
+below belongs to your application:
+
+```ts
+import { flowmark } from "@/lib/flowmark"
+
+export async function POST() {
+  const flow = flowmark.workflow("invoice.import")
+  try {
+    flow.step("file-validated", {
+      properties: { rowCount: 120 },
+    })
+    const result = await importInvoices()
+    flow.done({ result: { saved: result.saved, skipped: result.skipped } })
+  } catch (cause) {
+    flow.error({
+      code: "INVOICE_IMPORT_FAILED",
+      handled: false,
+      retryable: false,
+    })
+    flow.fail({ code: "INVOICE_IMPORT_FAILED", retryable: false })
+    throw cause
+  }
+  return Response.json({ accepted: true })
+}
+```
+
+## Automatic delivery
+
+The adapter uses Next.js `after()` to drain delivery after the response; there
+is no need for a transport, wrapper, or manual flush. Use it only in supported
+server request contexts—not Client Components, middleware, or during rendering.
+If telemetry delivery fails, the adapter logs it and does not undo application
+changes.
+
+`defineConfig()` can provide typed server options, but it only returns its input
+unchanged. Explicitly import and pass the configuration to the client; no
+configuration file is loaded automatically.
+
+This package does not provide a hosted API or production authentication. See
+[self-hosting](/docs/local-development) for deployment boundaries and
+[configuration](/docs/configuration) for all client options.
+
+## Request lifecycle
+
+Create the shared adapter in a server-only module, then start runs inside a
+supported request context. The adapter returns only `workflow()`; it does not
+expose manual `flush()` or `shutdown()`.
+
+Each call to `workflow()` creates a separate delivery client for that request
+lifecycle. No React provider, callback wrapper, or special configuration file
+is needed.
+
+## Continue instrumenting
+
+The returned run has the [standard marker API](/docs/reference):
+checkpoints, operations, progress, errors, properties, and completion.
+Use [`operation()`](/docs/reference/operation) for measured work and
+[`done({ result })`](/docs/reference/completion) for a bounded business summary.

@@ -1,0 +1,51 @@
+{
+  "name": "@flowmark/db",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./schema": {
+      "types": "./dist/schema.d.ts",
+      "import": "./dist/schema.js"
+    },
+    "./store": {
+      "types": "./dist/store.d.ts",
+      "import": "./dist/store.js"
+    },
+    "./demo": {
+      "types": "./dist/demo.d.ts",
+      "import": "./dist/demo.js"
+    }
+  },
+  "scripts": {
+    "dev": "pnpm db:studio",
+    "build": "tsc -p tsconfig.json",
+    "lint": "eslint src",
+    "db:generate": "drizzle-kit generate",
+    "db:studio": "drizzle-kit studio --host=127.0.0.1 --port=4983",
+    "db:setup-demo": "tsx src/setup-demo.ts",
+    "db:reset-local-telemetry": "tsx src/reset-local-telemetry.ts",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@flowmark/core": "workspace:*",
+    "effect": "^3.22.4",
+    "drizzle-orm": "^0.44.5",
+    "postgres": "^3.4.7"
+  },
+  "devDependencies": {
+    "@types/node": "^22.18.6",
+    "tsx": "^4.20.6",
+    "drizzle-kit": "^0.31.4",
+    "typescript": "^5.9.2"
+  }
+}

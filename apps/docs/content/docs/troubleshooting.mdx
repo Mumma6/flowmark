@@ -1,0 +1,64 @@
+---
+title: Troubleshooting
+description: Diagnose missing runs, incomplete timelines, and reported failures.
+---
+
+## A run is missing
+
+1. Confirm the workflow marker runs in application code and uses a semantic
+   workflow name.
+2. Check that the server process has the private `FLOWMARK_API_KEY` and the
+   correct `FLOWMARK_API_URL`.
+3. Check API availability, key permission, and persistence health. The API
+   acknowledges server ingestion only after it stores the event.
+4. For browser delivery, verify the public browser key, the exact request
+   `Origin`, and API CORS configuration. Browser keys cannot use the server
+   ingestion endpoint.
+
+Delivery is best-effort. The SDK's in-memory queue is bounded; a process exit,
+browser shutdown, or network interruption can lose telemetry. Instrumentation
+failure should not change the result of your business operation.
+
+## A run stopped before `done()` or `fail()`
+
+An incomplete timeline is not proof that the business operation failed. The
+process, tab, or telemetry delivery may have stopped before a terminal marker
+was stored. Compare the available events with your application logs and traces,
+then add a marker at the decision point you need to inspect.
+
+## A run is failed
+
+`fail()` is an outcome reported by your application code. Inspect its error
+code, safe message, retryable flag, and preceding milestones. A retryable flag
+is descriptive; Flowmark does not retry business work.
+
+## Completion is waiting on an operation
+
+`done()` waits for already-open operation handles. Close each handle using
+`operation.done()` or `operation.fail()`, or use the callback overload to close
+on settlement. A callback rejection does not automatically fail the whole run.
+See [operation lifecycle](/docs/reference/operation#overlap-and-completion).
+
+## A recovered error appears
+
+Use `error({ handled: true, ... })` only for errors your code recovers from.
+The error is recorded separately from the run outcome, so the run can later
+complete with `done({ result })`. If recovery does not succeed, emit a
+terminal error and `fail(...)`.
+
+## Configuration errors
+
+- **Server key missing:** add the private `FLOWMARK_API_KEY` to the server
+  environment; do not replace it with a public browser key.
+- **Browser origin rejected:** add the exact frontend origin to the browser
+  key's allowlist. Avoid wildcard CORS as a workaround.
+- **No database connection:** verify PostgreSQL reachability and the API's
+  `DATABASE_URL`.
+- **Unexpected result data:** check that properties and results contain only
+  bounded, plain JSON-safe values.
+- **Diagnostics not visible:** configure `onInstrumentationError` or inspect SDK
+  warning logs. Explicit `flush()` and `shutdown()` can also reject; handle them
+  without masking the application's result. See [delivery](/docs/delivery).
+
+For deployment and authentication limits, see [self-hosting Flowmark](./local-development)
+and [security and privacy](./security-privacy).

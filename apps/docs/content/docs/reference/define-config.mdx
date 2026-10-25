@@ -1,0 +1,41 @@
+---
+title: defineConfig
+description: Type-check configuration without a config loader or hidden initialization.
+---
+
+## Usage
+
+```ts
+// flowmark.config.ts (server only)
+import { defineConfig } from "@flowmark/node"
+
+export default defineConfig({
+  environment: "production",
+  release: "2026.10.2",
+})
+```
+
+```ts
+import { createFlowmark } from "@flowmark/node"
+import config from "./flowmark.config"
+
+export const flowmark = createFlowmark(config)
+```
+
+## Behavior
+
+`defineConfig<const T extends FlowmarkConfig>(config): T` returns the same
+object, preserving literal types and rejecting unknown option names at compile
+time. It does not validate credentials at runtime, start a client, access a
+special filename, or automatically load environment files.
+
+It is optional. Passing an object directly to `createFlowmark()` is equivalent.
+
+## Entry points
+
+- `@flowmark/node` and `@flowmark/node/next`: server `FlowmarkConfig`.
+- `@flowmark/node/browser`: public `BrowserFlowmarkConfig`.
+
+Browser configuration must never contain a private server key, even when
+the file is named `flowmark.config.ts`.
+See [configuration](/docs/configuration) for all settings.

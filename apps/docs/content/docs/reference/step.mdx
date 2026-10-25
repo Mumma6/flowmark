@@ -1,0 +1,41 @@
+---
+title: step
+description: Record a meaningful milestone and optional checkpoint-local facts.
+---
+
+## Signature
+
+```ts
+run.step(name: string, options?: WorkflowStepOptions): void
+```
+
+## Example
+
+```ts
+const invoices = await loadInvoices(batchId)
+run.step("source-loaded", {
+  properties: { count: invoices.length },
+})
+```
+
+`loadInvoices` is your application's helper. The marker only records that
+your code reached this checkpoint. It does not execute, wrap, or measure it.
+
+## Parameters
+
+| Parameter            | Meaning                                                |
+| -------------------- | ------------------------------------------------------ |
+| `name`               | Stable semantic checkpoint name                        |
+| `options.properties` | Optional bounded JSON-safe facts attached to this step |
+
+Step properties belong to that event; they do not amend the run's current
+context. Use [`setProperties()`](/docs/reference/properties) for run-wide context.
+
+## When to use it
+
+Choose checkpoints that help explain decisions or side effects:
+`payment-captured`, `source-loaded`, `validation-finished`.
+Do not add a step for every line of implementation code.
+
+Use [`operation()`](/docs/reference/operation) when you need a measured duration.
+Steps after completion has been requested or the run has failed are ignored.

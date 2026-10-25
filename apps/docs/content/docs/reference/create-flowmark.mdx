@@ -1,0 +1,73 @@
+---
+title: createFlowmark
+description: Create a configured client for the runtime where the work happens.
+---
+
+## Node.js
+
+```ts
+import { createFlowmark } from "@flowmark/node"
+import type { FlowmarkClient, FlowmarkConfig } from "@flowmark/node"
+
+// Signature: createFlowmark(config?: FlowmarkConfig): FlowmarkClient
+const flowmark = createFlowmark({
+  environment: "production",
+  release: "2026.10.2",
+})
+```
+
+| Option                   | Type                     | Required                                   |
+| ------------------------ | ------------------------ | ------------------------------------------ |
+| `apiKey`                 | `string`                 | Option or `FLOWMARK_API_KEY`               |
+| `apiUrl`                 | `string`                 | Option or `FLOWMARK_API_URL` in production |
+| `environment`            | `string`                 | No                                         |
+| `release`                | `string`                 | No                                         |
+| `onInstrumentationError` | `(error, event) => void` | No; defaults to warning logs               |
+
+The client returns [`workflow()`](/docs/reference/workflow),
+[`flush()` and `shutdown()`](/docs/reference/delivery). Reuse it across work;
+close it at the process boundary. Creating it validates server settings and
+can throw `FlowmarkConfigError`. Starting a workflow can also throw for invalid
+run context or a closed client.
+
+See [configuration](/docs/configuration) for URL rules and precedence.
+
+## Next.js
+
+```ts
+import { createFlowmark } from "@flowmark/node/next"
+
+const flowmark = createFlowmark()
+// Exposes workflow() only; no flush() or shutdown().
+```
+
+Accepts the same server options but creates a request-scoped delivery client
+when `workflow()` is called. Call it only in supported Route Handler or
+Server Action contexts; `after()` drains after the response.
+Invalid configuration/context can throw when starting the run.
+See [Next.js integration](/docs/nextjs).
+
+## Browser
+
+```ts
+import { createFlowmark } from "@flowmark/node/browser"
+import type { BrowserFlowmarkConfig } from "@flowmark/node/browser"
+
+const flowmark = createFlowmark({
+  publicKey: "fm_browser_...",
+  apiUrl: "https://your-flowmark-api.example",
+})
+```
+
+| Option                   | Meaning                                                 |
+| ------------------------ | ------------------------------------------------------- |
+| `publicKey`              | Public browser-write key for direct ingestion           |
+| `apiUrl`                 | API origin, required with `publicKey`                   |
+| `proxyPath`              | Same-origin absolute route; defaults to `/api/flowmark` |
+| `environment`, `release` | Default run metadata                                    |
+| `onInstrumentationError` | Optional delivery/validation failure callback           |
+
+Direct settings and `proxyPath` are mutually exclusive. Creation is SSR-safe;
+the first `workflow()` validates browser context/settings and must run in an
+event handler or effect. No React provider or environment-file loader is needed.
+See [browser integration](/docs/browser).

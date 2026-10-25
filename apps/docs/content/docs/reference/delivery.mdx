@@ -1,0 +1,57 @@
+---
+title: flush and shutdown
+description: Explicit delivery boundaries for Node.js and browser clients.
+---
+
+## Signatures
+
+```ts
+flowmark.flush(): Promise<void>
+flowmark.shutdown(): Promise<void>
+```
+
+Available on Node.js and browser clients. The Next.js adapter exposes neither;
+it drains request-scoped delivery automatically with `after()`.
+
+## flush
+
+Waits for pending delivery without closing the client. Rejects with
+`FlowmarkDeliveryError` if the drain reports delivery/validation errors or queue
+overflow. A successful flush does not prove business work succeeded.
+
+```ts
+try {
+  await flowmark.flush()
+} catch (error) {
+  console.error("Flowmark could not flush telemetry", error)
+}
+```
+
+Recorded failures are collected by the drain and cleared afterward. Do not
+interpret a later clean flush as proof that previously lost events arrived.
+
+## shutdown
+
+Stops accepting new workflows, drains pending events, and releases resources.
+Repeated shutdown calls return the same result. Starting another run afterward
+throws `FlowmarkConfigError`; existing markers cannot restart delivery.
+
+```ts
+try {
+  await flowmark.shutdown()
+} catch (error) {
+  console.error("Flowmark shutdown reported delivery failures", error)
+}
+```
+
+Place this at a job/process exit boundary, not after every function using a
+shared client. It does not call `done()` or `fail()` for open runs.
+
+## Browser limits
+
+Browser `flush()` can be used before full-page navigation, but neither it nor
+keepalive guarantees delivery during unload or offline operation. Before the
+first browser workflow, flush is a no-op; shutdown still closes the client.
+
+Read [delivery and diagnostics](/docs/delivery) for queue limits and error
+reporting without replacing your business result.

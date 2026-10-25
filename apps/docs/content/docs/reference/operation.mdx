@@ -1,0 +1,61 @@
+---
+title: operation
+description: Measure work without transferring execution ownership to Flowmark.
+---
+
+## Signatures
+
+```ts
+run.operation(name: string): WorkflowOperation
+run.operation<T>(name: string, callback: () => PromiseLike<T>): Promise<T>
+```
+
+## Promise callback
+
+```ts
+const receipt = await run.operation("charge-payment", () => chargeCustomer())
+```
+
+The SDK starts an operation, closes it when the callback settles, and preserves
+its return value. If it rejects, the operation is marked failed and the
+**same original cause is rethrown**. Synchronous callback throws are also
+recorded as operation failures.
+
+An operation failure does not automatically fail the run. Your application
+decides whether to recover or call [`fail()`](/docs/reference/completion).
+
+## Explicit handle
+
+```ts
+const operation = run.operation("reserve-stock")
+try {
+  await reserveStock()
+  operation.done()
+} catch (error) {
+  operation.fail({ code: "OUT_OF_STOCK", retryable: false })
+  throw error
+}
+```
+
+| Member                | Meaning                                 |
+| --------------------- | --------------------------------------- |
+| `operationId`         | Unique UUID for this operation's events |
+| `done(): void`        | Record success and monotonic duration   |
+| `fail(reason?): void` | Record failure and monotonic duration   |
+
+`reason` may be a structured `WorkflowFailure`, legacy string, or omitted.
+Do not include sensitive exception messages.
+
+## Overlap and completion
+
+Operations are independently identified siblings. They may overlap and share a
+name; nested operation relationships are not supported.
+
+If `run.done()` is called while operations remain open, run completion is
+deferred until the final handle closes. The first completion request and result
+win. Other run markers are then ignored, but the existing handles can close.
+An unclosed handle can leave the run open indefinitely.
+`run.fail()` supersedes pending completion.
+
+Calling an operation callback after the run is terminal still executes your
+callback, but does not reopen telemetry. Flowmark is not an execution guard.

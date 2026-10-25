@@ -1,0 +1,87 @@
+---
+title: API and dashboard data
+description: Current ingestion endpoints, authorization, and typed queries.
+---
+
+The repository API is a self-hosted Next.js application. There is no hosted
+Flowmark API. In local development it runs at `http://localhost:3003` and
+requires PostgreSQL for event ingestion and workflow queries.
+
+## HTTP endpoints
+
+| Endpoint                        | Purpose                                      |
+| ------------------------------- | -------------------------------------------- |
+| `GET /api/health`               | Database-independent API liveness check      |
+| `GET /api/trpc/{procedure}`     | Typed read/query API used by the dashboard   |
+| `POST /api/trpc/{procedure}`    | tRPC transport; no mutations currently exist |
+| `OPTIONS /api/trpc/{procedure}` | Dashboard CORS preflight                     |
+| `POST /v1/events`               | Private server-side workflow event ingestion |
+| `POST /v1/browser-events`       | Public-key browser event ingestion           |
+| `OPTIONS /v1/browser-events`    | Browser CORS preflight                       |
+
+The API application's root page (at your API origin; locally
+`http://localhost:3003`) includes expandable request
+examples, response codes, event schemas, and per-route security notes.
+Examples are documentation only: the reference never sends writes or loads
+credentials. The health-check link is a safe GET request.
+
+Private ingestion uses a server write key in an `Authorization` header with
+the `Bearer` scheme. The API validates event envelopes, resolves the project
+from the key rather than from the request body, and acknowledges ingestion
+only after persistence.
+
+Browser ingestion uses a separate public browser key and an allowed request
+Origin; it cannot read data or use private server ingestion. Request bodies are
+limited to 64 KiB. Browser keys are limited to 120 requests per minute per key.
+Workflow names are prefixed with `browser.`. Origin checks and CORS do not prove
+identity outside a browser; treat browser telemetry as untrusted input, not
+authoritative evidence of a business outcome.
+
+## tRPC queries
+
+The API router exposes these procedures at `/api/trpc`:
+
+- `health.check`
+- `project.snapshot`
+- `workflow.list`
+- `run.detail` (requires a run UUID)
+- `run.related` (requires a run UUID)
+
+Use GET for these queries; the exported POST transport does not enable
+query-over-POST. `run.detail` accepts `{ "id": "<UUID>" }` as the URL-encoded
+`input` query parameter. Use the internal run `id` returned by
+`project.snapshot`, not the external `runId` sent during ingestion. A missing
+or differently scoped run returns an empty array, not a 404.
+`run.related` takes the same internal run UUID and returns project-scoped
+parent matches and correlated runs.
+
+Dashboard reads use a separate server-held read key. Query results and run
+lookups are scoped to the project resolved from that key. The dashboard's
+same-origin proxy keeps the key out of browser code.
+
+`run.detail` returns the append-only event timeline, including measured
+operations (`operation_started`, `operation_completed`, `operation_failed`)
+and absolute `progress` snapshots. Operation events include `operationId` and
+`operationName`; terminal events include the monotonic `durationMs`. Progress
+events include `completed`, optional `total`, and optional `unit`. Each event
+also includes its occurrence `timestamp` and persistence `receivedAt`. Run
+summaries and timeline rows include optional `correlationId` and `parentRunId`
+declared at start.
+
+`run.related({ id })` accepts the internal UUID of a run and returns
+`{ parentMatches, related }`. Both lists are project-scoped to the read key;
+`related` includes every other run sharing the explicit correlation ID, not
+only overview rows in the latest-100 snapshot. Parent matches resolve the
+provided external `parentRunId` only within the same project. These are
+application-declared associations, not causal proof or an OpenTelemetry trace.
+
+## Current data and service limits
+
+Events, runs, workflow definitions, and keys are stored in PostgreSQL through
+the database package. Metrics are computed by the backend rather than accepted
+as client-submitted aggregates. The dashboard currently shows the latest 100
+runs, with metrics across recorded runs and a 30-day chart.
+
+The fixed local demo account is not production login or workspace
+authentication. Customer provisioning, key management, hosted API operations,
+alerting, and durable offline delivery are not implemented.

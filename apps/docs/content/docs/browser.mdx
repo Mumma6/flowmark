@@ -1,0 +1,107 @@
+---
+title: Browser integration
+description: Send browser workflow telemetry with a public key or a same-origin proxy.
+---
+
+Import `@flowmark/node/browser` in browser code. This entry has no Node.js or
+Next.js dependency and never reads server environment variables. You may create
+the client during SSR, but call `workflow()` only in browser event handlers or
+effects, never while rendering.
+
+## Direct delivery
+
+Direct delivery sends events to `POST /v1/browser-events`. It needs a public
+browser key and API origin:
+
+```ts
+// flowmark.config.ts — public settings only
+import { defineConfig } from "@flowmark/node/browser"
+
+export default defineConfig({
+  publicKey: "fm_browser_...",
+  apiUrl: "https://your-self-hosted-flowmark-api.example",
+})
+```
+
+```ts
+// app/flowmark.ts
+"use client"
+
+import { createFlowmark } from "@flowmark/node/browser"
+import config from "../flowmark.config"
+
+export const flowmark = createFlowmark(config)
+```
+
+`defineConfig()` is a typed identity helper, not a config-file loader; the
+explicit import above is required. Public keys are intentionally visible in
+the delivered frontend. They can write browser telemetry only: they do not
+authorize private ingestion or dashboard reads. Never use a server write key
+here, in a public config file, or in a `NEXT_PUBLIC_*` variable.
+
+The API checks that the request's Origin is allowed for the key and limits each
+browser key to 120 requests per minute across all visitors sharing that key.
+These controls do not authenticate users or make browser telemetry trustworthy.
+Treat browser events as untrusted reports, not proof of a payment or other
+business result. The API prefixes browser workflow names with `browser.` unless
+the name already has that prefix.
+
+There is no hosted Flowmark API. Repository development keys belong only to
+the local contributor harness, never a public deployment.
+
+## Record an interaction
+
+Use the client inside your application's handler. `submitOrder` is your
+application helper:
+
+```ts
+async function onSubmit() {
+  const run = flowmark.workflow("checkout.submit")
+  try {
+    await submitOrder()
+    run.done({ result: { submitted: true } })
+  } catch (error) {
+    run.fail({ code: "SUBMISSION_FAILED" })
+    throw error
+  }
+}
+```
+
+This reports what the browser observed, not authoritative payment or order
+state. Record business confirmation on the server.
+
+## Optional same-origin proxy
+
+Instead of a public direct-ingestion key, a browser client can POST to your own
+server route (default `/api/flowmark`):
+
+```ts
+// app/flowmark.ts
+"use client"
+
+import { createFlowmark } from "@flowmark/node/browser"
+
+export const flowmark = createFlowmark()
+```
+
+```ts
+// app/api/flowmark/route.ts
+import { createFlowmarkProxy } from "@flowmark/node/next/proxy"
+
+export const POST = createFlowmarkProxy({
+  authorize: async (request) => await canRecordWorkflow(request),
+})
+```
+
+The server proxy adds its private write key and validates the event envelope.
+Keep `FLOWMARK_API_KEY` only on the server. Origin checks alone are not
+authentication: protect a public write route with the application's own
+authorization and rate limiting. The proxy bounds the request body to 64 KiB.
+
+Browser delivery uses keepalive but is still best-effort. Shutdown, offline
+operation, and browser limits can lose events; there is no durable offline or
+unload-delivery guarantee.
+
+For all options, see [createFlowmark](/docs/reference/create-flowmark#browser).
+For proxy validation and response codes, see
+[createFlowmarkProxy](/docs/reference/proxy).

@@ -1,0 +1,47 @@
+---
+title: Linking related runs
+description: Explicitly associate executions across requests and services.
+---
+
+## Group by correlation ID
+
+Pass the same `correlationId` to runs that belong to the same application-defined
+process. Flowmark does not generate or propagate this value for you.
+
+```ts
+const run = flowmark.workflow("order.fulfill", {
+  correlationId: requestGroupId,
+  properties: { orderId },
+})
+```
+
+## Declare a parent
+
+Pass a parent's external SDK `runId` through your own application request or job
+payload, then set `parentRunId` on the child:
+
+```ts
+const child = flowmark.workflow("shipment.create", {
+  correlationId: requestGroupId,
+  parentRunId: upstreamRunId,
+})
+```
+
+The SDK does not add headers or create trace trees. `parentRunId` is not the
+dashboard's internal run UUID.
+
+## Lookup behavior
+
+The dashboard queries related runs within the same project. Parent lookup can
+return no match if the parent has not arrived or is missing. Repeated external
+IDs across workflows can produce multiple matches. Correlation lookup includes
+matching runs outside the overview's latest-100 snapshot.
+
+These links are application declarations, not proof of causation. Browser-supplied
+values are untrusted and must not be used for identity or authorization.
+
+## Bounds
+
+Correlation IDs must be nonblank strings up to 128 characters; parent IDs are
+nonblank strings up to 200 characters. Keep both non-sensitive.
+See [`workflow()`](/docs/reference/workflow) and [`run.related`](/docs/api#trpc-queries).

@@ -1,0 +1,4 @@
+**/next-env.d.ts
+apps/docs/.next-preview/
+apps/docs/.next-production/
+apps/api/.next-preview/

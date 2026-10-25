@@ -1,0 +1,45 @@
+---
+title: progress
+description: Record an absolute snapshot of work completed so far.
+---
+
+## Signature
+
+```ts
+run.progress(progress: WorkflowProgress): void
+```
+
+## Example
+
+```ts
+let updated = 0
+for await (const page of fetchProductPages(supplierId)) {
+  await updateStock(page)
+  updated += page.length
+  run.progress({ completed: updated, total: 1000, unit: "products" })
+}
+```
+
+The helpers are application code. Call after the work whose progress you want
+to report, not before it.
+
+## Fields
+
+| Field       | Type     | Validation                                                      |
+| ----------- | -------- | --------------------------------------------------------------- |
+| `completed` | `number` | Required nonnegative safe integer                               |
+| `total`     | `number` | Optional nonnegative safe integer; must be at least `completed` |
+| `unit`      | `string` | Optional non-empty string, max 64 characters                    |
+
+Snapshots are absolute, not increments. Two reports of `completed: 100` do not
+mean 200 items. Every valid call is persisted; there is no aggregation or
+coalescing. Choose sensible reporting intervals instead of per-item spam.
+
+## Interpretation and invalid input
+
+The latest report is evidence from the application, not a heartbeat, prediction,
+or guarantee of the current database state. Progress does not complete a run.
+
+Invalid snapshots are rejected through instrumentation diagnostics, not capped
+or silently repaired. Snapshots after completion request or failure are ignored.
+See [delivery and diagnostics](/docs/delivery).

@@ -1,0 +1,56 @@
+---
+title: Introduction
+description: Know what your application actually does.
+---
+
+Track the processes that matter. See their executions, progress, errors, and
+business outcomes in one place, using explicit TypeScript markers.
+Your application runs the work; Flowmark records what your code reports.
+
+## Start here
+
+| Your goal                                | Read this                               |
+| ---------------------------------------- | --------------------------------------- |
+| Record your first execution              | [Quickstart](/docs/sdk)                 |
+| Understand workflows, runs, and outcomes | [Core concepts](/docs/concepts/runs)    |
+| Instrument a Next.js server              | [Next.js integration](/docs/nextjs)     |
+| Track browser interactions               | [Browser integration](/docs/browser)    |
+| Look up a method or type                 | [SDK reference](/docs/reference)        |
+| Operate your own instance                | [Self-hosting](/docs/local-development) |
+
+## A small instrumentation surface
+
+```ts
+const run = flowmark.workflow("invoice.import", { properties: { batchId } })
+run.step("source-loaded", { properties: { count: 1000 } })
+run.done({ result: { imported: 988, skipped: 12 } })
+```
+
+This is an instrumentation sketch, not a complete importer. The
+[quickstart](/docs/sdk) shows where the markers belong around real work,
+including failure handling and delivery.
+
+## What you can learn
+
+- **What happened:** each run has a reported status, duration, and timeline.
+- **What it accomplished:** business summaries such as imported and skipped counts.
+- **Where to investigate:** checkpoints, measured operations, progress snapshots,
+  safe error details, and explicitly linked runs.
+
+A completed import can still have skipped records. A failed order can already
+have captured a payment. Flowmark keeps those facts near the same execution
+instead of asking you to reconstruct them from unrelated log lines.
+
+## What Flowmark does not do
+
+It does not discover workflows, execute jobs, schedule work, retry business
+operations, or independently verify reported outcomes. It complements logs
+and traces rather than replacing them. Browser events are untrusted reports.
+
+## Current project status
+
+Flowmark is an early, self-hosted open-source project. The SDK is not yet
+published to a registry. There is no hosted API, customer signup, or turnkey
+production dashboard authentication. Start with [quickstart](/docs/sdk) for
+package availability and [self-hosting](/docs/local-development) for deployment
+boundaries.

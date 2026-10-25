@@ -1,0 +1,23 @@
+{
+  "title": "SDK reference",
+  "defaultOpen": true,
+  "pages": [
+    "index",
+    "---Client---",
+    "create-flowmark",
+    "define-config",
+    "delivery",
+    "---Run markers---",
+    "workflow",
+    "step",
+    "operation",
+    "progress",
+    "error",
+    "completion",
+    "properties",
+    "---Types and adapters---",
+    "types",
+    "proxy",
+    "advanced"
+  ]
+}

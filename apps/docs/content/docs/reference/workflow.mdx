@@ -1,0 +1,54 @@
+---
+title: workflow and runId
+description: Start a new execution under a stable workflow name.
+---
+
+## Signature
+
+```ts
+flowmark.workflow(name: string, options?: WorkflowRunOptions): Flow
+```
+
+Each call immediately queues a start event and returns a run handle.
+It does not execute any business function.
+
+## Example
+
+```ts
+const run = flowmark.workflow("invoice.import", {
+  properties: { batchId },
+  environment: "production",
+  release: "2026.10.2",
+})
+console.log(run.runId)
+```
+
+## Options
+
+| Field           | Type                 | Behavior                                               |
+| --------------- | -------------------- | ------------------------------------------------------ |
+| `id`            | `string`             | External execution ID; generated UUID if omitted       |
+| `properties`    | `WorkflowProperties` | Bounded context on the start event                     |
+| `environment`   | `string`             | Overrides the client default                           |
+| `release`       | `string`             | Overrides the client default                           |
+| `correlationId` | `string`             | Explicit grouping; nonblank, max 128 characters        |
+| `parentRunId`   | `string`             | Parent's external run ID; nonblank, max 200 characters |
+
+Use stable names such as `invoice.import`; put instance IDs in properties.
+Use a fresh execution ID for each attempt. Do not reuse an order ID as the
+run ID across retries.
+
+## Returned handle
+
+`Flow` exposes `runId`, `step`, `operation`, `progress`, `error`,
+`setProperties`, `done`, and `fail`.
+
+`runId` is the external SDK identifier, not the dashboard database UUID.
+Propagate it explicitly if you need [parent links](/docs/concepts/related-runs).
+
+## Errors and lifecycle
+
+Invalid start context/configuration or a shut-down client can throw
+`FlowmarkConfigError`. Delivery errors after starting use instrumentation
+diagnostics. `workflow()` after shutdown is not supported.
+See [delivery and diagnostics](/docs/delivery).

@@ -1,0 +1,55 @@
+---
+title: Advanced exports
+description: Custom Effect transports and typed diagnostic errors, outside the normal integration path.
+---
+
+## Prefer the configured client
+
+Use `createFlowmark().workflow()` for ordinary application code.
+The following exports exist for tests and custom integrations; they do not
+require you to change the application into an Effect program.
+
+## Low-level workflow
+
+```ts
+import { workflow, MemoryTransport } from "@flowmark/node"
+
+const run = workflow("test.import", {
+  id: crypto.randomUUID(),
+  transport: new MemoryTransport(),
+})
+run.done({ result: { imported: 1 } })
+```
+
+Signature: `workflow(name, options: WorkflowOptions): Flow`.
+Unlike the client method, `id` and `transport` are required. It creates its own
+delivery lifecycle and releases resources after terminal completion.
+With open operations, successful completion waits for them.
+Omitting a transport throws `FlowmarkConfigError`.
+
+## Transport contract
+
+`WorkflowTransport` is an exported Effect service/tag whose `emit` delivers one
+validated `WorkflowEvent`. `new MemoryTransport()` records events in memory
+and exposes its `events` array for inspection after delivery drains.
+This is for testing, not durable storage or an offline queue.
+
+## Typed errors
+
+These error classes are exported by the **Node entry**:
+
+| Export                   | Meaning                                                              |
+| ------------------------ | -------------------------------------------------------------------- |
+| `FlowmarkConfigError`    | Invalid settings, run context, unsupported context, or closed client |
+| `FlowmarkDeliveryError`  | Explicit drain rejected; `failures` contains collected diagnostics   |
+| `FlowmarkHttpError`      | HTTP/encoding/network failure; optional `status`, original `cause`   |
+| `WorkflowTransportError` | Failed event and Effect cause, potentially wrapping HTTP failure     |
+| `FlowmarkQueueError`     | Event could not queue; `reason` is `capacity` or `closed`            |
+
+Diagnostics can also contain the core `WorkflowEventValidationError`.
+`onInstrumentationError` receives a `DeliveryFailure` union rather than
+always receiving a bare `FlowmarkHttpError`. Use `_tag` to distinguish cases;
+do not assume every failure has an HTTP status.
+
+Browser and Next.js entry points do not re-export these runtime error classes.
+See [delivery and diagnostics](/docs/delivery) for normal error handling.

@@ -1,0 +1,48 @@
+---
+title: Business results
+description: Separate successful execution from what the process accomplished.
+---
+
+## Status is not the whole outcome
+
+An import can complete and still skip records. A failed order can have already
+captured payment. Report the facts someone needs to decide what happens next.
+
+```ts
+run.done({
+  result: { imported: 988, skipped: 12 },
+})
+```
+
+`result` is an optional bounded JSON-safe object on the completion event.
+Choose a small, explicit summary from your application's return value. Never
+pass an entire response, invoice collection, or raw function result without
+reviewing what it contains.
+
+## Three different kinds of information
+
+| Information                                 | Example                          | API                              |
+| ------------------------------------------- | -------------------------------- | -------------------------------- |
+| Context: what this execution concerns       | `batchId`, provider, environment | `workflow()` / `setProperties()` |
+| Progress: what was last reported so far     | 600 of 1,000 products updated    | `progress()`                     |
+| Result: what the completed run accomplished | 988 imported, 12 skipped         | `done({ result })`               |
+
+A failed run has no completion result. Use its checkpoints, progress, and
+failure details to investigate partial work. Do not synthesize a successful
+result from missing telemetry.
+
+## Make summaries useful to people
+
+Prefer domain names and small counts: `imported`, `skipped`, `booked`, or
+`shipmentId`. Technical status codes alone rarely explain the outcome to
+someone outside engineering.
+
+Flowmark displays what your code reports; it does not verify the external
+payment provider or database. Keep this distinction when interpreting results,
+especially for browser instrumentation.
+
+## Bounds and privacy
+
+Results share the same [JSON bounds](/docs/reference/types#json-properties-and-results)
+as properties. Avoid credentials, personal data, raw errors, and payment details.
+See [`done()`](/docs/reference/completion) for completion behavior.

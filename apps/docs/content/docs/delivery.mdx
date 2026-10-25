@@ -1,0 +1,71 @@
+---
+title: Delivery and diagnostics
+description: Understand best-effort instrumentation and handle telemetry failures explicitly.
+---
+
+## Automatic, not durable
+
+Run markers queue delivery in the background. The current in-memory queue
+allows at most 1,000 pending events. It has no durable offline storage.
+Network failures, queue overflow, browser shutdown, or process exit can lose
+events. Events in a run are delivered in order; separate runs may deliver
+concurrently.
+
+Flowmark is not a transaction boundary for your application.
+
+## Failure boundaries
+
+| Boundary                          | Behavior                                |
+| --------------------------------- | --------------------------------------- |
+| Client/start configuration        | Can throw `FlowmarkConfigError`         |
+| Delivery or marker validation     | Diagnostic callback or warning log      |
+| Explicit `flush()` / `shutdown()` | Can reject with `FlowmarkDeliveryError` |
+| Next.js post-response drain       | Logged; does not undo application work  |
+
+Do not swallow failures silently or treat them as business failures.
+The callback below logs a bounded diagnostic rather than the full event payload:
+
+```ts
+const flowmark = createFlowmark({
+  onInstrumentationError(error, event) {
+    console.warn("Flowmark instrumentation failed", {
+      failure: error._tag,
+      eventType: event.type,
+    })
+  },
+})
+```
+
+If this callback throws, the SDK contains it and logs a warning. Avoid recursively
+recording a workflow from inside the diagnostic callback.
+
+## Drain without masking the original error
+
+For a short-lived Node.js job:
+
+```ts
+try {
+  await runApplicationJob()
+} finally {
+  try {
+    await flowmark.shutdown()
+  } catch (error) {
+    console.error("Flowmark delivery failed", error)
+  }
+}
+```
+
+The nested catch is intentional: it makes the telemetry failure visible without
+replacing an application exception or successful result.
+Do not shut down a shared client until all work using it has finished.
+
+## Choose the runtime lifecycle
+
+- **Node.js:** drain at controlled job/process boundaries; `flush()` keeps the
+  client open.
+- **Next.js:** use the adapter in supported request contexts, not the plain
+  Node client with an unawaited request-local queue.
+- **Browser:** use event handlers/effects and expect best-effort delivery.
+
+See [lifecycle API](/docs/reference/delivery), [typed errors](/docs/reference/advanced#typed-errors),
+and [troubleshooting](/docs/troubleshooting).

@@ -1,0 +1,79 @@
+---
+title: Configuration
+description: Choose an entry point, configure a client, and keep credentials in the right place.
+---
+
+## Choose your entry point
+
+| Runtime                                   | Import                                                | Delivery lifecycle                   |
+| ----------------------------------------- | ----------------------------------------------------- | ------------------------------------ |
+| Node.js scripts, workers, servers         | `@flowmark/node`                                      | Explicit `flush()` / `shutdown()`    |
+| Next.js Route Handlers and Server Actions | `@flowmark/node/next`                                 | Drained automatically with `after()` |
+| Browser event handlers and effects        | `@flowmark/node/browser`                              | Best-effort keepalive delivery       |
+| Same-origin backend proxy                 | `@flowmark/node/proxy` or `@flowmark/node/next/proxy` | Web Request/Response POST handler    |
+
+Do not import the server entry into a browser bundle.
+
+## Server settings
+
+```ts
+import { createFlowmark } from "@flowmark/node"
+
+export const flowmark = createFlowmark({
+  apiKey: process.env.FLOWMARK_API_KEY,
+  apiUrl: process.env.FLOWMARK_API_URL,
+  environment: "production",
+  release: "2026.10.2",
+})
+```
+
+| Option                   | Default            | Meaning                               |
+| ------------------------ | ------------------ | ------------------------------------- |
+| `apiKey`                 | `FLOWMARK_API_KEY` | Required private project write key    |
+| `apiUrl`                 | `FLOWMARK_API_URL` | API origin; required in production    |
+| `environment`            | Not set            | Default run environment               |
+| `release`                | Not set            | Default run release/version           |
+| `onInstrumentationError` | SDK warning log    | Receives delivery/validation failures |
+
+Explicit options take precedence over environment variables. Outside production,
+the API URL falls back to `http://localhost:3003`; production has no URL
+fallback. HTTPS is required except for permitted loopback development origins.
+Environment/release defaults come from options, not automatically from
+environment variables. Per-run values override client defaults.
+
+Invalid server credentials or origin configuration throws
+`FlowmarkConfigError`. See [createFlowmark](/docs/reference/create-flowmark).
+
+## Browser settings
+
+Choose one mode:
+
+```ts
+import { createFlowmark } from "@flowmark/node/browser"
+
+// Direct ingestion: both values are public.
+const direct = createFlowmark({
+  publicKey: "fm_browser_...",
+  apiUrl: "https://your-flowmark-api.example",
+})
+
+// Or use your own same-origin backend route.
+const proxied = createFlowmark({ proxyPath: "/api/flowmark" })
+```
+
+Direct mode requires both `publicKey` and `apiUrl` and cannot be combined with
+`proxyPath`. Without direct settings, `proxyPath` defaults to `/api/flowmark`.
+Browser configuration does not read server environment variables. See the
+[browser guide](/docs/browser) for the distinct security models.
+
+## Optional configuration helper
+
+[`defineConfig()`](/docs/reference/define-config) gives autocomplete and
+preserves literal types. It returns the same object. No filename is special:
+import the config and pass it explicitly to `createFlowmark()`.
+
+## Secrets and data
+
+Never expose private write or dashboard-read keys in `NEXT_PUBLIC_*`, frontend
+config, or copied client code. Use a separate browser key for public delivery.
+Read [security and privacy](/docs/security-privacy) before recording real data.

@@ -1,0 +1,22 @@
+{
+  "title": "Documentation",
+  "pages": [
+    "---Getting started---",
+    "introduction",
+    "sdk",
+    "configuration",
+    "---Understand Flowmark---",
+    "concepts",
+    "---Integrations---",
+    "nextjs",
+    "browser",
+    "---SDK---",
+    "reference",
+    "delivery",
+    "---Operate Flowmark---",
+    "local-development",
+    "api",
+    "security-privacy",
+    "troubleshooting"
+  ]
+}

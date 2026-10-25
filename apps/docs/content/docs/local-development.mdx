@@ -1,0 +1,49 @@
+---
+title: Self-hosting Flowmark
+description: Understand the services and safeguards required to operate Flowmark.
+---
+
+There is no hosted Flowmark API or customer account service yet. The API,
+PostgreSQL database, and dashboard must run in infrastructure you control; this
+project does not yet provide a turnkey production deployment or customer
+provisioning flow.
+
+## Services to operate
+
+- **Flowmark API:** accepts private server events and public browser events.
+  Configure its PostgreSQL `DATABASE_URL` and provision project-scoped keys.
+  Instrumented applications use `FLOWMARK_API_URL` and `FLOWMARK_API_KEY` to
+  connect to this API; these are SDK client settings, not a provisioning flow.
+- **PostgreSQL:** stores projects, hashed keys, workflows, runs, and append-only
+  event history. Back up and protect this database as telemetry data.
+- **Dashboard:** reads project-scoped run data using a separate server-only read
+  key. Put it behind your own authentication and authorization boundary; the
+  repository's fixed local demo account is not customer authentication.
+
+The API currently supports project-scoped keys and query authorization, but
+does not provide customer signup, key management, or a production dashboard
+login. Do not expose a dashboard configured with demo mode or a shared demo
+credential to the public internet.
+
+## Configure keys safely
+
+Keep private server-write and dashboard-read keys in server-side secret
+storage. Never place them in browser bundles, frontend environment variables,
+or build logs. Browser instrumentation requires a separate public browser key,
+restricted to exact origins and rate limited per key; its events remain
+untrusted input.
+
+Before handling real data, add your own authentication, rate limiting,
+provisioning, backups, retention and deletion policy, monitoring, and key
+rotation. Test these controls in a non-production project. Do not use the
+repository's public local-demo credentials with customer data.
+
+## The local development harness is not a deployment recipe
+
+The repository's invoice, inventory and order operations harness exists only
+for local development, with SDK diagnostics isolated in a separate project.
+It intentionally uses fixed development projects and
+development-only credentials. Its setup scripts, repository commands, ports,
+and PostgreSQL workflow are for contributors and are documented in the
+separate internal contributor guide. The harness is not a public demo,
+customer example, or deployment target.

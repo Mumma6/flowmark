@@ -1,0 +1,208 @@
+@import "tailwindcss";
+@import "fumadocs-ui/css/neutral.css";
+@import "fumadocs-ui/css/preset.css";
+
+.architecture-overview {
+  --arch-line: var(--color-fd-border);
+}
+
+.architecture-overview .arch-intro {
+  max-width: 700px;
+  font-size: 1.1rem;
+  color: var(--color-fd-muted-foreground);
+}
+
+.architecture-overview section {
+  margin-block: 2.5rem;
+}
+
+.arch-figure,
+.arch-boundaries {
+  margin: 0;
+  border: 1px solid var(--arch-line);
+  border-radius: 16px;
+  padding: clamp(16px, 3vw, 32px);
+  background: var(--color-fd-card);
+}
+
+.arch-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.arch-node {
+  display: grid;
+  gap: 8px;
+  border: 1px solid var(--arch-line);
+  border-radius: 10px;
+  background: var(--color-fd-background);
+  padding: 20px;
+  text-align: center;
+}
+
+.arch-node strong {
+  font-size: 15px;
+}
+
+.arch-node span {
+  color: var(--color-fd-foreground);
+  font-family: monospace;
+  font-size: 12px;
+}
+
+.arch-node small,
+.arch-journey small,
+.arch-stack small {
+  display: block;
+  color: var(--color-fd-muted-foreground);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.arch-node-api {
+  border-color: #728bdf80;
+  background: #728bdf0c;
+}
+
+.arch-node-db {
+  border-color: #35a88780;
+  background: #35a8870c;
+}
+
+.arch-arrow {
+  display: grid;
+  justify-items: center;
+  gap: 5px;
+  padding: 12px 4px;
+  color: var(--color-fd-muted-foreground);
+  font-size: 11px;
+  text-align: center;
+}
+
+.arch-arrow span:last-child {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.arch-figure figcaption {
+  margin-top: 20px;
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.architecture-overview .arch-journey {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+  padding: 0;
+  list-style: none;
+}
+
+.arch-journey li {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  margin: 0;
+  border: 1px solid var(--arch-line);
+  border-radius: 10px;
+  padding: 16px;
+}
+
+.arch-number {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border-radius: 50%;
+  background: #35a88720;
+  color: var(--color-fd-foreground);
+  font-family: monospace;
+  font-size: 12px;
+}
+
+.arch-stack {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.arch-stack > div {
+  display: grid;
+  gap: 8px;
+  border-left: 3px solid #728bdf80;
+  border-radius: 0 8px 8px 0;
+  background: var(--color-fd-card);
+  padding: 18px;
+}
+
+.arch-stack > div > span {
+  color: var(--color-fd-muted-foreground);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.arch-workspace {
+  border: 1px solid var(--arch-line);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.arch-workspace h3 {
+  margin-top: 0;
+}
+
+.arch-workspace dl {
+  margin: 0;
+}
+
+.arch-workspace dl > div {
+  display: grid;
+  gap: 5px;
+  padding-block: 10px;
+}
+
+.arch-workspace dt {
+  font-family: monospace;
+  font-size: 12px;
+}
+
+.arch-workspace dd {
+  margin: 0;
+  color: var(--color-fd-muted-foreground);
+  font-size: 12px;
+}
+
+.arch-limitations {
+  border: 1px solid var(--arch-line);
+  border-radius: 10px;
+  padding: 20px;
+  font-size: 13px;
+}
+
+.arch-technical-details {
+  margin-top: 32px;
+  border-top: 1px solid var(--color-fd-border);
+  padding-top: 20px;
+}
+
+.arch-technical-details > summary {
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+@media (max-width: 900px) {
+  .architecture-overview .arch-journey {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .arch-pair,
+  .arch-stack,
+  .architecture-overview .arch-journey {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

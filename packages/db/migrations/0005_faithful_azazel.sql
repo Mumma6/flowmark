@@ -1,0 +1,1 @@
+CREATE INDEX "workflow_runs_external_lookup_idx" ON "workflow_runs" USING btree ("external_id","workflow_id");

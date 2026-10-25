@@ -1,0 +1,32 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "ui": "tui",
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": [".next/**", "!.next/cache/**", "dist/**"]
+    },
+    "dev": {
+      "dependsOn": ["^build", "@flowmark/node#build"],
+      "passThroughEnv": [
+        "PORT",
+        "DATABASE_URL",
+        "FLOWMARK_*",
+        "NEXT_PUBLIC_*",
+        "SUPABASE_*"
+      ],
+      "cache": false,
+      "persistent": true
+    },
+    "lint": {
+      "dependsOn": ["^lint"]
+    },
+    "test": {
+      "dependsOn": ["^build"],
+      "env": ["TEST_DATABASE_URL"]
+    },
+    "typecheck": {
+      "dependsOn": ["^build"]
+    }
+  }
+}

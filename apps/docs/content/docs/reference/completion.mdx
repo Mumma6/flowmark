@@ -1,0 +1,67 @@
+---
+title: done and fail
+description: Report a terminal outcome without returning or throwing on behalf of your function.
+---
+
+## Signatures
+
+```ts
+run.done(options?: WorkflowDoneOptions): void
+run.fail(reason?: string | WorkflowFailure): void
+```
+
+## Completion
+
+```ts
+run.done({ result: { imported: 988, skipped: 12 } })
+```
+
+`result` is optional. `done()` records successful execution; it does not imply
+every business record was accepted. Prefer a small reviewed summary over
+passing a raw function return value.
+
+If operations are still open, completion waits for their handles to close.
+The first completion request wins and its result is preserved. New run markers
+are ignored while completion is pending; existing operation handles can close.
+Calling `fail()` supersedes pending completion.
+
+## Failure
+
+```ts
+run.fail({
+  code: "SUPPLIER_SYNC_FAILED",
+  message: "Supplier inventory could not be synchronized",
+  retryable: true,
+})
+```
+
+| Structured field | Meaning                                              |
+| ---------------- | ---------------------------------------------------- |
+| `code`           | Required non-empty stable code, max 128 characters   |
+| `message`        | Optional safe description, max 2,048 characters      |
+| `retryable`      | Optional application policy, not a retry instruction |
+
+`run.fail()` without a reason and `run.fail("legacy description")` remain
+supported. Prefer structured reasons for new instrumentation.
+
+Failure has no completion result. Use prior progress/checkpoints to investigate
+partial work.
+
+## Your function is still in charge
+
+Neither method returns from your function, throws your original exception,
+retries, or rolls back work:
+
+```ts
+try {
+  const result = await importInvoices()
+  run.done({ result: { imported: result.imported, skipped: result.skipped } })
+  return result
+} catch (error) {
+  run.fail({ code: "IMPORT_FAILED" })
+  throw error
+}
+```
+
+Once terminal, later run markers do not reopen the run. Completion and failure
+describe application reports, not independently verified business state.
