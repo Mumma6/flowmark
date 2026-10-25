@@ -516,6 +516,82 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
       ])
     })
 
+    it("continues the same run when later requests reuse the execution id", async () => {
+      const continuedRun = randomUUID()
+      const workflow = "expedition.run"
+      const timestamp = new Date().toISOString()
+      await send({
+        type: "started",
+        workflow,
+        runId: continuedRun,
+        timestamp,
+        properties: { battleCount: 3 },
+      })
+      await send({
+        type: "started",
+        workflow,
+        runId: continuedRun,
+        timestamp,
+        properties: { shouldNotReplace: true },
+      })
+      await send({
+        type: "step",
+        workflow,
+        runId: continuedRun,
+        timestamp,
+        step: "battle-claimed",
+      })
+      await send({
+        type: "completed",
+        workflow,
+        runId: continuedRun,
+        timestamp,
+        result: { battlesWon: 2 },
+      })
+      await send({
+        type: "step",
+        workflow,
+        runId: continuedRun,
+        timestamp,
+        step: "ignored-after-done",
+      })
+      await send({
+        type: "failed",
+        workflow,
+        runId: continuedRun,
+        timestamp,
+        failure: { code: "EXPEDITION_ABANDONED" },
+        result: { battlesWon: 2, abandoned: true },
+      })
+
+      const snapshot = await caller(readKey).project.snapshot()
+      const summary = snapshot.runs.find(
+        (run) => run.externalId === continuedRun,
+      )!
+      expect(summary.status).toBe("Failed")
+      expect(summary.result).toEqual({
+        battlesWon: 2,
+        abandoned: true,
+      })
+      const timeline = await caller(readKey).run.detail({ id: summary.id })
+      expect(timeline.map((entry) => entry.type)).toEqual([
+        "started",
+        "step",
+        "completed",
+        "failed",
+      ])
+      expect(timeline[0]).toMatchObject({
+        properties: { battleCount: 3 },
+      })
+      expect(timeline[0].properties).not.toHaveProperty("shouldNotReplace")
+      expect(timeline.map((entry) => entry.step)).toEqual([
+        null,
+        "battle-claimed",
+        null,
+        null,
+      ])
+    })
+
     it("does not expose project data through another project's read key", async () => {
       const snapshot = await caller(readKey).project.snapshot()
       const otherProject = await caller(DEMO_READ_KEY).run.detail({
@@ -566,7 +642,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         result: { captured: false, reserved: true },
       })
       const snapshot = await caller(readKey).project.snapshot()
-      expect(snapshot.metrics.failedRuns).toBe(2)
+      expect(snapshot.metrics.failedRuns).toBe(3)
       expect(snapshot.failureCodes).toEqual(
         expect.arrayContaining([
           expect.objectContaining({

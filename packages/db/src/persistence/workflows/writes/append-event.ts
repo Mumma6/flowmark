@@ -21,6 +21,7 @@ import {
   eventResult,
   isTerminalError,
 } from "./event-fields.js"
+import { ignoreContinuedEvent, runTerminal } from "./continue-run.js"
 
 const runUpdates = (
   event: WorkflowEvent,
@@ -101,6 +102,17 @@ export const appendEvent = Effect.fn("appendEvent")(function* (
         )
       if (!run) {
         return false
+      }
+      const recorded = await tx
+        .select({ type: workflowEvents.type })
+        .from(workflowEvents)
+        .where(eq(workflowEvents.runId, run.id))
+      const types = new Set(recorded.map((row) => row.type))
+      if (event.type === "started" && types.has("started")) {
+        return true
+      }
+      if (ignoreContinuedEvent(runTerminal(types), event.type)) {
+        return true
       }
       const failure = eventFailure(event)
       const error = eventError(event, failure)

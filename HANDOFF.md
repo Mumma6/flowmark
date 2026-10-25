@@ -79,7 +79,9 @@ integration remains valuable; do not rebuild the harness merely to prepare infra
 - `error({ handled: true })` does not fail a run. Neither an observed error nor
   an operation failure automatically terminates its parent; `fail()` does.
 - Reported progress is absolute, not a delta or heartbeat. Related run metadata
-  is explicitly supplied, not automatic distributed tracing.
+  is explicitly supplied, not automatic distributed tracing. The same
+  `workflow(name, { id })` continues one run across later requests; a second
+  `started` is ignored. `done()` / `fail()` still end that execution.
 - SDK run IDs and dashboard internal database UUIDs differ. Harness links filter
   a workflow by SDK ID before opening the corresponding internal run.
 - Public local keys are intentional fixtures, gated by demo mode. Never reuse

@@ -10,6 +10,7 @@ export const scenarioIds = [
   "deferred-completion",
   "progress",
   "correlation",
+  "continue",
 ] as const
 
 export type ScenarioId = (typeof scenarioIds)[number]
@@ -88,6 +89,14 @@ export const scenarios: {
     methods: "runId · correlationId · parentRunId",
     expected:
       "Two independently completed runs linked in the dashboard. No automatic tracing.",
+  },
+  {
+    id: "continue",
+    group: "Related runs",
+    title: "Continue one run across requests",
+    methods: "workflow({ id }) twice · step · done",
+    expected:
+      "One execution. Later workflow({ id }) adds markers; a second started is ignored.",
   },
 ]
 
@@ -199,6 +208,19 @@ export async function runScenario(
       child.done({ result: { child: true } })
       flow.done({ result: { parent: true } })
       runs.push({ runId: child.runId, name: childName })
+      break
+    }
+    case "continue": {
+      flow.step("draft-started")
+      const later = client.workflow(name, {
+        id: flow.runId,
+        environment: "local",
+        release: "sdk-playground",
+        correlationId,
+        properties: { scenario: id, source, wave: 2 },
+      })
+      later.step("battle-claimed")
+      later.done({ result: { continued: true } })
       break
     }
   }

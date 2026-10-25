@@ -39,8 +39,9 @@ flowchart TB
 ```
 
 Start options belong to `workflow()`: `id`, `properties`, `environment`,
-`release`, `correlationId`, and `parentRunId`. `cancel()` remains a later
-proposal, not a current method.
+`release`, `correlationId`, and `parentRunId`. The same `id` and workflow name
+continues one run across later requests; a second `started` is ignored.
+`cancel()` remains a later proposal, not a current method.
 
 ## Stage 1 delivered: explainable runs
 

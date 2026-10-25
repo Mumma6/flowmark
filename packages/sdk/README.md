@@ -129,7 +129,13 @@ unnecessary personal data in them.
 ## Linking runs explicitly
 
 `flow.runId` exposes this run's SDK identifier immediately after creation.
-`workflow()` accepts optional per-run `correlationId` and `parentRunId`:
+Pass the same `id` and workflow name on a later request to continue that run.
+A second start for an existing run is ignored; later steps, operations, and
+`done()` / `fail()` append to the same timeline. Call `done()` only when the
+whole process ends.
+
+`workflow()` also accepts optional per-run `correlationId` and `parentRunId`
+when later work is a *different* run:
 
 ```ts
 const browserFlow = browserFlowmark.workflow("browser.checkout")

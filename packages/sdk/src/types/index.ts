@@ -43,8 +43,9 @@ export interface FlowmarkConfig {
 /** Optional metadata for one execution of a workflow. */
 export interface WorkflowRunOptions {
   /**
-   * Unique ID for this execution; a UUID is generated if omitted.
-   * Do not reuse a todo/order ID across runs; put business IDs in properties.
+   * ID for this execution. A UUID is generated if omitted.
+   * Pass the same id and workflow name on a later request to continue the run.
+   * Do not reuse a durable entity id that outlives one execution; put those in properties.
    */
   readonly id?: WorkflowRunId
   /** Bounded JSON-safe context sent with the start event. Never include secrets or unnecessary personal data. */
@@ -170,8 +171,9 @@ export interface Flow {
 /** Ordinary TypeScript client; Effect execution is managed internally. */
 export interface FlowmarkClient {
   /**
-   * Starts an independent run and immediately schedules its start event.
+   * Starts a run and immediately schedules its start event.
    * Every call generates a new run ID unless options.id is supplied.
+   * The same id and workflow name continues that run across later requests.
    * @param name Stable workflow name used to group runs in the dashboard.
    * @param options Execution ID, bounded JSON properties, deployment metadata,
    * and optional explicit correlation/parent run identifiers.

@@ -26,7 +26,7 @@ console.log(run.runId)
 
 | Field           | Type                 | Behavior                                               |
 | --------------- | -------------------- | ------------------------------------------------------ |
-| `id`            | `string`             | External execution ID; generated UUID if omitted       |
+| `id`            | `string`             | Execution ID; generated if omitted. Reuse it to continue this run |
 | `properties`    | `WorkflowProperties` | Bounded context on the start event                     |
 | `environment`   | `string`             | Overrides the client default                           |
 | `release`       | `string`             | Overrides the client default                           |
@@ -34,8 +34,8 @@ console.log(run.runId)
 | `parentRunId`   | `string`             | Parent's external run ID; nonblank, max 200 characters |
 
 Use stable names such as `invoice.import`; put instance IDs in properties.
-Use a fresh execution ID for each attempt. Do not reuse an order ID as the
-run ID across retries.
+Reuse `id` across requests of the *same* execution. Do not reuse an order ID
+as the run ID across retries or later jobs.
 
 ## Returned handle
 

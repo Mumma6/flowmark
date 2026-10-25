@@ -24,9 +24,27 @@ console.log(run.runId)
 ```
 
 Each call generates a fresh SDK UUID unless you explicitly supply `id`.
-Do not reuse a business ID as an execution ID across retries.
+Pass the same `id` and workflow name on a later request to continue that run —
+for a battle that starts in one handler and is claimed in another, persist
+`flow.runId` on your own record and pass it back. Do not reuse a durable
+entity ID that outlives one execution; put those in properties.
 The dashboard also has its own internal run UUID for queries and navigation;
 it is different from the external SDK `runId`.
+
+```ts
+// First request
+const flow = flowmark.workflow("expedition.run", { id: expeditionId })
+flow.step("draft-started")
+
+// Later request
+const flow = flowmark.workflow("expedition.run", { id: expeditionId })
+flow.step("battle-claimed")
+flow.done({ result: { battlesWon: 2 } })
+```
+
+A second `started` for the same run is ignored. Call `done()` or `fail()` only
+when the whole process ends. Use [related runs](/docs/concepts/related-runs)
+when the later work is a *different* process, not the same execution.
 
 ## Lifecycle
 

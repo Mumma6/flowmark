@@ -41,7 +41,7 @@
     "db:setup": "tsx src/cli/setup.ts",
     "db:setup-demo": "tsx src/cli/setup.ts",
     "db:reset-local-telemetry": "tsx src/cli/reset-local-telemetry.ts",
-    "test": "node --import tsx --test test/environment/runtime.test.ts test/auth/secret.test.ts",
+    "test": "node --import tsx --test test/environment/runtime.test.ts test/auth/secret.test.ts test/persistence/continue-run.test.ts",
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
