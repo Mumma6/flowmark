@@ -1,13 +1,18 @@
 # Flowmark - MVP 0.1 Infrastructure
 
-> Planning baseline: October 25, 2026. This document proposes the infrastructure
-> needed to install, deploy, and use Flowmark outside its local POC environment.
-> It does not claim that these capabilities are implemented.
+> Planning baseline: October 25, 2026. Status updated October 26, 2026.
+> This document scopes the infrastructure needed to install, deploy, and use
+> Flowmark outside its local POC environment.
 >
-> Scope: a small open-source tool and a maintainable reference deployment, not a
-> public multi-tenant SaaS. Provider, auth-provider, and access-model choices are
+> Scope: a maintainable reference deployment of the open-source product, not a
+> public multi-tenant SaaS. Product ambition is defined in
+> [PRODUCT-VISION.md](./PRODUCT-VISION.md). This document only scopes
+> infrastructure. Provider, auth-provider, and access-model choices are
 > confirmed in [ADR 0006](./docs/decisions/0006-mvp-0.1-infrastructure.md).
-> Remaining sections still describe work that is not implemented.
+> The Neon database is provisioned; how to operate it is in
+> [docs/infrastructure.md](./docs/infrastructure.md). Vercel, domains, npm,
+> backup restore, and the retention job are still open. Do not treat the rest
+> of this plan as implemented.
 
 ## 1. What 0.1 should make possible
 
@@ -30,9 +35,9 @@ The local harness remains internal, loopback-only, and never a deployment target
 | Area          | What exists                                                                | What is missing for 0.1                                                      |
 | ------------- | -------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
 | Hosting       | Separate Next.js landing, docs, dashboard, and server apps                 | Deployment configuration, domains, environment isolation, operational checks |
-| Database      | PostgreSQL, Drizzle schema, versioned migrations, `pnpm db:migrate`        | Documented hosted deploy process                                             |
+| Database      | PostgreSQL, Drizzle schema, versioned migrations, `pnpm db:migrate`. Neon project `flowmark` (`snowy-dawn-12186433`), branch `production`, Postgres only, migrations applied, no seed. Local demo stays on loopback. See [Infrastructure](./docs/infrastructure.md). | Vercel wiring, a tested backup restore, and the 30-day cleanup job |
 | Setup         | `pnpm db:setup` migrates then seeds; seed refuses production/non-loopback and creates `local@dev` | Production onboarding without demo mode                                      |
-| Auth          | Better Auth email/password; session-scoped dashboard reads; register creates owner, project, and first write key | Hosted auth URL/cookie setup, password reset, and key-management UI          |
+| Auth          | Better Auth email/password; session-scoped dashboard reads; register creates owner, project, and first write key. Dashboard key management is implemented | Hosted auth URL and cookie setup. Password reset stays off until email delivery exists |
 | Credentials   | Hashed project read/write keys, browser keys, and dashboard create/revoke/rotate | Hosted rotation after a leak is still an operator process                    |
 | Environment   | Effect Schema API settings, dashboard server-env checks, production demo refusal | Auth secrets and hosted URL validation in later increments                   |
 | SDK release   | `@flowmark/node`, its `@flowmark/core` dependency, built ESM/types/exports | Tarball verification, external-install tests, registry setup, and release CI |
@@ -175,11 +180,18 @@ Vercel is a reference deployment, not a requirement imposed on self-hosters.
 Document normal Node.js hosting and PostgreSQL configuration too. Check current
 provider limits, permitted usage, and costs before choosing a plan.
 
-## 4. PostgreSQL: Neon recommended, Supabase supported
+## 4. PostgreSQL: Neon provisioned, Supabase still valid for self-hosting
 
-**Recommendation: Neon for the reference deployment.** We need managed PostgreSQL,
-not a second authentication or application platform. Neon fits that narrow need.
-This is not a reason to rewrite persistence around a provider-specific API.
+**Reference database: Neon, provisioned October 26, 2026.** The project is
+`flowmark` in `eu-central-1`, Postgres only, with committed migrations applied
+to branch `production`. The driver is still `postgres` with prepared statements
+disabled. Local demo setup stays on loopback. Operating steps, file locations,
+and the pooled versus direct URL split are in
+[Infrastructure](./docs/infrastructure.md).
+
+**Why Neon.** We need managed PostgreSQL, not a second authentication or
+application platform. This is not a reason to rewrite persistence around a
+provider-specific API.
 
 **Supabase is also valid:** use its PostgreSQL connection with Drizzle and Better
 Auth. Do not also add Supabase Auth or browser database access.
@@ -201,10 +213,10 @@ Do not open an unbounded pool per request. Do not assume a generic HTTP database
 driver supports the transactions used by ingestion and provisioning. Neon/Vercel
 connection guidance depends on the compute model; test the chosen combination.
 
-Before production data matters, document backup availability, retention, restore
-steps, and cost limits. Test a restore into an isolated database. Set an explicit
-telemetry-retention policy and implement a bounded scheduled cleanup; the initial
-retention period and deletion UI need a deliberate decision.
+Before production data matters, document backup availability, restore steps,
+and cost limits. Test a restore into an isolated database. The telemetry
+retention period is 30 days ([ADR 0006](./docs/decisions/0006-mvp-0.1-infrastructure.md)).
+The cleanup job is not built, and 0.1 has no deletion UI.
 
 ## 5. Better Auth: people sign in, SDKs use keys
 
@@ -415,7 +427,8 @@ An existing `0.1.0` version in a manifest does not mean a release exists.
 | 2     | Standardize env boundaries and split migration/seed/setup           | Done: `db:migrate` / `db:seed` / `db:setup`, production seed refusal, and existing Effect Schema env checks. T3 Env was not added. |
 | 3     | Add Better Auth, owner/project authorization and onboarding         | Done: anonymous reads fail; `local@dev` and new registrations get project-scoped sessions |
 | 4     | Add ingestion-key management                                        | Done: dashboard create/revoke/rotate for write and browser keys; sessions and SDK credentials stay separate. |
-| 5     | Deploy isolated preview with managed PostgreSQL                     | Auth, SDK ingestion and run investigation work outside localhost           |
+| 5a    | Neon Postgres project, policy, and committed migrations             | Done: project `flowmark`, branch `production`, Postgres only, migrations applied, no seed. See [Infrastructure](./docs/infrastructure.md). |
+| 5b    | Deploy isolated Vercel preview of the API and dashboard             | Auth, SDK ingestion and run investigation work outside localhost           |
 | 6     | Add server-side run pagination and minimal data lifecycle           | Older runs remain findable; retention/delete/restore documented and tested |
 | 7     | Verify packages and publish prerelease                              | Clean external consumers install and deliver telemetry successfully        |
 | 8     | Release 0.1.0 with setup/operating docs                             | Real application integration and release checklist pass                    |

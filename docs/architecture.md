@@ -18,10 +18,11 @@ Dashboard
   -> runs, metrics, workflows, timelines
 ```
 
-There is no hosted Flowmark API. The diagram describes the repository's
-self-hosted API and local development setup. The server application is a
-replaceable HTTP/framework shell; API use cases, ports, and persistence
-adapters live in the separate `@flowmark/api` package.
+There is no hosted Flowmark API. The Neon reference database exists; the
+[infrastructure guide](./infrastructure) records it. The diagram describes the
+repository's self-hosted API and local development setup. The server
+application is a replaceable HTTP/framework shell; API use cases, ports, and
+persistence adapters live in the separate `@flowmark/api` package.
 
 ## Core domain package
 
@@ -289,7 +290,9 @@ all recorded runs; daily volume covers the last 30 UTC days. The local harness
 simulates invoice, inventory and order work per execution, while workflow history
 is persistent. Technical SDK diagnostics use a separate local project.
 
-Hosted deployment, dashboard key rotation, alerting, retention cleanup,
-durable delivery, and an operated hosted service are not implemented.
+The Neon reference database exists and has the committed schema. See the
+[infrastructure guide](./infrastructure). Hosted deployment, alerting,
+retention cleanup, durable delivery, and an operated hosted service are not
+implemented.
 The direct browser-key quota is a basic per-key limit, not production-grade
 abuse prevention. No offline queue or durable delivery guarantee exists.

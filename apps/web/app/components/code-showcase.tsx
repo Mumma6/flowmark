@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@flowmark/ui"
 import { examples } from "./code-examples"
-import { overlineClassName } from "./layout"
+import { overlineClassName } from "./shell"
 import { RunPreview } from "./run-preview"
 import { WorkflowCodeBlock } from "./workflow-code-block"
 

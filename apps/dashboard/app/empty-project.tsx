@@ -1,6 +1,11 @@
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from "@flowmark/ui"
 import Link from "next/link"
 
+const apiUrl =
+  process.env.NODE_ENV === "development"
+    ? "http://localhost:3003"
+    : "https://api.flowmark.dev"
+
 export function EmptyProject() {
   return (
     <Card>
@@ -14,7 +19,7 @@ export function EmptyProject() {
       <CardContent className="grid gap-4">
         <pre className="overflow-x-auto rounded-lg border border-border bg-muted p-4 text-xs leading-6">
           {`FLOWMARK_API_KEY=<write-key-from-settings>
-FLOWMARK_API_URL=http://localhost:3003
+FLOWMARK_API_URL=${apiUrl}
 
 import { createFlowmark } from "@flowmark/node"
 

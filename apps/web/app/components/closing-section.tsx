@@ -1,7 +1,7 @@
 import { Button, FlowmarkLockup } from "@flowmark/ui"
 import { BackgroundBeams } from "./background-beams"
 import { Arrow } from "./brand"
-import { overlineClassName, shellClassName } from "./layout"
+import { overlineClassName, shellClassName } from "./shell"
 import { docsUrl } from "./site-links"
 import { SpotlightWash } from "./spotlight-wash"
 

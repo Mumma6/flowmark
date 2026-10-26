@@ -4,7 +4,15 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": [".next/**", "!.next/cache/**", "dist/**"]
+      "outputs": [".next/**", "!.next/cache/**", "dist/**"],
+      "passThroughEnv": [
+        "DATABASE_URL",
+        "DATABASE_MIGRATION_URL",
+        "BETTER_AUTH_SECRET",
+        "BETTER_AUTH_URL",
+        "FLOWMARK_*",
+        "NEXT_PUBLIC_*"
+      ]
     },
     "dev": {
       "dependsOn": ["^build", "@flowmark/node#build"],

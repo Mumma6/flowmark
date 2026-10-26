@@ -11,12 +11,17 @@ second copy in the app.
 
 ## Guides
 
+- [Infrastructure](./infrastructure): what is provisioned, starting with the
+  Neon reference database, and how local demo stays separate from it.
 - [Development setup](./development): workspace commands, local demo, database,
   and checks.
 - [Architecture](./architecture): service boundaries, persistence,
   local auth, and current system constraints.
-- [Product definition](./product): positioning, principles, delivered
-  capabilities, and product boundaries.
+- [Product vision](../PRODUCT-VISION.md): long-term product direction. It
+  lives at the repository root and supersedes the retired north star and
+  business plan.
+- [Product definition](./product): current model, delivered capabilities, and
+  boundaries. Keep it consistent with the product vision.
 - [SDK evolution](./sdk-evolution): Stage 1 implementation and explicitly
   proposed future SDK contracts.
 - [Architecture decisions](./decisions/0001-turborepo): accepted decisions and

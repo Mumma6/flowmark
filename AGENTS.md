@@ -2,14 +2,15 @@
 
 ## Start here
 
-- Read [the handoff](./HANDOFF.md) for the current baseline and next task.
-- Product direction: [BUSINESS-PLAN.md](./BUSINESS-PLAN.md) and
-  [NORTH-STAR.md](./NORTH-STAR.md).
-- Phase status: [NEXT-PHASE-PLAN.md](./NEXT-PHASE-PLAN.md).
+- Product direction: [PRODUCT-VISION.md](./PRODUCT-VISION.md).
+- Current baseline and roadmap: [NEXT-PHASE-PLAN.md](./NEXT-PHASE-PLAN.md).
 - MVP infrastructure proposals: [MVP-INFRA.md](./MVP-INFRA.md). Confirmed
   provider and auth choices are in
-  [ADR 0006](./docs/decisions/0006-mvp-0.1-infrastructure.md). Remaining
-  increments are not automatically approved implementation decisions.
+  [ADR 0006](./docs/decisions/0006-mvp-0.1-infrastructure.md). What is
+  actually provisioned is recorded in
+  [docs/infrastructure.md](./docs/infrastructure.md). The Neon database
+  exists; local demo stays on loopback. Do not seed Neon. Remaining
+  increments, including Vercel and npm, are not automatically approved.
 - Read applicable nested `AGENTS.md` files. Next.js apps require checking the
   installed Next.js documentation before framework changes.
 
@@ -17,8 +18,10 @@
 
 - Flowmark observes application-owned work; it never executes, schedules, or
   retries that work. Preserve the workflow/run abstraction.
-- This is a small open-source developer tool, not an enterprise observability
-  platform or a public multi-tenant SaaS.
+- Flowmark is a focused open-source workflow observability product. Ambition
+  inside that domain is welcome. It is not an enterprise observability
+  platform or a public multi-tenant SaaS. Read
+  [PRODUCT-VISION.md](./PRODUCT-VISION.md) before expanding scope.
 - Business results are application-reported evidence, not verified correctness.
   Completed does not mean every record succeeded. Progress is last reported;
   missing terminal telemetry does not prove a run is active or failed.

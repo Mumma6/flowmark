@@ -1,325 +1,565 @@
-# Flowmark — Next Phase Development Plan
+# Flowmark — Development Roadmap
 
-> **Status:** Core POC increments implemented, October 25, 2026; validation and cross-run insight remain incomplete. MVP 0.1 infrastructure planning starts in [MVP-INFRA.md](./MVP-INFRA.md). This is a learning-driven plan, **not** a commitment to the current models, SDK signatures, database design, or UI. Nothing in this plan requires preserving code simply because it exists.
+> **Status:** Authoritative development plan, October 26, 2026. This replaces
+> the October 25 learning plan.
 >
-> **Scope clarification:** `apps/dev-harness` is strictly a loopback-only local development fixture. It is not a public demo, customer example, or deployment target. References to the reference scenario mean using it locally to test Flowmark's value.
-
-## 1. Objective
-
-Make one realistic TypeScript application process easy to:
-
-1. Instrument without restructuring application code.
-2. Investigate as an individual execution (what happened, what failed, what was recovered, what resulted).
-3. Understand at the workflow level (what is being accomplished over time).
-4. Explain to an interested non-developer without walking through raw logs or JSON.
-
-**Target experience:** an engineer and a product/support colleague can use the same Flowmark data at different levels of detail.
-
-**Core principle:** Flowmark observes and explains work that the application owns; it does not execute, orchestrate, retry, or verify that work.
-
-## Current progress — October 25, 2026
-
-This section records implementation status, not validation with independent users.
-
-### Done
-
-- Inspected the current SDK, telemetry models, API/persistence path, dashboard, and local harness against the product direction.
-- Replaced the original invoice fixture and Todo app with six deterministic local operations scenarios across `invoices.import`, `inventory.sync`, and `orders.fulfill`. They cover complete results, rejected invoices, an interrupted sync, and a carrier failure after stock reservation. SDK diagnostics use a separate project.
-- Improved run investigation using existing telemetry: scalar result highlights with raw JSON retained, explicit attribution to application reports, last-reported progress, and wording that does not infer an active run from missing terminal telemetry.
-- Passed stored completion results through the project snapshot read model. Run lists show reported result highlights; workflow pages show up to five recent individual outcomes linked to their run investigations. No arbitrary cross-run aggregation has been added.
-- Renamed the Todo app to `@flowmark/dev-harness`, documented its local-only purpose, and bound its dev/start commands to `127.0.0.1`.
-- Added focused tests for invoice telemetry and result/progress presentation.
-- Validated the original completed/interrupted invoice fixtures end to end against local PostgreSQL, including results, handled errors, measured operations, and last-reported progress. Subsequently verified all six replacement operations scenarios through the SDK/API/database/dashboard path; see Workstream A for the current scenarios.
-- Reviewed current SDK/model semantics against the scenario in [SDK-SEMANTICS.md](./SDK-SEMANTICS.md). The existing API supported this use case without a public SDK change.
-- Recorded the telemetry interoperability decision in [TELEMETRY-INTEROPERABILITY.md](./TELEMETRY-INTEROPERABILITY.md): retain the current model for now; no OTel dependency, exporter, or migration is justified by present evidence.
-
-### Still to do
-
-- Run the planned side-by-side walkthrough with an actual developer and a non-technical reader; compare the same questions with logs or a trace view where practical. No independent usability result is claimed.
-- Reassess whether a cross-run result insight is useful after reader feedback. The local database contains repeated synthetic operations scenarios, not independent business activity; summing fixed sample data or extrapolating a trend would be misleading, so no cross-run business aggregate has been implemented.
-- Record participant findings, evidence gaps, and whether the developer would keep the SDK installed. Do not invent participant feedback or treat the local harness as a public demo.
-- Instrument an actual application process, or refactor the local example around ordinary application functions and inputs. The current scenario runner verifies telemetry but does not yet demonstrate natural integration into existing business code.
-
-### Transition to MVP 0.1
-
-The founder has reviewed the run experience and expressed confidence in its
-usefulness. This is valuable founder feedback, not the independent comparison
-required below. The phase is therefore **not fully complete**: reader validation,
-natural application integration, and the successful-phase criterion for an
-across-run business insight remain open. Deliberately deferring an aggregate is
-not the same as implementing or validating it.
-
-Infrastructure planning may proceed in parallel under
-[MVP-INFRA.md](./MVP-INFRA.md). This is a new phase, not a claim that hosted
-deployment, authentication, or npm distribution already work.
-
-## 2. Current POC baseline (verify in repository)
-
-The POC report describes:
-
-- `createFlowmark()` and `client.workflow(name, options)` producing a run handle.
-- `step()`, `operation()`, `progress()`, `error()`, `setProperties()`, `done({ result })`, `fail({ code, result? })`.
-- Event-based ingestion into a PostgreSQL-backed API.
-- A workflow directory, overview metrics, run-investigation timeline, context, errors, result JSON, and recent per-run outcome highlights.
-- A loopback-only operations harness with invoice import, inventory sync and order fulfillment, plus SDK diagnostics isolated in a separate project.
-
-Remaining product limitations:
-
-- Results still need deliberate comparison across runs; recent per-run result highlights are implemented, but no cross-run business insight is validated.
-- Last-reported progress is surfaced on run investigation; it must not be represented as guaranteed live/current progress.
-- The invoice-import scenario demonstrates the product locally, but no independent reader has validated that it is convincing or understandable.
-- The local harness remains local-only and must not be published or deployed.
-
-**These are observations, not reasons to preserve the architecture.** Recheck actual repository state before making changes.
-
-## 3. Non-goals for this phase
-
-- No workflow engine, scheduling, task queue, automatic retries, or business execution ownership.
-- No generic logs/traces/APM ingestion product.
-- No dashboard builder or general BI analytics.
-- No SaaS billing, enterprise permissions, SSO, or multi-tenant launch work.
-- No integration marketplace or broad provider adapters.
-- No speculative AI features.
-- No telemetry standard migration before we have an explicit problem it solves.
-- No “production-ready” refactor marathon before the core experience proves useful.
-
-## 4. Workstream A — Build a meaningful reference scenario
-
-**Why:** the Todo CRUD scenario demonstrates connectivity, but hides why Flowmark is useful. Keep it as a local-only developer harness, not a public showcase.
-
-**Implemented:** `apps/dev-harness` is now a local-only operations app with fixed
-synthetic records, source tables and six repeatable scenarios. The original
-Todo example has been replaced; low-level SDK checks have their own diagnostics
-page and project so they no longer pollute the operations dashboard.
-
-The scenario currently includes:
-
-- `invoices.import`: all 5 imported, or 3 imported and 2 rejected with exact record references and handled validation errors.
-- `inventory.sync`: all 12 updated, or a retryable page-3 timeout after saving 8 products.
-- `orders.fulfill`: stock reservation and a shipping label, or a carrier failure after reservation.
-- Measured operations, meaningful checkpoints, absolute progress and non-sensitive batch/sync/order references.
-- A concrete next action in the harness and a link filtering the dashboard to that SDK run ID.
-- A guarded, explicit local telemetry reset; no automatic deletion or direct SQL seeding.
-
-Tests verify recorded events, reported results, request validation and diagnostic
-project isolation. These remain simulations, not real suppliers or persistent
-business storage. Automatic retry/recovery is not implemented.
-
-**Verified:** the six scenarios execute from the harness and persist through the
-SDK/API to local PostgreSQL, producing three workflow names in the dashboard.
-**Still needed:** walk a developer and non-technical reader through the same
-questions. Technical verification does not establish reader comprehension.
-
-**Acceptance:** a reader can identify which run skipped records, how far an interrupted run last reported progress, and what each successful run reported accomplishing.
-
-**Guardrail:** example instrumentation should resemble code a developer would willingly maintain in an actual app.
-
-## 5. Workstream B — Validate the minimal SDK and telemetry semantics
-
-**Status: review completed.** [SDK-SEMANTICS.md](./SDK-SEMANTICS.md) records the decision to retain the current API and the remaining questions. Integration friction and reader comprehension still need validation.
-
-**Why:** we should not finalize ten concepts just because the POC currently exposes them.
-
-Review `Workflow`, `Run`, `Step`, `Operation`, `Progress`, `Context`, `Error`, `Result`, `Outcome`, and `Correlation` against the reference scenario.
-
-For each concept, answer:
-
-- What concrete user question does it answer?
-- Is it straightforward to instrument correctly?
-- Could another concept already represent it without loss of clarity?
-- Does it create ambiguous or misleading meaning?
-- Is it necessary for the initial useful product?
-
-Specific questions to settle deliberately:
-
-1. **Run:** Is a single named process execution still the most natural primary unit?
-2. **Step vs operation:** Keep a milestone distinct from timed work? If yes, make semantics obvious.
-3. **Failures:** Distinguish handled error, failed operation, and terminal run failure without confusing readers.
-4. **Result:** Should failed/partial runs also report useful outputs? The POC attaches `result` to completion; examine alternatives.
-5. **Progress:** Show **last reported** progress without implying the process remains active or completed beyond recorded evidence.
-6. **Lifecycle:** What does `Running` mean when telemetry stops? Avoid inventing failure or completion from silence.
-7. **Correlation:** Is manual parent/correlation propagation necessary for the initial scenario or safely deferrable?
-
-**Deliverable:** a short `SDK-SEMANTICS.md` decision note (or equivalent) with examples of the chosen API and alternatives rejected/deferred. The file is proposed, not presumed to exist.
-
-**Acceptance:** the scenario can be instrumented clearly with minimal calls; no Flowmark callback must own the entire application process; instrumentation must not change business function return values or error behavior.
-
-## 6. Workstream C — Make reported business results useful
-
-**Why:** `done({ result: { imported: 988, skipped: 12 } })` is useful evidence, but a raw JSON panel alone is weak as a product feature.
-
-Start with **small, developer-supplied, structured results**, not automatic business inference.
-
-### Current implementation and remaining exploration
-
-Current POC-style reporting:
-
-```ts
-flow.done({
-  result: {
-    total: 1000,
-    imported: 988,
-    skipped: 12,
-  },
-})
-```
-
-The current UI presents up to four scalar fields from a run result, retains raw JSON for detail, labels the result as application-reported, and shows recent run outcomes with links to individual investigations. The result travels through the existing project snapshot read model; no telemetry or database schema migration was needed.
-
-Possible future work, only if validated by a real comparison need:
-
-- Compare a selected, explicitly comparable result field across runs.
-- Filter/find runs with meaningful result differences (for example `skipped > 0`), if cheap and natural.
-- Preserve access to raw event/result evidence and links to the runs that support any summary.
-
-**Do not** blindly aggregate every JSON field. Mixed schema versions, missing values, arbitrary strings, IDs, units, and privacy-sensitive fields make naive rollups misleading.
-
-Before building cross-run aggregation, decide:
-
-- How can a developer identify fields suitable for summary (explicit declaration, convention, or opt-in)?
-- What is a safe default when run results differ in shape?
-- Do we need values such as counts, ratios, and units, or can we keep v1 simpler?
-- How should results be shown for failed or partial executions?
-- What does an application-reported result mean vs independently verified correctness?
-
-**Implemented first slice:** up to four scalar result fields are shown on run detail and run lists; the workflow page shows up to five individual recent results. This is per-run visibility, not an across-run summary. Do not build a generic query language or chart configurator.
-
-**Acceptance:** an engineer and a non-developer can distinguish `run completed` from `988 imported; 12 skipped`, with clear attribution that these values were reported by the application.
-
-## 7. Workstream D — One workflow experience, progressive detail
-
-**Why:** we want technical investigation and business insight without inventing two separate products.
-
-**Implemented first slice:** run investigation presents scalar reported-result highlights, preserves raw result JSON, labels progress as last reported, and avoids treating a run without terminal telemetry as confirmed active. The run list shows result highlights. Workflow-specific pages display up to five recent individual outcomes, each linked to its exact investigation.
-
-**Still needed:** assess this hierarchy with readers and decide whether a safe across-run insight adds value. A workflow-level rollup is not implemented.
-
-Proposed information hierarchy:
-
-```text
-Workflows
-  -> Workflow overview: activity, outcomes, meaningful reported result trends
-       -> Run list: status, time, duration, key result(s), last reported progress
-            -> Run investigation: full timeline, operations, errors, context, result
-```
-
-Questions each level should answer:
-
-| Level             | Essential question                                                              |
-| ----------------- | ------------------------------------------------------------------------------- |
-| Workflow overview | What has this process reported accomplishing, and is that changing across runs? |
-| Run list          | Which specific execution needs attention?                                       |
-| Run details       | What happened and what evidence explains the reported outcome?                  |
-
-Design rules:
-
-- A run should remain the core evidence unit.
-- Do not replace the investigation timeline with only aggregate charts.
-- Clearly label `completed`, `failed`, and **last seen/reported** states.
-- Surface partial outcomes and handled errors without equating every error with a failed run.
-- Treat result trends as optional and meaningful, not obligatory for every workflow.
-- Keep the screen understandable without assuming the reader knows internal code concepts.
-
-**Deliverable:** working design/implementation for one coherent happy-path and partial-success investigation, including navigation from outcome summary back to the exact run.
-
-**Acceptance:** a non-developer can see the reported import outcome without reading raw JSON; an engineer can drill into skipped/error events and operation timing.
-
-## 8. Workstream E — Telemetry architecture decision (research spike only)
-
-**Decision recorded:** [TELEMETRY-INTEROPERABILITY.md](./TELEMETRY-INTEROPERABILITY.md) recommends retaining the current custom model and transport for this phase. No migration or dependency was added. Revisit only if a concrete compatibility or maintenance problem makes integration useful.
-
-**Question:** should Flowmark continue using its own append-only events and transport, or eventually encode/export through OpenTelemetry?
-
-Do **not** start by migrating. First compare options against these criteria:
-
-- Does the public SDK remain tiny and intuitive?
-- Can the model represent a named run, milestone, timed operation, progress, handled errors, and reported results faithfully?
-- Are run-centric queries and business-result summaries easy to build?
-- Does the approach materially reduce maintenance or improve compatibility?
-- Does it force unwanted terminology, execution coupling, or infrastructure?
-- Are there data volume, privacy, and self-hosting trade-offs?
-
-**Deliverable:** a short decision note comparing:
-
-1. Retain custom event model/transport for now.
-2. Keep the Flowmark API but map events to OTel internally or through an exporter.
-3. Other small compatibility option, only if justified by actual needs.
-
-**Acceptance:** a reasoned decision with explicit deferred questions. No architectural rewrite merely to match industry fashion.
-
-## 9. Validation — prove useful, not novel
-
-Use the **same** example and questions to compare:
-
-- Existing structured logs.
-- A reasonably configured trace tool (if practical, not a weeks-long benchmark setup).
-- Flowmark.
-
-Ask the tester to answer:
-
-1. Which specific import failed or partially succeeded?
-2. How many records were imported and skipped?
-3. Where did a recoverable error occur?
-4. What was the last reported progress before the process stopped reporting?
-5. What changed across two runs?
-
-Record:
-
-- Instrumentation changes / developer effort.
-- Time to locate the relevant execution and explain its outcome.
-- Questions not answerable with available evidence.
-- What confused the developer or non-developer reader.
-- Whether the developer would keep the SDK installed.
-
-**Pass condition:** at least for the chosen scenario, Flowmark demonstrably reduces reconstruction effort and improves outcome clarity. It does not need unique primitives, enterprise features, or many users.
-
-## 10. Suggested sequence and checkpoints
-
-This is a sequence of learning checkpoints, **not** a fixed sprint schedule.
-
-| Order | Step                                                  | Status / next checkpoint                                                                                                                                                                                                                   |
-| ----- | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 1     | Inspect current implementation against the POC report | **Done.** Direction and implementation gaps were reviewed.                                                                                                                                                                                 |
-| 2     | Implement/reference one realistic import or sync      | **Implemented and end-to-end validated locally.** Both scenarios persisted through PostgreSQL/API and were visible in workflow and run investigation views. This is not independent user validation.                                       |
-| 3     | Review SDK/model against that use case                | **Done.** [SDK-SEMANTICS.md](./SDK-SEMANTICS.md) records current semantics, evidence, and open questions. No public API changes were made.                                                                                                 |
-| 4     | Improve run-result presentation                       | **First slice done.** Scalar result highlights, raw JSON, honest progress/status copy, and run-list results are implemented. Validate comprehension with readers.                                                                          |
-| 5     | Add a modest workflow-level result insight            | **Assessed; implementation deferred.** The current fixed sample has too little independent comparable data to support a truthful aggregate. Revisit after reader feedback or a real data scenario establishes useful comparison semantics. |
-| 6     | Connect overview to investigation                     | **Implemented.** Recent individual outcomes link to exact investigations; the live PostgreSQL-backed flow was verified. Reader comprehension remains untested.                                                                             |
-| 7     | Evaluate OTel options in a design note                | **Decision recorded.** Retain the current custom event model for now; see [TELEMETRY-INTEROPERABILITY.md](./TELEMETRY-INTEROPERABILITY.md). No migration is planned.                                                                       |
-| 8     | Run a small side-by-side usability test               | **Awaiting real participants.** Compare the same questions in Flowmark and existing logs/a trace view; record effort, time, confusion, unanswered questions, and SDK retention intent.                                                     |
-
-**Next action:** conduct the developer/non-developer walkthrough and side-by-side comparison. Then use those findings to decide whether a cross-run insight is both useful and semantically safe; implement it only if the evidence supports it.
-
-The local dev harness is not a public example or launch surface. Hosted deployment
-and release preparation belong to the subsequent MVP phase in
-[MVP-INFRA.md](./MVP-INFRA.md), not to this phase's completed work. A telemetry
-migration remains unjustified.
-
-## 11. How to choose the next coding task
-
-For any proposed change, answer these before implementation:
-
-1. **Who benefits?** Developer investigating a run, or colleague reading results?
-2. **Which question becomes easier to answer?** Give an example from the reference process.
-3. **Can we express it with existing evidence?** Avoid new SDK concepts when UI/read-model work suffices.
-4. **Is it small?** Prefer one end-to-end improvement over broad abstraction work.
-5. **Does it violate non-goals?** Reject orchestration, generic APM/BI expansion, or premature platform building.
-6. **How will we know it worked?** State an observable acceptance criterion.
-
-## 12. Definition of a successful next phase
-
-- A realistic integration/import process is instrumented naturally in existing TypeScript code.
-- Runs make success, failure, recovery, progress, and reported partial results legible.
-- The workflow view offers at least one genuinely useful across-run business insight, backed by comparable reported data and linked to relevant runs.
-- A non-developer can understand the reported result; a developer can drill into the cause/evidence.
-- The SDK stays focused and preserves application execution behavior.
-- We have a documented, deliberate decision about telemetry interoperability rather than an assumed OTel migration.
-- We have tested the experience against a reasonable log/trace alternative.
-- The local development harness remains clearly internal and loopback-only; it is not published or deployed as a demo.
-- The project still feels fun and small enough to maintain.
-
-**If these goals reveal that parts of the current SDK/model/UI are unnecessary, remove or redesign them. A two-day POC is evidence to learn from, not a contract to defend.**
-
-## 13. Related document
-
-- [BUSINESS-PLAN.md](./BUSINESS-PLAN.md) — mission, audience, positioning, scope boundaries, and definition of success.
+> Product direction lives in [PRODUCT-VISION.md](./PRODUCT-VISION.md). Do not
+> treat this file as a second vision. Infrastructure choices already made live
+> in [MVP-INFRA.md](./MVP-INFRA.md) and
+> [ADR 0006](./docs/decisions/0006-mvp-0.1-infrastructure.md). This roadmap
+> sequences that work and everything after the first public release.
+>
+> **Start here:** Phase 1, first unchecked task — an isolated Vercel preview of
+> the API and dashboard against the existing Neon database. The Neon project
+> and its migrations are done; see
+> [Infrastructure](./docs/infrastructure.md). Do not publish, attach
+> `flowmark.dev`, or instrument the card game in that same task. Ask before
+> creating the Vercel project or spending money.
+
+## How to use this plan
+
+Phases are ordered. Do not start Phase 3 feature work before a developer can
+install Flowmark and inspect a real execution on the hosted service. Do not
+start Phase 4 or 5 before Phase 2 has produced real executions whose results
+are comparable.
+
+Check a box only when the acceptance criterion is true in the running product,
+not when the code merely exists. Deploying, publishing, making the repository
+public, and destructive database actions still require explicit maintainer
+approval.
+
+A later phase may start early only under a pull-forward rule written in that
+phase. Otherwise finish the phase you are in.
+
+### Rules for every phase
+
+- Flowmark observes application-owned work. It does not execute, schedule, or
+  retry that work.
+- The public SDK stays the current surface unless a concrete question cannot
+  be answered from telemetry the application can already send.
+- Insights say what changed, where, and which runs are the evidence. They do
+  not invent causality, liveness, or verified business correctness.
+- No workflow engine, generic logs or APM, OpenTelemetry migration,
+  ClickHouse, Redis, queues, or a separate business dashboard.
+- `apps/dev-harness` and `apps/internal-docs` stay loopback-only and are never
+  deployed.
+- The local harness scenarios are regression fixtures. Do not aggregate them
+  into business trends.
+
+## Shared foundations
+
+These are the technical dependencies that more than one later capability
+needs. Build each one for the first user-visible feature that requires it.
+Do not build a general analytics framework in advance.
+
+| Foundation | Why it is shared | When to build it |
+| --- | --- | --- |
+| Hosted API, database, auth, and an installable SDK | Every later phase assumes a developer outside this repo can send and read a run | Phase 1. Nothing in Phases 2–5 replaces it |
+| Historical run queries | Discovery, peer comparison, intelligence windows, and outcome trends all need runs older than the latest 100, with a stated time range | First increment of Phase 3. Pull it forward during Phase 2 if the dashboard becomes slow or a real investigation needs a run outside the latest 100 |
+| Compact run facts | Duration, status, result, environment, and release already land on `workflow_runs`. Operation-level explanation still needs event rows. Later windows should prefer these facts over recomputing every event | Use the columns that already exist in Phase 3. Add a longer-lived summary only if Phase 4 needs history beyond raw-event retention |
+| Declared outcome fields | Filtering, aggregation, and business-readable summaries must agree on which result keys are counts, ratios, or categories | Phase 5, after Phase 2 shows the real result shapes. Not a new SDK method unless declaration cannot see the existing JSON |
+
+The overview query is the reason the historical read path is real work, not a
+speculative scale project. `projectRunSummaries` groups every event of every
+run in the project. The run list then keeps 100 rows, while workflow metrics,
+the 30-day chart, and peer comparison rebuild that full grouping. The
+dashboard refetches the snapshot every 3 seconds. Week-over-week duration is
+computed in the browser from those latest 100 runs, while volume and success
+rate use the 30-day series. That split is acceptable for a first release with
+little data. It is not an acceptable base for discovery or intelligence.
+
+## Phase 0 — Current state
+
+Objective: record what the next phases must not rebuild.
+
+This inventory was checked against the source on October 26, 2026. The test
+suite and the browser were not re-run for this plan. HANDOFF.md is no longer
+in the repository; this phase is the baseline.
+
+### Implemented and working in the local product
+
+- SDK for Node, Next.js, and the browser: `workflow()`, `step()`,
+  `operation()`, `progress()`, `error()`, `setProperties()`, `done()`,
+  `fail()`, plus explicit `correlationId` and `parentRunId`. The same workflow
+  name and external id continue one run. A second `started` is ignored.
+  Continuation is covered by `packages/db/test/persistence/continue-run.test.ts`
+  and an expedition ingestion test.
+- Bounded JSON context and results. Terminal results are stored on the event
+  and copied onto `workflow_runs.result`. `environment` and `release` are
+  columns on the run. The public SDK already accepts both.
+- Validated ingestion at `POST /v1/events` and `POST /v1/browser-events`.
+  Event ids deduplicate. Browser events are origin-limited, rate-limited, and
+  untrusted. `GET /api/health` is a liveness check and does not touch the
+  database.
+- PostgreSQL schema, committed migrations through `0007`, and
+  `pnpm db:migrate` / `db:seed` / `db:setup`. Seed refuses production and
+  non-loopback databases.
+- Better Auth email and password. Registration creates the user, a project,
+  and the first write key, and returns that key once. Dashboard reads require
+  a session and project membership. Anonymous reads fail.
+- Dashboard project switcher and create, revoke, and rotate for server write
+  keys and browser keys.
+- Dashboard overview: volume, success rate, median and p95, 30-day charts,
+  week-over-week figures, slowest operations, and failure codes from `fail()`.
+  Handled `error()` events are not those failure codes. They stay on the run.
+- Run investigation: timeline, operations, last-reported progress, errors,
+  context, up to four scalar result highlights, raw JSON, and explicit related
+  runs. Comparison is this run's duration and status against the previous 20
+  runs of the same workflow.
+- Local harness with `invoices.import`, `inventory.sync`, and
+  `orders.fulfill`. It is not a public demo.
+- MIT license. `flowmark.dev` is owned. The reference stack is Neon, Vercel,
+  and the four hostnames in MVP-INFRA. Neon Postgres is provisioned and
+  migrated. Vercel and the hostnames are not deployed.
+- Customer docs exist for the SDK, concepts, and dashboard. They state that
+  the package is not published.
+
+### Implemented, not yet verified outside this workspace
+
+- Sign-up, session cookies, and key management on a hosted URL. The code path
+  is local and proxied. Production `BETTER_AUTH_URL`, trusted origins, and
+  cookie behavior are untested.
+- Serverless Postgres. The driver disables prepared statements. Pooler
+  limits, TLS, and connection lifetime on Neon plus Vercel still need a
+  deployment test. Do not replace Drizzle or the driver unless that test
+  fails.
+- The six harness scenarios and the founder's earlier dashboard pass. Re-run
+  the relevant tests when a release candidate claims them. Do not treat this
+  document as a fresh test report.
+
+### Partial
+
+- Run discovery is a client-side filter over the latest 100 runs.
+- Comparison does not look at operations, order, failure codes, results,
+  environment, release, or context.
+- Business results are visible per run. They are not defined, aggregated, or
+  filterable.
+- Empty project state tells the developer to use `http://localhost:3003`.
+- Quickstart cannot be followed from npm.
+
+### Not started
+
+Vercel, production domains, retention cleanup, npm publish, release CI,
+instrumentation of the card game, waterfall views, historical search,
+explainable change detection, and outcome definitions. The Neon database
+itself is provisioned; see the infrastructure guide.
+
+### Obsolete as backlog
+
+Do not schedule these again: the Todo example, Supabase Auth, T3 Env, an
+OpenTelemetry migration, key-management UI, the migration/seed split, and the
+old requirement that the product stay small. The side-by-side log comparison
+and the independent reader session are not release gates. They belong to
+Phase 2 if a real investigation needs them. Cross-run business aggregates stay
+out until Phase 5 has real, comparable results.
+
+## Phase 1 — Public release
+
+### Objective
+
+A developer who is not in this repository can create an account, install
+`@flowmark/node`, instrument one process, and inspect its next execution on
+`https://app.flowmark.dev`.
+
+### Why it matters
+
+The vision cannot be tested, and the card game cannot be instrumented, until
+the product exists outside the monorepo. This phase is the public MVP. It is
+not the advanced analytics program.
+
+### Existing foundations
+
+Local registration, ingestion, investigation, key management, migrations, and
+the auth proxy. ADR 0006 and MVP-INFRA sections 3–9 are the deployment
+baseline. Do not redesign hosting, auth, or the database.
+
+### Deliverables
+
+Ask before the first cloud resource, the production domain, and npm publish.
+
+- [x] Create an isolated Neon project and a direct migration URL. Apply the
+      committed migrations with `pnpm db:migrate`. Do not run seed. Do not
+      enable demo mode. Done October 26, 2026: project `flowmark`
+      (`snowy-dawn-12186433`), branch `production`, Postgres only, pooled
+      runtime URL and direct migration URL in `packages/db/.env.neon`. Local
+      demo stays on loopback. Ingestion and a dashboard read against this
+      database wait for the Vercel preview below. Operating notes:
+      [Infrastructure](./docs/infrastructure.md).
+- [ ] Deploy preview projects for `apps/server` and `apps/dashboard` only.
+      Set `DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, and
+      `FLOWMARK_DASHBOARD_ORIGIN` on the API. Point the dashboard at that API.
+      Reject `FLOWMARK_DEMO_MODE` in production.
+- [ ] On the preview URL, prove the whole path: register, receive the write
+      key, send one `POST /v1/events` from outside the monorepo, and open that
+      run while signed in. Confirm a second user cannot read the project.
+      Confirm a wrong key is rejected and a database error is not reported as
+      success.
+- [ ] Confirm Better Auth cookies stay on the dashboard origin, sign-out
+      works, and the API trusts only the dashboard origin. Keep the canonical
+      auth instance in `apps/server`.
+- [ ] Attach the domains from ADR 0006 after the preview path works:
+      `flowmark.dev`, `docs.flowmark.dev`, `app.flowmark.dev`, and
+      `api.flowmark.dev`. Deploy landing and docs without database or auth
+      secrets. Redirect `www` only if DNS makes it a one-step choice. Do not
+      deploy the harness or internal docs.
+- [ ] Replace localhost in the dashboard empty state and any launch-facing
+      copy with the public API origin and the npm install command.
+- [ ] Document backup, restore, and rollback: where Neon keeps backups, one
+      restore into an isolated database, and the rule that migrations run as a
+      controlled step, not on every Vercel build. Prefer additive migrations.
+- [ ] Add the 30-day telemetry cleanup from ADR 0006. Delete runs, and their
+      events, older than 30 days in the reference deployment. Test it on
+      disposable rows. Do not build a long-term summary table in this phase.
+      Record in the ops notes that Phase 4 may need a longer window before
+      this job is the only history.
+- [ ] Make failed requests visible: structured API errors, `/api/health`, and
+      a written place to look at Vercel and Neon logs. No new monitoring
+      product.
+- [ ] Pack `@flowmark/core` and `@flowmark/node` and install them in a clean
+      project outside the workspace. Prove ESM, types, Node without Next,
+      the Next adapter, and the browser entry without Node built-ins. Confirm
+      `workspace:*` is gone and `effect` resolves as a normal dependency.
+- [ ] Publish a prerelease, then `0.1.0`, through a protected npm workflow.
+      Smoke-test the published tarball against the hosted preview project,
+      including a rejected key and Next.js `after()` delivery. Internal
+      packages stay private.
+- [ ] Update the quickstart so an external developer can install the package,
+      configure `FLOWMARK_API_KEY` and `FLOWMARK_API_URL`, mark one process,
+      and find the run. State that password reset does not exist yet.
+- [ ] Label week-over-week duration so it cannot be read as the same
+      population as the 30-day volume chart, or compute it from that chart's
+      population. Do not leave the mixed definition unlabeled in the shipped
+      dashboard.
+
+### Dependencies
+
+Maintainer approval to create the Vercel project, attach the domain, and
+publish to npm. The Neon project already exists. Confirmation that the
+`@flowmark` npm scope can be published and whether the Git repository becomes
+public at release. See the decisions at the end.
+
+### Acceptance
+
+A person with a new account, the public docs, and a published package can
+instrument one server-side process and open its run within a single sitting,
+without this repository, a fixture key, or a manually edited database. The
+acceptance test is that sitting. It has not been claimed yet.
+
+### Not included
+
+Server-side history beyond the current queries, waterfalls, outcome
+aggregates, the card game, password reset, OAuth, organization invites,
+alerting beyond logs and health, and durable offline delivery.
+
+### Unresolved
+
+- Whether the first public repository is this private GitHub remote made
+  public, or a separate public remote. Open source is decided. The remote is
+  not.
+- Password reset stays off unless an email sender is explicitly chosen. The
+  recommendation is to ship without it and say so in the docs.
+- Browser ingestion stays supported. Verify it before calling the release
+  done if a launch app needs the browser entry. The server path is the
+  release-critical one.
+
+## Phase 2 — Real-world validation
+
+### Objective
+
+Learn from genuine executions in the existing card game, especially processes
+that span more than one HTTP request.
+
+### Why it matters
+
+The harness cannot tell us whether run ids are natural to persist, whether
+the timeline explains a real process, or which result fields are stable
+enough to aggregate later. Phase 4 and 5 should follow that evidence.
+
+### Existing foundations
+
+The SDK already continues `expedition.run` when a later request passes the
+same workflow name and id. The game is not in this repository and is not
+instrumented. Docs and one ingestion test use that name as an example only.
+
+### Deliverables
+
+Instrument the smallest set that answers the questions below. Do not mark
+ordinary CRUD.
+
+- [ ] Read the game's expedition, battle, and pack-checkout paths and write
+      down where each process starts and ends, and which id already lives
+      across the requests that belong to one execution.
+- [ ] Instrument one expedition as a single workflow. Record draft, battle,
+      and reward claim as steps or operations on that run. Persist the run id
+      on the expedition record for that execution and pass it on later
+      requests. Do not reuse a player, card, or account id that outlives the
+      expedition.
+- [ ] Instrument pack checkout as its own short workflow, with the operations
+      and the reported result that make a partial open understandable.
+- [ ] Send those runs to the hosted project from Phase 1. Investigate at least
+      one completed expedition, one expedition that stopped before `done()` or
+      `fail()`, and one pack checkout, using the dashboard rather than
+      application logs.
+- [ ] Write the findings in this file, or a short note it links: lines changed,
+      where passing the run id was awkward, events that did not match the
+      process, facts that were missing, and whether a real question was
+      answered without the game's logs. Include whether the developer would
+      keep the SDK installed.
+
+### Dependencies
+
+Phase 1 acceptance. Access to the card game repository. A hosted project and
+write key dedicated to that game, not the local fixture keys.
+
+### Acceptance
+
+The hosted project contains real expedition and pack-checkout runs. A written
+note answers the learning questions from those runs. Product changes after
+this phase cite that note.
+
+### Not included
+
+Instrumenting the rest of the game. A synthetic aggregate of harness data. A
+new SDK concept proposed before the findings exist. Automatic context
+propagation.
+
+### Unresolved
+
+Treat a battle as part of `expedition.run` unless the findings show that a
+battle is investigated on its own. A separate battle workflow would use
+`parentRunId` or `correlationId`, which the SDK already has. That split is a
+decision after seeing the game's request boundaries, not before.
+
+### Pull forward
+
+If a real run falls outside the latest 100, or the 3-second snapshot becomes
+too slow to investigate the game, start the Phase 3 read-path increment
+before any visualization work.
+
+## Phase 3 — Advanced run investigation
+
+### Objective
+
+Make one execution understandable in detail, comparable with its peers, and
+findable after it leaves the latest 100 runs.
+
+### Why it matters
+
+This is the investigation pillar. The support path in the vision — find
+yesterday's import from an explicit reference, see what was skipped, and open
+the execution — starts here. So does the expedition that should be read as a
+24-minute process rather than three requests.
+
+### Existing foundations
+
+Timelines, operation intervals, progress snapshots, related runs, and
+duration comparison against 20 peers. Run rows already store context,
+result, environment, release, and external id. Indexes exist for workflow
+plus start time, external id, correlation, and parent. They do not yet serve
+a paged historical API.
+
+### Deliverables
+
+Build these in order. The first increment is the shared read path.
+
+- [ ] **Historical read path.** Page runs on the server by workflow and time.
+      State the population of every overview number. Bound the snapshot so a
+      dashboard refresh does not regroup every event in the project. Add
+      indexes only for the filters this increment executes. Keep project
+      scope on every query.
+- [ ] **Run discovery.** Filter that history by workflow, external run id,
+      explicit context such as a reported batch or expedition id, `fail()`
+      code, operation duration, environment, and release. A result filter may
+      wait for Phase 5 if the predicate would freeze an undeclared JSON
+      shape. Link every result to the run.
+- [ ] **Advanced comparison.** Against a stated peer group, show differences
+      in total duration, operation duration, operations present or absent,
+      order, failure codes, reported outcomes, environment, release, and
+      relevant context. Say where the recorded timeline differs. Do not state
+      a cause the events do not show.
+- [ ] **Process visualization.** Render recorded operation intervals as a
+      waterfall, including overlap, milestones, idle time between recorded
+      points, last-reported progress, and links to related runs. Do not draw
+      an orchestration graph or a causal edge.
+
+### Dependencies
+
+Phase 1. Phase 2 should inform which context keys and peer groupings matter,
+but the read path can start under the pull-forward rule without waiting for a
+finished write-up.
+
+### Acceptance
+
+Someone can find an execution by a reference the application reported, open a
+waterfall of its recorded operations, and see how it differs from the stated
+peers, including a run older than the latest 100. A comparison with too few
+peers says so.
+
+### Not included
+
+Anomaly detection, outcome definitions, a query language, AI narration, and
+automatic tracing across services the application did not link.
+
+### Unresolved
+
+Which context keys are searchable. Prefer keys the application already sends
+and a person would type, such as an expedition or batch id. Do not index
+arbitrary JSON. Decide the peer group in the UI: previous runs of the same
+workflow, the same release, or an explicit selection. The current implicit
+"previous 20" is the fallback until that choice is designed.
+
+## Phase 4 — Workflow intelligence
+
+### Objective
+
+Explain observable change: what changed, where it changed, and which
+executions are the evidence.
+
+### Why it matters
+
+Volume, p95, and success rate are already on the overview. They do not yet
+answer why. This phase is the difference between a chart and the intelligence
+pillar. Deterministic comparisons are enough. AI is not part of the design.
+
+### Existing foundations
+
+Thirty-day series, week-over-week rates, all-time top operations by total
+duration, and top `fail()` codes. Operation rows store name, duration, and
+terminal type. Run rows store release and environment when the application
+sends them. Phase 3 supplies a bounded historical query.
+
+### Deliverables
+
+- [ ] For a stated window against the previous window, attribute a duration
+      change to named operations, with the sample size and the runs that
+      moved the number.
+- [ ] Attribute a success-rate change to `fail()` codes in the same way.
+      Keep handled `error()` events out of that explanation unless a separate,
+      clearly labeled view is added for them.
+- [ ] Show which finished runs sit farthest from the peer duration or status
+      baseline, and open them.
+- [ ] Compare the same workflow across two releases when both releases have
+      enough finished runs. Show the same operation and failure-code
+      breakdown. Withhold the comparison below a stated minimum.
+- [ ] Surface uncertainty in the UI: window, count, and the absence of a
+      prior window. Do not describe a thin sample as a regression.
+- [ ] Revisit the 30-day raw retention before relying on these views. If the
+      game or the next user needs a longer explanation window, keep compact
+      run and operation facts beyond raw event deletion. Do not keep every
+      event forever by default.
+
+### Dependencies
+
+Phase 3 read path. Enough real runs from Phase 2, or from the next real
+project, to populate two windows. Do not demonstrate this phase on the
+harness.
+
+### Acceptance
+
+Given a real duration change or success-rate change, the overview names the
+operations or failure codes involved and links to the runs. A viewer can tell
+when the evidence is too thin to say.
+
+### Not included
+
+Causal claims, suspected-stuck detection, AI-written explanations, and
+business-outcome trends that need Phase 5 definitions. A generic anomaly
+framework with no workflow question attached.
+
+### Unresolved
+
+The minimum sample size and the default window. Start with the windows the
+dashboard already shows, 7 days against the previous 7, and change them only
+when real data makes those windows misleading. Stuck detection stays out
+until a workflow has an explicit expected duration supplied by the
+application, not inferred from silence.
+
+## Phase 5 — Business outcome analytics
+
+### Objective
+
+Turn developer-reported results into comparable, business-readable facts,
+with a path back to the runs.
+
+### Why it matters
+
+`988 imported, 12 skipped` is already visible on one run. The support
+example, the release comparison, and the question "are we skipping more?"
+need those numbers to be declared, aggregated, and filtered without treating
+every JSON value as a metric.
+
+### Existing foundations
+
+`done()` and `fail()` already accept a bounded result. The run row stores it.
+The dashboard shows up to four scalar highlights and the raw JSON. Phase 2
+records the actual keys the game sends. Phase 3 can filter once a field is
+safe to filter.
+
+### Deliverables
+
+- [ ] From the Phase 2 results, choose the first declared fields. For each
+      field record meaning, kind (count, ratio, or category), and whether it
+      may be aggregated. Leave ids as search context.
+- [ ] Store that declaration in the product, per workflow, without a new
+      public SDK method if the existing result JSON already contains the
+      values. Add an SDK or config field only if the declaration cannot be
+      made accurately from the current payload, and discuss that change
+      before implementing it.
+- [ ] Aggregate declared numeric fields over the same windows as Phase 4.
+      Show categories as counts. Show missing results, partial runs, and
+      failed runs with a result as themselves, not as zeroes and not as
+      successes.
+- [ ] Let a person filter runs by a declared field, compare the field across
+      two releases, and open the runs behind any total.
+- [ ] Present a short workflow reading a non-developer can use: what this
+      process reported accomplishing in the window, what changed, and which
+      executions to open. Keep the application-reported label.
+
+### Dependencies
+
+Phase 2 findings and the Phase 3 historical query. Phase 4's window and
+sample-size behavior should be reused, not reinvented.
+
+### Acceptance
+
+For one real workflow, a person can see a declared outcome change, trust the
+population it was computed from, and open a run that explains it. An
+undeclared JSON key does not become a chart. A completed run that skipped
+records is not presented as a fully successful business result.
+
+### Not included
+
+A BI workspace, an arbitrary query language, automatic inference over every
+JSON property, customer identity collection, and any claim that Flowmark
+verified the numbers.
+
+### Unresolved
+
+Where the declaration lives: dashboard configuration is the recommended
+start. A checked-in manifest is an alternative if the game already wants
+outcome meaning next to the instrumentation. Decide when the Phase 2 result
+shapes are known. High-cardinality fields stay out of aggregates even if
+someone declares them.
+
+## Decisions needed before implementation
+
+1. **Publish and visibility.** Who owns the npm scope, and does the public
+   release make this repository public? Phase 1 packing can proceed before
+   that answer. Publishing and the production domain should not.
+2. **Password reset.** Recommendation: ship Phase 1 without email, and
+   document it. Change this only if a sender is already chosen.
+3. **Retention.** Recommendation: implement the decided 30-day deletion in
+   Phase 1, and decide on longer-lived summaries at the start of Phase 4
+   rather than before the first user. Confirm that deleting the game's raw
+   runs after 30 days is acceptable.
+4. **Battle boundaries.** Recommendation: one `expedition.run` until Phase 2
+   shows that a battle is its own investigation unit.
+
+## What this plan no longer treats as the goal
+
+The October 25 plan optimized the next step for a single synthetic import and
+a very small surface. Those scenarios remain useful fixtures. The goal now is
+a public, carefully operated product, proven on the card game, and then
+deepened in investigation, intelligence, and reported outcomes. Each increment
+should be visible to a person using Flowmark. None of them should widen
+Flowmark into an execution platform or a general observability suite.

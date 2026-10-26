@@ -1,7 +1,7 @@
 import { Button } from "@flowmark/ui"
 import { Arrow } from "./brand"
 import { CodeShowcase } from "./code-showcase"
-import { overlineClassName, sectionTitleClassName, shellClassName } from "./layout"
+import { overlineClassName, sectionTitleClassName, shellClassName } from "./shell"
 import { docsUrl } from "./site-links"
 
 export function InstrumentationSection() {

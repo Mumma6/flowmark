@@ -18,8 +18,10 @@
 - **Interpretation** means a plausible reading of the design that needs
   independent validation; it is not an attributed developer rationale.
 
-The most relevant product statements are in `README.md`,
-`NORTH-STAR.md`, and `REVIEW-PROMPT.md`.
+The product statements current when this report was written were in
+`README.md`, `NORTH-STAR.md`, and `REVIEW-PROMPT.md`. Long-term direction
+now lives in `PRODUCT-VISION.md`. `NORTH-STAR.md` and `BUSINESS-PLAN.md` are
+retired pointers to that vision.
 The concrete API and data behavior is in the SDK, `packages/core`,
 `packages/api`, `packages/db`, `apps/server`, and `apps/dashboard`.
 
@@ -126,7 +128,7 @@ than treating competitor limitations as fact.
 
 ## 2. Current conceptual model
 
-The current model is summarized in `NORTH-STAR.md` and
+The model at the time of this report was summarized in `NORTH-STAR.md` and
 implemented as a set of typed event variants in
 `packages/core/src/events.ts`. These names
 describe the current experiment only; any can be altered or removed.
@@ -681,7 +683,7 @@ These are questions, not recommendations or answers:
 
 | Concern                                | Source                                                                                                                           |
 | -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| Product premise and current vocabulary | `README.md`, `NORTH-STAR.md`, `REVIEW-PROMPT.md`                                                                                 |
+| Product premise and current vocabulary | `PRODUCT-VISION.md` (current). This report originally cited `README.md`, `NORTH-STAR.md`, and `REVIEW-PROMPT.md`. |
 | SDK public exports                     | `packages/sdk/src/index.ts`                                                                                                      |
 | Client initialization and Node config  | `packages/sdk/src/client/create-client.ts`, `packages/sdk/src/config/settings.ts`                                                |
 | Browser / Next entry points            | `packages/sdk/src/browser/index.ts`, `packages/sdk/src/adapters/next.ts`                                                         |

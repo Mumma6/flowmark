@@ -1,6 +1,6 @@
 import { Button, Card, CardContent } from "@flowmark/ui"
 import { Arrow } from "./brand"
-import { overlineClassName, sectionTitleClassName, shellClassName } from "./layout"
+import { overlineClassName, sectionTitleClassName, shellClassName } from "./shell"
 import { docsUrl } from "./site-links"
 
 const stages: ReadonlyArray<{

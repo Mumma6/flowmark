@@ -8,6 +8,11 @@ const guides = [
     description: "Start here for contributor and maintainer guidance.",
   },
   {
+    href: "/docs/infrastructure",
+    title: "Infrastructure",
+    description: "Reference deployment, starting with the Neon database.",
+  },
+  {
     href: "/docs/architecture",
     title: "Architecture",
     description: "Services, data boundaries, and current system limitations.",

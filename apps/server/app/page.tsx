@@ -1,5 +1,14 @@
 import styles from "./reference.module.css"
 
+const hosted = process.env.NODE_ENV === "production"
+const apiOrigin = hosted ? "https://api.flowmark.dev" : "http://localhost:3003"
+const docsOrigin = hosted
+  ? "https://docs.flowmark.dev"
+  : "http://localhost:3002"
+const dashboardOrigin = hosted
+  ? "https://app.flowmark.dev"
+  : "http://localhost:3001"
+
 type Endpoint = {
   id: string
   method: "GET" | "POST" | "OPTIONS"
@@ -111,7 +120,7 @@ const endpoints: Endpoint[] = [
       "Uses a separate browser credential with an exact origin allowlist. Workflow names are prefixed with browser. unless already prefixed. Browser telemetry is not trusted server evidence.",
     request: `// Run only from an origin configured for YOUR public browser key.
 // Explicit example: this writes an event when you execute it.
-await fetch("http://localhost:3003/v1/browser-events", {
+await fetch("${apiOrigin}/v1/browser-events", {
   method: "POST",
   headers: {
     "Content-Type": "application/json",
@@ -164,7 +173,7 @@ Cache-Control: no-store`,
     description:
       "The route exports GET, POST, and OPTIONS. All current procedures are queries: use GET. POST is wired to the tRPC adapter, but there are no mutations and query-over-POST is not enabled.",
     request: `curl -i -X OPTIONS "$FLOWMARK_API_URL/api/trpc/project.snapshot" \\
-  -H "Origin: http://localhost:3001" \\
+  -H "Origin: ${dashboardOrigin}" \\
   -H "Access-Control-Request-Method: GET"`,
     response: `HTTP 204 (empty body)
 // Only when Origin equals FLOWMARK_DASHBOARD_ORIGIN:
@@ -189,7 +198,7 @@ Vary: Origin`,
       ],
     ],
     notes:
-      "The CORS origin defaults to http://localhost:3001. CORS does not authorize a read; protected procedures still require a read key. Prefer a same-origin server proxy to keep dashboard read keys out of browsers. Standard tRPC batching may return 207 for mixed outcomes.",
+      `The dashboard CORS origin is ${dashboardOrigin}. CORS does not authorize a read; protected procedures still require a read key. Prefer a same-origin server proxy to keep dashboard read keys out of browsers. Standard tRPC batching may return 207 for mixed outcomes.`,
   },
   {
     id: "trpc-health",
@@ -403,8 +412,8 @@ export default function ApiHome() {
           Flowmark <span> / API reference</span>
         </a>
         <nav aria-label="Related resources">
-          <a href="http://localhost:3002/docs/api">Documentation ↗</a>
-          <a href="http://localhost:3001">Dashboard ↗</a>
+          <a href={`${docsOrigin}/docs/api`}>Documentation ↗</a>
+          <a href={dashboardOrigin}>Dashboard ↗</a>
         </nav>
       </header>
       <div className={styles.shell}>
@@ -426,9 +435,9 @@ export default function ApiHome() {
             ))}
           </nav>
           <div className={styles.sidebarNote}>
-            Self-hosted
+            {hosted ? "Reference deployment" : "Local development"}
             <br />
-            No hosted API service
+            {apiOrigin}
           </div>
         </aside>
         <main id="reference" className={styles.main}>
@@ -455,8 +464,8 @@ export default function ApiHome() {
               </a>
             </div>
             <div className={styles.baseUrl}>
-              <span>LOCAL BASE URL</span>
-              <code>http://localhost:3003</code>
+              <span>{hosted ? "API ORIGIN" : "LOCAL BASE URL"}</span>
+              <code>{apiOrigin}</code>
               <span>JSON over HTTP</span>
             </div>
           </section>
@@ -515,7 +524,7 @@ export default function ApiHome() {
             <p>
               Expand an operation for its request, response schema, and error
               codes. Examples assume{" "}
-              <code>FLOWMARK_API_URL=http://localhost:3003</code> and your own
+              <code>{`FLOWMARK_API_URL=${apiOrigin}`}</code> and your own
               server-side key environment variables. Sending an example POST
               persists data.
             </p>
@@ -696,8 +705,10 @@ export default function ApiHome() {
             </p>
           </section>
           <footer className={styles.footer}>
-            <span>Flowmark · self-hosted workflow observability</span>
-            <a href="http://localhost:3002/docs/local-development">
+            <span>
+              Flowmark · {hosted ? "api.flowmark.dev" : "local API reference"}
+            </span>
+            <a href={`${docsOrigin}/docs/local-development`}>
               Local setup & SDK guides ↗
             </a>
           </footer>

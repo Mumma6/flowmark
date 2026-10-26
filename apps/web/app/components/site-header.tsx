@@ -1,7 +1,7 @@
 import { Button } from "@flowmark/ui"
 import { Arrow, BrandLink } from "./brand"
-import { shellClassName } from "./layout"
-import { docsUrl, githubUrl } from "./site-links"
+import { shellClassName } from "./shell"
+import { appUrl, docsUrl, githubUrl } from "./site-links"
 
 export function SiteHeader() {
   return (
@@ -22,6 +22,9 @@ export function SiteHeader() {
           </a>
           <Button asChild variant="ghost" size="sm">
             <a href={githubUrl}>GitHub</a>
+          </Button>
+          <Button asChild variant="ghost" size="sm">
+            <a href={appUrl}>Dashboard</a>
           </Button>
           <Button asChild size="sm">
             <a href={docsUrl}>

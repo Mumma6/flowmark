@@ -79,6 +79,11 @@ update `DATABASE_URL` to the intended connection string (with the provider's
 required TLS settings), then restart Studio. Provider-specific auth, Storage,
 and other services are not configured by Studio.
 
+The reference Neon project is a separate database. Its operating notes are in
+the [infrastructure guide](./infrastructure). Local demo setup keeps
+`DATABASE_URL` on loopback. Do not point Studio, `pnpm db:setup`, or
+`pnpm db:seed` at that project.
+
 The dashboard uses a same-origin server proxy for tRPC and Better Auth. Its
 server-side `FLOWMARK_API_URL` defaults to `http://localhost:3003`. Dashboard
 reads use the signed-in session; workflow queries read PostgreSQL, not mock

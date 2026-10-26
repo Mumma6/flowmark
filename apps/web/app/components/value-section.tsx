@@ -1,5 +1,5 @@
 import { Card, CardContent } from "@flowmark/ui"
-import { overlineClassName, sectionTitleClassName, shellClassName } from "./layout"
+import { overlineClassName, sectionTitleClassName, shellClassName } from "./shell"
 
 const steps = [
   {

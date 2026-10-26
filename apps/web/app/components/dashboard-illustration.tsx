@@ -1,5 +1,5 @@
 import { Badge, Card, CardContent, FlowmarkLockup } from "@flowmark/ui"
-import { overlineClassName } from "./layout"
+import { overlineClassName } from "./shell"
 
 const results = [
   { label: "Processed", value: "5", detail: "checkouts" },

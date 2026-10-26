@@ -8,7 +8,7 @@ import {
   CardContent,
 } from "@flowmark/ui"
 import type { RunPreviewData } from "./code-examples"
-import { overlineClassName } from "./layout"
+import { overlineClassName } from "./shell"
 
 const markerClassName = {
   step: "border-[#82918a]",

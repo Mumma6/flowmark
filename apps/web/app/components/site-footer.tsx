@@ -1,7 +1,7 @@
 import { Separator } from "@flowmark/ui"
 import { BrandLink } from "./brand"
-import { shellClassName } from "./layout"
-import { docsUrl, githubUrl } from "./site-links"
+import { shellClassName } from "./shell"
+import { appUrl, docsUrl, githubUrl } from "./site-links"
 
 const columns = [
   {
@@ -15,6 +15,7 @@ const columns = [
   {
     title: "Resources",
     links: [
+      { href: appUrl, label: "Dashboard" },
       { href: docsUrl, label: "Documentation" },
       { href: githubUrl, label: "GitHub" },
     ],

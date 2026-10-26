@@ -79,7 +79,7 @@ and a published package are next.
 
 - Product: [flowmark.dev](https://flowmark.dev)
 - SDK reference (this repo): [`apps/docs`](./apps/docs)
-- Purpose: [north star](./NORTH-STAR.md)
+- Purpose: [product vision](./PRODUCT-VISION.md)
 
 ## Local development
 
@@ -119,8 +119,9 @@ them.
 ## Contributing
 
 - [Development commands](./docs/development.md)
+- [Infrastructure](./docs/infrastructure.md)
 - [Architecture](./docs/architecture.md)
 - [Agent guidelines](./AGENTS.md)
-- [Handoff](./HANDOFF.md)
+- [Development roadmap](./NEXT-PHASE-PLAN.md)
 
 License: [MIT](./LICENSE).

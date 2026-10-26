@@ -26,3 +26,4 @@ coverage
 /dumps/
 .envrc
 .cursor/mcp.json
+.neon
