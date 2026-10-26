@@ -62,6 +62,13 @@ function repository(overrides: Partial<WorkflowRepositoryService> = {}) {
         operations: [],
         failureCodes: [],
       }),
+    listRuns: () =>
+      Effect.succeed({
+        runs: [],
+        nextCursor: null,
+        total: 0,
+        limit: 50,
+      }),
     timeline: () => Effect.succeed([]),
     related: () => Effect.succeed({ parentMatches: [], related: [] }),
     compare: () =>
@@ -71,6 +78,7 @@ function repository(overrides: Partial<WorkflowRepositoryService> = {}) {
         peerSuccessRate: null,
         peerMedianDurationMs: null,
         peerP95DurationMs: null,
+        operations: [],
       }),
     ...overrides,
   })

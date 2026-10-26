@@ -27,6 +27,12 @@ export const WorkflowRepositoryLive = Layer.effect(
       snapshot: Effect.fn("PostgresWorkflowRepository.snapshot")((projectId) =>
         store.snapshot(projectId).pipe(Effect.mapError(toPersistenceError)),
       ),
+      listRuns: Effect.fn("PostgresWorkflowRepository.listRuns")(
+        (projectId, query) =>
+          store
+            .listRuns(projectId, query)
+            .pipe(Effect.mapError(toPersistenceError)),
+      ),
       timeline: Effect.fn("PostgresWorkflowRepository.timeline")(
         (projectId, runId) =>
           store

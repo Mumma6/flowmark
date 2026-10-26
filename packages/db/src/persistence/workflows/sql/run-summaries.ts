@@ -31,7 +31,13 @@ export const projectRunSummaries = (projectId: string) => sql`
       (
         array_agg(e.result ORDER BY e.occurred_at DESC, e.created_at DESC)
         FILTER (WHERE e.type IN ('completed', 'failed') AND e.result IS NOT NULL)
-      )[1] AS result
+      )[1] AS result,
+      max(r.environment) AS environment,
+      max(r.release) AS release,
+      (
+        array_agg(e.error ->> 'code' ORDER BY e.occurred_at DESC, e.created_at DESC)
+        FILTER (WHERE e.type = 'failed' AND e.error ->> 'code' IS NOT NULL)
+      )[1] AS "failCode"
     FROM workflow_runs r
     JOIN workflows w ON w.id = r.workflow_id
     LEFT JOIN workflow_events e ON e.run_id = r.id
@@ -165,5 +171,130 @@ export const peerRunsSql = (projectId: string, runId: string) => sql`
   JOIN current_run ON current_run.workflow = runs.workflow
   WHERE runs.id != current_run.id
   ORDER BY runs."startedAt" DESC
-  LIMIT 20
+  LIMIT 50
 `
+
+export type ListRunsFilter = {
+  readonly workflow?: string
+  readonly status?: "Completed" | "Failed" | "Running"
+  readonly search?: string
+  readonly externalId?: string
+  readonly failCode?: string
+  readonly environment?: string
+  readonly release?: string
+  readonly correlationId?: string
+  readonly parentRunId?: string
+  readonly namespace?: "browser" | "application"
+  readonly startedAfter?: string
+  readonly startedBefore?: string
+  readonly cursorStartedAt?: string
+  readonly cursorId?: string
+  readonly limit: number
+}
+
+export const listRunsSql = (projectId: string, filter: ListRunsFilter) => {
+  const search = filter.search?.trim()
+  const like =
+    search && search.length > 0 ? `%${search.replaceAll("%", "")}%` : null
+  return sql`
+  ${projectRunSummaries(projectId)}
+  SELECT
+    id,
+    "externalId",
+    workflow,
+    "startedAt"::text AS "startedAt",
+    status,
+    "durationMs",
+    step,
+    result,
+    "correlationId",
+    "parentRunId",
+    environment,
+    release,
+    "failCode"
+  FROM runs
+  WHERE
+    (${filter.workflow ?? null}::text IS NULL OR workflow = ${filter.workflow ?? null})
+    AND (${filter.status ?? null}::text IS NULL OR status = ${filter.status ?? null})
+    AND (${filter.externalId ?? null}::text IS NULL OR "externalId" = ${filter.externalId ?? null})
+    AND (${filter.failCode ?? null}::text IS NULL OR "failCode" = ${filter.failCode ?? null})
+    AND (${filter.environment ?? null}::text IS NULL OR environment = ${filter.environment ?? null})
+    AND (${filter.release ?? null}::text IS NULL OR release = ${filter.release ?? null})
+    AND (${filter.correlationId ?? null}::text IS NULL OR "correlationId" = ${filter.correlationId ?? null})
+    AND (${filter.parentRunId ?? null}::text IS NULL OR "parentRunId" = ${filter.parentRunId ?? null})
+    AND (
+      ${filter.namespace ?? null}::text IS NULL
+      OR (
+        ${filter.namespace ?? null} = 'browser'
+        AND workflow LIKE 'browser.%'
+      )
+      OR (
+        ${filter.namespace ?? null} = 'application'
+        AND workflow NOT LIKE 'browser.%'
+      )
+    )
+    AND (${filter.startedAfter ?? null}::timestamptz IS NULL OR "startedAt" >= ${filter.startedAfter ?? null}::timestamptz)
+    AND (${filter.startedBefore ?? null}::timestamptz IS NULL OR "startedAt" <= ${filter.startedBefore ?? null}::timestamptz)
+    AND (
+      ${like}::text IS NULL
+      OR "externalId" ILIKE ${like}
+      OR workflow ILIKE ${like}
+      OR coalesce("correlationId", '') ILIKE ${like}
+      OR coalesce("parentRunId", '') ILIKE ${like}
+      OR coalesce(step, '') ILIKE ${like}
+      OR coalesce("failCode", '') ILIKE ${like}
+    )
+    AND (
+      ${filter.cursorStartedAt ?? null}::timestamptz IS NULL
+      OR ${filter.cursorId ?? null}::uuid IS NULL
+      OR ("startedAt", id) < (${filter.cursorStartedAt ?? null}::timestamptz, ${filter.cursorId ?? null}::uuid)
+    )
+  ORDER BY "startedAt" DESC, id DESC
+  LIMIT ${filter.limit + 1}
+`
+}
+
+export const listRunsCountSql = (
+  projectId: string,
+  filter: Omit<ListRunsFilter, "limit" | "cursorStartedAt" | "cursorId">,
+) => {
+  const search = filter.search?.trim()
+  const like =
+    search && search.length > 0 ? `%${search.replaceAll("%", "")}%` : null
+  return sql`
+  ${projectRunSummaries(projectId)}
+  SELECT count(*)::int AS count
+  FROM runs
+  WHERE
+    (${filter.workflow ?? null}::text IS NULL OR workflow = ${filter.workflow ?? null})
+    AND (${filter.status ?? null}::text IS NULL OR status = ${filter.status ?? null})
+    AND (${filter.externalId ?? null}::text IS NULL OR "externalId" = ${filter.externalId ?? null})
+    AND (${filter.failCode ?? null}::text IS NULL OR "failCode" = ${filter.failCode ?? null})
+    AND (${filter.environment ?? null}::text IS NULL OR environment = ${filter.environment ?? null})
+    AND (${filter.release ?? null}::text IS NULL OR release = ${filter.release ?? null})
+    AND (${filter.correlationId ?? null}::text IS NULL OR "correlationId" = ${filter.correlationId ?? null})
+    AND (${filter.parentRunId ?? null}::text IS NULL OR "parentRunId" = ${filter.parentRunId ?? null})
+    AND (
+      ${filter.namespace ?? null}::text IS NULL
+      OR (
+        ${filter.namespace ?? null} = 'browser'
+        AND workflow LIKE 'browser.%'
+      )
+      OR (
+        ${filter.namespace ?? null} = 'application'
+        AND workflow NOT LIKE 'browser.%'
+      )
+    )
+    AND (${filter.startedAfter ?? null}::timestamptz IS NULL OR "startedAt" >= ${filter.startedAfter ?? null}::timestamptz)
+    AND (${filter.startedBefore ?? null}::timestamptz IS NULL OR "startedAt" <= ${filter.startedBefore ?? null}::timestamptz)
+    AND (
+      ${like}::text IS NULL
+      OR "externalId" ILIKE ${like}
+      OR workflow ILIKE ${like}
+      OR coalesce("correlationId", '') ILIKE ${like}
+      OR coalesce("parentRunId", '') ILIKE ${like}
+      OR coalesce(step, '') ILIKE ${like}
+      OR coalesce("failCode", '') ILIKE ${like}
+    )
+`
+}

@@ -72,12 +72,21 @@ export interface ProjectSnapshot {
   readonly failureCodes: ReadonlyArray<FailureCodeInsight>
 }
 
+export interface OperationCompareRow {
+  readonly name: string
+  readonly currentDurationMs: number | null
+  readonly currentStatus: "completed" | "failed" | "open" | "absent"
+  readonly peerMedianDurationMs: number | null
+  readonly peerPresentCount: number
+}
+
 export interface RunComparison {
   readonly current: StoredRun | null
   readonly peers: ReadonlyArray<StoredRun>
   readonly peerSuccessRate: number | null
   readonly peerMedianDurationMs: number | null
   readonly peerP95DurationMs: number | null
+  readonly operations: ReadonlyArray<OperationCompareRow>
 }
 
 export interface RunTimelineEvent {
@@ -111,6 +120,36 @@ export interface RelatedRuns {
   readonly related: ReadonlyArray<RelatedRun>
 }
 
+export interface ListedRun extends StoredRun {
+  readonly environment: string | null
+  readonly release: string | null
+  readonly failCode: string | null
+}
+
+export interface ListRunsQuery {
+  readonly workflow?: string
+  readonly status?: RunStatus
+  readonly search?: string
+  readonly externalId?: string
+  readonly failCode?: string
+  readonly environment?: string
+  readonly release?: string
+  readonly correlationId?: string
+  readonly parentRunId?: string
+  readonly namespace?: "browser" | "application"
+  readonly startedAfter?: string
+  readonly startedBefore?: string
+  readonly cursor?: string
+  readonly limit?: number
+}
+
+export interface ListedRunsPage {
+  readonly runs: ReadonlyArray<ListedRun>
+  readonly nextCursor: string | null
+  readonly total: number
+  readonly limit: number
+}
+
 export interface WorkflowRepositoryService {
   readonly append: (
     projectId: string,
@@ -120,6 +159,10 @@ export interface WorkflowRepositoryService {
   readonly snapshot: (
     projectId: string,
   ) => Effect.Effect<ProjectSnapshot, PersistenceError>
+  readonly listRuns: (
+    projectId: string,
+    query: ListRunsQuery,
+  ) => Effect.Effect<ListedRunsPage, PersistenceError>
   readonly timeline: (
     projectId: string,
     runId: string,

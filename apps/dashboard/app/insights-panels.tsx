@@ -74,6 +74,7 @@ export function WeekOverWeek({
     {
       label: "Volume",
       value: current.count.toLocaleString(),
+      population: "From the 30-day daily series",
       change: (
         <Change current={current.count} previous={previous.count} />
       ),
@@ -81,6 +82,7 @@ export function WeekOverWeek({
     {
       label: "Success rate",
       value: current.successRate == null ? "—" : `${current.successRate}%`,
+      population: "Among finished runs in the 30-day daily series",
       change: (
         <Change
           current={current.successRate}
@@ -91,6 +93,8 @@ export function WeekOverWeek({
     {
       label: "Median duration",
       value: formatDuration(currentDuration.median),
+      population:
+        "From the latest-100 run snapshot in that date range — not the same population as volume above",
       change: (
         <Change
           current={currentDuration.median}
@@ -102,6 +106,7 @@ export function WeekOverWeek({
     {
       label: "Failed runs",
       value: current.failed.toLocaleString(),
+      population: "From the 30-day daily series",
       change: (
         <Change
           current={current.failed}
@@ -120,8 +125,9 @@ export function WeekOverWeek({
               <CardDescription>{card.label} · last 7 days</CardDescription>
               <CardTitle className="text-2xl">{card.value}</CardTitle>
             </CardHeader>
-            <CardContent className="p-4 pt-2 text-xs sm:p-6 sm:pt-2">
+            <CardContent className="space-y-1 p-4 pt-2 text-xs sm:p-6 sm:pt-2">
               {card.change}
+              <p className="leading-5 text-muted-foreground">{card.population}</p>
             </CardContent>
           </Card>
         ))}

@@ -24,8 +24,15 @@ import { useTRPC } from "../lib/trpc"
 import { WorkflowDirectory } from "./workflow-directory"
 import { RunInvestigation } from "./run-investigation"
 import { DataState, PageHeading, ViewLink } from "./dashboard-components"
-import { formatDuration, type WorkflowSummary } from "./dashboard-data"
-import { EmptyProject } from "./empty-project"
+import {
+  dailyFromRuns,
+  formatDuration,
+  formatTimestamp,
+  weekOverWeek,
+  workflowOutliers,
+  type Run,
+  type WorkflowSummary,
+} from "./dashboard-data"
 import { OnboardingGuide } from "./getting-started"
 import { useProject } from "./project-context"
 import {
@@ -36,6 +43,7 @@ import {
   WeekOverWeek,
 } from "./insights-panels"
 import { RunExplorer, RunsTable } from "./runs-table"
+import { StatusBadge } from "./dashboard-components"
 
 function useSnapshot() {
   const trpc = useTRPC()
@@ -174,13 +182,12 @@ export function DashboardOverview() {
       >
         <Refresh fetching={isFetching} onClick={() => void refetch()} />
       </PageHeading>
-      <OnboardingGuide />
+      <OnboardingGuide hasRuns={(data?.metrics.totalRuns ?? 0) > 0} />
       <DataState
         pending={isPending}
         error={error}
         retry={() => void refetch()}
       />
-      {data && data.metrics.totalRuns === 0 ? <EmptyProject /> : null}
       {data && data.metrics.totalRuns > 0 && (
         <>
           <section
@@ -241,6 +248,67 @@ export function DashboardOverview() {
   )
 }
 
+function WorkflowOutlierLinks({
+  title,
+  runs,
+  empty,
+}: {
+  title: string
+  runs: readonly Run[]
+  empty: string
+}) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{title}</CardTitle>
+        <CardDescription>
+          From the latest-100 project snapshot filtered to this workflow — not
+          all-time history.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="p-0">
+        {runs.length === 0 ? (
+          <p className="px-6 py-8 text-center text-sm text-muted-foreground">
+            {empty}
+          </p>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Run</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Duration</TableHead>
+                <TableHead>Started (UTC)</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {runs.map((run) => (
+                <TableRow key={run.id}>
+                  <TableCell>
+                    <Link
+                      className="font-medium hover:text-primary hover:underline"
+                      href={`/runs/${run.id}`}
+                    >
+                      <code>{run.externalId.slice(0, 12)}</code>
+                    </Link>
+                  </TableCell>
+                  <TableCell>
+                    <StatusBadge status={run.status} />
+                  </TableCell>
+                  <TableCell>{formatDuration(run.durationMs)}</TableCell>
+                  <TableCell className="whitespace-nowrap">
+                    {formatTimestamp(run.startedAt)}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
 export function ProjectRuns({
   workflow,
   initialSearch = "",
@@ -250,6 +318,20 @@ export function ProjectRuns({
 }) {
   const { data, isPending, error, isFetching, refetch } = useSnapshot()
   const summary = data?.workflows.find((item) => item.name === workflow)
+  const workflowRuns =
+    workflow && data
+      ? data.runs.filter((run) => run.workflow === workflow)
+      : []
+  const workflowDaily =
+    workflow && workflowRuns.length > 0
+      ? dailyFromRuns(workflowRuns)
+      : null
+  const outliers =
+    workflow && workflowRuns.length > 0
+      ? workflowOutliers(workflowRuns)
+      : null
+  const wow =
+    workflowDaily != null ? weekOverWeek(workflowDaily) : null
   return (
     <div className="grid min-w-0 gap-6">
       <PageHeading
@@ -268,21 +350,44 @@ export function ProjectRuns({
         retry={() => void refetch()}
       />
       {workflow && summary && (
-        <div className="flex flex-wrap gap-2">
-          <Badge variant="outline">
-            {summary.runs.toLocaleString()} recorded runs
-          </Badge>
-          <Badge variant="outline">
-            {summary.successRate === null
-              ? "No finished runs"
-              : `${summary.successRate}% success`}
-          </Badge>
-          <Badge variant="outline">
-            Median {formatDuration(summary.medianDurationMs)}
-          </Badge>
-          <Badge variant="outline">
-            p95 {formatDuration(summary.p95DurationMs)}
-          </Badge>
+        <div className="grid gap-3">
+          <div className="flex flex-wrap gap-2">
+            <Badge
+              variant="outline"
+              title="All-time recorded runs for this workflow name"
+            >
+              {summary.runs.toLocaleString()} recorded runs · all time
+            </Badge>
+            <Badge
+              variant="outline"
+              title="Among finished runs. Incomplete runs are not failures."
+            >
+              {summary.successRate === null
+                ? "No finished runs"
+                : `${summary.successRate}% success among finished`}
+            </Badge>
+            <Badge variant="outline">
+              Median {formatDuration(summary.medianDurationMs)} · all time
+            </Badge>
+            <Badge variant="outline">
+              p95 {formatDuration(summary.p95DurationMs)} · all time
+            </Badge>
+          </div>
+          <p className="text-xs leading-6 text-muted-foreground">
+            Summary badges use all recorded runs for this workflow. Charts and
+            the explorer below use the latest-100 project snapshot filtered to
+            this name ({workflowRuns.length} in that slice).
+          </p>
+          {wow && (
+            <p className="text-xs leading-6 text-muted-foreground">
+              Last 7 days in this slice: {wow.current.count} runs
+              {wow.current.successRate != null
+                ? ` · ${wow.current.successRate}% success among finished`
+                : ""}
+              . Week-over-week volume change is only meaningful inside the
+              latest-100 window.
+            </p>
+          )}
         </div>
       )}
       {workflow && data && (
@@ -301,28 +406,46 @@ export function ProjectRuns({
           />
         </div>
       )}
+      {workflow && workflowDaily && (
+        <div className="grid min-w-0 gap-5 xl:grid-cols-2">
+          <DailyVolumePanel daily={workflowDaily} />
+          <DailyDurationPanel daily={workflowDaily} />
+        </div>
+      )}
+      {workflow && outliers && (
+        <div className="grid min-w-0 gap-5 xl:grid-cols-2">
+          <WorkflowOutlierLinks
+            title="Recent failures"
+            runs={outliers.failed}
+            empty="No failed runs in the latest-100 slice for this workflow."
+          />
+          <WorkflowOutlierLinks
+            title="Longest durations"
+            runs={outliers.longest}
+            empty="No timed runs in the latest-100 slice for this workflow."
+          />
+        </div>
+      )}
       <Alert>
         <AlertDescription>
-          History below covers the project’s latest 100 runs
-          {workflow ? ", filtered to this workflow" : ""}. Filters and
-          pagination apply to that snapshot, not the full database history.
+          {workflow
+            ? "Run explorer pages the full project history for this workflow. Summary badges above are all-time aggregates. Charts and outlier tables still use the latest-100 snapshot slice."
+            : "Run explorer pages the full project history with server-side filters. Overview charts still use the latest-100 snapshot plus 30-day aggregates."}
         </AlertDescription>
       </Alert>
-      {data && (
-        <Card>
-          <CardHeader>
-            <CardTitle>{workflow ? "Workflow runs" : "Run explorer"}</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            <RunExplorer
-              key={`${workflow ?? "all"}:${initialSearch}`}
-              runs={data.runs}
-              workflow={workflow}
-              initialSearch={initialSearch}
-            />
-          </CardContent>
-        </Card>
-      )}
+      <Card>
+        <CardHeader>
+          <CardTitle>{workflow ? "Workflow runs" : "Run explorer"}</CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          <RunExplorer
+            key={`${workflow ?? "all"}:${initialSearch}`}
+            workflow={workflow}
+            workflowNames={data?.workflows.map((item) => item.name) ?? []}
+            initialSearch={initialSearch}
+          />
+        </CardContent>
+      </Card>
     </div>
   )
 }

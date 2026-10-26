@@ -3,7 +3,8 @@
 ## Pages and data
 
 Anonymous visitors are redirected to sign in. Email/password registration
-creates a project and the first write key. Seed `local@dev` /
+creates the account only; the first project and write key are created in
+Settings / onboarding. Seed `local@dev` /
 `local-dev-only` after `pnpm db:setup` to open the operations project.
 
 - **Overview:** project metrics, week-over-week change, 30-day volume and

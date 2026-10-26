@@ -13,6 +13,7 @@ import {
   AlertDescription,
   AlertTitle,
   Badge,
+  Button,
   Card,
   CardContent,
   CardDescription,
@@ -35,10 +36,21 @@ import {
   getRunResultHighlights,
   latestReportedProgress,
 } from "./run-presentation"
-import { StatusBadge, TablePagination, ViewLink } from "./dashboard-components"
+import {
+  CopyButton,
+  StatusBadge,
+  TablePagination,
+  ViewLink,
+} from "./dashboard-components"
 import { formatDuration, formatTimestamp, paginate } from "./dashboard-data"
 import { RunCompareChart } from "./insight-charts"
+import {
+  buildRunExport,
+  buildTimelineExport,
+  stringifyExport,
+} from "./run-export"
 import { EventTable, JsonData, type RunEvent } from "./run-event-table"
+import { OperationWaterfall, ProgressStrip } from "./run-waterfall"
 
 type RunRelationships = inferRouterOutputs<AppRouter>["run"]["related"]
 type RunComparison = inferRouterOutputs<AppRouter>["run"]["compare"]
@@ -124,6 +136,7 @@ function RunComparisonPanel({
   error?: string
 }) {
   const current = comparison?.current
+  const peerCount = comparison?.peers.length ?? 0
   const vsMedian = durationDelta(
     current?.durationMs ?? null,
     comparison?.peerMedianDurationMs ?? null,
@@ -135,9 +148,10 @@ function RunComparisonPanel({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Compared with the last 20 runs</CardTitle>
+        <CardTitle>Compared with the last 50 runs</CardTitle>
         <CardDescription>
-          Same workflow. Duration and outcome against recent peers.
+          Same workflow. Duration, reported outcome, and named operations
+          against recent peers. Comparison does not state a cause.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -147,12 +161,21 @@ function RunComparisonPanel({
           </Alert>
         ) : loading ? (
           <p role="status">Loading comparison…</p>
-        ) : !current || (comparison?.peers.length ?? 0) === 0 ? (
+        ) : !current || peerCount === 0 ? (
           <p className="text-sm text-muted-foreground">
             No earlier runs of this workflow to compare yet.
           </p>
         ) : (
           <>
+            {peerCount < 5 && (
+              <Alert>
+                <AlertTitle>Few peers</AlertTitle>
+                <AlertDescription>
+                  Only {peerCount} earlier run{peerCount === 1 ? "" : "s"}. Treat
+                  median and p95 as thin samples, not a regression signal.
+                </AlertDescription>
+              </Alert>
+            )}
             <RunCompareChart
               currentMs={current.durationMs}
               peerMedianMs={comparison.peerMedianDurationMs}
@@ -193,17 +216,59 @@ function RunComparisonPanel({
               </div>
             </dl>
             <p className="text-xs text-muted-foreground">
-              Peer success rate:{" "}
+              Peer success rate among finished peers:{" "}
               {comparison.peerSuccessRate == null
                 ? "No finished peers"
                 : `${comparison.peerSuccessRate}%`}
-              . {comparison.peers.length} earlier runs.
+              . {peerCount} earlier runs in this window.
             </p>
+            {(comparison.operations?.length ?? 0) > 0 && (
+              <section className="grid gap-3">
+                <h3 className="text-sm font-semibold">Operations vs peers</h3>
+                <p className="text-xs leading-6 text-muted-foreground">
+                  Presence and duration differences in recorded operations.
+                  Absent means this run did not record that operation name.
+                </p>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Operation</TableHead>
+                      <TableHead>This run</TableHead>
+                      <TableHead>Peer median</TableHead>
+                      <TableHead>In peers</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {comparison.operations.map((row) => (
+                      <TableRow key={row.name}>
+                        <TableCell>
+                          <span className="font-medium">{row.name}</span>
+                          <p className="text-xs text-muted-foreground">
+                            {row.currentStatus}
+                          </p>
+                        </TableCell>
+                        <TableCell>
+                          {formatDuration(row.currentDurationMs)}
+                        </TableCell>
+                        <TableCell>
+                          {formatDuration(row.peerMedianDurationMs)}
+                        </TableCell>
+                        <TableCell>
+                          {row.peerPresentCount}/{peerCount}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </section>
+            )}
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Run</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Started (UTC)</TableHead>
+                  <TableHead>Business result</TableHead>
                   <TableHead>Duration</TableHead>
                   <TableHead>Delta vs this run</TableHead>
                 </TableRow>
@@ -214,6 +279,7 @@ function RunComparisonPanel({
                     current.durationMs,
                     peer.durationMs,
                   )
+                  const highlights = getRunResultHighlights(peer.result ?? {})
                   return (
                     <TableRow key={peer.id}>
                       <TableCell>
@@ -226,6 +292,16 @@ function RunComparisonPanel({
                       </TableCell>
                       <TableCell>
                         <StatusBadge status={peer.status} />
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        {formatTimestamp(peer.startedAt)}
+                      </TableCell>
+                      <TableCell>
+                        {highlights.length > 0
+                          ? highlights
+                              .map((item) => `${item.label}: ${item.value}`)
+                              .join(" · ")
+                          : "—"}
                       </TableCell>
                       <TableCell>{formatDuration(peer.durationMs)}</TableCell>
                       <TableCell>
@@ -266,6 +342,9 @@ export function RunInvestigation({
   comparisonLoading?: boolean
   comparisonError?: string
 }) {
+  const [timelineView, setTimelineView] = useState<"waterfall" | "events">(
+    "waterfall",
+  )
   const first = events[0]
   if (!first) {
     return null
@@ -310,14 +389,51 @@ export function RunInvestigation({
             {first.release && (
               <Badge variant="outline">Release {first.release}</Badge>
             )}
-            <Badge variant="outline">
+            <Badge
+              variant="outline"
+              title="Elapsed from started to done() or fail(), when recorded"
+            >
               {formatDuration(getRunDurationMs(events))}
             </Badge>
-            <Badge variant="outline">{events.length} events</Badge>
+            <Badge
+              variant="outline"
+              title="Persisted telemetry events for this run"
+            >
+              {events.length} events
+            </Badge>
           </div>
-          <ViewLink href={`/workflows/${encodeURIComponent(first.workflow)}`}>
-            View workflow
-          </ViewLink>
+          <p className="mb-4 text-xs leading-6 text-muted-foreground">
+            Duration is elapsed time to a recorded terminal outcome. Events are
+            what the application sent. Running means no final outcome yet — not
+            proof the process is still active.
+          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <ViewLink
+              href={`/workflows/${encodeURIComponent(first.workflow)}`}
+            >
+              View workflow
+            </ViewLink>
+            {(() => {
+              const runExport = buildRunExport(events)
+              const timelineExport = buildTimelineExport(events)
+              return (
+                <>
+                  {runExport && (
+                    <CopyButton
+                      label="Copy run JSON"
+                      value={stringifyExport(runExport)}
+                    />
+                  )}
+                  {timelineExport && (
+                    <CopyButton
+                      label="Copy timeline JSON"
+                      value={stringifyExport(timelineExport)}
+                    />
+                  )}
+                </>
+              )
+            })()}
+          </div>
         </CardContent>
       </Card>
       <Tabs defaultValue="outcome" className="min-w-0">
@@ -408,6 +524,9 @@ export function RunInvestigation({
                   {formatReportedProgress(progress)}
                 </p>
               )}
+              <div className="mb-5">
+                <ProgressStrip events={events} />
+              </div>
               <div className="mb-4 flex flex-wrap gap-2">
                 <Badge variant="secondary">
                   {operations.length} operations
@@ -444,15 +563,46 @@ export function RunInvestigation({
         </TabsContent>
         <TabsContent value="timeline" className="mt-4 grid min-w-0 gap-5">
           <Card>
-            <CardHeader>
-              <CardTitle>Event timeline</CardTitle>
-              <CardDescription>
-                Checkpoints, operations, progress and failures. Filter before
-                expanding payloads.
-              </CardDescription>
+            <CardHeader className="flex-row flex-wrap items-start justify-between gap-4 space-y-0">
+              <div>
+                <CardTitle>
+                  {timelineView === "waterfall"
+                    ? "Operation waterfall"
+                    : "Event timeline"}
+                </CardTitle>
+                <CardDescription className="mt-2">
+                  {timelineView === "waterfall"
+                    ? "Recorded operation intervals, overlap, and idle gaps between endpoints."
+                    : "Checkpoints, operations, progress and failures. Filter before expanding payloads."}
+                </CardDescription>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={
+                    timelineView === "waterfall" ? "secondary" : "outline"
+                  }
+                  onClick={() => setTimelineView("waterfall")}
+                >
+                  Waterfall
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={timelineView === "events" ? "secondary" : "outline"}
+                  onClick={() => setTimelineView("events")}
+                >
+                  Events
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="p-0">
-              <EventTable events={events} />
+              {timelineView === "waterfall" ? (
+                <OperationWaterfall events={events} />
+              ) : (
+                <EventTable events={events} />
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -516,14 +666,38 @@ export function RunInvestigation({
               <dl className="mb-5 grid gap-4 text-xs sm:grid-cols-2 [&_dt]:text-muted-foreground [&_dd]:mt-1 [&_dd]:break-all">
                 <div>
                   <dt>Correlation ID</dt>
-                  <dd>
-                    <code>{first.correlationId ?? "Not supplied"}</code>
+                  <dd className="flex flex-wrap items-center gap-2">
+                    {first.correlationId ? (
+                      <>
+                        <Link
+                          className="font-medium hover:text-primary hover:underline"
+                          href={`/runs?search=${encodeURIComponent(first.correlationId)}`}
+                        >
+                          <code>{first.correlationId}</code>
+                        </Link>
+                        <CopyButton value={first.correlationId} label="Copy" />
+                      </>
+                    ) : (
+                      <code>Not supplied</code>
+                    )}
                   </dd>
                 </div>
                 <div>
                   <dt>Parent run ID</dt>
-                  <dd>
-                    <code>{first.parentRunId ?? "Not supplied"}</code>
+                  <dd className="flex flex-wrap items-center gap-2">
+                    {first.parentRunId ? (
+                      <>
+                        <Link
+                          className="font-medium hover:text-primary hover:underline"
+                          href={`/runs?search=${encodeURIComponent(first.parentRunId)}`}
+                        >
+                          <code>{first.parentRunId}</code>
+                        </Link>
+                        <CopyButton value={first.parentRunId} label="Copy" />
+                      </>
+                    ) : (
+                      <code>Not supplied</code>
+                    )}
                   </dd>
                 </div>
               </dl>

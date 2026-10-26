@@ -122,7 +122,9 @@ export function WorkflowDirectory({
                   <TableHead>Workflow</TableHead>
                   <TableHead>Namespace</TableHead>
                   <TableHead>Recorded runs</TableHead>
-                  <TableHead>Success rate</TableHead>
+                  <TableHead title="Among finished runs. Incomplete runs are not failures.">
+                    Success rate
+                  </TableHead>
                   <TableHead>Median</TableHead>
                   <TableHead>p95</TableHead>
                   <TableHead>
@@ -149,7 +151,9 @@ export function WorkflowDirectory({
                       </Badge>
                     </TableCell>
                     <TableCell>{item.runs.toLocaleString()}</TableCell>
-                    <TableCell>
+                    <TableCell
+                      title="Among finished runs. Incomplete runs are not failures."
+                    >
                       {item.successRate === null
                         ? "No finished runs"
                         : `${item.successRate}%`}

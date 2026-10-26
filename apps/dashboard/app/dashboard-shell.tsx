@@ -185,7 +185,12 @@ function ProjectSwitcher() {
   }
   if (projects.length === 0) {
     return (
-      <p className="text-xs text-muted-foreground">No project yet</p>
+      <div className="grid gap-2">
+        <p className="text-xs text-muted-foreground">No project yet</p>
+        <Button asChild size="sm" variant="outline" className="justify-start">
+          <Link href="/settings?section=projects">Create a project</Link>
+        </Button>
+      </div>
     )
   }
   if (projects.length === 1) {

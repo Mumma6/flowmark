@@ -82,3 +82,164 @@ export function getRunResultHighlights(
       value: String(value),
     }))
 }
+
+export type OperationSpanStatus = "completed" | "failed" | "open"
+
+export interface OperationSpan {
+  readonly operationId: string
+  readonly name: string
+  readonly startedAt: string
+  readonly endedAt: string | null
+  readonly durationMs: number | null
+  readonly status: OperationSpanStatus
+  readonly offsetMs: number
+  readonly error: unknown
+}
+
+export interface ProgressPoint {
+  readonly timestamp: string
+  readonly offsetMs: number
+  readonly completed: number
+  readonly total?: number | null
+  readonly unit?: string | null
+}
+
+function runStartMs(
+  events: ReadonlyArray<{ readonly type: string; readonly timestamp: string }>,
+): number | null {
+  const started = events.find((event) => event.type === "started")
+  return started ? Date.parse(started.timestamp) : null
+}
+
+/** Pair operation_started with completed/failed by operationId. */
+export function buildOperationSpans(
+  events: ReadonlyArray<{
+    readonly type: string
+    readonly timestamp: string
+    readonly operationId?: string | null
+    readonly operationName?: string | null
+    readonly durationMs?: number | null
+    readonly error?: unknown
+  }>,
+): ReadonlyArray<OperationSpan> {
+  const startMs = runStartMs(events)
+  if (startMs == null) {
+    return []
+  }
+  const byId = new Map<
+    string,
+    {
+      name: string
+      startedAt: string
+      endedAt: string | null
+      durationMs: number | null
+      status: OperationSpanStatus
+      error: unknown
+    }
+  >()
+  for (const event of events) {
+    const id = event.operationId
+    if (!id) {
+      continue
+    }
+    if (event.type === "operation_started") {
+      byId.set(id, {
+        name: event.operationName ?? "Operation",
+        startedAt: event.timestamp,
+        endedAt: null,
+        durationMs: null,
+        status: "open",
+        error: null,
+      })
+      continue
+    }
+    const existing = byId.get(id)
+    if (!existing) {
+      continue
+    }
+    if (event.type === "operation_completed") {
+      byId.set(id, {
+        ...existing,
+        endedAt: event.timestamp,
+        durationMs:
+          event.durationMs ??
+          Date.parse(event.timestamp) - Date.parse(existing.startedAt),
+        status: "completed",
+      })
+    } else if (event.type === "operation_failed") {
+      byId.set(id, {
+        ...existing,
+        endedAt: event.timestamp,
+        durationMs:
+          event.durationMs ??
+          Date.parse(event.timestamp) - Date.parse(existing.startedAt),
+        status: "failed",
+        error: event.error ?? null,
+      })
+    }
+  }
+  return [...byId.entries()]
+    .map(([operationId, span]) => ({
+      operationId,
+      name: span.name,
+      startedAt: span.startedAt,
+      endedAt: span.endedAt,
+      durationMs: span.durationMs,
+      status: span.status,
+      offsetMs: Math.max(0, Date.parse(span.startedAt) - startMs),
+      error: span.error,
+    }))
+    .sort(
+      (a, b) =>
+        Date.parse(a.startedAt) - Date.parse(b.startedAt) ||
+        a.operationId.localeCompare(b.operationId),
+    )
+}
+
+export function buildProgressSeries(
+  events: ReadonlyArray<{
+    readonly type: string
+    readonly timestamp: string
+    readonly completed?: number | null
+    readonly total?: number | null
+    readonly unit?: string | null
+  }>,
+): ReadonlyArray<ProgressPoint> {
+  const startMs = runStartMs(events)
+  if (startMs == null) {
+    return []
+  }
+  return events
+    .filter((event) => event.type === "progress" && event.completed != null)
+    .map((event) => ({
+      timestamp: event.timestamp,
+      offsetMs: Math.max(0, Date.parse(event.timestamp) - startMs),
+      completed: event.completed as number,
+      total: event.total,
+      unit: event.unit,
+    }))
+}
+
+/** Idle gaps between consecutive recorded operation endpoints (ms). */
+export function operationIdleGaps(
+  spans: ReadonlyArray<OperationSpan>,
+): ReadonlyArray<{ readonly afterOperationId: string; readonly idleMs: number }> {
+  const finished = spans
+    .filter((span) => span.endedAt != null)
+    .sort(
+      (a, b) =>
+        Date.parse(a.endedAt!) - Date.parse(b.endedAt!) ||
+        a.operationId.localeCompare(b.operationId),
+    )
+  const gaps: { afterOperationId: string; idleMs: number }[] = []
+  for (let index = 0; index < finished.length - 1; index += 1) {
+    const current = finished[index]!
+    const next = finished[index + 1]!
+    const idleMs =
+      Date.parse(next.startedAt) - Date.parse(current.endedAt!)
+    if (idleMs > 0) {
+      gaps.push({ afterOperationId: current.operationId, idleMs })
+    }
+  }
+  return gaps
+}

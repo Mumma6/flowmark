@@ -1,6 +1,6 @@
 "use client"
 
-import type { ReactNode } from "react"
+import { useState, type ReactNode } from "react"
 import {
   Alert,
   AlertDescription,
@@ -16,6 +16,30 @@ import {
 import { ArrowRight, RefreshCw } from "lucide-react"
 import Link from "next/link"
 import { runStatusLabel, type RunStatus } from "./run-presentation"
+
+export function CopyButton({
+  value,
+  label = "Copy",
+}: {
+  value: string
+  label?: string
+}) {
+  const [copied, setCopied] = useState(false)
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      size="sm"
+      onClick={async () => {
+        await navigator.clipboard.writeText(value)
+        setCopied(true)
+        window.setTimeout(() => setCopied(false), 2000)
+      }}
+    >
+      {copied ? "Copied" : label}
+    </Button>
+  )
+}
 
 export function StatusBadge({ status }: { status: RunStatus }) {
   return (

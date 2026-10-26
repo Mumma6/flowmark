@@ -43,21 +43,18 @@ export function AuthScreen({
           body: JSON.stringify({ name, email, password }),
         })
         const body = (await response.json()) as {
-          writeKey?: string
+          ok?: boolean
           error?: string
         }
         if (!response.ok) {
           throw new Error(body.error ?? "Could not create the account.")
-        }
-        if (body.writeKey) {
-          sessionStorage.setItem("flowmark.newWriteKey", body.writeKey)
         }
       }
       const result = await authClient.signIn.email({ email, password })
       if (result.error) {
         throw new Error(result.error.message ?? "Could not sign in.")
       }
-      router.push(isSignUp ? "/settings" : "/")
+      router.push(isSignUp ? "/settings?section=projects" : "/")
       router.refresh()
     } catch (cause) {
       setError(
@@ -74,7 +71,9 @@ export function AuthScreen({
         <CardHeader>
           <CardTitle>{title}</CardTitle>
           <CardDescription>
-            Email and password for this Flowmark workspace
+            {isSignUp
+              ? "Create an account, then add a project in Settings when you are ready to ingest runs."
+              : "Email and password for the Flowmark dashboard."}
           </CardDescription>
         </CardHeader>
         <CardContent>

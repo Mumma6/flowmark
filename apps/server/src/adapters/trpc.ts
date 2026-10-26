@@ -278,6 +278,46 @@ export const appRouter = t.router({
     ),
   }),
   run: t.router({
+    list: t.procedure
+      .input(
+        Schema.standardSchemaV1(
+          Schema.Struct({
+            workflow: Schema.optional(Schema.String),
+            status: Schema.optional(
+              Schema.Literal("Completed", "Failed", "Running"),
+            ),
+            search: Schema.optional(Schema.String.pipe(Schema.maxLength(200))),
+            externalId: Schema.optional(Schema.String),
+            failCode: Schema.optional(Schema.String),
+            environment: Schema.optional(Schema.String),
+            release: Schema.optional(Schema.String),
+            correlationId: Schema.optional(Schema.String),
+            parentRunId: Schema.optional(Schema.String),
+            namespace: Schema.optional(
+              Schema.Literal("browser", "application"),
+            ),
+            startedAfter: Schema.optional(Schema.String),
+            startedBefore: Schema.optional(Schema.String),
+            cursor: Schema.optional(Schema.String),
+            limit: Schema.optional(
+              Schema.Number.pipe(Schema.int(), Schema.between(1, 100)),
+            ),
+          }),
+        ),
+      )
+      .query(({ ctx, input }) =>
+        readQuery(
+          ctx.request,
+          (userId, projectId) =>
+            Effect.flatMap(GetProjectWorkflowData, (queries) =>
+              queries.listRunsForUser(userId, input, projectId),
+            ),
+          (header) =>
+            Effect.flatMap(GetProjectWorkflowData, (queries) =>
+              queries.listRuns(header, input),
+            ),
+        ),
+      ),
     detail: t.procedure
       .input(Schema.standardSchemaV1(Schema.Struct({ id: Schema.UUID })))
       .query(({ ctx, input }) =>

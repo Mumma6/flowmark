@@ -13,8 +13,15 @@ import {
   getRunTimeline,
   type RunTimelineEvent,
 } from "./queries/get-run-timeline.js"
+import { listRuns } from "./queries/list-runs.js"
 import { appendEvent } from "./writes/append-event.js"
-import type { ProjectSnapshot, RelatedRuns, RunComparison } from "./types.js"
+import type {
+  ListedRunsPage,
+  ListRunsQuery,
+  ProjectSnapshot,
+  RelatedRuns,
+  RunComparison,
+} from "./types.js"
 
 export interface WorkflowStoreService {
   readonly append: (
@@ -25,6 +32,10 @@ export interface WorkflowStoreService {
   readonly snapshot: (
     projectId: string,
   ) => Effect.Effect<ProjectSnapshot, DatabaseError>
+  readonly listRuns: (
+    projectId: string,
+    query: ListRunsQuery,
+  ) => Effect.Effect<ListedRunsPage, DatabaseError>
   readonly timeline: (
     projectId: string,
     runId: string,
@@ -49,6 +60,8 @@ export class WorkflowStore extends Effect.Service<WorkflowStore>()(
         append: (projectId, eventId, event) =>
           provide(appendEvent(projectId, eventId, event)),
         snapshot: (projectId) => provide(getProjectSnapshot(projectId)),
+        listRuns: (projectId, query) =>
+          provide(listRuns(projectId, query)),
         timeline: (projectId, runId) =>
           provide(getRunTimeline(projectId, runId)),
         related: (projectId, runId) =>

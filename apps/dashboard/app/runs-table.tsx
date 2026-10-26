@@ -1,7 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import Link from "next/link"
+import { useQuery } from "@tanstack/react-query"
 import { ArrowUpRight, Search } from "lucide-react"
 import {
   Badge,
@@ -15,20 +16,17 @@ import {
   TableRow,
 } from "@flowmark/ui"
 import {
-  filterRuns,
   formatDuration,
   formatTimestamp,
-  groupBy,
-  paginate,
   type Run,
-  type RunFilters,
 } from "./dashboard-data"
 import {
   FilterSelect,
   StatusBadge,
-  TablePagination,
 } from "./dashboard-components"
 import { getRunResultHighlights } from "./run-presentation"
+import { useTRPC } from "../lib/trpc"
+import { useProject } from "./project-context"
 
 export function RunsTable({
   runs,
@@ -129,44 +127,79 @@ export function RunsTable({
   )
 }
 
-const defaults: RunFilters = {
+type ExplorerFilters = {
+  search: string
+  status: string
+  workflow: string
+  namespace: string
+  failCode: string
+  environment: string
+  release: string
+}
+
+const defaults: ExplorerFilters = {
   search: "",
   status: "all",
   workflow: "all",
   namespace: "all",
-  sort: "recent",
+  failCode: "",
+  environment: "",
+  release: "",
 }
 
 export function RunExplorer({
-  runs,
   workflow,
+  workflowNames = [],
   initialSearch = "",
 }: {
-  runs: readonly Run[]
   workflow?: string
+  workflowNames?: readonly string[]
   initialSearch?: string
 }) {
-  const [filters, setFilters] = useState(() => ({
+  const trpc = useTRPC()
+  const { current } = useProject()
+  const [filters, setFilters] = useState<ExplorerFilters>(() => ({
     ...defaults,
     search: initialSearch,
   }))
-  const [grouped, setGrouped] = useState(false)
-  const [page, setPage] = useState(1)
-  const update = (key: keyof RunFilters, value: string) => {
-    setFilters((current) => ({ ...current, [key]: value }))
-    setPage(1)
+  const [cursorStack, setCursorStack] = useState<(string | null)[]>([null])
+  const pageIndex = cursorStack.length - 1
+  const cursor = cursorStack[pageIndex] ?? null
+  const update = (key: keyof ExplorerFilters, value: string) => {
+    setFilters((currentFilters) => ({ ...currentFilters, [key]: value }))
+    setCursorStack([null])
   }
-  const matching = filterRuns(runs, {
-    ...filters,
-    workflow: workflow ?? filters.workflow,
+  const queryInput = useMemo(
+    () => ({
+      workflow:
+        workflow ??
+        (filters.workflow !== "all" ? filters.workflow : undefined),
+      status:
+        filters.status === "all"
+          ? undefined
+          : (filters.status as "Completed" | "Failed" | "Running"),
+      search: filters.search.trim() || undefined,
+      failCode: filters.failCode.trim() || undefined,
+      environment: filters.environment.trim() || undefined,
+      release: filters.release.trim() || undefined,
+      namespace:
+        filters.namespace === "browser"
+          ? ("browser" as const)
+          : filters.namespace === "server"
+            ? ("application" as const)
+            : undefined,
+      cursor: cursor ?? undefined,
+      limit: 25,
+    }),
+    [workflow, filters, cursor],
+  )
+  const list = useQuery({
+    ...trpc.run.list.queryOptions(queryInput),
+    enabled: Boolean(current),
   })
-  const ordered = grouped
-    ? matching.sort((a, b) => a.workflow.localeCompare(b.workflow))
-    : matching
-  const result = paginate(ordered, page, 15)
-  const groups = grouped
-    ? groupBy(result.items, (run) => run.workflow)
-    : [["Runs", result.items] as const]
+  const runs = list.data?.runs ?? []
+  const total = list.data?.total ?? 0
+  const nextCursor = list.data?.nextCursor ?? null
   return (
     <div>
       <div className="flex flex-wrap items-end gap-3 p-5">
@@ -181,7 +214,7 @@ export function RunExplorer({
             <Input
               className="pl-8"
               type="search"
-              placeholder="Run ID, workflow or correlation…"
+              placeholder="Run ID, workflow, fail code, correlation…"
               value={filters.search}
               onChange={(event) => update("search", event.target.value)}
             />
@@ -194,9 +227,7 @@ export function RunExplorer({
             onChange={(value) => update("workflow", value)}
             options={[
               { value: "all", label: "All workflows" },
-              ...[...new Set(runs.map((run) => run.workflow))]
-                .sort()
-                .map((value) => ({ value, label: value })),
+              ...workflowNames.map((value) => ({ value, label: value })),
             ]}
           />
         )}
@@ -221,67 +252,96 @@ export function RunExplorer({
             { value: "browser", label: "Browser" },
           ]}
         />
-        <FilterSelect
-          label={grouped ? "Sort within workflow" : "Sort"}
-          value={filters.sort}
-          onChange={(value) => update("sort", value)}
-          options={[
-            { value: "recent", label: "Newest first" },
-            { value: "duration", label: "Longest first" },
-          ]}
-        />
+        <label className="grid min-w-0 flex-[1_1_140px] gap-2 text-xs text-muted-foreground sm:max-w-[200px]">
+          <span>Fail code</span>
+          <Input
+            value={filters.failCode}
+            placeholder="e.g. LOAD_FAILED"
+            onChange={(event) => update("failCode", event.target.value)}
+          />
+        </label>
+        <label className="grid min-w-0 flex-[1_1_140px] gap-2 text-xs text-muted-foreground sm:max-w-[180px]">
+          <span>Environment</span>
+          <Input
+            value={filters.environment}
+            placeholder="production"
+            onChange={(event) => update("environment", event.target.value)}
+          />
+        </label>
+        <label className="grid min-w-0 flex-[1_1_140px] gap-2 text-xs text-muted-foreground sm:max-w-[180px]">
+          <span>Release</span>
+          <Input
+            value={filters.release}
+            placeholder="2026.10.2"
+            onChange={(event) => update("release", event.target.value)}
+          />
+        </label>
       </div>
       <div className="flex flex-wrap items-center gap-2 px-5 pb-4">
-        {!workflow && (
-          <Button
-            variant={grouped ? "secondary" : "outline"}
-            size="sm"
-            aria-pressed={grouped}
-            onClick={() => {
-              setGrouped(!grouped)
-              setPage(1)
-            }}
-          >
-            Group by workflow
-          </Button>
-        )}
         <Button
           variant="ghost"
           size="sm"
           onClick={() => {
-            setFilters(defaults)
-            setPage(1)
+            setFilters({ ...defaults, search: "" })
+            setCursorStack([null])
           }}
         >
           Clear filters
         </Button>
-        <Badge variant="outline">{matching.length} runs</Badge>
+        <Badge variant="outline">{total.toLocaleString()} matching runs</Badge>
+        <p className="text-xs text-muted-foreground">
+          Server-side history · page {pageIndex + 1}
+        </p>
       </div>
-      <div>
-        {groups.map(([name, items]) => (
-          <section key={name}>
-            {grouped && (
-              <div className="flex flex-wrap items-center gap-2.5 border-y border-border bg-secondary/60 px-5 py-3 text-sm font-medium">
-                <Link href={`/workflows/${encodeURIComponent(name)}`}>
-                  {name}
-                </Link>
-                <Badge variant="secondary">
-                  {matching.filter((run) => run.workflow === name).length}{" "}
-                  matches
-                </Badge>
-              </div>
-            )}
-            <RunsTable runs={items} showWorkflow={!grouped && !workflow} />
-          </section>
-        ))}
-        {result.total === 0 && (
-          <p className="px-5 py-8 text-center text-sm leading-7 text-muted-foreground">
-            No runs match these filters. Clear filters to see all available
-            runs.
-          </p>
-        )}
+      {list.isPending ? (
+        <p role="status" className="px-5 py-8 text-sm text-muted-foreground">
+          Loading runs…
+        </p>
+      ) : list.error ? (
+        <p className="px-5 py-8 text-sm text-destructive">
+          Could not load runs: {list.error.message}
+        </p>
+      ) : (
+        <>
+          <RunsTable runs={runs} showWorkflow={!workflow} />
+          {runs.length === 0 && (
+            <p className="px-5 py-8 text-center text-sm leading-7 text-muted-foreground">
+              No runs match these filters.
+            </p>
+          )}
+        </>
+      )}
+      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-5 py-4">
+        <p className="text-xs text-muted-foreground">
+          Showing {runs.length} of {total.toLocaleString()}
+        </p>
+        <div className="flex gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={pageIndex === 0 || list.isFetching}
+            onClick={() =>
+              setCursorStack((stack) =>
+                stack.length > 1 ? stack.slice(0, -1) : stack,
+              )
+            }
+          >
+            Previous
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={!nextCursor || list.isFetching}
+            onClick={() =>
+              setCursorStack((stack) => [...stack, nextCursor])
+            }
+          >
+            Next
+          </Button>
+        </div>
       </div>
-      <TablePagination {...result} onPageChange={setPage} />
     </div>
   )
 }

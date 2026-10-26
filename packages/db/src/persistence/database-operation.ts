@@ -30,6 +30,7 @@ export enum DatabaseOperation {
   ReadRelatedRuns = "read-related-runs",
   ReadRun = "read-run",
   ReadWorkflowSummaries = "read-workflow-summaries",
+  ListRuns = "list-runs",
   Reset = "reset",
   Seed = "seed",
 }

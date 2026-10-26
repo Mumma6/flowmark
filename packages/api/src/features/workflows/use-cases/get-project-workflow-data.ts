@@ -3,6 +3,8 @@ import type { PersistenceError, Unauthorized } from "../../../errors.js"
 import { AuthorizeProject } from "../../project-access/use-cases/authorize-project.js"
 import {
   WorkflowRepository,
+  type ListedRunsPage,
+  type ListRunsQuery,
   type ProjectSnapshot,
   type RelatedRuns,
   type RunComparison,
@@ -19,6 +21,10 @@ export interface GetProjectWorkflowDataService {
     ProjectSnapshot["workflows"],
     Unauthorized | PersistenceError
   >
+  readonly listRuns: (
+    header: string | null,
+    query: ListRunsQuery,
+  ) => Effect.Effect<ListedRunsPage, Unauthorized | PersistenceError>
   readonly timeline: (
     header: string | null,
     runId: string,
@@ -45,6 +51,11 @@ export interface GetProjectWorkflowDataService {
     ProjectSnapshot["workflows"],
     Unauthorized | PersistenceError
   >
+  readonly listRunsForUser: (
+    userId: string,
+    query: ListRunsQuery,
+    projectId?: string,
+  ) => Effect.Effect<ListedRunsPage, Unauthorized | PersistenceError>
   readonly timelineForUser: (
     userId: string,
     runId: string,
@@ -84,6 +95,13 @@ export class GetProjectWorkflowData extends Context.Tag(
         (header: string | null) =>
           snapshot(header).pipe(Effect.map((data) => data.workflows)),
       )
+      const listRuns = Effect.fn("GetProjectWorkflowData.listRuns")(function* (
+        header: string | null,
+        query: ListRunsQuery,
+      ) {
+        const projectId = yield* authorization.authorize(header, "read")
+        return yield* repository.listRuns(projectId, query)
+      })
       const timeline = Effect.fn("GetProjectWorkflowData.timeline")(function* (
         header: string | null,
         runId: string,
@@ -122,6 +140,19 @@ export class GetProjectWorkflowData extends Context.Tag(
           Effect.map((data) => data.workflows),
         ),
       )
+      const listRunsForUser = Effect.fn(
+        "GetProjectWorkflowData.listRunsForUser",
+      )(function* (
+        userId: string,
+        query: ListRunsQuery,
+        requestedProjectId?: string,
+      ) {
+        const projectId = yield* authorization.authorizeUser(
+          userId,
+          requestedProjectId,
+        )
+        return yield* repository.listRuns(projectId, query)
+      })
       const timelineForUser = Effect.fn(
         "GetProjectWorkflowData.timelineForUser",
       )(function* (
@@ -165,11 +196,13 @@ export class GetProjectWorkflowData extends Context.Tag(
       return GetProjectWorkflowData.of({
         snapshot,
         workflows,
+        listRuns,
         timeline,
         related,
         compare,
         snapshotForUser,
         workflowsForUser,
+        listRunsForUser,
         timelineForUser,
         relatedForUser,
         compareForUser,

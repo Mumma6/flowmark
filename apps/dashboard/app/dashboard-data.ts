@@ -81,6 +81,75 @@ export function durationInRange(
   }
 }
 
+/** Client-side daily counts from a run slice (e.g. latest 100 for one workflow). */
+export function dailyFromRuns(runs: readonly Run[], days = 30): DayInsight[] {
+  const today = new Date()
+  today.setUTCHours(0, 0, 0, 0)
+  const byDate = new Map<
+    string,
+    {
+      completed: number
+      failed: number
+      running: number
+      durations: number[]
+    }
+  >()
+  for (let offset = days - 1; offset >= 0; offset -= 1) {
+    const date = new Date(today)
+    date.setUTCDate(today.getUTCDate() - offset)
+    byDate.set(date.toISOString().slice(0, 10), {
+      completed: 0,
+      failed: 0,
+      running: 0,
+      durations: [],
+    })
+  }
+  for (const run of runs) {
+    const day = run.startedAt.slice(0, 10)
+    const bucket = byDate.get(day)
+    if (!bucket) {
+      continue
+    }
+    if (run.status === "Completed") {
+      bucket.completed += 1
+    } else if (run.status === "Failed") {
+      bucket.failed += 1
+    } else {
+      bucket.running += 1
+    }
+    if (run.durationMs != null) {
+      bucket.durations.push(run.durationMs)
+    }
+  }
+  return [...byDate.entries()].map(([date, bucket]) => {
+    const finished = bucket.completed + bucket.failed
+    return {
+      date,
+      count: finished + bucket.running,
+      completed: bucket.completed,
+      failed: bucket.failed,
+      successRate:
+        finished === 0
+          ? null
+          : Math.round((1000 * bucket.completed) / finished) / 10,
+      medianDurationMs: percentile(bucket.durations, 0.5),
+      p95DurationMs: percentile(bucket.durations, 0.95),
+    }
+  })
+}
+
+export function workflowOutliers(runs: readonly Run[], limit = 3) {
+  const failed = [...runs]
+    .filter((run) => run.status === "Failed")
+    .sort((a, b) => b.startedAt.localeCompare(a.startedAt))
+    .slice(0, limit)
+  const longest = [...runs]
+    .filter((run) => run.durationMs != null)
+    .sort((a, b) => (b.durationMs ?? 0) - (a.durationMs ?? 0))
+    .slice(0, limit)
+  return { failed, longest }
+}
+
 export function percentChange(current: number | null, previous: number | null) {
   if (current == null || previous == null || previous === 0) {
     return null

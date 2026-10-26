@@ -209,8 +209,9 @@ The API follows feature-first ports-and-adapters:
   validates the event envelope with Effect Schema, then persists through
   `WorkflowRepository`. Browser event ingestion is a separate use case with
   browser-key, origin, and quota policy.
-- `RegisterOwner` creates a Better Auth user plus workspace, project, owner
-  membership, and the first write key.
+- Account registration creates the Better Auth user only. The first project
+  and write key are created later via `ManageProject.create` (Settings /
+  onboarding).
 - `GetProjectWorkflowData` performs read authorization and project-scoped
   snapshot, workflow-list, and timeline queries. Dashboard calls use the
   `*ForUser` variants; programmatic callers may still use a project read key.
@@ -280,9 +281,9 @@ Dashboard sign-in is Better Auth email and password. The dashboard's
 same-origin proxy forwards `/api/auth/*`, `/api/register`, and `/api/trpc/*`
 to the API so the session cookie stays first-party. Anonymous dashboard reads
 are rejected. Seed creates `local@dev` on the operations project. New
-registrations get their own project and first write key. Password reset is
-off until email delivery exists. Do not enable demo mode for real customer
-data.
+registrations create an account only; the first project and write key are
+created explicitly in Settings / onboarding. Password reset is off until
+email delivery exists. Do not enable demo mode for real customer data.
 
 ## Limits
 

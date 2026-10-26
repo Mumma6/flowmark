@@ -1,10 +1,5 @@
 import { Effect, Exit, Schema } from "effect"
-import {
-  InvalidInput,
-  RegisterOwner,
-  logFailure,
-  runApi,
-} from "@flowmark/api"
+import { InvalidInput, logFailure, runApi } from "@flowmark/api"
 import { APIError } from "better-auth/api"
 import { Data } from "effect"
 import { getAuth } from "../auth"
@@ -29,7 +24,7 @@ export const handleRegister = Effect.fn("handleRegister")(function* (
   )
   const name = body.name?.trim() || body.email
   const auth = yield* getAuth()
-  const created = yield* Effect.tryPromise({
+  yield* Effect.tryPromise({
     try: () =>
       auth.api.signUpEmail({
         body: {
@@ -43,9 +38,7 @@ export const handleRegister = Effect.fn("handleRegister")(function* (
         ? new AuthConflict({ cause })
         : new InvalidInput({ cause }),
   })
-  const owner = yield* RegisterOwner
-  const provisioned = yield* owner.provision(created.user.id, name)
-  return Response.json({ writeKey: provisioned.writeKey })
+  return Response.json({ ok: true as const })
 })
 
 export async function registerOwner(request: Request) {
@@ -90,7 +83,7 @@ export async function registerOwner(request: Request) {
     onFailure: () => {
       logFailure(result)
       return Response.json(
-        { error: "Could not create a project for this account." },
+        { error: "Could not create the account." },
         { status: 500 },
       )
     },
