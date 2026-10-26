@@ -15,6 +15,7 @@ on:
     tags:
       - "sdk-v*"
 
+# Required for npm Trusted Publishing (OIDC).
 permissions:
   contents: read
   id-token: write
@@ -27,8 +28,9 @@ jobs:
   publish:
     name: Publish @flowmarkdev/core and @flowmarkdev/node
     runs-on: ubuntu-latest
-    # Do not set `environment` unless the same name is configured on the
-    # npm Trusted Publisher (OIDC claim must match).
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -43,11 +45,18 @@ jobs:
         with:
           node-version: "22.14"
           cache: pnpm
-          # Do not set registry-url here: it injects a placeholder
-          # NODE_AUTH_TOKEN that blocks npm trusted publishing (OIDC).
 
       - name: Install npm CLI for OIDC
         run: npm install -g npm@11.15.0
+
+      - name: Prove OIDC is available
+        run: |
+          test -n "${ACTIONS_ID_TOKEN_REQUEST_URL:-}" \
+            || (echo "ACTIONS_ID_TOKEN_REQUEST_URL missing; id-token: write not effective" && exit 1)
+          test -n "${ACTIONS_ID_TOKEN_REQUEST_TOKEN:-}" \
+            || (echo "ACTIONS_ID_TOKEN_REQUEST_TOKEN missing" && exit 1)
+          npm --version
+          node --version
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -71,33 +80,34 @@ jobs:
             echo "tag=latest" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Pack packages with rewritten workspace deps
+      - name: Pack with pnpm (rewrite workspace:*)
         run: |
           mkdir -p "$RUNNER_TEMP/flowmark-packs"
           pnpm --filter @flowmarkdev/core pack --pack-destination "$RUNNER_TEMP/flowmark-packs"
           pnpm --filter @flowmarkdev/node pack --pack-destination "$RUNNER_TEMP/flowmark-packs"
-          tar -xOf "$RUNNER_TEMP/flowmark-packs"/flowmarkdev-node-*.tgz package/package.json \
-            | node -e 'let s="";process.stdin.on("data",d=>s+=d);process.stdin.on("end",()=>{const d=JSON.parse(s).dependencies; if(JSON.stringify(d).includes("workspace:")) {console.error(d); process.exit(1)}; console.log("packed-deps-ok", d)})'
 
-      # Pack via pnpm (rewrites workspace:*), publish via npm so OIDC trusted
-      # publishing is used. Clear any leftover token so npm does not prefer it.
-      - name: Publish @flowmarkdev/core
-        env:
-          NODE_AUTH_TOKEN: ""
+      - name: Publish @flowmarkdev/core via OIDC
+        working-directory: ${{ runner.temp }}/flowmark-publish-core
         run: |
-          npm publish "$RUNNER_TEMP/flowmark-packs"/flowmarkdev-core-*.tgz \
-            --access public \
-            --tag "${{ steps.dist.outputs.tag }}"
+          rm -rf "$RUNNER_TEMP/flowmark-publish-core"
+          mkdir -p "$RUNNER_TEMP/flowmark-publish-core"
+          tar -xzf "$RUNNER_TEMP/flowmark-packs"/flowmarkdev-core-*.tgz \
+            -C "$RUNNER_TEMP/flowmark-publish-core" --strip-components=1
+          cd "$RUNNER_TEMP/flowmark-publish-core"
+          unset NODE_AUTH_TOKEN
+          npm publish --access public --tag "${{ steps.dist.outputs.tag }}"
 
-      - name: Publish @flowmarkdev/node
-        env:
-          NODE_AUTH_TOKEN: ""
+      - name: Publish @flowmarkdev/node via OIDC
         run: |
-          npm publish "$RUNNER_TEMP/flowmark-packs"/flowmarkdev-node-*.tgz \
-            --access public \
-            --tag "${{ steps.dist.outputs.tag }}"
+          rm -rf "$RUNNER_TEMP/flowmark-publish-node"
+          mkdir -p "$RUNNER_TEMP/flowmark-publish-node"
+          tar -xzf "$RUNNER_TEMP/flowmark-packs"/flowmarkdev-node-*.tgz \
+            -C "$RUNNER_TEMP/flowmark-publish-node" --strip-components=1
+          cd "$RUNNER_TEMP/flowmark-publish-node"
+          node -e 'const d=require("./package.json").dependencies; if(JSON.stringify(d).includes("workspace:")) {console.error(d); process.exit(1)}'
+          unset NODE_AUTH_TOKEN
+          npm publish --access public --tag "${{ steps.dist.outputs.tag }}"
 
       - name: Reminder
         run: |
           echo "If npm staged the release, approve both packages (core first) on npmjs.com."
-          echo "Trusted Publisher validates after the first successful OIDC publish from this workflow."
