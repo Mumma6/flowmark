@@ -15,7 +15,6 @@ on:
     tags:
       - "sdk-v*"
 
-# Required for npm Trusted Publishing (OIDC).
 permissions:
   contents: read
   id-token: write
@@ -40,23 +39,24 @@ jobs:
         with:
           version: 10.18.1
 
+      # Match npm trusted-publishing docs: registry-url set, no token secret.
+      # Clear NODE_AUTH_TOKEN before publish so OIDC is used.
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
-          node-version: "22.14"
+          node-version: "24"
+          registry-url: https://registry.npmjs.org
           cache: pnpm
 
       - name: Install npm CLI for OIDC
-        run: npm install -g npm@11.15.0
+        run: npm install -g npm@latest
 
-      - name: Prove OIDC is available
+      - name: Show npm / OIDC context
         run: |
-          test -n "${ACTIONS_ID_TOKEN_REQUEST_URL:-}" \
-            || (echo "ACTIONS_ID_TOKEN_REQUEST_URL missing; id-token: write not effective" && exit 1)
-          test -n "${ACTIONS_ID_TOKEN_REQUEST_TOKEN:-}" \
-            || (echo "ACTIONS_ID_TOKEN_REQUEST_TOKEN missing" && exit 1)
           npm --version
           node --version
+          test -n "${ACTIONS_ID_TOKEN_REQUEST_URL:-}"
+          echo "repo=${GITHUB_REPOSITORY} workflow=${GITHUB_WORKFLOW} file=publish-sdk.yml"
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -87,16 +87,19 @@ jobs:
           pnpm --filter @flowmarkdev/node pack --pack-destination "$RUNNER_TEMP/flowmark-packs"
 
       - name: Publish @flowmarkdev/core via OIDC
+        env:
+          NODE_AUTH_TOKEN: ""
         run: |
           rm -rf "$RUNNER_TEMP/flowmark-publish-core"
           mkdir -p "$RUNNER_TEMP/flowmark-publish-core"
           tar -xzf "$RUNNER_TEMP/flowmark-packs"/flowmarkdev-core-*.tgz \
             -C "$RUNNER_TEMP/flowmark-publish-core" --strip-components=1
           cd "$RUNNER_TEMP/flowmark-publish-core"
-          unset NODE_AUTH_TOKEN
           npm publish --access public --tag "${{ steps.dist.outputs.tag }}"
 
       - name: Publish @flowmarkdev/node via OIDC
+        env:
+          NODE_AUTH_TOKEN: ""
         run: |
           rm -rf "$RUNNER_TEMP/flowmark-publish-node"
           mkdir -p "$RUNNER_TEMP/flowmark-publish-node"
@@ -104,9 +107,4 @@ jobs:
             -C "$RUNNER_TEMP/flowmark-publish-node" --strip-components=1
           cd "$RUNNER_TEMP/flowmark-publish-node"
           node -e 'const d=require("./package.json").dependencies; if(JSON.stringify(d).includes("workspace:")) {console.error(d); process.exit(1)}'
-          unset NODE_AUTH_TOKEN
           npm publish --access public --tag "${{ steps.dist.outputs.tag }}"
-
-      - name: Reminder
-        run: |
-          echo "If npm staged the release, approve both packages (core first) on npmjs.com."
