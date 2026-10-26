@@ -1,4 +1,4 @@
-import { defineConfig } from "@flowmark/node/browser"
+import { defineConfig } from "@flowmarkdev/node/browser"
 
 export default defineConfig({
   publicKey: "fm_diagnostics_browser_local_only",

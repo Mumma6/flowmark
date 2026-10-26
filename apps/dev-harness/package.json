@@ -13,7 +13,7 @@
   "dependencies": {
     "@flowmark/ui": "workspace:*",
     "effect": "^3.22.4",
-    "@flowmark/node": "workspace:*",
+    "@flowmarkdev/node": "workspace:*",
     "next": "^16.4.2",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"

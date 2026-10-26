@@ -5,18 +5,18 @@ description: Add your first workflow run around the business logic you already h
 
 ## Before you start
 
-You need a running Flowmark API, a project server-write key, and the SDK
-available to your project. The published `@flowmark/node` README is the
-implementation contract for adding markers in an existing app.
+You need a running Flowmark API, a project server-write key, and the SDK.
+The published `@flowmarkdev/node` README is the implementation contract for
+adding markers in an existing app.
 
-**The SDK is not published to a package registry yet.** The current package
-is in `packages/sdk` in this repository. Existing workspace apps consume it as
-`"@flowmark/node": "workspace:*"` and build it with
-`pnpm --filter @flowmark/node build`. External installation instructions will
-be added when a release is available.
+Install the current prerelease:
 
-The following example assumes the package and an API have been configured.
-For local services, read [local development](/docs/local-development).
+```bash
+npm i @flowmarkdev/node@alpha
+```
+
+That pulls `@flowmarkdev/core` automatically. Password reset is not available
+yet. For local services, read [local development](/docs/local-development).
 
 ## 1. Configure the server
 
@@ -24,23 +24,23 @@ Set these in your server environment, not in browser-visible variables:
 
 ```bash
 FLOWMARK_API_KEY=<your-project-server-write-key>
-FLOWMARK_API_URL=https://your-flowmark-api.example
+FLOWMARK_API_URL=https://api.flowmark.dev
 ```
 
-The URL is the API origin, not `/v1/events`. Use your own deployment address.
-Production requires an explicit URL. See [configuration](/docs/configuration)
-for defaults and overrides.
+The URL is the API origin, not `/v1/events`. Use your own deployment address
+when self-hosting. Production requires an explicit URL. See
+[configuration](/docs/configuration) for defaults and overrides.
 
 ## 2. Create one shared client
 
 ```ts
 // lib/flowmark.ts (server only)
-import { createFlowmark } from "@flowmark/node"
+import { createFlowmark } from "@flowmarkdev/node"
 
 export const flowmark = createFlowmark()
 ```
 
-Using Next.js? Import from `@flowmark/node/next` instead and follow the
+Using Next.js? Import from `@flowmarkdev/node/next` instead and follow the
 [Next.js guide](/docs/nextjs) for automatic request-lifecycle delivery.
 
 ## 3. Add markers to an existing function

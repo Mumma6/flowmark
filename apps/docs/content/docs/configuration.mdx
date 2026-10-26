@@ -7,17 +7,17 @@ description: Choose an entry point, configure a client, and keep credentials in 
 
 | Runtime                                   | Import                                                | Delivery lifecycle                   |
 | ----------------------------------------- | ----------------------------------------------------- | ------------------------------------ |
-| Node.js scripts, workers, servers         | `@flowmark/node`                                      | Explicit `flush()` / `shutdown()`    |
-| Next.js Route Handlers and Server Actions | `@flowmark/node/next`                                 | Drained automatically with `after()` |
-| Browser event handlers and effects        | `@flowmark/node/browser`                              | Best-effort keepalive delivery       |
-| Same-origin backend proxy                 | `@flowmark/node/proxy` or `@flowmark/node/next/proxy` | Web Request/Response POST handler    |
+| Node.js scripts, workers, servers         | `@flowmarkdev/node`                                      | Explicit `flush()` / `shutdown()`    |
+| Next.js Route Handlers and Server Actions | `@flowmarkdev/node/next`                                 | Drained automatically with `after()` |
+| Browser event handlers and effects        | `@flowmarkdev/node/browser`                              | Best-effort keepalive delivery       |
+| Same-origin backend proxy                 | `@flowmarkdev/node/proxy` or `@flowmarkdev/node/next/proxy` | Web Request/Response POST handler    |
 
 Do not import the server entry into a browser bundle.
 
 ## Server settings
 
 ```ts
-import { createFlowmark } from "@flowmark/node"
+import { createFlowmark } from "@flowmarkdev/node"
 
 export const flowmark = createFlowmark({
   apiKey: process.env.FLOWMARK_API_KEY,
@@ -50,7 +50,7 @@ Invalid server credentials or origin configuration throws
 Choose one mode:
 
 ```ts
-import { createFlowmark } from "@flowmark/node/browser"
+import { createFlowmark } from "@flowmarkdev/node/browser"
 
 // Direct ingestion: both values are public.
 const direct = createFlowmark({

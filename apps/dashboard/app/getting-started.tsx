@@ -55,7 +55,8 @@ function AgentPromptBody() {
     <div className="grid gap-3">
       <p className="text-sm leading-6 text-muted-foreground">
         Put the write key in the server environment yourself. This prompt does
-        not contain it, and <code>@flowmark/node</code> is not on npm yet.
+        not contain it. Install with{" "}
+        <code>npm i @flowmarkdev/node@alpha</code>.
       </p>
       <pre className="max-h-80 overflow-auto rounded-lg border border-border bg-muted p-4 text-xs leading-6 whitespace-pre-wrap">
         {prompt}
@@ -72,7 +73,7 @@ export function AgentPromptCard() {
         <CardTitle>Coding agent</CardTitle>
         <CardDescription>
           Paste this into your agent chat. It tells the agent to add{" "}
-          <code>@flowmark/node</code>, set the server environment, and look
+          <code>@flowmarkdev/node</code>, set the server environment, and look
           for processes where a workflow is worth marking.
         </CardDescription>
       </CardHeader>

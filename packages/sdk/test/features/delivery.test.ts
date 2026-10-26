@@ -5,7 +5,7 @@ import {
 } from "@effect/platform"
 import { Context, Deferred, Effect, Either, Layer, Redacted } from "effect"
 import { describe, expect, it, vi } from "vitest"
-import type { WorkflowEvent, WorkflowProperties } from "@flowmark/core"
+import type { WorkflowEvent, WorkflowProperties } from "@flowmarkdev/core"
 import { HttpTransportLive } from "../../src/features/delivery/adapters/http.js"
 import { FlowmarkSettings } from "../../src/config/settings.js"
 import { DeliveryQueue } from "../../src/features/delivery/delivery-queue.js"

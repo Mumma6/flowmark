@@ -1,5 +1,5 @@
 import { Context, type Effect } from "effect"
-import type { WorkflowEvent } from "@flowmark/core"
+import type { WorkflowEvent } from "@flowmarkdev/core"
 
 /** Port for delivering validated workflow events to an external destination. */
 export interface WorkflowTransport {
@@ -9,5 +9,5 @@ export interface WorkflowTransport {
 
 /** Effect dependency tag for replacing delivery implementations. */
 export const WorkflowTransport = Context.GenericTag<WorkflowTransport>(
-  "@flowmark/node/WorkflowTransport",
+  "@flowmarkdev/node/WorkflowTransport",
 )

@@ -20,8 +20,9 @@ export function InstrumentationSection() {
             </h2>
           </div>
           <p className="max-w-md text-[13px] leading-7 text-muted-foreground">
-            Developers mark existing TypeScript. The same evidence opens one
-            execution and, over time, what changed across them.
+            Developers mark existing TypeScript with a small write API. The same
+            evidence opens one execution and, over time, what changed across
+            them. Flowmark does not run, schedule, or retry the work.
           </p>
         </div>
         <CodeShowcase />

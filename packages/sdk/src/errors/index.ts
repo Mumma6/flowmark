@@ -2,7 +2,7 @@ import { Data, type Cause } from "effect"
 import type {
   WorkflowEvent,
   WorkflowEventValidationError,
-} from "@flowmark/core"
+} from "@flowmarkdev/core"
 
 /** Invalid credentials/origin, unsupported execution context, or use of a closed client. */
 export class FlowmarkConfigError extends Data.TaggedError(

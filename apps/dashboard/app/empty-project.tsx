@@ -18,10 +18,12 @@ export function EmptyProject() {
       </CardHeader>
       <CardContent className="grid gap-4">
         <pre className="overflow-x-auto rounded-lg border border-border bg-muted p-4 text-xs leading-6">
-          {`FLOWMARK_API_KEY=<write-key-from-settings>
+          {`npm i @flowmarkdev/node@alpha
+
+FLOWMARK_API_KEY=<write-key-from-settings>
 FLOWMARK_API_URL=${apiUrl}
 
-import { createFlowmark } from "@flowmark/node"
+import { createFlowmark } from "@flowmarkdev/node"
 
 export const flowmark = createFlowmark()`}
         </pre>

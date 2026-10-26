@@ -4,7 +4,7 @@ import {
   HttpClientRequest,
 } from "@effect/platform"
 import { Data, Effect, Exit, Match, Schema, Stream } from "effect"
-import { EventEnvelopeSchema } from "@flowmark/core"
+import { EventEnvelopeSchema } from "@flowmarkdev/core"
 import { resolveSettings } from "../config/settings.js"
 import type { FlowmarkConfig } from "../types/index.js"
 
@@ -85,7 +85,7 @@ const readEnvelope = Effect.fn("Flowmark.Proxy.readEnvelope")(function* (
  * 409/429 for upstream conflict/throttling, or 502 for delivery/configuration failures.
  * @param config Server credentials/API origin (default FLOWMARK_* env) and a production access check.
  * @example
- * import { createFlowmarkProxy } from "@flowmark/node/proxy"
+ * import { createFlowmarkProxy } from "@flowmarkdev/node/proxy"
  * export const POST = createFlowmarkProxy({
  *   authorize: async (request) => Boolean(await getSession(request)),
  * })

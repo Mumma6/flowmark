@@ -1,0 +1,91 @@
+name: Publish SDK
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: npm dist-tag (alpha or latest)
+        required: true
+        default: alpha
+        type: choice
+        options:
+          - alpha
+          - latest
+  push:
+    tags:
+      - "sdk-v*"
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: publish-sdk
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish @flowmarkdev/core and @flowmarkdev/node
+    runs-on: ubuntu-latest
+    environment: npm-publish
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.18.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: "22.14"
+          registry-url: https://registry.npmjs.org
+          cache: pnpm
+
+      - name: Install npm CLI for OIDC
+        run: npm install -g npm@11.15.0
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        run: pnpm --filter @flowmarkdev/core... --filter @flowmarkdev/node... build
+
+      - name: Test packages
+        run: |
+          pnpm --filter @flowmarkdev/core test
+          pnpm --filter @flowmarkdev/node test
+
+      - name: Resolve dist-tag
+        id: dist
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "tag=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
+          elif [[ "${GITHUB_REF_NAME}" == *alpha* || "${GITHUB_REF_NAME}" == *beta* || "${GITHUB_REF_NAME}" == *rc* ]]; then
+            echo "tag=alpha" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=latest" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Use pnpm publish so workspace:* is rewritten. Bare npm publish leaves
+      # workspace protocol in the registry and breaks installs.
+      - name: Publish @flowmarkdev/core
+        run: >
+          pnpm --filter @flowmarkdev/core publish
+          --access public
+          --tag "${{ steps.dist.outputs.tag }}"
+          --no-git-checks
+
+      - name: Publish @flowmarkdev/node
+        run: >
+          pnpm --filter @flowmarkdev/node publish
+          --access public
+          --tag "${{ steps.dist.outputs.tag }}"
+          --no-git-checks
+
+      - name: Reminder
+        run: |
+          echo "If npm staged the release, approve both packages (core first) on npmjs.com."
+          echo "Trusted Publisher validates after the first successful OIDC publish from this workflow."

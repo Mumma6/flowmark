@@ -77,7 +77,7 @@ export function ArchitectureOverview() {
             <div>
               <Node
                 title="Browser application"
-                tech="@flowmark/node/browser"
+                tech="@flowmarkdev/node/browser"
                 detail="Public browser key · allowed Origin"
               />
               <Arrow label="POST /v1/browser-events" />
@@ -85,7 +85,7 @@ export function ArchitectureOverview() {
             <div>
               <Node
                 title="Server / Next.js application"
-                tech="@flowmark/node · @flowmark/node/next"
+                tech="@flowmarkdev/node · @flowmarkdev/node/next"
                 detail="Secret write key · Next after() flush"
               />
               <Arrow label="POST /v1/events" />
@@ -235,7 +235,7 @@ export function ArchitectureOverview() {
               </div>
               <div>
                 <dt>sdk</dt>
-                <dd>Published as @flowmark/node</dd>
+                <dd>Published as @flowmarkdev/node</dd>
               </div>
               <div>
                 <dt>db</dt>

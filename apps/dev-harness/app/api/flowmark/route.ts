@@ -1,4 +1,4 @@
-import { createFlowmarkProxy } from "@flowmark/node/next/proxy"
+import { createFlowmarkProxy } from "@flowmarkdev/node/next/proxy"
 
 export const runtime = "nodejs"
 

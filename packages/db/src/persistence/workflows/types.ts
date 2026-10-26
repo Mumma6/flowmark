@@ -1,4 +1,4 @@
-import type { WorkflowResult } from "@flowmark/core"
+import type { WorkflowResult } from "@flowmarkdev/core"
 
 export type RunStatus = "Completed" | "Failed" | "Running"
 

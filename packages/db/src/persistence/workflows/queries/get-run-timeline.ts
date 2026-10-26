@@ -5,7 +5,7 @@ import type {
   WorkflowFailure,
   WorkflowProperties,
   WorkflowResult,
-} from "@flowmark/core"
+} from "@flowmarkdev/core"
 import {
   workflowEvents,
   workflowRuns,

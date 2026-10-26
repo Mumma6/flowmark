@@ -111,8 +111,8 @@ in the repository; this phase is the baseline.
 - MIT license. `flowmark.dev` is owned. The reference stack is Neon, Vercel,
   and the four hostnames in MVP-INFRA. Neon Postgres is provisioned and
   migrated. The four Vercel projects deploy from `main` to those hostnames.
-- Customer docs exist for the SDK, concepts, and dashboard. They state that
-  the package is not published.
+- Customer docs exist for the SDK, concepts, and dashboard. They point at
+  `npm i @flowmarkdev/node@alpha`.
 
 ### Implemented, not yet verified outside this workspace
 
@@ -159,7 +159,7 @@ out until Phase 5 has real, comparable results.
 ### Objective
 
 A developer who is not in this repository can create an account, install
-`@flowmark/node`, instrument one process, and inspect its next execution on
+`@flowmarkdev/node`, instrument one process, and inspect its next execution on
 `https://app.flowmark.dev`.
 
 ### Why it matters
@@ -220,17 +220,22 @@ Ask before npm publish, a database restore, or another paid resource.
 - [ ] Make failed requests visible: structured API errors. `/api/health`
       already responds, and the infrastructure guide says where Vercel and
       Neon logs live. No new monitoring product.
-- [ ] Pack `@flowmark/core` and `@flowmark/node` and install them in a clean
+- [x] Pack `@flowmarkdev/core` and `@flowmarkdev/node` and install them in a clean
       project outside the workspace. Prove ESM, types, Node without Next,
-      the Next adapter, and the browser entry without Node built-ins. Confirm
-      `workspace:*` is gone and `effect` resolves as a normal dependency.
-- [ ] Publish a prerelease, then `0.1.0`, through a protected npm workflow.
-      Smoke-test the published tarball against the hosted preview project,
-      including a rejected key and Next.js `after()` delivery. Internal
+      the Next adapter export, and the browser entry without Node built-ins.
+      Confirm `workspace:*` is gone and `effect` resolves as a normal
+      dependency. Packages use the `@flowmarkdev` scope.
+- [x] Publish installable prerelease `0.1.0-alpha.1` of `@flowmarkdev/core`
+      and `@flowmarkdev/node` with **pnpm publish**. Registry install + hosted
+      ingest smoke against `api.flowmark.dev` (including rejected key) passed.
+      Workflow: `.github/workflows/publish-sdk.yml`.
+- [ ] Promote `0.1.0` and finish Trusted Publisher + staged-approve habit.
+      Next.js `after()` delivery still worth a dedicated smoke. Internal
       packages stay private.
-- [ ] Update the quickstart so an external developer can install the package,
-      configure `FLOWMARK_API_KEY` and `FLOWMARK_API_URL`, mark one process,
-      and find the run. State that password reset does not exist yet.
+- [x] Update the quickstart so an external developer can install
+      `@flowmarkdev/node@alpha`, configure `FLOWMARK_API_KEY` and
+      `FLOWMARK_API_URL`, mark one process, and find the run. Password reset
+      does not exist yet.
 - [ ] Label week-over-week duration so it cannot be read as the same
       population as the 30-day volume chart, or compute it from that chart's
       population. Do not leave the mixed definition unlabeled in the shipped
@@ -239,9 +244,9 @@ Ask before npm publish, a database restore, or another paid resource.
 ### Dependencies
 
 Maintainer approval to publish to npm. Neon, Vercel, and the domains
-already exist. Confirmation that the
-`@flowmark` npm scope can be published and whether the Git repository becomes
-public at release. See the decisions at the end.
+already exist. Publish under `@flowmarkdev` (not `@flowmark`). Make the
+GitHub repository public at release for provenance. See
+[SDK release](./docs/sdk-release.md).
 
 ### Acceptance
 
@@ -548,9 +553,9 @@ someone declares them.
 
 ## Decisions needed before implementation
 
-1. **Publish and visibility.** Who owns the npm scope, and does the public
-   release make this repository public? Phase 1 packing can proceed before
-   that answer. Publishing and the production domain should not.
+1. **Publish and visibility.** Decided: publish `@flowmarkdev/core` and
+   `@flowmarkdev/node`; make `Mumma6/flowmark` public at release. Bootstrap
+   publish still needs an npm login and the `flowmarkdev` org.
 2. **Password reset.** Recommendation: ship Phase 1 without email, and
    document it. Change this only if a sender is already chosen.
 3. **Retention.** Recommendation: implement the decided 30-day deletion in

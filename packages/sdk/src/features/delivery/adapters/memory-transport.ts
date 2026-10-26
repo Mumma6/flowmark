@@ -1,5 +1,5 @@
 import { Effect } from "effect"
-import type { WorkflowEvent } from "@flowmark/core"
+import type { WorkflowEvent } from "@flowmarkdev/core"
 import type { WorkflowTransport } from "../ports/workflow-transport.js"
 
 /** In-memory transport for tests/custom integrations. Nothing is sent to the Flowmark API. */

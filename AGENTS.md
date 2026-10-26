@@ -47,6 +47,9 @@
 - Before Vercel, domain, or hosted environment changes, read and apply
   [flowmark-vercel](./.agents/skills/flowmark-vercel/SKILL.md). The
   operating record is [docs/infrastructure.md](./docs/infrastructure.md).
+- Before publishing `@flowmarkdev/core` or `@flowmarkdev/node`, read and
+  apply [flowmark-npm](./.agents/skills/flowmark-npm/SKILL.md). Ask before
+  every publish.
 - Before frontend changes, read and apply
   [flowmark-ui-components](./.agents/skills/flowmark-ui-components/SKILL.md).
   Use shadcn components through `@flowmark/ui`; add missing reusable primitives

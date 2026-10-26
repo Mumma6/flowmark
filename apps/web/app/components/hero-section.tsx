@@ -1,14 +1,12 @@
-import { Badge, Button, FlowmarkLockup } from "@flowmark/ui"
+import { Button, FlowmarkLockup } from "@flowmark/ui"
 import { BackgroundBeams } from "./background-beams"
 import { Arrow } from "./brand"
 import { DashboardIllustration } from "./dashboard-illustration"
 import { Meteors } from "./meteors"
 import { overlineClassName, shellClassName } from "./shell"
-import { docsUrl } from "./site-links"
+import { appUrl, docsUrl } from "./site-links"
 import { Spotlight } from "./spotlight"
 import { SpotlightWash } from "./spotlight-wash"
-
-const facts = ["Open source", "Workflow observability", "TypeScript SDK"] as const
 
 export function HeroSection() {
   return (
@@ -46,40 +44,23 @@ export function HeroSection() {
           <p className="mt-7 max-w-3xl text-balance text-[clamp(1.35rem,3vw,2.15rem)] leading-snug font-medium tracking-tight text-foreground">
             Understand every execution. Discover what matters across them.
           </p>
-          <p className="mt-5 max-w-[40rem] text-pretty text-[15px] leading-7 text-muted-foreground sm:text-base sm:leading-8">
-            Mark a process your application already runs. Each execution
-            becomes evidence you can investigate. Many executions become a
-            picture of what that process is accomplishing, and how that is
-            changing.
+          <p className="mt-5 max-w-[36rem] text-pretty text-[15px] leading-7 text-muted-foreground sm:text-base sm:leading-8">
+            Mark a process your TypeScript application already runs. Investigate
+            one execution, then see what changed across many — without moving
+            that work into an engine.
           </p>
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-            {facts.map((fact) => (
-              <Badge
-                key={fact}
-                variant="outline"
-                className="text-muted-foreground"
-              >
-                {fact}
-              </Badge>
-            ))}
-          </div>
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+          <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
             <Button asChild size="lg">
-              <a href="#how-it-works">
-                See how it works <Arrow />
+              <a href={appUrl}>
+                Open the dashboard <Arrow />
               </a>
             </Button>
             <Button asChild size="lg" variant="outline">
               <a href={docsUrl}>
-                Read the SDK docs <Arrow diagonal />
+                Read the docs <Arrow diagonal />
               </a>
             </Button>
           </div>
-          <p className="mt-5 text-[12px] text-muted-foreground">
-            A small TypeScript write API. A rich reading of what the
-            application reports. Flowmark does not run, schedule, or retry the
-            work.
-          </p>
         </div>
 
         <div className="relative mx-auto mt-14 max-w-5xl [perspective:1400px] sm:mt-16">

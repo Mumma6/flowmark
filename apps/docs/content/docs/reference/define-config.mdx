@@ -7,7 +7,7 @@ description: Type-check configuration without a config loader or hidden initiali
 
 ```ts
 // flowmark.config.ts (server only)
-import { defineConfig } from "@flowmark/node"
+import { defineConfig } from "@flowmarkdev/node"
 
 export default defineConfig({
   environment: "production",
@@ -16,7 +16,7 @@ export default defineConfig({
 ```
 
 ```ts
-import { createFlowmark } from "@flowmark/node"
+import { createFlowmark } from "@flowmarkdev/node"
 import config from "./flowmark.config"
 
 export const flowmark = createFlowmark(config)
@@ -33,8 +33,8 @@ It is optional. Passing an object directly to `createFlowmark()` is equivalent.
 
 ## Entry points
 
-- `@flowmark/node` and `@flowmark/node/next`: server `FlowmarkConfig`.
-- `@flowmark/node/browser`: public `BrowserFlowmarkConfig`.
+- `@flowmarkdev/node` and `@flowmarkdev/node/next`: server `FlowmarkConfig`.
+- `@flowmarkdev/node/browser`: public `BrowserFlowmarkConfig`.
 
 Browser configuration must never contain a private server key, even when
 the file is named `flowmark.config.ts`.

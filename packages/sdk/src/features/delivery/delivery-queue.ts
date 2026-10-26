@@ -1,5 +1,5 @@
 import { Context, Effect, FiberSet, Layer, Ref } from "effect"
-import { decodeWorkflowEvent, type WorkflowEvent } from "@flowmark/core"
+import { decodeWorkflowEvent, type WorkflowEvent } from "@flowmarkdev/core"
 import {
   FlowmarkDeliveryError,
   FlowmarkQueueError,
@@ -18,7 +18,7 @@ export interface DeliveryQueueService {
   readonly shutdown: Effect.Effect<void, FlowmarkDeliveryError>
 }
 
-export class DeliveryQueue extends Context.Tag("@flowmark/node/DeliveryQueue")<
+export class DeliveryQueue extends Context.Tag("@flowmarkdev/node/DeliveryQueue")<
   DeliveryQueue,
   DeliveryQueueService
 >() {

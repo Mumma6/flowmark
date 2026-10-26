@@ -21,8 +21,9 @@ chat, or in a commit. Neon connection files are gitignored.
 | Local demo database | Unchanged. `apps/server/.env.local` stays on loopback with `FLOWMARK_DEMO_MODE=true`. |
 | Vercel | Four Hobby projects on team `mumma6s-projects`, all connected to `Mumma6/flowmark`. A push to `main` builds each one. |
 | Public hostnames | `https://flowmark.dev`, `https://docs.flowmark.dev`, `https://app.flowmark.dev`, and `https://api.flowmark.dev`. `www.flowmark.dev` redirects to the apex. |
-| npm packages | Not published. |
-| End-to-end hosted use | Not proven. The apps respond. Registering a user, sending telemetry, and opening that run on the hosted dashboard has not been done. |
+| GitHub repo | Public: `https://github.com/Mumma6/flowmark`. |
+| npm packages | Prerelease `@flowmarkdev/node` / `@flowmarkdev/core` (`npm i @flowmarkdev/node@alpha`). Avoid `0.1.0-alpha.0` (leaked `workspace:*`). See [SDK release](./sdk-release.md). |
+| End-to-end hosted use | Partially exercised (register + SDK ingest against `api.flowmark.dev`). A full signed-in dashboard acceptance sitting is not claimed. |
 | 30-day telemetry cleanup | Decided, not built. |
 | Backup restore drill | Not done. |
 
@@ -421,9 +422,12 @@ Do these before treating the branch as a durable environment:
 
 ## Still open
 
-- Prove the hosted path: register on `https://app.flowmark.dev`, send one
-  event to `https://api.flowmark.dev`, and open that run while signed in.
-- npm publish of `@flowmark/core` and `@flowmark/node`.
+- Finish the hosted acceptance sitting: open a run on
+  `https://app.flowmark.dev` after register + ingest (ingest smoke has been
+  run against `api.flowmark.dev`).
+- Promote the SDK from `0.1.0-alpha.1` to stable `0.1.0` after external
+  install smoke. Release process: [SDK release](./sdk-release.md) and
+  [flowmark-npm](../.agents/skills/flowmark-npm/SKILL.md).
 - The backup restore drill and the 30-day cleanup above.
 
 Phase 1 in the roadmap is the checklist. Ask before publishing to npm or

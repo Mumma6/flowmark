@@ -9,7 +9,7 @@ import type {
   WorkflowResult,
   WorkflowRunId,
   WorkflowStepName,
-} from "@flowmark/core"
+} from "@flowmarkdev/core"
 import type { DeliveryFailure } from "../errors/index.js"
 import type { WorkflowTransport } from "../features/delivery/ports/workflow-transport.js"
 
@@ -116,7 +116,7 @@ export interface WorkflowOptions extends WorkflowRunOptions {
 
 /**
  * Markers for one workflow run. Delivery happens asynchronously in the background.
- * Properties/results must be JSON-safe objects within the shared @flowmark/core
+ * Properties/results must be JSON-safe objects within the shared @flowmarkdev/core
  * limits: 5 nested levels, 128 keys, 128-character keys, 2,048-character
  * strings, and 16 KiB encoded per object.
  */

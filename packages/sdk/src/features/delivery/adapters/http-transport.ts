@@ -1,6 +1,6 @@
 import { HttpClient, HttpClientRequest } from "@effect/platform"
 import { Effect, Match, Schedule, type Redacted } from "effect"
-import type { WorkflowEvent } from "@flowmark/core"
+import type { WorkflowEvent } from "@flowmarkdev/core"
 import { FlowmarkHttpError } from "../../../errors/index.js"
 import { WorkflowTransport } from "../ports/workflow-transport.js"
 

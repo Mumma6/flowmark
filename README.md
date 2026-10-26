@@ -74,11 +74,13 @@ on the timeline until you complete or fail the run.
 ## Status
 
 Instrument a process, ingest events, sign in to the dashboard, and inspect a
-run. The reference deployment is live at the links below. The SDK is not on
-npm yet. Key management is in the dashboard.
+run. The reference deployment is live at the links below. The SDK prerelease
+is on npm as `@flowmarkdev/node` (`npm i @flowmarkdev/node@alpha`). Key
+management is in the dashboard.
 
 - Product: [flowmark.dev](https://flowmark.dev)
-- SDK reference (this repo): [`apps/docs`](./apps/docs)
+- Docs: [docs.flowmark.dev](https://docs.flowmark.dev)
+- SDK: [`@flowmarkdev/node`](https://www.npmjs.com/package/@flowmarkdev/node)
 - Purpose: [product vision](./PRODUCT-VISION.md)
 
 ## Local development
@@ -105,7 +107,7 @@ them.
 
 | Path | Purpose |
 | --- | --- |
-| `packages/sdk` | `@flowmark/node` — Node, Next.js, and browser SDK |
+| `packages/sdk` | `@flowmarkdev/node` — Node, Next.js, and browser SDK |
 | `packages/core` | Workflow domain and event contract |
 | `packages/api` | Use cases, ports, and adapters |
 | `packages/db` | Schema, migrations, and persistence |

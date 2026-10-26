@@ -12,7 +12,7 @@ import type {
   WorkflowOperationOptions,
   WorkflowRunOptions,
 } from "../types/index.js"
-import type { WorkflowStepName, WorkflowProgress } from "@flowmark/core"
+import type { WorkflowStepName, WorkflowProgress } from "@flowmarkdev/core"
 
 /** Shared execution boundary; this module has no Node.js or framework imports. */
 export function makeClient(

@@ -1,6 +1,6 @@
 import { Effect, Either, Schema } from "effect"
-import { createFlowmark } from "@flowmark/node"
-import { createFlowmark as createNextFlowmark } from "@flowmark/node/next"
+import { createFlowmark } from "@flowmarkdev/node"
+import { createFlowmark as createNextFlowmark } from "@flowmarkdev/node/next"
 import { runScenario, scenarioIds } from "../../../lib/sdk-scenarios"
 
 const RequestSchema = Schema.Struct({

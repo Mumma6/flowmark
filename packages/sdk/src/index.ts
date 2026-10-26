@@ -33,4 +33,4 @@ export type {
   WorkflowProgress,
   WorkflowOperationFailure,
   WorkflowResult,
-} from "@flowmark/core"
+} from "@flowmarkdev/core"

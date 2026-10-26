@@ -31,7 +31,7 @@ export type {
   WorkflowProgress,
   WorkflowOperationFailure,
   WorkflowResult,
-} from "@flowmark/core"
+} from "@flowmarkdev/core"
 
 /** Browser options: a public browser key for direct delivery, or a same-origin proxy path. Never include server secrets. */
 export interface BrowserFlowmarkConfig {
@@ -74,13 +74,13 @@ export function defineConfig<const T extends BrowserFlowmarkConfig>(
  * Creates a browser client. Works in ordinary React/Vite apps as well as Next.js.
  * Pass publicKey and apiUrl to send directly to Flowmark without your own backend.
  * Without these options, uses your same-origin backend proxy at /api/flowmark.
- * Never pass a secret server write key or import `@flowmark/node` / `@flowmark/node/next` here.
+ * Never pass a secret server write key or import `@flowmarkdev/node` / `@flowmarkdev/node/next` here.
  * Safe to create during SSR, but call workflow() only in browser event handlers or effects.
  * Delivery starts automatically and uses keepalive; offline/unload delivery is not guaranteed.
  * No config file, React provider, or Next.js dependency is required.
  * @param config Public browser key/API origin for direct delivery, or a proxy path; optional error callback.
  * @example
- * import { createFlowmark } from "@flowmark/node/browser"
+ * import { createFlowmark } from "@flowmarkdev/node/browser"
  * const flowmark = createFlowmark({ publicKey: "fm_browser_...", apiUrl: "https://your-flowmark-api" })
  * // Inside a click/submit handler:
  * const flow = flowmark.workflow("checkout.ui")

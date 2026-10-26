@@ -1,6 +1,6 @@
 {
-  "name": "@flowmark/node",
-  "version": "0.1.0",
+  "name": "@flowmarkdev/node",
+  "version": "0.1.0-alpha.2",
   "description": "Workflow observability for Node.js application code",
   "license": "MIT",
   "type": "module",
@@ -26,12 +26,29 @@
     "./proxy": {
       "types": "./dist/adapters/proxy.d.ts",
       "import": "./dist/adapters/proxy.js"
-    }
+    },
+    "./package.json": "./package.json"
   },
   "files": [
     "dist",
-    "README.md"
+    "README.md",
+    "LICENSE"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Mumma6/flowmark.git",
+    "directory": "packages/sdk"
+  },
+  "homepage": "https://docs.flowmark.dev",
+  "bugs": {
+    "url": "https://github.com/Mumma6/flowmark/issues"
+  },
+  "engines": {
+    "node": ">=20.19"
+  },
   "scripts": {
     "dev": "tsc -p tsconfig.build.json --watch --preserveWatchOutput",
     "build": "tsc -p tsconfig.build.json",
@@ -41,7 +58,7 @@
   },
   "dependencies": {
     "@effect/platform": "^0.97.2",
-    "@flowmark/core": "workspace:*",
+    "@flowmarkdev/core": "workspace:*",
     "effect": "^3.22.4"
   },
   "peerDependencies": {

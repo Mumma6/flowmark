@@ -5,7 +5,7 @@ import type {
   WorkflowEvent,
   WorkflowProperties,
   WorkflowResult,
-} from "@flowmark/core"
+} from "@flowmarkdev/core"
 import type { PersistenceError, RunNotFound } from "../../../errors.js"
 
 export type RunStatus = "Completed" | "Failed" | "Running"

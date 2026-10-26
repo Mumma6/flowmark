@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { Schema } from "effect"
-import { createFlowmark, defineConfig } from "@flowmark/node/browser"
+import { createFlowmark, defineConfig } from "@flowmarkdev/node/browser"
 import {
   Button,
   Card,

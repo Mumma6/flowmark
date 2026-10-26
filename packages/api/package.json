@@ -21,7 +21,7 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@flowmark/core": "workspace:*",
+    "@flowmarkdev/core": "workspace:*",
     "@flowmark/db": "workspace:*",
     "effect": "^3.22.4"
   },

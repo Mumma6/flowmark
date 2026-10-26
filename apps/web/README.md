@@ -12,12 +12,10 @@ pnpm --filter @flowmark/web build
 ```
 
 The website runs at `http://localhost:3000`. In development, documentation
-links point to `http://localhost:3002/docs/introduction`. In a deployment, set
-`NEXT_PUBLIC_FLOWMARK_DOCS_URL` to the published documentation URL; the
-production fallback is `/docs/introduction` for deployments that route docs
-under the same origin. The dashboard is a separate development-only
-application and is not linked from the public landing page. These local
-services are not hosted signup destinations.
+links point to `http://localhost:3002/docs/introduction` and the dashboard to
+`http://localhost:3001`. In a deployment, set
+`NEXT_PUBLIC_FLOWMARK_DOCS_URL` and `NEXT_PUBLIC_FLOWMARK_APP_URL` to the
+published origins.
 
 If port 3000 is already in use, Next.js reads `PORT` to override the website's
 development port (the default remains 3000). Other apps use explicit ports and
@@ -36,24 +34,21 @@ local to the app. Decorative Spotlight, Spotlight New, Background Beams, and
 Meteors treatments are attributed in source and subject to the Aceternity
 License; review that license before redistributing the source.
 The dashboard illustration is explicitly illustrative and uses synthetic
-invoice values, not live or customer data. No credentials are needed by the
-website.
+values, not live or customer data. No credentials are needed by the website.
 
 ## Landing and the product vision
 
 The landing page is the public statement of the repository
-[product vision](../../PRODUCT-VISION.md). It includes capabilities that are
-not built yet, and those stay labeled as ahead of the current dashboard.
-When the vision changes, update the landing in the same change. Do not narrow
-the page to only what the dashboard can do today.
+[product vision](../../PRODUCT-VISION.md). It sells the complete product in
+present tense. It does not label unfinished work as ahead of the dashboard.
+When the vision changes, update the landing in the same change.
 
 ## Component organization
 
-`app/page.tsx` composes the landing sections from `app/components/`. The hero,
-product pillars, what the dashboard does today, what is still ahead, value
-proposition, instrumentation introduction, architecture, FAQ, and closing
-sections are separate server components, alongside the site header/footer and
-app-specific brand and dashboard illustration.
+`app/page.tsx` composes the landing sections from `app/components/`: hero,
+instrumentation, product pillars, capabilities, outcomes path, positioning,
+FAQ, and closing, alongside the site header/footer and app-specific brand and
+dashboard illustration.
 
 The interactive code showcase is the client boundary. Its example content
 lives in `code-examples.ts`, with separate `workflow-code-block.tsx` and

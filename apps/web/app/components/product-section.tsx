@@ -1,24 +1,17 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@flowmark/ui"
 import { overlineClassName, sectionTitleClassName, shellClassName } from "./shell"
 
-const surfaces = [
+const pillars = [
   {
+    mark: "One run",
     title: "Run investigation",
     detail:
-      "What happened in this execution: order, operation time, recovered errors, last reported progress, the result the application attached, and how this run compares with recent ones.",
-    mark: "One run",
+      "See what happened in an execution: order, overlapping operations, recovered errors, last-reported progress, the result the application attached, and how this run differs from comparable ones.",
   },
   {
+    mark: "Many runs",
     title: "Workflow intelligence",
     detail:
-      "What changed across executions, where it changed, and which runs to open. Volume and duration open that answer. So does what those runs reported accomplishing.",
-    mark: "Many runs",
-  },
-  {
-    title: "A small write API",
-    detail:
-      "workflow, step, operation, progress, error, and a reported result. Ordinary TypeScript and Promises. The application keeps the process.",
-    mark: "SDK",
+      "See what changed across executions, where it changed, and which runs to open. Volume, duration, failure codes, and reported outcomes open that answer — and lead straight back to the evidence.",
   },
 ] as const
 
@@ -37,27 +30,23 @@ export function ProductSection() {
           </h2>
           <p className="mt-4 max-w-xl text-sm leading-7 text-muted-foreground">
             Flowmark observes a process the application already owns. A
-            developer marks it. Anyone in the project can read what it
+            developer marks it once. Anyone in the project can read what it
             reported, then open the execution when that reading is not enough.
           </p>
         </div>
-        <div className="mt-10 grid gap-4 md:grid-cols-3">
-          {surfaces.map((surface) => (
-            <Card key={surface.title} className="border-border bg-card/70">
-              <CardHeader className="gap-3">
-                <span className="w-fit rounded-md border border-primary/20 bg-primary/10 px-2 py-1 font-mono text-[10px] tracking-wide text-primary">
-                  {surface.mark}
-                </span>
-                <CardTitle className="text-lg font-medium">
-                  {surface.title}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription className="text-[13px] leading-7">
-                  {surface.detail}
-                </CardDescription>
-              </CardContent>
-            </Card>
+        <div className="mt-12 grid gap-10 border-t border-border pt-10 md:grid-cols-2 md:gap-16">
+          {pillars.map((pillar) => (
+            <article key={pillar.title}>
+              <span className="font-mono text-[10px] tracking-wide text-primary uppercase">
+                {pillar.mark}
+              </span>
+              <h3 className="mt-3 text-xl font-medium tracking-tight sm:text-2xl">
+                {pillar.title}
+              </h3>
+              <p className="mt-3 max-w-md text-sm leading-7 text-muted-foreground">
+                {pillar.detail}
+              </p>
+            </article>
           ))}
         </div>
       </div>

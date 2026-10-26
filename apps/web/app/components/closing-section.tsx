@@ -2,7 +2,7 @@ import { Button, FlowmarkLockup } from "@flowmark/ui"
 import { BackgroundBeams } from "./background-beams"
 import { Arrow } from "./brand"
 import { overlineClassName, shellClassName } from "./shell"
-import { docsUrl } from "./site-links"
+import { appUrl, docsUrl } from "./site-links"
 import { SpotlightWash } from "./spotlight-wash"
 
 export function ClosingSection() {
@@ -24,14 +24,21 @@ export function ClosingSection() {
         </h2>
         <p className="mx-auto mt-4 max-w-[32rem] text-sm leading-7 text-muted-foreground">
           Mark a process in the TypeScript you already have. Open one run.
-          The product is built so a change across runs leads back to the
-          executions behind it.
+          When something changes across runs, see what changed, where, and
+          which executions to open next.
         </p>
-        <Button asChild className="mt-7" size="lg">
-          <a href={docsUrl}>
-            Read the introduction <Arrow />
-          </a>
-        </Button>
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+          <Button asChild size="lg">
+            <a href={appUrl}>
+              Open the dashboard <Arrow />
+            </a>
+          </Button>
+          <Button asChild size="lg" variant="outline">
+            <a href={docsUrl}>
+              Read the introduction <Arrow diagonal />
+            </a>
+          </Button>
+        </div>
       </div>
     </section>
   )

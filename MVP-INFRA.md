@@ -41,7 +41,7 @@ The local harness remains internal, loopback-only, and never a deployment target
 | Auth          | Better Auth email/password; session-scoped dashboard reads; register creates owner, project, and first write key. Dashboard key management is implemented. Hosted `BETTER_AUTH_URL` and `FLOWMARK_DASHBOARD_ORIGIN` are `https://app.flowmark.dev`. | A confirmed hosted cookie and sign-out. Password reset stays off until email delivery exists. |
 | Credentials   | Hashed project read/write keys, browser keys, and dashboard create/revoke/rotate | Hosted rotation after a leak is still an operator process                    |
 | Environment   | Per-app local files and per-project Vercel env. Production demo mode is rejected. The catalog is in the infrastructure guide. | Preview currently shares the production database. It is not an isolated environment. |
-| SDK release   | `@flowmark/node`, its `@flowmark/core` dependency, built ESM/types/exports | Tarball verification, external-install tests, registry setup, and release CI |
+| SDK release   | `@flowmarkdev/node` / `@flowmarkdev/core` prerelease path, pack checks, `publish-sdk.yml`, [sdk-release](./docs/sdk-release.md) | Stable `0.1.0`, trusted-publisher finish, and external registry smoke |
 | Data browsing | Useful workflow and run views                                              | Server-side pagination beyond the latest-100-run snapshot                    |
 
 Supabase Auth and the unused browser helper are gone. Choosing Supabase later
@@ -380,26 +380,28 @@ without backend secrets, and built client assets contain no private credentials.
 
 ## 9. Publish an installable npm SDK
 
-Preserve the current public package name and entry points initially:
+Publish under the `@flowmarkdev` npm scope (the unscoped name `flowmark` is a
+security holding package, and `@flowmark` is owned by another publisher). Keep
+the existing entry points:
 
 ```ts
-import { createFlowmark } from "@flowmark/node"
+import { createFlowmark } from "@flowmarkdev/node"
 // Optional entry points:
-// @flowmark/node/next
-// @flowmark/node/browser
-// @flowmark/node/proxy
-// @flowmark/node/next/proxy
+// @flowmarkdev/node/next
+// @flowmarkdev/node/browser
+// @flowmarkdev/node/proxy
+// @flowmarkdev/node/next/proxy
 ```
 
-The SDK currently imports `@flowmark/core` at runtime. The simplest first release
+The SDK currently imports `@flowmarkdev/core` at runtime. The simplest first release
 is to publish **both** packages, core first, with explicit compatible versions.
-Users install `@flowmark/node`; its dependency is resolved normally. Do not publish
+Users install `@flowmarkdev/node`; its dependency is resolved normally. Do not publish
 a tarball containing unresolved `workspace:*`, missing compiled files, or imports
-of private packages. Do not introduce a bundler or rename the SDK without need.
+of private packages. Do not introduce a bundler without need.
 
 Release checklist:
 
-- Confirm npm scope ownership and package-name availability.
+- Own the `flowmarkdev` npm org and confirm package-name availability.
 - Confirm the license and add the actual license file; package manifests currently
   say MIT, but this is not a substitute for a repository license decision/file.
 - Set public publishing metadata, repository links, package documentation, and
@@ -431,7 +433,7 @@ An existing `0.1.0` version in a manifest does not mean a release exists.
 | 5a    | Neon Postgres project, policy, and committed migrations             | Done: project `flowmark`, branch `production`, Postgres only, migrations applied, no seed. See [Infrastructure](./docs/infrastructure.md). |
 | 5b    | Deploy isolated Vercel preview of the API and dashboard             | Auth, SDK ingestion and run investigation work outside localhost           |
 | 6     | Add server-side run pagination and minimal data lifecycle           | Older runs remain findable; retention/delete/restore documented and tested |
-| 7     | Verify packages and publish prerelease                              | Clean external consumers install and deliver telemetry successfully        |
+| 7     | Verify packages and publish prerelease                              | Done: `0.1.0-alpha.1` installable; hosted ingest smoke passed               |
 | 8     | Release 0.1.0 with setup/operating docs                             | Real application integration and release checklist pass                    |
 
 Carry forward the open items from [NEXT-PHASE-PLAN.md](./NEXT-PHASE-PLAN.md):

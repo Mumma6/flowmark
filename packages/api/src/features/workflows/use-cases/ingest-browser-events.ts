@@ -1,6 +1,6 @@
 import { Context, Effect, Layer, Redacted, Schema } from "effect"
 import { DEMO_BROWSER_KEY, DIAGNOSTICS_BROWSER_KEY } from "@flowmark/db/demo"
-import { EventEnvelopeSchema } from "@flowmark/core"
+import { EventEnvelopeSchema } from "@flowmarkdev/core"
 import { ApiSettings } from "../../../config.js"
 import {
   BrowserForbidden,

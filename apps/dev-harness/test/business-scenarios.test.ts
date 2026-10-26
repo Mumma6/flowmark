@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest"
-import { MemoryTransport, workflow } from "@flowmark/node"
+import { MemoryTransport, workflow } from "@flowmarkdev/node"
 import { runBusinessScenario } from "../lib/business-scenarios"
 import { businessScenarios, ExecutionSchema } from "../lib/operations-catalog"
 import { Schema } from "effect"

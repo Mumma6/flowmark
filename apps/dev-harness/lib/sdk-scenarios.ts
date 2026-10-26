@@ -1,4 +1,4 @@
-import type { FlowmarkClient } from "@flowmark/node"
+import type { FlowmarkClient } from "@flowmarkdev/node"
 
 export const scenarioIds = [
   "lifecycle",

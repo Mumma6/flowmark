@@ -37,7 +37,7 @@ task, `m` for help, and `Ctrl+C` to stop; `pnpm dev:stream` runs without the
 TUI. To run only the local dev harness while preserving Turbo's SDK/core build
 prerequisites, use `pnpm dev --filter=@flowmark/dev-harness`. If you invoke
 `pnpm --filter @flowmark/dev-harness dev` directly, first build its workspace
-dependency with `pnpm --filter @flowmark/node... build`. Do not launch a direct
+dependency with `pnpm --filter @flowmarkdev/node... build`. Do not launch a direct
 build concurrently with the root dev watchers.
 
 Before starting Turbo, `pnpm dev` runs `pnpm dev:setup`: it copies the three
@@ -304,4 +304,6 @@ billing, notification, and search controls are intentionally not shown.
 
 ## SDK publishing
 
-`packages/sdk` is independently package-shaped as `@flowmark/node`; it is not published by this repository setup. Add Changesets when release/version coordination becomes useful rather than introducing release automation now.
+`packages/sdk` is published as `@flowmarkdev/node` (with `@flowmarkdev/core`).
+Release uses a protected GitHub Actions workflow and npm trusted publishing.
+Do not publish from a laptop except for the documented bootstrap.

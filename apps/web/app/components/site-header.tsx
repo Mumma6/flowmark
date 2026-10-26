@@ -14,24 +14,24 @@ export function SiteHeader() {
           className="flex shrink-0 items-center gap-2 whitespace-nowrap text-[13px] text-muted-foreground sm:gap-4"
           aria-label="Main navigation"
         >
-          <a className="hidden hover:text-primary sm:inline" href="#insights">
-            Today
-          </a>
-          <a className="hidden hover:text-primary lg:inline" href="#direction">
-            Ahead
+          <a className="hidden hover:text-primary sm:inline" href="#product">
+            Product
           </a>
           <a className="hidden hover:text-primary sm:inline" href="#how-it-works">
             How it works
+          </a>
+          <a className="hidden hover:text-primary lg:inline" href="#faq">
+            FAQ
           </a>
           <Button asChild variant="ghost" size="sm">
             <a href={githubUrl}>GitHub</a>
           </Button>
           <Button asChild variant="ghost" size="sm">
-            <a href={appUrl}>Dashboard</a>
+            <a href={docsUrl}>Docs</a>
           </Button>
           <Button asChild size="sm">
-            <a href={docsUrl}>
-              Documentation <Arrow diagonal />
+            <a href={appUrl}>
+              Dashboard <Arrow />
             </a>
           </Button>
         </nav>

@@ -183,14 +183,14 @@ describe the current experiment only; any can be altered or removed.
 
 ### Initialization
 
-**Implemented.** The Node/server entry point is `@flowmark/node`.
+**Implemented.** The Node/server entry point is `@flowmarkdev/node`.
 `createFlowmark(config?)` accepts a `FlowmarkConfig`; it resolves an API key
 from `config.apiKey` or `FLOWMARK_API_KEY`, and the API origin from
 `config.apiUrl` or `FLOWMARK_API_URL` (development defaults to localhost).
 `defineConfig()` is a typed identity helper, not a file-discovery mechanism.
-The `@flowmark/node/next` entry wraps client lifetime in Next.js `after()`.
+The `@flowmarkdev/node/next` entry wraps client lifetime in Next.js `after()`.
 Browser applications import `createFlowmark()` from
-`@flowmark/node/browser`, using either a public key plus API origin or a
+`@flowmarkdev/node/browser`, using either a public key plus API origin or a
 same-origin proxy path. Browser configuration cannot use a private server key.
 
 The relevant code is in
@@ -342,7 +342,7 @@ That separation is implemented in workspace package manifests and imports.
 
 ```text
 Node / Next server application                Browser application
-@flowmark/node or @flowmark/node/next         @flowmark/node/browser
+@flowmarkdev/node or @flowmarkdev/node/next         @flowmarkdev/node/browser
 private write key                             public browser key + Origin
              |                                             |
              +---- POST /v1/events ------------------------+

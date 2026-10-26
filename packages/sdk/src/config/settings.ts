@@ -13,7 +13,7 @@ export interface FlowmarkSettingsService {
   readonly apiUrl: string
 }
 
-export class FlowmarkSettings extends Context.Tag("@flowmark/node/Settings")<
+export class FlowmarkSettings extends Context.Tag("@flowmarkdev/node/Settings")<
   FlowmarkSettings,
   FlowmarkSettingsService
 >() {}

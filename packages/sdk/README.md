@@ -1,4 +1,4 @@
-# @flowmark/node
+# @flowmarkdev/node
 
 Flowmark observes a process your app already runs. It does not execute,
 schedule, or retry that work. There is no `track()`, `span()`, or `metric()`
@@ -12,24 +12,24 @@ This README is the implementation contract. Read it before adding markers.
 
 | Code | Import |
 | --- | --- |
-| Next.js Route Handler or Server Action | `createFlowmark` from `@flowmark/node/next` |
-| Node worker, script, or long-lived server | `createFlowmark` from `@flowmark/node` |
-| Browser / Client Component | `createFlowmark` from `@flowmark/node/browser` |
+| Next.js Route Handler or Server Action | `createFlowmark` from `@flowmarkdev/node/next` |
+| Node worker, script, or long-lived server | `createFlowmark` from `@flowmarkdev/node` |
+| Browser / Client Component | `createFlowmark` from `@flowmarkdev/node/browser` |
 
 Create **one** shared client in a server-only module. Do not construct a new
 client per file. Do not import the Node or Next entry in Client Components.
-`@flowmark/node/next` drains via `after()` — do not call it from middleware,
+`@flowmarkdev/node/next` drains via `after()` — do not call it from middleware,
 render, or the browser.
 
 ```ts
 // lib/flowmark.ts — Next.js server
-import { createFlowmark } from "@flowmark/node/next"
+import { createFlowmark } from "@flowmarkdev/node/next"
 export const flowmark = createFlowmark()
 ```
 
 ```ts
 // lib/flowmark.ts — Node
-import { createFlowmark } from "@flowmark/node"
+import { createFlowmark } from "@flowmarkdev/node"
 export const flowmark = createFlowmark()
 ```
 
@@ -132,7 +132,7 @@ or create a client. A `flowmark.config.ts` file is only a convention — import
 it and pass it to `createFlowmark(config)`. Flowmark does not discover files.
 
 Server config may omit credentials and use `FLOWMARK_API_KEY` /
-`FLOWMARK_API_URL`. Browser code must use `@flowmark/node/browser` and a public
+`FLOWMARK_API_URL`. Browser code must use `@flowmarkdev/node/browser` and a public
 browser key, never the server write key. Keep server and browser clients in
 separate modules.
 
@@ -159,9 +159,9 @@ failure; `step` / `done` / `fail` never throw delivery errors into app code.
 
 ## Browser
 
-`@flowmark/node/browser` never reads server env. Direct delivery needs a public
+`@flowmarkdev/node/browser` never reads server env. Direct delivery needs a public
 browser key and `POST /v1/browser-events`. Or omit the key and proxy through
-`createFlowmarkProxy` from `@flowmark/node/next/proxy` with `FLOWMARK_API_KEY`
+`createFlowmarkProxy` from `@flowmarkdev/node/next/proxy` with `FLOWMARK_API_KEY`
 only on the server.
 
 Browser telemetry is untrusted. Create workflows in event handlers or effects,

@@ -1,5 +1,5 @@
 import { Context, Effect, Layer, Schema } from "effect"
-import { EventEnvelopeSchema } from "@flowmark/core"
+import { EventEnvelopeSchema } from "@flowmarkdev/core"
 import {
   InvalidInput,
   PersistenceError,

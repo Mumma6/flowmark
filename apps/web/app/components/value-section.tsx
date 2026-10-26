@@ -1,9 +1,8 @@
-import { Card, CardContent } from "@flowmark/ui"
 import { overlineClassName, sectionTitleClassName, shellClassName } from "./shell"
 
 const steps = [
   {
-    index: "01 / Reported result",
+    index: "01",
     title: "Read what the run accomplished",
     evidence: (
       <>
@@ -11,16 +10,16 @@ const steps = [
         <span>150 skipped</span>
       </>
     ),
-    copy: "A completed import can still leave records behind. The result is what the application reported, not an audit that every record succeeded.",
+    copy: "A completed import can still leave records behind. The result is what the application reported — visible without reconstructing logs.",
   },
   {
-    index: "02 / Run context",
+    index: "02",
     title: "Start from a reference you chose",
     evidence: <code>batchId: batch_2049</code>,
-    copy: "An order, batch, or job id in the run context is how someone finds that execution without reconstructing logs.",
+    copy: "An order, batch, or job id in the run context is how someone finds that execution when a customer asks what happened.",
   },
   {
-    index: "03 / The execution",
+    index: "03",
     title: "Open the run when the summary is not enough",
     evidence: <span>Same investigation. No second product.</span>,
     copy: "Product, support, and engineering read the same project. The timeline, operations, and errors are there when the reported result needs a story.",
@@ -30,6 +29,7 @@ const steps = [
 export function ValueSection() {
   return (
     <section
+      id="outcomes"
       className="border-t border-border py-16 sm:py-[6.25rem]"
       aria-labelledby="value-title"
     >
@@ -42,10 +42,11 @@ export function ValueSection() {
           <p className="mt-4 max-w-[650px] text-sm leading-7 text-muted-foreground">
             Someone says yesterday&apos;s import created 850 of 1,000 expected
             records. The path is the reported outcome, the reference the
-            application attached, and the execution behind them.
+            application attached, and the execution behind them — without
+            waiting for an engineer to translate the logs.
           </p>
         </div>
-        <ol className="mt-10 grid gap-6 border-t border-border pt-6 sm:grid-cols-3 sm:gap-8">
+        <ol className="mt-10 grid gap-8 border-t border-border pt-8 sm:grid-cols-3 sm:gap-10">
           {steps.map((step) => (
             <li key={step.title}>
               <span className="font-mono text-[11px] tracking-wide text-primary">
@@ -54,23 +55,15 @@ export function ValueSection() {
               <h3 className="mt-4 text-[17px] font-medium tracking-tight">
                 {step.title}
               </h3>
-              <Card className="mt-4 rounded-lg border-border bg-primary/[0.02]">
-                <CardContent className="flex min-h-16 flex-wrap items-center gap-x-3 gap-y-1.5 p-3.5 font-mono text-xs text-[#dce8d8]">
-                  {step.evidence}
-                </CardContent>
-              </Card>
-              <p className="mt-2.5 text-[13px] leading-7 text-muted-foreground">
+              <div className="mt-4 flex min-h-14 flex-wrap items-center gap-x-3 gap-y-1.5 rounded-lg border border-border bg-primary/[0.02] p-3.5 font-mono text-xs text-[#dce8d8]">
+                {step.evidence}
+              </div>
+              <p className="mt-3 text-[13px] leading-7 text-muted-foreground">
                 {step.copy}
               </p>
             </li>
           ))}
         </ol>
-        <p className="mt-7 text-xs leading-7 text-muted-foreground">
-          A run can already carry that context and result. Finding the
-          execution from the reference, and reading the skip without raw JSON,
-          is part of what is still ahead. Flowmark does not fix the import.
-          The application does.
-        </p>
       </div>
     </section>
   )

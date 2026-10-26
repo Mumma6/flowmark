@@ -6,8 +6,8 @@ description: Create a configured client for the runtime where the work happens.
 ## Node.js
 
 ```ts
-import { createFlowmark } from "@flowmark/node"
-import type { FlowmarkClient, FlowmarkConfig } from "@flowmark/node"
+import { createFlowmark } from "@flowmarkdev/node"
+import type { FlowmarkClient, FlowmarkConfig } from "@flowmarkdev/node"
 
 // Signature: createFlowmark(config?: FlowmarkConfig): FlowmarkClient
 const flowmark = createFlowmark({
@@ -35,7 +35,7 @@ See [configuration](/docs/configuration) for URL rules and precedence.
 ## Next.js
 
 ```ts
-import { createFlowmark } from "@flowmark/node/next"
+import { createFlowmark } from "@flowmarkdev/node/next"
 
 const flowmark = createFlowmark()
 // Exposes workflow() only; no flush() or shutdown().
@@ -50,8 +50,8 @@ See [Next.js integration](/docs/nextjs).
 ## Browser
 
 ```ts
-import { createFlowmark } from "@flowmark/node/browser"
-import type { BrowserFlowmarkConfig } from "@flowmark/node/browser"
+import { createFlowmark } from "@flowmarkdev/node/browser"
+import type { BrowserFlowmarkConfig } from "@flowmarkdev/node/browser"
 
 const flowmark = createFlowmark({
   publicKey: "fm_browser_...",

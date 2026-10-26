@@ -3,7 +3,7 @@ title: Browser integration
 description: Send browser workflow telemetry with a public key or a same-origin proxy.
 ---
 
-Import `@flowmark/node/browser` in browser code. This entry has no Node.js or
+Import `@flowmarkdev/node/browser` in browser code. This entry has no Node.js or
 Next.js dependency and never reads server environment variables. You may create
 the client during SSR, but call `workflow()` only in browser event handlers or
 effects, never while rendering.
@@ -15,7 +15,7 @@ browser key and API origin:
 
 ```ts
 // flowmark.config.ts — public settings only
-import { defineConfig } from "@flowmark/node/browser"
+import { defineConfig } from "@flowmarkdev/node/browser"
 
 export default defineConfig({
   publicKey: "fm_browser_...",
@@ -27,7 +27,7 @@ export default defineConfig({
 // app/flowmark.ts
 "use client"
 
-import { createFlowmark } from "@flowmark/node/browser"
+import { createFlowmark } from "@flowmarkdev/node/browser"
 import config from "../flowmark.config"
 
 export const flowmark = createFlowmark(config)
@@ -80,14 +80,14 @@ server route (default `/api/flowmark`):
 // app/flowmark.ts
 "use client"
 
-import { createFlowmark } from "@flowmark/node/browser"
+import { createFlowmark } from "@flowmarkdev/node/browser"
 
 export const flowmark = createFlowmark()
 ```
 
 ```ts
 // app/api/flowmark/route.ts
-import { createFlowmarkProxy } from "@flowmark/node/next/proxy"
+import { createFlowmarkProxy } from "@flowmarkdev/node/next/proxy"
 
 export const POST = createFlowmarkProxy({
   authorize: async (request) => await canRecordWorkflow(request),

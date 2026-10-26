@@ -1,4 +1,4 @@
-import type { WorkflowFailure } from "@flowmark/core"
+import type { WorkflowFailure } from "@flowmarkdev/core"
 
 const codeLimit = 128
 const messageLimit = 2048

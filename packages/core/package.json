@@ -1,18 +1,37 @@
 {
-  "name": "@flowmark/core",
-  "version": "0.1.0",
+  "name": "@flowmarkdev/core",
+  "version": "0.1.0-alpha.2",
+  "description": "Shared workflow event contracts for Flowmark",
   "license": "MIT",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "files": [
-    "dist"
+    "dist",
+    "README.md",
+    "LICENSE"
   ],
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
-    }
+    },
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Mumma6/flowmark.git",
+    "directory": "packages/core"
+  },
+  "homepage": "https://flowmark.dev",
+  "bugs": {
+    "url": "https://github.com/Mumma6/flowmark/issues"
+  },
+  "engines": {
+    "node": ">=20.19"
   },
   "scripts": {
     "dev": "tsc -p tsconfig.build.json --watch --preserveWatchOutput",

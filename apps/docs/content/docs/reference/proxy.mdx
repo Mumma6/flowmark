@@ -6,8 +6,8 @@ description: Receive browser telemetry through an authorized same-origin server 
 ## Imports and signature
 
 ```ts
-import { createFlowmarkProxy } from "@flowmark/node/proxy"
-// Also exported from "@flowmark/node/next/proxy".
+import { createFlowmarkProxy } from "@flowmarkdev/node/proxy"
+// Also exported from "@flowmarkdev/node/next/proxy".
 
 // createFlowmarkProxy(config?: FlowmarkProxyConfig):
 //   (request: Request) => Promise<Response>
@@ -19,7 +19,7 @@ This is a Web Request/Response handler, not a Next.js-only wrapper.
 
 ```ts
 // app/api/flowmark/route.ts
-import { createFlowmarkProxy } from "@flowmark/node/next/proxy"
+import { createFlowmarkProxy } from "@flowmarkdev/node/next/proxy"
 
 export const POST = createFlowmarkProxy({
   authorize: async (request) => await canRecordWorkflow(request),

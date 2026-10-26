@@ -19,12 +19,12 @@ import type {
   WorkflowName,
   WorkflowProgress,
   WorkflowStepName,
-} from "@flowmark/core"
+} from "@flowmarkdev/core"
 
 /**
- * Node server client. Import this from `@flowmark/node` in workers and scripts.
- * Next.js Route Handlers must import createFlowmark from `@flowmark/node/next`.
- * Browser code must import it from `@flowmark/node/browser`.
+ * Node server client. Import this from `@flowmarkdev/node` in workers and scripts.
+ * Next.js Route Handlers must import createFlowmark from `@flowmarkdev/node/next`.
+ * Browser code must import it from `@flowmarkdev/node/browser`.
  * Reads FLOWMARK_API_KEY and FLOWMARK_API_URL; never put those in NEXT_PUBLIC_*.
  * Call shutdown() before process exit. Create one shared client.
  * @throws FlowmarkConfigError If credentials or API origin are invalid.

@@ -1,5 +1,5 @@
 import { Match } from "effect"
-import type { WorkflowEvent } from "@flowmark/core"
+import type { WorkflowEvent } from "@flowmarkdev/core"
 import type { StoredWorkflowError } from "../../../schema/index.js"
 
 const shortReason = (reason: string) =>

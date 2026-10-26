@@ -2,12 +2,12 @@
 
 ```text
 Customer server application
-  -> @flowmark/node or @flowmark/node/next
+  -> @flowmarkdev/node or @flowmarkdev/node/next
   -> POST /v1/events (private server write key)
   -> project-scoped PostgreSQL records
 
 Browser application
-  -> @flowmark/node/browser
+  -> @flowmarkdev/node/browser
   -> POST /v1/browser-events (public browser key + allowed Origin)
   -> project-scoped PostgreSQL records
 
@@ -28,7 +28,7 @@ package.
 
 ## Core domain package
 
-`@flowmark/core` is the framework-independent contract package shared by the
+`@flowmarkdev/core` is the framework-independent contract package shared by the
 SDK, API, and persistence layers. Its source is grouped into workflow
 identifiers, bounded JSON context/results, telemetry types/schemas, failure
 schemas, and event/envelope schemas with decoding. The root `index.ts` preserves
@@ -106,7 +106,7 @@ errors, reported results and terminal outcomes are persisted for the dashboard's
 workflow-run investigation. Browser events remain untrusted client reports,
 not authoritative business outcomes.
 
-The `@flowmark/node/browser` entry shares workflow and delivery behavior without
+The `@flowmarkdev/node/browser` entry shares workflow and delivery behavior without
 Node.js or Next.js imports and never reads server environment variables. It
 supports two distinct delivery choices:
 

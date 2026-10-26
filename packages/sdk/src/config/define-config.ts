@@ -5,7 +5,7 @@ import type { FlowmarkConfig } from "../types/index.js"
  * Returns the same object without reading environment variables, validating credentials,
  * creating a client, or starting delivery. Validation happens at the client boundary.
  * Export from flowmark.config.ts and pass to createFlowmark(); the file is not auto-loaded.
- * Keep this configuration server-only. Use @flowmark/node/browser for public browser keys.
+ * Keep this configuration server-only. Use @flowmarkdev/node/browser for public browser keys.
  * @example
  * export default defineConfig({ apiUrl: "http://localhost:3003" })
  */

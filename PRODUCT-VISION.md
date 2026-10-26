@@ -107,16 +107,18 @@ Working locally, and in the repository's self-hosted shape:
 - A comparison of one run's duration and reported outcome with recent peers
   of the same workflow.
 
-Not built yet: a published npm package, history beyond the dashboard's
-latest 100 runs, search by outcome or operation, comparison deeper than
-overall duration, aggregation of business results, waterfall views, and
-automatic detection of meaningful change. The reference deployment choices
-in [ADR 0006](./docs/decisions/0006-mvp-0.1-infrastructure.md) — Neon,
-Vercel, `flowmark.dev`, MIT, and 30-day retention — are decided. Neon, the
-four Vercel projects, and the public hostnames are provisioned. How they
-run, and which environment variables are local versus production, is in
-[the infrastructure guide](./docs/infrastructure.md). npm, the retention
-job, and a proven register-to-run pass on the hosted service are not done.
+Not built yet: history beyond the dashboard's latest 100 runs, search by
+outcome or operation, comparison deeper than overall duration, aggregation
+of business results, waterfall views, and automatic detection of meaningful
+change. The reference deployment choices in
+[ADR 0006](./docs/decisions/0006-mvp-0.1-infrastructure.md) — Neon, Vercel,
+`flowmark.dev`, MIT, and 30-day retention — are decided. Neon, the four
+Vercel projects, and the public hostnames are provisioned. The SDK
+prerelease is published as `@flowmarkdev/node` (with `@flowmarkdev/core`).
+How the stack runs, and which environment variables are local versus
+production, is in [the infrastructure guide](./docs/infrastructure.md). The
+retention job and a fully proven hosted register-to-run acceptance sitting
+are still open.
 
 The local harness in `apps/dev-harness` is a loopback fixture for
 `invoices.import`, `inventory.sync`, and `orders.fulfill`. It is not a public
@@ -537,8 +539,9 @@ Commercial use can be considered later. It is neither required nor forbidden.
 
 **The ceiling is gone. Hypergrowth is not the replacement.**
 
-Distribution remains a clear repository, documentation, npm when the package
-is ready, and `flowmark.dev`. Share it with developers who have the problem.
+Distribution remains a clear repository, documentation, npm
+(`@flowmarkdev/node`), and `flowmark.dev`. Share it with developers who have
+the problem.
 Success is repeated, real investigation: someone instruments a process, keeps
 it, and can explain an execution and a change across executions. Stars and
 downloads do not substitute for that. Enjoyment and maintainability remain

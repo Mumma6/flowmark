@@ -1,5 +1,5 @@
 import { Match } from "effect"
-import type { WorkflowEvent } from "@flowmark/core"
+import type { WorkflowEvent } from "@flowmarkdev/core"
 
 /** Last persisted terminal on a run. Failed wins over completed. */
 export type RunTerminal = "open" | "completed" | "failed"

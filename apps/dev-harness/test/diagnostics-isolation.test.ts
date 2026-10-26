@@ -7,8 +7,8 @@ const mocks = vi.hoisted(() => ({
   createNext: vi.fn(),
   run: vi.fn(),
 }))
-vi.mock("@flowmark/node", () => ({ createFlowmark: mocks.createNode }))
-vi.mock("@flowmark/node/next", () => ({ createFlowmark: mocks.createNext }))
+vi.mock("@flowmarkdev/node", () => ({ createFlowmark: mocks.createNode }))
+vi.mock("@flowmarkdev/node/next", () => ({ createFlowmark: mocks.createNext }))
 vi.mock("../lib/sdk-scenarios", () => ({
   scenarioIds: ["lifecycle"],
   runScenario: mocks.run,

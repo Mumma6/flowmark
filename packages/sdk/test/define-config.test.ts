@@ -5,7 +5,7 @@ import {
   defineConfig as defineBrowserConfig,
 } from "../src/browser/index.js"
 import type { DeliveryFailure } from "../src/errors/index.js"
-import type { WorkflowEvent } from "@flowmark/core"
+import type { WorkflowEvent } from "@flowmarkdev/core"
 
 afterEach(() => {
   vi.unstubAllGlobals()

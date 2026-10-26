@@ -7,9 +7,9 @@ const columns = [
   {
     title: "Product",
     links: [
-      { href: "#insights", label: "Today" },
-      { href: "#direction", label: "Ahead" },
+      { href: "#product", label: "Product" },
       { href: "#how-it-works", label: "How it works" },
+      { href: "#capabilities", label: "Capabilities" },
       { href: "#faq", label: "FAQ" },
     ],
   },
@@ -32,7 +32,7 @@ export function SiteFooter() {
         <div>
           <BrandLink />
           <p className="mt-3 max-w-xs text-sm leading-6 text-muted-foreground">
-            Workflow observability for application code. MIT licensed.
+            Workflow observability for application code. Open source under MIT.
           </p>
         </div>
         {columns.map((column) => (
@@ -57,7 +57,7 @@ export function SiteFooter() {
         className={`${shellClassName} flex flex-col gap-2 py-5 text-[11px] text-muted-foreground sm:flex-row sm:items-center sm:justify-between`}
       >
         <p>© 2026 Flowmark</p>
-        <p>Open source. Workflow observability for TypeScript.</p>
+        <p>Understand every execution. Discover what matters across them.</p>
       </div>
     </footer>
   )

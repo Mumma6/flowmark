@@ -24,17 +24,17 @@ export type {
   WorkflowProgress,
   WorkflowOperationFailure,
   WorkflowResult,
-} from "@flowmark/core"
+} from "@flowmarkdev/core"
 export { defineConfig } from "../config/define-config.js"
 
 /**
- * Next.js server client. Import from `@flowmark/node/next` only.
+ * Next.js server client. Import from `@flowmarkdev/node/next` only.
  * Use in Route Handlers or Server Actions. Not Client Components, middleware, or render.
  * Reads FLOWMARK_API_KEY and FLOWMARK_API_URL. Never NEXT_PUBLIC_*.
  * Drains via after() — do not call shutdown() yourself.
  * One shared module-level client; wrap the places the developer named.
  * @example
- * import { createFlowmark } from "@flowmark/node/next"
+ * import { createFlowmark } from "@flowmarkdev/node/next"
  * export const flowmark = createFlowmark()
  * const flow = flowmark.workflow("checkout.order")
  * flow.done({ result: { ok: true } })

@@ -45,8 +45,8 @@ continues one run across later requests; a second `started` is ignored.
 
 ## Stage 1 delivered: explainable runs
 
-The current public entry points are `@flowmark/node`,
-`@flowmark/node/browser`, and `@flowmark/node/next`. The workflow API is:
+The current public entry points are `@flowmarkdev/node`,
+`@flowmarkdev/node/browser`, and `@flowmarkdev/node/next`. The workflow API is:
 
 ```ts
 const flow = flowmark.workflow("invoice.import", {

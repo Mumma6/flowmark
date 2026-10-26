@@ -15,7 +15,7 @@
       ]
     },
     "dev": {
-      "dependsOn": ["^build", "@flowmark/node#build"],
+      "dependsOn": ["^build", "@flowmarkdev/node#build"],
       "passThroughEnv": [
         "PORT",
         "DATABASE_URL",

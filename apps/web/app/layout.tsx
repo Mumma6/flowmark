@@ -14,7 +14,7 @@ const mono = Geist_Mono({
 
 const title = "Flowmark — Understand every execution"
 const description =
-  "Workflow observability for TypeScript. Mark a process your application already runs, investigate one execution, and see what changed across them."
+  "Workflow observability for TypeScript. Mark a process your application already runs. Investigate one execution, discover what changed across them, and open the runs behind every insight."
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://flowmark.dev"),

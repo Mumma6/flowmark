@@ -46,7 +46,7 @@
   },
   "dependencies": {
     "@better-auth/drizzle-adapter": "^1.7.13",
-    "@flowmark/core": "workspace:*",
+    "@flowmarkdev/core": "workspace:*",
     "better-auth": "^1.7.13",
     "drizzle-orm": "^0.44.5",
     "effect": "^3.22.4",

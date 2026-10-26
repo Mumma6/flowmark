@@ -5,13 +5,13 @@ description: Record workflows in Route Handlers and Server Actions.
 
 ## Configure a server client
 
-Use the `@flowmark/node/next` entry point from a server-only module. This is an
+Use the `@flowmarkdev/node/next` entry point from a server-only module. This is an
 ordinary module; neither the module name nor `flowmark.config.ts` is
 automatically discovered.
 
 ```ts
 // lib/flowmark.ts
-import { createFlowmark } from "@flowmark/node/next"
+import { createFlowmark } from "@flowmarkdev/node/next"
 
 export const flowmark = createFlowmark()
 ```

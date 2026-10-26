@@ -7,7 +7,7 @@ import type {
   WorkflowProperties,
   WorkflowProgress,
   WorkflowStepName,
-} from "@flowmark/core"
+} from "@flowmarkdev/core"
 import type {
   WorkflowDoneOptions,
   WorkflowFailOptions,
@@ -50,7 +50,7 @@ export interface WorkflowEngineService {
 }
 
 export class WorkflowEngine extends Context.Tag(
-  "@flowmark/node/WorkflowEngine",
+  "@flowmarkdev/node/WorkflowEngine",
 )<WorkflowEngine, WorkflowEngineService>() {
   static readonly layer = Layer.effect(
     WorkflowEngine,
