@@ -27,7 +27,8 @@ jobs:
   publish:
     name: Publish @flowmarkdev/core and @flowmarkdev/node
     runs-on: ubuntu-latest
-    environment: npm-publish
+    # Do not set `environment` unless the same name is configured on the
+    # npm Trusted Publisher (OIDC claim must match).
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -41,8 +42,9 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: "22.14"
-          registry-url: https://registry.npmjs.org
           cache: pnpm
+          # Do not set registry-url here: it injects a placeholder
+          # NODE_AUTH_TOKEN that blocks npm trusted publishing (OIDC).
 
       - name: Install npm CLI for OIDC
         run: npm install -g npm@11.15.0
@@ -69,21 +71,31 @@ jobs:
             echo "tag=latest" >> "$GITHUB_OUTPUT"
           fi
 
-      # Use pnpm publish so workspace:* is rewritten. Bare npm publish leaves
-      # workspace protocol in the registry and breaks installs.
+      - name: Pack packages with rewritten workspace deps
+        run: |
+          mkdir -p "$RUNNER_TEMP/flowmark-packs"
+          pnpm --filter @flowmarkdev/core pack --pack-destination "$RUNNER_TEMP/flowmark-packs"
+          pnpm --filter @flowmarkdev/node pack --pack-destination "$RUNNER_TEMP/flowmark-packs"
+          tar -xOf "$RUNNER_TEMP/flowmark-packs"/flowmarkdev-node-*.tgz package/package.json \
+            | node -e 'let s="";process.stdin.on("data",d=>s+=d);process.stdin.on("end",()=>{const d=JSON.parse(s).dependencies; if(JSON.stringify(d).includes("workspace:")) {console.error(d); process.exit(1)}; console.log("packed-deps-ok", d)})'
+
+      # Pack via pnpm (rewrites workspace:*), publish via npm so OIDC trusted
+      # publishing is used. Clear any leftover token so npm does not prefer it.
       - name: Publish @flowmarkdev/core
-        run: >
-          pnpm --filter @flowmarkdev/core publish
-          --access public
-          --tag "${{ steps.dist.outputs.tag }}"
-          --no-git-checks
+        env:
+          NODE_AUTH_TOKEN: ""
+        run: |
+          npm publish "$RUNNER_TEMP/flowmark-packs"/flowmarkdev-core-*.tgz \
+            --access public \
+            --tag "${{ steps.dist.outputs.tag }}"
 
       - name: Publish @flowmarkdev/node
-        run: >
-          pnpm --filter @flowmarkdev/node publish
-          --access public
-          --tag "${{ steps.dist.outputs.tag }}"
-          --no-git-checks
+        env:
+          NODE_AUTH_TOKEN: ""
+        run: |
+          npm publish "$RUNNER_TEMP/flowmark-packs"/flowmarkdev-node-*.tgz \
+            --access public \
+            --tag "${{ steps.dist.outputs.tag }}"
 
       - name: Reminder
         run: |

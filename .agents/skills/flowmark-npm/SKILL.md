@@ -65,9 +65,12 @@ Inspect packed manifests: no `workspace:*`, `dist/` and types present.
 4. Commit the version bump (only if the user asked for a commit).
 5. Trigger `.github/workflows/publish-sdk.yml` via `workflow_dispatch`
    (`tag=alpha` or `tag=latest`), or push a `sdk-v*` tag after the bump is
-   on `main`. The workflow runs **`pnpm publish`** (core then node) so
-   `workspace:*` is rewritten. Do not use bare `npm publish` in CI either.
-6. Workflow environment: `npm-publish`. Node 22.14+, npm ≥ 11.15.0 for OIDC.
+   on `main`. CI **packs with pnpm** (rewrites `workspace:*`) then
+   **`npm publish` of the tarball** so Trusted Publishing OIDC works. Do
+   not set `actions/setup-node` `registry-url` (it injects a fake token).
+   Do not set a GitHub Environment on the job unless the same name is on
+   the npm Trusted Publisher.
+6. Node 22.14+, npm ≥ 11.15.0 for OIDC.
 7. If npm staged the release, approve with 2FA on the website
    [Staged Packages](https://www.npmjs.com/) tab (core first), or:
 
