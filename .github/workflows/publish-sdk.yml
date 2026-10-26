@@ -87,7 +87,6 @@ jobs:
           pnpm --filter @flowmarkdev/node pack --pack-destination "$RUNNER_TEMP/flowmark-packs"
 
       - name: Publish @flowmarkdev/core via OIDC
-        working-directory: ${{ runner.temp }}/flowmark-publish-core
         run: |
           rm -rf "$RUNNER_TEMP/flowmark-publish-core"
           mkdir -p "$RUNNER_TEMP/flowmark-publish-core"
