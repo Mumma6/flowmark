@@ -14,13 +14,14 @@ type SelectProps = Omit<
   value?: string | null
 }
 
-function Select({ onValueChange, ...props }: SelectProps) {
+function Select({ onValueChange, value, ...props }: SelectProps) {
   return (
     <SelectPrimitive.Root
       {...props}
-      onValueChange={(value) => {
-        if (value !== null) {
-          onValueChange?.(value)
+      value={value}
+      onValueChange={(next) => {
+        if (next !== null && next !== value) {
+          onValueChange?.(next)
         }
       }}
     />
@@ -70,11 +71,16 @@ function SelectContent({
 }: ComponentProps<typeof SelectPrimitive.Popup>) {
   return (
     <SelectPrimitive.Portal>
-      <SelectPrimitive.Positioner sideOffset={4}>
+      <SelectPrimitive.Positioner
+        align="start"
+        alignItemWithTrigger={false}
+        className="isolate z-50"
+        sideOffset={4}
+      >
         <SelectPrimitive.Popup
           data-slot="select-content"
           className={cn(
-            "z-50 max-h-[min(24rem,var(--available-height))] min-w-[var(--anchor-width)] overflow-y-auto rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-md outline-none data-[starting-style]:scale-95 data-[starting-style]:opacity-0",
+            "z-50 max-h-[min(24rem,var(--available-height))] min-w-[var(--anchor-width)] overflow-y-auto rounded-md border border-border bg-card p-1 text-card-foreground shadow-lg outline-none",
             className,
           )}
           {...props}
@@ -117,7 +123,10 @@ function SelectLabel({
   return (
     <SelectPrimitive.Label
       data-slot="select-label"
-      className={cn("px-2 py-1.5 text-xs font-medium text-muted-foreground", className)}
+      className={cn(
+        "px-2 py-1.5 text-xs font-medium text-muted-foreground",
+        className,
+      )}
       {...props}
     />
   )

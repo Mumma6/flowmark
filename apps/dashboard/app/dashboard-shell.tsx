@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, type ReactNode } from "react"
+import { useMemo, useState, type ReactNode } from "react"
 import {
   BookOpen,
   GitBranch,
@@ -181,6 +181,11 @@ function PageBreadcrumbs() {
 
 function ProjectSwitcher() {
   const { projects, current, pending, select } = useProject()
+  const items = useMemo(
+    () =>
+      Object.fromEntries(projects.map((project) => [project.id, project.name])),
+    [projects],
+  )
   if (pending && projects.length === 0) {
     return (
       <p className="text-xs text-muted-foreground" role="status">
@@ -206,14 +211,19 @@ function ProjectSwitcher() {
     )
   }
   return (
-    <label className="grid gap-1.5">
-      <span className="text-xs text-muted-foreground">Project</span>
+    <div className="grid gap-1.5">
+      <label
+        htmlFor="project-switcher"
+        className="text-xs text-muted-foreground"
+      >
+        Project
+      </label>
       <Select
-        aria-label="Project"
+        items={items}
         value={current?.id ?? projects[0]?.id}
         onValueChange={select}
       >
-        <SelectTrigger>
+        <SelectTrigger id="project-switcher">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -224,7 +234,7 @@ function ProjectSwitcher() {
           ))}
         </SelectContent>
       </Select>
-    </label>
+    </div>
   )
 }
 

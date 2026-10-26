@@ -10,21 +10,29 @@ import {
   SelectValue,
 } from "@flowmark/ui"
 
+const appearanceItems = {
+  system: "System",
+  light: "Light",
+  dark: "Dark",
+}
+
 export function ThemeSelect() {
   const { theme, setTheme } = useTheme()
 
   return (
-    <label className="flex shrink-0 items-center gap-2 text-muted-foreground">
+    <div className="flex shrink-0 items-center gap-2 text-muted-foreground">
       <Monitor size={15} aria-hidden="true" className="hidden sm:block" />
-      <span className="sr-only">Appearance</span>
+      <label htmlFor="appearance" className="sr-only">
+        Appearance
+      </label>
       <Select
-        aria-label="Appearance"
+        items={appearanceItems}
         value={theme ?? "system"}
         onValueChange={setTheme}
       >
         <SelectTrigger
+          id="appearance"
           className="w-[85px] text-xs sm:w-[100px]"
-          aria-label="Appearance"
         >
           <SelectValue />
         </SelectTrigger>
@@ -34,6 +42,6 @@ export function ThemeSelect() {
           <SelectItem value="dark">Dark</SelectItem>
         </SelectContent>
       </Select>
-    </label>
+    </div>
   )
 }

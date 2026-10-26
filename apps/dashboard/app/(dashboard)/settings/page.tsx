@@ -100,24 +100,29 @@ function ProjectSettings() {
         </CardHeader>
         <CardContent className="grid gap-6">
           {projects.length > 1 ? (
-            <label className="grid max-w-md gap-2 text-sm">
-              <span className="font-medium">Active project</span>
+            <div className="grid max-w-md gap-2 text-sm">
+              <label htmlFor="active-project" className="font-medium">
+                Active project
+              </label>
               <Select
-                value={current?.id ?? ""}
+                items={Object.fromEntries(
+                  projects.map((project) => [project.id, project.name]),
+                )}
+                value={current?.id}
                 onValueChange={select}
               >
-                <SelectTrigger>
+                <SelectTrigger id="active-project">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                {projects.map((project) => (
-                  <SelectItem key={project.id} value={project.id}>
-                    {project.name}
-                  </SelectItem>
-                ))}
+                  {projects.map((project) => (
+                    <SelectItem key={project.id} value={project.id}>
+                      {project.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
-            </label>
+            </div>
           ) : null}
           {current ? (
             <form
@@ -555,9 +560,7 @@ function AccountSettings() {
               revokeOtherSessions: false,
             })
             if (result.error) {
-              setError(
-                result.error.message ?? "Could not change the password.",
-              )
+              setError(result.error.message ?? "Could not change the password.")
               return
             }
             setCurrentPassword("")

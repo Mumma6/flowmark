@@ -79,3 +79,13 @@ export {
   SheetTitle,
   SheetDescription,
 } from "./sheet"
+export {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "./dialog"

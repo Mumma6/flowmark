@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, type ReactNode } from "react"
+import { useMemo, useState, type ReactNode } from "react"
 import {
   Alert,
   AlertDescription,
@@ -127,25 +127,28 @@ export function FilterSelect({
   onChange: (value: string) => void
   options: readonly { value: string; label: string }[]
 }) {
+  const fieldId = `filter-${label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`
+  const items = useMemo(
+    () =>
+      Object.fromEntries(options.map((option) => [option.value, option.label])),
+    [options],
+  )
   return (
-    <label className="grid min-w-0 flex-[1_1_140px] gap-2 text-xs text-muted-foreground sm:max-w-[260px]">
-      <span>{label}</span>
-      <Select
-        value={value}
-        onValueChange={onChange}
-      >
-        <SelectTrigger aria-label={label}>
+    <div className="grid min-w-0 flex-[1_1_140px] gap-2 text-xs text-muted-foreground sm:max-w-[260px]">
+      <label htmlFor={fieldId}>{label}</label>
+      <Select items={items} value={value} onValueChange={onChange}>
+        <SelectTrigger id={fieldId}>
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-        {options.map((option) => (
-          <SelectItem key={option.value} value={option.value}>
-            {option.label}
-          </SelectItem>
-        ))}
+          {options.map((option) => (
+            <SelectItem key={option.value} value={option.value}>
+              {option.label}
+            </SelectItem>
+          ))}
         </SelectContent>
       </Select>
-    </label>
+    </div>
   )
 }
 

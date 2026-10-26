@@ -182,7 +182,10 @@ export function DashboardOverview() {
       >
         <Refresh fetching={isFetching} onClick={() => void refetch()} />
       </PageHeading>
-      <OnboardingGuide hasRuns={(data?.metrics.totalRuns ?? 0) > 0} />
+      <OnboardingGuide
+        hasRuns={(data?.metrics.totalRuns ?? 0) > 0}
+        snapshotReady={!isPending}
+      />
       <DataState
         pending={isPending}
         error={error}
