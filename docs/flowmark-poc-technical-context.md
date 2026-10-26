@@ -403,7 +403,9 @@ and the API repository port in
   multi-customer product.
 - **Documented but absent at the original snapshot:** no hosted Flowmark API,
   alerting, native external log-platform integration, or durable offline
-  queue. Dashboard email/password auth landed after this report.
+  queue. Dashboard email/password auth landed after this report. A reference
+  API and dashboard were deployed later; see `docs/infrastructure.md`. This
+  bullet remains the snapshot, not the current operating record.
 - **Not established by repository evidence:** whether the current event model
   represents real production workflows well, whether the dashboard answers
   users' questions, or how it compares empirically with existing tools.

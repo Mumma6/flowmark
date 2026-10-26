@@ -9,12 +9,12 @@
 > [ADR 0006](./docs/decisions/0006-mvp-0.1-infrastructure.md). This roadmap
 > sequences that work and everything after the first public release.
 >
-> **Start here:** Phase 1, first unchecked task — an isolated Vercel preview of
-> the API and dashboard against the existing Neon database. The Neon project
-> and its migrations are done; see
-> [Infrastructure](./docs/infrastructure.md). Do not publish, attach
-> `flowmark.dev`, or instrument the card game in that same task. Ask before
-> creating the Vercel project or spending money.
+> **Start here:** Phase 1, first unchecked task — prove register, ingest, and
+> read on the hosted reference deployment. Neon, the four Vercel projects,
+> and the public hostnames are done; see
+> [Infrastructure](./docs/infrastructure.md). Do not publish to npm or
+> instrument the card game in that same task. Ask before publishing or
+> spending money.
 
 ## How to use this plan
 
@@ -110,19 +110,19 @@ in the repository; this phase is the baseline.
   `orders.fulfill`. It is not a public demo.
 - MIT license. `flowmark.dev` is owned. The reference stack is Neon, Vercel,
   and the four hostnames in MVP-INFRA. Neon Postgres is provisioned and
-  migrated. Vercel and the hostnames are not deployed.
+  migrated. The four Vercel projects deploy from `main` to those hostnames.
 - Customer docs exist for the SDK, concepts, and dashboard. They state that
   the package is not published.
 
 ### Implemented, not yet verified outside this workspace
 
-- Sign-up, session cookies, and key management on a hosted URL. The code path
-  is local and proxied. Production `BETTER_AUTH_URL`, trusted origins, and
-  cookie behavior are untested.
-- Serverless Postgres. The driver disables prepared statements. Pooler
-  limits, TLS, and connection lifetime on Neon plus Vercel still need a
-  deployment test. Do not replace Drizzle or the driver unless that test
-  fails.
+- Sign-up, session cookies, and key management on a hosted URL. The code
+  path is proxied and the production auth URLs are set. A real registration
+  on `https://app.flowmark.dev` has not been recorded.
+- Serverless Postgres. The driver disables prepared statements. The API
+  process is deployed and `/api/health` responds. A hosted ingestion and a
+  signed-in read against Neon have not been recorded. Do not replace
+  Drizzle or the driver unless that test fails.
 - The six harness scenarios and the founder's earlier dashboard pass. Re-run
   the relevant tests when a release candidate claims them. Do not treat this
   document as a fresh test report.
@@ -134,12 +134,13 @@ in the repository; this phase is the baseline.
   environment, release, or context.
 - Business results are visible per run. They are not defined, aggregated, or
   filterable.
-- Empty project state tells the developer to use `http://localhost:3003`.
+- Empty project state uses `http://localhost:3003` in development and
+  `https://api.flowmark.dev` otherwise.
 - Quickstart cannot be followed from npm.
 
 ### Not started
 
-Vercel, production domains, retention cleanup, npm publish, release CI,
+Retention cleanup, npm publish, release CI,
 instrumentation of the card game, waterfall views, historical search,
 explainable change detection, and outcome definitions. The Neon database
 itself is provisioned; see the infrastructure guide.
@@ -175,35 +176,39 @@ baseline. Do not redesign hosting, auth, or the database.
 
 ### Deliverables
 
-Ask before the first cloud resource, the production domain, and npm publish.
+Ask before npm publish, a database restore, or another paid resource.
 
 - [x] Create an isolated Neon project and a direct migration URL. Apply the
       committed migrations with `pnpm db:migrate`. Do not run seed. Do not
       enable demo mode. Done October 26, 2026: project `flowmark`
       (`snowy-dawn-12186433`), branch `production`, Postgres only, pooled
       runtime URL and direct migration URL in `packages/db/.env.neon`. Local
-      demo stays on loopback. Ingestion and a dashboard read against this
-      database wait for the Vercel preview below. Operating notes:
+      demo stays on loopback. The hosted API is what reads this database.
+      Operating notes:
       [Infrastructure](./docs/infrastructure.md).
-- [ ] Deploy preview projects for `apps/server` and `apps/dashboard` only.
-      Set `DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, and
-      `FLOWMARK_DASHBOARD_ORIGIN` on the API. Point the dashboard at that API.
-      Reject `FLOWMARK_DEMO_MODE` in production.
-- [ ] On the preview URL, prove the whole path: register, receive the write
+- [x] Deploy `apps/server` and `apps/dashboard`, plus landing and docs.
+      `DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, and
+      `FLOWMARK_DASHBOARD_ORIGIN` are set on the API. The dashboard points
+      at `https://api.flowmark.dev`. `FLOWMARK_DEMO_MODE` is unset and
+      rejected in production. Done October 26, 2026. The variable catalog
+      is in the infrastructure guide.
+- [ ] On the hosted URLs, prove the whole path: register, receive the write
       key, send one `POST /v1/events` from outside the monorepo, and open that
       run while signed in. Confirm a second user cannot read the project.
       Confirm a wrong key is rejected and a database error is not reported as
       success.
 - [ ] Confirm Better Auth cookies stay on the dashboard origin, sign-out
       works, and the API trusts only the dashboard origin. Keep the canonical
-      auth instance in `apps/server`.
-- [ ] Attach the domains from ADR 0006 after the preview path works:
-      `flowmark.dev`, `docs.flowmark.dev`, `app.flowmark.dev`, and
-      `api.flowmark.dev`. Deploy landing and docs without database or auth
-      secrets. Redirect `www` only if DNS makes it a one-step choice. Do not
-      deploy the harness or internal docs.
-- [ ] Replace localhost in the dashboard empty state and any launch-facing
-      copy with the public API origin and the npm install command.
+      auth instance in `apps/server`. The URLs are already set to
+      `https://app.flowmark.dev`. The cookie behavior is not yet confirmed
+      with a real session.
+- [x] Attach the domains from ADR 0006: `flowmark.dev`,
+      `docs.flowmark.dev`, `app.flowmark.dev`, and `api.flowmark.dev`.
+      Landing and docs have no database or auth secrets. `www.flowmark.dev`
+      redirects to the apex. The harness and internal docs are not deployed.
+- [x] Replace localhost in the dashboard empty state and launch-facing
+      copy with the public origins. The npm install command waits until the
+      package is published.
 - [ ] Document backup, restore, and rollback: where Neon keeps backups, one
       restore into an isolated database, and the rule that migrations run as a
       controlled step, not on every Vercel build. Prefer additive migrations.
@@ -212,9 +217,9 @@ Ask before the first cloud resource, the production domain, and npm publish.
       disposable rows. Do not build a long-term summary table in this phase.
       Record in the ops notes that Phase 4 may need a longer window before
       this job is the only history.
-- [ ] Make failed requests visible: structured API errors, `/api/health`, and
-      a written place to look at Vercel and Neon logs. No new monitoring
-      product.
+- [ ] Make failed requests visible: structured API errors. `/api/health`
+      already responds, and the infrastructure guide says where Vercel and
+      Neon logs live. No new monitoring product.
 - [ ] Pack `@flowmark/core` and `@flowmark/node` and install them in a clean
       project outside the workspace. Prove ESM, types, Node without Next,
       the Next adapter, and the browser entry without Node built-ins. Confirm
@@ -233,8 +238,8 @@ Ask before the first cloud resource, the production domain, and npm publish.
 
 ### Dependencies
 
-Maintainer approval to create the Vercel project, attach the domain, and
-publish to npm. The Neon project already exists. Confirmation that the
+Maintainer approval to publish to npm. Neon, Vercel, and the domains
+already exist. Confirmation that the
 `@flowmark` npm scope can be published and whether the Git repository becomes
 public at release. See the decisions at the end.
 

@@ -8,9 +8,10 @@
   provider and auth choices are in
   [ADR 0006](./docs/decisions/0006-mvp-0.1-infrastructure.md). What is
   actually provisioned is recorded in
-  [docs/infrastructure.md](./docs/infrastructure.md). The Neon database
-  exists; local demo stays on loopback. Do not seed Neon. Remaining
-  increments, including Vercel and npm, are not automatically approved.
+  [docs/infrastructure.md](./docs/infrastructure.md). Neon and the four
+  Vercel projects exist. Local demo stays on loopback. Do not seed Neon.
+  npm publish, backup restore, and retention cleanup are not automatically
+  approved.
 - Read applicable nested `AGENTS.md` files. Next.js apps require checking the
   installed Next.js documentation before framework changes.
 

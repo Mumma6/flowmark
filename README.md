@@ -74,8 +74,8 @@ on the timeline until you complete or fail the run.
 ## Status
 
 Instrument a process, ingest events, sign in to the dashboard, and inspect a
-run. The SDK is not on npm yet. Hosted Flowmark, key management in the UI,
-and a published package are next.
+run. The reference deployment is live at the links below. The SDK is not on
+npm yet. Key management is in the dashboard.
 
 - Product: [flowmark.dev](https://flowmark.dev)
 - SDK reference (this repo): [`apps/docs`](./apps/docs)

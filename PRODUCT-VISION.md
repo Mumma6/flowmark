@@ -107,15 +107,16 @@ Working locally, and in the repository's self-hosted shape:
 - A comparison of one run's duration and reported outcome with recent peers
   of the same workflow.
 
-Not built yet: a published npm package, an operated hosted service, history
-beyond the dashboard's latest 100 runs, search by outcome or operation,
-comparison deeper than overall duration, aggregation of business results,
-waterfall views, and automatic detection of meaningful change. The reference
-deployment choices in
-[ADR 0006](./docs/decisions/0006-mvp-0.1-infrastructure.md) — Neon, Vercel,
-`flowmark.dev`, MIT, and 30-day retention — are decided. The Neon database
-exists and the committed migrations have been applied. Vercel, the public
-domains, npm, hosted operation, and the retention job are not built.
+Not built yet: a published npm package, history beyond the dashboard's
+latest 100 runs, search by outcome or operation, comparison deeper than
+overall duration, aggregation of business results, waterfall views, and
+automatic detection of meaningful change. The reference deployment choices
+in [ADR 0006](./docs/decisions/0006-mvp-0.1-infrastructure.md) — Neon,
+Vercel, `flowmark.dev`, MIT, and 30-day retention — are decided. Neon, the
+four Vercel projects, and the public hostnames are provisioned. How they
+run, and which environment variables are local versus production, is in
+[the infrastructure guide](./docs/infrastructure.md). npm, the retention
+job, and a proven register-to-run pass on the hosted service are not done.
 
 The local harness in `apps/dev-harness` is a loopback fixture for
 `invoices.import`, `inventory.sync`, and `orders.fulfill`. It is not a public

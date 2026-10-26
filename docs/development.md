@@ -127,9 +127,10 @@ These are manual integration checks, not assertions that replace automated
 SDK tests. Run each case once when checking browser delivery: the local browser
 key shares a 120-request/minute quota across local clients.
 
-The server allows the local dashboard origin by default. Set
-`FLOWMARK_DASHBOARD_ORIGIN` to the deployed dashboard origin in the server
-environment before production use.
+The server allows the local dashboard origin by default. The reference
+deployment sets `FLOWMARK_DASHBOARD_ORIGIN` and `BETTER_AUTH_URL` to
+`https://app.flowmark.dev`. The full local and production catalog is in
+the [infrastructure guide](./infrastructure).
 
 The framework-independent use cases, ports, and persistence adapters are in
 `packages/api` (`@flowmark/api`). The current `apps/server` Next.js application
@@ -175,13 +176,20 @@ integration coverage additionally needs `TEST_DATABASE_URL` as described below.
 
 ## Environment and database
 
-Run `pnpm dev:setup` (or copy the relevant `.env.example`) to configure local demo
-mode. The API needs `DATABASE_URL` and `FLOWMARK_DEMO_MODE=true`; the dashboard
-uses the same demo-mode flag and its server-side `FLOWMARK_API_URL`. The dev
-harness's `FLOWMARK_API_KEY` is used by its server route only. Demo mode defaults
-off and is rejected when `NODE_ENV` or `VERCEL_ENV` is production. Set
-`BETTER_AUTH_SECRET` in the API environment for hosted use; local demo mode
-falls back to a documented development secret.
+Local demo and the reference deployment are different environments. Do not
+copy Vercel values into `.env.local`, and do not point local demo at Neon.
+The [infrastructure guide](./infrastructure) lists every variable, which
+process reads it, and the value used in each environment.
+
+Run `pnpm dev:setup` (or copy the relevant `.env.example`) to configure local
+demo mode. The API needs a loopback `DATABASE_URL` and
+`FLOWMARK_DEMO_MODE=true`. The dashboard uses the same demo-mode flag and
+`FLOWMARK_API_URL=http://localhost:3003`. The dev harness's
+`FLOWMARK_API_KEY` is used by its server route only. Landing and customer
+docs need no local env file. Demo mode defaults off and is rejected when
+`NODE_ENV` or `VERCEL_ENV` is production. Hosted API use sets
+`BETTER_AUTH_SECRET` on Vercel. Local demo mode falls back to a development
+secret and must not reuse it in production.
 
 Database schema lives in `packages/db/src/schema`. Set `DATABASE_URL` when generating Drizzle migrations:
 

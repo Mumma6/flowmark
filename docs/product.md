@@ -93,14 +93,15 @@ derived from persisted events.
 
 ## Current boundaries
 
-The reference Neon database exists and has the committed schema. There is no
-operated hosted Flowmark API. Local and self-hosted dashboard
-sign-in is Better Auth email and password; registration creates a project and
-the first write key. Applications still authenticate with a project write key.
-The dashboard can create, revoke, and rotate ingestion keys. Retention
-cleanup and an operated production service are not implemented. Self-hosted deployments still own backups, deletion, and
-operations. Delivery is best-effort and bounded in memory, not a durable
-offline queue.
+The reference deployment serves the landing page, docs, dashboard, and API
+on `flowmark.dev` and its subdomains. Neon holds the schema and no demo
+seed. Local and hosted dashboard sign-in is Better Auth email and password;
+registration creates a project and the first write key. Applications still
+authenticate with a project write key. The dashboard can create, revoke,
+and rotate ingestion keys. The SDK is not on npm yet. Retention cleanup and
+a backup restore drill are not done. Self-hosted deployments still own
+backups, deletion, and operations. Delivery is best-effort and bounded in
+memory, not a durable offline queue.
 
 ## Proposed next work
 

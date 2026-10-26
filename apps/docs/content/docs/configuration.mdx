@@ -36,8 +36,9 @@ export const flowmark = createFlowmark({
 | `onInstrumentationError` | SDK warning log    | Receives delivery/validation failures |
 
 Explicit options take precedence over environment variables. Outside production,
-the API URL falls back to `http://localhost:3003`; production has no URL
-fallback. HTTPS is required except for permitted loopback development origins.
+the API URL falls back to `http://localhost:3003`. Production has no URL
+fallback; the reference API is `https://api.flowmark.dev`. HTTPS is required
+except for permitted loopback development origins.
 Environment/release defaults come from options, not automatically from
 environment variables. Per-run values override client defaults.
 

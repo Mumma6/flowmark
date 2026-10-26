@@ -10,7 +10,7 @@ const guides = [
   {
     href: "/docs/infrastructure",
     title: "Infrastructure",
-    description: "Reference deployment, starting with the Neon database.",
+    description: "Neon, Vercel, domains, and local versus production env.",
   },
   {
     href: "/docs/architecture",

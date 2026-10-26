@@ -9,10 +9,11 @@
 > [PRODUCT-VISION.md](./PRODUCT-VISION.md). This document only scopes
 > infrastructure. Provider, auth-provider, and access-model choices are
 > confirmed in [ADR 0006](./docs/decisions/0006-mvp-0.1-infrastructure.md).
-> The Neon database is provisioned; how to operate it is in
-> [docs/infrastructure.md](./docs/infrastructure.md). Vercel, domains, npm,
-> backup restore, and the retention job are still open. Do not treat the rest
-> of this plan as implemented.
+> Neon, the four Vercel projects, and the public hostnames are provisioned.
+> How to operate them, including every local and production variable, is in
+> [docs/infrastructure.md](./docs/infrastructure.md). npm, backup restore,
+> and the retention job are still open. Do not treat the rest of this plan
+> as implemented.
 
 ## 1. What 0.1 should make possible
 
@@ -34,12 +35,12 @@ The local harness remains internal, loopback-only, and never a deployment target
 
 | Area          | What exists                                                                | What is missing for 0.1                                                      |
 | ------------- | -------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| Hosting       | Separate Next.js landing, docs, dashboard, and server apps                 | Deployment configuration, domains, environment isolation, operational checks |
-| Database      | PostgreSQL, Drizzle schema, versioned migrations, `pnpm db:migrate`. Neon project `flowmark` (`snowy-dawn-12186433`), branch `production`, Postgres only, migrations applied, no seed. Local demo stays on loopback. See [Infrastructure](./docs/infrastructure.md). | Vercel wiring, a tested backup restore, and the 30-day cleanup job |
-| Setup         | `pnpm db:setup` migrates then seeds; seed refuses production/non-loopback and creates `local@dev` | Production onboarding without demo mode                                      |
-| Auth          | Better Auth email/password; session-scoped dashboard reads; register creates owner, project, and first write key. Dashboard key management is implemented | Hosted auth URL and cookie setup. Password reset stays off until email delivery exists |
+| Hosting       | Four Vercel projects from `Mumma6/flowmark`, roots under `apps/`, public hostnames attached. See [Infrastructure](./docs/infrastructure.md). | A recorded register, ingest, and read pass on those hostnames. npm is separate. |
+| Database      | PostgreSQL, Drizzle schema, versioned migrations, `pnpm db:migrate`. Neon project `flowmark` (`snowy-dawn-12186433`), branch `production`, Postgres only, migrations applied, no seed. The API uses the pooled URL. Local demo stays on loopback. | A tested backup restore and the 30-day cleanup job |
+| Setup         | `pnpm db:setup` migrates then seeds; seed refuses production/non-loopback and creates `local@dev` | Production onboarding without demo mode is the hosted register path. It has not been exercised. |
+| Auth          | Better Auth email/password; session-scoped dashboard reads; register creates owner, project, and first write key. Dashboard key management is implemented. Hosted `BETTER_AUTH_URL` and `FLOWMARK_DASHBOARD_ORIGIN` are `https://app.flowmark.dev`. | A confirmed hosted cookie and sign-out. Password reset stays off until email delivery exists. |
 | Credentials   | Hashed project read/write keys, browser keys, and dashboard create/revoke/rotate | Hosted rotation after a leak is still an operator process                    |
-| Environment   | Effect Schema API settings, dashboard server-env checks, production demo refusal | Auth secrets and hosted URL validation in later increments                   |
+| Environment   | Per-app local files and per-project Vercel env. Production demo mode is rejected. The catalog is in the infrastructure guide. | Preview currently shares the production database. It is not an isolated environment. |
 | SDK release   | `@flowmark/node`, its `@flowmark/core` dependency, built ESM/types/exports | Tarball verification, external-install tests, registry setup, and release CI |
 | Data browsing | Useful workflow and run views                                              | Server-side pagination beyond the latest-100-run snapshot                    |
 
@@ -117,8 +118,8 @@ limits, and database hosting has its own costs.
    The API gets runtime DB/auth credentials; the dashboard server points to
    `https://api.flowmark.dev`. Migrations run separately with migration
    credentials. Neither deployment receives local fixture keys or demo mode.
-   Update Turborepo build env declarations/cache inputs for variables actually
-   used during builds; the current dev-only pass-through list is not sufficient.
+   `turbo.json` `build.passThroughEnv` must include every variable the build
+   reads. The current list is in the infrastructure guide.
 9. **Verify the complete hosted path.** Sign in through `app.flowmark.dev`,
    authorize the project, send SDK telemetry to `api.flowmark.dev`, and inspect
    the resulting run. Configure Better Auth's public browser-facing URL as

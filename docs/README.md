@@ -11,8 +11,8 @@ second copy in the app.
 
 ## Guides
 
-- [Infrastructure](./infrastructure): what is provisioned, starting with the
-  Neon reference database, and how local demo stays separate from it.
+- [Infrastructure](./infrastructure): the Neon database, the four Vercel
+  projects, and every local and production environment variable.
 - [Development setup](./development): workspace commands, local demo, database,
   and checks.
 - [Architecture](./architecture): service boundaries, persistence,
