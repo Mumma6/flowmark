@@ -157,7 +157,9 @@ function RunComparisonPanel({
       <CardContent className="space-y-6">
         {error ? (
           <Alert variant="destructive">
-            <AlertDescription>Could not load comparison: {error}</AlertDescription>
+            <AlertDescription>
+              Could not load comparison: {error}
+            </AlertDescription>
           </Alert>
         ) : loading ? (
           <p role="status">Loading comparison…</p>
@@ -171,8 +173,8 @@ function RunComparisonPanel({
               <Alert>
                 <AlertTitle>Few peers</AlertTitle>
                 <AlertDescription>
-                  Only {peerCount} earlier run{peerCount === 1 ? "" : "s"}. Treat
-                  median and p95 as thin samples, not a regression signal.
+                  Only {peerCount} earlier run{peerCount === 1 ? "" : "s"}.
+                  Treat median and p95 as thin samples, not a regression signal.
                 </AlertDescription>
               </Alert>
             )}
@@ -207,9 +209,7 @@ function RunComparisonPanel({
                   {formatDuration(comparison.peerP95DurationMs)}
                   {vsP95 != null && (
                     <p className="mt-1 text-xs font-normal text-muted-foreground">
-                      {vsP95 > 0
-                        ? "Slower than p95"
-                        : "Within the usual range"}
+                      {vsP95 > 0 ? "Slower than p95" : "Within the usual range"}
                     </p>
                   )}
                 </dd>
@@ -371,9 +371,12 @@ export function RunInvestigation({
   )
   return (
     <div className="grid min-w-0 gap-6">
-      <Card>
+      <Card className="overflow-hidden border-primary/20">
         <CardHeader className="flex-row flex-wrap items-start justify-between gap-4 space-y-0">
           <div>
+            <p className="mb-2 text-[10px] font-medium uppercase tracking-[0.14em] text-primary/80">
+              One execution · reported outcome
+            </p>
             <CardTitle>{first.workflow}</CardTitle>
             <CardDescription>
               <code className="break-all">{first.externalId}</code>
@@ -382,7 +385,7 @@ export function RunInvestigation({
           <StatusBadge status={state} />
         </CardHeader>
         <CardContent>
-          <div className="mb-4 flex flex-wrap gap-2">
+          <div className="mb-4 grid grid-cols-2 gap-2 sm:flex">
             {first.environment && (
               <Badge variant="outline">{first.environment}</Badge>
             )}
@@ -408,9 +411,7 @@ export function RunInvestigation({
             proof the process is still active.
           </p>
           <div className="flex flex-wrap items-center gap-2">
-            <ViewLink
-              href={`/workflows/${encodeURIComponent(first.workflow)}`}
-            >
+            <ViewLink href={`/workflows/${encodeURIComponent(first.workflow)}`}>
               View workflow
             </ViewLink>
             {(() => {

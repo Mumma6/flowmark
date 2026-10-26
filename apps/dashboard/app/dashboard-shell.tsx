@@ -78,7 +78,7 @@ function Navigation({
     <div className="flex h-full min-h-0 flex-col">
       <Link
         href="/"
-        className="mb-6 flex items-center gap-2.5 text-xl tracking-tight text-foreground"
+        className="mb-8 flex items-center gap-2.5 text-xl tracking-tight text-foreground"
         onClick={onNavigate}
       >
         <FlowmarkMark className="shrink-0 text-primary" />
@@ -98,7 +98,9 @@ function Navigation({
               asChild
               variant={active ? "secondary" : "ghost"}
               className={
-                active ? "justify-start text-primary" : "justify-start"
+                active
+                  ? "justify-start border border-primary/20 bg-primary/10 text-primary shadow-sm"
+                  : "justify-start text-muted-foreground hover:bg-white/[0.04] hover:text-foreground"
               }
             >
               <Link
@@ -215,11 +217,11 @@ function ProjectSwitcher() {
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-        {projects.map((project) => (
-          <SelectItem key={project.id} value={project.id}>
-            {project.name}
-          </SelectItem>
-        ))}
+          {projects.map((project) => (
+            <SelectItem key={project.id} value={project.id}>
+              {project.name}
+            </SelectItem>
+          ))}
         </SelectContent>
       </Select>
     </label>
@@ -236,51 +238,53 @@ export function DashboardShell({
   const [open, setOpen] = useState(false)
   return (
     <ProjectProvider>
-      <div className="min-h-screen">
-      <a
-        href="#dashboard-main"
-        className="sr-only z-[100] rounded-md bg-card px-4 py-3 focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:ring-2 focus:ring-ring"
-      >
-        Skip to content
-      </a>
-      <aside className="fixed inset-y-0 left-0 z-20 hidden w-56 border-r border-border bg-card px-4 py-6 lg:block">
-        <Navigation email={email} />
-      </aside>
-      <div className="min-w-0 lg:ml-56">
-        <header className="flex min-h-16 items-center justify-between gap-3 border-b border-border bg-card px-4 py-3 sm:px-8">
-          <div className="flex min-w-0 items-center gap-3">
-            <Sheet open={open} onOpenChange={setOpen}>
-              <SheetTrigger
-                render={
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="shrink-0 lg:hidden"
-                  />
-                }
-                aria-label="Open navigation"
-              >
-                <Menu aria-hidden="true" />
-              </SheetTrigger>
-              <SheetContent>
-                <SheetTitle className="sr-only">Project navigation</SheetTitle>
-                <SheetDescription className="sr-only">
-                  Browse workflows, runs and project settings.
-                </SheetDescription>
-                <Navigation email={email} onNavigate={() => setOpen(false)} />
-              </SheetContent>
-            </Sheet>
-            <PageBreadcrumbs />
-          </div>
-          <ThemeSelect />
-        </header>
-        <main
-          id="dashboard-main"
-          className="mx-auto w-full max-w-[1600px] p-4 sm:p-8"
+      <div className="dashboard-app min-h-screen">
+        <a
+          href="#dashboard-main"
+          className="sr-only z-[100] rounded-md bg-card px-4 py-3 focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:ring-2 focus:ring-ring"
         >
-          {children}
-        </main>
-      </div>
+          Skip to content
+        </a>
+        <aside className="fixed inset-y-0 left-0 z-20 hidden w-56 border-r border-border bg-card px-4 py-6 lg:block">
+          <Navigation email={email} />
+        </aside>
+        <div className="min-w-0 lg:ml-56">
+          <header className="flex min-h-16 items-center justify-between gap-3 border-b border-border bg-card/90 px-4 py-3 backdrop-blur sm:px-8">
+            <div className="flex min-w-0 items-center gap-3">
+              <Sheet open={open} onOpenChange={setOpen}>
+                <SheetTrigger
+                  render={
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="shrink-0 lg:hidden"
+                    />
+                  }
+                  aria-label="Open navigation"
+                >
+                  <Menu aria-hidden="true" />
+                </SheetTrigger>
+                <SheetContent>
+                  <SheetTitle className="sr-only">
+                    Project navigation
+                  </SheetTitle>
+                  <SheetDescription className="sr-only">
+                    Browse workflows, runs and project settings.
+                  </SheetDescription>
+                  <Navigation email={email} onNavigate={() => setOpen(false)} />
+                </SheetContent>
+              </Sheet>
+              <PageBreadcrumbs />
+            </div>
+            <ThemeSelect />
+          </header>
+          <main
+            id="dashboard-main"
+            className="mx-auto w-full max-w-[1600px] p-4 sm:p-8"
+          >
+            {children}
+          </main>
+        </div>
       </div>
     </ProjectProvider>
   )

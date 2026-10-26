@@ -50,8 +50,8 @@ export function WorkflowDirectory({
     )
   const result = paginate(matching, page, 12)
   return (
-    <Card>
-      <div className="flex flex-wrap items-end gap-3 p-5">
+    <Card className="overflow-hidden">
+      <div className="flex flex-wrap items-end gap-3 border-b border-border/60 bg-white/[0.015] p-5">
         <label className="grid min-w-0 flex-[1_1_240px] gap-2 text-xs text-muted-foreground sm:max-w-[360px]">
           <span>Search workflows</span>
           <div className="relative">
@@ -105,7 +105,7 @@ export function WorkflowDirectory({
       {groupBy(result.items, (workflow) => workflowFamily(workflow.name)).map(
         ([family, items]) => (
           <section key={family}>
-            <div className="flex flex-wrap items-center gap-2.5 border-y border-border bg-secondary/60 px-5 py-3 text-sm font-medium">
+            <div className="flex flex-wrap items-center gap-2.5 border-y border-border/60 bg-primary/[0.04] px-5 py-3 text-sm font-medium">
               <h2 className="text-sm font-medium">{family}</h2>
               <Badge variant="secondary">
                 {
@@ -151,9 +151,7 @@ export function WorkflowDirectory({
                       </Badge>
                     </TableCell>
                     <TableCell>{item.runs.toLocaleString()}</TableCell>
-                    <TableCell
-                      title="Among finished runs. Incomplete runs are not failures."
-                    >
+                    <TableCell title="Among finished runs. Incomplete runs are not failures.">
                       {item.successRate === null
                         ? "No finished runs"
                         : `${item.successRate}%`}

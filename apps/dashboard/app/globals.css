@@ -32,27 +32,57 @@
 
   .dark {
     color-scheme: dark;
-    --background: 204 22% 5%;
+    --background: 204 24% 4.5%;
     --foreground: 144 16% 94%;
-    --card: 197 18% 8%;
+    --card: 165 15% 8%;
     --card-foreground: 144 16% 94%;
     --primary: 98 82% 78%;
     --primary-foreground: 100 30% 7%;
-    --secondary: 180 15% 12%;
+    --secondary: 165 15% 12%;
     --secondary-foreground: 144 16% 94%;
     --destructive: 0 88% 73%;
     --destructive-foreground: 0 0% 100%;
-    --muted: 180 15% 9%;
+    --muted: 165 15% 9%;
     --muted-foreground: 157 7% 63%;
-    --accent: 180 15% 14%;
+    --accent: 165 15% 14%;
     --accent-foreground: 98 82% 78%;
-    --border: 160 8% 20%;
-    --input: 160 8% 25%;
+    --border: 160 8% 19%;
+    --input: 160 8% 24%;
     --ring: 98 82% 78%;
     --chart-1: 98 82% 78%;
     --chart-2: 180 40% 62%;
     --chart-3: 0 88% 73%;
     --chart-4: 157 30% 68%;
     --chart-5: 40 80% 68%;
+  }
+}
+
+@layer components {
+  .dashboard-app {
+    background:
+      radial-gradient(
+        circle at 85% -10%,
+        hsl(150 25% 16% / 0.28),
+        transparent 34rem
+      ),
+      hsl(var(--background));
+  }
+
+  .dark .dashboard-app .rounded-xl.border-border.bg-card {
+    border-color: hsl(160 18% 30% / 0.45);
+    background: linear-gradient(
+      135deg,
+      hsl(165 15% 10% / 0.98),
+      hsl(204 24% 6% / 0.98)
+    );
+    box-shadow: 0 18px 55px hsl(0 0% 0% / 0.16);
+  }
+
+  .dark .dashboard-app table tbody tr {
+    border-color: hsl(160 18% 30% / 0.35);
+  }
+
+  .dark .dashboard-app table tbody tr:hover {
+    background: hsl(150 24% 18% / 0.22);
   }
 }

@@ -195,13 +195,17 @@ export function DashboardOverview() {
             aria-label="Project metrics"
           >
             {cards.map(({ label, value, icon: Icon, note }) => (
-              <Card key={label}>
-                <CardHeader className="flex-row items-center justify-between gap-2 space-y-0 p-4 text-xs text-muted-foreground sm:p-6 sm:text-sm">
+              <Card key={label} className="overflow-hidden">
+                <CardHeader className="flex-row items-center justify-between gap-2 space-y-0 p-4 text-[11px] uppercase tracking-[0.08em] text-muted-foreground sm:p-5">
                   <span>{label}</span>
-                  <Icon size={17} aria-hidden="true" />
+                  <Icon
+                    size={16}
+                    className="text-primary/80"
+                    aria-hidden="true"
+                  />
                 </CardHeader>
-                <CardContent className="px-4 pb-4 sm:px-6 sm:pb-6">
-                  <strong className="mb-2 block text-2xl font-semibold tracking-tight sm:text-3xl">
+                <CardContent className="px-4 pb-4 sm:px-5 sm:pb-5">
+                  <strong className="mb-2 block text-2xl font-medium tracking-tight sm:text-3xl">
                     {value}
                   </strong>
                   <p className="text-xs leading-6 text-muted-foreground">
@@ -227,7 +231,7 @@ export function DashboardOverview() {
               empty="No fail({ code }) reports yet."
             />
           </div>
-          <Card>
+          <Card className="overflow-hidden">
             <CardHeader className="flex-row flex-wrap items-start justify-between gap-4 space-y-0">
               <div>
                 <CardTitle>Latest runs</CardTitle>
@@ -319,19 +323,12 @@ export function ProjectRuns({
   const { data, isPending, error, isFetching, refetch } = useSnapshot()
   const summary = data?.workflows.find((item) => item.name === workflow)
   const workflowRuns =
-    workflow && data
-      ? data.runs.filter((run) => run.workflow === workflow)
-      : []
+    workflow && data ? data.runs.filter((run) => run.workflow === workflow) : []
   const workflowDaily =
-    workflow && workflowRuns.length > 0
-      ? dailyFromRuns(workflowRuns)
-      : null
+    workflow && workflowRuns.length > 0 ? dailyFromRuns(workflowRuns) : null
   const outliers =
-    workflow && workflowRuns.length > 0
-      ? workflowOutliers(workflowRuns)
-      : null
-  const wow =
-    workflowDaily != null ? weekOverWeek(workflowDaily) : null
+    workflow && workflowRuns.length > 0 ? workflowOutliers(workflowRuns) : null
+  const wow = workflowDaily != null ? weekOverWeek(workflowDaily) : null
   return (
     <div className="grid min-w-0 gap-6">
       <PageHeading

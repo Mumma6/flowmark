@@ -15,15 +15,8 @@ import {
   TableHeader,
   TableRow,
 } from "@flowmark/ui"
-import {
-  formatDuration,
-  formatTimestamp,
-  type Run,
-} from "./dashboard-data"
-import {
-  FilterSelect,
-  StatusBadge,
-} from "./dashboard-components"
+import { formatDuration, formatTimestamp, type Run } from "./dashboard-data"
+import { FilterSelect, StatusBadge } from "./dashboard-components"
 import { getRunResultHighlights } from "./run-presentation"
 import { useTRPC } from "../lib/trpc"
 import { useProject } from "./project-context"
@@ -172,8 +165,7 @@ export function RunExplorer({
   const queryInput = useMemo(
     () => ({
       workflow:
-        workflow ??
-        (filters.workflow !== "all" ? filters.workflow : undefined),
+        workflow ?? (filters.workflow !== "all" ? filters.workflow : undefined),
       status:
         filters.status === "all"
           ? undefined
@@ -202,7 +194,7 @@ export function RunExplorer({
   const nextCursor = list.data?.nextCursor ?? null
   return (
     <div>
-      <div className="flex flex-wrap items-end gap-3 p-5">
+      <div className="flex flex-wrap items-end gap-3 border-b border-border/60 bg-white/[0.015] p-5">
         <label className="grid min-w-0 flex-[1_1_240px] gap-2 text-xs text-muted-foreground sm:max-w-[360px]">
           <span>Search runs</span>
           <div className="relative">
@@ -334,9 +326,7 @@ export function RunExplorer({
             variant="outline"
             size="sm"
             disabled={!nextCursor || list.isFetching}
-            onClick={() =>
-              setCursorStack((stack) => [...stack, nextCursor])
-            }
+            onClick={() => setCursorStack((stack) => [...stack, nextCursor])}
           >
             Next
           </Button>
