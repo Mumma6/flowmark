@@ -44,6 +44,9 @@
   [flowmark-persistence](./.agents/skills/flowmark-persistence/SKILL.md).
 - Keep API use cases in `packages/api`; `apps/server` is the framework/protocol
   shell. Keep database-specific work behind persistence boundaries.
+- Before Vercel, domain, or hosted environment changes, read and apply
+  [flowmark-vercel](./.agents/skills/flowmark-vercel/SKILL.md). The
+  operating record is [docs/infrastructure.md](./docs/infrastructure.md).
 - Before frontend changes, read and apply
   [flowmark-ui-components](./.agents/skills/flowmark-ui-components/SKILL.md).
   Use shadcn components through `@flowmark/ui`; add missing reusable primitives
