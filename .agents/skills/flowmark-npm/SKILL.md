@@ -9,7 +9,7 @@ description: >-
 # Flowmark npm release
 
 Public packages are `@flowmarkdev/core` and `@flowmarkdev/node` only. The
-operating notes are in [docs/sdk-release.md](../../../docs/sdk-release.md).
+operating notes are in [private/docs/sdk-release.md](../../../private/docs/sdk-release.md).
 Ask before publishing. Never publish `@flowmark/api`, `db`, `ui`, or apps.
 
 The unscoped name `flowmark` is an npm security holding package. The
@@ -136,6 +136,6 @@ script there. Do not print write keys.
 
 When promoting a stable release, update customer install copy so
 `npm i @flowmarkdev/node` is the quickstart path, and refresh
-[docs/infrastructure.md](../../../docs/infrastructure.md) npm status.
-Keep [docs/sdk-release.md](../../../docs/sdk-release.md) as the operator
+[private/docs/infrastructure.md](../../../private/docs/infrastructure.md) npm status.
+Keep [private/docs/sdk-release.md](../../../private/docs/sdk-release.md) as the operator
 guide.

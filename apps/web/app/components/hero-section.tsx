@@ -61,6 +61,9 @@ export function HeroSection() {
               </a>
             </Button>
           </div>
+          <p className="mt-5 font-mono text-[13px] tracking-tight text-muted-foreground">
+            npm i @flowmarkdev/node
+          </p>
         </div>
 
         <div className="relative mx-auto mt-14 max-w-5xl [perspective:1400px] sm:mt-16">

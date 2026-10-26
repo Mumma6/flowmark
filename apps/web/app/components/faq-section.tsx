@@ -67,7 +67,7 @@ const questions: ReadonlyArray<{
   {
     value: "start",
     title: "How do I start?",
-    body: "Create a project in the dashboard, install @flowmarkdev/node, and mark one process. The docs cover Node.js, Next.js, and the browser.",
+    body: "Create a project in the dashboard, run npm i @flowmarkdev/node, and mark one process. The docs cover Node.js, Next.js, and the browser.",
   },
 ]
 

@@ -27,3 +27,6 @@ coverage
 .envrc
 .cursor/mcp.json
 .neon
+
+# Maintainer-only product / ops docs (not published to GitHub)
+/private/

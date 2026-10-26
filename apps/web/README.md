@@ -36,12 +36,11 @@ License; review that license before redistributing the source.
 The dashboard illustration is explicitly illustrative and uses synthetic
 values, not live or customer data. No credentials are needed by the website.
 
-## Landing and the product vision
+## Landing copy
 
-The landing page is the public statement of the repository
-[product vision](../../PRODUCT-VISION.md). It sells the complete product in
-present tense. It does not label unfinished work as ahead of the dashboard.
-When the vision changes, update the landing in the same change.
+The landing page sells the complete product in present tense. It does not
+label unfinished work as ahead of the dashboard. Keep copy aligned with the
+dashboard and customer docs.
 
 ## Component organization
 

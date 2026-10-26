@@ -11,7 +11,7 @@ description: >-
 
 Flowmark's reference deployment is four Vercel projects. The provisioned
 state and the environment catalog are in
-[docs/infrastructure.md](../../../docs/infrastructure.md). This skill is how
+[private/docs/infrastructure.md](../../../private/docs/infrastructure.md). This skill is how
 to operate them. Read that guide before changing a project, a domain, or a
 variable.
 

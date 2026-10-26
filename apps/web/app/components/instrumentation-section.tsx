@@ -27,7 +27,11 @@ export function InstrumentationSection() {
         </div>
         <CodeShowcase />
         <p className="mt-5 border-t border-border pt-5 text-xs leading-7 text-muted-foreground">
-          One shared server client:{" "}
+          Install with{" "}
+          <code className="font-mono text-[0.92em]">
+            npm i @flowmarkdev/node
+          </code>
+          , then one shared server client:{" "}
           <code className="font-mono text-[0.92em]">
             const flowmark = createFlowmark()
           </code>

@@ -2,14 +2,13 @@
 
 ## Start here
 
-- Product direction: [PRODUCT-VISION.md](./PRODUCT-VISION.md).
-- Current baseline and roadmap: [NEXT-PHASE-PLAN.md](./NEXT-PHASE-PLAN.md).
-- MVP infrastructure proposals: [MVP-INFRA.md](./MVP-INFRA.md). Confirmed
-  provider and auth choices are in
-  [ADR 0006](./docs/decisions/0006-mvp-0.1-infrastructure.md). What is
-  actually provisioned is recorded in
-  [docs/infrastructure.md](./docs/infrastructure.md). Neon and the four
-  Vercel projects exist. Local demo stays on loopback. Do not seed Neon.
+- Product direction, roadmap, and infrastructure operating notes live in the
+  local-only `private/` folder (`PRODUCT-VISION.md`, `NEXT-PHASE-PLAN.md`,
+  `MVP-INFRA.md`, `docs/infrastructure.md`). That folder is listed in
+  `.gitignore` and is not in the public Git tree. Confirmed provider
+  and auth choices are in
+  [ADR 0006](./docs/decisions/0006-mvp-0.1-infrastructure.md). Neon and the
+  four Vercel projects exist. Local demo stays on loopback. Do not seed Neon.
   npm publish, backup restore, and retention cleanup are not automatically
   approved.
 - Read applicable nested `AGENTS.md` files. Next.js apps require checking the
@@ -21,8 +20,8 @@
   retries that work. Preserve the workflow/run abstraction.
 - Flowmark is a focused open-source workflow observability product. Ambition
   inside that domain is welcome. It is not an enterprise observability
-  platform or a public multi-tenant SaaS. Read
-  [PRODUCT-VISION.md](./PRODUCT-VISION.md) before expanding scope.
+  platform or a public multi-tenant SaaS. Prefer the local product vision
+  before expanding scope.
 - Business results are application-reported evidence, not verified correctness.
   Completed does not mean every record succeeded. Progress is last reported;
   missing terminal telemetry does not prove a run is active or failed.
@@ -45,8 +44,8 @@
 - Keep API use cases in `packages/api`; `apps/server` is the framework/protocol
   shell. Keep database-specific work behind persistence boundaries.
 - Before Vercel, domain, or hosted environment changes, read and apply
-  [flowmark-vercel](./.agents/skills/flowmark-vercel/SKILL.md). The
-  operating record is [docs/infrastructure.md](./docs/infrastructure.md).
+  [flowmark-vercel](./.agents/skills/flowmark-vercel/SKILL.md). The detailed
+  operating record is maintainer-local (`private/docs/infrastructure.md`).
 - Before publishing `@flowmarkdev/core` or `@flowmarkdev/node`, read and
   apply [flowmark-npm](./.agents/skills/flowmark-npm/SKILL.md). Ask before
   every publish.

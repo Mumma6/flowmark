@@ -39,6 +39,9 @@ export function ClosingSection() {
             </a>
           </Button>
         </div>
+        <p className="mt-5 font-mono text-[13px] tracking-tight text-muted-foreground">
+          npm i @flowmarkdev/node
+        </p>
       </div>
     </section>
   )
