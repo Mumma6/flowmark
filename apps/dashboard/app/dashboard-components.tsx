@@ -7,10 +7,14 @@ import {
   AlertTitle,
   Badge,
   Button,
-  NativeSelect,
   Pagination,
   PaginationNext,
   PaginationPrevious,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Skeleton,
 } from "@flowmark/ui"
 import { ArrowRight, RefreshCw } from "lucide-react"
@@ -126,16 +130,21 @@ export function FilterSelect({
   return (
     <label className="grid min-w-0 flex-[1_1_140px] gap-2 text-xs text-muted-foreground sm:max-w-[260px]">
       <span>{label}</span>
-      <NativeSelect
+      <Select
         value={value}
-        onChange={(event) => onChange(event.target.value)}
+        onValueChange={onChange}
       >
+        <SelectTrigger aria-label={label}>
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
         {options.map((option) => (
-          <option key={option.value} value={option.value}>
+          <SelectItem key={option.value} value={option.value}>
             {option.label}
-          </option>
+          </SelectItem>
         ))}
-      </NativeSelect>
+        </SelectContent>
+      </Select>
     </label>
   )
 }

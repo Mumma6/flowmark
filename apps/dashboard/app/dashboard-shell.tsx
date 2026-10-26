@@ -21,8 +21,11 @@ import {
   BreadcrumbSeparator,
   Button,
   FlowmarkMark,
-  NativeSelect,
-  NativeSelectOption,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Separator,
   Sheet,
   SheetContent,
@@ -203,17 +206,22 @@ function ProjectSwitcher() {
   return (
     <label className="grid gap-1.5">
       <span className="text-xs text-muted-foreground">Project</span>
-      <NativeSelect
+      <Select
         aria-label="Project"
         value={current?.id ?? projects[0]?.id}
-        onChange={(event) => select(event.target.value)}
+        onValueChange={select}
       >
+        <SelectTrigger>
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
         {projects.map((project) => (
-          <NativeSelectOption key={project.id} value={project.id}>
+          <SelectItem key={project.id} value={project.id}>
             {project.name}
-          </NativeSelectOption>
+          </SelectItem>
         ))}
-      </NativeSelect>
+        </SelectContent>
+      </Select>
     </label>
   )
 }

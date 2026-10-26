@@ -15,6 +15,11 @@ import {
   CardTitle,
   Input,
   Separator,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Table,
   TableBody,
   TableCell,
@@ -97,17 +102,21 @@ function ProjectSettings() {
           {projects.length > 1 ? (
             <label className="grid max-w-md gap-2 text-sm">
               <span className="font-medium">Active project</span>
-              <select
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+              <Select
                 value={current?.id ?? ""}
-                onChange={(event) => select(event.target.value)}
+                onValueChange={select}
               >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
                 {projects.map((project) => (
-                  <option key={project.id} value={project.id}>
+                  <SelectItem key={project.id} value={project.id}>
                     {project.name}
-                  </option>
+                  </SelectItem>
                 ))}
-              </select>
+                </SelectContent>
+              </Select>
             </label>
           ) : null}
           {current ? (

@@ -16,6 +16,14 @@ export {
 } from "./card"
 export { Tabs, TabsContent, TabsList, TabsTrigger } from "./tabs"
 export {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "./select"
+export {
   CodeBlock,
   CodeBlockActions,
   CodeBlockContent,

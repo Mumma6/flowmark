@@ -14,7 +14,14 @@ it("tells an agent how to install, configure, and choose a process", () => {
 })
 
 it("keeps the write key out of the prompt", () => {
-  expect(prompt).toContain("Do not ask them to paste it into the chat.")
+  expect(prompt).toContain("Never use NEXT_PUBLIC_, commit, print, or chat-paste the write key.")
   expect(prompt).not.toMatch(/fm_[A-Za-z0-9]+/)
   expect(prompt).not.toContain("NEXT_PUBLIC_FLOWMARK_API_KEY")
+})
+
+it("keeps execution identity and privacy rules explicit", () => {
+  expect(prompt).toContain("fresh execution ID")
+  expect(prompt).toContain("Do not use a durable entity ID")
+  expect(prompt).toContain("raw exceptions")
+  expect(prompt).toContain("Choose exactly one real process")
 })

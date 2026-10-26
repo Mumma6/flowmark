@@ -307,7 +307,7 @@ export function OnboardingGuide({ hasRuns }: { hasRuns: boolean }) {
       {hasProject && hasRuns ? (
         <div>
           <Button type="button" variant="ghost" size="sm" onClick={dismiss}>
-            Dismiss guide
+            Close Getting started
           </Button>
         </div>
       ) : null}
