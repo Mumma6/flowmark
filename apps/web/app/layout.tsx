@@ -12,9 +12,9 @@ const mono = Geist_Mono({
   variable: "--font-geist-mono",
 })
 
-const title = "Flowmark — Turn business processes into data-driven insight"
+const title = "Flowmark — Understand every execution"
 const description =
-  "Operations insight for TypeScript. Mark a checkout, sync, or job and see volume, duration, success rate, and the reported result."
+  "Workflow observability for TypeScript. Mark a process your application already runs, investigate one execution, and see what changed across them."
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://flowmark.dev"),
@@ -23,7 +23,6 @@ export const metadata: Metadata = {
   applicationName: "Flowmark",
   keywords: [
     "workflow observability",
-    "operations insight",
     "TypeScript",
     "SDK",
     "open source",

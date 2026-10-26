@@ -22,9 +22,9 @@ const insights = [
   },
   {
     title: "Operations",
-    metric: "Which step was slow",
+    metric: "Where the time went",
     detail:
-      "Named operations ranked by total time, with their own median and p95.",
+      "Named operations ranked by total time, with their own median and p95. A step is a milestone, not a timed task.",
   },
   {
     title: "Progress",
@@ -49,13 +49,15 @@ export function InsightsSection() {
     >
       <div className={shellClassName}>
         <div className="max-w-2xl">
-          <p className={overlineClassName}>Data-driven insight</p>
+          <p className={overlineClassName}>In the dashboard today</p>
           <h2 id="insights-title" className={`${sectionTitleClassName} mt-4`}>
-            Numbers operations can act on.
+            Open the run behind the number.
           </h2>
           <p className="mt-4 max-w-xl text-sm leading-7 text-muted-foreground">
-            Every marked process becomes volume, duration, success rate, and a
-            reported result. Open one run when the numbers need a story.
+            A workflow already shows volume, success rate, duration, and
+            week-over-week change. A run already shows the timeline, the
+            result the application reported, and how its duration compares
+            with recent peers.
           </p>
         </div>
         <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

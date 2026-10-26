@@ -15,7 +15,10 @@ export function SiteHeader() {
           aria-label="Main navigation"
         >
           <a className="hidden hover:text-primary sm:inline" href="#insights">
-            Insights
+            Today
+          </a>
+          <a className="hidden hover:text-primary lg:inline" href="#direction">
+            Ahead
           </a>
           <a className="hidden hover:text-primary sm:inline" href="#how-it-works">
             How it works

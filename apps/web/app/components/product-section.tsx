@@ -3,22 +3,22 @@ import { overlineClassName, sectionTitleClassName, shellClassName } from "./shel
 
 const surfaces = [
   {
-    title: "TypeScript SDK",
+    title: "Run investigation",
     detail:
-      "A few markers around the business logic you already have. Ordinary methods and Promises. This is how the data reaches Flowmark.",
+      "What happened in this execution: order, operation time, recovered errors, last reported progress, the result the application attached, and how this run compares with recent ones.",
+    mark: "One run",
+  },
+  {
+    title: "Workflow intelligence",
+    detail:
+      "What changed across executions, where it changed, and which runs to open. Volume and duration open that answer. So does what those runs reported accomplishing.",
+    mark: "Many runs",
+  },
+  {
+    title: "A small write API",
+    detail:
+      "workflow, step, operation, progress, error, and a reported result. Ordinary TypeScript and Promises. The application keeps the process.",
     mark: "SDK",
-  },
-  {
-    title: "Flowmark API",
-    detail:
-      "Validates and stores what the application reports: context, operations, progress, errors, and the business result.",
-    mark: "API",
-  },
-  {
-    title: "Operations dashboard",
-    detail:
-      "Volume, success rate, and duration for each process — then open one run for its timeline, progress, and reported result.",
-    mark: "UI",
   },
 ] as const
 
@@ -33,11 +33,12 @@ export function ProductSection() {
         <div className="max-w-2xl">
           <p className={overlineClassName}>The product</p>
           <h2 id="product-title" className={`${sectionTitleClassName} mt-4`}>
-            Insight from the business logic you already have.
+            From one execution to the pattern across them.
           </h2>
           <p className="mt-4 max-w-xl text-sm leading-7 text-muted-foreground">
-            Developers mark a process. Operations opens it and understands
-            what it accomplished.
+            Flowmark observes a process the application already owns. A
+            developer marks it. Anyone in the project can read what it
+            reported, then open the execution when that reading is not enough.
           </p>
         </div>
         <div className="mt-10 grid gap-4 md:grid-cols-3">

@@ -26,6 +26,7 @@ import { RunInvestigation } from "./run-investigation"
 import { DataState, PageHeading, ViewLink } from "./dashboard-components"
 import { formatDuration, type WorkflowSummary } from "./dashboard-data"
 import { EmptyProject } from "./empty-project"
+import { OnboardingGuide } from "./getting-started"
 import { useProject } from "./project-context"
 import {
   DailyDurationPanel,
@@ -173,6 +174,7 @@ export function DashboardOverview() {
       >
         <Refresh fetching={isFetching} onClick={() => void refetch()} />
       </PageHeading>
+      <OnboardingGuide />
       <DataState
         pending={isPending}
         error={error}

@@ -3,27 +3,27 @@ import { overlineClassName, sectionTitleClassName, shellClassName } from "./shel
 
 const steps = [
   {
-    index: "01 / In Flowmark",
-    title: "See the incomplete outcome",
+    index: "01 / Reported result",
+    title: "Read what the run accomplished",
     evidence: (
       <>
-        <strong className="font-medium text-primary">988 succeeded</strong>
-        <span>12 failed</span>
+        <strong className="font-medium text-primary">850 imported</strong>
+        <span>150 skipped</span>
       </>
     ),
-    copy: "A completed job can still leave skipped work. Open the process and read the reported result.",
+    copy: "A completed import can still leave records behind. The result is what the application reported, not an audit that every record succeeded.",
   },
   {
-    index: "02 / In your tools",
-    title: "Follow the business id",
-    evidence: <code>orderId: ord_2049</code>,
-    copy: "Use the identifier you attached — an order, a source, a job — to look up the rest in logs and systems you already have.",
+    index: "02 / Run context",
+    title: "Start from a reference you chose",
+    evidence: <code>batchId: batch_2049</code>,
+    copy: "An order, batch, or job id in the run context is how someone finds that execution without reconstructing logs.",
   },
   {
-    index: "03 / In the process",
-    title: "Close the gap",
-    evidence: <span>12 items to investigate—not 1,000</span>,
-    copy: "Fix what failed. If the process can retry a subset, do that and check the new outcome.",
+    index: "03 / The execution",
+    title: "Open the run when the summary is not enough",
+    evidence: <span>Same investigation. No second product.</span>,
+    copy: "Product, support, and engineering read the same project. The timeline, operations, and errors are there when the reported result needs a story.",
   },
 ] as const
 
@@ -35,13 +35,14 @@ export function ValueSection() {
     >
       <div className={shellClassName}>
         <div className="max-w-[800px]">
-          <p className={overlineClassName}>From insight to a next step</p>
+          <p className={overlineClassName}>From a result to the execution</p>
           <h2 id="value-title" className={`${sectionTitleClassName} mt-4`}>
-            See what operations actually produced.
+            See what the process reported, then open the run.
           </h2>
           <p className="mt-4 max-w-[650px] text-sm leading-7 text-muted-foreground">
-            Start from success rate and duration. Open the process that needs
-            attention, read what it reported, and fix the gap.
+            Someone says yesterday&apos;s import created 850 of 1,000 expected
+            records. The path is the reported outcome, the reference the
+            application attached, and the execution behind them.
           </p>
         </div>
         <ol className="mt-10 grid gap-6 border-t border-border pt-6 sm:grid-cols-3 sm:gap-8">
@@ -65,8 +66,10 @@ export function ValueSection() {
           ))}
         </ol>
         <p className="mt-7 text-xs leading-7 text-muted-foreground">
-          Flowmark gives operations the reported result. Your application
-          handles the fix.
+          A run can already carry that context and result. Finding the
+          execution from the reference, and reading the skip without raw JSON,
+          is part of what is still ahead. Flowmark does not fix the import.
+          The application does.
         </p>
       </div>
     </section>

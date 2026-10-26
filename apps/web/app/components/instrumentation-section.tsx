@@ -14,14 +14,14 @@ export function InstrumentationSection() {
       <div className={shellClassName}>
         <div className="mb-8 flex flex-col items-start justify-between gap-4 sm:mb-10 sm:flex-row sm:items-end sm:gap-8">
           <div>
-            <p className={overlineClassName}>A little code. A clearer answer.</p>
+            <p className={overlineClassName}>A little code. A clearer account.</p>
             <h2 id="how-title" className={`${sectionTitleClassName} mt-4`}>
-              Keep the logic. See the outcome.
+              Keep the logic. See the execution.
             </h2>
           </div>
           <p className="max-w-md text-[13px] leading-7 text-muted-foreground">
-            Developers mark existing business logic. Operations gets volume,
-            duration, success rate, and the reported result for that process.
+            Developers mark existing TypeScript. The same evidence opens one
+            execution and, over time, what changed across them.
           </p>
         </div>
         <CodeShowcase />

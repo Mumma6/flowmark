@@ -24,6 +24,7 @@ import { LOCAL_DEV_EMAIL } from "@flowmark/db/demo"
 import { authClient } from "../../../lib/auth-client"
 import { useTRPC } from "../../../lib/trpc"
 import { PageHeading } from "../../dashboard-components"
+import { AgentPromptCard } from "../../getting-started"
 import { useProject } from "../../project-context"
 
 type CreatedSecret = {
@@ -527,10 +528,11 @@ export default function SettingsPage() {
     <div className="grid min-w-0 gap-6">
       <PageHeading
         title="Settings"
-        description="Project, ingestion keys, and the signed-in account."
+        description="Project, ingestion keys, a coding-agent prompt, and the signed-in account."
       />
       <ProjectSettings />
       <KeySettings />
+      <AgentPromptCard />
       <AccountSettings />
     </div>
   )

@@ -15,12 +15,12 @@ const questions: ReadonlyArray<{
   {
     value: "what-to-mark",
     title: "What should I instrument?",
-    body: "A named business process you already run — checkout, a sync, a nightly job, an import. Give it a stable name, attach the order or batch id, and report the result your code already computed.",
+    body: "A named process the application already runs: an import, a checkout, a sync, a job that continues across later requests. It earns its place when someone needs to understand one execution, the code has progress or a result to report, and logs or an APM do not already give that view. An ordinary create or update endpoint, where one request log is enough, is a weak fit.",
   },
   {
     value: "insights",
     title: "What insights do I get?",
-    body: "Volume, week-over-week change, success rate, median and p95 duration, slowest operations, failure codes, last-reported progress, and the business result. Open a run to compare it with the last 20 of the same process.",
+    body: "Today: volume, week-over-week change, success rate, median and p95 duration, slowest operations, failure codes, last-reported progress, a few scalar result highlights, and a duration comparison with recent peers of the same workflow. The product is also for a change you can attribute — which operation slowed, which failure codes account for a drop, what the runs reported accomplishing — and that reading is still ahead.",
   },
   {
     value: "performance",
@@ -30,12 +30,12 @@ const questions: ReadonlyArray<{
   {
     value: "result",
     title: "What is a reported result?",
-    body: "A small JSON summary your code attaches on done() or fail() — imported and skipped counts, a shipment id, how far a sync got. Operations reads that first, then opens the timeline if they need the story.",
+    body: "A small JSON summary the application attaches on done() or fail() — imported and skipped counts, a shipment id, how far a sync got. It is evidence the application reported, not verified business correctness. Failed and partial runs can carry one too. Following those fields across runs is still ahead.",
   },
   {
     value: "framework",
     title: "Do I need a workflow framework?",
-    body: "No. Add markers around ordinary TypeScript functions and Promises. A workflow is the process name you choose.",
+    body: "No. Add markers around ordinary TypeScript functions and Promises. A workflow is the process name you choose. Flowmark does not execute, schedule, or retry that work.",
   },
   {
     value: "errors",
@@ -72,7 +72,12 @@ const questions: ReadonlyArray<{
   {
     value: "start",
     title: "How do I start?",
-    body: "Create a Flowmark client, mark one process, and open it in the dashboard. The SDK docs cover Node.js, Next.js, and the browser.",
+    body: "Create a project in the dashboard, copy the agent prompt from Getting started or Settings, and mark one process. The SDK docs cover Node.js, Next.js, and the browser. The npm package is not published yet.",
+  },
+  {
+    value: "ahead",
+    title: "What is not in the product yet?",
+    body: "Search beyond the latest runs, outcome trends, a waterfall, comparison deeper than overall duration, and automatic signals for a meaningful change. They are part of the product this page describes. They are not in the dashboard yet.",
   },
 ]
 

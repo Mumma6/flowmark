@@ -8,7 +8,7 @@ import { docsUrl } from "./site-links"
 import { Spotlight } from "./spotlight"
 import { SpotlightWash } from "./spotlight-wash"
 
-const facts = ["Open source", "Operations insight", "TypeScript SDK"] as const
+const facts = ["Open source", "Workflow observability", "TypeScript SDK"] as const
 
 export function HeroSection() {
   return (
@@ -35,10 +35,8 @@ export function HeroSection() {
 
       <div className={`${shellClassName} relative z-10`}>
         <div className="mx-auto flex max-w-4xl flex-col items-center text-center">
-          <FlowmarkLockup className="mb-7 size-14 rounded-2xl sm:size-16" />
-          <p className={overlineClassName}>
-            Operations insight for TypeScript
-          </p>
+          <FlowmarkLockup className="mb-8 size-28 rounded-3xl sm:size-36" />
+          <p className={overlineClassName}>Workflow observability</p>
           <h1
             id="hero-title"
             className="mt-4 text-[clamp(3.4rem,11vw,7.6rem)] leading-[0.88] font-semibold tracking-[-0.06em]"
@@ -46,12 +44,13 @@ export function HeroSection() {
             flowmark<span className="text-primary">.</span>
           </h1>
           <p className="mt-7 max-w-3xl text-balance text-[clamp(1.35rem,3vw,2.15rem)] leading-snug font-medium tracking-tight text-foreground">
-            Turn business processes into data-driven insight.
+            Understand every execution. Discover what matters across them.
           </p>
           <p className="mt-5 max-w-[40rem] text-pretty text-[15px] leading-7 text-muted-foreground sm:text-base sm:leading-8">
-            Mark the checkout, sync, or job you already run. Flowmark turns
-            each execution into volume, duration, success rate, and a reported
-            result operations can open.
+            Mark a process your application already runs. Each execution
+            becomes evidence you can investigate. Many executions become a
+            picture of what that process is accomplishing, and how that is
+            changing.
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             {facts.map((fact) => (
@@ -77,8 +76,9 @@ export function HeroSection() {
             </Button>
           </div>
           <p className="mt-5 text-[12px] text-muted-foreground">
-            TypeScript SDK. Hosted API and dashboard. Your application keeps
-            the business logic.
+            A small TypeScript write API. A rich reading of what the
+            application reports. Flowmark does not run, schedule, or retry the
+            work.
           </p>
         </div>
 

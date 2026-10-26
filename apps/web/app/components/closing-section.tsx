@@ -20,11 +20,12 @@ export function ClosingSection() {
           id="closing-title"
           className="mt-4 text-[clamp(2.25rem,5vw,3.6rem)] font-medium tracking-tight"
         >
-          Turn one process into insight.
+          Understand the execution. Then see what changed.
         </h2>
         <p className="mx-auto mt-4 max-w-[32rem] text-sm leading-7 text-muted-foreground">
-          A checkout, a sync, a scheduled job. Mark the business logic. Then
-          open the outcome in Flowmark.
+          Mark a process in the TypeScript you already have. Open one run.
+          The product is built so a change across runs leads back to the
+          executions behind it.
         </p>
         <Button asChild className="mt-7" size="lg">
           <a href={docsUrl}>

@@ -5,11 +5,11 @@
 <h1 align="center">flowmark.</h1>
 
 <p align="center">
-  <strong>Turn business processes into data-driven insight.</strong>
+  <strong>Understand every execution. Discover what matters across them.</strong>
 </p>
 
 <p align="center">
-  Open source · Operations insight · TypeScript SDK
+  Open source · Workflow observability · TypeScript SDK
 </p>
 
 <p align="center">
@@ -17,9 +17,9 @@
   <a href="https://flowmark.dev"><img alt="flowmark.dev" src="https://img.shields.io/badge/flowmark.dev-0d1311" /></a>
 </p>
 
-Mark the checkout, sync, or job you already run. Flowmark records operations,
-progress, errors, and the reported result — then turns each process into
-volume, duration, success rate, and an outcome you can open.
+Mark a process your application already runs. Flowmark records the execution
+— milestones, operations, progress, errors, and the result the application
+reports — so you can investigate one run and see what changed across them.
 
 ```ts
 const flow = flowmark.workflow("checkout.order", { properties: { orderId } })

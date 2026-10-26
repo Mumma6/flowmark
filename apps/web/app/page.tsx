@@ -1,5 +1,6 @@
 import { ArchitectureSection } from "./components/architecture-section"
 import { ClosingSection } from "./components/closing-section"
+import { DirectionSection } from "./components/direction-section"
 import { FaqSection } from "./components/faq-section"
 import { HeroSection } from "./components/hero-section"
 import { InsightsSection } from "./components/insights-section"
@@ -24,6 +25,7 @@ export default function HomePage() {
         <InstrumentationSection />
         <ProductSection />
         <InsightsSection />
+        <DirectionSection />
         <ValueSection />
         <ArchitectureSection />
         <FaqSection />

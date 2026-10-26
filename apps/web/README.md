@@ -39,10 +39,19 @@ The dashboard illustration is explicitly illustrative and uses synthetic
 invoice values, not live or customer data. No credentials are needed by the
 website.
 
+## Landing and the product vision
+
+The landing page is the public statement of the repository
+[product vision](../../PRODUCT-VISION.md). It includes capabilities that are
+not built yet, and those stay labeled as ahead of the current dashboard.
+When the vision changes, update the landing in the same change. Do not narrow
+the page to only what the dashboard can do today.
+
 ## Component organization
 
 `app/page.tsx` composes the landing sections from `app/components/`. The hero,
-value proposition, instrumentation introduction, architecture, FAQ, and closing
+product pillars, what the dashboard does today, what is still ahead, value
+proposition, instrumentation introduction, architecture, FAQ, and closing
 sections are separate server components, alongside the site header/footer and
 app-specific brand and dashboard illustration.
 

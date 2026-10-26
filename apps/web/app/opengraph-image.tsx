@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og"
 
-export const alt = "Flowmark — Turn business processes into data-driven insight"
+export const alt = "Flowmark — Understand every execution"
 export const size = { width: 1200, height: 630 }
 export const contentType = "image/png"
 
@@ -66,7 +66,7 @@ export default function OpenGraphImage() {
               maxWidth: 900,
             }}
           >
-            Turn business processes into data-driven insight.
+            Understand every execution.
           </div>
           <div
             style={{
@@ -76,13 +76,13 @@ export default function OpenGraphImage() {
               maxWidth: 760,
             }}
           >
-            Operations insight for TypeScript applications.
+            Discover what matters across them.
           </div>
         </div>
         <div style={{ display: "flex", gap: 28, color: "#b9f597", fontSize: 20 }}>
           <span>SDK</span>
-          <span>API</span>
-          <span>Operations</span>
+          <span>Investigation</span>
+          <span>Intelligence</span>
         </div>
       </div>
     ),
