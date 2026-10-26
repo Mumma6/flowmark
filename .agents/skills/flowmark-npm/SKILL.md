@@ -19,7 +19,7 @@ The unscoped name `flowmark` is an npm security holding package. The
 
 | Package | Path | Dist-tags |
 | ------- | ---- | --------- |
-| `@flowmarkdev/core` | `packages/core` | `alpha`, then `latest` |
+| `@flowmarkdev/core` | `packages/core` | `latest` |
 | `@flowmarkdev/node` | `packages/sdk` | same version as core |
 
 Keep both package `version` fields aligned. Users install

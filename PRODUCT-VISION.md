@@ -113,12 +113,11 @@ of business results, waterfall views, and automatic detection of meaningful
 change. The reference deployment choices in
 [ADR 0006](./docs/decisions/0006-mvp-0.1-infrastructure.md) — Neon, Vercel,
 `flowmark.dev`, MIT, and 30-day retention — are decided. Neon, the four
-Vercel projects, and the public hostnames are provisioned. The SDK
-prerelease is published as `@flowmarkdev/node` (with `@flowmarkdev/core`).
-How the stack runs, and which environment variables are local versus
-production, is in [the infrastructure guide](./docs/infrastructure.md). The
-retention job and a fully proven hosted register-to-run acceptance sitting
-are still open.
+Vercel projects, and the public hostnames are provisioned. The SDK is
+published as `@flowmarkdev/node` (with `@flowmarkdev/core`). How the stack
+runs, and which environment variables are local versus production, is in
+[the infrastructure guide](./docs/infrastructure.md). The retention job and
+a fully proven hosted register-to-run acceptance sitting are still open.
 
 The local harness in `apps/dev-harness` is a loopback fixture for
 `invoices.import`, `inventory.sync`, and `orders.fulfill`. It is not a public

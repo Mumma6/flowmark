@@ -55,8 +55,7 @@ function AgentPromptBody() {
     <div className="grid gap-3">
       <p className="text-sm leading-6 text-muted-foreground">
         Put the write key in the server environment yourself. This prompt does
-        not contain it. Install with{" "}
-        <code>npm i @flowmarkdev/node@alpha</code>.
+        not contain it. Install with <code>npm i @flowmarkdev/node</code>.
       </p>
       <pre className="max-h-80 overflow-auto rounded-lg border border-border bg-muted p-4 text-xs leading-6 whitespace-pre-wrap">
         {prompt}

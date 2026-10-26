@@ -10,7 +10,7 @@ export function flowmarkAgentPrompt(apiOrigin: string): string {
     "",
     "Flowmark is workflow observability for processes this application already runs. It records evidence. It does not execute, schedule, or retry that work.",
     "",
-    "Install the SDK with `npm i @flowmarkdev/node@alpha` (or the current published tag). Do not invent a client, a wrapper, or a different package name. If install fails, stop and say so.",
+    "Install the SDK with `npm i @flowmarkdev/node`. Do not invent a client, a wrapper, or a different package name. If install fails, stop and say so.",
     "",
     "Create one shared server client. Do not construct a client per file. Do not import the Node or Next entry in a Client Component.",
     "",

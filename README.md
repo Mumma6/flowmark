@@ -74,9 +74,8 @@ on the timeline until you complete or fail the run.
 ## Status
 
 Instrument a process, ingest events, sign in to the dashboard, and inspect a
-run. The reference deployment is live at the links below. The SDK prerelease
-is on npm as `@flowmarkdev/node` (`npm i @flowmarkdev/node@alpha`). Key
-management is in the dashboard.
+run. The reference deployment is live at the links below. Install the SDK
+with `npm i @flowmarkdev/node`. Key management is in the dashboard.
 
 - Product: [flowmark.dev](https://flowmark.dev)
 - Docs: [docs.flowmark.dev](https://docs.flowmark.dev)

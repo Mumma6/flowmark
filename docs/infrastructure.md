@@ -22,7 +22,7 @@ chat, or in a commit. Neon connection files are gitignored.
 | Vercel | Four Hobby projects on team `mumma6s-projects`, all connected to `Mumma6/flowmark`. A push to `main` builds each one. |
 | Public hostnames | `https://flowmark.dev`, `https://docs.flowmark.dev`, `https://app.flowmark.dev`, and `https://api.flowmark.dev`. `www.flowmark.dev` redirects to the apex. |
 | GitHub repo | Public: `https://github.com/Mumma6/flowmark`. |
-| npm packages | Prerelease `@flowmarkdev/node` / `@flowmarkdev/core` (`npm i @flowmarkdev/node@alpha`). Avoid `0.1.0-alpha.0` (leaked `workspace:*`). See [SDK release](./sdk-release.md). |
+| npm packages | `@flowmarkdev/node` / `@flowmarkdev/core` — `npm i @flowmarkdev/node`. See [SDK release](./sdk-release.md). |
 | End-to-end hosted use | Partially exercised (register + SDK ingest against `api.flowmark.dev`). A full signed-in dashboard acceptance sitting is not claimed. |
 | 30-day telemetry cleanup | Decided, not built. |
 | Backup restore drill | Not done. |
@@ -425,8 +425,7 @@ Do these before treating the branch as a durable environment:
 - Finish the hosted acceptance sitting: open a run on
   `https://app.flowmark.dev` after register + ingest (ingest smoke has been
   run against `api.flowmark.dev`).
-- Promote the SDK from `0.1.0-alpha.1` to stable `0.1.0` after external
-  install smoke. Release process: [SDK release](./sdk-release.md) and
+- Keep SDK releases on `latest` via [SDK release](./sdk-release.md) and
   [flowmark-npm](../.agents/skills/flowmark-npm/SKILL.md).
 - The backup restore drill and the 30-day cleanup above.
 

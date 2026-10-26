@@ -98,11 +98,11 @@ on `flowmark.dev` and its subdomains. Neon holds the schema and no demo
 seed. Local and hosted dashboard sign-in is Better Auth email and password;
 registration creates a project and the first write key. Applications still
 authenticate with a project write key. The dashboard can create, revoke,
-and rotate ingestion keys. The SDK prerelease is on npm as
-`@flowmarkdev/node` (`npm i @flowmarkdev/node@alpha`). Retention cleanup and
-a backup restore drill are not done. Self-hosted deployments still own
-backups, deletion, and operations. Delivery is best-effort and bounded in
-memory, not a durable offline queue.
+and rotate ingestion keys. The SDK is on npm as `@flowmarkdev/node`
+(`npm i @flowmarkdev/node`). Retention cleanup and a backup restore drill
+are not done. Self-hosted deployments still own backups, deletion, and
+operations. Delivery is best-effort and bounded in memory, not a durable
+offline queue.
 
 ## Proposed next work
 

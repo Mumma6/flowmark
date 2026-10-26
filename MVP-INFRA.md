@@ -434,7 +434,7 @@ An existing `0.1.0` version in a manifest does not mean a release exists.
 | 5b    | Deploy isolated Vercel preview of the API and dashboard             | Auth, SDK ingestion and run investigation work outside localhost           |
 | 6     | Add server-side run pagination and minimal data lifecycle           | Older runs remain findable; retention/delete/restore documented and tested |
 | 7     | Verify packages and publish prerelease                              | Done: `0.1.0-alpha.1` installable; hosted ingest smoke passed               |
-| 8     | Release 0.1.0 with setup/operating docs                             | Real application integration and release checklist pass                    |
+| 8     | Release 0.1.0 with setup/operating docs                             | `0.1.0` on npm `latest`; docs install path is `npm i @flowmarkdev/node`     |
 
 Carry forward the open items from [NEXT-PHASE-PLAN.md](./NEXT-PHASE-PLAN.md):
 natural instrumentation in a real app, independent reader feedback, a modest

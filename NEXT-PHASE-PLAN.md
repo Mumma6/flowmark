@@ -112,7 +112,7 @@ in the repository; this phase is the baseline.
   and the four hostnames in MVP-INFRA. Neon Postgres is provisioned and
   migrated. The four Vercel projects deploy from `main` to those hostnames.
 - Customer docs exist for the SDK, concepts, and dashboard. They point at
-  `npm i @flowmarkdev/node@alpha`.
+  `npm i @flowmarkdev/node`.
 
 ### Implemented, not yet verified outside this workspace
 
@@ -229,11 +229,11 @@ Ask before npm publish, a database restore, or another paid resource.
       and `@flowmarkdev/node` with **pnpm publish**. Registry install + hosted
       ingest smoke against `api.flowmark.dev` (including rejected key) passed.
       Workflow: `.github/workflows/publish-sdk.yml`.
-- [ ] Promote `0.1.0` and finish Trusted Publisher + staged-approve habit.
+- [x] Ship stable `0.1.0` on `latest` with Trusted Publisher validated.
       Next.js `after()` delivery still worth a dedicated smoke. Internal
       packages stay private.
 - [x] Update the quickstart so an external developer can install
-      `@flowmarkdev/node@alpha`, configure `FLOWMARK_API_KEY` and
+      `@flowmarkdev/node`, configure `FLOWMARK_API_KEY` and
       `FLOWMARK_API_URL`, mark one process, and find the run. Password reset
       does not exist yet.
 - [ ] Label week-over-week duration so it cannot be read as the same

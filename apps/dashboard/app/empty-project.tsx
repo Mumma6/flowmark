@@ -18,7 +18,7 @@ export function EmptyProject() {
       </CardHeader>
       <CardContent className="grid gap-4">
         <pre className="overflow-x-auto rounded-lg border border-border bg-muted p-4 text-xs leading-6">
-          {`npm i @flowmarkdev/node@alpha
+          {`npm i @flowmarkdev/node
 
 FLOWMARK_API_KEY=<write-key-from-settings>
 FLOWMARK_API_URL=${apiUrl}

@@ -1,6 +1,6 @@
 {
   "name": "@flowmarkdev/core",
-  "version": "0.1.0-alpha.2",
+  "version": "0.1.0",
   "description": "Shared workflow event contracts for Flowmark",
   "license": "MIT",
   "type": "module",
@@ -46,5 +46,13 @@
   "devDependencies": {
     "typescript": "^5.9.2",
     "vitest": "^3.2.4"
-  }
+  },
+  "keywords": [
+    "workflow",
+    "observability",
+    "telemetry",
+    "schema",
+    "typescript",
+    "flowmark"
+  ]
 }

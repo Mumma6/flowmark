@@ -1,9 +1,14 @@
 # @flowmarkdev/core
 
-Shared workflow event contracts for Flowmark. Application code should depend on
-[`@flowmarkdev/node`](https://www.npmjs.com/package/@flowmarkdev/node) instead of
-importing this package directly.
+Shared workflow event contracts for Flowmark.
 
-This package is published so the Node SDK can resolve a normal registry
-dependency. The schemas and types here define the telemetry envelope that the
-API accepts.
+Application code should install
+[`@flowmarkdev/node`](https://www.npmjs.com/package/@flowmarkdev/node). This
+package is published so the SDK can depend on a normal registry version of the
+telemetry envelope the API accepts.
+
+```bash
+npm i @flowmarkdev/node
+```
+
+Docs: [docs.flowmark.dev](https://docs.flowmark.dev)

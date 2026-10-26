@@ -13,13 +13,13 @@ The `@flowmark` npm scope is owned by another publisher, and the unscoped name
 | Package | Path | Consumers install |
 | ------- | ---- | ----------------- |
 | `@flowmarkdev/core` | `packages/core` | Transitive dependency of the Node SDK |
-| `@flowmarkdev/node` | `packages/sdk` | `npm i @flowmarkdev/node@alpha` (prerelease) |
+| `@flowmarkdev/node` | `packages/sdk` | `npm i @flowmarkdev/node` |
 
 Internal apps keep `"private": true`. Do not publish API, DB, UI, or apps.
 
-Current prerelease line: **`0.1.0-alpha.*`** on the `alpha` tag. Do not use
-`0.1.0-alpha.0` (bare `npm publish` leaked `workspace:*`). Stable `0.1.0` is
-not cut yet.
+Stable line: **`0.1.0+`** on the `latest` tag. Publish with the workflow
+`tag=latest` (default). Avoid bare `npm publish` — it can leave
+`workspace:*` in the manifest.
 
 Always publish with **`pnpm --filter ... publish`**, never bare `npm publish`
 from a package directory — only pnpm rewrites `workspace:*`. npm may still
