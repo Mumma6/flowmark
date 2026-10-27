@@ -4,6 +4,8 @@ import { AuthorizeProject } from "../../project-access/use-cases/authorize-proje
 import {
   WorkflowRepository,
   type ListedRunsPage,
+  type IntelligenceQuery,
+  type WorkflowIntelligence,
   type ListRunsQuery,
   type ProjectSnapshot,
   type RelatedRuns,
@@ -40,6 +42,10 @@ export interface GetProjectWorkflowDataService {
     header: string | null,
     runId: string,
   ) => Effect.Effect<RunComparison, Unauthorized | PersistenceError>
+  readonly intelligence: (
+    header: string | null,
+    query: IntelligenceQuery,
+  ) => Effect.Effect<WorkflowIntelligence, Unauthorized | PersistenceError>
   readonly snapshotForUser: (
     userId: string,
     projectId?: string,
@@ -74,6 +80,11 @@ export interface GetProjectWorkflowDataService {
     runId: string,
     projectId?: string,
   ) => Effect.Effect<RunComparison, Unauthorized | PersistenceError>
+  readonly intelligenceForUser: (
+    userId: string,
+    query: IntelligenceQuery,
+    projectId?: string,
+  ) => Effect.Effect<WorkflowIntelligence, Unauthorized | PersistenceError>
 }
 
 export class GetProjectWorkflowData extends Context.Tag(
@@ -123,6 +134,12 @@ export class GetProjectWorkflowData extends Context.Tag(
         const projectId = yield* authorization.authorize(header, "read")
         return yield* repository.compare(projectId, runId)
       })
+      const intelligence = Effect.fn("GetProjectWorkflowData.intelligence")(
+        function* (header: string | null, query: IntelligenceQuery) {
+          const projectId = yield* authorization.authorize(header, "read")
+          return yield* repository.intelligence(projectId, query)
+        },
+      )
 
       const snapshotForUser = Effect.fn(
         "GetProjectWorkflowData.snapshotForUser",
@@ -155,11 +172,7 @@ export class GetProjectWorkflowData extends Context.Tag(
       })
       const timelineForUser = Effect.fn(
         "GetProjectWorkflowData.timelineForUser",
-      )(function* (
-        userId: string,
-        runId: string,
-        requestedProjectId?: string,
-      ) {
+      )(function* (userId: string, runId: string, requestedProjectId?: string) {
         const projectId = yield* authorization.authorizeUser(
           userId,
           requestedProjectId,
@@ -167,11 +180,7 @@ export class GetProjectWorkflowData extends Context.Tag(
         return yield* repository.timeline(projectId, runId)
       })
       const relatedForUser = Effect.fn("GetProjectWorkflowData.relatedForUser")(
-        function* (
-          userId: string,
-          runId: string,
-          requestedProjectId?: string,
-        ) {
+        function* (userId: string, runId: string, requestedProjectId?: string) {
           const projectId = yield* authorization.authorizeUser(
             userId,
             requestedProjectId,
@@ -180,11 +189,7 @@ export class GetProjectWorkflowData extends Context.Tag(
         },
       )
       const compareForUser = Effect.fn("GetProjectWorkflowData.compareForUser")(
-        function* (
-          userId: string,
-          runId: string,
-          requestedProjectId?: string,
-        ) {
+        function* (userId: string, runId: string, requestedProjectId?: string) {
           const projectId = yield* authorization.authorizeUser(
             userId,
             requestedProjectId,
@@ -192,6 +197,19 @@ export class GetProjectWorkflowData extends Context.Tag(
           return yield* repository.compare(projectId, runId)
         },
       )
+      const intelligenceForUser = Effect.fn(
+        "GetProjectWorkflowData.intelligenceForUser",
+      )(function* (
+        userId: string,
+        query: IntelligenceQuery,
+        requestedProjectId?: string,
+      ) {
+        const projectId = yield* authorization.authorizeUser(
+          userId,
+          requestedProjectId,
+        )
+        return yield* repository.intelligence(projectId, query)
+      })
 
       return GetProjectWorkflowData.of({
         snapshot,
@@ -200,12 +218,14 @@ export class GetProjectWorkflowData extends Context.Tag(
         timeline,
         related,
         compare,
+        intelligence,
         snapshotForUser,
         workflowsForUser,
         listRunsForUser,
         timelineForUser,
         relatedForUser,
         compareForUser,
+        intelligenceForUser,
       })
     }),
   )

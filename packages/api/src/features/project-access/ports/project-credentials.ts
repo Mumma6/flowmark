@@ -13,6 +13,14 @@ export interface ProjectSummary {
   readonly createdAt: string
 }
 
+export type OnboardingStep =
+  "project" | "key" | "install" | "instrument" | "run"
+
+export interface OnboardingState {
+  readonly step: OnboardingStep
+  readonly completedAt: string | null
+}
+
 export interface ApiKeySummary {
   readonly id: string
   readonly name: string
@@ -63,6 +71,14 @@ export interface ProjectCredentialsService {
   readonly workspaceForUser: (
     userId: string,
   ) => Effect.Effect<string | undefined, PersistenceError>
+  readonly onboardingState: (
+    userId: string,
+  ) => Effect.Effect<OnboardingState | undefined, PersistenceError>
+  readonly updateOnboardingState: (
+    userId: string,
+    step: OnboardingStep,
+    completedAt: Date | null,
+  ) => Effect.Effect<void, PersistenceError>
   readonly addOwner: (
     userId: string,
     projectId: string,

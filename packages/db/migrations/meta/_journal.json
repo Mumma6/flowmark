@@ -57,6 +57,13 @@
       "when": 1792957617842,
       "tag": "0007_tidy_slayback",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1793090138665,
+      "tag": "0008_regular_caretaker",
+      "breakpoints": true
     }
   ]
 }

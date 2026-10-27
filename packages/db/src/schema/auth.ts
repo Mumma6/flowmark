@@ -13,6 +13,14 @@ export const user = pgTable("user", {
     .defaultNow()
     .$onUpdate(() => new Date())
     .notNull(),
+  onboardingStep: text("onboarding_step", {
+    enum: ["project", "key", "install", "instrument", "run"],
+  })
+    .default("project")
+    .notNull(),
+  onboardingCompletedAt: timestamp("onboarding_completed_at", {
+    withTimezone: true,
+  }),
 })
 
 export const session = pgTable("session", {

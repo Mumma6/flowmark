@@ -10,6 +10,11 @@ export type DashboardSession = {
   }
 }
 
+export type DashboardOnboarding = {
+  readonly step: "project" | "key" | "install" | "instrument" | "run"
+  readonly completedAt: string | null
+}
+
 export class DashboardSessionError extends Data.TaggedError(
   "DashboardSessionError",
 )<{
@@ -24,17 +29,32 @@ const SessionBody = Schema.Struct({
   }),
 })
 
+const OnboardingBody = Schema.Struct({
+  result: Schema.Struct({
+    data: Schema.Struct({
+      json: Schema.Struct({
+        step: Schema.Literal("project", "key", "install", "instrument", "run"),
+        completedAt: Schema.NullOr(Schema.String),
+      }),
+    }),
+  }),
+})
+
+const dashboardCookie = Effect.fn("dashboardCookie")(function* () {
+  const cookieStore = yield* Effect.tryPromise({
+    try: () => cookies(),
+    catch: (cause) => new DashboardSessionError({ cause }),
+  })
+  return cookieStore
+    .getAll()
+    .map((item) => `${item.name}=${item.value}`)
+    .join("; ")
+})
+
 export const readDashboardSession = Effect.fn("readDashboardSession")(
   function* () {
     const apiUrl = yield* dashboardApiUrl()
-    const cookieStore = yield* Effect.tryPromise({
-      try: () => cookies(),
-      catch: (cause) => new DashboardSessionError({ cause }),
-    })
-    const cookie = cookieStore
-      .getAll()
-      .map((item) => `${item.name}=${item.value}`)
-      .join("; ")
+    const cookie = yield* dashboardCookie()
     if (!cookie) {
       return Option.none<DashboardSession>()
     }
@@ -66,5 +86,40 @@ export const readDashboardSession = Effect.fn("readDashboardSession")(
       Effect.mapError((cause) => new DashboardSessionError({ cause })),
     )
     return Option.some(session)
+  },
+)
+
+export const readDashboardOnboarding = Effect.fn("readDashboardOnboarding")(
+  function* () {
+    const apiUrl = yield* dashboardApiUrl()
+    const cookie = yield* dashboardCookie()
+    if (!cookie) {
+      return Option.none<DashboardOnboarding>()
+    }
+    const response = yield* Effect.tryPromise({
+      try: () =>
+        fetch(new URL("/api/trpc/onboarding.state", apiUrl), {
+          headers: { cookie },
+          cache: "no-store",
+          signal: AbortSignal.timeout(8000),
+        }),
+      catch: (cause) => new DashboardSessionError({ cause }),
+    })
+    if (response.status === 401 || response.status === 403) {
+      return Option.none<DashboardOnboarding>()
+    }
+    if (!response.ok) {
+      return yield* new DashboardSessionError({
+        cause: new Error(`Onboarding lookup failed (${response.status}).`),
+      })
+    }
+    const json = yield* Effect.tryPromise({
+      try: () => response.json(),
+      catch: (cause) => new DashboardSessionError({ cause }),
+    })
+    const onboarding = yield* Schema.decodeUnknown(OnboardingBody)(json).pipe(
+      Effect.mapError((cause) => new DashboardSessionError({ cause })),
+    )
+    return Option.some(onboarding.result.data.json)
   },
 )

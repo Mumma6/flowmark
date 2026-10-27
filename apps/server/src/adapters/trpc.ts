@@ -5,6 +5,7 @@ import {
   GetProjectWorkflowData,
   InvalidInput,
   ManageProject,
+  Onboarding,
   PersistenceError,
   logFailure,
   runApi,
@@ -37,6 +38,32 @@ const BrowserKeyInput = Schema.standardSchemaV1(
     origins: Schema.Array(Schema.Trim.pipe(Schema.minLength(1))),
   }),
 )
+const IntelligenceInput = Schema.standardSchemaV1(
+  Schema.Struct({
+    workflow: Schema.optional(Schema.String.pipe(Schema.maxLength(200))),
+    currentStartedAfter: Schema.String.pipe(
+      Schema.minLength(1),
+      Schema.maxLength(40),
+    ),
+    currentStartedBefore: Schema.String.pipe(
+      Schema.minLength(1),
+      Schema.maxLength(40),
+    ),
+    previousStartedAfter: Schema.String.pipe(
+      Schema.minLength(1),
+      Schema.maxLength(40),
+    ),
+    previousStartedBefore: Schema.String.pipe(
+      Schema.minLength(1),
+      Schema.maxLength(40),
+    ),
+  }),
+)
+const OnboardingStep = Schema.standardSchemaV1(
+  Schema.Struct({
+    step: Schema.Literal("project", "key", "install", "instrument", "run"),
+  }),
+)
 
 const sessionUserId = Effect.fn("sessionUserId")(function* (request: Request) {
   if (!request.headers.get("cookie") || !process.env.DATABASE_URL) {
@@ -64,7 +91,7 @@ async function executeQuery<A>(
   operation: Effect.Effect<
     A,
     Unauthorized | PersistenceError | ConfigurationError | InvalidInput,
-    GetProjectWorkflowData | ManageProject
+    GetProjectWorkflowData | ManageProject | Onboarding
   >,
 ) {
   const result = await runApi(
@@ -163,9 +190,31 @@ function sessionQuery<A>(
     sessionUserId(request).pipe(
       Effect.flatMap(
         Option.match({
-          onNone: () =>
-            Effect.fail(new Unauthorized({ permission: "read" })),
+          onNone: () => Effect.fail(new Unauthorized({ permission: "read" })),
           onSome: (userId) => forUser(userId),
+        }),
+      ),
+    ),
+  )
+}
+
+function onboardingQuery<A>(
+  request: Request,
+  operation: (
+    userId: string,
+  ) => Effect.Effect<
+    A,
+    Unauthorized | PersistenceError | InvalidInput,
+    Onboarding
+  >,
+) {
+  return executeQuery(
+    request,
+    sessionUserId(request).pipe(
+      Effect.flatMap(
+        Option.match({
+          onNone: () => Effect.fail(new Unauthorized({ permission: "read" })),
+          onSome: operation,
         }),
       ),
     ),
@@ -193,30 +242,49 @@ export const appRouter = t.router({
           ),
       ),
     ),
+    intelligence: t.procedure.input(IntelligenceInput).query(({ ctx, input }) =>
+      readQuery(
+        ctx.request,
+        (userId, projectId) =>
+          Effect.flatMap(GetProjectWorkflowData, (queries) =>
+            queries.intelligenceForUser(userId, input, projectId),
+          ),
+        (header) =>
+          Effect.flatMap(GetProjectWorkflowData, (queries) =>
+            queries.intelligence(header, input),
+          ),
+      ),
+    ),
     list: t.procedure.query(({ ctx }) =>
       sessionQuery(ctx.request, (userId) =>
         Effect.flatMap(ManageProject, (manage) => manage.list(userId)),
       ),
     ),
-    create: t.procedure.input(ProjectName).mutation(({ ctx, input }) =>
-      sessionQuery(ctx.request, (userId) =>
-        Effect.flatMap(ManageProject, (manage) =>
-          manage.create(userId, input.name),
+    create: t.procedure
+      .input(ProjectName)
+      .mutation(({ ctx, input }) =>
+        sessionQuery(ctx.request, (userId) =>
+          Effect.flatMap(ManageProject, (manage) =>
+            manage.create(userId, input.name),
+          ),
         ),
       ),
-    ),
-    rename: t.procedure.input(ProjectIdName).mutation(({ ctx, input }) =>
-      sessionQuery(ctx.request, (userId) =>
-        Effect.flatMap(ManageProject, (manage) =>
-          manage.rename(userId, input.projectId, input.name),
+    rename: t.procedure
+      .input(ProjectIdName)
+      .mutation(({ ctx, input }) =>
+        sessionQuery(ctx.request, (userId) =>
+          Effect.flatMap(ManageProject, (manage) =>
+            manage.rename(userId, input.projectId, input.name),
+          ),
         ),
       ),
-    ),
-    keys: t.procedure.input(Uuid).query(({ ctx, input }) =>
-      sessionQuery(ctx.request, (userId) =>
-        Effect.flatMap(ManageProject, (manage) => manage.keys(userId, input)),
+    keys: t.procedure
+      .input(Uuid)
+      .query(({ ctx, input }) =>
+        sessionQuery(ctx.request, (userId) =>
+          Effect.flatMap(ManageProject, (manage) => manage.keys(userId, input)),
+        ),
       ),
-    ),
     createWriteKey: t.procedure
       .input(ProjectIdName)
       .mutation(({ ctx, input }) =>
@@ -226,20 +294,24 @@ export const appRouter = t.router({
           ),
         ),
       ),
-    revokeApiKey: t.procedure.input(ProjectKey).mutation(({ ctx, input }) =>
-      sessionQuery(ctx.request, (userId) =>
-        Effect.flatMap(ManageProject, (manage) =>
-          manage.revokeApiKey(userId, input.projectId, input.keyId),
+    revokeApiKey: t.procedure
+      .input(ProjectKey)
+      .mutation(({ ctx, input }) =>
+        sessionQuery(ctx.request, (userId) =>
+          Effect.flatMap(ManageProject, (manage) =>
+            manage.revokeApiKey(userId, input.projectId, input.keyId),
+          ),
         ),
       ),
-    ),
-    rotateWriteKey: t.procedure.input(ProjectKey).mutation(({ ctx, input }) =>
-      sessionQuery(ctx.request, (userId) =>
-        Effect.flatMap(ManageProject, (manage) =>
-          manage.rotateWriteKey(userId, input.projectId, input.keyId),
+    rotateWriteKey: t.procedure
+      .input(ProjectKey)
+      .mutation(({ ctx, input }) =>
+        sessionQuery(ctx.request, (userId) =>
+          Effect.flatMap(ManageProject, (manage) =>
+            manage.rotateWriteKey(userId, input.projectId, input.keyId),
+          ),
         ),
       ),
-    ),
     createBrowserKey: t.procedure
       .input(BrowserKeyInput)
       .mutation(({ ctx, input }) =>
@@ -261,6 +333,27 @@ export const appRouter = t.router({
           ),
         ),
       ),
+  }),
+  onboarding: t.router({
+    state: t.procedure.query(({ ctx }) =>
+      onboardingQuery(ctx.request, (userId) =>
+        Effect.flatMap(Onboarding, (onboarding) => onboarding.state(userId)),
+      ),
+    ),
+    advance: t.procedure
+      .input(OnboardingStep)
+      .mutation(({ ctx, input }) =>
+        onboardingQuery(ctx.request, (userId) =>
+          Effect.flatMap(Onboarding, (onboarding) =>
+            onboarding.advance(userId, input.step),
+          ),
+        ),
+      ),
+    complete: t.procedure.mutation(({ ctx }) =>
+      onboardingQuery(ctx.request, (userId) =>
+        Effect.flatMap(Onboarding, (onboarding) => onboarding.complete(userId)),
+      ),
+    ),
   }),
   workflow: t.router({
     list: t.procedure.query(({ ctx }) =>

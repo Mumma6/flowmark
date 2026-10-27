@@ -1,5 +1,6 @@
 "use client"
 
+import { useMemo } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { Activity, Check, Clock3, RefreshCw, ShieldAlert } from "lucide-react"
 import {
@@ -26,6 +27,7 @@ import { RunInvestigation } from "./run-investigation"
 import { DataState, PageHeading, ViewLink } from "./dashboard-components"
 import {
   dailyFromRuns,
+  defaultIntelligenceQuery,
   formatDuration,
   formatTimestamp,
   weekOverWeek,
@@ -39,6 +41,7 @@ import {
   DailyDurationPanel,
   DailyVolumePanel,
   FailureCodeTable,
+  IntelligencePanel,
   OperationInsightsTable,
   WeekOverWeek,
 } from "./insights-panels"
@@ -50,6 +53,16 @@ function useSnapshot() {
   const { current } = useProject()
   return useQuery({
     ...trpc.project.snapshot.queryOptions(),
+    enabled: Boolean(current),
+  })
+}
+
+function useIntelligence(workflow?: string) {
+  const trpc = useTRPC()
+  const { current } = useProject()
+  const input = useMemo(() => defaultIntelligenceQuery(workflow), [workflow])
+  return useQuery({
+    ...trpc.project.intelligence.queryOptions(input),
     enabled: Boolean(current),
   })
 }
@@ -141,6 +154,7 @@ function WorkflowHealth({
 
 export function DashboardOverview() {
   const { data, isPending, error, isFetching, refetch } = useSnapshot()
+  const intelligence = useIntelligence()
   const metrics = data?.metrics
   const cards = [
     {
@@ -219,6 +233,11 @@ export function DashboardOverview() {
             ))}
           </section>
           <WeekOverWeek daily={data.daily} runs={data.runs} />
+          <IntelligencePanel
+            data={intelligence.data}
+            loading={intelligence.isPending}
+            error={intelligence.error?.message}
+          />
           <DailyVolumePanel daily={data.daily} />
           <div className="grid min-w-0 gap-5 xl:grid-cols-2">
             <DailyDurationPanel daily={data.daily} />
@@ -324,6 +343,7 @@ export function ProjectRuns({
   initialSearch?: string
 }) {
   const { data, isPending, error, isFetching, refetch } = useSnapshot()
+  const intelligence = useIntelligence(workflow)
   const summary = data?.workflows.find((item) => item.name === workflow)
   const workflowRuns =
     workflow && data ? data.runs.filter((run) => run.workflow === workflow) : []
@@ -389,6 +409,13 @@ export function ProjectRuns({
             </p>
           )}
         </div>
+      )}
+      {workflow && (
+        <IntelligencePanel
+          data={intelligence.data}
+          loading={intelligence.isPending}
+          error={intelligence.error?.message}
+        />
       )}
       {workflow && data && (
         <div className="grid min-w-0 gap-5 xl:grid-cols-2">

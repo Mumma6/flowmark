@@ -4,11 +4,7 @@ import { DatabaseOperation } from "../../database-operation.js"
 import { runQuery } from "../../run-query.js"
 import { currentRunSql, peerRunsSql } from "../sql/run-summaries.js"
 import { getRunTimeline } from "./get-run-timeline.js"
-import type {
-  OperationCompareRow,
-  RunComparison,
-  StoredRun,
-} from "../types.js"
+import type { OperationCompareRow, RunComparison, StoredRun } from "../types.js"
 
 const percentile = (values: readonly number[], p: number) => {
   if (values.length === 0) {
@@ -65,7 +61,10 @@ function operationSummaries(
         status: "open",
         startedAt: event.timestamp,
       })
-    } else if (event.type === "operation_completed" || event.type === "operation_failed") {
+    } else if (
+      event.type === "operation_completed" ||
+      event.type === "operation_failed"
+    ) {
       const existing = byId.get(id)
       if (!existing) {
         continue
@@ -95,28 +94,37 @@ function operationSummaries(
 
 function buildOperationCompare(
   current: ReadonlyArray<OpSummary>,
-  peers: ReadonlyArray<ReadonlyArray<OpSummary>>,
+  peers: ReadonlyArray<{
+    readonly runId: string
+    readonly operations: ReadonlyArray<OpSummary>
+  }>,
 ): ReadonlyArray<OperationCompareRow> {
   const names = new Set<string>([
     ...current.map((item) => item.name),
-    ...peers.flatMap((list) => list.map((item) => item.name)),
+    ...peers.flatMap(({ operations }) => operations.map((item) => item.name)),
   ])
   return [...names]
     .sort((left, right) => left.localeCompare(right))
     .map((name) => {
       const currentOp = current.find((item) => item.name === name)
-      const peerDurations = peers.flatMap((list) => {
-        const match = list.find((item) => item.name === name)
+      const peerDurations = peers.flatMap(({ operations }) => {
+        const match = operations.find((item) => item.name === name)
         return match?.durationMs == null ? [] : [match.durationMs]
       })
+      const peerRunIds = peers
+        .filter(({ operations }) =>
+          operations.some((item) => item.name === name),
+        )
+        .map(({ runId }) => runId)
       return {
         name,
         currentDurationMs: currentOp?.durationMs ?? null,
         currentStatus: currentOp?.status ?? "absent",
         peerMedianDurationMs: percentile(peerDurations, 0.5),
         peerPresentCount: peers.filter((list) =>
-          list.some((item) => item.name === name),
+          list.operations.some((item) => item.name === name),
         ).length,
+        peerRunIds,
       }
     })
 }
@@ -152,13 +160,19 @@ export const getRunComparison = Effect.fn("getRunComparison")(function* (
   const completed = finished.filter((run) => run.status === "Completed").length
   const currentTimeline = yield* getRunTimeline(projectId, runId)
   const peerTimelines = yield* Effect.forEach(
-    peerList.slice(0, 20),
-    (peer) => getRunTimeline(projectId, peer.id),
+    peerList,
+    (peer) =>
+      getRunTimeline(projectId, peer.id).pipe(
+        Effect.map((timeline) => ({
+          runId: peer.id,
+          operations: operationSummaries(timeline),
+        })),
+      ),
     { concurrency: 4 },
   )
   const operations = buildOperationCompare(
     operationSummaries(currentTimeline),
-    peerTimelines.map(operationSummaries),
+    peerTimelines,
   )
   return {
     current,

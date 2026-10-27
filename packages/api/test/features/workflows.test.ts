@@ -25,10 +25,7 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
-const expectLeft = <E>(
-  result: Either.Either<unknown, E>,
-  expected: unknown,
-) =>
+const expectLeft = <E>(result: Either.Either<unknown, E>, expected: unknown) =>
   Either.match(result, {
     onLeft: (error) => expect(error).toMatchObject(expected as object),
     onRight: () => expect.fail("expected a failure"),
@@ -80,6 +77,34 @@ function repository(overrides: Partial<WorkflowRepositoryService> = {}) {
         peerP95DurationMs: null,
         operations: [],
       }),
+    intelligence: () =>
+      Effect.succeed({
+        workflow: null,
+        current: {
+          startedAfter: "2026-10-23T00:00:00.000Z",
+          startedBefore: "2026-10-24T00:00:00.000Z",
+          totalRuns: 0,
+          finishedRuns: 0,
+          completedRuns: 0,
+          failedRuns: 0,
+          successRate: null,
+          medianDurationMs: null,
+          p95DurationMs: null,
+        },
+        previous: {
+          startedAfter: "2026-10-22T00:00:00.000Z",
+          startedBefore: "2026-10-23T00:00:00.000Z",
+          totalRuns: 0,
+          finishedRuns: 0,
+          completedRuns: 0,
+          failedRuns: 0,
+          successRate: null,
+          medianDurationMs: null,
+          p95DurationMs: null,
+        },
+        operations: [],
+        failureCodes: [],
+      }),
     ...overrides,
   })
 }
@@ -96,6 +121,9 @@ function projectCredentials(
     memberProject: () => Effect.succeed("project-from-key"),
     listProjects: () => Effect.succeed([]),
     workspaceForUser: () => Effect.succeed("workspace-from-key"),
+    onboardingState: () =>
+      Effect.succeed({ step: "project" as const, completedAt: null }),
+    updateOnboardingState: () => Effect.void,
     addOwner: () => Effect.void,
     createProject: () =>
       Effect.succeed({

@@ -2,6 +2,8 @@ import type { inferRouterOutputs } from "@trpc/server"
 import type { AppRouter } from "@flowmark/server/trpc"
 
 export type Snapshot = inferRouterOutputs<AppRouter>["project"]["snapshot"]
+export type Intelligence =
+  inferRouterOutputs<AppRouter>["project"]["intelligence"]
 export type Run = Snapshot["runs"][number]
 export type WorkflowSummary = Snapshot["workflows"][number]
 
@@ -43,6 +45,27 @@ export function percentile(values: readonly number[], p: number) {
 }
 
 export type DayInsight = Snapshot["daily"][number]
+
+function startOfUtcDay(date: Date) {
+  const day = new Date(date)
+  day.setUTCHours(0, 0, 0, 0)
+  return day
+}
+
+export function defaultIntelligenceQuery(workflow?: string) {
+  const today = startOfUtcDay(new Date())
+  const currentStartedAfter = new Date(today)
+  currentStartedAfter.setUTCDate(today.getUTCDate() - 6)
+  const previousStartedAfter = new Date(today)
+  previousStartedAfter.setUTCDate(today.getUTCDate() - 13)
+  return {
+    workflow: workflow || undefined,
+    currentStartedAfter: currentStartedAfter.toISOString(),
+    currentStartedBefore: new Date(today.getTime() + 86400000).toISOString(),
+    previousStartedAfter: previousStartedAfter.toISOString(),
+    previousStartedBefore: currentStartedAfter.toISOString(),
+  }
+}
 
 export function summarizeDays(days: readonly DayInsight[]) {
   const count = days.reduce((sum, day) => sum + day.count, 0)

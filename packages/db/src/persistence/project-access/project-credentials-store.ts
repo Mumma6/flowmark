@@ -4,6 +4,7 @@ import { browserOriginAllowed } from "./queries/allow-browser-origin.js"
 import { authenticateBrowserKey } from "./queries/authenticate-browser-key.js"
 import { authenticateKey } from "./queries/authenticate-key.js"
 import { getMemberProject } from "./queries/get-member-project.js"
+import { getOnboardingState } from "./queries/get-onboarding-state.js"
 import { getProjectForUser } from "./queries/get-project-for-user.js"
 import { getWorkspaceForUser } from "./queries/get-workspace-for-user.js"
 import { listApiKeys } from "./queries/list-api-keys.js"
@@ -13,6 +14,8 @@ import type {
   ApiKeySummary,
   BrowserKeySummary,
   CreatedSecret,
+  OnboardingState,
+  OnboardingStep,
   ProjectSummary,
 } from "./types.js"
 import { addProjectMember } from "./writes/add-project-member.js"
@@ -24,6 +27,7 @@ import { createProject } from "./writes/create-project.js"
 import { renameProject } from "./writes/rename-project.js"
 import { revokeApiKey } from "./writes/revoke-api-key.js"
 import { revokeBrowserKey } from "./writes/revoke-browser-key.js"
+import { updateOnboardingState } from "./writes/update-onboarding-state.js"
 
 export type BrowserCredential = {
   readonly id: string
@@ -65,6 +69,14 @@ export interface ProjectCredentialsStoreService {
   readonly workspaceForUser: (
     userId: string,
   ) => Effect.Effect<string | undefined, DatabaseError>
+  readonly onboardingState: (
+    userId: string,
+  ) => Effect.Effect<OnboardingState | undefined, DatabaseError>
+  readonly updateOnboardingState: (
+    userId: string,
+    step: OnboardingStep,
+    completedAt: Date | null,
+  ) => Effect.Effect<void, DatabaseError>
   readonly addOwner: (
     userId: string,
     projectId: string,
@@ -133,6 +145,9 @@ export class ProjectCredentialsStore extends Effect.Service<ProjectCredentialsSt
           provide(getMemberProject(userId, projectId)),
         listProjects: (userId) => provide(listProjectsForUser(userId)),
         workspaceForUser: (userId) => provide(getWorkspaceForUser(userId)),
+        onboardingState: (userId) => provide(getOnboardingState(userId)),
+        updateOnboardingState: (userId, step, completedAt) =>
+          provide(updateOnboardingState(userId, step, completedAt)),
         addOwner: (userId, projectId) =>
           provide(addProjectMember(userId, projectId)),
         createOwnedProject: (userId, names) =>

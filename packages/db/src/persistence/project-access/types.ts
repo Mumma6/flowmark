@@ -4,6 +4,14 @@ export interface ProjectSummary {
   readonly createdAt: string
 }
 
+export type OnboardingStep =
+  "project" | "key" | "install" | "instrument" | "run"
+
+export interface OnboardingState {
+  readonly step: OnboardingStep
+  readonly completedAt: string | null
+}
+
 export interface ApiKeySummary {
   readonly id: string
   readonly name: string

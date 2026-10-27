@@ -248,7 +248,7 @@ export function DashboardShell({
   const [open, setOpen] = useState(false)
   return (
     <ProjectProvider>
-      <div className="dashboard-app min-h-screen">
+      <div className="min-h-screen bg-background">
         <a
           href="#dashboard-main"
           className="sr-only z-[100] rounded-md bg-card px-4 py-3 focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:ring-2 focus:ring-ring"

@@ -9,6 +9,7 @@ import {
 import { getProjectSnapshot } from "./queries/get-project-snapshot.js"
 import { getRelatedRuns } from "./queries/get-related-runs.js"
 import { getRunComparison } from "./queries/get-run-comparison.js"
+import { getWorkflowIntelligence } from "./queries/get-workflow-intelligence.js"
 import {
   getRunTimeline,
   type RunTimelineEvent,
@@ -21,6 +22,8 @@ import type {
   ProjectSnapshot,
   RelatedRuns,
   RunComparison,
+  WorkflowIntelligence,
+  IntelligenceQuery,
 } from "./types.js"
 
 export interface WorkflowStoreService {
@@ -48,6 +51,10 @@ export interface WorkflowStoreService {
     projectId: string,
     runId: string,
   ) => Effect.Effect<RunComparison, DatabaseError>
+  readonly intelligence: (
+    projectId: string,
+    query: IntelligenceQuery,
+  ) => Effect.Effect<WorkflowIntelligence, DatabaseError>
 }
 
 export class WorkflowStore extends Effect.Service<WorkflowStore>()(
@@ -60,14 +67,15 @@ export class WorkflowStore extends Effect.Service<WorkflowStore>()(
         append: (projectId, eventId, event) =>
           provide(appendEvent(projectId, eventId, event)),
         snapshot: (projectId) => provide(getProjectSnapshot(projectId)),
-        listRuns: (projectId, query) =>
-          provide(listRuns(projectId, query)),
+        listRuns: (projectId, query) => provide(listRuns(projectId, query)),
         timeline: (projectId, runId) =>
           provide(getRunTimeline(projectId, runId)),
         related: (projectId, runId) =>
           provide(getRelatedRuns(projectId, runId)),
         compare: (projectId, runId) =>
           provide(getRunComparison(projectId, runId)),
+        intelligence: (projectId, query) =>
+          provide(getWorkflowIntelligence(projectId, query)),
       } satisfies WorkflowStoreService
     }),
   },

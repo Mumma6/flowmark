@@ -2,6 +2,7 @@ import { Effect, Exit, Layer } from "effect"
 import { ApiSettings } from "./config.js"
 import { AuthorizeProject } from "./features/project-access/use-cases/authorize-project.js"
 import { ManageProject } from "./features/project-access/use-cases/manage-project.js"
+import { Onboarding } from "./features/project-access/use-cases/onboarding.js"
 import { RegisterOwner } from "./features/project-access/use-cases/register-owner.js"
 import { IngestWorkflowEvents } from "./features/workflows/use-cases/ingest-events.js"
 import { GetProjectWorkflowData } from "./features/workflows/use-cases/get-project-workflow-data.js"
@@ -32,6 +33,7 @@ export const ApiLive = Layer.mergeAll(
   IngestBrowserWorkflowEvents.layer,
   RegisterOwner.layer,
   ManageProject.layer,
+  Onboarding.layer,
 ).pipe(Layer.provide(dependencies), Layer.provide(ApiSettings.layer))
 
 /** Request boundary: acquire dependencies, execute once, then release the scope. */
@@ -44,6 +46,7 @@ export function runApi<A, E>(
     | IngestBrowserWorkflowEvents
     | RegisterOwner
     | ManageProject
+    | Onboarding
   >,
   signal?: AbortSignal,
 ) {

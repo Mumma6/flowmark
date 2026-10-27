@@ -22,10 +22,16 @@ export {
   type ManageProjectService,
 } from "./features/project-access/use-cases/manage-project.js"
 export {
+  Onboarding,
+  type OnboardingService,
+} from "./features/project-access/use-cases/onboarding.js"
+export {
   ProjectCredentials,
   type ApiKeySummary,
   type BrowserKeySummary,
   type CreatedSecret,
+  type OnboardingState,
+  type OnboardingStep,
   type ProjectCredentialsService,
   type ProjectSummary,
 } from "./features/project-access/ports/project-credentials.js"
@@ -47,6 +53,9 @@ export {
   type ProjectSnapshot,
   type RelatedRuns,
   type RunTimelineEvent,
+  type RunComparison,
+  type IntelligenceQuery,
+  type WorkflowIntelligence,
   type WorkflowRepositoryService,
 } from "./features/workflows/ports/workflow-repository.js"
 export { WorkflowRepositoryLive } from "./features/workflows/adapters/workflow-repository.js"

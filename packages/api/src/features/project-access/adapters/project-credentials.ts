@@ -46,7 +46,9 @@ export const ProjectCredentialsLive = Layer.effect(
       ),
       projectForUser: Effect.fn("PostgresProjectCredentials.projectForUser")(
         (userId) =>
-          store.projectForUser(userId).pipe(Effect.mapError(toPersistenceError)),
+          store
+            .projectForUser(userId)
+            .pipe(Effect.mapError(toPersistenceError)),
       ),
       memberProject: Effect.fn("PostgresProjectCredentials.memberProject")(
         (userId, projectId) =>
@@ -63,6 +65,19 @@ export const ProjectCredentialsLive = Layer.effect(
       )((userId) =>
         store
           .workspaceForUser(userId)
+          .pipe(Effect.mapError(toPersistenceError)),
+      ),
+      onboardingState: Effect.fn("PostgresProjectCredentials.onboardingState")(
+        (userId) =>
+          store
+            .onboardingState(userId)
+            .pipe(Effect.mapError(toPersistenceError)),
+      ),
+      updateOnboardingState: Effect.fn(
+        "PostgresProjectCredentials.updateOnboardingState",
+      )((userId, step, completedAt) =>
+        store
+          .updateOnboardingState(userId, step, completedAt)
           .pipe(Effect.mapError(toPersistenceError)),
       ),
       addOwner: Effect.fn("PostgresProjectCredentials.addOwner")(
@@ -92,7 +107,9 @@ export const ProjectCredentialsLive = Layer.effect(
       ),
       listApiKeys: Effect.fn("PostgresProjectCredentials.listApiKeys")(
         (projectId) =>
-          store.listApiKeys(projectId).pipe(Effect.mapError(toPersistenceError)),
+          store
+            .listApiKeys(projectId)
+            .pipe(Effect.mapError(toPersistenceError)),
       ),
       listBrowserKeys: Effect.fn("PostgresProjectCredentials.listBrowserKeys")(
         (projectId) =>

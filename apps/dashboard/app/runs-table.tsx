@@ -128,6 +128,8 @@ type ExplorerFilters = {
   failCode: string
   environment: string
   release: string
+  startedAfter: string
+  startedBefore: string
 }
 
 const defaults: ExplorerFilters = {
@@ -138,6 +140,8 @@ const defaults: ExplorerFilters = {
   failCode: "",
   environment: "",
   release: "",
+  startedAfter: "",
+  startedBefore: "",
 }
 
 export function RunExplorer({
@@ -180,6 +184,12 @@ export function RunExplorer({
           : filters.namespace === "server"
             ? ("application" as const)
             : undefined,
+      startedAfter: filters.startedAfter
+        ? `${filters.startedAfter}T00:00:00.000Z`
+        : undefined,
+      startedBefore: filters.startedBefore
+        ? `${filters.startedBefore}T23:59:59.999Z`
+        : undefined,
       cursor: cursor ?? undefined,
       limit: 25,
     }),
@@ -268,6 +278,22 @@ export function RunExplorer({
             onChange={(event) => update("release", event.target.value)}
           />
         </label>
+        <label className="grid min-w-0 flex-[1_1_140px] gap-2 text-xs text-muted-foreground sm:max-w-[160px]">
+          <span>Started after</span>
+          <Input
+            type="date"
+            value={filters.startedAfter}
+            onChange={(event) => update("startedAfter", event.target.value)}
+          />
+        </label>
+        <label className="grid min-w-0 flex-[1_1_140px] gap-2 text-xs text-muted-foreground sm:max-w-[160px]">
+          <span>Started before</span>
+          <Input
+            type="date"
+            value={filters.startedBefore}
+            onChange={(event) => update("startedBefore", event.target.value)}
+          />
+        </label>
       </div>
       <div className="flex flex-wrap items-center gap-2 px-5 pb-4">
         <Button
@@ -294,14 +320,7 @@ export function RunExplorer({
           Could not load runs: {list.error.message}
         </p>
       ) : (
-        <>
-          <RunsTable runs={runs} showWorkflow={!workflow} />
-          {runs.length === 0 && (
-            <p className="px-5 py-8 text-center text-sm leading-7 text-muted-foreground">
-              No runs match these filters.
-            </p>
-          )}
-        </>
+        <RunsTable runs={runs} showWorkflow={!workflow} />
       )}
       <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-5 py-4">
         <p className="text-xs text-muted-foreground">

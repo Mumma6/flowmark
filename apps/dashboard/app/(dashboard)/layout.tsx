@@ -3,7 +3,10 @@ import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import { Effect, Option } from "effect"
 import { DashboardShell } from "../dashboard-shell"
-import { readDashboardSession } from "../../lib/session"
+import {
+  readDashboardOnboarding,
+  readDashboardSession,
+} from "../../lib/session"
 
 export const dynamic = "force-dynamic"
 
@@ -14,10 +17,20 @@ export default async function DashboardLayout({
 }) {
   await cookies()
   const session = await Effect.runPromise(readDashboardSession())
-  return Option.match(session, {
-    onNone: () => redirect("/sign-in"),
-    onSome: (value) => (
-      <DashboardShell email={value.user.email}>{children}</DashboardShell>
-    ),
+  const value = Option.match(session, {
+    onNone: () => null,
+    onSome: (current) => current,
   })
+  if (!value) {
+    redirect("/sign-in")
+  }
+  const onboarding = await Effect.runPromise(readDashboardOnboarding())
+  const state = Option.match(onboarding, {
+    onNone: () => null,
+    onSome: (current) => current,
+  })
+  if (state && !state.completedAt) {
+    redirect(`/onboarding?step=${state.step}`)
+  }
+  return <DashboardShell email={value.user.email}>{children}</DashboardShell>
 }

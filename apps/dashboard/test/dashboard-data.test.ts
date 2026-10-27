@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 import { getRunDurationMs } from "../app/run-presentation"
 import {
   filterRuns,
@@ -6,6 +6,7 @@ import {
   groupBy,
   paginate,
   durationInRange,
+  defaultIntelligenceQuery,
   percentChange,
   percentile,
   shareWidthClass,
@@ -16,6 +17,10 @@ import {
   type Run,
   type RunFilters,
 } from "../app/dashboard-data"
+
+afterEach(() => {
+  vi.useRealTimers()
+})
 
 const filters: RunFilters = {
   search: "",
@@ -202,5 +207,17 @@ describe("insight math", () => {
     )
     expect(windowed.median).toBe(200)
     expect(windowed.p95).toBe(290)
+  })
+
+  it("builds adjacent UTC intelligence windows", () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date("2026-10-27T09:00:00.000Z"))
+    expect(defaultIntelligenceQuery("invoice.import")).toEqual({
+      workflow: "invoice.import",
+      currentStartedAfter: "2026-10-21T00:00:00.000Z",
+      currentStartedBefore: "2026-10-28T00:00:00.000Z",
+      previousStartedAfter: "2026-10-14T00:00:00.000Z",
+      previousStartedBefore: "2026-10-21T00:00:00.000Z",
+    })
   })
 })

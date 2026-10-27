@@ -78,6 +78,7 @@ export interface OperationCompareRow {
   readonly currentStatus: "completed" | "failed" | "open" | "absent"
   readonly peerMedianDurationMs: number | null
   readonly peerPresentCount: number
+  readonly peerRunIds: ReadonlyArray<string>
 }
 
 export interface RunComparison {
@@ -87,6 +88,54 @@ export interface RunComparison {
   readonly peerMedianDurationMs: number | null
   readonly peerP95DurationMs: number | null
   readonly operations: ReadonlyArray<OperationCompareRow>
+}
+
+export interface InsightWindow {
+  readonly startedAfter: string
+  readonly startedBefore: string
+  readonly totalRuns: number
+  readonly finishedRuns: number
+  readonly completedRuns: number
+  readonly failedRuns: number
+  readonly successRate: number | null
+  readonly medianDurationMs: number | null
+  readonly p95DurationMs: number | null
+}
+
+export interface OperationAttribution {
+  readonly name: string
+  readonly currentRunCount: number
+  readonly previousRunCount: number
+  readonly currentMedianDurationMs: number | null
+  readonly previousMedianDurationMs: number | null
+  readonly durationDeltaMs: number | null
+  readonly currentRunIds: ReadonlyArray<string>
+  readonly previousRunIds: ReadonlyArray<string>
+}
+
+export interface FailureCodeAttribution {
+  readonly code: string
+  readonly currentCount: number
+  readonly previousCount: number
+  readonly countDelta: number
+  readonly currentRunIds: ReadonlyArray<string>
+  readonly previousRunIds: ReadonlyArray<string>
+}
+
+export interface WorkflowIntelligence {
+  readonly workflow: string | null
+  readonly current: InsightWindow
+  readonly previous: InsightWindow
+  readonly operations: ReadonlyArray<OperationAttribution>
+  readonly failureCodes: ReadonlyArray<FailureCodeAttribution>
+}
+
+export interface IntelligenceQuery {
+  readonly workflow?: string
+  readonly currentStartedAfter: string
+  readonly currentStartedBefore: string
+  readonly previousStartedAfter: string
+  readonly previousStartedBefore: string
 }
 
 export interface RunTimelineEvent {
@@ -175,6 +224,10 @@ export interface WorkflowRepositoryService {
     projectId: string,
     runId: string,
   ) => Effect.Effect<RunComparison, PersistenceError>
+  readonly intelligence: (
+    projectId: string,
+    query: IntelligenceQuery,
+  ) => Effect.Effect<WorkflowIntelligence, PersistenceError>
 }
 
 export class WorkflowRepository extends Context.Tag(

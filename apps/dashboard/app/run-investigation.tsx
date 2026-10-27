@@ -148,7 +148,7 @@ function RunComparisonPanel({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Compared with the last 50 runs</CardTitle>
+        <CardTitle>Compared with up to 50 earlier runs</CardTitle>
         <CardDescription>
           Same workflow. Duration, reported outcome, and named operations
           against recent peers. Comparison does not state a cause.
@@ -220,7 +220,7 @@ function RunComparisonPanel({
               {comparison.peerSuccessRate == null
                 ? "No finished peers"
                 : `${comparison.peerSuccessRate}%`}
-              . {peerCount} earlier runs in this window.
+              . {peerCount} earlier runs in this comparison window.
             </p>
             {(comparison.operations?.length ?? 0) > 0 && (
               <section className="grid gap-3">
@@ -254,7 +254,24 @@ function RunComparisonPanel({
                           {formatDuration(row.peerMedianDurationMs)}
                         </TableCell>
                         <TableCell>
-                          {row.peerPresentCount}/{peerCount}
+                          <div className="grid gap-1">
+                            <span>
+                              {row.peerPresentCount}/{peerCount}
+                            </span>
+                            {row.peerRunIds.length > 0 && (
+                              <span className="flex flex-wrap gap-1 text-xs">
+                                {row.peerRunIds.slice(0, 3).map((runId) => (
+                                  <Link
+                                    key={runId}
+                                    className="font-mono text-muted-foreground hover:text-primary hover:underline"
+                                    href={`/runs/${runId}`}
+                                  >
+                                    {runId.slice(0, 8)}
+                                  </Link>
+                                ))}
+                              </span>
+                            )}
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}

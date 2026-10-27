@@ -3,15 +3,13 @@ import { describe, expect, it, vi } from "vitest"
 import { ApiSettings } from "../../src/config"
 import { AuthorizeProject } from "../../src/features/project-access/use-cases/authorize-project"
 import { ManageProject } from "../../src/features/project-access/use-cases/manage-project"
+import { Onboarding } from "../../src/features/project-access/use-cases/onboarding"
 import {
   ProjectCredentials,
   type ProjectCredentialsService,
 } from "../../src/features/project-access/ports/project-credentials"
 
-const expectLeft = <E>(
-  result: Either.Either<unknown, E>,
-  expected: unknown,
-) =>
+const expectLeft = <E>(result: Either.Either<unknown, E>, expected: unknown) =>
   Either.match(result, {
     onLeft: (error) => expect(error).toMatchObject(expected as object),
     onRight: () => expect.fail("expected a failure"),
@@ -36,6 +34,9 @@ function projectCredentials(
         },
       ]),
     workspaceForUser: () => Effect.succeed("workspace-1"),
+    onboardingState: () =>
+      Effect.succeed({ step: "project" as const, completedAt: null }),
+    updateOnboardingState: () => Effect.void,
     addOwner: () => Effect.void,
     createOwnedProject: () =>
       Effect.succeed({
@@ -89,6 +90,12 @@ function provide(credentials = projectCredentials()) {
   )
 }
 
+function provideOnboarding(credentials = projectCredentials()) {
+  return Onboarding.layer.pipe(
+    Layer.provide(Layer.succeed(ProjectCredentials, credentials)),
+  )
+}
+
 describe("ManageProject", () => {
   it("creates a project in the existing workspace", async () => {
     const createProject = vi.fn(projectCredentials().createProject)
@@ -99,7 +106,11 @@ describe("ManageProject", () => {
     )
     expect(result.project.name).toBe("Staging")
     expect(result.writeKey.secret).toBe("fm_write_secret")
-    expect(createProject).toHaveBeenCalledWith("user-1", "workspace-1", "Staging")
+    expect(createProject).toHaveBeenCalledWith(
+      "user-1",
+      "workspace-1",
+      "Staging",
+    )
   })
 
   it("rejects a blank project name", async () => {
@@ -159,6 +170,58 @@ describe("ManageProject", () => {
         ),
       ).pipe(Effect.provide(provide())),
     )
+    expectLeft(result, { _tag: "InvalidInput" })
+  })
+})
+
+describe("Onboarding", () => {
+  it("returns the persisted onboarding state", async () => {
+    const onboardingState = vi.fn(() =>
+      Effect.succeed({ step: "instrument" as const, completedAt: null }),
+    )
+    const result = await Effect.runPromise(
+      Effect.flatMap(Onboarding, (onboarding) =>
+        onboarding.state("user-1"),
+      ).pipe(
+        Effect.provide(
+          provideOnboarding(projectCredentials({ onboardingState })),
+        ),
+      ),
+    )
+
+    expect(result).toEqual({ step: "instrument", completedAt: null })
+    expect(onboardingState).toHaveBeenCalledWith("user-1")
+  })
+
+  it("requires a project before advancing", async () => {
+    const result = await Effect.runPromise(
+      Effect.flatMap(Onboarding, (onboarding) =>
+        Effect.either(onboarding.advance("user-1", "key")),
+      ).pipe(
+        Effect.provide(
+          provideOnboarding(
+            projectCredentials({ projectForUser: () => Effect.succeed(null) }),
+          ),
+        ),
+      ),
+    )
+
+    expectLeft(result, { _tag: "InvalidInput" })
+  })
+
+  it("requires a write key before completing", async () => {
+    const result = await Effect.runPromise(
+      Effect.flatMap(Onboarding, (onboarding) =>
+        Effect.either(onboarding.complete("user-1")),
+      ).pipe(
+        Effect.provide(
+          provideOnboarding(
+            projectCredentials({ listApiKeys: () => Effect.succeed([]) }),
+          ),
+        ),
+      ),
+    )
+
     expectLeft(result, { _tag: "InvalidInput" })
   })
 })
