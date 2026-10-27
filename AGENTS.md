@@ -41,6 +41,10 @@
 - Before `@flowmark/db`, Drizzle, SQL, query, migration, or seed changes, read
   and apply
   [flowmark-persistence](./.agents/skills/flowmark-persistence/SKILL.md).
+- Every schema migration must be applied and verified in both the local
+  loopback database and Neon `production` before the change is considered
+  complete. Use the committed migration through `pnpm db:migrate`; never seed
+  Neon or leave a manually applied migration out of Drizzle's history.
 - Keep API use cases in `packages/api`; `apps/server` is the framework/protocol
   shell. Keep database-specific work behind persistence boundaries.
 - Before Vercel, domain, or hosted environment changes, read and apply

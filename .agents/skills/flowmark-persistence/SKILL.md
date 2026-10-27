@@ -102,6 +102,32 @@ export class WorkflowStore extends Effect.Service<WorkflowStore>()(
   terminal events stay Running. Do not change SQL meaning to tidy files.
 - Every read and write stays project-scoped.
 
+## Required migration workflow
+
+A database-backed change is not complete when the schema and migration file
+exist only in Git. Every committed schema migration must be applied and
+verified in both database environments:
+
+1. Generate the migration from the schema change and inspect the SQL. Never
+   edit an already-applied migration; create a new migration instead.
+2. Apply the committed migration to the local loopback database:
+   `pnpm db:migrate`. The CLI loads `apps/server/.env.local`; it must not
+   point the local demo at Neon.
+3. Apply the same committed migration to the Neon `production` branch using
+   the secure migration connection (`DATABASE_MIGRATION_URL`), from a
+   workstation. Do not put the URL in Git, chat, or a Vercel runtime env.
+4. Verify the changed tables/constraints and Drizzle migration history in both
+   environments. The migration command must update Drizzle's bookkeeping; do
+   not apply raw SQL and leave the migration unrecorded.
+5. Run the narrow database/API tests, typecheck, and lint. If either database
+   cannot be migrated, stop and report that as an incomplete implementation;
+   do not claim the schema change is finished.
+
+Schema migrations run separately from Vercel builds and requests. A migration
+does not authorize seeding, resetting telemetry, deleting data, or restoring a
+database. Never seed Neon; local fixture setup remains an explicit,
+separate operation.
+
 ## Adding work
 
 1. Inspect the neighboring query, write, or store before adding a file.
@@ -111,4 +137,5 @@ export class WorkflowStore extends Effect.Service<WorkflowStore>()(
 4. Expose behavior through the feature store unless a test already imports the
    function from `@flowmark/db/persistence`.
 5. Update the persistence barrel and any docs that name the old path.
-6. Run the narrow `@flowmark/db` and `@flowmark/api` typecheck, lint, and tests.
+6. Follow the required migration workflow above, then run the narrow
+   `@flowmark/db` and `@flowmark/api` typecheck, lint, and tests.
