@@ -29,14 +29,19 @@ const SessionBody = Schema.Struct({
   }),
 })
 
+const OnboardingState = Schema.Struct({
+  step: Schema.Literal("project", "key", "install", "instrument", "run"),
+  completedAt: Schema.NullOr(Schema.String),
+})
+
+const OnboardingData = Schema.Union(
+  OnboardingState,
+  Schema.Struct({ json: OnboardingState }),
+)
+
 const OnboardingBody = Schema.Struct({
   result: Schema.Struct({
-    data: Schema.Struct({
-      json: Schema.Struct({
-        step: Schema.Literal("project", "key", "install", "instrument", "run"),
-        completedAt: Schema.NullOr(Schema.String),
-      }),
-    }),
+    data: OnboardingData,
   }),
 })
 
@@ -120,6 +125,10 @@ export const readDashboardOnboarding = Effect.fn("readDashboardOnboarding")(
     const onboarding = yield* Schema.decodeUnknown(OnboardingBody)(json).pipe(
       Effect.mapError((cause) => new DashboardSessionError({ cause })),
     )
-    return Option.some(onboarding.result.data.json)
+    return Option.some(
+      "json" in onboarding.result.data
+        ? onboarding.result.data.json
+        : onboarding.result.data,
+    )
   },
 )
