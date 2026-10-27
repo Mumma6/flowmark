@@ -16,11 +16,17 @@ import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { authClient } from "../../lib/auth-client"
+import { CopyButton } from "../dashboard-components"
 
 export function AuthScreen({
   mode,
+  localAccount,
 }: {
   mode: "sign-in" | "sign-up"
+  localAccount?: {
+    readonly email: string
+    readonly password: string
+  }
 }) {
   const router = useRouter()
   const isSignUp = mode === "sign-up"
@@ -77,6 +83,29 @@ export function AuthScreen({
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {localAccount ? (
+            <section
+              className="mb-5 grid gap-3 rounded-lg border border-border bg-muted p-3"
+              aria-label="Local development account"
+            >
+              <p className="text-sm font-medium">Local development account</p>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-sm">
+                  Email <code>{localAccount.email}</code>
+                </p>
+                <CopyButton value={localAccount.email} label="Copy email" />
+              </div>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-sm">
+                  Password <code>{localAccount.password}</code>
+                </p>
+                <CopyButton
+                  value={localAccount.password}
+                  label="Copy password"
+                />
+              </div>
+            </section>
+          ) : null}
           <form className="grid gap-4" onSubmit={onSubmit}>
             {error ? (
               <Alert>

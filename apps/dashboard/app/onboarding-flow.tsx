@@ -11,7 +11,6 @@ import {
   Button,
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@flowmark/ui"
@@ -119,7 +118,7 @@ function OnboardingContent({
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
               Welcome, {email}. We will create a project, connect your
-              application, and help you inspect one real execution.
+              application, and help you inspect your application's activity.
             </p>
           </div>
           <Badge variant="outline">
@@ -163,10 +162,7 @@ function OnboardingContent({
         <Card className="overflow-hidden">
           <CardHeader>
             <CardTitle>{currentStep.title}</CardTitle>
-            <CardDescription>
-              Flowmark observes work your application already runs. It does not
-              execute, schedule, or retry that work.
-            </CardDescription>
+      
           </CardHeader>
           <CardContent className="grid gap-6">
             {currentStep.id === "project" && (

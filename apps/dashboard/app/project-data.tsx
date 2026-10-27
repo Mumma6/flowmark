@@ -13,6 +13,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  Skeleton,
   Table,
   TableBody,
   TableCell,
@@ -35,7 +36,6 @@ import {
   type Run,
   type WorkflowSummary,
 } from "./dashboard-data"
-import { OnboardingGuide } from "./getting-started"
 import { useProject } from "./project-context"
 import {
   DailyDurationPanel,
@@ -79,6 +79,44 @@ function Refresh({
       <RefreshCw aria-hidden="true" />
       Refresh
     </Button>
+  )
+}
+
+function EmptyOverview() {
+  return (
+    <Card className="border-dashed">
+      <CardHeader>
+        <CardTitle>No runs recorded yet</CardTitle>
+        <CardDescription>
+          Once your application reports its first execution, this overview will
+          show volume, outcomes, duration, and failure evidence.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="grid gap-6">
+        <div
+          className="grid grid-cols-2 gap-3 xl:grid-cols-5"
+          aria-hidden="true"
+        >
+          {["w-2/3", "w-1/2", "w-3/4", "w-1/2", "w-2/3"].map((width, index) => (
+            <div
+              className="grid gap-3 rounded-lg border border-border/70 p-4"
+              key={index}
+            >
+              <Skeleton className={`h-3 ${width}`} />
+              <Skeleton className="h-8 w-1/2" />
+              <Skeleton className="h-3 w-3/4" />
+            </div>
+          ))}
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border pt-5">
+          <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
+            Install the SDK, add a write key to your server environment, and
+            report one real process to start filling this view.
+          </p>
+          <ViewLink href="/settings?section=projects">Open setup</ViewLink>
+        </div>
+      </CardContent>
+    </Card>
   )
 }
 
@@ -196,10 +234,6 @@ export function DashboardOverview() {
       >
         <Refresh fetching={isFetching} onClick={() => void refetch()} />
       </PageHeading>
-      <OnboardingGuide
-        hasRuns={(data?.metrics.totalRuns ?? 0) > 0}
-        snapshotReady={!isPending}
-      />
       <DataState
         pending={isPending}
         error={error}
@@ -270,6 +304,7 @@ export function DashboardOverview() {
           </Card>
         </>
       )}
+      {data && data.metrics.totalRuns === 0 && <EmptyOverview />}
     </div>
   )
 }
