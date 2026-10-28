@@ -10,8 +10,9 @@ description: >-
 
 Create concise, professional PRs that are easy to review. Follow
 [`.github/pull_request_template.md`](../../../.github/pull_request_template.md)
-for every PR description. **Creating a PR and merging it are separate
-actions** — never merge without explicit user approval.
+for every PR description. Git and Production gates live in
+[`.cursor/rules/git-safety.mdc`](../../../.cursor/rules/git-safety.mdc);
+creating a PR is not permission to merge or deploy.
 
 ## Before creating a PR
 
@@ -27,8 +28,7 @@ actions** — never merge without explicit user approval.
 7. Note database migrations, infrastructure changes, Vercel or Neon impact,
    and any manual deployment steps.
 
-Push and open the PR **only when the user explicitly asks**. Use
-[`gh`](https://cli.github.com/) for GitHub operations when appropriate.
+Use [`gh`](https://cli.github.com/) for GitHub operations when appropriate.
 
 ## PR description
 
@@ -82,12 +82,15 @@ description only**. Do not create GitHub links to gitignored paths.
 
 ## Git workflow
 
-- One coherent task or feature per PR when possible.
+Apply [git-safety.mdc](../../../.cursor/rules/git-safety.mdc) for push-to-`main`,
+merge, deploy, force-push, and destructive production operations.
+
+- Prefer feature branches and one coherent task or feature per PR.
 - Branch names: `feat/...`, `fix/...`, `infra/...`, etc.
 - Meaningful conventional commit messages on the branch.
 - No unrelated work in the same PR.
-- Never force-push or rewrite shared history without approval.
-- Do not deploy Production outside the normal merge-to-`main` flow.
+- Push the feature branch and open a PR when the change is ready for review.
+- Never merge or deploy unless the user explicitly approves that step.
 
 When creating a PR, gather state in parallel where useful: `git status`,
 diff against base, recent commits, and whether the branch tracks remote.
@@ -100,7 +103,8 @@ For changes that affect deployed apps (`apps/web`, `apps/dashboard`,
 - Inspect relevant **Vercel Preview** deployments when available; verify
   behavior, not only green builds.
 - Use the isolated Neon **`preview`** branch for Preview DB testing only.
-- Never run migrations or destructive database operations without approval.
+- Never run migrations or destructive database operations without explicit
+  approval (see git-safety rule).
 - Label verification as automated vs manual.
 - If Preview cannot be tested, say so in **Verification** or **Deployment
   Notes**.
