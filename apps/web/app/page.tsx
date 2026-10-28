@@ -19,6 +19,12 @@ export default function HomePage() {
         Skip to content
       </a>
       <SiteHeader />
+      <div
+        className="border-b border-amber-500/40 bg-amber-500/15 px-4 py-6 text-center text-2xl font-bold tracking-tight text-amber-950 dark:text-amber-100"
+        role="status"
+      >
+        🚀 PREVIEW BRANCH TEST — LANDING PAGE
+      </div>
       <main id="main">
         <HeroSection />
         <InstrumentationSection />
