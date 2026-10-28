@@ -41,6 +41,7 @@ export default function Layout({
       ]}
       sidebar={{ defaultOpenLevel: 1 }}
     >
+      <h1>Preview test 3</h1>
       {children}
     </DocsLayout>
   )

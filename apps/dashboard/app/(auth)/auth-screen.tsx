@@ -83,6 +83,7 @@ export function AuthScreen({
           </CardDescription>
         </CardHeader>
         <CardContent>
+          <h1>Preview test</h1>
           {localAccount ? (
             <section
               className="mb-5 grid gap-3 rounded-lg border border-border bg-muted p-3"

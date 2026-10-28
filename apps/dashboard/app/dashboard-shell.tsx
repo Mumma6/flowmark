@@ -292,6 +292,7 @@ export function DashboardShell({
             id="dashboard-main"
             className="mx-auto w-full max-w-[1600px] p-4 sm:p-8"
           >
+            <h1>Preview test 2</h1>
             {children}
           </main>
         </div>
