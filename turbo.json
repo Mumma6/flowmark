@@ -20,8 +20,7 @@
         "PORT",
         "DATABASE_URL",
         "FLOWMARK_*",
-        "NEXT_PUBLIC_*",
-        "SUPABASE_*"
+        "NEXT_PUBLIC_*"
       ],
       "cache": false,
       "persistent": true

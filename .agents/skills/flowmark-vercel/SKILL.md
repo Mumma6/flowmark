@@ -41,12 +41,12 @@ Always pass `--scope mumma6s-projects` and `--project <name>`. A bare
 
 ## Projects
 
-| Project | Root | Public URL |
-| ------- | ---- | ---------- |
-| `flowmark-web` | `apps/web` | `https://flowmark.dev` |
-| `flowmark-docs` | `apps/docs` | `https://docs.flowmark.dev` |
-| `flowmark-dashboard` | `apps/dashboard` | `https://app.flowmark.dev` |
-| `flowmark-api` | `apps/server` | `https://api.flowmark.dev` |
+| Project              | Root             | Public URL                  |
+| -------------------- | ---------------- | --------------------------- |
+| `flowmark-web`       | `apps/web`       | `https://flowmark.dev`      |
+| `flowmark-docs`      | `apps/docs`      | `https://docs.flowmark.dev` |
+| `flowmark-dashboard` | `apps/dashboard` | `https://app.flowmark.dev`  |
+| `flowmark-api`       | `apps/server`    | `https://api.flowmark.dev`  |
 
 `www.flowmark.dev` redirects to the apex. `flowmark-web-delta.vercel.app` is
 only the spare hostname. `*.vercel.app` is behind Vercel Authentication.
@@ -54,8 +54,11 @@ Custom domains are public.
 
 Do not create a project for `apps/dev-harness` or `apps/internal-docs`.
 Ask before creating a project, attaching a domain, or any other paid change.
-Do not seed Neon. Preview and Production currently share the production
-database.
+Do not seed Neon. Preview must not use the production database. Repository
+guards reject production hosts when `VERCEL_ENV` is `preview`. Keep
+Production and Preview on separate Vercel env records. Do not add one env record with both targets for `DATABASE_URL`,
+`BETTER_AUTH_URL`, `FLOWMARK_DASHBOARD_ORIGIN`, `BETTER_AUTH_SECRET`, or
+dashboard `FLOWMARK_API_URL`.
 
 Each app's `vercel.json` already sets Next.js, function region `fra1`, and
 the monorepo install and Turbo build. Node is 22.x. Leave those unless the
@@ -102,12 +105,12 @@ npx vercel@latest env list --project <project> --scope mumma6s-projects
 ```
 
 Add a variable by piping the value on stdin. Do not use `--value`. That
-puts the secret in the process list. Repeat `--environment` for Production
-and Preview. Mark secrets `--sensitive`.
+puts the secret in the process list. Add Production and Preview as separate
+commands so they do not share one value. Mark secrets `--sensitive`.
 
 ```sh
 npx vercel@latest env add <NAME> --sensitive --yes \
-  --environment production --environment preview \
+  --environment production \
   --project <project> --scope mumma6s-projects
 ```
 
@@ -115,10 +118,14 @@ The command reads stdin when `--value` is omitted. Never echo the value
 back. After a change, redeploy the project. The catalog of which variable belongs on which
 project is in the infrastructure guide. In particular:
 
-- `BETTER_AUTH_URL` and `FLOWMARK_DASHBOARD_ORIGIN` are
-  `https://app.flowmark.dev`, not the API origin.
-- `DATABASE_URL` on `flowmark-api` is the pooled Neon URL. The unpooled URL
-  is only `DATABASE_MIGRATION_URL` for a workstation `pnpm db:migrate`.
+- Production `BETTER_AUTH_URL` and `FLOWMARK_DASHBOARD_ORIGIN` are
+  `https://app.flowmark.dev`, not the API origin. Preview must not use that
+  host. See the infrastructure guide before setting Preview.
+- Production `DATABASE_URL` on `flowmark-api` is the pooled Neon URL for
+  branch `production`. Preview uses the pooled URL for branch `preview` and
+  `FLOWMARK_DATABASE_BRANCH=preview`. The unpooled URL is only
+  `DATABASE_MIGRATION_URL` for a workstation `pnpm db:migrate:prod` or
+  `pnpm db:migrate:preview`. It is not a Vercel variable.
 - Do not set `FLOWMARK_DEMO_MODE`, `DATABASE_MIGRATION_URL`, or
   `FLOWMARK_API_KEY` on Vercel.
 

@@ -12,9 +12,10 @@
  * Optional:
  *   FLOWMARK_SMOKE_EXPECT_REJECT=1  — also exercise a bad key path
  */
-import { pathToFileURL } from "node:url"
+import console from "node:console"
 import path from "node:path"
-import { fileURLToPath } from "node:url"
+import process from "node:process"
+import { fileURLToPath, pathToFileURL } from "node:url"
 
 const here = path.dirname(fileURLToPath(import.meta.url))
 

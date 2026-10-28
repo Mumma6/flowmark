@@ -1,3 +1,4 @@
+import { assertPreviewDatabase } from "@flowmark/db/environment"
 import { Context, Effect, Layer, Redacted, Schema } from "effect"
 import { ConfigurationError } from "./errors.js"
 
@@ -38,6 +39,21 @@ export class ApiSettings extends Context.Tag("@flowmark/api/Settings")<
           }),
         )
       }
+      if (input.demoMode && process.env.VERCEL_ENV === "preview") {
+        return yield* Effect.fail(
+          new ConfigurationError({
+            cause: new Error(
+              "FLOWMARK_DEMO_MODE cannot be enabled in preview.",
+            ),
+          }),
+        )
+      }
+      yield* assertPreviewDatabase(process.env.DATABASE_URL).pipe(
+        Effect.catchTags({
+          PreviewDatabaseError: (error) =>
+            Effect.fail(new ConfigurationError({ cause: error })),
+        }),
+      )
       return yield* Schema.decodeUnknown(SettingsSchema)(input).pipe(
         Effect.mapError((cause) => new ConfigurationError({ cause })),
       )

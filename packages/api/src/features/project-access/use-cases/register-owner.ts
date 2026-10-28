@@ -17,12 +17,7 @@ export class RegisterOwner extends Context.Tag(
   static readonly layer = Layer.succeed(
     RegisterOwner,
     RegisterOwner.of({
-      provision: Effect.fn("RegisterOwner.provision")(function* (
-        _userId: string,
-        _name: string,
-      ) {
-        return undefined
-      }),
+      provision: Effect.fn("RegisterOwner.provision")(() => Effect.void),
     }),
   )
 }

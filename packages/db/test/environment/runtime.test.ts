@@ -111,3 +111,24 @@ test("refuses local seed and reset against production or non-loopback databases"
     assertLocalDevelopmentDatabase(local, { FLOWMARK_DEMO_MODE: "true" }),
   )
 })
+
+test("db:setup sequence refuses a non-loopback migration URL when runtime URL is loopback", () => {
+  const runtimeUrl = "postgresql://localhost:5432/flowmark"
+  const remoteMigrationUrl = "postgresql://ep-fake.neon.tech/neondb"
+  const env = {
+    FLOWMARK_DEMO_MODE: "true",
+    DATABASE_URL: runtimeUrl,
+    DATABASE_MIGRATION_URL: remoteMigrationUrl,
+  }
+
+  Effect.runSync(assertLocalDevelopmentDatabase(runtimeUrl, env))
+  assert.match(
+    leftReason(
+      assertLocalDevelopmentDatabase(
+        Effect.runSync(readMigrationDatabaseUrl(env)),
+        env,
+      ),
+    ),
+    /loopback/,
+  )
+})

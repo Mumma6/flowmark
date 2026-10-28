@@ -82,7 +82,11 @@ and other services are not configured by Studio.
 The reference Neon project is a separate database. Its operating notes are in
 the [infrastructure guide](./infrastructure). Local demo setup keeps
 `DATABASE_URL` on loopback. Do not point Studio, `pnpm db:setup`, or
-`pnpm db:seed` at that project.
+`pnpm db:seed` at that project. Preview deployments must not use the
+production database or `https://api.flowmark.dev`.
+`pnpm db:migrate:preview` applies committed migrations to the Neon `preview`
+branch only. It refuses a production, loopback, or non-Neon host. The branch
+is created by an approved operator step, not by a Vercel build.
 
 The dashboard uses a same-origin server proxy for tRPC and Better Auth. Its
 server-side `FLOWMARK_API_URL` defaults to `http://localhost:3003`. Dashboard

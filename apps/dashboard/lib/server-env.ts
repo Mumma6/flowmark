@@ -1,3 +1,4 @@
+import { assertPreviewDashboardApi } from "@flowmark/db/environment"
 import { Data, Effect } from "effect"
 
 export class DashboardConfigurationError extends Data.TaggedError(
@@ -10,8 +11,16 @@ const isProductionRuntime = () =>
   process.env.NODE_ENV === "production" ||
   process.env.VERCEL_ENV === "production"
 
+const isPreviewRuntime = () => process.env.VERCEL_ENV === "preview"
+
 export const dashboardApiUrl = Effect.fn("dashboardApiUrl")(function* () {
   const configured = process.env.FLOWMARK_API_URL
+  yield* assertPreviewDashboardApi(configured).pipe(
+    Effect.catchTags({
+      PreviewDashboardApiError: (error) =>
+        Effect.fail(new DashboardConfigurationError({ reason: error.reason })),
+    }),
+  )
   if (configured) {
     return configured
   }
@@ -29,6 +38,11 @@ export const dashboardDemoModeEnabled = Effect.fn("dashboardDemoModeEnabled")(
     if (enabled && isProductionRuntime()) {
       return yield* new DashboardConfigurationError({
         reason: "FLOWMARK_DEMO_MODE cannot be enabled in production.",
+      })
+    }
+    if (enabled && isPreviewRuntime()) {
+      return yield* new DashboardConfigurationError({
+        reason: "FLOWMARK_DEMO_MODE cannot be enabled in preview.",
       })
     }
     return enabled

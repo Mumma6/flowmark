@@ -129,4 +129,23 @@ describe("API request resource scope", () => {
       onRight: () => expect.fail("Production demo mode must fail"),
     })
   })
+
+  it("rejects a preview runtime that still points at a non-preview database", async () => {
+    vi.stubEnv(
+      "DATABASE_URL",
+      "postgresql://user:secret@ep-fake.example.com/neondb",
+    )
+    vi.stubEnv("VERCEL_ENV", "preview")
+    vi.stubEnv("FLOWMARK_DATABASE_BRANCH", "")
+    const result = await Effect.runPromise(
+      Effect.either(ApiSettings.pipe(Effect.provide(ApiSettings.layer))),
+    )
+    Either.match(result, {
+      onLeft: (error) => {
+        expect(error._tag).toBe("ConfigurationError")
+        expect(String(error.cause)).not.toContain("secret")
+      },
+      onRight: () => expect.fail("Preview without the branch marker must fail"),
+    })
+  })
 })

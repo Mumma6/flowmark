@@ -14,7 +14,9 @@ await runDatabaseCommand(
     yield* loadApiEnvironment
     const runtimeUrl = yield* readDatabaseUrl()
     yield* assertLocalDevelopmentDatabase(runtimeUrl)
-    yield* applyCommittedMigrations(yield* readMigrationDatabaseUrl())
+    const migrationUrl = yield* readMigrationDatabaseUrl()
+    yield* assertLocalDevelopmentDatabase(migrationUrl)
+    yield* applyCommittedMigrations(migrationUrl)
     yield* seedLocalDevelopment(runtimeUrl)
     yield* Effect.sync(() => {
       console.log(

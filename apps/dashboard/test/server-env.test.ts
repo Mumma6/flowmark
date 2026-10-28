@@ -1,17 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { Effect, Either } from "effect"
-import {
-  dashboardApiUrl,
-  dashboardDemoModeEnabled,
-} from "../lib/server-env"
+import { dashboardApiUrl, dashboardDemoModeEnabled } from "../lib/server-env"
 
 afterEach(() => {
   vi.unstubAllEnvs()
 })
 
-const leftReason = <A>(
-  effect: Effect.Effect<A, { readonly reason: string }>,
-) =>
+const leftReason = <A>(effect: Effect.Effect<A, { readonly reason: string }>) =>
   Either.match(Effect.runSync(Effect.either(effect)), {
     onLeft: (error) => error.reason,
     onRight: () => {
@@ -37,6 +32,19 @@ describe("dashboard server environment", () => {
     vi.stubEnv("FLOWMARK_DEMO_MODE", "true")
     vi.stubEnv("NODE_ENV", "production")
     expect(leftReason(dashboardDemoModeEnabled())).toMatch(/cannot be enabled/)
+  })
+
+  it("rejects the production API from a preview dashboard", () => {
+    vi.stubEnv("VERCEL_ENV", "preview")
+    vi.stubEnv("FLOWMARK_API_URL", "https://api.flowmark.dev")
+    expect(leftReason(dashboardApiUrl())).toMatch(/api\.flowmark\.dev/)
+  })
+
+  it("accepts a non-production API URL in preview", () => {
+    vi.stubEnv("VERCEL_ENV", "preview")
+    vi.stubEnv("NODE_ENV", "production")
+    vi.stubEnv("FLOWMARK_API_URL", "https://preview.example")
+    expect(Effect.runSync(dashboardApiUrl())).toBe("https://preview.example")
   })
 
   it("keeps demo mode off by default", () => {

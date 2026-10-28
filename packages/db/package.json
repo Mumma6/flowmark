@@ -28,6 +28,10 @@
     "./auth": {
       "types": "./dist/auth/create-auth.d.ts",
       "import": "./dist/auth/create-auth.js"
+    },
+    "./environment": {
+      "types": "./dist/environment/preview-isolation.d.ts",
+      "import": "./dist/environment/preview-isolation.js"
     }
   },
   "scripts": {
@@ -37,11 +41,12 @@
     "db:generate": "drizzle-kit generate",
     "db:studio": "drizzle-kit studio --host=127.0.0.1 --port=4983",
     "db:migrate": "tsx src/cli/migrate.ts",
+    "db:preview-baseline": "tsx src/cli/stamp-preview-baseline.ts",
     "db:seed": "tsx src/cli/seed.ts",
     "db:setup": "tsx src/cli/setup.ts",
     "db:setup-demo": "tsx src/cli/setup.ts",
     "db:reset-local-telemetry": "tsx src/cli/reset-local-telemetry.ts",
-    "test": "node --import tsx --test test/environment/runtime.test.ts test/auth/secret.test.ts test/persistence/continue-run.test.ts",
+    "test": "node --import tsx --test test/environment/runtime.test.ts test/environment/preview-isolation.test.ts test/auth/secret.test.ts test/persistence/continue-run.test.ts",
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
