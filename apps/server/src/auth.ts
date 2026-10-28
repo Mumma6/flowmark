@@ -4,6 +4,7 @@ import { createFlowmarkAuth, readAuthSecret } from "@flowmark/db/auth"
 import {
   assertPreviewAuthOrigins,
   assertPreviewDatabase,
+  previewDashboardOrigin,
 } from "@flowmark/db/environment"
 import { ConfigurationError } from "@flowmark/api"
 
@@ -14,8 +15,19 @@ export const getAuth = Effect.fn("getAuth")(function* () {
     return cached
   }
   const configuredUrl = process.env.DATABASE_URL
+  const previewOrigin = previewDashboardOrigin()
+  const dashboardOrigin =
+    previewOrigin ??
+    process.env.FLOWMARK_DASHBOARD_ORIGIN ??
+    "http://localhost:3001"
+  const baseURL =
+    previewOrigin ?? process.env.BETTER_AUTH_URL ?? dashboardOrigin
   const url = yield* Effect.gen(function* () {
-    yield* assertPreviewAuthOrigins()
+    yield* assertPreviewAuthOrigins({
+      ...process.env,
+      BETTER_AUTH_URL: baseURL,
+      FLOWMARK_DASHBOARD_ORIGIN: dashboardOrigin,
+    })
     if (!configuredUrl) {
       return yield* new ConfigurationError({
         cause: new Error("DATABASE_URL is required for authentication."),
@@ -40,13 +52,8 @@ export const getAuth = Effect.fn("getAuth")(function* () {
   cached = createFlowmarkAuth({
     db,
     secret,
-    baseURL:
-      process.env.BETTER_AUTH_URL ??
-      process.env.FLOWMARK_DASHBOARD_ORIGIN ??
-      "http://localhost:3001",
-    trustedOrigins: [
-      process.env.FLOWMARK_DASHBOARD_ORIGIN ?? "http://localhost:3001",
-    ],
+    baseURL,
+    trustedOrigins: [dashboardOrigin],
   })
   return cached
 })

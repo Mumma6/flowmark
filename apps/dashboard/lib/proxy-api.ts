@@ -30,6 +30,10 @@ const proxyToApi = Effect.fn("proxyToApi")(function* (
       headers.set(name, value)
     }
   }
+  const protectionBypass = process.env.FLOWMARK_VERCEL_PROTECTION_BYPASS
+  if (protectionBypass) {
+    headers.set("x-vercel-protection-bypass", protectionBypass)
+  }
   const response = yield* Effect.tryPromise({
     try: async () =>
       fetch(endpoint, {

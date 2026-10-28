@@ -1,4 +1,7 @@
-import { assertPreviewDashboardApi } from "@flowmark/db/environment"
+import {
+  assertPreviewDashboardApi,
+  previewApiOrigin,
+} from "@flowmark/db/environment"
 import { Data, Effect } from "effect"
 
 export class DashboardConfigurationError extends Data.TaggedError(
@@ -15,14 +18,16 @@ const isPreviewRuntime = () => process.env.VERCEL_ENV === "preview"
 
 export const dashboardApiUrl = Effect.fn("dashboardApiUrl")(function* () {
   const configured = process.env.FLOWMARK_API_URL
-  yield* assertPreviewDashboardApi(configured).pipe(
+  const sibling = previewApiOrigin()
+  const candidate = isPreviewRuntime() ? (sibling ?? configured) : configured
+  yield* assertPreviewDashboardApi(candidate).pipe(
     Effect.catchTags({
       PreviewDashboardApiError: (error) =>
         Effect.fail(new DashboardConfigurationError({ reason: error.reason })),
     }),
   )
-  if (configured) {
-    return configured
+  if (candidate) {
+    return candidate
   }
   if (isProductionRuntime()) {
     return yield* new DashboardConfigurationError({

@@ -13,7 +13,10 @@ import {
   assertPreviewAuthOrigins,
   assertPreviewDashboardApi,
   assertPreviewDatabase,
+  isProductionDeploymentHost,
   isProductionPublicHost,
+  previewApiOrigin,
+  previewDashboardOrigin,
 } from "../../src/environment/preview-isolation.js"
 
 const migrationsFolder = fileURLToPath(
@@ -32,6 +35,16 @@ test("recognises production public hosts", () => {
   assert.equal(isProductionPublicHost("api.flowmark.dev"), true)
   assert.equal(isProductionPublicHost("app.flowmark.dev"), true)
   assert.equal(isProductionPublicHost("ep-fake.neon.tech"), false)
+  assert.equal(
+    isProductionDeploymentHost("flowmark-api-mumma6s-projects.vercel.app"),
+    true,
+  )
+  assert.equal(
+    isProductionDeploymentHost(
+      "flowmark-api-git-test-preview-dev-mumma6s-projects.vercel.app",
+    ),
+    false,
+  )
 })
 
 test("preview database access requires the preview branch marker and a Neon host", () => {
@@ -83,10 +96,33 @@ test("preview auth and dashboard origins reject production hosts", () => {
     ),
     /api\.flowmark\.dev/,
   )
+  assert.match(
+    leftReason(
+      assertPreviewDashboardApi(
+        "https://flowmark-api-mumma6s-projects.vercel.app",
+        { VERCEL_ENV: "preview" },
+      ),
+    ),
+    /flowmark-api-mumma6s-projects\.vercel\.app/,
+  )
   Effect.runSync(
     assertPreviewDashboardApi("https://preview.example", {
       VERCEL_ENV: "preview",
     }),
+  )
+  assert.equal(
+    previewApiOrigin({
+      VERCEL_ENV: "preview",
+      VERCEL_GIT_COMMIT_REF: "test-preview-dev",
+    }),
+    "https://flowmark-api-git-test-preview-dev-mumma6s-projects.vercel.app",
+  )
+  assert.equal(
+    previewDashboardOrigin({
+      VERCEL_ENV: "preview",
+      VERCEL_GIT_COMMIT_REF: "test/vercel-preview",
+    }),
+    "https://flowmark-dashboard-git-test-vercel-preview-mumma6s-projects.vercel.app",
   )
   Effect.runSync(
     assertPreviewAuthOrigins({

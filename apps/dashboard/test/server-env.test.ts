@@ -36,8 +36,22 @@ describe("dashboard server environment", () => {
 
   it("rejects the production API from a preview dashboard", () => {
     vi.stubEnv("VERCEL_ENV", "preview")
+    vi.stubEnv("VERCEL_GIT_COMMIT_REF", "")
     vi.stubEnv("FLOWMARK_API_URL", "https://api.flowmark.dev")
     expect(leftReason(dashboardApiUrl())).toMatch(/api\.flowmark\.dev/)
+  })
+
+  it("calls the preview API deployment for the same git branch", () => {
+    vi.stubEnv("VERCEL_ENV", "preview")
+    vi.stubEnv("NODE_ENV", "production")
+    vi.stubEnv("VERCEL_GIT_COMMIT_REF", "test-preview-dev")
+    vi.stubEnv(
+      "FLOWMARK_API_URL",
+      "https://flowmark-api-mumma6s-projects.vercel.app",
+    )
+    expect(Effect.runSync(dashboardApiUrl())).toBe(
+      "https://flowmark-api-git-test-preview-dev-mumma6s-projects.vercel.app",
+    )
   })
 
   it("accepts a non-production API URL in preview", () => {

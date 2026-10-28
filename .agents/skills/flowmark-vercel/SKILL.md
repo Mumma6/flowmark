@@ -123,7 +123,10 @@ project is in the infrastructure guide. In particular:
   host. See the infrastructure guide before setting Preview.
 - Production `DATABASE_URL` on `flowmark-api` is the pooled Neon URL for
   branch `production`. Preview uses the pooled URL for branch `preview` and
-  `FLOWMARK_DATABASE_BRANCH=preview`. The unpooled URL is only
+  `FLOWMARK_DATABASE_BRANCH=preview`. Preview `FLOWMARK_API_URL` must be that
+  branch's preview API deployment. `flowmark-api-mumma6s-projects.vercel.app`
+  is the production deployment alias and still reads the production database.
+  The unpooled URL is only
   `DATABASE_MIGRATION_URL` for a workstation `pnpm db:migrate:prod` or
   `pnpm db:migrate:preview`. It is not a Vercel variable.
 - Do not set `FLOWMARK_DEMO_MODE`, `DATABASE_MIGRATION_URL`, or

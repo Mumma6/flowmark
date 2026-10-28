@@ -13,8 +13,80 @@ const productionPublicHosts = new Set([
   "docs.flowmark.dev",
 ])
 
+// Stable production aliases. A preview git alias
+// (`flowmark-api-git-<branch>-…`) is not in this set.
+const productionDeploymentHosts = new Set([
+  "flowmark-api.vercel.app",
+  "flowmark-api-mumma6s-projects.vercel.app",
+  "flowmark-api-git-main-mumma6s-projects.vercel.app",
+  "flowmark-dashboard.vercel.app",
+  "flowmark-dashboard-mumma6s-projects.vercel.app",
+  "flowmark-dashboard-git-main-mumma6s-projects.vercel.app",
+])
+
+const previewApiLabelPrefix = "flowmark-api-git-"
+const previewDashboardLabelPrefix = "flowmark-dashboard-git-"
+const previewLabelSuffix = "-mumma6s-projects"
+
 export function isProductionPublicHost(hostname: string): boolean {
   return productionPublicHosts.has(hostname.toLowerCase())
+}
+
+export function isProductionDeploymentHost(hostname: string): boolean {
+  return productionDeploymentHosts.has(hostname.toLowerCase())
+}
+
+export function isProductionHost(hostname: string): boolean {
+  return (
+    isProductionPublicHost(hostname) || isProductionDeploymentHost(hostname)
+  )
+}
+
+export function vercelPreviewBranchSlug(
+  ref: string,
+  labelPrefix: string,
+): string | undefined {
+  const slug = ref
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+  if (!slug) {
+    return undefined
+  }
+  const max = 63 - labelPrefix.length - previewLabelSuffix.length
+  return slug.slice(0, max).replace(/-+$/g, "") || undefined
+}
+
+const previewDeploymentOrigin = (
+  env: NodeJS.ProcessEnv,
+  labelPrefix: string,
+) => {
+  if (!isPreviewRuntime(env)) {
+    return undefined
+  }
+  const ref = env.VERCEL_GIT_COMMIT_REF
+  if (!ref) {
+    return undefined
+  }
+  const slug = vercelPreviewBranchSlug(ref, labelPrefix)
+  if (!slug) {
+    return undefined
+  }
+  return `https://${labelPrefix}${slug}${previewLabelSuffix}.vercel.app`
+}
+
+export function previewApiOrigin(
+  env: NodeJS.ProcessEnv = process.env,
+): string | undefined {
+  return previewDeploymentOrigin(env, previewApiLabelPrefix)
+}
+
+export function previewDashboardOrigin(
+  env: NodeJS.ProcessEnv = process.env,
+): string | undefined {
+  return previewDeploymentOrigin(env, previewDashboardLabelPrefix)
 }
 
 export function isPreviewRuntime(
@@ -61,7 +133,7 @@ export const assertPreviewDatabase = Effect.fn("assertPreviewDatabase")(
         reason: `Refusing preview database: host ${host} is not a Neon host.`,
       })
     }
-    if (isProductionPublicHost(host)) {
+    if (isProductionHost(host)) {
       return yield* new PreviewDatabaseError({
         reason: `Refusing preview database: host ${host} is a production host.`,
       })
@@ -89,7 +161,7 @@ export const assertPreviewAuthOrigins = Effect.fn("assertPreviewAuthOrigins")(
           reason: "Refusing preview auth: an origin is not a valid URL.",
         }),
       )
-      if (isProductionPublicHost(host)) {
+      if (isProductionHost(host)) {
         return yield* new PreviewAuthOriginError({
           reason: `Refusing preview auth: ${host} is a production host.`,
         })
@@ -116,7 +188,7 @@ export const assertPreviewDashboardApi = Effect.fn("assertPreviewDashboardApi")(
           "Refusing preview dashboard: FLOWMARK_API_URL is not a valid URL.",
       }),
     )
-    if (isProductionPublicHost(host)) {
+    if (isProductionHost(host)) {
       return yield* new PreviewDashboardApiError({
         reason: `Refusing preview dashboard: ${host} is a production host.`,
       })
