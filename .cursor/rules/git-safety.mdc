@@ -1,0 +1,33 @@
+---
+description: Git, pull request, and Production safety gates for AI agents in Flowmark
+alwaysApply: true
+---
+
+# Git and Production safety
+
+Follow these gates for every conversation. **Explicit approval** means the user
+clearly authorizes that **specific** operation in the current request.
+
+Phrases like “implement this task” or “finish the feature” do **not** authorize
+merge, direct push to `main`, Production deploy, force-push, history rewrite,
+or destructive cloud/database work.
+
+## Required approval before acting
+
+| Operation | Rule |
+| --------- | ---- |
+| Push to `main` | Never without explicit approval. Prefer feature branches and PRs. Direct push to `main` is allowed when the user explicitly asks for it. |
+| Merge a PR | Never without explicit approval. |
+| Deploy to Production | Never without explicit approval. Merging to `main` deploys Production — treat merge as deploy only when the user explicitly approves merge (or deploy). |
+| Force-push, reset shared branches, rewrite history | Never without explicit approval. |
+| Production DB migrations, destructive Neon/Vercel/cloud changes | Never without explicit approval. |
+
+## Allowed without extra gates
+
+Creating branches, implementing tasks, running tests, committing on a feature
+branch, pushing that branch, and opening a PR when the work is ready for review.
+These are normal agent workflow — still do **not** merge, push to `main`
+(unless explicitly approved), or deploy without the gates above.
+
+When in doubt, stop and ask before push-to-`main`, merge, deploy, force-push,
+or destructive production operations.
