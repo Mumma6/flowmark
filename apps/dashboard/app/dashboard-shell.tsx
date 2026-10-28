@@ -268,7 +268,7 @@ export function DashboardShell({
                       variant="ghost"
                       size="icon"
                       className="shrink-0 lg:hidden"
-                    />
+                    /> 
                   }
                   aria-label="Open navigation"
                 >
@@ -292,6 +292,7 @@ export function DashboardShell({
             id="dashboard-main"
             className="mx-auto w-full max-w-[1600px] p-4 sm:p-8"
           >
+            <h1>Preview test 6</h1>
             {children}
           </main>
         </div>

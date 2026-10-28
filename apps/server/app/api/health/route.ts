@@ -1,3 +1,3 @@
 export function GET() {
-  return Response.json({ status: "ok", service: "flowmark-api" })
+  return Response.json({ status: "ok", service: "flowmark-api preview test" })
 }
