@@ -12,10 +12,11 @@ const readWorkflow = (name) => readFileSync(join(workflowsDir, name), "utf8")
 
 const requiredCheckJobName = () => {
   const yaml = readWorkflow("pull-request.yml")
-  const match = yaml.match(
-    /^\s*check:\s*\n\s*name:\s*(.+)$/m,
+  const match = yaml.match(/^\s*check:\s*\n\s*name:\s*(.+)$/m)
+  assert.ok(
+    match,
+    "pull-request check job name is required for branch rulesets",
   )
-  assert.ok(match, "pull-request check job name is required for branch rulesets")
   return match[1].trim()
 }
 
@@ -64,20 +65,17 @@ test("main ruleset requires the pull-request job check name", () => {
     (rule) => rule.type === "required_status_checks",
   )
   assert.ok(statusRule)
-  assert.equal(
-    statusRule.parameters.required_status_checks[0].context,
-    jobName,
-  )
+  assert.equal(statusRule.parameters.required_status_checks[0].context, jobName)
 
   const pullRequestRule = ruleset.rules.find(
     (rule) => rule.type === "pull_request",
   )
   assert.ok(pullRequestRule)
-  assert.equal(
-    pullRequestRule.parameters.required_approving_review_count,
-    0,
-  )
+  assert.equal(pullRequestRule.parameters.required_approving_review_count, 0)
 
   const updateRule = ruleset.rules.find((rule) => rule.type === "update")
-  assert.ok(updateRule, "update rule restricts merge/push on main to bypass only")
+  assert.ok(
+    updateRule,
+    "update rule restricts merge/push on main to bypass only",
+  )
 })

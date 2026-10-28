@@ -23,8 +23,14 @@ creating a PR is not permission to merge or deploy.
    (1–2 sentences on purpose — no confidential detail).
 5. Scan for unrelated files, secrets, `.env` or credential material,
    temporary debugging code, and accidental edits.
-6. Run relevant tests and quality checks (for example `pnpm check`, targeted
-   package tests, migration tests). Record **actual** results only.
+6. **Run `pnpm check` from the repository root** before the first push for the
+   PR and before `gh pr create`. This matches CI (`format:check`, lint,
+   typecheck, test). If it fails, fix the failure (including
+   `pnpm exec prettier --write` on touched files when format check fails) and
+   re-run until it passes. Do not push or open the PR while `pnpm check` is
+   red. For changes that truly cannot use the full monorepo check, run the
+   narrowest equivalent and say so in **Verification** — default is always
+   `pnpm check`.
 7. Note database migrations, infrastructure changes, Vercel or Neon impact,
    and any manual deployment steps.
 
@@ -91,9 +97,14 @@ merge, deploy, force-push, and destructive production operations.
 - No unrelated work in the same PR.
 - Push the feature branch and open a PR when the change is ready for review.
 - Never merge or deploy unless the user explicitly approves that step.
+- **Gate:** `pnpm check` must pass locally immediately before `git push -u`
+  (or the final push) and `gh pr create`. Skipping this gate causes the same
+  failure on the pull request workflow.
 
 When creating a PR, gather state in parallel where useful: `git status`,
 diff against base, recent commits, and whether the branch tracks remote.
+Run `pnpm check` after the diff is final and before any push that precedes
+`gh pr create`.
 
 ## Preview verification
 
