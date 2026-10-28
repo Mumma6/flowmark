@@ -7,8 +7,7 @@ import { fileURLToPath } from "node:url"
 const repoRoot = join(fileURLToPath(new URL(".", import.meta.url)), "..")
 const workflowsDir = join(repoRoot, ".github", "workflows")
 
-const readWorkflow = (name) =>
-  readFileSync(join(workflowsDir, name), "utf8")
+const readWorkflow = (name) => readFileSync(join(workflowsDir, name), "utf8")
 
 test("pull-request workflow runs pnpm check on pull_request with least privilege", () => {
   const yaml = readWorkflow("pull-request.yml")
@@ -24,6 +23,15 @@ test("pull-request workflow runs pnpm check on pull_request with least privilege
     yaml,
     /Must not receive database, Neon, Vercel, or npm credentials/,
   )
+})
+
+test("pnpm check script includes unit tests", () => {
+  const pkg = JSON.parse(readFileSync(join(repoRoot, "package.json"), "utf8"))
+  assert.match(pkg.scripts.check, /pnpm test/)
+})
+
+test("intentional failure probe for CI contract", () => {
+  assert.fail("temporary probe")
 })
 
 test("publish-sdk workflow still publishes only on dispatch or sdk-v* tags", () => {
