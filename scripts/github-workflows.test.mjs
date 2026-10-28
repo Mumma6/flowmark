@@ -6,8 +6,18 @@ import { fileURLToPath } from "node:url"
 
 const repoRoot = join(fileURLToPath(new URL(".", import.meta.url)), "..")
 const workflowsDir = join(repoRoot, ".github", "workflows")
+const scriptsDir = join(repoRoot, "scripts")
 
 const readWorkflow = (name) => readFileSync(join(workflowsDir, name), "utf8")
+
+const requiredCheckJobName = () => {
+  const yaml = readWorkflow("pull-request.yml")
+  const match = yaml.match(
+    /^\s*check:\s*\n\s*name:\s*(.+)$/m,
+  )
+  assert.ok(match, "pull-request check job name is required for branch rulesets")
+  return match[1].trim()
+}
 
 test("pull-request workflow runs pnpm check on pull_request with least privilege", () => {
   const yaml = readWorkflow("pull-request.yml")
@@ -36,4 +46,38 @@ test("publish-sdk workflow still publishes only on dispatch or sdk-v* tags", () 
   assert.match(yaml, /workflow_dispatch:/)
   assert.match(yaml, /tags:\s*\n\s*-\s*"sdk-v\*"/m)
   assert.doesNotMatch(yaml, /^\s*pull_request:/m)
+})
+
+test("main ruleset requires the pull-request job check name", () => {
+  const jobName = requiredCheckJobName()
+  const ruleset = JSON.parse(
+    readFileSync(join(scriptsDir, "github-main-ruleset.json"), "utf8"),
+  )
+
+  assert.equal(ruleset.enforcement, "active")
+  assert.deepEqual(ruleset.conditions.ref_name.include, ["refs/heads/main"])
+  assert.equal(ruleset.bypass_actors.length, 1)
+  assert.equal(ruleset.bypass_actors[0].actor_type, "User")
+  assert.equal(ruleset.bypass_actors[0].bypass_mode, "always")
+
+  const statusRule = ruleset.rules.find(
+    (rule) => rule.type === "required_status_checks",
+  )
+  assert.ok(statusRule)
+  assert.equal(
+    statusRule.parameters.required_status_checks[0].context,
+    jobName,
+  )
+
+  const pullRequestRule = ruleset.rules.find(
+    (rule) => rule.type === "pull_request",
+  )
+  assert.ok(pullRequestRule)
+  assert.equal(
+    pullRequestRule.parameters.required_approving_review_count,
+    0,
+  )
+
+  const updateRule = ruleset.rules.find((rule) => rule.type === "update")
+  assert.ok(updateRule, "update rule restricts merge/push on main to bypass only")
 })
