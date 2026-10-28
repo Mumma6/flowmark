@@ -1,0 +1,129 @@
+# Preview Environments
+
+Flowmark uses Vercel Preview deployments to test changes before merging them into Production.
+
+## How it works
+
+When a new Pull Request is created, Vercel automatically deploys Preview versions of the affected applications:
+
+| Application   | Production          |
+| ------------- | ------------------- |
+| Landing page  | `flowmark.dev`      |
+| Dashboard     | `app.flowmark.dev`  |
+| API           | `api.flowmark.dev`  |
+| Documentation | `docs.flowmark.dev` |
+
+Each PR gets its own deployment URLs, typically under `*.vercel.app`.
+
+All Preview deployments share a single Neon database branch named `preview`.
+
+**Preview and Production use separate databases and environment variables.**
+
+## Testing a Pull Request
+
+1. Create a feature branch and open a PR against `main`.
+2. Wait for the Vercel Preview deployments to finish.
+3. Open the Preview URLs from the PR or Vercel dashboard.
+4. Test the changed functionality.
+5. For authenticated features, register or sign in using a Preview account.
+6. Verify that projects, workflows, and telemetry behave as expected.
+7. Merge the PR when everything is ready.
+
+Changes are deployed to Production when merged into `main`.
+
+## Preview Database
+
+Neon contains two separate branches:
+
+- `production` — real application data.
+- `preview` — temporary test data.
+
+The Preview database has the same application schema but does not contain production users or application data.
+
+Because all PRs share the same Preview database, test accounts and workflows remain available between PRs until manually removed.
+
+### Resetting Preview Data
+
+For now, the Preview database is reset manually through the Neon SQL Editor.
+
+**WARNING: Always select the `preview` branch in Neon before running destructive SQL. Never run this against `production`.**
+
+**Step 1 — Generate the SQL**
+
+Run:
+
+```sql
+SELECT
+  'TRUNCATE TABLE ' ||
+  string_agg(format('%I.%I', schemaname, tablename), ', ') ||
+  ' RESTART IDENTITY CASCADE;'
+FROM pg_tables
+WHERE schemaname = 'public'
+  AND tablename NOT IN ('__drizzle_migrations');
+```
+
+This generates a `TRUNCATE` statement without executing it.
+
+**Step 2 — Review and execute**
+
+Copy the generated SQL statement.
+
+Confirm again that the selected Neon branch is `preview`, review the table list, and execute the statement.
+
+This will:
+
+- Delete test users and sessions.
+- Delete workspaces, projects, and API keys.
+- Delete workflows, runs, and telemetry.
+- Preserve database tables, columns, indexes, and schema.
+- Preserve Drizzle migration history, provided no migration tables are included.
+
+**Note:** `CASCADE` can also affect dependent tables not explicitly listed. Review the statement before execution.
+
+After resetting, register a new test account in the Preview dashboard.
+
+## Database Schema Changes
+
+Preview and Production do not automatically share schema changes.
+
+When a PR introduces a database migration:
+
+1. Apply the migration to Neon `preview` using the guarded Preview migration workflow.
+2. Test the feature against Preview.
+3. Merge the PR once verified.
+4. Apply the Production migration in the appropriate deployment order, using the guarded Production migration workflow.
+
+For breaking schema changes, follow an expand-and-contract strategy.
+
+**Never run database migrations automatically during Vercel builds.**
+
+## Known Limitations
+
+- All PRs share one Preview database.
+- Test data is not automatically cleared.
+- Schema changes can affect other Preview deployments.
+- Preview authentication uses separate users and sessions from Production.
+- Vercel Preview URLs may change between branches or deployments.
+- Merging a PR does not automatically migrate the Production database.
+
+This setup is intentionally simple because Flowmark currently uses one active PR at a time.
+
+If parallel PR development becomes common, we can introduce separate Neon branches per PR.
+
+## Useful Links
+
+- [Vercel Dashboard](https://vercel.com/dashboard)
+- [Neon Console](https://console.neon.tech)
+- [Infrastructure Roadmap](../INFRASTRUCTURE-ROADMAP.md)
+
+## Quick Checklist
+
+Before merging a PR:
+
+- [ ] Preview deployments are successful.
+- [ ] Dashboard authentication works.
+- [ ] API can read and write to Neon Preview.
+- [ ] Changed functionality has been tested.
+- [ ] No test data has reached Production.
+- [ ] Database migrations are accounted for, if applicable.
+- [ ] The PR is ready to merge.
