@@ -1,7 +1,11 @@
 import { Button } from "@flowmark/ui"
 import { Arrow } from "./brand"
 import { CodeShowcase } from "./code-showcase"
-import { overlineClassName, sectionTitleClassName, shellClassName } from "./shell"
+import {
+  overlineClassName,
+  sectionTitleClassName,
+  shellClassName,
+} from "./shell"
 import { docsUrl } from "./site-links"
 
 export function InstrumentationSection() {
@@ -14,7 +18,9 @@ export function InstrumentationSection() {
       <div className={shellClassName}>
         <div className="mb-8 flex flex-col items-start justify-between gap-4 sm:mb-10 sm:flex-row sm:items-end sm:gap-8">
           <div>
-            <p className={overlineClassName}>A little code. A clearer account.</p>
+            <p className={overlineClassName}>
+              A little code. A clearer account.
+            </p>
             <h2 id="how-title" className={`${sectionTitleClassName} mt-4`}>
               Keep the logic. See the execution.
             </h2>

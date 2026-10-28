@@ -49,13 +49,13 @@ export const authorizeUser = Effect.fn("AuthorizeProject.authorizeUser")(
 
 Use Effect's matchers instead of nested `if`, `switch`, or `result._tag ===`.
 
-| Value | Use |
-| ----- | --- |
-| Tagged error / union | `Match.value(error).pipe(Match.tag(...), Match.orElse(...))` |
-| `Either` | `Either.match({ onLeft, onRight })` |
-| `Exit` | `Exit.match({ onSuccess, onFailure })` |
-| `Option` | `Option.match({ onNone, onSome })` |
-| Cause | `Match.value(cause).pipe(Match.tag("Fail", ...), Match.orElse(...))` |
+| Value                | Use                                                                  |
+| -------------------- | -------------------------------------------------------------------- |
+| Tagged error / union | `Match.value(error).pipe(Match.tag(...), Match.orElse(...))`         |
+| `Either`             | `Either.match({ onLeft, onRight })`                                  |
+| `Exit`               | `Exit.match({ onSuccess, onFailure })`                               |
+| `Option`             | `Option.match({ onNone, onSome })`                                   |
+| Cause                | `Match.value(cause).pipe(Match.tag("Fail", ...), Match.orElse(...))` |
 
 Prefer `Match.exhaustive` when every member of a closed union must be handled.
 

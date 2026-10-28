@@ -20,9 +20,13 @@ function run(command, args) {
 }
 
 function readPackedManifest(tarballPath) {
-  const listing = spawnSync("tar", ["-xOf", tarballPath, "package/package.json"], {
-    encoding: "utf8",
-  })
+  const listing = spawnSync(
+    "tar",
+    ["-xOf", tarballPath, "package/package.json"],
+    {
+      encoding: "utf8",
+    },
+  )
   if (listing.status !== 0) {
     console.error(`Failed to read package.json from ${tarballPath}.`)
     process.exit(1)

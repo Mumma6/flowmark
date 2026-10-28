@@ -32,8 +32,8 @@ export function SecretAlert({
       <AlertTitle>Copy this key now</AlertTitle>
       <AlertDescription className="grid gap-3">
         <p>
-          {label} <code>{secret.prefix}…</code>. Flowmark will not show the
-          full secret again.
+          {label} <code>{secret.prefix}…</code>. Flowmark will not show the full
+          secret again.
         </p>
         <div className="flex flex-wrap items-center gap-2">
           <code className="break-all text-xs">{secret.secret}</code>

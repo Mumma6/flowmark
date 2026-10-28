@@ -67,8 +67,9 @@ describe("configured HTTP client", () => {
     client.workflow("checkout").done()
     await client.flush()
     const events = await Promise.all(
-      fetcher.mock.calls.map(async (call) =>
-        JSON.parse(await new Response(call[1]?.body).text()).event,
+      fetcher.mock.calls.map(
+        async (call) =>
+          JSON.parse(await new Response(call[1]?.body).text()).event,
       ),
     )
     const starts = events.filter((event) => event.type === "started")
@@ -108,8 +109,9 @@ describe("configured HTTP client", () => {
       _tag: "WorkflowEventValidationError",
     })
     const types = await Promise.all(
-      fetcher.mock.calls.map(async ([, options]) =>
-        JSON.parse(await new Response(options?.body).text()).event.type,
+      fetcher.mock.calls.map(
+        async ([, options]) =>
+          JSON.parse(await new Response(options?.body).text()).event.type,
       ),
     )
     expect(types).toEqual(["started", "completed"])

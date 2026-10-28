@@ -162,7 +162,6 @@ function OnboardingContent({
         <Card className="overflow-hidden">
           <CardHeader>
             <CardTitle>{currentStep.title}</CardTitle>
-      
           </CardHeader>
           <CardContent className="grid gap-6">
             {currentStep.id === "project" && (

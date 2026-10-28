@@ -328,9 +328,7 @@ describe("workflow event schema", () => {
       },
     },
   ])("rejects $name", ({ event }) => {
-    const result = Effect.runSync(
-      Effect.either(decodeWorkflowEvent(event)),
-    )
+    const result = Effect.runSync(Effect.either(decodeWorkflowEvent(event)))
     Either.match(result, {
       onLeft: () => undefined,
       onRight: () => expect.fail("expected an invalid workflow event"),

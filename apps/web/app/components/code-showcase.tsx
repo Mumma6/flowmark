@@ -69,8 +69,7 @@ function ExamplePanel({ example }: { example: (typeof examples)[number] }) {
 
 export function CodeShowcase() {
   const [scenario, setScenario] = useState(examples[0]!.id)
-  const example =
-    examples.find((item) => item.id === scenario) ?? examples[0]!
+  const example = examples.find((item) => item.id === scenario) ?? examples[0]!
 
   return (
     <div className="min-w-0 w-full">

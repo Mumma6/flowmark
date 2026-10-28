@@ -48,27 +48,27 @@ Enable the AI Gateway on the branch and get `NEON_AI_GATEWAY_TOKEN` and the bare
 For TypeScript apps, use Neon's `@neon/ai-sdk-provider` 1.0.0+ with the [Vercel AI SDK](https://ai-sdk.dev) (`ai`, 6+) (`npm install @neon/ai-sdk-provider ai dotenv`). The provider reads `NEON_AI_GATEWAY_TOKEN` and `NEON_AI_GATEWAY_BASE_URL` directly and sends embedding requests to `/v1/embeddings`. Load `.env` in a standalone app; Neon Functions inject the variables automatically.
 
 ```typescript
-import "dotenv/config";
-import { neon } from "@neon/ai-sdk-provider";
-import { embed, embedMany } from "ai";
+import "dotenv/config"
+import { neon } from "@neon/ai-sdk-provider"
+import { embed, embedMany } from "ai"
 
-const embeddingModel = neon.embeddingModel("qwen3-embedding-0-6b");
-const providerOptions = { neon: { dimensions: 1024 } };
+const embeddingModel = neon.embeddingModel("qwen3-embedding-0-6b")
+const providerOptions = { neon: { dimensions: 1024 } }
 // Qwen3 query prompt adapted for Neon documentation search; documents stay unprefixed.
 const queryPrompt =
-  "Instruct: Given a question about Neon, retrieve documentation passages that answer the question\nQuery: ";
+  "Instruct: Given a question about Neon, retrieve documentation passages that answer the question\nQuery: "
 
 const { embeddings: documentEmbeddings } = await embedMany({
   model: embeddingModel,
   values: documentBodies, // non-empty document batch; store vectors by input index
   providerOptions,
   maxParallelCalls: 1,
-});
+})
 const { embedding: queryEmbedding } = await embed({
   model: embeddingModel,
   value: `${queryPrompt}${queryText}`,
   providerOptions,
-}); // bind to $1 below
+}) // bind to $1 below
 ```
 
 Skip empty imports before calling `embedMany`. It returns vectors in input order and splits requests according to the provider's item limit. For large imports, also split document text within the endpoint's token limits and keep database writes bounded.
@@ -80,40 +80,40 @@ For Neon documentation search, the example adapts the task instruction in Qwen3'
 For an existing OpenAI SDK integration, install `openai` and `dotenv` (`npm install openai dotenv`) and configure the client explicitly:
 
 ```typescript
-import "dotenv/config";
-import OpenAI from "openai";
+import "dotenv/config"
+import OpenAI from "openai"
 
-const apiKey = process.env.NEON_AI_GATEWAY_TOKEN;
-const gatewayBaseUrl = process.env.NEON_AI_GATEWAY_BASE_URL;
+const apiKey = process.env.NEON_AI_GATEWAY_TOKEN
+const gatewayBaseUrl = process.env.NEON_AI_GATEWAY_BASE_URL
 if (!apiKey || !gatewayBaseUrl) {
-  throw new Error("Missing Neon AI Gateway credentials");
+  throw new Error("Missing Neon AI Gateway credentials")
 }
 
 const client = new OpenAI({
   apiKey,
   baseURL: `${gatewayBaseUrl}/v1`,
-});
+})
 
 async function embedBatch(inputs: string[]): Promise<number[][]> {
-  if (inputs.length === 0) return [];
+  if (inputs.length === 0) return []
   const response = await client.embeddings.create({
     model: "qwen3-embedding-0-6b",
     input: inputs,
     dimensions: 1024,
     encoding_format: "float",
-  });
-  const vectors: number[][] = [];
-  for (const item of response.data) vectors[item.index] = item.embedding;
+  })
+  const vectors: number[][] = []
+  for (const item of response.data) vectors[item.index] = item.embedding
   return inputs.map((_, index) => {
-    const embedding = vectors[index];
-    if (!embedding) throw new Error(`Missing embedding for input ${index}`);
-    return embedding;
-  });
+    const embedding = vectors[index]
+    if (!embedding) throw new Error(`Missing embedding for input ${index}`)
+    return embedding
+  })
 }
 
-const documentEmbeddings = await embedBatch(documentBodies);
-const [queryEmbedding] = await embedBatch([`${queryPrompt}${queryText}`]);
-if (!queryEmbedding) throw new Error("Missing query embedding");
+const documentEmbeddings = await embedBatch(documentBodies)
+const [queryEmbedding] = await embedBatch([`${queryPrompt}${queryText}`])
+if (!queryEmbedding) throw new Error("Missing query embedding")
 ```
 
 Use the same `queryPrompt` defined above, only for query inputs. Keep each batch within the endpoint's input and rate limits, and pair each vector with its source row using the response `index`. The [OpenAI JavaScript SDK v6](https://github.com/openai/openai-node/blob/v6.0.0/src/resources/embeddings.ts) defaults to requesting base64 and decodes the response as base64. If a compatible endpoint returns float arrays instead, that decoder can silently turn them into zeros. Pass `encoding_format: "float"` explicitly for the AI Gateway; the SDK then returns the float arrays directly. Base64 can reduce response size when an endpoint actually returns base64, but do not assume that format for this gateway.

@@ -35,12 +35,12 @@ run.fail({
 })
 ```
 
-| Field        | Meaning                                              |
-| ------------ | ---------------------------------------------------- |
-| `code`       | Required non-empty stable code, max 128 characters   |
-| `message`    | Optional safe description, max 2,048 characters      |
-| `retryable`  | Optional application policy for the failure          |
-| `result`     | Optional bounded business summary, same as `done()`  |
+| Field       | Meaning                                             |
+| ----------- | --------------------------------------------------- |
+| `code`      | Required non-empty stable code, max 128 characters  |
+| `message`   | Optional safe description, max 2,048 characters     |
+| `retryable` | Optional application policy for the failure         |
+| `result`    | Optional bounded business summary, same as `done()` |
 
 `code` is required. Do not pass a bare string. Attach `result` when the
 application already knows what was produced before the failure — partial

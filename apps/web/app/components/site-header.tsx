@@ -17,7 +17,10 @@ export function SiteHeader() {
           <a className="hidden hover:text-primary sm:inline" href="#product">
             Product
           </a>
-          <a className="hidden hover:text-primary sm:inline" href="#how-it-works">
+          <a
+            className="hidden hover:text-primary sm:inline"
+            href="#how-it-works"
+          >
             How it works
           </a>
           <a className="hidden hover:text-primary lg:inline" href="#faq">

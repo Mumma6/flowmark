@@ -30,9 +30,9 @@ export default function HomePage() {
       <p className="internal-eyebrow">LOCAL CONTRIBUTOR REFERENCE</p>
       <h1>Flowmark internal documentation</h1>
       <p className="internal-intro">
-        Engineering setup, architecture, and decisions that ship with the
-        public repository. Customer-facing SDK documentation lives in the
-        separate docs app.
+        Engineering setup, architecture, and decisions that ship with the public
+        repository. Customer-facing SDK documentation lives in the separate docs
+        app.
       </p>
       <div className="internal-guides">
         {guides.map((guide) => (
@@ -46,9 +46,9 @@ export default function HomePage() {
         ))}
       </div>
       <p className="internal-intro">
-        Product vision, roadmap, infrastructure ops, and SDK release notes
-        live in the local-only <code>private/</code> folder (not rendered
-        here). Open those Markdown files in the editor.
+        Product vision, roadmap, infrastructure ops, and SDK release notes live
+        in the local-only <code>private/</code> folder (not rendered here). Open
+        those Markdown files in the editor.
       </p>
       <p className="internal-warning">
         This app has no authentication. It binds to 127.0.0.1 and must not be

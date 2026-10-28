@@ -79,18 +79,18 @@ change business behavior.
 
 ## API
 
-| Method | Role |
-| --- | --- |
-| `createFlowmark()` | Shared client |
-| `workflow(name, options?)` | Start or continue a run |
-| `flow.runId` | This execution's id |
-| `flow.step(name)` | Instant milestone |
-| `flow.operation(name, fn)` | Timed work (failures stay on the timeline) |
-| `flow.progress({ completed, total?, unit? })` | Absolute snapshot |
-| `flow.error({ code, handled, retryable? })` | Non-terminal observation |
-| `flow.setProperties(props)` | Amend run context |
-| `flow.done({ result? })` / `flow.fail({ code, result? })` | End the run |
-| `flowmark.flush()` / `shutdown()` | Node delivery drain (Next drains itself) |
+| Method                                                    | Role                                       |
+| --------------------------------------------------------- | ------------------------------------------ |
+| `createFlowmark()`                                        | Shared client                              |
+| `workflow(name, options?)`                                | Start or continue a run                    |
+| `flow.runId`                                              | This execution's id                        |
+| `flow.step(name)`                                         | Instant milestone                          |
+| `flow.operation(name, fn)`                                | Timed work (failures stay on the timeline) |
+| `flow.progress({ completed, total?, unit? })`             | Absolute snapshot                          |
+| `flow.error({ code, handled, retryable? })`               | Non-terminal observation                   |
+| `flow.setProperties(props)`                               | Amend run context                          |
+| `flow.done({ result? })` / `flow.fail({ code, result? })` | End the run                                |
+| `flowmark.flush()` / `shutdown()`                         | Node delivery drain (Next drains itself)   |
 
 Options on `workflow()`: `id`, `properties`, `environment`, `release`,
 `correlationId`, `parentRunId`.

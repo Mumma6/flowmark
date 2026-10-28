@@ -18,10 +18,9 @@ export interface DeliveryQueueService {
   readonly shutdown: Effect.Effect<void, FlowmarkDeliveryError>
 }
 
-export class DeliveryQueue extends Context.Tag("@flowmarkdev/node/DeliveryQueue")<
-  DeliveryQueue,
-  DeliveryQueueService
->() {
+export class DeliveryQueue extends Context.Tag(
+  "@flowmarkdev/node/DeliveryQueue",
+)<DeliveryQueue, DeliveryQueueService>() {
   static layer(onError?: InstrumentationErrorHandler) {
     return Layer.scoped(
       DeliveryQueue,

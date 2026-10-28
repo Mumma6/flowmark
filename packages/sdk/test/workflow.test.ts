@@ -252,7 +252,10 @@ describe("workflow", () => {
 
   it("wraps promise callbacks without replacing results or application errors", async () => {
     const transport = new MemoryTransport()
-    const flow = workflow("checkout", { id: "order_operation_callback", transport })
+    const flow = workflow("checkout", {
+      id: "order_operation_callback",
+      transport,
+    })
     const result = await flow.operation("load-customer", async () => ({
       customerId: "customer-1",
     }))
@@ -366,7 +369,10 @@ describe("workflow", () => {
     flow.progress({ completed: 0, total: 4, unit: "rows" })
     flow.progress({ completed: 2, total: 4, unit: "rows" })
     flow.done()
-    const callback = await flow.operation("after-completion", async () => "result")
+    const callback = await flow.operation(
+      "after-completion",
+      async () => "result",
+    )
     expect(callback).toBe("result")
     flow.progress({ completed: 4, total: 4, unit: "rows" })
 

@@ -1,9 +1,5 @@
 import { Effect, Exit } from "effect"
-import {
-  IngestWorkflowEvents,
-  logFailure,
-  runApi,
-} from "@flowmark/api"
+import { IngestWorkflowEvents, logFailure, runApi } from "@flowmark/api"
 import { readJsonBody } from "./request-body"
 
 export async function handleIngestion(request: Request) {

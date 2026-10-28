@@ -93,9 +93,7 @@ export function OperationWaterfall({
 }) {
   const spans = buildOperationSpans(events)
   const gaps = operationIdleGaps(spans)
-  const gapById = new Map(
-    gaps.map((gap) => [gap.afterOperationId, gap.idleMs]),
-  )
+  const gapById = new Map(gaps.map((gap) => [gap.afterOperationId, gap.idleMs]))
   if (spans.length === 0) {
     return (
       <p className="px-5 py-6 text-sm leading-6 text-muted-foreground">

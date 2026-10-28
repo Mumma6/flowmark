@@ -2,7 +2,10 @@ import type { ComponentProps } from "react"
 import { FlowmarkMark } from "./flowmark-mark"
 import { cn } from "./utils"
 
-export function FlowmarkLockup({ className, ...props }: ComponentProps<"span">) {
+export function FlowmarkLockup({
+  className,
+  ...props
+}: ComponentProps<"span">) {
   return (
     <span
       className={cn(

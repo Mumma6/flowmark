@@ -328,7 +328,12 @@ export function FailureCodeChart({
         margin={{ left: 4, right: 16 }}
       >
         <CartesianGrid horizontal={false} />
-        <XAxis type="number" allowDecimals={false} tickLine={false} axisLine={false} />
+        <XAxis
+          type="number"
+          allowDecimals={false}
+          tickLine={false}
+          axisLine={false}
+        />
         <YAxis
           type="category"
           dataKey="label"

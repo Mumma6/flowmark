@@ -23,13 +23,11 @@ export const listApiKeys = Effect.fn("listApiKeys")(function* (
       .where(eq(projectApiKeys.projectId, projectId))
       .orderBy(desc(projectApiKeys.createdAt)),
   )
-  return rows.map(
-    (row): ApiKeySummary => ({
-      id: row.id,
-      name: row.name,
-      prefix: row.prefix,
-      permission: row.permission,
-      createdAt: row.createdAt.toISOString(),
-    }),
-  )
+  return rows.map((row): ApiKeySummary => ({
+    id: row.id,
+    name: row.name,
+    prefix: row.prefix,
+    permission: row.permission,
+    createdAt: row.createdAt.toISOString(),
+  }))
 })

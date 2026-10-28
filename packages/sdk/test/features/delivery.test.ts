@@ -107,7 +107,8 @@ describe("workflow delivery feature", () => {
     )
 
     Either.match(result, {
-      onLeft: (error) => expect(error).toMatchObject({ _tag: "FlowmarkHttpError" }),
+      onLeft: (error) =>
+        expect(error).toMatchObject({ _tag: "FlowmarkHttpError" }),
       onRight: () => expect.fail("expected an encoding failure"),
     })
     expect(execute).not.toHaveBeenCalled()

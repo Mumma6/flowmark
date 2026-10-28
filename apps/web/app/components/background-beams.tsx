@@ -53,7 +53,8 @@ export function BackgroundBeams({
             "animate-beam-travel motion-reduce:animate-none",
             index === 1 && "[animation-delay:1.6s]",
             index === 2 && "[animation-delay:3.2s]",
-            index === 3 && "[animation-delay:4.8s] [animation-direction:reverse]",
+            index === 3 &&
+              "[animation-delay:4.8s] [animation-direction:reverse]",
             index % 2 === 1 && index !== 3 && "[animation-direction:reverse]",
           )}
           stroke={`url(#${travelId})`}

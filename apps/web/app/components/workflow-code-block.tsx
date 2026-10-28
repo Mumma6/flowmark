@@ -16,7 +16,10 @@ function HighlightedCode({ value }: { value: string }) {
   const sourceLines = value.split("\n")
 
   return (
-    <CodeBlockContent className="overflow-auto text-xs leading-[1.9]" lineNumbers>
+    <CodeBlockContent
+      className="overflow-auto text-xs leading-[1.9]"
+      lineNumbers
+    >
       {lines.map((line, index) => (
         <CodeBlockLine
           key={index}

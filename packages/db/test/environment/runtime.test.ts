@@ -10,9 +10,7 @@ import {
   readMigrationDatabaseUrl,
 } from "../../src/environment/runtime.js"
 
-const leftReason = <A>(
-  effect: Effect.Effect<A, { readonly reason: string }>,
-) =>
+const leftReason = <A>(effect: Effect.Effect<A, { readonly reason: string }>) =>
   Either.match(Effect.runSync(Effect.either(effect)), {
     onLeft: (error) => error.reason,
     onRight: () => {

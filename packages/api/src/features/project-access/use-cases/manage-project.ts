@@ -107,9 +107,10 @@ export interface ManageProjectService {
   >
 }
 
-export class ManageProject extends Context.Tag(
-  "@flowmark/api/ManageProject",
-)<ManageProject, ManageProjectService>() {
+export class ManageProject extends Context.Tag("@flowmark/api/ManageProject")<
+  ManageProject,
+  ManageProjectService
+>() {
   static readonly layer = Layer.effect(
     ManageProject,
     Effect.gen(function* () {
@@ -239,11 +240,7 @@ export class ManageProject extends Context.Tag(
 
       const rotateWriteKey = Effect.fn("ManageProject.rotateWriteKey")(
         function* (userId: string, projectId: string, keyId: string) {
-          const created = yield* createWriteKey(
-            userId,
-            projectId,
-            "Write key",
-          )
+          const created = yield* createWriteKey(userId, projectId, "Write key")
           const deleted = yield* credentials.revokeApiKey(projectId, keyId)
           if (!deleted) {
             return yield* new InvalidInput({

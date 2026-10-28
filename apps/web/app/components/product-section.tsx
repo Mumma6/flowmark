@@ -1,4 +1,8 @@
-import { overlineClassName, sectionTitleClassName, shellClassName } from "./shell"
+import {
+  overlineClassName,
+  sectionTitleClassName,
+  shellClassName,
+} from "./shell"
 
 const pillars = [
   {

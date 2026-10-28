@@ -43,7 +43,9 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
   const trpc = useTRPC()
   const queryClient = useQueryClient()
   const list = useQuery(trpc.project.list.queryOptions())
-  const [selectedId, setSelectedId] = useState<string | null>(readStoredProjectId)
+  const [selectedId, setSelectedId] = useState<string | null>(
+    readStoredProjectId,
+  )
 
   useEffect(() => {
     const projects = list.data
