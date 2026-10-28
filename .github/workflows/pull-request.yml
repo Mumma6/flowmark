@@ -35,4 +35,4 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Check format, lint, typecheck, and unit tests
-        run: pnpm test
+        run: pnpm check

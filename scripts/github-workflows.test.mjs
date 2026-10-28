@@ -30,10 +30,6 @@ test("pnpm check script includes unit tests", () => {
   assert.match(pkg.scripts.check, /pnpm test/)
 })
 
-test("intentional failure probe for CI contract", () => {
-  assert.fail("temporary probe")
-})
-
 test("publish-sdk workflow still publishes only on dispatch or sdk-v* tags", () => {
   const yaml = readWorkflow("publish-sdk.yml")
 
