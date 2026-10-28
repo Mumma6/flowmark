@@ -70,13 +70,13 @@ export async function completeCheckout(orderId: string) {
 
 ## Product
 
-| | |
-| --- | --- |
-| Landing | [flowmark.dev](https://flowmark.dev) |
-| Dashboard | [app.flowmark.dev](https://app.flowmark.dev) |
-| Docs | [docs.flowmark.dev](https://docs.flowmark.dev) |
-| API | [api.flowmark.dev](https://api.flowmark.dev) |
-| npm | [`@flowmarkdev/node`](https://www.npmjs.com/package/@flowmarkdev/node) |
+|           |                                                                        |
+| --------- | ---------------------------------------------------------------------- |
+| Landing   | [flowmark.dev](https://flowmark.dev)                                   |
+| Dashboard | [app.flowmark.dev](https://app.flowmark.dev)                           |
+| Docs      | [docs.flowmark.dev](https://docs.flowmark.dev)                         |
+| API       | [api.flowmark.dev](https://api.flowmark.dev)                           |
+| npm       | [`@flowmarkdev/node`](https://www.npmjs.com/package/@flowmarkdev/node) |
 
 Sign up on the dashboard to create a project and a write key. Password reset
 is not available yet.
@@ -110,17 +110,17 @@ them.
 
 ## Repository
 
-| Path | Purpose |
-| --- | --- |
-| `packages/sdk` | `@flowmarkdev/node` |
-| `packages/core` | Shared event contracts |
-| `packages/api` | Use cases and ports |
-| `packages/db` | Schema, migrations, persistence |
-| `packages/ui` | Shared UI |
-| `apps/server` | API |
-| `apps/dashboard` | Signed-in UI |
-| `apps/web` | Landing |
-| `apps/docs` | Customer docs |
+| Path             | Purpose                         |
+| ---------------- | ------------------------------- |
+| `packages/sdk`   | `@flowmarkdev/node`             |
+| `packages/core`  | Shared event contracts          |
+| `packages/api`   | Use cases and ports             |
+| `packages/db`    | Schema, migrations, persistence |
+| `packages/ui`    | Shared UI                       |
+| `apps/server`    | API                             |
+| `apps/dashboard` | Signed-in UI                    |
+| `apps/web`       | Landing                         |
+| `apps/docs`      | Customer docs                   |
 
 ## Contributing
 

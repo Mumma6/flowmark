@@ -197,8 +197,7 @@ Vary: Origin`,
         "Unsupported or missing POST Content-Type (UNSUPPORTED_MEDIA_TYPE).",
       ],
     ],
-    notes:
-      `The dashboard CORS origin is ${dashboardOrigin}. CORS does not authorize a read; protected procedures still require a read key. Prefer a same-origin server proxy to keep dashboard read keys out of browsers. Standard tRPC batching may return 207 for mixed outcomes.`,
+    notes: `The dashboard CORS origin is ${dashboardOrigin}. CORS does not authorize a read; protected procedures still require a read key. Prefer a same-origin server proxy to keep dashboard read keys out of browsers. Standard tRPC batching may return 207 for mixed outcomes.`,
   },
   {
     id: "trpc-health",
@@ -584,7 +583,13 @@ export default function ApiHome() {
                     <code>event.type</code>
                   </th>
                   <td>
-                    Required: <code>started | step | properties | error | operation_started | operation_completed | operation_failed | progress | completed | failed</code>.
+                    Required:{" "}
+                    <code>
+                      started | step | properties | error | operation_started |
+                      operation_completed | operation_failed | progress |
+                      completed | failed
+                    </code>
+                    .
                   </td>
                 </tr>
                 <tr>
@@ -652,8 +657,8 @@ export default function ApiHome() {
                     <code>failed</code> may include failure details{" "}
                     <code>{`{ code, message?, retryable? }`}</code>. An{" "}
                     <code>error</code> event requires{" "}
-                    <code>{`{ code, message?, retryable?, handled }`}</code>{" "}
-                    and does not terminate the run. Codes are limited to 128
+                    <code>{`{ code, message?, retryable?, handled }`}</code> and
+                    does not terminate the run. Codes are limited to 128
                     characters; messages to 2,048.
                   </td>
                 </tr>

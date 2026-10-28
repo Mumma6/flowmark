@@ -11,18 +11,18 @@ and workflow queries. The dashboard is
 
 ## HTTP endpoints
 
-| Endpoint                        | Purpose                                      |
-| ------------------------------- | -------------------------------------------- |
-| `GET /api/health`               | Database-independent API liveness check      |
-| `GET /api/auth/*`               | Better Auth session lookup                   |
-| `POST /api/auth/*`              | Better Auth sign-in, sign-out, and callbacks |
+| Endpoint                        | Purpose                                       |
+| ------------------------------- | --------------------------------------------- |
+| `GET /api/health`               | Database-independent API liveness check       |
+| `GET /api/auth/*`               | Better Auth session lookup                    |
+| `POST /api/auth/*`              | Better Auth sign-in, sign-out, and callbacks  |
 | `POST /api/register`            | Create an owner, project, and first write key |
-| `GET /api/trpc/{procedure}`     | Typed read/query API used by the dashboard   |
-| `POST /api/trpc/{procedure}`    | tRPC transport; no mutations currently exist |
-| `OPTIONS /api/trpc/{procedure}` | Dashboard CORS preflight                     |
-| `POST /v1/events`               | Private server-side workflow event ingestion |
-| `POST /v1/browser-events`       | Public-key browser event ingestion           |
-| `OPTIONS /v1/browser-events`    | Browser CORS preflight                       |
+| `GET /api/trpc/{procedure}`     | Typed read/query API used by the dashboard    |
+| `POST /api/trpc/{procedure}`    | tRPC transport; no mutations currently exist  |
+| `OPTIONS /api/trpc/{procedure}` | Dashboard CORS preflight                      |
+| `POST /v1/events`               | Private server-side workflow event ingestion  |
+| `POST /v1/browser-events`       | Public-key browser event ingestion            |
+| `OPTIONS /v1/browser-events`    | Browser CORS preflight                        |
 
 The API application's root page (at your API origin; locally
 `http://localhost:3003`) includes expandable request

@@ -48,10 +48,10 @@ try {
 }
 ```
 
-| Member                | Meaning                                 |
-| --------------------- | --------------------------------------- |
-| `operationId`         | Unique UUID for this operation's events |
-| `done(): void`        | Record success and monotonic duration   |
+| Member                | Meaning                                            |
+| --------------------- | -------------------------------------------------- |
+| `operationId`         | Unique UUID for this operation's events            |
+| `done(): void`        | Record success and monotonic duration              |
 | `fail(failure): void` | Record a structured failure and monotonic duration |
 
 `failure` is `{ code, message?, retryable? }`. `code` is required. Do not

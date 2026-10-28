@@ -23,9 +23,9 @@ export function ClosingSection() {
           Understand the execution. Then see what changed.
         </h2>
         <p className="mx-auto mt-4 max-w-[32rem] text-sm leading-7 text-muted-foreground">
-          Mark a process in the TypeScript you already have. Open one run.
-          When something changes across runs, see what changed, where, and
-          which executions to open next.
+          Mark a process in the TypeScript you already have. Open one run. When
+          something changes across runs, see what changed, where, and which
+          executions to open next.
         </p>
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
           <Button asChild size="lg">

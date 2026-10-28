@@ -52,11 +52,11 @@ packages/db/src/
 
 Group by domain (`workflows`, `project-access`), then by kind:
 
-| Folder | Put here | Name like |
-| --- | --- | --- |
+| Folder     | Put here                              | Name like                 |
+| ---------- | ------------------------------------- | ------------------------- |
 | `queries/` | Reads that return rows or read models | `get-project-snapshot.ts` |
-| `writes/` | Inserts, updates, transactions | `append-event.ts` |
-| `sql/` | Shared SQL fragments, no Effect | `run-summaries.ts` |
+| `writes/`  | Inserts, updates, transactions        | `append-event.ts`         |
+| `sql/`     | Shared SQL fragments, no Effect       | `run-summaries.ts`        |
 
 - One primary query, write, or service per file.
 - `get-*` for reads. Imperative domain verbs for writes

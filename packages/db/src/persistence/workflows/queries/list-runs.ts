@@ -3,11 +3,7 @@ import { Database } from "../../database.js"
 import { DatabaseOperation } from "../../database-operation.js"
 import { runQuery } from "../../run-query.js"
 import { listRunsCountSql, listRunsSql } from "../sql/run-summaries.js"
-import type {
-  ListedRun,
-  ListedRunsPage,
-  ListRunsQuery,
-} from "../types.js"
+import type { ListedRun, ListedRunsPage, ListRunsQuery } from "../types.js"
 
 const DEFAULT_LIMIT = 50
 const MAX_LIMIT = 100
@@ -30,10 +26,7 @@ export const listRuns = Effect.fn("listRuns")(function* (
   query: ListRunsQuery,
 ) {
   const db = yield* Database
-  const limit = Math.min(
-    MAX_LIMIT,
-    Math.max(1, query.limit ?? DEFAULT_LIMIT),
-  )
+  const limit = Math.min(MAX_LIMIT, Math.max(1, query.limit ?? DEFAULT_LIMIT))
   const cursor = decodeCursor(query.cursor)
   const filter = {
     workflow: query.workflow,
@@ -79,8 +72,7 @@ export const listRuns = Effect.fn("listRuns")(function* (
   const last = runs[runs.length - 1]
   return {
     runs,
-    nextCursor:
-      hasMore && last ? `${last.startedAt}|${last.id}` : null,
+    nextCursor: hasMore && last ? `${last.startedAt}|${last.id}` : null,
     total: countRow?.count ?? runs.length,
     limit,
   } satisfies ListedRunsPage

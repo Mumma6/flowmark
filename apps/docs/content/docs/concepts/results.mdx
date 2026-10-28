@@ -21,11 +21,11 @@ reviewing what it contains.
 
 ## Three different kinds of information
 
-| Information                                 | Example                          | API                              |
-| ------------------------------------------- | -------------------------------- | -------------------------------- |
-| Context: what this execution concerns       | `batchId`, provider, environment | `workflow()` / `setProperties()` |
-| Progress: what was last reported so far     | 600 of 1,000 products updated    | `progress()`                     |
-| Result: what the run produced               | 988 imported, 12 skipped         | `done({ result })` / `fail({ result })` |
+| Information                             | Example                          | API                                     |
+| --------------------------------------- | -------------------------------- | --------------------------------------- |
+| Context: what this execution concerns   | `batchId`, provider, environment | `workflow()` / `setProperties()`        |
+| Progress: what was last reported so far | 600 of 1,000 products updated    | `progress()`                            |
+| Result: what the run produced           | 988 imported, 12 skipped         | `done({ result })` / `fail({ result })` |
 
 A failed run can still report what it produced before stopping. Use that
 summary together with checkpoints, progress, and the failure code.

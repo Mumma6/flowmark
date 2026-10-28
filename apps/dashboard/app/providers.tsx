@@ -26,9 +26,7 @@ export function Providers({ children }: { children: ReactNode }) {
               return {}
             }
             const projectId = window.localStorage.getItem("flowmark.projectId")
-            return projectId
-              ? { "x-flowmark-project-id": projectId }
-              : {}
+            return projectId ? { "x-flowmark-project-id": projectId } : {}
           },
           fetch(url, options) {
             return fetch(url, { ...options, credentials: "include" })

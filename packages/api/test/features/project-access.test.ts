@@ -200,7 +200,9 @@ describe("Onboarding", () => {
       ).pipe(
         Effect.provide(
           provideOnboarding(
-            projectCredentials({ projectForUser: () => Effect.succeed(null) }),
+            projectCredentials({
+              projectForUser: () => Effect.succeed(undefined),
+            }),
           ),
         ),
       ),

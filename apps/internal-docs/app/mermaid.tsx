@@ -11,9 +11,8 @@ export function Mermaid({ chart }: { chart: string }) {
     let cancelled = false
     const render = async () => {
       try {
-        const { default: mermaid } = (await import(
-          "mermaid/dist/mermaid.esm.min.mjs"
-        )) as typeof import("mermaid")
+        const { default: mermaid } =
+          (await import("mermaid/dist/mermaid.esm.min.mjs")) as typeof import("mermaid")
         mermaid.initialize({
           startOnLoad: false,
           securityLevel: "strict",

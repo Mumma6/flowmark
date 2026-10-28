@@ -24,17 +24,17 @@ console.log(run.runId)
 
 ## Options
 
-| Field           | Type                 | Behavior                                               |
-| --------------- | -------------------- | ------------------------------------------------------ |
+| Field           | Type                 | Behavior                                                          |
+| --------------- | -------------------- | ----------------------------------------------------------------- |
 | `id`            | `string`             | Execution ID; generated if omitted. Reuse it to continue this run |
-| `properties`    | `WorkflowProperties` | Bounded context on the start event                     |
-| `environment`   | `string`             | Overrides the client default                           |
-| `release`       | `string`             | Overrides the client default                           |
-| `correlationId` | `string`             | Explicit grouping; nonblank, max 128 characters        |
-| `parentRunId`   | `string`             | Parent's external run ID; nonblank, max 200 characters |
+| `properties`    | `WorkflowProperties` | Bounded context on the start event                                |
+| `environment`   | `string`             | Overrides the client default                                      |
+| `release`       | `string`             | Overrides the client default                                      |
+| `correlationId` | `string`             | Explicit grouping; nonblank, max 128 characters                   |
+| `parentRunId`   | `string`             | Parent's external run ID; nonblank, max 200 characters            |
 
 Use stable names such as `invoice.import`; put instance IDs in properties.
-Reuse `id` across requests of the *same* execution. Do not reuse an order ID
+Reuse `id` across requests of the _same_ execution. Do not reuse an order ID
 as the run ID across retries or later jobs.
 
 ## Returned handle

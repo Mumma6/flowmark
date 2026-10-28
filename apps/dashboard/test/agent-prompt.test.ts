@@ -14,7 +14,9 @@ it("tells an agent how to install, configure, and choose a process", () => {
 })
 
 it("keeps the write key out of the prompt", () => {
-  expect(prompt).toContain("Never use NEXT_PUBLIC_, commit, print, or chat-paste the write key.")
+  expect(prompt).toContain(
+    "Never use NEXT_PUBLIC_, commit, print, or chat-paste the write key.",
+  )
   expect(prompt).not.toMatch(/fm_[A-Za-z0-9]+/)
   expect(prompt).not.toContain("NEXT_PUBLIC_FLOWMARK_API_KEY")
 })

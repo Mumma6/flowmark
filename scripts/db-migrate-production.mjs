@@ -14,12 +14,8 @@ import {
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..")
 
 if (!process.argv.includes("--confirm-production-migrate")) {
-  console.error(
-    "Production migration requires explicit confirmation.",
-  )
-  console.error(
-    "Usage: pnpm db:migrate:prod -- --confirm-production-migrate",
-  )
+  console.error("Production migration requires explicit confirmation.")
+  console.error("Usage: pnpm db:migrate:prod -- --confirm-production-migrate")
   console.error(
     "This applies committed migrations to Neon using packages/db/.env.neon only.",
   )
@@ -74,14 +70,10 @@ const childEnv = { ...process.env, DATABASE_MIGRATION_URL: migrationUrl }
 delete childEnv.DATABASE_URL
 delete childEnv.FLOWMARK_DEMO_MODE
 
-const result = spawnSync(
-  "pnpm",
-  ["--filter", "@flowmark/db", "db:migrate"],
-  {
-    cwd: repoRoot,
-    stdio: "inherit",
-    env: childEnv,
-  },
-)
+const result = spawnSync("pnpm", ["--filter", "@flowmark/db", "db:migrate"], {
+  cwd: repoRoot,
+  stdio: "inherit",
+  env: childEnv,
+})
 
 process.exit(result.status ?? 1)

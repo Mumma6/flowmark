@@ -5,7 +5,11 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@flowmark/ui"
-import { overlineClassName, sectionTitleClassName, shellClassName } from "./shell"
+import {
+  overlineClassName,
+  sectionTitleClassName,
+  shellClassName,
+} from "./shell"
 
 const questions: ReadonlyArray<{
   value: string
@@ -45,8 +49,8 @@ const questions: ReadonlyArray<{
         <code className="font-mono text-[0.92em] text-[#c5d9bb]">done()</code>{" "}
         or{" "}
         <code className="font-mono text-[0.92em] text-[#c5d9bb]">fail()</code>{" "}
-        for the terminal outcome. A failed operation can sit next to a
-        completed run when your code recovered.
+        for the terminal outcome. A failed operation can sit next to a completed
+        run when your code recovered.
       </>
     ),
   },

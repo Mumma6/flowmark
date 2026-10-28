@@ -18,7 +18,9 @@ const decodeScenario = Effect.fn("decodeScenario")(function* (
 })
 
 export async function POST(request: Request) {
-  const decoded = await Effect.runPromise(Effect.either(decodeScenario(request)))
+  const decoded = await Effect.runPromise(
+    Effect.either(decodeScenario(request)),
+  )
   return Either.match(decoded, {
     onLeft: () =>
       Response.json(

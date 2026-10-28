@@ -1,6 +1,10 @@
 import { Button } from "@flowmark/ui"
 import { Arrow } from "./brand"
-import { overlineClassName, sectionTitleClassName, shellClassName } from "./shell"
+import {
+  overlineClassName,
+  sectionTitleClassName,
+  shellClassName,
+} from "./shell"
 import { docsUrl } from "./site-links"
 
 const contrasts = [
@@ -41,9 +45,9 @@ export function ArchitectureSection() {
             Between job monitoring and general observability.
           </h2>
           <p className="mt-4 max-w-xl text-sm leading-7 text-muted-foreground">
-            The application names the process and reports the evidence.
-            Flowmark does not infer a business process from generic traces,
-            and it does not take over the work.
+            The application names the process and reports the evidence. Flowmark
+            does not infer a business process from generic traces, and it does
+            not take over the work.
           </p>
         </div>
         <ul className="mt-12 space-y-0 border-t border-border">

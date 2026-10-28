@@ -64,32 +64,41 @@ Each task file contains:
 **Execution:** Autonomous / Review required / Approval for live changes
 
 ## Outcome
+
 What will be measurably different when complete?
 
 ## Context and evidence
+
 Relevant files, current behavior, confirmed gaps, and important unknowns.
 
 ## Implementation scope
+
 Required behaviors and constraints; allow the agent to choose sensible internals.
 
 ## Out of scope
+
 Adjacent work explicitly excluded.
 
 ## Acceptance criteria
+
 - [ ] Concrete, verifiable requirement
 - [ ] Automated verification where appropriate
 - [ ] Live or manual verification if needed
 
 ## Dependencies
+
 Relative links to required predecessor tasks, or None.
 
 ## Verification
+
 Commands, tests, or observations that prove the result.
 
 ## Safety and approval
+
 Only task-specific risks and approval gates.
 
 ## Completion notes
+
 Implementation decisions, verified results, and unfinished manual steps.
 ```
 

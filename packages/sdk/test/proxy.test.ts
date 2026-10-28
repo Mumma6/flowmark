@@ -85,10 +85,14 @@ describe("server-only workflow proxy", () => {
   })
 
   it("allows authenticated same-origin submissions", async () => {
-    const fetcher = vi.fn<typeof fetch>(async () => new Response(null, { status: 202 }))
+    const fetcher = vi.fn<typeof fetch>(
+      async () => new Response(null, { status: 202 }),
+    )
     vi.stubGlobal("fetch", fetcher)
     const authorize = vi.fn(async () => true)
-    expect((await createFlowmarkProxy({ ...config, authorize })(request())).status).toBe(202)
+    expect(
+      (await createFlowmarkProxy({ ...config, authorize })(request())).status,
+    ).toBe(202)
     expect(authorize).toHaveBeenCalledOnce()
     expect(fetcher).toHaveBeenCalledOnce()
   })
@@ -106,7 +110,9 @@ describe("server-only workflow proxy", () => {
     const fetcher = vi.fn()
     vi.stubGlobal("fetch", fetcher)
     const incoming = new Request("https://customer.example/api/flowmark", {
-      method: "POST", headers: { origin: "https://customer.example" }, body: "{",
+      method: "POST",
+      headers: { origin: "https://customer.example" },
+      body: "{",
     })
     expect((await createFlowmarkProxy(config)(incoming)).status).toBe(400)
     expect(fetcher).not.toHaveBeenCalled()
@@ -166,30 +172,50 @@ describe("server-only workflow proxy", () => {
     expect(fetcher).not.toHaveBeenCalled()
   })
 
-  it.each([65536, 65537])("enforces the exact byte boundary for a %i-byte payload", async (bytes) => {
-    const fetcher = vi.fn<typeof fetch>(async () => new Response(null, { status: 202 }))
-    vi.stubGlobal("fetch", fetcher)
-    const json = JSON.stringify(input)
-    const body = json + " ".repeat(bytes - new TextEncoder().encode(json).length)
-    const incoming = new Request("https://customer.example/api/flowmark", {
-      method: "POST", headers: { origin: "https://customer.example" }, body,
-    })
-    const response = await createFlowmarkProxy(config)(incoming)
-    expect(response.status).toBe(bytes === 65536 ? 202 : 400)
-    expect(fetcher).toHaveBeenCalledTimes(bytes === 65536 ? 1 : 0)
-  })
+  it.each([65536, 65537])(
+    "enforces the exact byte boundary for a %i-byte payload",
+    async (bytes) => {
+      const fetcher = vi.fn<typeof fetch>(
+        async () => new Response(null, { status: 202 }),
+      )
+      vi.stubGlobal("fetch", fetcher)
+      const json = JSON.stringify(input)
+      const body =
+        json + " ".repeat(bytes - new TextEncoder().encode(json).length)
+      const incoming = new Request("https://customer.example/api/flowmark", {
+        method: "POST",
+        headers: { origin: "https://customer.example" },
+        body,
+      })
+      const response = await createFlowmarkProxy(config)(incoming)
+      expect(response.status).toBe(bytes === 65536 ? 202 : 400)
+      expect(fetcher).toHaveBeenCalledTimes(bytes === 65536 ? 1 : 0)
+    },
+  )
 
   it("propagates request cancellation to the upstream request", async () => {
     const aborted = vi.fn()
     let started!: () => void
-    const ready = new Promise<void>((resolve) => { started = resolve })
-    vi.stubGlobal("fetch", vi.fn<typeof fetch>((_url, options) => new Promise<Response>((_resolve, reject) => {
-      options?.signal?.addEventListener("abort", () => {
-        aborted()
-        reject(new Error("aborted"))
-      }, { once: true })
-      started()
-    })))
+    const ready = new Promise<void>((resolve) => {
+      started = resolve
+    })
+    vi.stubGlobal(
+      "fetch",
+      vi.fn<typeof fetch>(
+        (_url, options) =>
+          new Promise<Response>((_resolve, reject) => {
+            options?.signal?.addEventListener(
+              "abort",
+              () => {
+                aborted()
+                reject(new Error("aborted"))
+              },
+              { once: true },
+            )
+            started()
+          }),
+      ),
+    )
     vi.spyOn(console, "error").mockImplementation(() => {})
     const controller = new AbortController()
     const incoming = new Request(request(), { signal: controller.signal })

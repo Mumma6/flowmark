@@ -23,13 +23,11 @@ export const listBrowserKeys = Effect.fn("listBrowserKeys")(function* (
       .where(eq(projectBrowserKeys.projectId, projectId))
       .orderBy(desc(projectBrowserKeys.createdAt)),
   )
-  return rows.map(
-    (row): BrowserKeySummary => ({
-      id: row.id,
-      name: row.name,
-      prefix: row.prefix,
-      allowedOrigins: row.allowedOrigins,
-      createdAt: row.createdAt.toISOString(),
-    }),
-  )
+  return rows.map((row): BrowserKeySummary => ({
+    id: row.id,
+    name: row.name,
+    prefix: row.prefix,
+    allowedOrigins: row.allowedOrigins,
+    createdAt: row.createdAt.toISOString(),
+  }))
 })

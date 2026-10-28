@@ -20,10 +20,15 @@ export function RunPreview({ preview }: { preview: RunPreviewData }) {
   const failed = preview.status === "Failed"
 
   return (
-    <section className="min-w-0 w-full" aria-label={`${preview.name} run walkthrough`}>
+    <section
+      className="min-w-0 w-full"
+      aria-label={`${preview.name} run walkthrough`}
+    >
       <div className="mb-3 flex min-h-8 flex-wrap items-baseline justify-between gap-2">
         <span className={overlineClassName}>What you see in Flowmark</span>
-        <span className="text-[11px] text-muted-foreground">{preview.duration}</span>
+        <span className="text-[11px] text-muted-foreground">
+          {preview.duration}
+        </span>
       </div>
       <Card
         className={
@@ -34,7 +39,9 @@ export function RunPreview({ preview }: { preview: RunPreviewData }) {
       >
         <CardContent className="p-5 sm:p-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <code className="font-mono text-xs text-[#c4d0c8]">{preview.name}</code>
+            <code className="font-mono text-xs text-[#c4d0c8]">
+              {preview.name}
+            </code>
             <Badge
               variant="outline"
               className={
@@ -53,7 +60,9 @@ export function RunPreview({ preview }: { preview: RunPreviewData }) {
           <h4 className="mt-6 mb-2.5 text-[clamp(1.375rem,2.1vw,1.75rem)] font-medium tracking-tight text-[#f0f5f1]">
             {preview.headline}
           </h4>
-          <p className="text-[13px] leading-7 text-[#b3c1b8]">{preview.explanation}</p>
+          <p className="text-[13px] leading-7 text-[#b3c1b8]">
+            {preview.explanation}
+          </p>
           <dl className="my-6 grid grid-cols-3 gap-2 border-y border-border py-4 sm:gap-3">
             {preview.metrics.map((metric) => (
               <div key={metric.label}>
@@ -67,7 +76,9 @@ export function RunPreview({ preview }: { preview: RunPreviewData }) {
             ))}
           </dl>
           <div className="mb-3 grid gap-1">
-            <strong className="text-[13px] font-medium">Follow the evidence</strong>
+            <strong className="text-[13px] font-medium">
+              Follow the evidence
+            </strong>
             <span className="text-[11px] text-muted-foreground">
               Select an event to inspect it
             </span>

@@ -60,9 +60,7 @@ export function makeClient(
       ): Promise<T>
       function operation<T>(
         name: WorkflowStepName,
-        callbackOrOptions?:
-          | (() => PromiseLike<T>)
-          | WorkflowOperationOptions,
+        callbackOrOptions?: (() => PromiseLike<T>) | WorkflowOperationOptions,
         options?: WorkflowOperationOptions,
       ): WorkflowOperation | Promise<T> {
         const args = splitOperationArgs(callbackOrOptions, options)

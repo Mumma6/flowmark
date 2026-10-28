@@ -5,7 +5,7 @@ A Function Trigger is a branch-scoped rule that POSTs to a Neon Function on a cr
 **Prefer `neon.ts`.** Declare a `triggers` map. The record key is the trigger name. `neon deploy` applies triggers after the functions they target. Names must be unique among every trigger visible on the branch. Triggers that exist remotely but are omitted from `neon.ts` are left alone; delete with `neon triggers delete`.
 
 ```typescript
-import { defineConfig } from "@neon/config/v1";
+import { defineConfig } from "@neon/config/v1"
 
 export default defineConfig({
   functions: {
@@ -28,7 +28,7 @@ export default defineConfig({
       functionPath: "/cron",
     },
   },
-});
+})
 ```
 
 Needs Neon CLI 4.21 or newer (`@neon/config` 1.7.0).

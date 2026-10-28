@@ -223,7 +223,10 @@ export function buildProgressSeries(
 /** Idle gaps between consecutive recorded operation endpoints (ms). */
 export function operationIdleGaps(
   spans: ReadonlyArray<OperationSpan>,
-): ReadonlyArray<{ readonly afterOperationId: string; readonly idleMs: number }> {
+): ReadonlyArray<{
+  readonly afterOperationId: string
+  readonly idleMs: number
+}> {
   const finished = spans
     .filter((span) => span.endedAt != null)
     .sort(
@@ -235,8 +238,7 @@ export function operationIdleGaps(
   for (let index = 0; index < finished.length - 1; index += 1) {
     const current = finished[index]!
     const next = finished[index + 1]!
-    const idleMs =
-      Date.parse(next.startedAt) - Date.parse(current.endedAt!)
+    const idleMs = Date.parse(next.startedAt) - Date.parse(current.endedAt!)
     if (idleMs > 0) {
       gaps.push({ afterOperationId: current.operationId, idleMs })
     }

@@ -22,11 +22,9 @@ export const listProjectsForUser = Effect.fn("listProjectsForUser")(function* (
       .where(eq(projectMembers.userId, userId))
       .orderBy(desc(projects.createdAt)),
   )
-  return rows.map(
-    (row): ProjectSummary => ({
-      id: row.id,
-      name: row.name,
-      createdAt: row.createdAt.toISOString(),
-    }),
-  )
+  return rows.map((row): ProjectSummary => ({
+    id: row.id,
+    name: row.name,
+    createdAt: row.createdAt.toISOString(),
+  }))
 })

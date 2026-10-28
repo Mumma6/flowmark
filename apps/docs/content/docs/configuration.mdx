@@ -5,11 +5,11 @@ description: Choose an entry point, configure a client, and keep credentials in 
 
 ## Choose your entry point
 
-| Runtime                                   | Import                                                | Delivery lifecycle                   |
-| ----------------------------------------- | ----------------------------------------------------- | ------------------------------------ |
-| Node.js scripts, workers, servers         | `@flowmarkdev/node`                                      | Explicit `flush()` / `shutdown()`    |
-| Next.js Route Handlers and Server Actions | `@flowmarkdev/node/next`                                 | Drained automatically with `after()` |
-| Browser event handlers and effects        | `@flowmarkdev/node/browser`                              | Best-effort keepalive delivery       |
+| Runtime                                   | Import                                                      | Delivery lifecycle                   |
+| ----------------------------------------- | ----------------------------------------------------------- | ------------------------------------ |
+| Node.js scripts, workers, servers         | `@flowmarkdev/node`                                         | Explicit `flush()` / `shutdown()`    |
+| Next.js Route Handlers and Server Actions | `@flowmarkdev/node/next`                                    | Drained automatically with `after()` |
+| Browser event handlers and effects        | `@flowmarkdev/node/browser`                                 | Best-effort keepalive delivery       |
 | Same-origin backend proxy                 | `@flowmarkdev/node/proxy` or `@flowmarkdev/node/next/proxy` | Web Request/Response POST handler    |
 
 Do not import the server entry into a browser bundle.

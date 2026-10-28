@@ -73,9 +73,11 @@ describe("HTTP boundaries", () => {
     vi.stubEnv("DATABASE_URL", "postgresql://localhost:5432/flowmark")
     vi.stubEnv("FLOWMARK_DEMO_MODE", "true")
     await expect(
-      appRouter.createCaller({
-        request: new Request("http://localhost"),
-      }).project.snapshot(),
+      appRouter
+        .createCaller({
+          request: new Request("http://localhost"),
+        })
+        .project.snapshot(),
     ).rejects.toMatchObject({
       code: "UNAUTHORIZED",
       message: "Sign in required.",

@@ -98,14 +98,10 @@ console.log(`Applying committed migrations to local database (${host}).`)
 const childEnv = { ...process.env }
 delete childEnv.DATABASE_MIGRATION_URL
 
-const result = spawnSync(
-  "pnpm",
-  ["--filter", "@flowmark/db", "db:migrate"],
-  {
-    cwd: repoRoot,
-    stdio: "inherit",
-    env: childEnv,
-  },
-)
+const result = spawnSync("pnpm", ["--filter", "@flowmark/db", "db:migrate"], {
+  cwd: repoRoot,
+  stdio: "inherit",
+  env: childEnv,
+})
 
 process.exit(result.status ?? 1)

@@ -25,8 +25,7 @@ test("falls back to the local demo secret outside production", () => {
 
 test("refuses a missing secret outside local demo mode", () => {
   Either.match(Effect.runSync(Effect.either(readAuthSecret({}))), {
-    onLeft: (error) =>
-      assert.equal(error._tag, "AuthConfigurationError"),
+    onLeft: (error) => assert.equal(error._tag, "AuthConfigurationError"),
     onRight: () => {
       throw new Error("expected AuthConfigurationError")
     },
