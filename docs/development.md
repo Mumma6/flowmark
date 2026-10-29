@@ -241,6 +241,31 @@ docs need no local env file. Demo mode defaults off and is rejected when
 `BETTER_AUTH_SECRET` on Vercel. Local demo mode falls back to a development
 secret and must not reuse it in production.
 
+### Runtime environment validation
+
+Flowmark keeps Effect Schema for environment validation because it already provides
+typed configuration errors at the API and dashboard boundaries. The missing piece
+was consistent validation of the server's auth and CORS origins, which now share
+one request-time reader. Adding t3-env would duplicate that boundary without
+justifying another dependency.
+
+Hosted API requests require `FLOWMARK_DASHBOARD_ORIGIN` and `BETTER_AUTH_URL`;
+both must be HTTP(S) origins without credentials, paths, query strings, or
+fragments. Local development defaults to `http://localhost:3001`. The dashboard
+requires `FLOWMARK_API_URL` in production and Preview, accepts HTTP(S) URLs
+without credentials, query strings, or fragments, and defaults to
+`http://localhost:3003` only locally. Invalid configuration produces a typed
+runtime error rather than silently choosing localhost. Error messages name the
+setting without including its configured value.
+
+Branch Preview deployments continue deriving sibling API/dashboard origins from
+the Git branch. Staging continues requiring its dedicated staging origins; these
+checks do not restrict self-hosted production instances to Flowmark's domains.
+Demo mode remains forbidden in Production and Preview, including Staging.
+Validation runs on requests rather than module import: server and dashboard builds
+do not require a database, auth secret, or hosted origin configuration. Database
+CLI and SDK configuration are unchanged.
+
 Database schema lives in `packages/db/src/schema`. Set `DATABASE_URL` when generating Drizzle migrations:
 
 ```sh

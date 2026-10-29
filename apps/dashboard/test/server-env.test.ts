@@ -61,6 +61,28 @@ describe("dashboard server environment", () => {
     expect(Effect.runSync(dashboardApiUrl())).toBe("https://preview.example")
   })
 
+  it.each(["invalid", "ftp://api.example", "https://user:opaque@api.example"])(
+    "rejects an invalid API URL without exposing it",
+    (value) => {
+      vi.stubEnv("VERCEL_ENV", "")
+      vi.stubEnv("FLOWMARK_API_URL", value)
+      expect(leftReason(dashboardApiUrl())).toBe(
+        "FLOWMARK_API_URL must be an HTTP(S) URL without credentials, query, or fragment.",
+      )
+    },
+  )
+
+  it("accepts the staging API and rejects demo mode there", () => {
+    vi.stubEnv("VERCEL_ENV", "preview")
+    vi.stubEnv("VERCEL_GIT_COMMIT_REF", "staging")
+    vi.stubEnv("FLOWMARK_API_URL", "https://api.staging.flowmark.dev")
+    vi.stubEnv("FLOWMARK_DEMO_MODE", "true")
+    expect(Effect.runSync(dashboardApiUrl())).toBe(
+      "https://api.staging.flowmark.dev",
+    )
+    expect(leftReason(dashboardDemoModeEnabled())).toMatch(/cannot be enabled/)
+  })
+
   it("keeps demo mode off by default", () => {
     vi.stubEnv("FLOWMARK_DEMO_MODE", "")
     vi.stubEnv("NODE_ENV", "development")
