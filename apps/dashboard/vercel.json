@@ -3,5 +3,6 @@
   "framework": "nextjs",
   "regions": ["fra1"],
   "installCommand": "cd ../.. && pnpm install --frozen-lockfile",
+  "ignoreCommand": "cd ../.. && node scripts/vercel-should-deploy.mjs @flowmark/dashboard",
   "buildCommand": "cd ../.. && pnpm exec turbo build --filter=@flowmark/dashboard"
 }
