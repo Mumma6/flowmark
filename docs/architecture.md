@@ -285,6 +285,15 @@ registrations create an account only; the first project and write key are
 created explicitly in Settings / onboarding. Password reset is off until
 email delivery exists. Do not enable demo mode for real customer data.
 
+The server's authenticated-ingestion integration suite exercises real
+registration, Better Auth session cookies, project/key creation, ingestion,
+persisted-run reads, and cross-project denial against disposable PostgreSQL.
+Session project selection is checked against membership, including a supplied
+`x-flowmark-project-id`; management inputs cannot grant membership. Tests also
+cover forged and signed-out sessions. See the
+[coverage map](./development.md#database-integration-tests) for the CI split
+and browser/hosted verification limits.
+
 ## Limits
 
 Delivery is best-effort with a bounded in-memory pending set, no durable queue or
