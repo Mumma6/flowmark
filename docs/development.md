@@ -220,8 +220,9 @@ without a database, but workflow ingestion and queries require PostgreSQL.
 API unit tests run without PostgreSQL using injected authorization/repository
 services. They cover lazy ingestion, Schema validation, project scoping, typed
 failures, redacted settings, and scoped connection cleanup on success, failure,
-and interruption. Run them with `pnpm --filter @flowmark/api test`; database
-integration coverage additionally needs `TEST_DATABASE_URL` as described below.
+and interruption. Run them with `pnpm --filter @flowmark/api test`. Server HTTP
+integration coverage runs with `pnpm --filter @flowmark/server test` and needs
+`TEST_DATABASE_URL` as described below.
 
 ## Environment and database
 

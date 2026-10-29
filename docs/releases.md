@@ -23,8 +23,11 @@ automation. `apps/dev-harness` and `apps/internal-docs` remain local-only.
 
 Normal work starts on a separate branch after fetching origin. Multiple feature
 PRs can accumulate in Staging. Always select the PR base explicitly; GitHub's
-default branch remains `main`. The existing PR workflow runs for either base.
-Run `pnpm check` before pushing and creating the PR.
+default branch remains `main`. The PR workflow runs for either base: the fast
+format/lint/typecheck/unit job and the disposable-Postgres integration job must
+both pass before merge. Run `pnpm check` before pushing and creating the PR;
+see [database integration tests](./development.md#database-integration-tests)
+for the local equivalent of the integration job.
 
 Release and synchronization PRs use merge commits to preserve shared ancestry.
 Squashing a release would leave the original Staging commits outside main's
@@ -159,5 +162,6 @@ required by this workflow.
 
 Test this change with a feature PR into staging, CI, and a read-only release
 status/preparation review. Check the candidate diff without merging to main or
-creating tags. Verify the actual Production merge, publishing, and post-release
-handling of any main-only changes during approved releases, not through a dummy release.
+creating tags. Verify the actual Production merge, publishing, and handling of
+any independent main changes during approved releases, not through a dummy
+release. An ordinary release needs no post-release synchronization PR.
