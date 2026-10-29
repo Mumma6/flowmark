@@ -209,14 +209,14 @@ function RunComparisonPanel({
                   {formatDuration(comparison.peerP95DurationMs)}
                   {vsP95 != null && (
                     <p className="mt-1 text-xs font-normal text-muted-foreground">
-                      {vsP95 > 0 ? "Slower than p95" : "Within the usual range"}
+                      {vsP95 > 0 ? "Above peer p95" : "At or below peer p95"}
                     </p>
                   )}
                 </dd>
               </div>
             </dl>
             <p className="text-xs text-muted-foreground">
-              Peer success rate among finished peers:{" "}
+              Peer run completion among finished peers:{" "}
               {comparison.peerSuccessRate == null
                 ? "No finished peers"
                 : `${comparison.peerSuccessRate}%`}
@@ -285,7 +285,7 @@ function RunComparisonPanel({
                   <TableHead>Run</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Started (UTC)</TableHead>
-                  <TableHead>Business result</TableHead>
+                  <TableHead>Reported result</TableHead>
                   <TableHead>Duration</TableHead>
                   <TableHead>Delta vs this run</TableHead>
                 </TableRow>
@@ -301,7 +301,7 @@ function RunComparisonPanel({
                     <TableRow key={peer.id}>
                       <TableCell>
                         <Link
-                          className="font-medium hover:text-primary hover:underline"
+                          className="break-all font-mono text-xs hover:text-primary hover:underline"
                           href={`/runs/${peer.id}`}
                         >
                           <code>{peer.externalId}</code>
@@ -388,13 +388,13 @@ export function RunInvestigation({
   )
   return (
     <div className="grid min-w-0 gap-6">
-      <Card className="overflow-hidden border-primary/20">
+      <Card className="overflow-hidden shadow-none">
         <CardHeader className="flex-row flex-wrap items-start justify-between gap-4 space-y-0">
           <div>
-            <p className="mb-2 text-[10px] font-medium uppercase tracking-[0.14em] text-primary/80">
-              One execution · reported outcome
+            <p className="mb-2 text-xs font-medium text-muted-foreground">
+              Application-reported execution
             </p>
-            <CardTitle>{first.workflow}</CardTitle>
+            <CardTitle className="text-base">Reported outcome</CardTitle>
             <CardDescription>
               <code className="break-all">{first.externalId}</code>
             </CardDescription>
@@ -423,9 +423,8 @@ export function RunInvestigation({
             </Badge>
           </div>
           <p className="mb-4 text-xs leading-6 text-muted-foreground">
-            Duration is elapsed time to a recorded terminal outcome. Events are
-            what the application sent. Running means no final outcome yet — not
-            proof the process is still active.
+            Duration measures elapsed time to the reported final outcome. A run
+            without a final outcome is not proof of active work.
           </p>
           <div className="flex flex-wrap items-center gap-2">
             <ViewLink href={`/workflows/${encodeURIComponent(first.workflow)}`}>
@@ -456,8 +455,9 @@ export function RunInvestigation({
       </Card>
       <Tabs defaultValue="outcome" className="min-w-0">
         <TabsList
+          variant="line"
           aria-label="Run investigation sections"
-          className="h-auto w-full flex-wrap justify-start gap-1"
+          className="h-auto w-full flex-wrap justify-start gap-1 border-b border-border pb-2 [&_[data-slot=tabs-trigger]]:min-h-11 [&_[data-slot=tabs-trigger]]:flex-none"
         >
           <TabsTrigger value="outcome">Outcome</TabsTrigger>
           <TabsTrigger value="timeline">Timeline ({events.length})</TabsTrigger>
@@ -493,14 +493,14 @@ export function RunInvestigation({
           )}
           <Card>
             <CardHeader>
-              <CardTitle>Business result</CardTitle>
+              <CardTitle className="text-base">Reported result</CardTitle>
               <CardDescription>
                 Reported by application code, not independently verified.
               </CardDescription>
             </CardHeader>
             <CardContent>
               {highlights.length > 0 ? (
-                <dl className="mb-5 flex flex-wrap gap-5 [&>div]:min-w-[100px] [&>div]:rounded-lg [&>div]:border [&>div]:border-border [&>div]:p-4 [&_dt]:text-xs [&_dt]:text-muted-foreground [&_dd]:mt-2 [&_dd]:break-all [&_dd]:text-2xl [&_dd]:font-semibold">
+                <dl className="mb-5 grid grid-cols-2 gap-6 sm:grid-cols-4 [&>div]:min-w-0 [&_dt]:text-xs [&_dt]:text-muted-foreground [&_dd]:mt-2 [&_dd]:break-all [&_dd]:text-3xl [&_dd]:font-medium [&_dd]:tabular-nums">
                   {highlights.map((item) => (
                     <div key={item.key}>
                       <dt>{item.label}</dt>
@@ -533,7 +533,7 @@ export function RunInvestigation({
           </Card>
           <Card>
             <CardHeader>
-              <CardTitle>Recorded evidence</CardTitle>
+              <CardTitle className="text-base">Recorded evidence</CardTitle>
             </CardHeader>
             <CardContent>
               {progress && (
@@ -601,6 +601,7 @@ export function RunInvestigation({
                   variant={
                     timelineView === "waterfall" ? "secondary" : "outline"
                   }
+                  aria-pressed={timelineView === "waterfall"}
                   onClick={() => setTimelineView("waterfall")}
                 >
                   Waterfall
@@ -609,6 +610,7 @@ export function RunInvestigation({
                   type="button"
                   size="sm"
                   variant={timelineView === "events" ? "secondary" : "outline"}
+                  aria-pressed={timelineView === "events"}
                   onClick={() => setTimelineView("events")}
                 >
                   Events
@@ -627,7 +629,7 @@ export function RunInvestigation({
         <TabsContent value="context" className="mt-4 grid min-w-0 gap-5">
           <Card>
             <CardHeader>
-              <CardTitle>Run context</CardTitle>
+              <CardTitle className="text-base">Run context</CardTitle>
               <CardDescription>
                 Latest shallow merge of initial properties and context
                 amendments. Event history stays unchanged.

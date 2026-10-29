@@ -153,4 +153,8 @@ Server auth, CORS, and dashboard API settings are validated at request time. See
 [Runtime environment validation](./docs/development.md#runtime-environment-validation)
 for required hosted settings, local defaults, and Preview/Staging behavior.
 
+Database CI also checks that repeated auth and ingestion requests retain a bounded
+auth pool and release API connections; see
+[connection lifecycle verification](./docs/development.md#connection-lifecycle-verification).
+
 License: [MIT](./LICENSE).

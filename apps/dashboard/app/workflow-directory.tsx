@@ -50,8 +50,8 @@ export function WorkflowDirectory({
     )
   const result = paginate(matching, page, 12)
   return (
-    <Card className="overflow-hidden">
-      <div className="flex flex-wrap items-end gap-3 border-b border-border/60 bg-white/[0.015] p-5">
+    <Card className="overflow-hidden shadow-none">
+      <div className="flex flex-wrap items-end gap-3 border-b border-border/60 bg-muted/20 p-5">
         <label className="grid min-w-0 flex-[1_1_240px] gap-2 text-xs text-muted-foreground sm:max-w-[360px]">
           <span>Search workflows</span>
           <div className="relative">
@@ -99,40 +99,47 @@ export function WorkflowDirectory({
         />
       </div>
       <p className="px-5 py-3 text-xs leading-6 text-muted-foreground">
-        Grouped by workflow name prefix. Browser is a naming namespace, not
-        verified event provenance.
+        All recorded runs · completion rate is among finished runs. Namespace
+        follows the workflow name, not verified provenance.
       </p>
-      {groupBy(result.items, (workflow) => workflowFamily(workflow.name)).map(
-        ([family, items]) => (
-          <section key={family}>
-            <div className="flex flex-wrap items-center gap-2.5 border-y border-border/60 bg-primary/[0.04] px-5 py-3 text-sm font-medium">
-              <h2 className="text-sm font-medium">{family}</h2>
-              <Badge variant="secondary">
-                {
-                  matching.filter(
-                    (item) => workflowFamily(item.name) === family,
-                  ).length
-                }{" "}
-                workflows
-              </Badge>
-            </div>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Workflow</TableHead>
-                  <TableHead>Namespace</TableHead>
-                  <TableHead>Recorded runs</TableHead>
-                  <TableHead title="Among finished runs. Incomplete runs are not failures.">
-                    Success rate
-                  </TableHead>
-                  <TableHead>Median</TableHead>
-                  <TableHead>p95</TableHead>
-                  <TableHead>
-                    <span className="sr-only">View workflow</span>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Workflow</TableHead>
+            <TableHead>Namespace</TableHead>
+            <TableHead className="text-right">Recorded runs</TableHead>
+            <TableHead
+              className="text-right"
+              title="Completed among finished runs"
+            >
+              Run completion
+            </TableHead>
+            <TableHead className="text-right">Median</TableHead>
+            <TableHead className="text-right">p95</TableHead>
+            <TableHead>
+              <span className="sr-only">View workflow</span>
+            </TableHead>
+          </TableRow>
+        </TableHeader>
+        {groupBy(result.items, (workflow) => workflowFamily(workflow.name)).map(
+          ([family, items]) => {
+            const familyCount = matching.filter(
+              (item) => workflowFamily(item.name) === family,
+            ).length
+            return (
+              <TableBody key={family}>
+                <TableRow className="bg-muted/40 hover:bg-muted/40">
+                  <TableHead
+                    colSpan={7}
+                    scope="rowgroup"
+                    className="h-10 border-y border-border px-4 text-xs font-medium text-foreground"
+                  >
+                    {family}
+                    <span className="ml-2 font-normal text-muted-foreground">
+                      {familyCount} workflow{familyCount === 1 ? "" : "s"}
+                    </span>
                   </TableHead>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
                 {items.map((item) => (
                   <TableRow key={item.name}>
                     <TableCell>
@@ -150,16 +157,20 @@ export function WorkflowDirectory({
                           : "Application"}
                       </Badge>
                     </TableCell>
-                    <TableCell>{item.runs.toLocaleString()}</TableCell>
-                    <TableCell title="Among finished runs. Incomplete runs are not failures.">
-                      {item.successRate === null
+                    <TableCell className="text-right tabular-nums">
+                      {item.runs.toLocaleString()}
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {item.successRate == null
                         ? "No finished runs"
                         : `${item.successRate}%`}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="whitespace-nowrap text-right tabular-nums text-muted-foreground">
                       {formatDuration(item.medianDurationMs)}
                     </TableCell>
-                    <TableCell>{formatDuration(item.p95DurationMs)}</TableCell>
+                    <TableCell className="whitespace-nowrap text-right tabular-nums text-muted-foreground">
+                      {formatDuration(item.p95DurationMs)}
+                    </TableCell>
                     <TableCell>
                       <Button asChild variant="ghost" size="icon">
                         <Link
@@ -173,10 +184,10 @@ export function WorkflowDirectory({
                   </TableRow>
                 ))}
               </TableBody>
-            </Table>
-          </section>
-        ),
-      )}
+            )
+          },
+        )}
+      </Table>
       {result.total === 0 && (
         <p className="px-5 py-8 text-center text-sm leading-7 text-muted-foreground">
           {workflows.length === 0

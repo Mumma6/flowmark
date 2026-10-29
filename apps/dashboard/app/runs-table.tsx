@@ -5,6 +5,10 @@ import Link from "next/link"
 import { useQuery } from "@tanstack/react-query"
 import { ArrowUpRight, Search } from "lucide-react"
 import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
   Badge,
   Button,
   Input,
@@ -16,10 +20,28 @@ import {
   TableRow,
 } from "@flowmark/ui"
 import { formatDuration, formatTimestamp, type Run } from "./dashboard-data"
-import { FilterSelect, StatusBadge } from "./dashboard-components"
+import { DataState, FilterSelect, StatusBadge } from "./dashboard-components"
 import { getRunResultHighlights } from "./run-presentation"
 import { useTRPC } from "../lib/trpc"
 import { useProject } from "./project-context"
+
+function ReportedResult({ run }: { run: Run }) {
+  const highlights = getRunResultHighlights(run.result ?? {})
+  return highlights.length > 0 ? (
+    <span className="flex min-w-0 flex-wrap gap-x-3 gap-y-1 [overflow-wrap:anywhere]">
+      {highlights.map((item) => (
+        <span key={item.key} className="text-xs">
+          <span className="text-muted-foreground">{item.label}</span>{" "}
+          <span className="font-medium tabular-nums">{item.value}</span>
+        </span>
+      ))}
+    </span>
+  ) : (
+    <span className="text-xs text-muted-foreground">
+      {run.result == null ? "Not reported" : "Open run for result"}
+    </span>
+  )
+}
 
 export function RunsTable({
   runs,
@@ -28,95 +50,110 @@ export function RunsTable({
   runs: readonly Run[]
   showWorkflow?: boolean
 }) {
+  if (runs.length === 0) {
+    return (
+      <p className="px-5 py-8 text-center text-sm text-muted-foreground">
+        No runs match this view.
+      </p>
+    )
+  }
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Run</TableHead>
-          {showWorkflow && <TableHead>Workflow</TableHead>}
-          <TableHead>Status</TableHead>
-          <TableHead>Business result</TableHead>
-          <TableHead>Duration</TableHead>
-          <TableHead>Started (UTC)</TableHead>
-          <TableHead>
-            <span className="sr-only">Open run</span>
-          </TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
+    <>
+      <ul
+        className="divide-y divide-border sm:hidden"
+        aria-label="Recorded runs"
+      >
         {runs.map((run) => (
-          <TableRow key={run.id}>
-            <TableCell>
+          <li key={run.id} className="grid gap-3 p-4">
+            <div className="flex items-start justify-between gap-2">
               <Link
+                className="min-w-0 break-all text-sm font-medium hover:text-primary"
                 href={`/runs/${run.id}`}
-                className="font-medium hover:text-primary hover:underline"
               >
-                <code title={run.externalId}>
-                  {run.externalId.slice(0, 12)}
-                </code>
+                {showWorkflow ? run.workflow : run.externalId.slice(0, 12)}
+                <span className="sr-only"> · Open run {run.externalId}</span>
               </Link>
-            </TableCell>
-            {showWorkflow && (
-              <TableCell>
-                <Link
-                  href={`/workflows/${encodeURIComponent(run.workflow)}`}
-                  className="font-medium hover:text-primary hover:underline"
-                >
-                  {run.workflow}
-                </Link>
-              </TableCell>
-            )}
-            <TableCell>
               <StatusBadge status={run.status} />
-            </TableCell>
-            <TableCell>
-              <div className="flex min-w-[140px] flex-wrap gap-x-3 gap-y-1">
-                {getRunResultHighlights(run.result ?? {}).map((item) => (
-                  <span key={item.key}>
-                    <strong>{item.label}</strong> {item.value}
-                  </span>
-                ))}
-                {getRunResultHighlights(run.result ?? {}).length === 0 && (
-                  <span className="text-xs text-muted-foreground">
-                    {run.result == null
-                      ? "Not reported"
-                      : "Open run for result"}
-                  </span>
-                )}
-              </div>
-            </TableCell>
-            <TableCell className="whitespace-nowrap">
-              {formatDuration(run.durationMs)}
-            </TableCell>
-            <TableCell className="whitespace-nowrap">
+            </div>
+            <ReportedResult run={run} />
+            <div className="flex flex-wrap justify-between gap-2 text-xs text-muted-foreground">
               <time dateTime={run.startedAt}>
-                {formatTimestamp(run.startedAt)}
+                {formatTimestamp(run.startedAt)} UTC
               </time>
-            </TableCell>
-            <TableCell>
-              <Button asChild variant="ghost" size="icon">
-                <Link
-                  href={`/runs/${run.id}`}
-                  aria-label={`Open run ${run.externalId}`}
-                >
-                  <ArrowUpRight aria-hidden="true" />
-                </Link>
-              </Button>
-            </TableCell>
-          </TableRow>
+              <span className="tabular-nums">
+                {formatDuration(run.durationMs)}
+              </span>
+            </div>
+          </li>
         ))}
-        {runs.length === 0 && (
-          <TableRow>
-            <TableCell
-              colSpan={showWorkflow ? 7 : 6}
-              className="px-5 py-8 text-center text-sm text-muted-foreground"
-            >
-              No runs match this view.
-            </TableCell>
-          </TableRow>
-        )}
-      </TableBody>
-    </Table>
+      </ul>
+      <div className="hidden sm:block">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              {showWorkflow && <TableHead>Workflow</TableHead>}
+              <TableHead>Run</TableHead>
+              <TableHead>Run status</TableHead>
+              <TableHead>Reported result</TableHead>
+              <TableHead className="text-right">Duration</TableHead>
+              <TableHead>Started (UTC)</TableHead>
+              <TableHead>
+                <span className="sr-only">Open run</span>
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {runs.map((run) => (
+              <TableRow key={run.id}>
+                {showWorkflow && (
+                  <TableCell>
+                    <Link
+                      className="font-medium hover:text-primary hover:underline"
+                      href={`/workflows/${encodeURIComponent(run.workflow)}`}
+                    >
+                      {run.workflow}
+                    </Link>
+                  </TableCell>
+                )}
+                <TableCell>
+                  <Link
+                    href={`/runs/${run.id}`}
+                    className="font-mono text-xs text-muted-foreground hover:text-primary hover:underline"
+                    title={run.externalId}
+                  >
+                    {run.externalId.slice(0, 12)}
+                  </Link>
+                </TableCell>
+                <TableCell>
+                  <StatusBadge status={run.status} />
+                </TableCell>
+                <TableCell className="min-w-[160px]">
+                  <ReportedResult run={run} />
+                </TableCell>
+                <TableCell className="whitespace-nowrap text-right tabular-nums">
+                  {formatDuration(run.durationMs)}
+                </TableCell>
+                <TableCell className="whitespace-nowrap text-xs tabular-nums text-muted-foreground">
+                  <time dateTime={run.startedAt}>
+                    {formatTimestamp(run.startedAt)}
+                  </time>
+                </TableCell>
+                <TableCell>
+                  <Button asChild variant="ghost" size="icon">
+                    <Link
+                      href={`/runs/${run.id}`}
+                      aria-label={`Open run ${run.externalId}`}
+                    >
+                      <ArrowUpRight aria-hidden="true" />
+                    </Link>
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    </>
   )
 }
 
@@ -204,7 +241,7 @@ export function RunExplorer({
   const nextCursor = list.data?.nextCursor ?? null
   return (
     <div>
-      <div className="flex flex-wrap items-end gap-3 border-b border-border/60 bg-white/[0.015] p-5">
+      <div className="flex flex-wrap items-end gap-3 border-b border-border/60 bg-muted/20 p-5">
         <label className="grid min-w-0 flex-[1_1_240px] gap-2 text-xs text-muted-foreground sm:max-w-[360px]">
           <span>Search runs</span>
           <div className="relative">
@@ -244,40 +281,6 @@ export function RunExplorer({
             { value: "Running", label: "No final outcome" },
           ]}
         />
-        <FilterSelect
-          label="Namespace"
-          value={filters.namespace}
-          onChange={(value) => update("namespace", value)}
-          options={[
-            { value: "all", label: "All namespaces" },
-            { value: "server", label: "Application" },
-            { value: "browser", label: "Browser" },
-          ]}
-        />
-        <label className="grid min-w-0 flex-[1_1_140px] gap-2 text-xs text-muted-foreground sm:max-w-[200px]">
-          <span>Fail code</span>
-          <Input
-            value={filters.failCode}
-            placeholder="e.g. LOAD_FAILED"
-            onChange={(event) => update("failCode", event.target.value)}
-          />
-        </label>
-        <label className="grid min-w-0 flex-[1_1_140px] gap-2 text-xs text-muted-foreground sm:max-w-[180px]">
-          <span>Environment</span>
-          <Input
-            value={filters.environment}
-            placeholder="production"
-            onChange={(event) => update("environment", event.target.value)}
-          />
-        </label>
-        <label className="grid min-w-0 flex-[1_1_140px] gap-2 text-xs text-muted-foreground sm:max-w-[180px]">
-          <span>Release</span>
-          <Input
-            value={filters.release}
-            placeholder="2026.10.2"
-            onChange={(event) => update("release", event.target.value)}
-          />
-        </label>
         <label className="grid min-w-0 flex-[1_1_140px] gap-2 text-xs text-muted-foreground sm:max-w-[160px]">
           <span>Started after</span>
           <Input
@@ -295,7 +298,62 @@ export function RunExplorer({
           />
         </label>
       </div>
-      <div className="flex flex-wrap items-center gap-2 px-5 pb-4">
+      <Accordion className="border-b border-border px-5">
+        <AccordionItem value="advanced-filters">
+          <AccordionTrigger className="min-h-11 py-3 text-xs sm:text-xs">
+            More filters{" "}
+            <span className="mr-auto text-muted-foreground">
+              {[
+                filters.namespace !== "all",
+                Boolean(filters.failCode),
+                Boolean(filters.environment),
+                Boolean(filters.release),
+              ].filter(Boolean).length || ""}
+            </span>
+          </AccordionTrigger>
+          <AccordionContent className="max-w-none">
+            <div className="flex flex-wrap items-end gap-3">
+              <FilterSelect
+                label="Namespace"
+                value={filters.namespace}
+                onChange={(value) => update("namespace", value)}
+                options={[
+                  { value: "all", label: "All namespaces" },
+                  { value: "server", label: "Application" },
+                  { value: "browser", label: "Browser" },
+                ]}
+              />
+              <label className="grid min-w-0 flex-[1_1_140px] gap-2 text-xs text-muted-foreground sm:max-w-[200px]">
+                <span>Fail code</span>
+                <Input
+                  value={filters.failCode}
+                  placeholder="e.g. LOAD_FAILED"
+                  onChange={(event) => update("failCode", event.target.value)}
+                />
+              </label>
+              <label className="grid min-w-0 flex-[1_1_140px] gap-2 text-xs text-muted-foreground sm:max-w-[180px]">
+                <span>Environment</span>
+                <Input
+                  value={filters.environment}
+                  placeholder="production"
+                  onChange={(event) =>
+                    update("environment", event.target.value)
+                  }
+                />
+              </label>
+              <label className="grid min-w-0 flex-[1_1_140px] gap-2 text-xs text-muted-foreground sm:max-w-[180px]">
+                <span>Release</span>
+                <Input
+                  value={filters.release}
+                  placeholder="2026.10.2"
+                  onChange={(event) => update("release", event.target.value)}
+                />
+              </label>
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
+      <div className="flex flex-wrap items-center gap-2 px-5 py-3">
         <Button
           variant="ghost"
           size="sm"
@@ -306,25 +364,68 @@ export function RunExplorer({
         >
           Clear filters
         </Button>
-        <Badge variant="outline">{total.toLocaleString()} matching runs</Badge>
+        <Badge variant="outline">
+          {list.isPending
+            ? "Loading matches…"
+            : list.error
+              ? "Matches unavailable"
+              : `${total.toLocaleString()} matching runs`}
+        </Badge>
         <p className="text-xs text-muted-foreground">
-          Server-side history · page {pageIndex + 1}
+          Full recorded history · page {pageIndex + 1}
         </p>
       </div>
-      {list.isPending ? (
-        <p role="status" className="px-5 py-8 text-sm text-muted-foreground">
-          Loading runs…
-        </p>
-      ) : list.error ? (
-        <p className="px-5 py-8 text-sm text-destructive">
-          Could not load runs: {list.error.message}
-        </p>
-      ) : (
+      {Object.entries(filters).some(
+        ([key, value]) => value !== defaults[key as keyof ExplorerFilters],
+      ) && (
+        <div
+          className="flex flex-wrap gap-2 px-5 pb-3"
+          aria-label="Applied filters"
+        >
+          {Object.entries(filters)
+            .filter(
+              ([key, value]) =>
+                value !== defaults[key as keyof ExplorerFilters],
+            )
+            .map(([key, value]) => (
+              <Badge key={key} variant="secondary">
+                {
+                  (
+                    {
+                      search: "Search",
+                      workflow: "Workflow",
+                      status: "Status",
+                      namespace: "Namespace",
+                      failCode: "Failure code",
+                      environment: "Environment",
+                      release: "Release",
+                      startedAfter: "From",
+                      startedBefore: "Through",
+                    } as const
+                  )[key as keyof ExplorerFilters]
+                }
+                : {value === "Running" ? "No final outcome" : value}
+              </Badge>
+            ))}
+        </div>
+      )}
+      <div className="px-5">
+        <DataState
+          pending={list.isPending}
+          error={list.error}
+          retry={() => void list.refetch()}
+        />
+      </div>
+      {!list.isPending && !list.error && (
         <RunsTable runs={runs} showWorkflow={!workflow} />
       )}
       <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-5 py-4">
         <p className="text-xs text-muted-foreground">
-          Showing {runs.length} of {total.toLocaleString()}
+          {list.isPending
+            ? "Loading history…"
+            : list.error
+              ? "History unavailable"
+              : `Showing ${runs.length} of ${total.toLocaleString()}`}
         </p>
         <div className="flex gap-2">
           <Button

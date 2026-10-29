@@ -12,7 +12,7 @@ const badgeVariants = cva(
         destructive: "border-transparent bg-destructive/10 text-destructive",
         outline: "border-border text-foreground",
         success:
-          "border-transparent bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
+          "border-transparent bg-[hsl(var(--success,152_42%_30%)/0.12)] text-[hsl(var(--success-foreground,152_42%_30%))] dark:bg-[hsl(var(--success,152_42%_65%)/0.12)] dark:text-[hsl(var(--success-foreground,152_42%_65%))]",
       },
     },
     defaultVariants: { variant: "default" },

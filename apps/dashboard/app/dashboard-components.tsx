@@ -48,6 +48,7 @@ export function CopyButton({
 export function StatusBadge({ status }: { status: RunStatus }) {
   return (
     <Badge
+      className="gap-1.5"
       variant={
         status === "Completed"
           ? "success"
@@ -56,6 +57,10 @@ export function StatusBadge({ status }: { status: RunStatus }) {
             : "secondary"
       }
     >
+      <span
+        aria-hidden="true"
+        className="size-1.5 shrink-0 rounded-full bg-current"
+      />
       {runStatusLabel(status)}
     </Badge>
   )
@@ -73,10 +78,10 @@ export function PageHeading({
   return (
     <header className="flex flex-col justify-between gap-5 sm:flex-row sm:items-start">
       <div>
-        <h1 className="break-words text-2xl font-semibold tracking-tight sm:text-3xl">
+        <h1 className="break-words text-2xl font-semibold leading-9 tracking-tight sm:text-[28px]">
           {title}
         </h1>
-        <p className="mt-2 max-w-3xl text-sm leading-7 text-muted-foreground">
+        <p className="mt-1.5 max-w-2xl text-sm leading-6 text-muted-foreground">
           {description}
         </p>
       </div>
