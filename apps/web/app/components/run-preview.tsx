@@ -11,9 +11,9 @@ import type { RunPreviewData } from "./code-examples"
 import { overlineClassName } from "./shell"
 
 const markerClassName = {
-  step: "border-[#82918a]",
-  done: "border-primary bg-primary",
-  error: "border-[#f0c27d] bg-[#f0c27d]",
+  step: "border-muted-foreground",
+  done: "border-success bg-success",
+  error: "border-destructive bg-destructive",
 } as const
 
 export function RunPreview({ preview }: { preview: RunPreviewData }) {
@@ -30,37 +30,24 @@ export function RunPreview({ preview }: { preview: RunPreviewData }) {
           {preview.duration}
         </span>
       </div>
-      <Card
-        className={
-          failed
-            ? "rounded-[10px] border-[#e8bf6b]/30 bg-linear-to-br from-[#211d15] to-[#0c1113]"
-            : "rounded-[10px] border-primary/30 bg-linear-to-br from-[#152018] to-[#0c1113]"
-        }
-      >
+      <Card className="rounded-xl border-border bg-card shadow-none">
         <CardContent className="p-5 sm:p-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <code className="font-mono text-xs text-[#c4d0c8]">
+            <code className="font-mono text-xs text-muted-foreground">
               {preview.name}
             </code>
-            <Badge
-              variant="outline"
-              className={
-                failed
-                  ? "border-[#f0c27d]/30 text-[#f0c27d]"
-                  : "border-primary/30 text-primary"
-              }
-            >
+            <Badge variant={failed ? "destructive" : "success"}>
               <span
-                className={`size-1.5 rounded-full ${failed ? "bg-[#f0c27d]" : "bg-primary"}`}
+                className={`size-1.5 rounded-full ${failed ? "bg-destructive" : "bg-success"}`}
                 aria-hidden="true"
               />
               {preview.status}
             </Badge>
           </div>
-          <h4 className="mt-6 mb-2.5 text-[clamp(1.375rem,2.1vw,1.75rem)] font-medium tracking-tight text-[#f0f5f1]">
+          <h4 className="mt-6 mb-2.5 text-[clamp(1.375rem,2.1vw,1.75rem)] font-medium tracking-tight text-foreground">
             {preview.headline}
           </h4>
-          <p className="text-[13px] leading-7 text-[#b3c1b8]">
+          <p className="text-[13px] leading-7 text-muted-foreground">
             {preview.explanation}
           </p>
           <dl className="my-6 grid grid-cols-3 gap-2 border-y border-border py-4 sm:gap-3">
@@ -69,7 +56,7 @@ export function RunPreview({ preview }: { preview: RunPreviewData }) {
                 <dt className="min-h-7 text-[10px] text-muted-foreground">
                   {metric.label}
                 </dt>
-                <dd className="mt-1.5 text-base tracking-tight text-[#e5ede7] sm:text-lg">
+                <dd className="mt-1.5 text-base tracking-tight text-foreground sm:text-lg">
                   {metric.value}
                 </dd>
               </div>
@@ -95,7 +82,7 @@ export function RunPreview({ preview }: { preview: RunPreviewData }) {
                     aria-hidden="true"
                   />
                   <span className="grid min-w-0 flex-1 gap-1 text-left">
-                    <strong className="text-[13px] font-medium text-[#e1eae3]">
+                    <strong className="text-[13px] font-medium text-foreground">
                       {event.title}
                     </strong>
                     <small className="break-words text-[11px] text-muted-foreground">
@@ -104,7 +91,7 @@ export function RunPreview({ preview }: { preview: RunPreviewData }) {
                   </span>
                 </AccordionTrigger>
                 <AccordionContent>
-                  <p className="ml-5 text-xs leading-7 text-[#adbbb2]">
+                  <p className="ml-5 text-xs leading-7 text-muted-foreground">
                     {event.detail}
                   </p>
                 </AccordionContent>

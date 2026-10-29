@@ -11,66 +11,74 @@ pnpm --filter @flowmark/web test
 pnpm --filter @flowmark/web build
 ```
 
-The website runs at `http://localhost:3000`. In development, documentation
-links point to `http://localhost:3002/docs/introduction` and the dashboard to
-`http://localhost:3001`. In a deployment, set
-`NEXT_PUBLIC_FLOWMARK_DOCS_URL` and `NEXT_PUBLIC_FLOWMARK_APP_URL` to the
-published origins.
-
-If port 3000 is already in use, Next.js reads `PORT` to override the website's
-development port (the default remains 3000). Other apps use explicit ports and
-are unaffected:
+The website defaults to `http://localhost:3000`. When it is occupied, use an
+available loopback port without restarting another service:
 
 ```sh
-PORT=3100 pnpm --filter @flowmark/web dev
-# Or start all apps with the same website override:
-PORT=3100 pnpm dev
+pnpm --filter @flowmark/web dev --hostname 127.0.0.1 --port 3100
 ```
 
-The landing page uses Tailwind utilities and shared shadcn primitives from
-`@flowmark/ui`: Button, Accordion, Badge, Card, Tabs, code-block components,
-and the Flowmark wordmark/lockup. Purpose-built product illustrations stay
-local to the app. Decorative Spotlight, Spotlight New, Background Beams, and
-Meteors treatments are attributed in source and subject to the Aceternity
-License; review that license before redistributing the source.
-The dashboard illustration is explicitly illustrative and uses synthetic
-values, not live or customer data. No credentials are needed by the website.
+In development, documentation links default to
+`http://localhost:3002/docs/introduction` and the dashboard to
+`http://localhost:3001`. Deployments default to the public Flowmark origins.
+`NEXT_PUBLIC_FLOWMARK_DOCS_URL` and `NEXT_PUBLIC_FLOWMARK_APP_URL` override them.
 
-## Landing copy
+## Product story
 
-The landing page sells the complete product in present tense. It does not
-label unfinished work as ahead of the dashboard. Keep copy aligned with the
-dashboard and customer docs.
+“Know what your workflows actually accomplish” leads with application-reported
+results. Completion and business results remain separate facts. The central
+example is a customer import: 1,000 received, 988 imported, 12 skipped, with a
+handled CRM rate limit. Flowmark observes application-owned work; it does not
+execute, schedule, or retry it. Open-source/MIT is secondary context in source
+links and the footer, not the main value proposition.
 
-## Component organization
+The public landing describes the intended product experience in present tense,
+including outcome analytics, business-reference search, and expectations. It is
+product storytelling rather than a release-status page; roadmap sections and
+availability labels are kept out of the marketing UI. This does not change the
+SDK/API contracts or the implementation status tracked separately in product
+planning. The analytics panel uses sample data, not a live query or a screenshot
+of shipped analytics.
 
-`app/page.tsx` composes the landing sections from `app/components/`: hero,
-instrumentation, product pillars, capabilities, outcomes path, positioning,
-FAQ, and closing, alongside the site header/footer and app-specific brand and
-dashboard illustration.
+Never claim independently verified business correctness or infer active work,
+terminal failure, or root cause from missing telemetry alone.
 
-The interactive code showcase is the client boundary. Its example content
-lives in `code-examples.ts`, with separate `workflow-code-block.tsx` and
-`run-preview.tsx` renderers. Tabs, FAQ accordions, cards, code blocks, and CTA
-buttons all come through `@flowmark/ui`; the shared Tabs and Accordion
-implementations use Base UI. No app-local replacement controls are needed.
+## Composition and shared product UI
 
-The showcase is organized around checkout, sync, and a scheduled job rather
-than SDK method categories. Each scenario pairs the same business function
-before/after instrumentation with a readable operations outcome and
-expandable evidence. Displayed executions are static walkthrough fixtures;
-clicking them does not execute application work or contact the local harness.
-Only a footer identifies the sample data; event details retain the distinction
-between application reports and verified business state.
+`app/page.tsx` composes Server Components: hero, completion/result distinction,
+investigation and execution trends, business outcomes and team perspectives,
+positioning, developer examples, FAQ, product-led closing and footer. Metadata
+and generated Open Graph artwork use the same positioning.
 
-The scenario tests execute both versions of each displayed function with
-controlled application helpers, check preserved return/error behavior, and
-enforce the small instrumentation line budget. Setup and advanced SDK
-capabilities remain in documentation, not additional landing-page tabs.
+The main product demonstration uses **the same `RunSnapshot` component** exported
+by `@flowmark/ui` and rendered in the dashboard's `RunInvestigation`. The landing
+passes static illustrative props in `workflow-demo.tsx`; the dashboard projects
+recorded events with `buildRunSnapshot` in `run-snapshot-presentation.ts`. The
+shared component owns run identity/status, result metrics, milestone selection,
+payload inspection, and last-reported progress. Dashboard actions, raw results,
+full timeline, operations, comparisons and related runs remain available.
 
-`app/globals.css` holds theme tokens, Tailwind directives, and animation
-keyframes only. Layout and section styling use Tailwind utilities on the
-components. The spotlight, beams, meteors, and dashboard illustration respect
-reduced-motion preferences.
+`RunSnapshot` is the narrow client boundary; the surrounding fixture and page
+composition are server rendered. It uses keyboard-operable shared Buttons,
+unique evidence IDs, an announced detail region, bounded payload overflow,
+semantic status colors, and native progress. It holds no API clients, secrets,
+or data-fetching logic. Web dark tokens and system fonts match the dashboard;
+shared classes are compatible with Tailwind 3 and 4.
 
-The page remains primarily server-rendered.
+`mobile-navigation.tsx` uses the shared Sheet with focus management and Escape
+dismissal. `code-showcase.tsx` retains the before/after application scenarios,
+code copying, and expandable evidence. Code-example tests execute both versions
+against controlled helpers and check preserved behavior and line budgets.
+All illustrations are static fixtures; no work is executed, no telemetry is
+sent, and no customer data or credentials are needed.
+
+The hero reuses the original decorative Spotlight, Spotlight Wash, Background
+Beams, Meteors, and subtle grid/dot treatments. The effects are CSS/SVG, clipped
+to the hero background, hidden from assistive technology, and never intercept
+pointer input. Meteors disappear under reduced motion; beams and spotlights
+become static. Existing source attributions remain in the effect components.
+
+Global CSS contains theme tokens, base rules and animation keyframes. Smooth
+anchors and arrival motion respect reduced-motion preferences. Hover and
+selection feedback use CSS transitions. No timers, scroll listeners, remote
+font requests, animation dependencies, or backend changes are needed.

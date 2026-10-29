@@ -1,26 +1,16 @@
 import type { Metadata } from "next"
-import { Geist, Geist_Mono } from "next/font/google"
 import "./globals.css"
 
-const sans = Geist({
-  subsets: ["latin"],
-  variable: "--font-geist-sans",
-})
-
-const mono = Geist_Mono({
-  subsets: ["latin"],
-  variable: "--font-geist-mono",
-})
-
-const title = "Flowmark — Understand every execution"
+const title = "Flowmark — Know what your workflows actually accomplish"
 const description =
-  "Workflow observability for TypeScript. Mark a process your application already runs. Investigate one execution, discover what changed across them, and open the runs behind every insight."
+  "Workflow observability for TypeScript. Understand what your processes accomplish, explore reported business outcomes, and investigate the runs behind them."
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://flowmark.dev"),
   title,
   description,
   applicationName: "Flowmark",
+  alternates: { canonical: "/" },
   keywords: [
     "workflow observability",
     "TypeScript",
@@ -46,7 +36,7 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${sans.variable} ${mono.variable}`}>
+    <html lang="en" className="dark">
       <body>{children}</body>
     </html>
   )

@@ -9,7 +9,7 @@ const columns = [
     links: [
       { href: "#product", label: "Product" },
       { href: "#how-it-works", label: "How it works" },
-      { href: "#capabilities", label: "Capabilities" },
+      { href: "#outcomes", label: "Outcomes" },
       { href: "#faq", label: "FAQ" },
     ],
   },
@@ -57,7 +57,7 @@ export function SiteFooter() {
         className={`${shellClassName} flex flex-col gap-2 py-5 text-[11px] text-muted-foreground sm:flex-row sm:items-center sm:justify-between`}
       >
         <p>© 2026 Flowmark</p>
-        <p>Understand every execution. Discover what matters across them.</p>
+        <p>Your processes, made understandable.</p>
       </div>
     </footer>
   )
