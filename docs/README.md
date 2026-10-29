@@ -6,6 +6,8 @@ Contributor guides that ship with the public repository:
   and checks.
 - [Database integration tests](./development#database-integration-tests): local
   test setup and the separate disposable-Postgres PR job.
+- [Health and failure diagnostics](./development#health-and-failure-diagnostics):
+  liveness limits, safe log fields, and API storage versus dashboard proxy errors.
 - [Application releases](./releases): feature PRs into staging, release PRs into
   main, verification, versioning, and recovery. Synchronization is needed for
   independent main changes such as hotfixes, not after ordinary releases.

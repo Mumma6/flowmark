@@ -144,6 +144,7 @@ It exercises server routes and API procedures; browser UI and hosted cookie
 behavior still need Staging verification.
 
 - [Development](./docs/development.md)
+- [Health and failure diagnostics](./docs/development.md#health-and-failure-diagnostics)
 - [Application releases](./docs/releases.md)
 - [Architecture](./docs/architecture.md)
 - [Decisions](./docs/decisions/)
