@@ -135,8 +135,10 @@ project is in the infrastructure guide. In particular:
   `FLOWMARK_API_URL` records are Preview variables scoped to that git
   branch. The dashboard origin is `https://app.staging.flowmark.dev` and
   the API origin is `https://api.staging.flowmark.dev`. Do not point those
-  at `*.vercel.app`. See the infrastructure guide before creating the
-  branch or the records.
+  at `*.vercel.app`. Standard Protection still covers a custom domain on a
+  non-production git branch, so those two hostnames are Deployment
+  Protection Exceptions. Do not add that exception to a `*.vercel.app`
+  alias. See the infrastructure guide before changing the records.
 - Do not set `FLOWMARK_DEMO_MODE`, `DATABASE_MIGRATION_URL`, or
   `FLOWMARK_API_KEY` on Vercel.
 
