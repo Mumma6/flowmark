@@ -50,6 +50,7 @@ import {
   stringifyExport,
 } from "./run-export"
 import { EventTable, JsonData, type RunEvent } from "./run-event-table"
+import { RunEventTimeline } from "./run-event-timeline"
 import { OperationWaterfall, ProgressStrip } from "./run-waterfall"
 
 type RunRelationships = inferRouterOutputs<AppRouter>["run"]["related"]
@@ -359,9 +360,9 @@ export function RunInvestigation({
   comparisonLoading?: boolean
   comparisonError?: string
 }) {
-  const [timelineView, setTimelineView] = useState<"waterfall" | "events">(
-    "waterfall",
-  )
+  const [timelineView, setTimelineView] = useState<
+    "timeline" | "waterfall" | "events"
+  >("timeline")
   const first = events[0]
   if (!first) {
     return null
@@ -586,15 +587,30 @@ export function RunInvestigation({
                 <CardTitle>
                   {timelineView === "waterfall"
                     ? "Operation waterfall"
-                    : "Event timeline"}
+                    : timelineView === "events"
+                      ? "Event table"
+                      : "Event timeline"}
                 </CardTitle>
                 <CardDescription className="mt-2">
                   {timelineView === "waterfall"
                     ? "Recorded operation intervals, overlap, and idle gaps between endpoints."
-                    : "Checkpoints, operations, progress and failures. Filter before expanding payloads."}
+                    : timelineView === "events"
+                      ? "Filter and expand rows for full payloads and timestamps."
+                      : "Checkpoints, operations, progress, and failures in order. Expand rows with payloads."}
                 </CardDescription>
               </div>
               <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={
+                    timelineView === "timeline" ? "secondary" : "outline"
+                  }
+                  aria-pressed={timelineView === "timeline"}
+                  onClick={() => setTimelineView("timeline")}
+                >
+                  Timeline
+                </Button>
                 <Button
                   type="button"
                   size="sm"
@@ -604,7 +620,7 @@ export function RunInvestigation({
                   aria-pressed={timelineView === "waterfall"}
                   onClick={() => setTimelineView("waterfall")}
                 >
-                  Waterfall
+                  Operations
                 </Button>
                 <Button
                   type="button"
@@ -613,15 +629,17 @@ export function RunInvestigation({
                   aria-pressed={timelineView === "events"}
                   onClick={() => setTimelineView("events")}
                 >
-                  Events
+                  Table
                 </Button>
               </div>
             </CardHeader>
             <CardContent className="p-0">
               {timelineView === "waterfall" ? (
                 <OperationWaterfall events={events} />
-              ) : (
+              ) : timelineView === "events" ? (
                 <EventTable events={events} />
+              ) : (
+                <RunEventTimeline events={events} />
               )}
             </CardContent>
           </Card>
