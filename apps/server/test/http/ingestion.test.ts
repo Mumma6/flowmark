@@ -10,7 +10,7 @@ import {
 } from "@flowmark/db"
 import { and, eq } from "drizzle-orm"
 import { hashApiKey } from "@flowmark/db/persistence"
-import { DEMO_READ_KEY, DEMO_WRITE_KEY } from "@flowmark/db/demo"
+import { DEMO_WRITE_KEY } from "@flowmark/db/demo"
 import { POST } from "../../app/v1/events/route"
 import { appRouter } from "../../src/adapters/trpc"
 
@@ -21,6 +21,8 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
     const workspaceId = randomUUID()
     const writeKey = randomUUID()
     const readKey = randomUUID()
+    const otherProjectId = randomUUID()
+    const otherReadKey = randomUUID()
     const runId = randomUUID()
     let connection: ReturnType<typeof createDatabase>
     beforeAll(async () => {
@@ -30,12 +32,18 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
       await connection.db
         .insert(workspaces)
         .values({ id: workspaceId, name: "Isolated test workspace" })
-      await connection.db
-        .insert(projects)
-        .values({ id: projectId, workspaceId, name: "Isolated test project" })
+      await connection.db.insert(projects).values([
+        { id: projectId, workspaceId, name: "Isolated test project" },
+        { id: otherProjectId, workspaceId, name: "Other test project" },
+      ])
       await connection.db.insert(projectApiKeys).values([
         { projectId, keyHash: hashApiKey(writeKey), permission: "write" },
         { projectId, keyHash: hashApiKey(readKey), permission: "read" },
+        {
+          projectId: otherProjectId,
+          keyHash: hashApiKey(otherReadKey),
+          permission: "read",
+        },
       ])
     })
     afterAll(async () => {
@@ -366,7 +374,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
       expect(related.related).toHaveLength(105)
       const snapshotIds = new Set(snapshot.runs.map((run) => run.id))
       expect(related.related.some((run) => !snapshotIds.has(run.id))).toBe(true)
-      const inaccessible = await caller(DEMO_READ_KEY).run.related({
+      const inaccessible = await caller(otherReadKey).run.related({
         id: child.id,
       })
       expect(inaccessible).toEqual({ parentMatches: [], related: [] })
@@ -594,7 +602,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
 
     it("does not expose project data through another project's read key", async () => {
       const snapshot = await caller(readKey).project.snapshot()
-      const otherProject = await caller(DEMO_READ_KEY).run.detail({
+      const otherProject = await caller(otherReadKey).run.detail({
         id: snapshot.runs[0].id,
       })
       expect(otherProject).toEqual([])

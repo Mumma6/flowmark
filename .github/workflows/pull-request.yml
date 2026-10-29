@@ -1,6 +1,7 @@
 name: Pull request verification
 
-# Must not receive database, Neon, Vercel, or npm credentials.
+# Fast job: Must not receive database, Neon, Vercel, or npm credentials.
+# Integration uses only its disposable local service database.
 
 on:
   pull_request:
@@ -36,3 +37,65 @@ jobs:
 
       - name: Check format, lint, typecheck, and unit tests
         run: pnpm check
+
+  integration:
+    name: PostgreSQL integration tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: flowmark_ci
+          POSTGRES_PASSWORD: local_ci_only
+          POSTGRES_DB: flowmark_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U flowmark_ci -d flowmark_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      TEST_DATABASE_URL: postgresql://flowmark_ci:local_ci_only@127.0.0.1:5432/flowmark_test
+      DATABASE_URL: postgresql://flowmark_ci:local_ci_only@127.0.0.1:5432/flowmark_test
+      DATABASE_MIGRATION_URL: postgresql://flowmark_ci:local_ci_only@127.0.0.1:5432/flowmark_test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.18.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build test dependencies
+        run: pnpm --filter @flowmark/api... build
+
+      - name: Apply committed migrations to disposable Postgres
+        run: pnpm db:migrate
+
+      - name: Run server HTTP and database integration tests
+        run: >-
+          pnpm --filter @flowmark/server test
+          --reporter=default --reporter=json
+          --outputFile="$RUNNER_TEMP/server-tests.json"
+
+      - name: Refuse silently skipped tests
+        run: |
+          node --input-type=module -e '
+          import assert from "node:assert/strict";
+          import { readFileSync } from "node:fs";
+          const report = JSON.parse(readFileSync(`${process.env.RUNNER_TEMP}/server-tests.json`, "utf8"));
+          assert.ok(report.numTotalTests > 0, "No server tests ran");
+          assert.equal(report.numPendingTests, 0, "Integration tests must not skip");
+          '

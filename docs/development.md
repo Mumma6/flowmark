@@ -220,8 +220,9 @@ without a database, but workflow ingestion and queries require PostgreSQL.
 API unit tests run without PostgreSQL using injected authorization/repository
 services. They cover lazy ingestion, Schema validation, project scoping, typed
 failures, redacted settings, and scoped connection cleanup on success, failure,
-and interruption. Run them with `pnpm --filter @flowmark/api test`; database
-integration coverage additionally needs `TEST_DATABASE_URL` as described below.
+and interruption. Run them with `pnpm --filter @flowmark/api test`. Server HTTP
+integration coverage runs with `pnpm --filter @flowmark/server test` and needs
+`TEST_DATABASE_URL` as described below.
 
 ## Environment and database
 
@@ -319,17 +320,35 @@ Telemetry failure does not undo application work. Business data is simulated
 independently for each execution; the UI's recent-execution list resets on
 reload, but workflow history does not.
 
-Database integration tests use an explicitly selected test database after the
-same migration/demo setup:
+### Database integration tests
+
+The PR workflow has a separate **PostgreSQL integration tests** job with an
+empty Postgres 18 service container. It builds API/database dependencies,
+applies committed migrations, and runs the server tests with `TEST_DATABASE_URL`.
+It rejects a report containing skipped tests. The fast `pnpm check` job remains
+independent and has no database credentials. No Neon credentials or demo seed
+are used; HTTP tests create their own isolated projects and keys.
+
+To run the same tests locally, choose a disposable loopback database. Do not use
+the local demo database or any hosted database. Tests write rows; discard this
+database when finished. For example, with an existing local PostgreSQL server:
 
 ```sh
-TEST_DATABASE_URL=postgresql://localhost:5432/flowmark_test \
-  pnpm --filter @flowmark/api test
+createdb flowmark_test
+pnpm --filter @flowmark/api... build
+DATABASE_URL=postgresql://127.0.0.1:5432/flowmark_test \
+DATABASE_MIGRATION_URL=postgresql://127.0.0.1:5432/flowmark_test \
+  pnpm db:migrate
+TEST_DATABASE_URL=postgresql://127.0.0.1:5432/flowmark_test \
+  pnpm --filter @flowmark/server test
 ```
 
-Without `TEST_DATABASE_URL`, the PostgreSQL integration tests are skipped.
-They create isolated test projects and verify ingestion, idempotency, metrics,
-failed runs, and cross-project read isolation.
+Adjust role, port, and database name for your own local server. Export both
+migration URLs explicitly so server env files cannot redirect the migration.
+No `db:setup` or `db:seed` is needed. Without `TEST_DATABASE_URL`, normal server
+unit runs skip the database suites; the integration CI job must run them.
+These tests cover ingestion, idempotency, browser quotas, and project isolation.
+The sign-in → project → ingest → read full-path test is separate follow-up work.
 
 ## Troubleshooting local data
 
