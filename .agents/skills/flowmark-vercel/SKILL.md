@@ -67,10 +67,10 @@ the monorepo install and Turbo build. Node is 22.x. Leave those unless the
 infrastructure guide is updated in the same change.
 
 Each app also sets `ignoreCommand` to `scripts/vercel-should-deploy.mjs`,
-which runs Turbo's affected check for that workspace through `npx
-turbo-ignore` (Vercel runs the ignore step before `pnpm install`). Unchanged
-apps skip Preview and Production builds for that commit. Shared dependency
-changes (for example `packages/ui`) still rebuild every consumer.
+which runs Turbo's affected check through `npx turbo-ignore` (Vercel runs
+this before `pnpm install`). Only turbo-ignore exit code `1` continues the
+build; `0` and errors exit `0` so Vercel skips the deployment. Shared
+dependency changes still rebuild every consumer.
 
 ## Deploy
 

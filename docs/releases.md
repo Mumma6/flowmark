@@ -10,8 +10,9 @@ feature branch → PR into staging → Staging verification
 GitHub Actions runs PR checks. Vercel builds a hosted app only when that
 project or one of its workspace dependencies changed in the commit (Turbo
 `ignoreCommand` per app). Unchanged projects skip Preview and Production
-builds for that commit, which keeps deployment quota use down. There is no
-separate release deployment Action. Agent skills
+builds for that commit. If the ignore step fails, the deployment is skipped
+rather than forced, so a broken check does not consume the daily deploy
+quota. There is no separate release deployment Action. Agent skills
 help an operator perform this workflow when requested; they are not background
 automation. `apps/dev-harness` and `apps/internal-docs` remain local-only.
 
