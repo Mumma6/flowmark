@@ -109,6 +109,8 @@ const childEnv = {
   ...process.env,
   DATABASE_MIGRATION_URL: migrationUrl,
   NEON_BRANCH: "staging",
+  FLOWMARK_MIGRATION_WRAPPER: "staging",
+  FLOWMARK_MIGRATION_TARGET_HOST: stagingHost,
   FLOWMARK_PRODUCTION_DATABASE_HOST: productionHost,
   FLOWMARK_PREVIEW_DATABASE_HOST: previewHost,
 }

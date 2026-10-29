@@ -5,6 +5,7 @@ import process from "node:process"
 import { existsSync, readFileSync } from "node:fs"
 import { fileURLToPath, URL } from "node:url"
 import { dirname, join } from "node:path"
+import { parseEnv } from "node:util"
 import { isLoopbackHost } from "./db-env-neon.mjs"
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..")
@@ -16,18 +17,7 @@ function parseEnvFile(path) {
   if (!existsSync(path)) {
     return values
   }
-  for (const line of readFileSync(path, "utf8").split("\n")) {
-    const trimmed = line.trim()
-    if (!trimmed || trimmed.startsWith("#")) {
-      continue
-    }
-    const index = trimmed.indexOf("=")
-    if (index === -1) {
-      continue
-    }
-    values.set(trimmed.slice(0, index), trimmed.slice(index + 1).trim())
-  }
-  return values
+  return new Map(Object.entries(parseEnv(readFileSync(path, "utf8"))))
 }
 
 function resolveLocalDatabaseUrl() {
@@ -95,8 +85,11 @@ if (
 
 console.log(`Applying committed migrations to local database (${host}).`)
 
-const childEnv = { ...process.env }
-delete childEnv.DATABASE_MIGRATION_URL
+const childEnv = {
+  ...process.env,
+  DATABASE_URL: databaseUrl,
+  DATABASE_MIGRATION_URL: databaseUrl,
+}
 
 const result = spawnSync("pnpm", ["--filter", "@flowmark/db", "db:migrate"], {
   cwd: repoRoot,

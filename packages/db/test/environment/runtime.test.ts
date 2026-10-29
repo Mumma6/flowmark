@@ -1,6 +1,7 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 import { Effect, Either } from "effect"
+import { assertMigrationTarget } from "../../src/environment/migration-target.js"
 import {
   assertLocalDevelopmentDatabase,
   isDemoModeEnabled,
@@ -17,6 +18,65 @@ const leftReason = <A>(effect: Effect.Effect<A, { readonly reason: string }>) =>
       throw new Error("expected a typed command failure")
     },
   })
+
+test("bare migrate allows loopback but refuses remote and malformed URLs safely", () => {
+  for (const host of ["localhost", "127.0.0.1", "[::1]"]) {
+    Effect.runSync(assertMigrationTarget(`postgresql://${host}/flowmark`, {}))
+  }
+  for (const host of ["ep-fake.neon.tech", "db.example.invalid"]) {
+    const reason = leftReason(
+      assertMigrationTarget(`postgresql://user:secret@${host}/flowmark`, {}),
+    )
+    assert.match(reason, /non-loopback/)
+    assert.doesNotMatch(reason, /secret|postgresql:\/\//)
+  }
+  assert.match(
+    leftReason(assertMigrationTarget("secret-invalid-url", {})),
+    /invalid/,
+  )
+  assert.match(
+    leftReason(assertMigrationTarget("https://localhost/db", {})),
+    /PostgreSQL/,
+  )
+})
+
+test("hosted migrate requires a matching wrapper, branch, direct host, and migration URL", () => {
+  const url = "postgresql://user:secret@ep-fake.neon.tech/flowmark"
+  for (const wrapper of ["production", "preview", "staging"]) {
+    const env = {
+      DATABASE_MIGRATION_URL: url,
+      FLOWMARK_MIGRATION_WRAPPER: wrapper,
+      FLOWMARK_MIGRATION_TARGET_HOST: "ep-fake.neon.tech",
+      NEON_BRANCH: wrapper,
+    }
+    Effect.runSync(assertMigrationTarget(url, env))
+    for (const override of [
+      { FLOWMARK_MIGRATION_WRAPPER: "unknown" },
+      { FLOWMARK_MIGRATION_TARGET_HOST: undefined },
+      { FLOWMARK_MIGRATION_TARGET_HOST: "ep-other.neon.tech" },
+      { NEON_BRANCH: "wrong" },
+      { DATABASE_MIGRATION_URL: undefined },
+    ]) {
+      assert.match(
+        leftReason(assertMigrationTarget(url, { ...env, ...override })),
+        /Refusing migrate/,
+      )
+    }
+    for (const host of ["db.example.invalid", "ep-fake-pooler.neon.tech"]) {
+      const otherUrl = `postgresql://user:secret@${host}/flowmark`
+      assert.match(
+        leftReason(
+          assertMigrationTarget(otherUrl, {
+            ...env,
+            DATABASE_MIGRATION_URL: otherUrl,
+            FLOWMARK_MIGRATION_TARGET_HOST: host,
+          }),
+        ),
+        /direct Neon host/,
+      )
+    }
+  }
+})
 
 test("detects production from NODE_ENV or VERCEL_ENV", () => {
   assert.equal(isProductionEnvironment({}), false)
