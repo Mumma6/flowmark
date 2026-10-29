@@ -125,7 +125,7 @@ export function DailyVolumeChart({ daily }: { daily: Snapshot["daily"] }) {
                 const rate = payload[0]?.payload?.successRate
                 return rate == null
                   ? String(value ?? "")
-                  : `${value} · ${rate}% success`
+                  : `${value} · ${rate}% run completion`
               }}
             />
           }
@@ -211,6 +211,7 @@ export function DailyDurationChart({ daily }: { daily: Snapshot["daily"] }) {
           activeDot={{ r: 5 }}
         />
         <Line
+          strokeDasharray="5 4"
           dataKey="p95"
           type="monotone"
           stroke="var(--color-p95)"

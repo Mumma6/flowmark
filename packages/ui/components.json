@@ -4,10 +4,10 @@
   "rsc": true,
   "tsx": true,
   "tailwind": {
-    "config": "",
-    "css": "../../apps/web/app/globals.css",
+    "config": "../../apps/dashboard/tailwind.config.ts",
+    "css": "../../apps/dashboard/app/globals.css",
     "baseColor": "neutral",
-    "cssVariables": false,
+    "cssVariables": true,
     "prefix": ""
   },
   "iconLibrary": "lucide",

@@ -2,18 +2,20 @@
 
 import { useMemo } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { Activity, Check, Clock3, RefreshCw, ShieldAlert } from "lucide-react"
+import { RefreshCw } from "lucide-react"
 import {
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent,
   Alert,
   AlertDescription,
-  Badge,
   Button,
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-  Skeleton,
   Table,
   TableBody,
   TableCell,
@@ -31,10 +33,8 @@ import {
   defaultIntelligenceQuery,
   formatDuration,
   formatTimestamp,
-  weekOverWeek,
   workflowOutliers,
   type Run,
-  type WorkflowSummary,
 } from "./dashboard-data"
 import { useProject } from "./project-context"
 import {
@@ -43,9 +43,13 @@ import {
   FailureCodeTable,
   IntelligencePanel,
   OperationInsightsTable,
-  WeekOverWeek,
 } from "./insights-panels"
 import { RunExplorer, RunsTable } from "./runs-table"
+import {
+  OverviewMetrics,
+  WorkflowOverview,
+  RecentFailures,
+} from "./overview-panels"
 import { StatusBadge } from "./dashboard-components"
 
 function useSnapshot() {
@@ -93,21 +97,6 @@ function EmptyOverview() {
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-6">
-        <div
-          className="grid grid-cols-2 gap-3 xl:grid-cols-5"
-          aria-hidden="true"
-        >
-          {["w-2/3", "w-1/2", "w-3/4", "w-1/2", "w-2/3"].map((width, index) => (
-            <div
-              className="grid gap-3 rounded-lg border border-border/70 p-4"
-              key={index}
-            >
-              <Skeleton className={`h-3 ${width}`} />
-              <Skeleton className="h-8 w-1/2" />
-              <Skeleton className="h-3 w-3/4" />
-            </div>
-          ))}
-        </div>
         <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border pt-5">
           <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
             Install the SDK, add a write key to your server environment, and
@@ -120,191 +109,100 @@ function EmptyOverview() {
   )
 }
 
-function WorkflowHealth({
-  workflows,
-}: {
-  workflows: readonly WorkflowSummary[]
-}) {
-  const attention = [...workflows]
-    .sort(
-      (a, b) =>
-        (a.successRate ?? 101) - (b.successRate ?? 101) || b.runs - a.runs,
-    )
-    .slice(0, 5)
-  return (
-    <Card>
-      <CardHeader className="flex-row flex-wrap items-start justify-between gap-4 space-y-0">
-        <div>
-          <CardTitle>Workflow outcomes</CardTitle>
-          <CardDescription className="mt-2 leading-6">
-            Lowest success rates among finished runs. Business results may still
-            need attention.
-          </CardDescription>
-        </div>
-        <ViewLink href="/workflows">All workflows</ViewLink>
-      </CardHeader>
-      <CardContent className="p-0">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Workflow</TableHead>
-              <TableHead>Runs</TableHead>
-              <TableHead>Success</TableHead>
-              <TableHead>p95</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {attention.map((item) => (
-              <TableRow key={item.name}>
-                <TableCell>
-                  <Link
-                    className="font-medium hover:text-primary hover:underline"
-                    href={`/workflows/${encodeURIComponent(item.name)}`}
-                  >
-                    {item.name}
-                  </Link>
-                </TableCell>
-                <TableCell>{item.runs}</TableCell>
-                <TableCell>
-                  {item.successRate === null
-                    ? "Not reported"
-                    : `${item.successRate}%`}
-                </TableCell>
-                <TableCell>{formatDuration(item.p95DurationMs)}</TableCell>
-              </TableRow>
-            ))}
-            {attention.length === 0 && (
-              <TableRow>
-                <TableCell
-                  colSpan={4}
-                  className="px-5 py-8 text-center text-sm text-muted-foreground"
-                >
-                  No workflows recorded yet.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
-  )
-}
-
 export function DashboardOverview() {
-  const { data, isPending, error, isFetching, refetch } = useSnapshot()
+  const snapshot = useSnapshot()
   const intelligence = useIntelligence()
-  const metrics = data?.metrics
-  const cards = [
-    {
-      label: "Recorded runs",
-      value: metrics?.totalRuns.toLocaleString() ?? "—",
-      icon: Activity,
-      note: "All recorded runs",
-    },
-    {
-      label: "Completed",
-      value: metrics?.successRate == null ? "—" : `${metrics.successRate}%`,
-      icon: Check,
-      note: "Among finished runs",
-    },
-    {
-      label: "Median duration",
-      value: metrics ? formatDuration(metrics.medianDurationMs) : "—",
-      icon: Clock3,
-      note: "Typical finished run",
-    },
-    {
-      label: "p95 duration",
-      value: metrics ? formatDuration(metrics.p95DurationMs) : "—",
-      icon: Clock3,
-      note: "Slow finished runs",
-    },
-    {
-      label: "Failed runs",
-      value: metrics?.failedRuns.toLocaleString() ?? "—",
-      icon: ShieldAlert,
-      note: "Application-reported failure",
-    },
-  ]
+  const { data } = snapshot
+  const refresh = () => {
+    void snapshot.refetch()
+    void intelligence.refetch()
+  }
   return (
-    <div className="grid min-w-0 gap-6">
+    <div className="grid min-w-0 gap-7">
       <PageHeading
         title="Overview"
-        description="Volume, success rate, duration, operations, and failure codes. Refreshes every 3 seconds."
+        description="Understand reported workflow outcomes and find the runs behind them."
       >
-        <Refresh fetching={isFetching} onClick={() => void refetch()} />
+        <div className="flex flex-wrap items-center gap-3 sm:flex-col sm:items-end sm:gap-2">
+          <Refresh
+            fetching={snapshot.isFetching || intelligence.isFetching}
+            onClick={refresh}
+          />
+          <span className="text-xs text-muted-foreground">
+            Auto-refresh · every 3 seconds
+          </span>
+        </div>
       </PageHeading>
       <DataState
-        pending={isPending}
-        error={error}
-        retry={() => void refetch()}
+        pending={snapshot.isPending}
+        error={snapshot.error}
+        retry={refresh}
       />
+      {data && data.metrics.totalRuns === 0 && <EmptyOverview />}
       {data && data.metrics.totalRuns > 0 && (
         <>
-          <section
-            className="grid grid-cols-2 gap-3 xl:grid-cols-5"
-            aria-label="Project metrics"
-          >
-            {cards.map(({ label, value, icon: Icon, note }) => (
-              <Card key={label} className="overflow-hidden">
-                <CardHeader className="flex-row items-center justify-between gap-2 space-y-0 p-4 text-[11px] uppercase tracking-[0.08em] text-muted-foreground sm:p-5">
-                  <span>{label}</span>
-                  <Icon
-                    size={16}
-                    className="text-primary/80"
-                    aria-hidden="true"
-                  />
-                </CardHeader>
-                <CardContent className="px-4 pb-4 sm:px-5 sm:pb-5">
-                  <strong className="mb-2 block text-2xl font-medium tracking-tight sm:text-3xl">
-                    {value}
-                  </strong>
-                  <p className="text-xs leading-6 text-muted-foreground">
-                    {note}
-                  </p>
-                </CardContent>
-              </Card>
-            ))}
-          </section>
-          <WeekOverWeek daily={data.daily} runs={data.runs} />
-          <IntelligencePanel
-            data={intelligence.data}
-            loading={intelligence.isPending}
-            error={intelligence.error?.message}
+          <DataState
+            pending={intelligence.isPending}
+            error={intelligence.error}
+            retry={() => void intelligence.refetch()}
           />
-          <DailyVolumePanel daily={data.daily} />
-          <div className="grid min-w-0 gap-5 xl:grid-cols-2">
-            <DailyDurationPanel daily={data.daily} />
-            <WorkflowHealth workflows={data.workflows} />
+          {intelligence.data && !intelligence.error && (
+            <OverviewMetrics data={intelligence.data} />
+          )}
+          <div className="grid min-w-0 items-start gap-5 xl:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)]">
+            <WorkflowOverview workflows={data.workflows} />
+            <RecentFailures runs={data.runs} />
           </div>
-          <div className="grid min-w-0 gap-5 xl:grid-cols-2">
-            <OperationInsightsTable
-              operations={data.operations}
-              empty="No measured operations yet. Wrap slow work in operation()."
-            />
-            <FailureCodeTable
-              codes={data.failureCodes}
-              empty="No fail({ code }) reports yet."
-            />
-          </div>
-          <Card className="overflow-hidden">
+          <Card className="overflow-hidden shadow-none">
             <CardHeader className="flex-row flex-wrap items-start justify-between gap-4 space-y-0">
               <div>
-                <CardTitle>Latest runs</CardTitle>
-                <CardDescription className="mt-2 leading-6">
-                  Five recent executions. Open a run for its result and
-                  evidence.
+                <CardTitle className="text-base">Latest runs</CardTitle>
+                <CardDescription className="mt-2 text-xs">
+                  Five latest executions · results reported by your application
                 </CardDescription>
               </div>
               <ViewLink href="/runs">Explore runs</ViewLink>
             </CardHeader>
             <CardContent className="p-0">
-              <RunsTable runs={data?.runs.slice(0, 5) ?? []} />
+              <RunsTable runs={data.runs.slice(0, 5)} />
             </CardContent>
           </Card>
+          <section
+            aria-label="Thirty-day trends"
+            className="grid min-w-0 gap-5 xl:grid-cols-2"
+          >
+            <DailyVolumePanel daily={data.daily} />
+            <DailyDurationPanel daily={data.daily} />
+          </section>
+          <IntelligencePanel
+            data={intelligence.data}
+            loading={intelligence.isPending}
+            error={intelligence.error?.message}
+          />
+          <Accordion className="rounded-xl border border-border bg-card px-5">
+            <AccordionItem value="diagnostics">
+              <AccordionTrigger>
+                All recorded diagnostics{" "}
+                <span className="ml-auto text-xs font-normal text-muted-foreground">
+                  Operations & failure codes
+                </span>
+              </AccordionTrigger>
+              <AccordionContent className="max-w-none">
+                <div className="grid min-w-0 gap-5 xl:grid-cols-2">
+                  <OperationInsightsTable
+                    operations={data.operations}
+                    empty="No measured operations yet. Wrap work in operation()."
+                  />
+                  <FailureCodeTable
+                    codes={data.failureCodes}
+                    empty="No terminal failure codes reported."
+                  />
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
         </>
       )}
-      {data && data.metrics.totalRuns === 0 && <EmptyOverview />}
     </div>
   )
 }
@@ -386,18 +284,25 @@ export function ProjectRuns({
     workflow && workflowRuns.length > 0 ? dailyFromRuns(workflowRuns) : null
   const outliers =
     workflow && workflowRuns.length > 0 ? workflowOutliers(workflowRuns) : null
-  const wow = workflowDaily != null ? weekOverWeek(workflowDaily) : null
   return (
     <div className="grid min-w-0 gap-6">
       <PageHeading
         title={workflow ?? "Runs"}
         description={
           workflow
-            ? "Execution history and reported outcomes for this workflow."
-            : "Find an execution by workflow, status, namespace or correlation ID."
+            ? "Reported results and execution history for this workflow."
+            : "Find an execution by run ID, workflow, failure code or recorded correlation."
         }
       >
-        <Refresh fetching={isFetching} onClick={() => void refetch()} />
+        <Refresh
+          fetching={isFetching}
+          onClick={() => {
+            void refetch()
+            if (workflow) {
+              void intelligence.refetch()
+            }
+          }}
+        />
       </PageHeading>
       <DataState
         pending={isPending}
@@ -405,99 +310,44 @@ export function ProjectRuns({
         retry={() => void refetch()}
       />
       {workflow && summary && (
-        <div className="grid gap-3">
-          <div className="flex flex-wrap gap-2">
-            <Badge
-              variant="outline"
-              title="All-time recorded runs for this workflow name"
-            >
-              {summary.runs.toLocaleString()} recorded runs · all time
-            </Badge>
-            <Badge
-              variant="outline"
-              title="Among finished runs. Incomplete runs are not failures."
-            >
-              {summary.successRate === null
-                ? "No finished runs"
-                : `${summary.successRate}% success among finished`}
-            </Badge>
-            <Badge variant="outline">
-              Median {formatDuration(summary.medianDurationMs)} · all time
-            </Badge>
-            <Badge variant="outline">
-              p95 {formatDuration(summary.p95DurationMs)} · all time
-            </Badge>
-          </div>
-          <p className="text-xs leading-6 text-muted-foreground">
-            Summary badges use all recorded runs for this workflow. Charts and
-            the explorer below use the latest-100 project snapshot filtered to
-            this name ({workflowRuns.length} in that slice).
+        <section aria-label="Workflow execution summary" className="grid gap-3">
+          <p className="text-xs text-muted-foreground">
+            Execution summary · all recorded runs
           </p>
-          {wow && (
-            <p className="text-xs leading-6 text-muted-foreground">
-              Last 7 days in this slice: {wow.current.count} runs
-              {wow.current.successRate != null
-                ? ` · ${wow.current.successRate}% success among finished`
-                : ""}
-              . Week-over-week volume change is only meaningful inside the
-              latest-100 window.
-            </p>
-          )}
-        </div>
+          <dl className="grid grid-cols-2 gap-5 border-y border-border py-5 sm:grid-cols-4 [&_dt]:text-xs [&_dt]:text-muted-foreground [&_dd]:mt-2 [&_dd]:text-2xl [&_dd]:font-medium [&_dd]:tabular-nums">
+            <div>
+              <dt>Recorded runs</dt>
+              <dd>{summary.runs.toLocaleString()}</dd>
+            </div>
+            <div>
+              <dt>Run completion</dt>
+              <dd>
+                {summary.successRate == null ? "—" : `${summary.successRate}%`}
+              </dd>
+            </div>
+            <div>
+              <dt>Median duration</dt>
+              <dd>{formatDuration(summary.medianDurationMs)}</dd>
+            </div>
+            <div>
+              <dt>p95 duration</dt>
+              <dd>{formatDuration(summary.p95DurationMs)}</dd>
+            </div>
+          </dl>
+          <p className="text-xs leading-5 text-muted-foreground">
+            Run completion is among finished runs, not a measure of business
+            success. Reported results appear with each execution below.
+          </p>
+        </section>
       )}
-      {workflow && (
-        <IntelligencePanel
-          data={intelligence.data}
-          loading={intelligence.isPending}
-          error={intelligence.error?.message}
-        />
-      )}
-      {workflow && data && (
-        <div className="grid min-w-0 gap-5 xl:grid-cols-2">
-          <OperationInsightsTable
-            operations={data.operations.filter(
-              (item) => item.workflow === workflow,
-            )}
-            empty="No measured operations on this workflow yet."
-          />
-          <FailureCodeTable
-            codes={data.failureCodes.filter(
-              (item) => item.workflow === workflow,
-            )}
-            empty="No fail({ code }) reports on this workflow yet."
-          />
-        </div>
-      )}
-      {workflow && workflowDaily && (
-        <div className="grid min-w-0 gap-5 xl:grid-cols-2">
-          <DailyVolumePanel daily={workflowDaily} />
-          <DailyDurationPanel daily={workflowDaily} />
-        </div>
-      )}
-      {workflow && outliers && (
-        <div className="grid min-w-0 gap-5 xl:grid-cols-2">
-          <WorkflowOutlierLinks
-            title="Recent failures"
-            runs={outliers.failed}
-            empty="No failed runs in the latest-100 slice for this workflow."
-          />
-          <WorkflowOutlierLinks
-            title="Longest durations"
-            runs={outliers.longest}
-            empty="No timed runs in the latest-100 slice for this workflow."
-          />
-        </div>
-      )}
-      <Alert>
-        <AlertDescription>
-          {workflow
-            ? "Run explorer pages the full project history for this workflow. Summary badges above are all-time aggregates. Charts and outlier tables still use the latest-100 snapshot slice."
-            : "Run explorer pages the full project history with server-side filters. Overview charts still use the latest-100 snapshot plus 30-day aggregates."}
-        </AlertDescription>
-      </Alert>
-      <Card>
+      <Card className="overflow-hidden shadow-none">
         <CardHeader>
-          <CardTitle>{workflow ? "Workflow runs" : "Run explorer"}</CardTitle>
+          <CardTitle className="text-base">
+            {workflow ? "Workflow runs & reported results" : "Run history"}
+          </CardTitle>
+          <CardDescription className="text-xs">
+            Full recorded history · filters apply to this list
+          </CardDescription>
         </CardHeader>
         <CardContent className="p-0">
           <RunExplorer
@@ -508,6 +358,70 @@ export function ProjectRuns({
           />
         </CardContent>
       </Card>
+      {workflow && workflowDaily && (
+        <section
+          aria-label="Workflow snapshot trends"
+          className="grid min-w-0 gap-5 xl:grid-cols-2"
+        >
+          <DailyVolumePanel
+            daily={workflowDaily}
+            scope="Last 30 days within latest-100 project snapshot · UTC"
+          />
+          <DailyDurationPanel
+            daily={workflowDaily}
+            scope="Last 30 days within latest-100 project snapshot · UTC"
+          />
+        </section>
+      )}
+      {workflow && (
+        <IntelligencePanel
+          data={intelligence.data}
+          loading={intelligence.isPending}
+          error={intelligence.error?.message}
+        />
+      )}
+      {workflow && data && (
+        <Accordion className="rounded-xl border border-border bg-card px-5">
+          <AccordionItem value="workflow-evidence">
+            <AccordionTrigger>
+              Technical evidence & diagnostics
+            </AccordionTrigger>
+            <AccordionContent className="max-w-none">
+              {outliers && (
+                <div className="mb-5 grid min-w-0 gap-5 xl:grid-cols-2">
+                  <WorkflowOutlierLinks
+                    title="Recent failures"
+                    runs={outliers.failed}
+                    empty="No failed runs in the latest-100 slice for this workflow."
+                  />
+                  <WorkflowOutlierLinks
+                    title="Longest durations"
+                    runs={outliers.longest}
+                    empty="No timed runs in the latest-100 slice for this workflow."
+                  />
+                </div>
+              )}
+              <p className="mb-3 text-xs text-muted-foreground">
+                All recorded operations & failure codes
+              </p>
+              <div className="grid min-w-0 gap-5 xl:grid-cols-2">
+                <OperationInsightsTable
+                  operations={data.operations.filter(
+                    (item) => item.workflow === workflow,
+                  )}
+                  empty="No measured operations on this workflow yet."
+                />
+                <FailureCodeTable
+                  codes={data.failureCodes.filter(
+                    (item) => item.workflow === workflow,
+                  )}
+                  empty="No terminal failure codes reported on this workflow."
+                />
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+      )}
     </div>
   )
 }
@@ -550,8 +464,8 @@ export function RunDetail({ id }: { id: string }) {
   return (
     <div className="grid min-w-0 gap-6">
       <PageHeading
-        title="Run details"
-        description="Reported outcome, recorded evidence and related executions."
+        title={data?.[0]?.workflow ?? "Run details"}
+        description="One execution · application-reported outcome and evidence."
       >
         <ViewLink href="/runs">All runs</ViewLink>
       </PageHeading>

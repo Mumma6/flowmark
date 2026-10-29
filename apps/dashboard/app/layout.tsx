@@ -12,7 +12,7 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" suppressHydrationWarning={true}>
-      <body className="m-0 bg-background font-sans text-foreground antialiased [&_a:focus-visible]:outline [&_a:focus-visible]:outline-2 [&_a:focus-visible]:outline-offset-4 [&_a:focus-visible]:outline-ring">
+      <body className="m-0 bg-background font-sans text-foreground antialiased motion-reduce:[&_*]:animate-none motion-reduce:[&_*]:transition-none [&_a:focus-visible]:outline [&_a:focus-visible]:outline-2 [&_a:focus-visible]:outline-offset-4 [&_a:focus-visible]:outline-ring">
         <Providers>{children}</Providers>
       </body>
     </html>

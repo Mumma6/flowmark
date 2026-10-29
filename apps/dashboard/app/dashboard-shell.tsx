@@ -78,7 +78,7 @@ function Navigation({
     <div className="flex h-full min-h-0 flex-col">
       <Link
         href="/"
-        className="mb-8 flex items-center gap-2.5 text-xl tracking-tight text-foreground"
+        className="mb-7 flex items-center gap-2.5 text-lg tracking-tight text-foreground"
         onClick={onNavigate}
       >
         <FlowmarkMark className="shrink-0 text-primary" />
@@ -89,42 +89,62 @@ function Navigation({
       <ProjectSwitcher />
       <Separator className="my-5" />
       <nav aria-label="Main navigation" className="grid gap-1">
-        {navigation.map(({ href, label, icon: Icon }) => {
-          const active =
-            href === "/" ? pathname === href : pathname.startsWith(href)
-          return (
-            <Button
-              key={href}
-              asChild
-              variant={active ? "secondary" : "ghost"}
-              className={
-                active
-                  ? "justify-start border border-primary/20 bg-primary/10 text-primary shadow-sm"
-                  : "justify-start text-muted-foreground hover:bg-white/[0.04] hover:text-foreground"
-              }
-            >
-              <Link
-                href={href}
-                onClick={onNavigate}
-                aria-current={active ? "page" : undefined}
+        {navigation
+          .filter((item) => item.href !== "/settings")
+          .map(({ href, label, icon: Icon }) => {
+            const active =
+              href === "/" ? pathname === href : pathname.startsWith(href)
+            return (
+              <Button
+                key={href}
+                asChild
+                variant={active ? "secondary" : "ghost"}
+                className={
+                  active
+                    ? "justify-start border border-primary/10 bg-primary/10 text-primary shadow-none"
+                    : "justify-start text-muted-foreground hover:bg-muted hover:text-foreground"
+                }
               >
-                <Icon aria-hidden="true" />
-                {label}
-              </Link>
-            </Button>
-          )
-        })}
+                <Link
+                  href={href}
+                  onClick={onNavigate}
+                  aria-current={active ? "page" : undefined}
+                >
+                  <Icon aria-hidden="true" />
+                  {label}
+                </Link>
+              </Button>
+            )
+          })}
       </nav>
       <div className="mt-auto">
         <Separator className="mb-4" />
-        <Button asChild variant="ghost" className="w-full justify-start">
+        <Button
+          asChild
+          variant="ghost"
+          className="w-full justify-start text-muted-foreground"
+        >
+          <Link
+            href="/settings"
+            onClick={onNavigate}
+            aria-current={pathname === "/settings" ? "page" : undefined}
+          >
+            <Settings aria-hidden="true" />
+            Settings
+          </Link>
+        </Button>
+        <Button
+          asChild
+          variant="ghost"
+          className="w-full justify-start text-muted-foreground"
+        >
           <a href={docsUrl}>
             <BookOpen aria-hidden="true" />
             Documentation
           </a>
         </Button>
-        <p className="mx-2 mt-3 text-xs leading-6 text-muted-foreground">
-          Signed in as {email}
+        <p className="mx-2 mt-4 break-all text-xs leading-5 text-muted-foreground">
+          {email}
         </p>
         <SignOutButton />
       </div>
@@ -134,6 +154,7 @@ function Navigation({
 
 function PageBreadcrumbs() {
   const pathname = usePathname()
+  const { current } = useProject()
   const segments = pathname.split("/").filter(Boolean)
   const section = navigation.find((item) => item.href === `/${segments[0]}`)
   return (
@@ -142,7 +163,7 @@ function PageBreadcrumbs() {
         <BreadcrumbItem>
           {segments.length ? (
             <BreadcrumbLink asChild>
-              <Link href="/">Project</Link>
+              <Link href="/">{current?.name ?? "Project"}</Link>
             </BreadcrumbLink>
           ) : (
             <BreadcrumbPage>Overview</BreadcrumbPage>
@@ -176,6 +197,26 @@ function PageBreadcrumbs() {
         )}
       </BreadcrumbList>
     </Breadcrumb>
+  )
+}
+
+function MobileProjectContext() {
+  const { current } = useProject()
+  const pathname = usePathname()
+  const section = navigation.find(
+    (item) => item.href === `/${pathname.split("/")[1] ?? ""}`,
+  )
+  return (
+    <div className="grid min-w-0 gap-0.5">
+      <span className="max-w-[160px] truncate text-xs font-medium text-foreground sm:max-w-[240px]">
+        {current?.name ?? "Flowmark"}
+      </span>
+      <span className="text-xs text-muted-foreground">
+        {pathname.startsWith("/runs/")
+          ? "Run details"
+          : (section?.label ?? "Overview")}
+      </span>
+    </div>
   )
 }
 
@@ -259,7 +300,7 @@ export function DashboardShell({
           <Navigation email={email} />
         </aside>
         <div className="min-w-0 lg:ml-56">
-          <header className="flex min-h-16 items-center justify-between gap-3 border-b border-border bg-card/90 px-4 py-3 backdrop-blur sm:px-8">
+          <header className="flex min-h-14 items-center justify-between gap-3 border-b border-border bg-background px-4 py-3 sm:px-8">
             <div className="flex min-w-0 items-center gap-3">
               <Sheet open={open} onOpenChange={setOpen}>
                 <SheetTrigger
@@ -267,7 +308,7 @@ export function DashboardShell({
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="shrink-0 lg:hidden"
+                      className="size-11 shrink-0 lg:hidden"
                     />
                   }
                   aria-label="Open navigation"
@@ -284,13 +325,18 @@ export function DashboardShell({
                   <Navigation email={email} onNavigate={() => setOpen(false)} />
                 </SheetContent>
               </Sheet>
-              <PageBreadcrumbs />
+              <div className="hidden lg:block">
+                <PageBreadcrumbs />
+              </div>
+              <div className="flex min-w-0 flex-col gap-0.5 lg:hidden">
+                <MobileProjectContext />
+              </div>
             </div>
             <ThemeSelect />
           </header>
           <main
             id="dashboard-main"
-            className="mx-auto w-full max-w-[1600px] p-4 sm:p-8"
+            className="mx-auto w-full max-w-[1440px] p-4 sm:p-8"
           >
             {children}
           </main>
