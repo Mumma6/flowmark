@@ -14,12 +14,12 @@ automation. `apps/dev-harness` and `apps/internal-docs` remain local-only.
 
 ## Branches and merge policy
 
-| Change                       | Start from               | PR target | Merge method                                  |
-| ---------------------------- | ------------------------ | --------- | --------------------------------------------- |
-| Feature, fix, infrastructure | Current `origin/staging` | `staging` | Squash                                        |
-| Application release          | Long-lived `staging`     | `main`    | Merge commit                                  |
-| Post-release synchronization | `main`                   | `staging` | Merge commit                                  |
-| Emergency Production hotfix  | Current `origin/main`    | `main`    | Squash, then merge `main` back into `staging` |
+| Change                           | Start from               | PR target | Merge method                                  |
+| -------------------------------- | ------------------------ | --------- | --------------------------------------------- |
+| Feature, fix, infrastructure     | Current `origin/staging` | `staging` | Squash                                        |
+| Application release              | Long-lived `staging`     | `main`    | Merge commit                                  |
+| Hotfix/main-only synchronization | `main`                   | `staging` | Merge commit                                  |
+| Emergency Production hotfix      | Current `origin/main`    | `main`    | Squash, then merge `main` back into `staging` |
 
 Normal work starts on a separate branch after fetching origin. Multiple feature
 PRs can accumulate in Staging. Always select the PR base explicitly; GitHub's
@@ -32,12 +32,17 @@ history and make later release comparisons misleading. Never delete `staging`
 after a merge, reset shared branches, force-push them, or rebase their published
 history. If the repository no longer allows merge commits, stop before release.
 
-After a release, open a synchronization PR with **base `staging`, head `main`**.
-Inspect its diff and checks and obtain approval before merging. It may have no
-file changes while still bringing the release merge commit into Staging's
-ancestry. New Staging changes can remain there during synchronization. If main
-is already an ancestor of staging, synchronization is unnecessary. Do not use
-GitHub's update-branch button on a release PR without reviewing its effects.
+No synchronization PR is required after an ordinary release. Main's extra
+release merge commit does not mean Staging is missing code. Continue creating
+features from staging and use merge commits for subsequent release PRs.
+
+Synchronize **base `staging`, head `main`** only when main has independent file
+changes, such as a hotfix or an explicitly approved direct change. Inspect the
+main-only commits and endpoint diff; being behind in commit count or failing
+an ancestry check alone is not a blocker. Review conflicts and test the combined
+candidate before release. Merge synchronization PRs by merge commit with approval;
+never reset or rewrite shared branches. Do not use GitHub's update-branch button
+on a release PR without reviewing its effects.
 
 For an emergency, branch from main so unfinished Staging work stays out of the
 hotfix. Review and verify that hotfix independently, obtain approval to merge
@@ -52,7 +57,7 @@ Ask the agent to **prepare a Flowmark release**, using the repository
 1. Fetch branch heads and tags. Compare `origin/main...origin/staging` for
    commits, file changes, migrations, and infrastructure changes. Also compare
    the two endpoint trees: a divergent merge base can hide hotfix conflicts.
-   Resolve missing main ancestry through the reviewed synchronization flow.
+   Check main-only commits for independent changes and synchronize those when needed; a release merge commit alone does not require synchronization.
    Stop if there is no releasable file change, even if synchronization added
    commits to the history.
 2. Verify CI and all four Staging deployments at the candidate Staging SHA.
@@ -123,7 +128,7 @@ application tag and publish the GitHub Release at that **exact verified SHA**.
 Do not use a moving main head as the target. Check existing tags/releases first;
 never move an existing tag or silently overwrite a release. Reconcile partial
 attempts before retrying. Publishing is separate from deployment and is not
-automatic. Finish the branch synchronization PR described above.
+automatic. Synchronize only if main has independent changes that staging needs.
 
 ## Release status and recovery
 
@@ -155,4 +160,4 @@ required by this workflow.
 Test this change with a feature PR into staging, CI, and a read-only release
 status/preparation review. Check the candidate diff without merging to main or
 creating tags. Verify the actual Production merge, publishing, and post-release
-synchronization during the first approved release, not through a dummy release.
+handling of any main-only changes during approved releases, not through a dummy release.
