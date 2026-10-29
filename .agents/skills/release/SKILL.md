@@ -21,9 +21,10 @@ deployments. Keep private operating records out of PRs and release notes.
 1. Inspect status, fetch origin and tags, and resolve the remote `main` and
    `staging` SHAs. Inspect repository merge settings and required checks.
    Compare both `origin/main...origin/staging` and `origin/main origin/staging`
-   with `git diff`; inspect `git log origin/main..origin/staging`. If main is
-   not an ancestor of staging, prepare the reviewed synchronization described
-   in the guide; do not reset or merge shared branches without authorization.
+   with `git diff`; inspect commits unique to each branch. Main's release merge
+   commits alone do not require synchronization. Prepare synchronization only
+   for independent main changes (such as hotfixes) missing from staging, using
+   the guide. Do not reset or merge shared branches without authorization.
 2. Confirm releasable file changes (ancestry-only synchronization commits do
    not need a release), current CI, and all four Staging deployments at
    the candidate SHA. Attribute manual evidence to its tested revision. Missing
@@ -66,10 +67,11 @@ deployments. Keep private operating records out of PRs and release notes.
    Obtain approval for tag creation and GitHub Release publication, then use
    the explicit SHA as target. Never move a tag, use an SDK tag, or dispatch
    npm publishing as part of an app release.
-5. Prepare the synchronization PR explicitly with base `staging`, head `main`.
-   Merge by merge commit only when authorized, then fetch and verify main is
-   an ancestor of staging. Skip synchronization when already true. Do not
-   delete staging, force-push, reset, or rebase it.
+5. No routine post-release synchronization is required. If main has independent
+   changes missing from staging, prepare a synchronization PR with base
+   `staging`, head `main`; merge by merge commit only when authorized and verify
+   those changes are present. Commit-count divergence alone is not a blocker.
+   Do not delete staging, force-push, reset, or rebase it.
 6. Report version/tag, verified Production SHA and deployments, checks, release
    URL, synchronization state, and remaining manual steps.
 

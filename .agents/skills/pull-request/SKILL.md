@@ -36,6 +36,13 @@ creating a PR is not permission to merge or deploy.
    `pnpm check`.
 7. Note database migrations, infrastructure changes, Vercel or Neon impact,
    and any manual deployment steps.
+8. Before reporting a PR ready to merge, inspect both CI jobs: the fast
+   `Format, lint, typecheck, and test` check and `PostgreSQL integration tests`.
+   Local `pnpm check` alone does not run the database suites without
+   `TEST_DATABASE_URL`. Report pending or failed integration checks explicitly;
+   use the [development guide](../../../docs/development.md#database-integration-tests)
+   for the isolated local equivalent. CI migrations target disposable loopback
+   Postgres only and do not authorize any hosted database action.
 
 Use [`gh`](https://cli.github.com/) for GitHub operations when appropriate.
 

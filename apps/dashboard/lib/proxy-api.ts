@@ -76,7 +76,9 @@ export async function proxyToApiHandler(request: Request, pathname: string) {
               Response.json({ error: error.reason }, { status: 500 }),
             ),
             Match.orElse(() => {
-              console.error("[Flowmark dashboard] API request failed", error)
+              console.error("[Flowmark dashboard] API request failed", {
+                type: "DashboardProxyError",
+              })
               return Response.json(
                 { error: "Flowmark API is unavailable." },
                 { status: 502 },

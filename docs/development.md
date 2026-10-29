@@ -220,8 +220,9 @@ without a database, but workflow ingestion and queries require PostgreSQL.
 API unit tests run without PostgreSQL using injected authorization/repository
 services. They cover lazy ingestion, Schema validation, project scoping, typed
 failures, redacted settings, and scoped connection cleanup on success, failure,
-and interruption. Run them with `pnpm --filter @flowmark/api test`; database
-integration coverage additionally needs `TEST_DATABASE_URL` as described below.
+and interruption. Run them with `pnpm --filter @flowmark/api test`. Server HTTP
+integration coverage runs with `pnpm --filter @flowmark/server test` and needs
+`TEST_DATABASE_URL` as described below.
 
 ## Environment and database
 
@@ -239,6 +240,31 @@ docs need no local env file. Demo mode defaults off and is rejected when
 `NODE_ENV` or `VERCEL_ENV` is production. Hosted API use sets
 `BETTER_AUTH_SECRET` on Vercel. Local demo mode falls back to a development
 secret and must not reuse it in production.
+
+### Runtime environment validation
+
+Flowmark keeps Effect Schema for environment validation because it already provides
+typed configuration errors at the API and dashboard boundaries. The missing piece
+was consistent validation of the server's auth and CORS origins, which now share
+one request-time reader. Adding t3-env would duplicate that boundary without
+justifying another dependency.
+
+Hosted API requests require `FLOWMARK_DASHBOARD_ORIGIN` and `BETTER_AUTH_URL`;
+both must be HTTP(S) origins without credentials, paths, query strings, or
+fragments. Local development defaults to `http://localhost:3001`. The dashboard
+requires `FLOWMARK_API_URL` in production and Preview, accepts HTTP(S) URLs
+without credentials, query strings, or fragments, and defaults to
+`http://localhost:3003` only locally. Invalid configuration produces a typed
+runtime error rather than silently choosing localhost. Error messages name the
+setting without including its configured value.
+
+Branch Preview deployments continue deriving sibling API/dashboard origins from
+the Git branch. Staging continues requiring its dedicated staging origins; these
+checks do not restrict self-hosted production instances to Flowmark's domains.
+Demo mode remains forbidden in Production and Preview, including Staging.
+Validation runs on requests rather than module import: server and dashboard builds
+do not require a database, auth secret, or hosted origin configuration. Database
+CLI and SDK configuration are unchanged.
 
 Database schema lives in `packages/db/src/schema`. Set `DATABASE_URL` when generating Drizzle migrations:
 
@@ -319,19 +345,97 @@ Telemetry failure does not undo application work. Business data is simulated
 independently for each execution; the UI's recent-execution list resets on
 reload, but workflow history does not.
 
-Database integration tests use an explicitly selected test database after the
-same migration/demo setup:
+### Database integration tests
+
+The PR workflow has a separate **PostgreSQL integration tests** job with an
+empty Postgres 18 service container. It builds API/database dependencies,
+applies committed migrations, and runs the server tests with `TEST_DATABASE_URL`.
+It rejects a report containing skipped tests. The fast `pnpm check` job remains
+independent and has no database credentials. No Neon credentials or demo seed
+are used; HTTP tests create their own isolated projects and keys.
+
+To run the same tests locally, choose a disposable loopback database. Do not use
+the local demo database or any hosted database. Tests write rows; discard this
+database when finished. For example, with an existing local PostgreSQL server:
 
 ```sh
-TEST_DATABASE_URL=postgresql://localhost:5432/flowmark_test \
-  pnpm --filter @flowmark/api test
+createdb flowmark_test
+pnpm --filter @flowmark/api... build
+DATABASE_URL=postgresql://127.0.0.1:5432/flowmark_test \
+DATABASE_MIGRATION_URL=postgresql://127.0.0.1:5432/flowmark_test \
+  pnpm db:migrate
+TEST_DATABASE_URL=postgresql://127.0.0.1:5432/flowmark_test \
+  pnpm --filter @flowmark/server test
 ```
 
-Without `TEST_DATABASE_URL`, the PostgreSQL integration tests are skipped.
-They create isolated test projects and verify ingestion, idempotency, metrics,
-failed runs, and cross-project read isolation.
+Adjust role, port, and database name for your own local server. Export both
+migration URLs explicitly so server env files cannot redirect the migration.
+No `db:setup` or `db:seed` is needed. Without `TEST_DATABASE_URL`, normal server
+unit runs skip the database suites; the integration CI job must run them.
+These tests cover ingestion, idempotency, browser quotas, and project isolation.
+The authenticated ingestion suite now covers registration → sign-in → project
+and key creation → ingestion → persisted-run read with a real Better Auth
+session, with demo mode off. It also checks that project headers and management
+inputs cannot grant another user's access, and that signed-out sessions fail.
+
+| Boundary                  | Test coverage                                                                                                                                                                                                                                     | CI job                                       |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| Register and sign in      | [`authenticated-ingestion.test.ts`](../apps/server/test/http/authenticated-ingestion.test.ts) uses the registration and Better Auth HTTP handlers and their actual session cookies                                                                | PostgreSQL integration tests                 |
+| Create project and key    | Same suite calls session-authenticated tRPC procedures; verifies stored key hash and secret-free key listing                                                                                                                                      | PostgreSQL integration tests                 |
+| Ingest                    | Same suite uses the actual events route; [`ingestion.test.ts`](../apps/server/test/http/ingestion.test.ts) and [`browser-ingestion.test.ts`](../apps/server/test/http/browser-ingestion.test.ts) add idempotency, validation, origins, and quotas | PostgreSQL integration tests                 |
+| Persist                   | Authenticated suite reads the reported terminal result from PostgreSQL                                                                                                                                                                            | PostgreSQL integration tests                 |
+| Read                      | Same suite reads project snapshot and run timeline using the signed-in user's cookie                                                                                                                                                              | PostgreSQL integration tests                 |
+| Deny cross-project access | Authenticated suite checks sessions, forged project headers, key listing/creation and project renaming; ingestion suite checks another project's read key                                                                                         | PostgreSQL integration tests                 |
+| Refuse demo credentials   | [`workflows.test.ts`](../packages/api/test/features/workflows.test.ts) checks read/write/diagnostics keys before storage; HTTP suites check server/browser demo-key refusal                                                                       | Fast checks and PostgreSQL integration tests |
+
+These are in-process route/API integration tests with the real auth and
+persistence implementations. They do not launch a Next.js server or browser,
+render dashboard UI, or verify the hosted dashboard proxy, cookie domain,
+SameSite behavior, or cross-origin deployment setup. Verify those in Staging
+when affected; no Playwright dependency is required for this API coverage.
 
 ## Troubleshooting local data
+
+### Health and failure diagnostics
+
+`GET /api/health` is liveness only: a 200 means the API process responds, even
+when PostgreSQL is unavailable. It does not verify authentication, ingestion,
+or database readiness. Keep this single database-independent health route;
+there is no `/api/ready` route or automated readiness check. Use relevant
+Staging smoke tests when a change needs database/auth verification rather than
+adding database work to every liveness request.
+
+```sh
+curl --fail http://127.0.0.1:3003/api/health
+```
+
+| Signal                                              | Meaning                                                                                   |
+| --------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| API health 200                                      | Process responds; database may still be unavailable                                       |
+| Ingestion 503, `Event storage is unavailable.`      | API could not complete storage work; not a successful write                               |
+| Dashboard proxy 500                                 | Dashboard API configuration is missing or invalid                                         |
+| Dashboard proxy 502, `Flowmark API is unavailable.` | Dashboard could not reach its upstream API                                                |
+| Upstream response forwarded by proxy                | The upstream status is preserved, including a 503; it is not converted to a transport 502 |
+
+`[Flowmark API] Request failed` logs safe structured metadata: known failure
+types, allowlisted database operations, selected network/PostgreSQL codes,
+defects, and interruption state. For example, `authenticate` with
+`ECONNREFUSED` points to database connectivity while resolving an ingestion key.
+Unknown labels/codes are omitted or reported as unknown. Raw causes, messages,
+stacks, SQL, bound values, URLs, and credentials are intentionally not logged.
+Original typed errors remain available inside the Effect error channel.
+
+Dashboard transport logs use `[Flowmark dashboard] API request failed` with a
+safe `DashboardProxyError` label, without the raw fetch error or endpoint URL.
+Do not restore raw exception dumps to debug an incident; inspect local/hosted
+configuration through the appropriate operator tools without copying secrets.
+
+Regression coverage includes an actual refused loopback database connection
+in the Postgres integration CI job, synthetic nested/compound error causes,
+and dashboard configuration/transport/status-forwarding tests. No existing
+development database needs to be stopped to run those tests.
+
+### Local data checks
 
 - `FlowmarkConfigError` mentioning `apiKey`: the harness server did not receive
   `FLOWMARK_API_KEY`. Run `pnpm dev:setup` and restart the dev command if the

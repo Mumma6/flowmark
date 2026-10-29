@@ -131,9 +131,26 @@ Releases are published separately after verification; SDK npm releases keep
 their own workflow. See [application releases](./docs/releases.md) for merge
 policy, agent skills, and approval steps.
 
+Each PR runs two CI jobs: format/lint/typecheck/unit checks and database-backed
+server tests against disposable Postgres 18. Both should be green before merge;
+CI never uses Neon credentials or demo seed data. See
+[database integration tests](./docs/development.md#database-integration-tests)
+for the local equivalent. Ordinary releases do not require a sync back into
+staging; bring main changes back only when needed, such as after a hotfix.
+
+The database suite includes real registration and session-based sign-in,
+project/key creation, ingestion, persisted-run reads, and cross-project denials.
+It exercises server routes and API procedures; browser UI and hosted cookie
+behavior still need Staging verification.
+
 - [Development](./docs/development.md)
+- [Health and failure diagnostics](./docs/development.md#health-and-failure-diagnostics)
 - [Application releases](./docs/releases.md)
 - [Architecture](./docs/architecture.md)
 - [Decisions](./docs/decisions/)
+
+Server auth, CORS, and dashboard API settings are validated at request time. See
+[Runtime environment validation](./docs/development.md#runtime-environment-validation)
+for required hosted settings, local defaults, and Preview/Staging behavior.
 
 License: [MIT](./LICENSE).
