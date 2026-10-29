@@ -16,7 +16,10 @@ creating a PR is not permission to merge or deploy.
 
 ## Before creating a PR
 
-1. Inspect Git status and the diff against the target branch (usually `main`).
+1. Inspect Git status and the diff against the explicit target branch: normal
+   feature, fix, and infrastructure PRs target `staging`; application release
+   PRs target `main` with head `staging`. Use the
+   [release skill](../release/SKILL.md) for application releases.
 2. Identify a related internal roadmap task when applicable.
 3. Read the task file internally when useful for context.
 4. Extract **task ID**, **title**, and a brief **public-safe** description
@@ -92,6 +95,13 @@ Apply [git-safety.mdc](../../../.cursor/rules/git-safety.mdc) for push-to-`main`
 merge, deploy, force-push, and destructive production operations.
 
 - Prefer feature branches and one coherent task or feature per PR.
+- Fetch origin and start normal branches from current `origin/staging`.
+- Always pass `--base staging --head <feature-branch>` for normal PRs;
+  never rely on GitHub's default branch. Release PRs explicitly use
+  `--base main --head staging`. Hotfix and synchronization exceptions follow
+  [application releases](../../../docs/releases.md).
+- Feature PRs use squash merges; release and synchronization PRs use merge
+  commits to preserve ancestry. Merge still requires explicit approval.
 - Branch names: `feat/...`, `fix/...`, `infra/...`, etc.
 - Meaningful conventional commit messages on the branch.
 - No unrelated work in the same PR.

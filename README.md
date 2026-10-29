@@ -124,7 +124,15 @@ them.
 
 ## Contributing
 
+Create feature and infrastructure branches from `staging` and open PRs into
+`staging`. CI checks each PR; merging deploys Staging through Vercel. A reviewed
+release PR from `staging` into `main` deploys Production. Application GitHub
+Releases are published separately after verification; SDK npm releases keep
+their own workflow. See [application releases](./docs/releases.md) for merge
+policy, agent skills, and approval steps.
+
 - [Development](./docs/development.md)
+- [Application releases](./docs/releases.md)
 - [Architecture](./docs/architecture.md)
 - [Decisions](./docs/decisions/)
 
