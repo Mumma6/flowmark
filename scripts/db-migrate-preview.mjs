@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { spawnSync } from "node:child_process"
 import console from "node:console"
+import { existsSync } from "node:fs"
 import process from "node:process"
 import { fileURLToPath } from "node:url"
 import { dirname, join } from "node:path"
@@ -10,6 +11,7 @@ import {
   neonEnvPath,
   previewNeonEnvPath,
   readNeonEnvFileAt,
+  stagingNeonEnvPath,
 } from "./db-env-neon.mjs"
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..")
@@ -62,10 +64,29 @@ if (!productionMigrationUrl) {
   process.exit(1)
 }
 
+let stagingMigrationUrl
+if (existsSync(stagingNeonEnvPath)) {
+  let stagingEnv
+  try {
+    stagingEnv = readNeonEnvFileAt(stagingNeonEnvPath)
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : String(error))
+    process.exit(1)
+  }
+  stagingMigrationUrl = stagingEnv.get("DATABASE_URL_UNPOOLED")
+  if (!stagingMigrationUrl) {
+    console.error(
+      "DATABASE_URL_UNPOOLED is missing from packages/db/.env.neon.staging.",
+    )
+    process.exit(1)
+  }
+}
+
 const refusal = assertPreviewMigrationTarget({
   branch: previewEnv.get("NEON_BRANCH"),
   migrationUrl,
   productionMigrationUrl,
+  stagingMigrationUrl,
 })
 if (refusal) {
   console.error(refusal)
@@ -86,6 +107,9 @@ console.log(
   `Applying committed migrations to Neon preview (host ${previewHost}).`,
 )
 console.log("The production env file host was compared and not printed.")
+if (stagingMigrationUrl) {
+  console.log("The staging env file host was compared and not printed.")
+}
 console.log("Credentials are not printed. Never run pnpm db:seed against Neon.")
 
 const childEnv = {
@@ -93,6 +117,10 @@ const childEnv = {
   DATABASE_MIGRATION_URL: migrationUrl,
   NEON_BRANCH: "preview",
   FLOWMARK_PRODUCTION_DATABASE_HOST: productionHost,
+}
+if (stagingMigrationUrl) {
+  childEnv.FLOWMARK_STAGING_DATABASE_HOST =
+    describeDatabaseTarget(stagingMigrationUrl).host
 }
 delete childEnv.DATABASE_URL
 delete childEnv.FLOWMARK_DEMO_MODE

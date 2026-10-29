@@ -42,6 +42,29 @@ export function isProductionHost(hostname: string): boolean {
   )
 }
 
+// Hobby has no Custom Environments, so the staging git branch still runs as
+// VERCEL_ENV=preview. Its *.vercel.app aliases stay behind deployment
+// protection, so this branch uses pinned custom origins instead of the
+// generated preview alias.
+export const stagingGitBranch = "staging"
+export const stagingDashboardOrigin = "https://app.staging.flowmark.dev"
+export const stagingApiOrigin = "https://api.staging.flowmark.dev"
+
+const stagingHosts = new Set([
+  "app.staging.flowmark.dev",
+  "api.staging.flowmark.dev",
+])
+
+export function isStagingGitBranch(
+  env: NodeJS.ProcessEnv = process.env,
+): boolean {
+  return env.VERCEL_GIT_COMMIT_REF === stagingGitBranch
+}
+
+export function isStagingHost(hostname: string): boolean {
+  return stagingHosts.has(hostname.toLowerCase())
+}
+
 export function vercelPreviewBranchSlug(
   ref: string,
   labelPrefix: string,
@@ -63,7 +86,7 @@ const previewDeploymentOrigin = (
   env: NodeJS.ProcessEnv,
   labelPrefix: string,
 ) => {
-  if (!isPreviewRuntime(env)) {
+  if (!isPreviewRuntime(env) || isStagingGitBranch(env)) {
     return undefined
   }
   const ref = env.VERCEL_GIT_COMMIT_REF
@@ -101,26 +124,32 @@ const hostnameFrom = <E>(url: string, error: E) =>
     catch: () => error,
   })
 
+const isolatedDatabaseBranch = (env: NodeJS.ProcessEnv) =>
+  isStagingGitBranch(env) ? stagingGitBranch : "preview"
+
 export const assertPreviewDatabase = Effect.fn("assertPreviewDatabase")(
   function* (url: string | undefined, env: NodeJS.ProcessEnv = process.env) {
     if (!isPreviewRuntime(env)) {
       return
     }
-    if (env.FLOWMARK_DATABASE_BRANCH !== "preview") {
+    const branch = isolatedDatabaseBranch(env)
+    if (env.FLOWMARK_DATABASE_BRANCH !== branch) {
       return yield* new PreviewDatabaseError({
         reason:
-          "Refusing preview database: FLOWMARK_DATABASE_BRANCH must be preview on the isolated preview env record.",
+          branch === "staging"
+            ? "Refusing staging database: FLOWMARK_DATABASE_BRANCH must be staging on the staging git branch."
+            : "Refusing preview database: FLOWMARK_DATABASE_BRANCH must be preview on the isolated preview env record.",
       })
     }
     if (!url) {
       return yield* new PreviewDatabaseError({
-        reason: "Refusing preview database: DATABASE_URL is required.",
+        reason: `Refusing ${branch} database: DATABASE_URL is required.`,
       })
     }
     const host = yield* hostnameFrom(
       url,
       new PreviewDatabaseError({
-        reason: "Refusing preview database: DATABASE_URL is not a valid URL.",
+        reason: `Refusing ${branch} database: DATABASE_URL is not a valid URL.`,
       }),
     )
     if (
@@ -130,20 +159,57 @@ export const assertPreviewDatabase = Effect.fn("assertPreviewDatabase")(
       !host.endsWith(".neon.tech")
     ) {
       return yield* new PreviewDatabaseError({
-        reason: `Refusing preview database: host ${host} is not a Neon host.`,
+        reason: `Refusing ${branch} database: host ${host} is not a Neon host.`,
       })
     }
     if (isProductionHost(host)) {
       return yield* new PreviewDatabaseError({
-        reason: `Refusing preview database: host ${host} is a production host.`,
+        reason: `Refusing ${branch} database: host ${host} is a production host.`,
       })
     }
   },
 )
 
+const exactHttpsOrigin = (value: string, expected: string) => {
+  const url = new URL(value)
+  return (
+    url.origin === expected &&
+    url.pathname === "/" &&
+    url.search === "" &&
+    url.hash === "" &&
+    url.username === "" &&
+    url.password === ""
+  )
+}
+
 export const assertPreviewAuthOrigins = Effect.fn("assertPreviewAuthOrigins")(
   function* (env: NodeJS.ProcessEnv = process.env) {
     if (!isPreviewRuntime(env)) {
+      return
+    }
+    if (isStagingGitBranch(env)) {
+      for (const value of [
+        env.BETTER_AUTH_URL,
+        env.FLOWMARK_DASHBOARD_ORIGIN,
+      ]) {
+        if (!value) {
+          return yield* new PreviewAuthOriginError({
+            reason: `Refusing staging auth: BETTER_AUTH_URL and FLOWMARK_DASHBOARD_ORIGIN must both be ${stagingDashboardOrigin}.`,
+          })
+        }
+        const exact = yield* Effect.try({
+          try: () => exactHttpsOrigin(value, stagingDashboardOrigin),
+          catch: () =>
+            new PreviewAuthOriginError({
+              reason: "Refusing staging auth: an origin is not a valid URL.",
+            }),
+        })
+        if (!exact) {
+          return yield* new PreviewAuthOriginError({
+            reason: `Refusing staging auth: BETTER_AUTH_URL and FLOWMARK_DASHBOARD_ORIGIN must both be ${stagingDashboardOrigin}.`,
+          })
+        }
+      }
       return
     }
     const baseUrl = env.BETTER_AUTH_URL
@@ -161,9 +227,9 @@ export const assertPreviewAuthOrigins = Effect.fn("assertPreviewAuthOrigins")(
           reason: "Refusing preview auth: an origin is not a valid URL.",
         }),
       )
-      if (isProductionHost(host)) {
+      if (isProductionHost(host) || isStagingHost(host)) {
         return yield* new PreviewAuthOriginError({
-          reason: `Refusing preview auth: ${host} is a production host.`,
+          reason: `Refusing preview auth: ${host} is not a preview host.`,
         })
       }
     }
@@ -173,6 +239,27 @@ export const assertPreviewAuthOrigins = Effect.fn("assertPreviewAuthOrigins")(
 export const assertPreviewDashboardApi = Effect.fn("assertPreviewDashboardApi")(
   function* (url: string | undefined, env: NodeJS.ProcessEnv = process.env) {
     if (!isPreviewRuntime(env)) {
+      return
+    }
+    if (isStagingGitBranch(env)) {
+      if (!url) {
+        return yield* new PreviewDashboardApiError({
+          reason: `Refusing staging dashboard: FLOWMARK_API_URL must be ${stagingApiOrigin}.`,
+        })
+      }
+      const exact = yield* Effect.try({
+        try: () => exactHttpsOrigin(url, stagingApiOrigin),
+        catch: () =>
+          new PreviewDashboardApiError({
+            reason:
+              "Refusing staging dashboard: FLOWMARK_API_URL is not a valid URL.",
+          }),
+      })
+      if (!exact) {
+        return yield* new PreviewDashboardApiError({
+          reason: `Refusing staging dashboard: FLOWMARK_API_URL must be ${stagingApiOrigin}.`,
+        })
+      }
       return
     }
     if (!url) {
@@ -188,9 +275,9 @@ export const assertPreviewDashboardApi = Effect.fn("assertPreviewDashboardApi")(
           "Refusing preview dashboard: FLOWMARK_API_URL is not a valid URL.",
       }),
     )
-    if (isProductionHost(host)) {
+    if (isProductionHost(host) || isStagingHost(host)) {
       return yield* new PreviewDashboardApiError({
-        reason: `Refusing preview dashboard: ${host} is a production host.`,
+        reason: `Refusing preview dashboard: ${host} is not a preview host.`,
       })
     }
   },

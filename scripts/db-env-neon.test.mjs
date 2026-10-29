@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url"
 import { dirname, join } from "node:path"
 import {
   assertPreviewMigrationTarget,
+  assertStagingMigrationTarget,
   describeDatabaseTarget,
   isLoopbackHost,
   isNeonHost,
@@ -72,6 +73,68 @@ describe("db-env-neon helpers", () => {
     )
   })
 
+  it("refuses a fake staging migration host", () => {
+    const productionUrl =
+      "postgresql://user:secret@ep-prod.eu-central-1.aws.neon.tech/neondb"
+    const previewUrl =
+      "postgresql://user:secret@ep-preview.eu-central-1.aws.neon.tech/neondb"
+    const stagingUrl =
+      "postgresql://user:secret@ep-staging.eu-central-1.aws.neon.tech/neondb"
+    const fakeHost = assertStagingMigrationTarget({
+      branch: "staging",
+      migrationUrl: "postgresql://user:secret@ep-fake.example.com/neondb",
+      productionMigrationUrl: productionUrl,
+      previewMigrationUrl: previewUrl,
+    })
+    assert.match(fakeHost ?? "", /ep-fake\.example\.com/)
+    assert.equal(fakeHost?.includes("secret"), false)
+    assert.match(
+      assertStagingMigrationTarget({
+        branch: "staging",
+        migrationUrl: productionUrl,
+        productionMigrationUrl: productionUrl,
+        previewMigrationUrl: previewUrl,
+      }) ?? "",
+      /production env file/,
+    )
+    assert.match(
+      assertStagingMigrationTarget({
+        branch: "staging",
+        migrationUrl: previewUrl,
+        productionMigrationUrl: productionUrl,
+        previewMigrationUrl: previewUrl,
+      }) ?? "",
+      /preview env file/,
+    )
+    assert.match(
+      assertStagingMigrationTarget({
+        branch: "preview",
+        migrationUrl: stagingUrl,
+        productionMigrationUrl: productionUrl,
+        previewMigrationUrl: previewUrl,
+      }) ?? "",
+      /not staging/,
+    )
+    assert.match(
+      assertPreviewMigrationTarget({
+        branch: "preview",
+        migrationUrl: stagingUrl,
+        productionMigrationUrl: productionUrl,
+        stagingMigrationUrl: stagingUrl,
+      }) ?? "",
+      /staging env file/,
+    )
+    assert.equal(
+      assertStagingMigrationTarget({
+        branch: "staging",
+        migrationUrl: stagingUrl,
+        productionMigrationUrl: productionUrl,
+        previewMigrationUrl: previewUrl,
+      }),
+      null,
+    )
+  })
+
   it("exits before reading database URLs when preview migrate is not confirmed", () => {
     const result = spawnSync(
       process.execPath,
@@ -80,6 +143,18 @@ describe("db-env-neon helpers", () => {
     )
     assert.notEqual(result.status, 0)
     assert.match(result.stderr, /confirm-preview-migrate/)
+    assert.equal(result.stderr.includes("postgresql://"), false)
+    assert.equal(result.stdout.includes("postgresql://"), false)
+  })
+
+  it("exits before reading database URLs when staging migrate is not confirmed", () => {
+    const result = spawnSync(
+      process.execPath,
+      ["scripts/db-migrate-staging.mjs"],
+      { cwd: repoRoot, encoding: "utf8" },
+    )
+    assert.notEqual(result.status, 0)
+    assert.match(result.stderr, /confirm-staging-migrate/)
     assert.equal(result.stderr.includes("postgresql://"), false)
     assert.equal(result.stdout.includes("postgresql://"), false)
   })

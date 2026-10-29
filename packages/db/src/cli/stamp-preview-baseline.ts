@@ -20,29 +20,28 @@ const migrationsFolder = fileURLToPath(
 
 const assertPreviewBaselineTarget = Effect.fn("assertPreviewBaselineTarget")(
   function* (env: NodeJS.ProcessEnv = process.env) {
-    if (env.NEON_BRANCH !== "preview") {
+    if (env.NEON_BRANCH !== "preview" && env.NEON_BRANCH !== "staging") {
       return yield* new PreviewBaselineError({
-        reason: `Refusing preview baseline: NEON_BRANCH is "${env.NEON_BRANCH ?? ""}", not preview.`,
+        reason: `Refusing schema baseline: NEON_BRANCH is "${env.NEON_BRANCH ?? ""}", not preview or staging.`,
       })
     }
+    const branch = env.NEON_BRANCH
     if (env.FLOWMARK_DEMO_MODE === "true") {
       return yield* new PreviewBaselineError({
-        reason: "Refusing preview baseline while FLOWMARK_DEMO_MODE is true.",
+        reason: `Refusing ${branch} baseline while FLOWMARK_DEMO_MODE is true.`,
       })
     }
     const url = env.DATABASE_MIGRATION_URL
     if (!url) {
       return yield* new PreviewBaselineError({
-        reason:
-          "Refusing preview baseline: DATABASE_MIGRATION_URL is required.",
+        reason: `Refusing ${branch} baseline: DATABASE_MIGRATION_URL is required.`,
       })
     }
     const host = yield* Effect.try({
       try: () => new URL(url).hostname,
       catch: () =>
         new PreviewBaselineError({
-          reason:
-            "Refusing preview baseline: DATABASE_MIGRATION_URL is not a valid URL.",
+          reason: `Refusing ${branch} baseline: DATABASE_MIGRATION_URL is not a valid URL.`,
         }),
     })
     if (
@@ -52,16 +51,29 @@ const assertPreviewBaselineTarget = Effect.fn("assertPreviewBaselineTarget")(
       !host.endsWith(".neon.tech")
     ) {
       return yield* new PreviewBaselineError({
-        reason: `Refusing preview baseline: host ${host} is not a Neon host.`,
+        reason: `Refusing ${branch} baseline: host ${host} is not a Neon host.`,
       })
     }
-    if (
-      env.FLOWMARK_PRODUCTION_DATABASE_HOST &&
-      host === env.FLOWMARK_PRODUCTION_DATABASE_HOST
-    ) {
+    if (branch === "staging" && !env.FLOWMARK_PREVIEW_DATABASE_HOST) {
       return yield* new PreviewBaselineError({
-        reason: `Refusing preview baseline: host ${host} matches the production env file.`,
+        reason:
+          "Refusing staging baseline: FLOWMARK_PREVIEW_DATABASE_HOST is required.",
       })
+    }
+    const forbiddenHosts = [
+      ["production", env.FLOWMARK_PRODUCTION_DATABASE_HOST],
+      ["preview", env.FLOWMARK_PREVIEW_DATABASE_HOST],
+      ["staging", env.FLOWMARK_STAGING_DATABASE_HOST],
+    ] as const
+    for (const [name, forbiddenHost] of forbiddenHosts) {
+      if (!forbiddenHost || name === branch) {
+        continue
+      }
+      if (host === forbiddenHost) {
+        return yield* new PreviewBaselineError({
+          reason: `Refusing ${branch} baseline: host ${host} matches the ${name} env file.`,
+        })
+      }
     }
     return url
   },
@@ -171,7 +183,8 @@ const stampEntries = (sql: postgres.Sql) =>
         }),
       { concurrency: 1 },
     )
-    return `Stamped ${entries.length} committed migrations on the preview branch. No product rows were copied.`
+    const branch = process.env.NEON_BRANCH === "staging" ? "staging" : "preview"
+    return `Stamped ${entries.length} committed migrations on the ${branch} branch. No product rows were copied.`
   })
 
 const inspectPreviewBaseline = (sql: postgres.Sql) =>
@@ -193,7 +206,8 @@ const inspectPreviewBaseline = (sql: postgres.Sql) =>
         ? yield* rowCount(sql, "migrations")
         : 0,
     }
-    const skipped = yield* decidePreviewBaseline(state)
+    const branch = process.env.NEON_BRANCH === "staging" ? "staging" : "preview"
+    const skipped = yield* decidePreviewBaseline(state, branch)
     return yield* Option.match(skipped, {
       onNone: () => stampEntries(sql),
       onSome: (reason) => Effect.succeed(reason),

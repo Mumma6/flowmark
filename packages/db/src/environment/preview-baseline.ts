@@ -14,27 +14,33 @@ export type PreviewBaselineState = {
   readonly migrationRowCount: number
 }
 
+const baselineLabel = (branch: "preview" | "staging") =>
+  branch === "staging" ? "Staging" : "Preview"
+
 export const decidePreviewBaseline = Effect.fn("decidePreviewBaseline")(
-  function* (state: PreviewBaselineState) {
+  function* (
+    state: PreviewBaselineState,
+    branch: "preview" | "staging" = "preview",
+  ) {
+    const label = baselineLabel(branch)
     if (state.migrationRowCount > 0) {
       return Option.some(
-        "Preview baseline skipped: migration history is already present.",
+        `${label} baseline skipped: migration history is already present.`,
       )
     }
     if (!state.userTableExists && !state.workflowsTableExists) {
       return Option.some(
-        "Preview baseline skipped: schema is absent. Committed migrations will create it.",
+        `${label} baseline skipped: schema is absent. Committed migrations will create it.`,
       )
     }
     if (state.userTableExists !== state.workflowsTableExists) {
       return yield* new PreviewBaselineError({
-        reason: "Refusing preview baseline: the schema is only partly present.",
+        reason: `Refusing ${branch} baseline: the schema is only partly present.`,
       })
     }
     if (state.userRowCount > 0 || state.workflowRowCount > 0) {
       return yield* new PreviewBaselineError({
-        reason:
-          "Refusing preview baseline: user or workflows already has rows. This branch is not an empty schema-only copy.",
+        reason: `Refusing ${branch} baseline: user or workflows already has rows. This branch is not an empty schema-only copy.`,
       })
     }
     return Option.none()
