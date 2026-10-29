@@ -1,4 +1,4 @@
-import { Effect, Exit, Layer } from "effect"
+import { Effect, Layer } from "effect"
 import { ApiSettings } from "./config.js"
 import { AuthorizeProject } from "./features/project-access/use-cases/authorize-project.js"
 import { ManageProject } from "./features/project-access/use-cases/manage-project.js"
@@ -55,11 +55,4 @@ export function runApi<A, E>(
   })
 }
 
-export function logFailure(exit: Exit.Exit<unknown, unknown>) {
-  Exit.match(exit, {
-    onSuccess: () => undefined,
-    onFailure: (cause) => {
-      console.error("[Flowmark API] Request failed", cause)
-    },
-  })
-}
+export { logFailure } from "./diagnostics.js"

@@ -239,7 +239,14 @@ boundary. Database acquisition/release belongs to a scoped database adapter,
 so connections close on success, failure, and interruption. Request abort
 signals interrupt the request effects. Initialization and cleanup failures
 preserve operation/cause and become explicit failures, not successful responses.
-The health endpoint remains a database-independent liveness check.
+The health endpoint remains a database-independent liveness check. There is no
+separate readiness route: health 200 does not prove database availability or a
+successful authenticated write. Ingestion storage failures return 503;
+dashboard configuration and upstream transport failures remain 500 and 502.
+Request failure logs emit safe known type/operation/code metadata rather than
+raw driver causes, SQL, parameters, or connection strings. See
+[health and failure diagnostics](./development.md#health-and-failure-diagnostics)
+for interpretation and verification limits.
 
 ## Persistence and isolation
 

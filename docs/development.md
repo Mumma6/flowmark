@@ -371,6 +371,47 @@ when affected; no Playwright dependency is required for this API coverage.
 
 ## Troubleshooting local data
 
+### Health and failure diagnostics
+
+`GET /api/health` is liveness only: a 200 means the API process responds, even
+when PostgreSQL is unavailable. It does not verify authentication, ingestion,
+or database readiness. Keep this single database-independent health route;
+there is no `/api/ready` route or automated readiness check. Use relevant
+Staging smoke tests when a change needs database/auth verification rather than
+adding database work to every liveness request.
+
+```sh
+curl --fail http://127.0.0.1:3003/api/health
+```
+
+| Signal                                              | Meaning                                                                                   |
+| --------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| API health 200                                      | Process responds; database may still be unavailable                                       |
+| Ingestion 503, `Event storage is unavailable.`      | API could not complete storage work; not a successful write                               |
+| Dashboard proxy 500                                 | Dashboard API configuration is missing or invalid                                         |
+| Dashboard proxy 502, `Flowmark API is unavailable.` | Dashboard could not reach its upstream API                                                |
+| Upstream response forwarded by proxy                | The upstream status is preserved, including a 503; it is not converted to a transport 502 |
+
+`[Flowmark API] Request failed` logs safe structured metadata: known failure
+types, allowlisted database operations, selected network/PostgreSQL codes,
+defects, and interruption state. For example, `authenticate` with
+`ECONNREFUSED` points to database connectivity while resolving an ingestion key.
+Unknown labels/codes are omitted or reported as unknown. Raw causes, messages,
+stacks, SQL, bound values, URLs, and credentials are intentionally not logged.
+Original typed errors remain available inside the Effect error channel.
+
+Dashboard transport logs use `[Flowmark dashboard] API request failed` with a
+safe `DashboardProxyError` label, without the raw fetch error or endpoint URL.
+Do not restore raw exception dumps to debug an incident; inspect local/hosted
+configuration through the appropriate operator tools without copying secrets.
+
+Regression coverage includes an actual refused loopback database connection
+in the Postgres integration CI job, synthetic nested/compound error causes,
+and dashboard configuration/transport/status-forwarding tests. No existing
+development database needs to be stopped to run those tests.
+
+### Local data checks
+
 - `FlowmarkConfigError` mentioning `apiKey`: the harness server did not receive
   `FLOWMARK_API_KEY`. Run `pnpm dev:setup` and restart the dev command if the
   process predates the local environment files. Never fix this with a public
