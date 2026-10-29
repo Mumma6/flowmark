@@ -83,7 +83,7 @@ export function CodeShowcase() {
       >
         <TabsList
           aria-label="Explore a real-world scenario"
-          className="h-auto flex-wrap justify-start gap-1 border border-border bg-white/[0.02] p-1"
+          className="h-auto flex-wrap justify-start gap-1 border border-border bg-card p-1"
         >
           {examples.map((item) => (
             <TabsTrigger

@@ -31,7 +31,7 @@ export const examples: ReadonlyArray<CodeExample> = [
     label: "Checkout",
     question: "Payment succeeded. What did operations still need to do?",
     description:
-      "Mark the business steps you already run. Operations can see which ones completed, how long they took, and what is still missing.",
+      "Mark the business steps you already run. Operations can see which ones completed, how long they took, and what was not reported.",
     title: "checkout/complete-order.ts",
     existingCode: `async function checkoutOrder(orderId: string) {
   try {
@@ -129,12 +129,12 @@ export const examples: ReadonlyArray<CodeExample> = [
       status: "Failed",
       headline: "Last reported: 600 of 1,000 records.",
       explanation:
-        "The sync failed after 600 of 1,000 records. The last snapshot is on the run.",
+        "The application reported failure with 600 updated records in its result. The last progress snapshot is also retained.",
       duration: "8.7 s",
       metrics: [
         { label: "Last reported", value: "600" },
         { label: "Expected", value: "1,000" },
-        { label: "Final result", value: "Not reported" },
+        { label: "Reported updated", value: "600" },
       ],
       events: [
         {

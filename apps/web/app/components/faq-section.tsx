@@ -24,12 +24,12 @@ const questions: ReadonlyArray<{
   {
     value: "insights",
     title: "What insights do I get?",
-    body: "Volume, success rate, duration, week-over-week change, slowest operations, and failure codes — plus attributed change: which operation slowed, which codes account for a drop, and what runs reported accomplishing. Every insight links back to the executions behind it.",
+    body: "Execution volume, completion rate, duration trends, operation timings, failure codes, peer comparisons, and declared business-outcome trends. Seven-day comparisons connect changes in duration and completion to recorded operations and failure codes.",
   },
   {
     value: "result",
     title: "What is a reported result?",
-    body: "A small JSON summary the application attaches on done() or fail() — imported and skipped counts, a shipment id, how far a sync got. It is evidence the application reported, not verified business correctness. Failed and partial runs can carry one too. Declared fields can be followed across runs and releases.",
+    body: "A small JSON summary the application attaches on done() or fail() — imported and skipped counts, a shipment id, how far a sync got. It is evidence the application reported, not verified business correctness. Failed and partial runs can carry one too. Declare which fields have business meaning to follow their results across executions, with coverage and a path back to the contributing runs.",
   },
   {
     value: "framework",
@@ -37,20 +37,24 @@ const questions: ReadonlyArray<{
     body: "No. Add markers around ordinary TypeScript functions and Promises. A workflow is the process name you choose. Flowmark does not execute, schedule, or retry that work.",
   },
   {
+    value: "business",
+    title: "Can product and support use the same data?",
+    body: "Yes. Product can read reported outcomes and trends. Support can find a case by a business reference. Engineering can inspect the operations, progress, and errors behind that same execution. Everyone works from the same application-reported facts, at the level of detail they need.",
+  },
+  {
     value: "errors",
     title: "How do I record errors?",
     body: (
       <>
         Use{" "}
-        <code className="font-mono text-[0.92em] text-[#c5d9bb]">
+        <code className="font-mono text-[0.92em] text-primary">
           error({"{ handled: true }"})
         </code>{" "}
         for a recovered problem, and{" "}
-        <code className="font-mono text-[0.92em] text-[#c5d9bb]">done()</code>{" "}
-        or{" "}
-        <code className="font-mono text-[0.92em] text-[#c5d9bb]">fail()</code>{" "}
-        for the terminal outcome. A failed operation can sit next to a completed
-        run when your code recovered.
+        <code className="font-mono text-[0.92em] text-primary">done()</code> or{" "}
+        <code className="font-mono text-[0.92em] text-primary">fail()</code> for
+        the terminal outcome. A failed operation can sit next to a completed run
+        when your code recovered.
       </>
     ),
   },
@@ -60,7 +64,7 @@ const questions: ReadonlyArray<{
     body: (
       <>
         Yes. The{" "}
-        <code className="font-mono text-[0.92em] text-[#c5d9bb]">
+        <code className="font-mono text-[0.92em] text-primary">
           @flowmarkdev/node/browser
         </code>{" "}
         entry point uses public browser keys with allowed origins, or a
@@ -71,7 +75,7 @@ const questions: ReadonlyArray<{
   {
     value: "start",
     title: "How do I start?",
-    body: "Create a project in the dashboard, run npm i @flowmarkdev/node, and mark one process. The docs cover Node.js, Next.js, and the browser.",
+    body: "Create a project and server-write key in the dashboard, install @flowmarkdev/node, and configure the API origin and key on the server. Mark one process and handle delivery at its process boundary. The docs cover Node.js, Next.js, browser setup, and self-hosting.",
   },
 ]
 

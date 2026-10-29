@@ -46,13 +46,13 @@ export function WorkflowCodeBlock({
   value: string
 }) {
   return (
-    <CodeBlock className="w-full border-white/15 bg-[#080d0e]">
+    <CodeBlock className="w-full border-border bg-background">
       <CodeBlockHeader className="min-h-12 px-3 sm:px-3.5">
         <CodeBlockTitle>{title}</CodeBlockTitle>
         <CodeBlockActions>
           <span className="text-[10px] text-muted-foreground">TypeScript</span>
           <CodeBlockCopyButton
-            className="border border-border text-[#c6d2c9]"
+            className="border border-border text-muted-foreground"
             value={value}
             variant="ghost"
           />
