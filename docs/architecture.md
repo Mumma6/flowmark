@@ -239,6 +239,15 @@ boundary. Database acquisition/release belongs to a scoped database adapter,
 so connections close on success, failure, and interruption. Request abort
 signals interrupt the request effects. Initialization and cleanup failures
 preserve operation/cause and become explicit failures, not successful responses.
+Better Auth separately caches one lazy database pool per server module/process.
+That pool lives across auth requests; it is not the request-scoped API pool.
+The installed postgres.js driver defaults to a maximum of ten connections per
+pool. Concurrent API requests can each own a pool until their scope closes, and
+multiple serverless instances each have their own auth cache: this is not a
+global connection cap. Local repeated-request measurements showed a stable auth
+pool after warm-up, so the existing driver and production settings are retained.
+See [connection lifecycle verification](./development.md#connection-lifecycle-verification).
+
 The health endpoint remains a database-independent liveness check. There is no
 separate readiness route: health 200 does not prove database availability or a
 successful authenticated write. Ingestion storage failures return 503;

@@ -394,6 +394,23 @@ render dashboard UI, or verify the hosted dashboard proxy, cookie domain,
 SameSite behavior, or cross-origin deployment setup. Verify those in Staging
 when affected; no Playwright dependency is required for this API coverage.
 
+### Connection lifecycle verification
+
+The authenticated ingestion suite also measures retained database connections
+through `pg_stat_activity`. It adds a random `application_name` to its runtime
+connection URL and counts only that name, excluding the observer and other
+suites. Four waves each run six concurrent session checks, two-event ingestions,
+and authenticated project reads. The retained count must stay within the cached
+auth pool's default maximum of ten. A final ingestion-only wave must return to
+the same retained count, verifying that API pools are closed.
+
+Run the existing server integration command above with a dedicated disposable
+local database; the result prints a baseline and four post-wave counts. A local
+PostgreSQL 16 run observed `1 → 6 → 6 → 6 → 6`. No driver, auth adapter, pool
+setting, or lifecycle redesign was needed. This measures one test process, not
+the total connections across Vercel instances or Neon capacity. Do not generate
+production traffic or change production driver settings as part of this check.
+
 ## Troubleshooting local data
 
 ### Health and failure diagnostics

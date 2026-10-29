@@ -1,10 +1,10 @@
 import { randomUUID } from "node:crypto"
-import { eq } from "drizzle-orm"
+import { eq, sql } from "drizzle-orm"
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest"
 import { createDatabase, projectApiKeys, workflowRuns } from "@flowmark/db"
 import { hashApiKey } from "@flowmark/db/persistence"
 import { POST as register } from "../../app/api/register/route"
-import { POST as auth } from "../../app/api/auth/[...all]/route"
+import { GET as authGet, POST as auth } from "../../app/api/auth/[...all]/route"
 import { POST as ingest } from "../../app/v1/events/route"
 import { appRouter } from "../../src/adapters/trpc"
 
@@ -87,9 +87,12 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
   "authenticated ingestion and session project isolation",
   () => {
     let connection: ReturnType<typeof createDatabase>
+    const applicationName = `flowmark-lifecycle-${randomUUID()}`
 
     beforeAll(() => {
-      vi.stubEnv("DATABASE_URL", process.env.TEST_DATABASE_URL!)
+      const runtimeUrl = new URL(process.env.TEST_DATABASE_URL!)
+      runtimeUrl.searchParams.set("application_name", applicationName)
+      vi.stubEnv("DATABASE_URL", runtimeUrl.toString())
       vi.stubEnv("FLOWMARK_DEMO_MODE", "false")
       vi.stubEnv("BETTER_AUTH_SECRET", `${randomUUID()}${randomUUID()}`)
       vi.stubEnv("BETTER_AUTH_URL", origin)
@@ -192,6 +195,60 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         (await aliceReader.project.keys(alice.project.id)).apiKeys,
       ).toHaveLength(2)
       expect(await aliceReader.run.detail({ id: run.id })).toHaveLength(2)
+    })
+
+    it("reuses a bounded auth pool and releases API pools across repeated request waves", async () => {
+      const owner = await createOwner("Connection lifecycle")
+      const read = caller(owner.cookie, owner.project.id)
+      const connectionCount = async () => {
+        const rows = await connection.db.execute<{ count: number }>(sql`
+          select count(*)::int as count from pg_stat_activity
+          where application_name = ${applicationName}
+        `)
+        return rows[0].count
+      }
+      const observations: number[] = []
+      const observeAfterRequests = async () => {
+        // Pool shutdown completes before runApi returns; allow the server's
+        // activity view to observe disconnects before recording the plateau.
+        await expect.poll(connectionCount).toBeLessThanOrEqual(10)
+        const count = await connectionCount()
+        expect(count).toBeGreaterThan(0) // The process-cached auth pool remains.
+        observations.push(count)
+      }
+      await observeAfterRequests()
+      for (let wave = 0; wave < 4; wave++) {
+        await Promise.all(
+          Array.from({ length: 6 }, async () => {
+            const session = await authGet(
+              new Request(`${origin}/api/auth/get-session`, {
+                headers: { cookie: owner.cookie },
+              }),
+            )
+            expect(session.status).toBe(200)
+            expect((await session.json()).user.id).toBeTruthy()
+            await sendRun(owner.writeKey.secret)
+            expect(await read.project.list()).toEqual([
+              expect.objectContaining({ id: owner.project.id }),
+            ])
+          }),
+        )
+        await observeAfterRequests()
+      }
+      const retainedAuthConnections = await connectionCount()
+      // Ingestion uses project keys, so this wave cannot grow the auth pool.
+      // Any extra retained connection would belong to a leaked API pool.
+      await Promise.all(
+        Array.from({ length: 6 }, () => sendRun(owner.writeKey.secret)),
+      )
+      await expect.poll(connectionCount).toBe(retainedAuthConnections)
+      // A fresh API pool leaked per request would accumulate well beyond the
+      // single cached postgres.js pool's default maximum of ten connections.
+      expect(observations).toHaveLength(5)
+      console.info(
+        "Connection lifecycle: baseline and four completed waves",
+        observations,
+      )
     })
 
     it("rejects anonymous and forged sessions and invalidates a signed-out session", async () => {
