@@ -66,7 +66,13 @@ console.log(
 )
 console.log("Credentials are not printed. Never run pnpm db:seed against Neon.")
 
-const childEnv = { ...process.env, DATABASE_MIGRATION_URL: migrationUrl }
+const childEnv = {
+  ...process.env,
+  DATABASE_MIGRATION_URL: migrationUrl,
+  NEON_BRANCH: "production",
+  FLOWMARK_MIGRATION_WRAPPER: "production",
+  FLOWMARK_MIGRATION_TARGET_HOST: target.host,
+}
 delete childEnv.DATABASE_URL
 delete childEnv.FLOWMARK_DEMO_MODE
 

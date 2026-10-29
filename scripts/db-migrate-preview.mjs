@@ -116,6 +116,8 @@ const childEnv = {
   ...process.env,
   DATABASE_MIGRATION_URL: migrationUrl,
   NEON_BRANCH: "preview",
+  FLOWMARK_MIGRATION_WRAPPER: "preview",
+  FLOWMARK_MIGRATION_TARGET_HOST: previewHost,
   FLOWMARK_PRODUCTION_DATABASE_HOST: productionHost,
 }
 if (stagingMigrationUrl) {
