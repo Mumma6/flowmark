@@ -138,6 +138,11 @@ CI never uses Neon credentials or demo seed data. See
 for the local equivalent. Ordinary releases do not require a sync back into
 staging; bring main changes back only when needed, such as after a hotfix.
 
+The database suite includes real registration and session-based sign-in,
+project/key creation, ingestion, persisted-run reads, and cross-project denials.
+It exercises server routes and API procedures; browser UI and hosted cookie
+behavior still need Staging verification.
+
 - [Development](./docs/development.md)
 - [Application releases](./docs/releases.md)
 - [Architecture](./docs/architecture.md)

@@ -1,6 +1,7 @@
 import { Effect, Either, Layer, Redacted } from "effect"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import {
+  DEMO_READ_KEY,
   DEMO_WRITE_KEY,
   DIAGNOSTICS_WRITE_KEY,
   DIAGNOSTICS_BROWSER_KEY,
@@ -286,24 +287,31 @@ describe("API Effect services", () => {
     expect(append).not.toHaveBeenCalled()
   })
 
-  it("rejects public demo credentials before touching storage when demo mode is off", async () => {
-    const authenticate = vi.fn(projectCredentials().authenticate)
-    const result = await Effect.runPromise(
-      Effect.flatMap(AuthorizeProject, (service) =>
-        Effect.either(service.authorize(`Bearer ${DEMO_WRITE_KEY}`, "write")),
-      ).pipe(
-        Effect.provide(
-          dependencies(
-            repository(),
-            false,
-            projectCredentials({ authenticate }),
+  it.each([
+    [DEMO_READ_KEY, "read"],
+    [DEMO_WRITE_KEY, "write"],
+    [DIAGNOSTICS_WRITE_KEY, "write"],
+  ] as const)(
+    "rejects %s before touching storage when demo mode is off",
+    async (key, permission) => {
+      const authenticate = vi.fn(projectCredentials().authenticate)
+      const result = await Effect.runPromise(
+        Effect.flatMap(AuthorizeProject, (service) =>
+          Effect.either(service.authorize(`Bearer ${key}`, permission)),
+        ).pipe(
+          Effect.provide(
+            dependencies(
+              repository(),
+              false,
+              projectCredentials({ authenticate }),
+            ),
           ),
         ),
-      ),
-    )
-    expectLeft(result, { _tag: "Unauthorized" })
-    expect(authenticate).not.toHaveBeenCalled()
-  })
+      )
+      expectLeft(result, { _tag: "Unauthorized" })
+      expect(authenticate).not.toHaveBeenCalled()
+    },
+  )
 
   it("authorizes dashboard sessions from project membership", async () => {
     const projectForUser = vi.fn(() => Effect.succeed("owned-project"))

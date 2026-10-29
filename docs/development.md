@@ -348,7 +348,26 @@ migration URLs explicitly so server env files cannot redirect the migration.
 No `db:setup` or `db:seed` is needed. Without `TEST_DATABASE_URL`, normal server
 unit runs skip the database suites; the integration CI job must run them.
 These tests cover ingestion, idempotency, browser quotas, and project isolation.
-The sign-in → project → ingest → read full-path test is separate follow-up work.
+The authenticated ingestion suite now covers registration → sign-in → project
+and key creation → ingestion → persisted-run read with a real Better Auth
+session, with demo mode off. It also checks that project headers and management
+inputs cannot grant another user's access, and that signed-out sessions fail.
+
+| Boundary                  | Test coverage                                                                                                                                                                                                                                     | CI job                                       |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| Register and sign in      | [`authenticated-ingestion.test.ts`](../apps/server/test/http/authenticated-ingestion.test.ts) uses the registration and Better Auth HTTP handlers and their actual session cookies                                                                | PostgreSQL integration tests                 |
+| Create project and key    | Same suite calls session-authenticated tRPC procedures; verifies stored key hash and secret-free key listing                                                                                                                                      | PostgreSQL integration tests                 |
+| Ingest                    | Same suite uses the actual events route; [`ingestion.test.ts`](../apps/server/test/http/ingestion.test.ts) and [`browser-ingestion.test.ts`](../apps/server/test/http/browser-ingestion.test.ts) add idempotency, validation, origins, and quotas | PostgreSQL integration tests                 |
+| Persist                   | Authenticated suite reads the reported terminal result from PostgreSQL                                                                                                                                                                            | PostgreSQL integration tests                 |
+| Read                      | Same suite reads project snapshot and run timeline using the signed-in user's cookie                                                                                                                                                              | PostgreSQL integration tests                 |
+| Deny cross-project access | Authenticated suite checks sessions, forged project headers, key listing/creation and project renaming; ingestion suite checks another project's read key                                                                                         | PostgreSQL integration tests                 |
+| Refuse demo credentials   | [`workflows.test.ts`](../packages/api/test/features/workflows.test.ts) checks read/write/diagnostics keys before storage; HTTP suites check server/browser demo-key refusal                                                                       | Fast checks and PostgreSQL integration tests |
+
+These are in-process route/API integration tests with the real auth and
+persistence implementations. They do not launch a Next.js server or browser,
+render dashboard UI, or verify the hosted dashboard proxy, cookie domain,
+SameSite behavior, or cross-origin deployment setup. Verify those in Staging
+when affected; no Playwright dependency is required for this API coverage.
 
 ## Troubleshooting local data
 
