@@ -36,3 +36,16 @@ General product questions, feature requests, and deployment help belong in
 GitHub Discussions or issues labeled for support, not in private security
 reports. Reports must not include live credentials, production connection
 strings, or copies of private maintainer configuration.
+
+## Dependencies
+
+GitHub **Dependabot alerts** and **Dependabot security updates** are enabled on
+this repository. **Secret scanning** and **push protection** are enabled for
+the public tree. There is no `.github/dependabot.yml` version-update schedule;
+maintainers review dependency security pull requests when Dependabot opens them
+rather than taking a weekly stream of version bumps.
+
+Local development may still report additional findings through `pnpm audit`
+(dev-only paths are not always covered by GitHub alerts). Those are triaged
+separately and are not a substitute for reporting product vulnerabilities
+through private advisory reporting above.
