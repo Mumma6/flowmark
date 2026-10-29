@@ -226,6 +226,10 @@ integration coverage runs with `pnpm --filter @flowmark/server test` and needs
 
 ## Environment and database
 
+Self-hosting uses the same apps and committed migrations with any PostgreSQL
+you control. The reference deployment on Neon and Vercel is documented for
+maintainers, not as a second product tier you must purchase to run the code.
+
 Local demo and the reference deployment are different environments. Do not
 copy Vercel values into `.env.local`, and do not point local demo at Neon.
 The [infrastructure guide](./infrastructure) lists every variable, which
