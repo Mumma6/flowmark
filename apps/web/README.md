@@ -72,7 +72,13 @@ against controlled helpers and check preserved behavior and line budgets.
 All illustrations are static fixtures; no work is executed, no telemetry is
 sent, and no customer data or credentials are needed.
 
-Global CSS contains theme tokens, base rules and one finite arrival keyframe.
-Smooth anchors and arrival motion respect reduced-motion preferences. Hover
-and selection feedback use CSS transitions. No timers, scroll listeners,
-remote font requests, animation dependencies, or backend changes are needed.
+The hero reuses the original decorative Spotlight, Spotlight Wash, Background
+Beams, Meteors, and subtle grid/dot treatments. The effects are CSS/SVG, clipped
+to the hero background, hidden from assistive technology, and never intercept
+pointer input. Meteors disappear under reduced motion; beams and spotlights
+become static. Existing source attributions remain in the effect components.
+
+Global CSS contains theme tokens, base rules and animation keyframes. Smooth
+anchors and arrival motion respect reduced-motion preferences. Hover and
+selection feedback use CSS transitions. No timers, scroll listeners, remote
+font requests, animation dependencies, or backend changes are needed.

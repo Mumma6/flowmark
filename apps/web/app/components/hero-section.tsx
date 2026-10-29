@@ -1,5 +1,9 @@
 import { Button } from "@flowmark/ui"
+import { BackgroundBeams } from "./background-beams"
 import { Arrow } from "./brand"
+import { Meteors } from "./meteors"
+import { Spotlight } from "./spotlight"
+import { SpotlightWash } from "./spotlight-wash"
 import { WorkflowDemo } from "./workflow-demo"
 import { overlineClassName, shellClassName } from "./shell"
 import { docsUrl } from "./site-links"
@@ -12,8 +16,16 @@ export function HeroSection() {
     >
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[800px] overflow-hidden bg-[radial-gradient(ellipse_at_50%_70%,var(--hero-glow),transparent_65%)]"
-      />
+        className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[50rem] overflow-hidden [mask-image:linear-gradient(to_bottom,#000_70%,transparent)] sm:h-[54rem]"
+      >
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_60%,var(--hero-glow),transparent_65%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle,#b9f59712_1px,transparent_1px)] bg-size-[22px_22px] [mask-image:radial-gradient(ellipse_at_50%_20%,#000_18%,transparent_72%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(#b9f5970c_1px,transparent_1px),linear-gradient(90deg,#b9f5970c_1px,transparent_1px)] bg-size-[72px_72px] [mask-image:radial-gradient(ellipse_at_50%_0%,#000_8%,transparent_70%)]" />
+        <SpotlightWash />
+        <BackgroundBeams />
+        <Meteors />
+        <Spotlight className="top-[-18%] opacity-70" />
+      </div>
       <div className={shellClassName}>
         <div className="mx-auto max-w-4xl text-center motion-safe:animate-arrive">
           <a
