@@ -7,8 +7,11 @@ feature branch → PR into staging → Staging verification
   → release PR into main → Production verification → application GitHub Release
 ```
 
-GitHub Actions runs PR checks. Vercel deploys the four hosted apps when their
-branches change. There is no separate release deployment Action. Agent skills
+GitHub Actions runs PR checks. Vercel builds a hosted app only when that
+project or one of its workspace dependencies changed in the commit (Turbo
+`ignoreCommand` per app). Unchanged projects skip Preview and Production
+builds for that commit, which keeps deployment quota use down. There is no
+separate release deployment Action. Agent skills
 help an operator perform this workflow when requested; they are not background
 automation. `apps/dev-harness` and `apps/internal-docs` remain local-only.
 
