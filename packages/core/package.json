@@ -1,6 +1,6 @@
 {
   "name": "@flowmarkdev/core",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Shared workflow event contracts for Flowmark",
   "license": "MIT",
   "type": "module",
