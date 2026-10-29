@@ -37,7 +37,7 @@ function barClass(status: OperationSpan["status"]) {
     case "open":
       return "bg-muted-foreground/50"
     default:
-      return "bg-primary"
+      return "bg-success"
   }
 }
 
@@ -127,7 +127,7 @@ export function OperationWaterfall({
         {spans.map((span) => (
           <li key={span.operationId} className="grid gap-2">
             <div className="flex flex-wrap items-center gap-2 text-sm">
-              <span className="font-medium">{span.name}</span>
+              <span className="break-all font-medium">{span.name}</span>
               <Badge
                 variant={
                   span.status === "failed"
@@ -137,7 +137,7 @@ export function OperationWaterfall({
                       : "success"
                 }
               >
-                {span.status === "open" ? "Still open" : span.status}
+                {span.status === "open" ? "No recorded end" : span.status}
               </Badge>
               <span className="text-xs text-muted-foreground">
                 +{formatDuration(span.offsetMs)}
@@ -146,7 +146,7 @@ export function OperationWaterfall({
                   : ""}
               </span>
             </div>
-            <div className="relative h-3 rounded-full bg-muted">
+            <div className="relative h-3 overflow-hidden rounded-full bg-muted">
               <div
                 className={`absolute top-0 h-full rounded-full ${barClass(span.status)}`}
                 style={{

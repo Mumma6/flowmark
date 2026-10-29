@@ -1,53 +1,46 @@
 # Flowmark dashboard
 
-## Pages and data
+Anonymous visitors are redirected to sign in. Registration creates the account;
+onboarding/Settings creates the first project and write key. Existing local demo
+setup supplies `local@dev` / `local-dev-only`. Do not seed or reset telemetry just
+to verify presentation changes.
 
-Anonymous visitors are redirected to sign in. Email/password registration
-creates the account only; the first project and write key are created in
-Settings / onboarding. Seed `local@dev` /
-`local-dev-only` after `pnpm db:setup` to open the operations project.
+## Pages and populations
 
-- **Overview:** project metrics, week-over-week change, 30-day volume and
-  duration charts, slowest operations, failure codes, five workflow summaries,
-  and five recent runs.
-- **Workflows:** name-prefix groups, namespace/search filters, and 12 workflow
-  rows per page.
-- **Workflow detail:** all-time workflow summary plus matching runs from the
-  project's latest-100 snapshot. A `?search=` URL parameter prefills run search,
-  including links from the local harness using an external SDK run ID.
-- **Runs:** search by SDK run ID, workflow, checkpoint, correlation or parent ID;
-  filter by workflow, status or naming namespace. Newest first by default;
-  sort and optionally group by workflow. At most 15 run rows per page.
-- **Run detail:** outcome first; separate timeline, context and related-run tabs.
-  Timeline pages contain 15 events with expandable payloads. Related-run tables
-  contain at most 10 rows each.
-- **Settings:** rename or create a project, create/revoke/rotate server write
-  keys and browser keys (secret shown once), and update the signed-in name
-  or password. The sidebar switches between projects the account owns.
+- **Overview:** four seven-day execution metrics from `project.intelligence`,
+  all-recorded workflow summaries, failures within the latest-100 snapshot,
+  five recent runs with reported results, 30-day trend charts, observed-change
+  evidence and all-recorded diagnostics. Populations are labelled separately.
+- **Workflows:** namespace/search/sort controls and name-prefix groups under one
+  table header; 12 workflow rows per page. Summary counts are all-recorded.
+- **Workflow detail:** all-recorded execution summary, full server-paginated run
+  history with reported results, explicitly scoped snapshot charts and diagnostic
+  evidence. `?search=` prefills history search.
+- **Runs:** full history through `run.list`, 25 rows per page, filtered on the
+  server by workflow, lifecycle, search, namespace, failure code, environment,
+  release and dates. Advanced filters are disclosed and applied values stay
+  visible. Search supports the existing IDs/workflow/failure-code contract;
+  arbitrary business properties and result predicates are not indexed.
+- **Run detail:** workflow identity, recorded lifecycle and application-reported
+  result; Outcome, Timeline, Context, Compare and Related runs tabs. Timeline
+  offers a waterfall and paginated event table. Peer sample size and recorded
+  links remain explicit; raw data/exports are available without dominating.
+- **Settings:** project creation/rename, write/browser key management, setup help
+  and account controls. Project switching stays in the navigation.
 
-Filtering and pagination of run summaries are client-side over the latest 100
-project runs, not full-history server queries. The workflow list and aggregate
-metrics retain their existing backend scope. Namespace grouping is inferred
-from names, not trusted event provenance. No workflow execution, retry,
-or business-result verification was added.
+Technical completion is not business success. Missing terminal telemetry is
+labelled **No final outcome**, and progress is **Last reported**. Result scalar
+highlights remain application-reported values; no arbitrary JSON is interpreted
+as aggregate business outcome analytics. No workflow execution/retry was added.
 
-## UI and theme
+## Design and shared UI
 
-All application styling uses Tailwind utilities. `app/globals.css` contains
-only Tailwind directives and shadcn theme variables: dark charcoal surfaces
-and lime accents matching the landing page, with an accessible light variant.
-Dark is the default; saved appearance preferences still take precedence.
-
-Reusable shadcn-style controls live in `@flowmark/ui`: tables, badges, inputs,
-native selects, breadcrumbs, pagination, alerts, skeletons, separators, sheet,
-cards, tabs, accordion, buttons, charts and code blocks. Insight charts compose
-Recharts through the shared `ChartContainer` primitive. The mobile navigation sheet
-uses the existing Base UI dialog for focus management and dismissal. Do not
-add app-local copies, custom selector stylesheets, or another UI kit.
-
-`dashboard-data.ts` owns pure filtering/grouping/pagination helpers;
-`dashboard-components.tsx` composes shared controls. Data queries retain
-project scoping from the signed-in session, and existing automatic refresh.
+See [Flowmark design system](../../docs/design-system.md) for typography, spacing,
+color/status meanings, ownership and data-scope rules. Use Tailwind utilities,
+semantic theme variables and shared `@flowmark/ui` controls. Dashboard and harness
+use Tailwind 3; web/docs use Tailwind 4. Recharts composes through shared chart
+primitives. The mobile navigation Sheet uses Base UI focus management. Theme
+preferences include system/light/dark with dark as the default.
 
 ## Validation
 
@@ -60,5 +53,8 @@ pnpm --filter @flowmark/dashboard typecheck
 pnpm --filter @flowmark/dashboard build
 ```
 
-Also inspect desktop/mobile navigation, table overflow, filtering/pagination,
-keyboard interactions, loading/error states, and both appearance modes.
+Inspect desktop/mobile navigation, filtering/clear/pagination, reported results,
+all investigation tabs, keyboard/focus, chart value disclosures, overflow, both
+themes and independent loading/error/empty states. Changes to shared defaults
+also require checking directly affected consumers. Never claim production
+validation from local fixtures.

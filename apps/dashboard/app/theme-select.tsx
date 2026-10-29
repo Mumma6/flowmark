@@ -1,5 +1,6 @@
 "use client"
 
+import { useSyncExternalStore } from "react"
 import { Monitor } from "lucide-react"
 import { useTheme } from "next-themes"
 import {
@@ -16,8 +17,17 @@ const appearanceItems = {
   dark: "Dark",
 }
 
+const subscribe = () => () => {}
+const clientSnapshot = () => true
+const serverSnapshot = () => false
+
 export function ThemeSelect() {
   const { theme, setTheme } = useTheme()
+  const mounted = useSyncExternalStore(
+    subscribe,
+    clientSnapshot,
+    serverSnapshot,
+  )
 
   return (
     <div className="flex shrink-0 items-center gap-2 text-muted-foreground">
@@ -27,7 +37,7 @@ export function ThemeSelect() {
       </label>
       <Select
         items={appearanceItems}
-        value={theme ?? "system"}
+        value={mounted ? (theme ?? "system") : "system"}
         onValueChange={setTheme}
       >
         <SelectTrigger

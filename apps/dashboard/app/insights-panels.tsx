@@ -1,5 +1,9 @@
 import Link from "next/link"
 import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
   Alert,
   AlertDescription,
   Card,
@@ -21,14 +25,11 @@ import {
   OperationDurationChart,
 } from "./insight-charts"
 import {
-  durationInRange,
   formatDuration,
-  percentChange,
-  weekOverWeek,
   type Intelligence,
-  type Run,
   type Snapshot,
 } from "./dashboard-data"
+import { windowLabel } from "./overview-presentation"
 
 function signed(value: number | null, suffix = "") {
   if (value == null) {
@@ -100,291 +101,180 @@ export function IntelligencePanel({
     data.current.successRate == null || data.previous.successRate == null
       ? null
       : data.current.successRate - data.previous.successRate
-  const periodLabel = `${data.current.startedAfter.slice(0, 10)} – ${data.current.startedBefore.slice(0, 10)} vs previous 7 days`
+  const periodLabel = windowLabel(data.current)
   return (
-    <section className="grid min-w-0 gap-4" aria-label="Observed changes">
-      <div>
-        <h2 className="text-lg font-semibold">Observed changes</h2>
-        <p className="text-xs leading-6 text-muted-foreground">
-          {periodLabel}. These are application-reported executions, not causal
-          explanations.
-        </p>
+    <section className="grid min-w-0 gap-3" aria-label="Observed changes">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h2 className="text-base font-semibold">Observed changes</h2>
+          <p className="mt-1 text-xs leading-5 text-muted-foreground">
+            {periodLabel} · UTC · compared with previous 7 days
+          </p>
+        </div>
+        <span className="text-xs text-muted-foreground">
+          {data.current.totalRuns} current · {data.previous.totalRuns} previous
+          runs
+        </span>
       </div>
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <Card>
-          <CardHeader className="p-4 pb-0">
-            <CardDescription>Runs</CardDescription>
-            <CardTitle className="text-2xl">
-              {signed(data.current.totalRuns - data.previous.totalRuns)}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-4 pt-2 text-xs text-muted-foreground">
-            {data.current.totalRuns} current · {data.previous.totalRuns}{" "}
-            previous
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="p-4 pb-0">
-            <CardDescription>Success rate</CardDescription>
-            <CardTitle className="text-2xl">
-              {signed(successDelta, " pp")}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-4 pt-2 text-xs text-muted-foreground">
-            {data.current.successRate == null
-              ? "No finished current runs"
-              : `${data.current.successRate}% current · ${data.current.finishedRuns} finished`}
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="p-4 pb-0">
-            <CardDescription>Median duration</CardDescription>
-            <CardTitle className="text-2xl">
-              {durationDelta == null
-                ? "Not enough data"
-                : signed(durationDelta, " ms")}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-4 pt-2 text-xs text-muted-foreground">
-            {formatDuration(data.current.medianDurationMs)} current ·{" "}
-            {formatDuration(data.previous.medianDurationMs)} previous
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="p-4 pb-0">
-            <CardDescription>Evidence</CardDescription>
-            <CardTitle className="text-2xl">
-              {data.current.totalRuns.toLocaleString()}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-4 pt-2 text-xs text-muted-foreground">
-            current-window runs included
-          </CardContent>
-        </Card>
-      </div>
-      <div className="grid min-w-0 gap-5 xl:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Operation duration changes</CardTitle>
-            <CardDescription>
-              Median operation duration compared with the previous window.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-0">
-            {data.operations.length === 0 ? (
-              <p className="px-6 py-8 text-sm text-muted-foreground">
-                No comparable operations in these windows.
-              </p>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Operation</TableHead>
-                    <TableHead>Change</TableHead>
-                    <TableHead>Current runs</TableHead>
-                    <TableHead>Evidence</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {data.operations.slice(0, 8).map((operation) => (
-                    <TableRow key={operation.name}>
-                      <TableCell className="font-medium">
-                        {operation.name}
-                      </TableCell>
-                      <TableCell>
-                        {operation.durationDeltaMs == null
-                          ? "Not comparable"
-                          : signed(operation.durationDeltaMs, " ms")}
-                      </TableCell>
-                      <TableCell className="tabular-nums">
-                        {operation.currentRunCount}
-                      </TableCell>
-                      <TableCell>
-                        <EvidenceLinks ids={operation.currentRunIds} />
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Failure-code changes</CardTitle>
-            <CardDescription>
-              Application-reported terminal failure codes by window.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-0">
-            {data.failureCodes.length === 0 ? (
-              <p className="px-6 py-8 text-sm text-muted-foreground">
-                No failure codes in these windows.
-              </p>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Code</TableHead>
-                    <TableHead>Change</TableHead>
-                    <TableHead>Current</TableHead>
-                    <TableHead>Evidence</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {data.failureCodes.slice(0, 8).map((failure) => (
-                    <TableRow key={failure.code}>
-                      <TableCell>
-                        <code>{failure.code}</code>
-                      </TableCell>
-                      <TableCell>{signed(failure.countDelta)}</TableCell>
-                      <TableCell className="tabular-nums">
-                        {failure.currentCount}
-                      </TableCell>
-                      <TableCell>
-                        <EvidenceLinks ids={failure.currentRunIds} />
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+      <p className="text-sm leading-6 text-muted-foreground">
+        {data.previous.totalRuns === 0 ? (
+          "No previous-period baseline. Current evidence is available below."
+        ) : (
+          <>
+            Median duration:{" "}
+            {durationDelta == null
+              ? "not comparable"
+              : signed(Math.round(durationDelta), " ms")}
+            . Run completion:{" "}
+            {successDelta == null
+              ? "not comparable"
+              : signed(Math.round(successDelta * 10) / 10, " pp")}
+            . Describes recorded change, not its cause.
+          </>
+        )}
+      </p>
+      <Accordion className="rounded-xl border border-border bg-card px-5">
+        <AccordionItem value="change-evidence">
+          <AccordionTrigger>
+            Inspect operations & failure evidence
+          </AccordionTrigger>
+          <AccordionContent className="max-w-none">
+            <div className="grid min-w-0 gap-5 xl:grid-cols-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Operation duration changes</CardTitle>
+                  <CardDescription>
+                    Median operation duration compared with the previous window.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="p-0">
+                  {data.operations.length === 0 ? (
+                    <p className="px-6 py-8 text-sm text-muted-foreground">
+                      No comparable operations in these windows.
+                    </p>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Operation</TableHead>
+                          <TableHead>Change</TableHead>
+                          <TableHead>Current runs</TableHead>
+                          <TableHead>Evidence</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {data.operations.slice(0, 8).map((operation) => (
+                          <TableRow key={operation.name}>
+                            <TableCell className="font-medium">
+                              {operation.name}
+                            </TableCell>
+                            <TableCell>
+                              {operation.durationDeltaMs == null
+                                ? "Not comparable"
+                                : signed(operation.durationDeltaMs, " ms")}
+                            </TableCell>
+                            <TableCell className="tabular-nums">
+                              {operation.currentRunCount}
+                            </TableCell>
+                            <TableCell>
+                              <EvidenceLinks ids={operation.currentRunIds} />
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Failure-code changes</CardTitle>
+                  <CardDescription>
+                    Application-reported terminal failure codes by window.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="p-0">
+                  {data.failureCodes.length === 0 ? (
+                    <p className="px-6 py-8 text-sm text-muted-foreground">
+                      No failure codes in these windows.
+                    </p>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Code</TableHead>
+                          <TableHead>Change</TableHead>
+                          <TableHead>Current</TableHead>
+                          <TableHead>Evidence</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {data.failureCodes.slice(0, 8).map((failure) => (
+                          <TableRow key={failure.code}>
+                            <TableCell>
+                              <code>{failure.code}</code>
+                            </TableCell>
+                            <TableCell>{signed(failure.countDelta)}</TableCell>
+                            <TableCell className="tabular-nums">
+                              {failure.currentCount}
+                            </TableCell>
+                            <TableCell>
+                              <EvidenceLinks ids={failure.currentRunIds} />
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
     </section>
   )
 }
 
-function Change({
-  current,
-  previous,
-  invert = false,
-}: {
-  current: number | null
-  previous: number | null
-  invert?: boolean
-}) {
-  const change = percentChange(current, previous)
-  if (change == null) {
-    return <span className="text-muted-foreground">No prior week</span>
-  }
-  const improved = invert ? change < 0 : change > 0
-  const sign = change > 0 ? "+" : ""
-  return (
-    <span className={improved ? "text-primary" : "text-destructive"}>
-      {sign}
-      {change}% vs prior 7 days
-    </span>
-  )
-}
-
-export function WeekOverWeek({
+export function DailyVolumePanel({
   daily,
-  runs,
+  scope = "Last 30 days · UTC",
 }: {
   daily: Snapshot["daily"]
-  runs: readonly Run[]
+  scope?: string
 }) {
-  const { current, previous } = weekOverWeek(daily)
-  const last7 = daily.slice(-7)
-  const prev7 = daily.slice(-14, -7)
-  const currentDuration = durationInRange(
-    runs,
-    last7[0]?.date ?? "",
-    last7.at(-1)?.date ?? "",
-  )
-  const previousDuration = durationInRange(
-    runs,
-    prev7[0]?.date ?? "",
-    prev7.at(-1)?.date ?? "",
-  )
-  const cards = [
-    {
-      label: "Volume",
-      value: current.count.toLocaleString(),
-      population: "From the 30-day daily series",
-      change: <Change current={current.count} previous={previous.count} />,
-    },
-    {
-      label: "Success rate",
-      value: current.successRate == null ? "—" : `${current.successRate}%`,
-      population: "Among finished runs in the 30-day daily series",
-      change: (
-        <Change current={current.successRate} previous={previous.successRate} />
-      ),
-    },
-    {
-      label: "Median duration",
-      value: formatDuration(currentDuration.median),
-      population:
-        "From the latest-100 run snapshot in that date range — not the same population as volume above",
-      change: (
-        <Change
-          current={currentDuration.median}
-          previous={previousDuration.median}
-          invert
-        />
-      ),
-    },
-    {
-      label: "Failed runs",
-      value: current.failed.toLocaleString(),
-      population: "From the 30-day daily series",
-      change: (
-        <Change current={current.failed} previous={previous.failed} invert />
-      ),
-    },
-  ] as const
-  return (
-    <section aria-label="Week over week">
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {cards.map((card) => (
-          <Card key={card.label}>
-            <CardHeader className="p-4 pb-0 sm:p-6 sm:pb-0">
-              <CardDescription>{card.label} · last 7 days</CardDescription>
-              <CardTitle className="text-2xl">{card.value}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-1 p-4 pt-2 text-xs sm:p-6 sm:pt-2">
-              {card.change}
-              <p className="leading-5 text-muted-foreground">
-                {card.population}
-              </p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    </section>
-  )
-}
-
-export function DailyVolumePanel({ daily }: { daily: Snapshot["daily"] }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Daily volume</CardTitle>
-        <CardDescription>
-          Completed and failed runs for the last 30 days · UTC
-        </CardDescription>
+        <CardTitle className="text-base">Daily volume</CardTitle>
+        <CardDescription>Completed and failed runs · {scope}</CardDescription>
       </CardHeader>
       <CardContent>
         <DailyVolumeChart daily={daily} />
+        <DailyData daily={daily} />
       </CardContent>
     </Card>
   )
 }
 
-export function DailyDurationPanel({ daily }: { daily: Snapshot["daily"] }) {
+export function DailyDurationPanel({
+  daily,
+  scope = "Last 30 days · UTC",
+}: {
+  daily: Snapshot["daily"]
+  scope?: string
+}) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Daily duration</CardTitle>
+        <CardTitle className="text-base">Daily duration</CardTitle>
         <CardDescription>
-          Median and p95 of finished runs · last 30 days · UTC
+          Median and p95 of measured finished runs · {scope}
         </CardDescription>
       </CardHeader>
       <CardContent>
         <DailyDurationChart daily={daily} />
+        <DailyData daily={daily} duration />
       </CardContent>
     </Card>
   )
@@ -534,5 +424,55 @@ export function FailureCodeTable({
         )}
       </CardContent>
     </Card>
+  )
+}
+
+function DailyData({
+  daily,
+  duration = false,
+}: {
+  daily: Snapshot["daily"]
+  duration?: boolean
+}) {
+  return (
+    <Accordion className="mt-3 border-t border-border">
+      <AccordionItem value="daily-values">
+        <AccordionTrigger className="min-h-10 py-2 text-xs sm:text-xs">
+          View daily values
+        </AccordionTrigger>
+        <AccordionContent className="max-w-none">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Date (UTC)</TableHead>
+                <TableHead>
+                  {duration ? "Median duration" : "Completed runs"}
+                </TableHead>
+                <TableHead>
+                  {duration ? "p95 duration" : "Failed runs"}
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {daily.map((day) => (
+                <TableRow key={day.date}>
+                  <TableCell className="whitespace-nowrap">
+                    {day.date}
+                  </TableCell>
+                  <TableCell>
+                    {duration
+                      ? formatDuration(day.medianDurationMs)
+                      : day.completed}
+                  </TableCell>
+                  <TableCell>
+                    {duration ? formatDuration(day.p95DurationMs) : day.failed}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </AccordionContent>
+      </AccordionItem>
+    </Accordion>
   )
 }

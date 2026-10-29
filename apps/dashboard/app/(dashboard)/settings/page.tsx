@@ -632,7 +632,7 @@ function SettingsPageInner() {
     <div className="grid min-w-0 gap-6">
       <PageHeading
         title="Settings"
-        description="Create projects, manage ingestion keys, and update your account. Sign-up does not create a project automatically."
+        description="Manage your projects, application access and account."
       />
       {projects.length === 0 ? (
         <Alert>
@@ -645,8 +645,9 @@ function SettingsPageInner() {
       ) : null}
       <Tabs value={section} onValueChange={setSection}>
         <TabsList
+          variant="line"
           aria-label="Settings sections"
-          className="h-auto w-full flex-wrap justify-start gap-1"
+          className="h-auto w-full flex-wrap justify-start gap-1 border-b border-border pb-2 [&_[data-slot=tabs-trigger]]:min-h-11 [&_[data-slot=tabs-trigger]]:flex-none"
         >
           {sections.map((item) => (
             <TabsTrigger key={item.id} value={item.id}>
