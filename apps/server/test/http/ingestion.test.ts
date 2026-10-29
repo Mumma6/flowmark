@@ -605,8 +605,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
       const otherProject = await caller(otherReadKey).run.detail({
         id: snapshot.runs[0].id,
       })
-      // Temporary TASK-008 probe: removed after CI failure is observed.
-      expect(otherProject).toEqual(["intentional TASK-008 CI probe"])
+      expect(otherProject).toEqual([])
       await expect(caller(writeKey).project.snapshot()).rejects.toMatchObject({
         code: "UNAUTHORIZED",
       })
