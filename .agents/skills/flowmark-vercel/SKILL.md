@@ -36,8 +36,10 @@ into `apps/server/.env.local`, `apps/dashboard/.env.local`, or any other
 local env file. That would point the local demo at Neon. Do not print
 connection strings, secrets, or command lines that contain them.
 
-Always pass `--scope mumma6s-projects` and `--project <name>`. A bare
-`vercel` in this repo can attach to the wrong linked project.
+Always select the project explicitly and pass `--scope mumma6s-projects`.
+For `list`, pass the project name as the positional argument; CLI 65.7.0
+rejects `list --project`. For other commands use `--project <name>` when
+supported. A bare `vercel` in this repo can attach to the wrong linked project.
 
 ## Projects
 

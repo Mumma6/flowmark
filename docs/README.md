@@ -4,6 +4,8 @@ Contributor guides that ship with the public repository:
 
 - [Development setup](./development): workspace commands, local demo, database,
   and checks.
+- [Application releases](./releases): feature PRs into staging, release PRs into
+  main, verification, versioning, and recovery.
 - [Architecture](./architecture): service boundaries, persistence, local auth,
   and current system constraints.
 - [Architecture decisions](./decisions/0001-turborepo): accepted decisions and

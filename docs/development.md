@@ -308,6 +308,18 @@ The dashboard's Appearance selector supports system, light, and dark themes,
 persists the selection, and applies it before hydration. Nonfunctional project,
 billing, notification, and search controls are intentionally not shown.
 
+## Pull requests and application releases
+
+Start normal feature and infrastructure branches from current `origin/staging`
+and open PRs explicitly targeting `staging`. Run `pnpm check` before pushing.
+Staging accumulates approved changes; a release PR from `staging` into `main`
+triggers the existing Vercel Production deploys after an approved merge.
+
+See [application releases](./releases.md) for merge methods, branch
+synchronization, schema deployment order, release notes, and verification.
+The repository `pull-request` and `release` agent skills perform these steps
+when requested. App releases do not publish SDK packages.
+
 ## SDK publishing
 
 `packages/sdk` is published as `@flowmarkdev/node` (with `@flowmarkdev/core`).
