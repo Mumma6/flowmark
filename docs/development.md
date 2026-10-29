@@ -87,6 +87,8 @@ production database or `https://api.flowmark.dev`.
 `pnpm db:migrate:preview` applies committed migrations to the Neon `preview`
 branch only. It refuses a production, loopback, or non-Neon host. The branch
 is created by an approved operator step, not by a Vercel build.
+`pnpm db:migrate:staging` is the same guard for the Neon `staging` branch. It
+also refuses the preview host. Neither command runs from a Vercel build.
 
 The dashboard uses a same-origin server proxy for tRPC and Better Auth. Its
 server-side `FLOWMARK_API_URL` defaults to `http://localhost:3003`. Dashboard

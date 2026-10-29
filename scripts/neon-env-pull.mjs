@@ -11,18 +11,35 @@ const dbPackageDir = join(
   "packages/db",
 )
 const preview = process.argv.includes("--preview")
-const file = preview ? ".env.neon.preview" : ".env.neon"
-const branchArgs = preview ? ["--branch", "preview"] : []
+const staging = process.argv.includes("--staging")
+if (preview && staging) {
+  console.error("Pass only one of --preview or --staging.")
+  process.exit(1)
+}
+const file = staging
+  ? ".env.neon.staging"
+  : preview
+    ? ".env.neon.preview"
+    : ".env.neon"
+const branchArgs = staging
+  ? ["--branch", "staging"]
+  : preview
+    ? ["--branch", "preview"]
+    : []
 
 console.log(
-  preview
-    ? "Pulling the Neon preview branch into packages/db/.env.neon.preview (gitignored)."
-    : "Pulling Neon connection variables into packages/db/.env.neon (gitignored).",
+  staging
+    ? "Pulling the Neon staging branch into packages/db/.env.neon.staging (gitignored)."
+    : preview
+      ? "Pulling the Neon preview branch into packages/db/.env.neon.preview (gitignored)."
+      : "Pulling Neon connection variables into packages/db/.env.neon (gitignored).",
 )
 console.log(
-  preview
-    ? "This does not change apps/server/.env.local, packages/db/.env.neon, or Vercel."
-    : "This does not change apps/server/.env.local or Vercel.",
+  staging
+    ? "This does not change apps/server/.env.local, packages/db/.env.neon, packages/db/.env.neon.preview, or Vercel."
+    : preview
+      ? "This does not change apps/server/.env.local, packages/db/.env.neon, or Vercel."
+      : "This does not change apps/server/.env.local or Vercel.",
 )
 
 const result = spawnSync(
@@ -39,7 +56,9 @@ if (result.status !== 0) {
 }
 
 console.log(
-  preview
-    ? "Done. Use pnpm db:migrate:preview only after confirming NEON_BRANCH=preview."
-    : "Done. Use pnpm db:migrate:prod only after reviewing NEON_BRANCH.",
+  staging
+    ? "Done. Use pnpm db:migrate:staging only after confirming NEON_BRANCH=staging."
+    : preview
+      ? "Done. Use pnpm db:migrate:preview only after confirming NEON_BRANCH=preview."
+      : "Done. Use pnpm db:migrate:prod only after reviewing NEON_BRANCH.",
 )

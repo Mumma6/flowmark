@@ -8,6 +8,10 @@ export const previewNeonEnvPath = join(
   repoRoot,
   "packages/db/.env.neon.preview",
 )
+export const stagingNeonEnvPath = join(
+  repoRoot,
+  "packages/db/.env.neon.staging",
+)
 
 function parseEnvLine(line) {
   const trimmed = line.trim()
@@ -88,37 +92,103 @@ export function describeDatabaseTarget(url) {
   return { host, kind: "other" }
 }
 
-export function assertPreviewMigrationTarget({
-  branch,
-  migrationUrl,
-  productionMigrationUrl,
-}) {
-  if (branch !== "preview") {
-    return `Refusing preview migrate: NEON_BRANCH is "${branch ?? ""}", not preview.`
-  }
+function hostedMigrationTarget(migrationUrl, label) {
   let target
   try {
     target = describeDatabaseTarget(migrationUrl)
   } catch {
-    return "Refusing preview migrate: preview DATABASE_URL_UNPOOLED is not a valid URL."
+    return {
+      refusal: `Refusing ${label} migrate: ${label} DATABASE_URL_UNPOOLED is not a valid URL.`,
+    }
   }
   if (target.kind === "loopback") {
-    return "Refusing preview migrate: DATABASE_URL_UNPOOLED is loopback."
+    return {
+      refusal: `Refusing ${label} migrate: DATABASE_URL_UNPOOLED is loopback.`,
+    }
   }
   if (target.kind !== "neon") {
-    return `Refusing preview migrate: expected a Neon host (*.neon.tech), got ${target.host}.`
+    return {
+      refusal: `Refusing ${label} migrate: expected a Neon host (*.neon.tech), got ${target.host}.`,
+    }
   }
-  if (!productionMigrationUrl) {
-    return "Refusing preview migrate: packages/db/.env.neon is required so the preview host can be compared with production."
+  return { target }
+}
+
+function comparedHost(migrationUrl, label, otherName) {
+  if (!migrationUrl) {
+    return {
+      refusal: `Refusing ${label} migrate: packages/db/.env.neon${otherName === "production" ? "" : `.${otherName}`} is required so the ${label} host can be compared with ${otherName}.`,
+    }
   }
-  let production
   try {
-    production = describeDatabaseTarget(productionMigrationUrl)
+    return { host: describeDatabaseTarget(migrationUrl).host }
   } catch {
-    return "Refusing preview migrate: production DATABASE_URL_UNPOOLED is not a valid URL."
+    return {
+      refusal: `Refusing ${label} migrate: ${otherName} DATABASE_URL_UNPOOLED is not a valid URL.`,
+    }
   }
-  if (target.host === production.host) {
-    return `Refusing preview migrate: host ${target.host} matches the production env file.`
+}
+
+export function assertPreviewMigrationTarget({
+  branch,
+  migrationUrl,
+  productionMigrationUrl,
+  stagingMigrationUrl,
+}) {
+  if (branch !== "preview") {
+    return `Refusing preview migrate: NEON_BRANCH is "${branch ?? ""}", not preview.`
+  }
+  const hosted = hostedMigrationTarget(migrationUrl, "preview")
+  if (hosted.refusal) {
+    return hosted.refusal
+  }
+  const production = comparedHost(
+    productionMigrationUrl,
+    "preview",
+    "production",
+  )
+  if (production.refusal) {
+    return production.refusal
+  }
+  if (hosted.target.host === production.host) {
+    return `Refusing preview migrate: host ${hosted.target.host} matches the production env file.`
+  }
+  if (stagingMigrationUrl) {
+    const staging = comparedHost(stagingMigrationUrl, "preview", "staging")
+    if (staging.refusal) {
+      return staging.refusal
+    }
+    if (hosted.target.host === staging.host) {
+      return `Refusing preview migrate: host ${hosted.target.host} matches the staging env file.`
+    }
+  }
+  return null
+}
+
+export function assertStagingMigrationTarget({
+  branch,
+  migrationUrl,
+  productionMigrationUrl,
+  previewMigrationUrl,
+}) {
+  if (branch !== "staging") {
+    return `Refusing staging migrate: NEON_BRANCH is "${branch ?? ""}", not staging.`
+  }
+  const hosted = hostedMigrationTarget(migrationUrl, "staging")
+  if (hosted.refusal) {
+    return hosted.refusal
+  }
+  for (const [otherName, otherUrl] of [
+    ["production", productionMigrationUrl],
+    ["preview", previewMigrationUrl],
+  ]) {
+    const other = comparedHost(otherUrl, "staging", otherName)
+    if (other.refusal) {
+      return other.refusal
+    }
+    if (hosted.target.host === other.host) {
+      return `Refusing staging migrate: host ${hosted.target.host} matches the ${otherName} env file.`
+    }
   }
   return null
 }

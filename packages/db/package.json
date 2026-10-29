@@ -42,6 +42,7 @@
     "db:studio": "drizzle-kit studio --host=127.0.0.1 --port=4983",
     "db:migrate": "tsx src/cli/migrate.ts",
     "db:preview-baseline": "tsx src/cli/stamp-preview-baseline.ts",
+    "db:schema-baseline": "tsx src/cli/stamp-preview-baseline.ts",
     "db:seed": "tsx src/cli/seed.ts",
     "db:setup": "tsx src/cli/setup.ts",
     "db:setup-demo": "tsx src/cli/setup.ts",

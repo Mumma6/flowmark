@@ -17,6 +17,8 @@ import {
   isProductionPublicHost,
   previewApiOrigin,
   previewDashboardOrigin,
+  stagingApiOrigin,
+  stagingDashboardOrigin,
 } from "../../src/environment/preview-isolation.js"
 
 const migrationsFolder = fileURLToPath(
@@ -173,6 +175,71 @@ test("preview baseline stamps an empty schema and refuses existing rows", () => 
       }),
     ),
     /already has rows/,
+  )
+})
+
+test("staging git branch uses pinned origins and its own database marker", () => {
+  const stagingEnv = {
+    VERCEL_ENV: "preview",
+    VERCEL_GIT_COMMIT_REF: "staging",
+    FLOWMARK_DATABASE_BRANCH: "staging",
+    BETTER_AUTH_URL: stagingDashboardOrigin,
+    FLOWMARK_DASHBOARD_ORIGIN: stagingDashboardOrigin,
+  }
+  assert.equal(previewApiOrigin(stagingEnv), undefined)
+  assert.equal(previewDashboardOrigin(stagingEnv), undefined)
+  assert.match(
+    leftReason(
+      assertPreviewDatabase(
+        "postgresql://user:secret@ep-preview.neon.tech/db",
+        { ...stagingEnv, FLOWMARK_DATABASE_BRANCH: "preview" },
+      ),
+    ),
+    /must be staging/,
+  )
+  Effect.runSync(
+    assertPreviewDatabase(
+      "postgresql://user:secret@ep-staging.neon.tech/db",
+      stagingEnv,
+    ),
+  )
+  assert.match(
+    leftReason(
+      assertPreviewAuthOrigins({
+        ...stagingEnv,
+        BETTER_AUTH_URL:
+          "https://flowmark-dashboard-git-staging-mumma6s-projects.vercel.app",
+      }),
+    ),
+    /app\.staging\.flowmark\.dev/,
+  )
+  Effect.runSync(assertPreviewAuthOrigins(stagingEnv))
+  Effect.runSync(assertPreviewDashboardApi(stagingApiOrigin, stagingEnv))
+  assert.match(
+    leftReason(
+      assertPreviewDashboardApi("https://api.flowmark.dev", stagingEnv),
+    ),
+    /api\.staging\.flowmark\.dev/,
+  )
+  assert.match(
+    leftReason(
+      assertPreviewDashboardApi(stagingApiOrigin, {
+        VERCEL_ENV: "preview",
+        VERCEL_GIT_COMMIT_REF: "some-pr",
+      }),
+    ),
+    /api\.staging\.flowmark\.dev/,
+  )
+  assert.match(
+    leftReason(
+      assertPreviewAuthOrigins({
+        VERCEL_ENV: "preview",
+        VERCEL_GIT_COMMIT_REF: "some-pr",
+        BETTER_AUTH_URL: stagingDashboardOrigin,
+        FLOWMARK_DASHBOARD_ORIGIN: stagingDashboardOrigin,
+      }),
+    ),
+    /app\.staging\.flowmark\.dev/,
   )
 })
 

@@ -127,8 +127,16 @@ project is in the infrastructure guide. In particular:
   branch's preview API deployment. `flowmark-api-mumma6s-projects.vercel.app`
   is the production deployment alias and still reads the production database.
   The unpooled URL is only
-  `DATABASE_MIGRATION_URL` for a workstation `pnpm db:migrate:prod` or
-  `pnpm db:migrate:preview`. It is not a Vercel variable.
+  `DATABASE_MIGRATION_URL` for a workstation `pnpm db:migrate:prod`,
+  `pnpm db:migrate:preview`, or `pnpm db:migrate:staging`. It is not a
+  Vercel variable.
+- Staging is the git branch `staging` on these same projects, not a new
+  project and not a shared Preview value. Its database, auth, and
+  `FLOWMARK_API_URL` records are Preview variables scoped to that git
+  branch. The dashboard origin is `https://app.staging.flowmark.dev` and
+  the API origin is `https://api.staging.flowmark.dev`. Do not point those
+  at `*.vercel.app`. See the infrastructure guide before creating the
+  branch or the records.
 - Do not set `FLOWMARK_DEMO_MODE`, `DATABASE_MIGRATION_URL`, or
   `FLOWMARK_API_KEY` on Vercel.
 
