@@ -33,7 +33,7 @@ const caller = (cookie: string, projectId?: string) =>
 
 async function registerAndSignIn() {
   const email = `flowmark-${randomUUID()}@example.com`
-  const password = `test-${randomUUID()}`
+  const password = randomUUID()
   const registered = await register(
     jsonRequest("/api/register", {
       name: "Integration owner",
