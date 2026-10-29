@@ -2,7 +2,7 @@ import {
   assertPreviewDashboardApi,
   previewApiOrigin,
 } from "@flowmark/db/environment"
-import { Data, Effect } from "effect"
+import { Data, Effect, Schema } from "effect"
 
 export class DashboardConfigurationError extends Data.TaggedError(
   "DashboardConfigurationError",
@@ -27,6 +27,32 @@ export const dashboardApiUrl = Effect.fn("dashboardApiUrl")(function* () {
     }),
   )
   if (candidate) {
+    yield* Schema.decodeUnknown(
+      Schema.String.pipe(
+        Schema.filter((value) => {
+          try {
+            const url = new URL(value)
+            return (
+              (url.protocol === "http:" || url.protocol === "https:") &&
+              !url.username &&
+              !url.password &&
+              !url.search &&
+              !url.hash
+            )
+          } catch {
+            return false
+          }
+        }),
+      ),
+    )(candidate).pipe(
+      Effect.mapError(
+        () =>
+          new DashboardConfigurationError({
+            reason:
+              "FLOWMARK_API_URL must be an HTTP(S) URL without credentials, query, or fragment.",
+          }),
+      ),
+    )
     return candidate
   }
   if (isProductionRuntime()) {

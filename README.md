@@ -148,4 +148,8 @@ behavior still need Staging verification.
 - [Architecture](./docs/architecture.md)
 - [Decisions](./docs/decisions/)
 
+Server auth, CORS, and dashboard API settings are validated at request time. See
+[Runtime environment validation](./docs/development.md#runtime-environment-validation)
+for required hosted settings, local defaults, and Preview/Staging behavior.
+
 License: [MIT](./LICENSE).
