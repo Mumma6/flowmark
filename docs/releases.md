@@ -8,9 +8,12 @@ feature branch → PR into staging → Staging verification
 ```
 
 GitHub Actions runs PR checks. Vercel builds a hosted app only when that
-project or one of its workspace dependencies changed in the commit (Turbo
-`ignoreCommand` per app). Unchanged projects skip Preview and Production
-builds for that commit. If the ignore step fails, the deployment is skipped
+project or one of its workspace dependencies changed in the commit. All four
+projects enable Vercel's **Skip unaffected projects** setting
+(`enableAffectedProjectsDeployments=true`), which skips unaffected deployments
+before allocating a build slot. Changes outside the workspace packages can
+still affect all projects. This applies to Preview and Production.
+The Turbo `ignoreCommand` per app remains an additional check. If it fails, the deployment is skipped
 rather than forced, so a broken check does not consume the daily deploy
 quota. There is no separate release deployment Action. Agent skills
 help an operator perform this workflow when requested; they are not background
