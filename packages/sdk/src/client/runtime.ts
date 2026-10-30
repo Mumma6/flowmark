@@ -1,3 +1,4 @@
+import { withWorkflowDefinitions } from "../features/workflows/define-workflow.js"
 import { Effect, Layer, ManagedRuntime } from "effect"
 import { FlowmarkConfigError } from "../errors/index.js"
 import { DeliveryQueue } from "../features/delivery/delivery-queue.js"
@@ -36,7 +37,7 @@ export function makeClient(
     runtime.runSync(command)
   }
 
-  return {
+  return withWorkflowDefinitions<Omit<FlowmarkClient, "defineWorkflow">>({
     workflow(name, options = {}) {
       if (shutdownResult) {
         throw new FlowmarkConfigError({ cause: "Client has been shut down" })
@@ -104,5 +105,5 @@ export function makeClient(
         .finally(() => runtime.dispose())
       return shutdownResult
     },
-  }
+  })
 }

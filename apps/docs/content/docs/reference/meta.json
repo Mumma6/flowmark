@@ -6,6 +6,7 @@
     "---Client---",
     "create-flowmark",
     "define-config",
+    "define-workflow",
     "delivery",
     "---Run markers---",
     "workflow",

@@ -10,6 +10,9 @@ export {
 export { WorkflowTransport } from "./features/delivery/ports/workflow-transport.js"
 export { MemoryTransport } from "./features/delivery/adapters/memory-transport.js"
 export type {
+  WorkflowDefinition,
+  TypedFlow,
+  TypedWorkflowOptions,
   Flow,
   FlowmarkClient,
   FlowmarkConfig,

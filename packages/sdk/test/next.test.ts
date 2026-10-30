@@ -28,7 +28,12 @@ describe("Next.js integration", () => {
         apiUrl: "http://localhost",
       }),
     )
-    const flow = flowmark.workflow("todo.add")
+    const definition = flowmark.defineWorkflow<
+      Record<never, never>,
+      { saved: number }
+    >("todo.add")
+    expect(callbacks).toHaveLength(0)
+    const flow = definition.start()
     flow.step("saved")
     flow.report({ saved: 1 })
     flow.done({ outcome: "no-availability" })
