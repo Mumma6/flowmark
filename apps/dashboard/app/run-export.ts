@@ -20,6 +20,8 @@ export interface ExportableRunEvent {
   readonly outcome?: string | null
   readonly result: Record<string, unknown> | null
   readonly timestamp: string
+  readonly receiptOrder?: number
+  readonly isLatestReport?: boolean
   readonly receivedAt: string
   readonly workflow: string
   readonly externalId: string
@@ -95,6 +97,9 @@ export function buildRunExport(events: ReadonlyArray<ExportableRunEvent>) {
     result,
     resultHighlights: result ? getRunResultHighlights(result) : [],
     lastReportedProgress: progress ?? null,
+    lastReportedBusinessWork:
+      events.find((event) => event.type === "report" && event.isLatestReport) ??
+      null,
     eventCount: events.length,
     operationCount: events.filter((event) => event.type === "operation_started")
       .length,
@@ -120,6 +125,8 @@ export function buildTimelineExport(events: ReadonlyArray<ExportableRunEvent>) {
       type: event.type,
       timestamp: event.timestamp,
       receivedAt: event.receivedAt,
+      receiptOrder: event.receiptOrder,
+      isLatestReport: event.isLatestReport,
       step: event.step,
       operationId: event.operationId,
       operationName: event.operationName,

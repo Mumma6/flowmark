@@ -46,6 +46,14 @@ const PropertiesEventSchema = Schema.Struct({
   properties: WorkflowPropertiesSchema,
 })
 
+const ReportEventSchema = Schema.Struct({
+  type: Schema.Literal("report"),
+  workflow: WorkflowNameSchema,
+  runId: WorkflowRunIdSchema,
+  timestamp: Schema.String,
+  result: WorkflowResultSchema,
+})
+
 const CompletedEventSchema = Schema.Struct({
   type: Schema.Literal("completed"),
   workflow: WorkflowNameSchema,
@@ -137,6 +145,7 @@ export const WorkflowEventSchema = Schema.Union(
   OperationCompletedEventSchema,
   OperationFailedEventSchema,
   ProgressEventSchema,
+  ReportEventSchema,
 )
 
 export type WorkflowEvent = Schema.Schema.Type<typeof WorkflowEventSchema>

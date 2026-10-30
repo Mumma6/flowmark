@@ -384,6 +384,9 @@ export function RunInvestigation({
   const state = failure ? "Failed" : completed ? "Completed" : "Running"
   const progress = latestReportedProgress(events)
   const reportedResult = failure?.result ?? completed?.result
+  const lastReport = events.find(
+    (event) => event.type === "report" && event.isLatestReport,
+  )
   const snapshot = buildRunSnapshot(events)
   const errors = events.filter((event) => event.type === "error")
   const operations = events.filter(
@@ -463,9 +466,51 @@ export function RunInvestigation({
               </AlertDescription>
             </Alert>
           )}
+          {lastReport && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">
+                  Last reported business work
+                </CardTitle>
+                <CardDescription>
+                  Latest received non-final whole snapshot. Missing fields are
+                  unknown. This observation does not prove the run is active or
+                  failed.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <dl className="grid gap-3 text-xs sm:grid-cols-2">
+                  <div>
+                    <dt>Reported (UTC)</dt>
+                    <dd>{formatTimestamp(lastReport.timestamp)}</dd>
+                  </div>
+                  <div>
+                    <dt>Received (UTC)</dt>
+                    <dd>{formatTimestamp(lastReport.receivedAt)}</dd>
+                  </div>
+                </dl>
+                <BusinessResult
+                  workflow={first.workflow}
+                  result={lastReport.result}
+                  properties={
+                    events.find((event) => event.type === "started")?.properties
+                  }
+                  nonFinal
+                />
+                <Accordion>
+                  <AccordionItem value="raw-report">
+                    <AccordionTrigger>Raw snapshot data</AccordionTrigger>
+                    <AccordionContent>
+                      <JsonData value={lastReport.result} />
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
+              </CardContent>
+            </Card>
+          )}
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Reported result</CardTitle>
+              <CardTitle className="text-base">Final reported result</CardTitle>
               <CardDescription>
                 Reported by application code, not independently verified.
               </CardDescription>

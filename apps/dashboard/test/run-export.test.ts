@@ -35,6 +35,47 @@ function event(
 }
 
 describe("run export", () => {
+  it("keeps received snapshots separate from final results even with skewed application timestamps", () => {
+    const events = [
+      event({
+        id: "start",
+        type: "started",
+        timestamp: "2026-10-26T20:00:00Z",
+      }),
+      event({
+        id: "latest",
+        type: "report",
+        timestamp: "2026-10-26T20:01:00Z",
+        receiptOrder: 3,
+        isLatestReport: true,
+        result: { imported: 20 },
+      }),
+      event({
+        id: "earlier",
+        type: "report",
+        timestamp: "2026-10-26T20:02:00Z",
+        receiptOrder: 2,
+        isLatestReport: false,
+        result: { imported: 10, rejected: 2 },
+      }),
+      event({
+        id: "final",
+        type: "completed",
+        timestamp: "2026-10-26T20:03:00Z",
+      }),
+    ]
+    expect(buildRunExport(events)).toMatchObject({
+      status: "Completed",
+      result: null,
+      lastReportedBusinessWork: { result: { imported: 20 } },
+    })
+    expect(
+      buildTimelineExport(events)?.events.filter(
+        (row) => row.type === "report",
+      ),
+    ).toHaveLength(2)
+  })
+
   it("builds a stable run summary with context, result, and counts", () => {
     const events = [
       event({

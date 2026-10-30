@@ -1,6 +1,7 @@
 import {
   index,
   bigint,
+  bigserial,
   doublePrecision,
   integer,
   jsonb,
@@ -33,6 +34,7 @@ export const workflowEventType = pgEnum("workflow_event_type", [
   "operation_completed",
   "operation_failed",
   "progress",
+  "report",
   "completed",
   "failed",
 ])
@@ -130,6 +132,7 @@ export const workflowEvents = pgTable(
   {
     id: uuid("id").defaultRandom().primaryKey(),
     eventId: uuid("event_id").notNull().unique(),
+    receiptOrder: bigserial("receipt_order", { mode: "number" }).notNull(),
     runId: uuid("run_id")
       .notNull()
       .references(() => workflowRuns.id),

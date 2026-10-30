@@ -35,6 +35,7 @@ export const eventProperties = (event: WorkflowEvent) =>
 
 export const eventResult = (event: WorkflowEvent) =>
   Match.value(event).pipe(
+    Match.when({ type: "report" }, ({ result }) => result),
     Match.when({ type: "completed" }, ({ result }) => result),
     Match.when({ type: "failed" }, ({ result }) => result),
     Match.orElse(() => undefined),

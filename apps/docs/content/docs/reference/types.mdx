@@ -29,6 +29,8 @@ entry exports `BrowserFlowmarkConfig` instead of `FlowmarkConfig`.
 The Next.js client itself exposes only `workflow()`, not the full
 `FlowmarkClient` lifecycle.
 
+`Flow.report(snapshot: WorkflowResult): void` uses the same bounded result type on all runtime surfaces. It has no revision option.
+
 ## JSON properties and results
 
 `WorkflowProperties` and `WorkflowResult` are plain JSON-safe objects.

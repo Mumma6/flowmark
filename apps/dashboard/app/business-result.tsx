@@ -12,7 +12,9 @@ export function BusinessResult({
   outcome,
   result,
   properties,
+  nonFinal = false,
 }: {
+  nonFinal?: boolean
   workflow: string
   outcome?: string | null
   result: Record<string, unknown> | null | undefined
@@ -29,10 +31,14 @@ export function BusinessResult({
   const declaration = declarationForRun(declarations.data ?? [], properties)
   return (
     <div className="space-y-4">
-      <div>
-        <p className="text-xs text-muted-foreground">Business outcome</p>
-        <Badge variant="secondary">{outcome ?? "Not reported"}</Badge>
-      </div>
+      {nonFinal ? (
+        <Badge variant="secondary">Non-final snapshot</Badge>
+      ) : (
+        <div>
+          <p className="text-xs text-muted-foreground">Business outcome</p>
+          <Badge variant="secondary">{outcome ?? "Not reported"}</Badge>
+        </div>
+      )}
       {workflow.startsWith("browser.") && (
         <p className="text-xs text-muted-foreground">
           Untrusted browser-reported evidence.

@@ -173,6 +173,9 @@ export interface Flow {
   ): Promise<T>
   /** Records an absolute progress snapshot; invalid values are rejected by validation. */
   progress(progress: WorkflowProgress): void
+
+  /** Absolute non-final result snapshot. Omitted fields become unknown; never inherited by done/fail. */
+  report(snapshot: WorkflowResult): void
 }
 
 /** Ordinary TypeScript client; Effect execution is managed internally. */

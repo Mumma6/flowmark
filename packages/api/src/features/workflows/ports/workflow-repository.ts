@@ -155,6 +155,8 @@ export interface RunTimelineEvent {
   readonly outcome?: string | null
   readonly result: WorkflowResult | null
   readonly timestamp: string
+  readonly isLatestReport?: boolean
+  readonly receiptOrder?: number
   readonly receivedAt: string
   readonly workflow: string
   readonly externalId: string

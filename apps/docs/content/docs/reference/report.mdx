@@ -1,0 +1,72 @@
+---
+title: report
+description: Record absolute, non-final business results during application-owned work.
+---
+
+## Signature
+
+```ts
+run.report(snapshot: WorkflowResult): void
+```
+
+Available in source on Node, Next.js, browser and the advanced custom-transport
+surface. Package publication is separate. Deploy a server accepting `report`
+events and apply migration `0010` before enabling a writer that uses this method.
+An older server rejects the event; delivery diagnostics and explicit drains
+report failure. There is no fallback to a checkpoint or final result.
+
+## Batched business evidence
+
+```ts
+const flow = flowmark.workflow("customer.import", {
+  properties: { batchRef: "synthetic-batch-42" },
+})
+// Application code commits a batch before reporting its cumulative counts.
+flow.report({ imported: 6000, skipped: 150, rejected: 50 })
+flow.report({ imported: 9600, skipped: 300, rejected: 100 })
+flow.done({
+  outcome: "partial",
+  result: { imported: 9600, skipped: 300, rejected: 100 },
+})
+```
+
+Each report replaces the **whole snapshot**. Omitted fields become unknown,
+not zero or retained earlier values. Nested reason objects are replaced too.
+`{}` is an explicitly empty snapshot. Payloads reuse the result JSON bounds:
+five nested levels, 128 keys, 128-character keys, 2,048-character strings and
+16 KiB encoded bytes. Invalid markers reach instrumentation diagnostics without
+throwing into application work.
+
+Use one logical cumulative reporter per run. The latest snapshot follows the
+server's persisted receipt order, independent of application timestamps or clock
+skew. Duplicate event IDs do not advance the snapshot. A delayed older snapshot
+with a new ID becomes the latest received observation; Flowmark cannot infer
+its business freshness. There is no application revision option or automatic
+aggregation across workers.
+
+## Finality and interruption
+
+Reports do not alter progress, execution status, context, terminal outcome or
+final result. Reports after `done()`/`fail()`, including pending completion, are
+ignored under existing marker rules. Previously accepted snapshots remain in
+the timeline and in the last-reported-work section after termination.
+
+`done()` without `result` leaves the final result unknown. A final result must
+be explicit and may differ from the snapshot; lower counts do not prove rollback.
+Final-result analytics must exclude report events.
+
+For a CRM sync that has committed useful work before a timeout:
+
+```ts
+flow.report({ updated: 400, rejected: 2, reasons: { invalid_reference: 2 } })
+flow.fail({ code: "CRM_TIMEOUT", outcome: "partial", result: { updated: 400 } })
+```
+
+If reporting simply stops, the dashboard shows the last observation and its
+application/receipt times. It does not prove liveness, failure or business
+correctness. Optional declarations selected by the original start's explicit
+`definitionRevision` label counts and reasons; browser evidence stays untrusted.
+
+Report per batch/page, avoid personal records and secrets, and use the existing
+Node `flush()`/`shutdown()` or Next `after()` lifecycle. Reports use the existing
+bounded delivery queue and do not guarantee durable offline delivery.
