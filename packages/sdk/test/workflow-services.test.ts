@@ -2,6 +2,7 @@ import { Effect, Layer } from "effect"
 import { describe, expect, it } from "vitest"
 import { makeOperations } from "../src/workflows/operations.js"
 import { WorkflowRuns } from "../src/workflows/run-lifecycle.js"
+import { RunState } from "../src/workflows/run-state.js"
 import { WorkflowEvents } from "../src/workflows/workflow-events.js"
 import type { WorkflowEventData } from "../src/workflows/events.js"
 
@@ -22,6 +23,9 @@ describe("workflow run service", () => {
         }),
     })
     const program = Effect.gen(function* () {
+      const enclosingState = yield* RunState
+      yield* enclosingState.fail
+
       const runs = yield* WorkflowRuns
       const first = yield* runs.start("first", { id: "same-id" })
       const second = yield* runs.start("second", { id: "same-id" })
@@ -35,7 +39,10 @@ describe("workflow run service", () => {
       yield* operation.done
       yield* operation.fail({ code: "ignored" })
       expect(yield* first.isFinished).toBe(true)
-    }).pipe(Effect.provide(WorkflowRuns.layer.pipe(Layer.provide(recorder))))
+    }).pipe(
+      Effect.provide(WorkflowRuns.layer.pipe(Layer.provide(recorder))),
+      Effect.provide(RunState.layer),
+    )
 
     expect(events).toHaveLength(0)
     await Effect.runPromise(program)

@@ -88,9 +88,11 @@ causation. Browser-supplied links remain untrusted.
 
 The SDK groups its internal domains directly under `src/workflows/` and
 `src/delivery/`, without an extra `features/` directory. The workflow engine
-coordinates two internal services: `WorkflowRuns` owns run-local state and
-terminal coordination, and `WorkflowEvents` creates recorders that attach run
-identity and timestamps before enqueueing events with per-run delivery ordering.
+coordinates `WorkflowRuns` for terminal event coordination and `WorkflowEvents`
+for recorders that attach run identity and timestamps before enqueueing events
+with per-run delivery ordering.
+Each run resolves `RunState` for its completion requests, terminal guards and
+active-operation membership. State transitions construct no events.
 Operation handles own their IDs, monotonic durations and terminal idempotency;
 they notify run state after recording their terminal event, so deferred run
 completion follows the last operation terminal. Marker factories and pure event
@@ -101,8 +103,10 @@ events rather than SDK-maintained aggregates.
 → event recorders → run lifecycle → workflow engine. Each client owns one managed
 runtime. Each run allocates fresh state and a delivery semaphore even when the
 caller reuses an external run ID. Each operation owns a fresh completion flag.
-These run/operation values need no additional runtime or resource scope; the
-client's scoped delivery service owns asynchronous work and cleanup. Tests can
+`WorkflowRuns.start` provides a local `RunState.layer` for each run, so even an
+enclosing service context cannot cause two runs to share state. The handle
+captures that state; its references need no resource finalizers or runtime.
+The client's scoped delivery service owns asynchronous work and cleanup. Tests can
 replace the delivery or event service independently.
 
 All Effect consumers use the same pinned Effect 4.1.0 version. Services use

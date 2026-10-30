@@ -1,3 +1,4 @@
+import type { RunEventRecorder } from "./workflow-events.js"
 import type { Effect } from "effect"
 import type {
   WorkflowError,
@@ -38,4 +39,21 @@ export interface WorkflowHandle {
   ) => Effect.Effect<WorkflowOperationHandle>
   readonly report: (snapshot: WorkflowResult) => Effect.Effect<void>
   readonly progress: (progress: WorkflowProgress) => Effect.Effect<void>
+}
+
+/** Run-local state shared by markers and operation handles, never by other runs. */
+export interface RunLifecycle extends RunEventRecorder {
+  readonly runId: string
+
+  readonly isOpen: Effect.Effect<boolean>
+  readonly isFinished: Effect.Effect<boolean>
+
+  readonly done: (options?: WorkflowDoneOptions) => Effect.Effect<void>
+  readonly fail: (options: WorkflowFailOptions) => Effect.Effect<void>
+
+  readonly openOperation: (operationId: string) => Effect.Effect<boolean>
+  readonly closeOperation: (operationId: string) => Effect.Effect<void>
+
+  /** Called after recording an operation terminal, preserving delivery order. */
+  readonly completeIfReady: Effect.Effect<void>
 }

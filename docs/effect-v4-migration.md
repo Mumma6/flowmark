@@ -41,6 +41,12 @@ Services use `Context.Service`; resource acquisition uses `Layer.effect` with
 and keep composite or defect-bearing failures internal. Diagnostic logging copies
 only approved labels rather than serializing causes.
 
+Run-local state is a separate `RunState` service, resolved with `yield*` inside
+the run lifecycle. The run creation boundary provides a local state layer for
+every start, isolating it from enclosing memoized layers. State transitions
+manage completion requests and operation membership; lifecycle coordination
+records terminal events. This keeps both modules small without extra runtimes.
+
 The fetch layer captures fetch explicitly per client/request. V4 caches
 `Context.Reference` defaults, including the default fetch implementation; relying
 on that default would reuse the first implementation across otherwise independent
@@ -62,12 +68,12 @@ staging `f1de422` (Effect 3.22.4) with this migration. They are not production
 latency, browser load-time or capacity guarantees.
 
 - Browser export bundle (`createFlowmark`, `defineConfig`), minified ESM with
-  installed esbuild 0.28.2: 492,349 → 447,652 bytes; gzip level 9:
-  154,319 → 144,417 bytes (about 6.4% smaller over the wire).
+  installed esbuild 0.28.2: 492,349 → 451,608 bytes; gzip level 9:
+  154,319 → 145,728 bytes (about 5.6% smaller over the wire).
 - Mocked HTTP delivery of 100 runs / 700 events, median after three warmups
-  over nine samples: 126.86 → 61.72 ms (about 51% lower elapsed time).
+  over nine samples: 126.86 → 59.84 ms (about 53% lower elapsed time).
 - Heap retained with the same 700 deliveries blocked, after forced GC:
-  15,003,184 → 7,882,992 bytes. This is one sample of retained heap,
+  15,003,184 → 8,169,656 bytes. This is one sample of retained heap,
   not peak RSS or a statistically established production memory reduction.
 
 The runtime benchmark creates an independent client for each sample and verifies
