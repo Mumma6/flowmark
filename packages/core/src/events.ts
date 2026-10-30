@@ -9,6 +9,7 @@ import {
 } from "./identifiers.js"
 import { WorkflowPropertiesSchema, WorkflowResultSchema } from "./json.js"
 import { WorkflowErrorSchema, WorkflowProgressFields } from "./telemetry.js"
+import { WorkflowOutcomeSchema } from "./results.js"
 import { WorkflowFailureSchema } from "./errors.js"
 
 const StartedEventSchema = Schema.Struct({
@@ -51,6 +52,7 @@ const CompletedEventSchema = Schema.Struct({
   runId: WorkflowRunIdSchema,
   timestamp: Schema.String,
   result: Schema.optional(WorkflowResultSchema),
+  outcome: Schema.optional(WorkflowOutcomeSchema),
 })
 
 const FailedEventSchema = Schema.Struct({
@@ -61,6 +63,7 @@ const FailedEventSchema = Schema.Struct({
   reason: Schema.optional(Schema.String.pipe(Schema.maxLength(2048))),
   failure: Schema.optional(WorkflowFailureSchema),
   result: Schema.optional(WorkflowResultSchema),
+  outcome: Schema.optional(WorkflowOutcomeSchema),
 })
 
 const ErrorEventSchema = Schema.Struct({

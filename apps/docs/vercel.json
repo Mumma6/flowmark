@@ -4,5 +4,11 @@
   "regions": ["fra1"],
   "installCommand": "cd ../.. && pnpm install --frozen-lockfile",
   "ignoreCommand": "cd ../.. && node scripts/vercel-should-deploy.mjs @flowmark/docs",
-  "buildCommand": "cd ../.. && pnpm exec turbo build --filter=@flowmark/docs"
+  "buildCommand": "cd ../.. && pnpm exec turbo build --filter=@flowmark/docs",
+  "git": {
+    "deploymentEnabled": {
+      "staging": false,
+      "main": false
+    }
+  }
 }

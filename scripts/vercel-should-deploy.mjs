@@ -13,6 +13,8 @@
  * @see https://vercel.com/docs/project-configuration/git-settings#ignored-build-step
  */
 
+import process from "node:process"
+import console from "node:console"
 import { spawnSync } from "node:child_process"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
@@ -25,6 +27,13 @@ if (!workspace) {
     "Usage: node scripts/vercel-should-deploy.mjs <pnpm-workspace-name>",
   )
   process.exit(2)
+}
+
+// The controlled pipeline deliberately builds a consistent four-project revision.
+// It already passed checks and migration; CLI deployments must not be cancelled
+// by the Git integration's affected-project optimization.
+if (process.env.FLOWMARK_CONTROLLED_DEPLOY === "true") {
+  process.exit(1)
 }
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")

@@ -79,3 +79,54 @@ test("main ruleset requires the pull-request job check name", () => {
     "update rule restricts merge/push on main to bypass only",
   )
 })
+
+test("hosted migrations require explicit dispatch, protected environment and exact revision", () => {
+  const yaml = readWorkflow("database-migrate.yml")
+  assert.match(yaml, /workflow_dispatch:/)
+  assert.doesNotMatch(
+    yaml,
+    /^\s+(pull_request|pull_request_target|push|schedule):/m,
+  )
+  assert.match(yaml, /github.ref == 'refs\/heads\/main'/)
+  assert.match(yaml, /required_reviewers/)
+  assert.match(yaml, /can_admins_bypass, false/)
+  assert.match(yaml, /environment: database-\$\{\{ inputs.target \}\}/)
+  assert.match(yaml, /needs: preflight/)
+  assert.match(yaml, /cancel-in-progress: false/)
+  assert.match(yaml, /ref: \$\{\{ inputs.sha \}\}/)
+  assert.match(yaml, /persist-credentials: false/)
+  assert.match(
+    yaml,
+    /git merge-base --is-ancestor "\$REVIEWED_SHA" origin\/staging/,
+  )
+  assert.doesNotMatch(yaml, /db:seed|db:reset|confirm-.*baseline/)
+})
+
+test("merge rollout verifies, migrates and deploys in order with no parallel Git deploy", () => {
+  const yaml = readWorkflow("deploy-release.yml")
+  assert.match(yaml, /branches: \[staging, main\]/)
+  assert.match(yaml, /needs: verify/)
+  assert.match(yaml, /uses: .\/.github\/workflows\/pull-request.yml/)
+  assert.match(yaml, /group: flowmark-database-migrations/)
+  assert.match(yaml, /cancel-in-progress: false/)
+  assert.ok(
+    yaml.indexOf("run: node scripts/db-migrate-ci.mjs") <
+      yaml.indexOf("run: node scripts/release-deployment.mjs\n"),
+  )
+  assert.match(yaml, /vercel@65\.7\.0/)
+  assert.doesNotMatch(yaml, /--token|secrets: inherit|pull_request_target/)
+  assert.match(yaml, /ref: \$\{\{ github.sha \}\}/)
+  for (const app of ["server", "dashboard", "docs", "web"]) {
+    const config = JSON.parse(
+      readFileSync(join(repoRoot, "apps", app, "vercel.json"), "utf8"),
+    )
+    assert.deepEqual(config.git.deploymentEnabled, {
+      staging: false,
+      main: false,
+    })
+  }
+  assert.match(
+    readFileSync(join(repoRoot, ".vercelignore"), "utf8"),
+    /^private$/m,
+  )
+})

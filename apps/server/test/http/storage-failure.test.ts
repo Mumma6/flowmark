@@ -19,11 +19,13 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("unreachable storage", () => {
     vi.stubEnv("FLOWMARK_DEMO_MODE", "false")
     vi.stubEnv("VERCEL_ENV", "")
     const log = vi.spyOn(console, "error").mockImplementation(() => {})
+    vi.stubEnv("FLOWMARK_DEPLOYMENT_SHA", "b".repeat(40))
     const alive = health()
     expect(alive.status).toBe(200)
     expect(await alive.json()).toEqual({
       status: "ok",
       service: "flowmark-api",
+      commit: "b".repeat(40),
     })
     expect(log).not.toHaveBeenCalled()
     const response = await POST(

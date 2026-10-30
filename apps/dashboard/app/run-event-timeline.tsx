@@ -133,7 +133,11 @@ function runTimelineStatus(event: RunEvent) {
 
 function hasExpandablePayload(event: RunEvent) {
   return Boolean(
-    event.error || event.properties || event.result != null || event.reason,
+    event.outcome ||
+    event.error ||
+    event.properties ||
+    event.result != null ||
+    event.reason,
   )
 }
 
@@ -231,6 +235,11 @@ export function RunEventTimeline({ events }: { events: readonly RunEvent[] }) {
                   )}
                 {expanded === event.id && (
                   <div id={`timeline-${event.id}`} className="grid gap-3 pt-2">
+                    {event.outcome != null && (
+                      <p className="text-sm">
+                        Business outcome: {event.outcome}
+                      </p>
+                    )}
                     {event.error && <JsonData value={event.error} />}
                     {!event.error && event.reason && (
                       <p className="text-xs leading-6">{event.reason}</p>

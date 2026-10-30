@@ -1,10 +1,10 @@
 ---
 name: flowmark-vercel
 description: >-
-  Operate Flowmark's Vercel projects with the Vercel CLI. Use when deploying,
+  Operate Flowmark's Vercel projects with connected Vercel tools and the CLI. Use when deploying,
   checking a build, changing hosted environment variables, connecting GitHub,
   or touching flowmark.dev, app.flowmark.dev, api.flowmark.dev, or
-  docs.flowmark.dev. There is no Vercel MCP server.
+  docs.flowmark.dev.
 ---
 
 # Flowmark Vercel
@@ -15,7 +15,22 @@ state and the environment catalog are in
 to operate them. Read that guide before changing a project, a domain, or a
 variable.
 
-There is no Vercel connector in the agent tool list. Use the Vercel CLI.
+Discover the connected Vercel plugin's current capabilities and prefer its tools
+when they cover the operation. Use the CLI for unsupported operations and the
+GitHub deployment runner. Do not assume a plugin is absent from a previous
+session's tool inventory.
+
+If the plugin returns a team-scope authorization error, call
+`authorize_team_access` with the failed request's team ID and show the returned
+single-use consent link. The maintainer must approve that provider consent;
+retry on the same connection afterward. Do not ask them to reconnect.
+
+Plugin access and CLI login are separate from GitHub Actions credentials. Neither
+an OAuth CLI login nor the plugin can mint a personal CI deployment token with
+the currently available tools. Verify the actual capabilities before claiming
+otherwise. Configure the CI token directly as an environment-scoped GitHub secret;
+never paste it into chat, commit it, or reuse the plugin's private credentials.
+Keep rollout disabled until the runner credential passes a read-only preflight.
 
 ## CLI
 
@@ -72,9 +87,25 @@ this before `pnpm install`). Only turbo-ignore exit code `1` continues the
 build; `0` and errors exit `0` so Vercel skips the deployment. Shared
 dependency changes still rebuild every consumer.
 
+## Database-dependent deploys
+
+Follow [database rollout](../../../docs/migrations.md). The controlled merge
+pipeline owns staging/main rollout after explicit one-time activation: checks →
+migration/history verification → API deploy → remaining apps → readiness/commit/
+domain checks. Merge approval authorizes that branch's rollout; no duplicate
+permission ask. Each app disables competing Git deploy on staging/main only.
+Feature PR previews remain Git based. Do not merge the cutover until scoped
+secrets, project IDs, branch-restricted environments and activation flag are ready.
+Use standalone migration dispatch only for Preview or approved manual recovery.
+Never migrate in Vercel builds/requests or ordinary PR CI. No seed or publication.
+A green availability check does not prove authenticated business-flow correctness.
+
 ## Deploy
 
-A push to `main` builds all four projects from that commit. Uncommitted
+After pipeline activation, a push to `main` migrates Production and deploys all
+four projects from that commit through Actions; Vercel does not independently
+Git-deploy main/staging. Until cutover, follow the documented activation/fallback
+procedure. Uncommitted
 files are not in a Git build. Prefer that path once the change is committed.
 
 Use a CLI production deploy only when the user has asked to deploy the

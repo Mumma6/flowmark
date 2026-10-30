@@ -11,3 +11,11 @@ test("vercel should-deploy requires a workspace name", () => {
   const result = spawnSync(process.execPath, [script], { cwd: root })
   assert.equal(result.status, 2)
 })
+
+test("controlled pipeline bypasses Git-only affected-build cancellation", () => {
+  const result = spawnSync(process.execPath, [script, "@flowmark/server"], {
+    cwd: root,
+    env: { ...process.env, FLOWMARK_CONTROLLED_DEPLOY: "true" },
+  })
+  assert.equal(result.status, 1)
+})

@@ -32,6 +32,7 @@ export const projectRunSummaries = (projectId: string) => sql`
         array_agg(e.result ORDER BY e.occurred_at DESC, e.created_at DESC)
         FILTER (WHERE e.type IN ('completed', 'failed') AND e.result IS NOT NULL)
       )[1] AS result,
+      r.outcome AS outcome,
       max(r.environment) AS environment,
       max(r.release) AS release,
       (
@@ -57,6 +58,7 @@ export const recentRunsSql = (projectId: string) => sql`
     "durationMs",
     step,
     result,
+    outcome,
     "correlationId",
     "parentRunId"
   FROM runs
@@ -145,6 +147,7 @@ export const currentRunSql = (projectId: string, runId: string) => sql`
     "durationMs",
     step,
     result,
+    outcome,
     "correlationId",
     "parentRunId"
   FROM runs
@@ -165,6 +168,7 @@ export const peerRunsSql = (projectId: string, runId: string) => sql`
     runs."durationMs",
     runs.step,
     runs.result,
+    runs.outcome,
     runs."correlationId",
     runs."parentRunId"
   FROM runs
@@ -207,6 +211,7 @@ export const listRunsSql = (projectId: string, filter: ListRunsFilter) => {
     "durationMs",
     step,
     result,
+    outcome,
     "correlationId",
     "parentRunId",
     environment,

@@ -1,0 +1,95 @@
+name: Migrate database
+run-name: Migrate ${{ inputs.target }} at ${{ inputs.sha }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Database environment (review migration SQL before approving)
+        required: true
+        type: choice
+        options: [preview, staging, production]
+      sha:
+        description: Exact reviewed 40-character commit SHA
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+# Never cancel a migration in progress; serialize shared database changes.
+concurrency:
+  group: flowmark-database-migrations
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require an existing environment with required reviewers
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TARGET: ${{ inputs.target }}
+          REVIEWED_SHA: ${{ inputs.sha }}
+        run: |
+          node --input-type=module -e '
+          import assert from "node:assert/strict";
+          import { execFileSync } from "node:child_process";
+          assert.ok(["preview", "staging", "production"].includes(process.env.TARGET));
+          assert.match(process.env.REVIEWED_SHA, /^[a-f0-9]{40}$/);
+          const environment = JSON.parse(execFileSync("gh", ["api", `repos/${process.env.GITHUB_REPOSITORY}/environments/database-${process.env.TARGET}`], { encoding: "utf8" }));
+          assert.ok(environment.protection_rules?.some(rule => rule.type === "required_reviewers" && rule.reviewers?.length > 0), "Configure required reviewers before running migrations");
+          assert.equal(environment.can_admins_bypass, false, "Disable environment administrator bypass");
+          '
+
+  migrate:
+    needs: preflight
+    name: Approve ${{ inputs.target }} migration at ${{ inputs.sha }}
+    environment: database-${{ inputs.target }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout reviewed migration and application revision
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ inputs.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify candidate branch and revision
+        env:
+          TARGET: ${{ inputs.target }}
+          REVIEWED_SHA: ${{ inputs.sha }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$REVIEWED_SHA"
+          if [ "$TARGET" = "production" ]; then
+            git merge-base --is-ancestor "$REVIEWED_SHA" origin/staging
+          fi
+      - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
+        with:
+          version: 10.18.1
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: "24"
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Build database dependencies without hosted credentials
+        run: pnpm --filter @flowmark/db... build
+      - name: Check history, migrate through guarded wrapper, verify history
+        env:
+          FLOWMARK_MIGRATION_APPROVED: "true"
+          MIGRATION_TARGET: ${{ inputs.target }}
+          MIGRATION_SHA: ${{ inputs.sha }}
+          MIGRATION_DATABASE_URL: ${{ secrets.MIGRATION_DATABASE_URL }}
+          MIGRATION_PREVIEW_HOST: ${{ vars.MIGRATION_PREVIEW_HOST }}
+          MIGRATION_STAGING_HOST: ${{ vars.MIGRATION_STAGING_HOST }}
+          MIGRATION_PRODUCTION_HOST: ${{ vars.MIGRATION_PRODUCTION_HOST }}
+        run: node scripts/db-migrate-ci.mjs
+      - name: Record applied revision
+        env:
+          TARGET: ${{ inputs.target }}
+          REVIEWED_SHA: ${{ inputs.sha }}
+        run: |
+          printf '### Database migration verified\n\nEnvironment: `%s`\n\nCommit: `%s`\n\nMigration history matches the committed SQL. Verify affected schema and application behavior before rollout acceptance.\n' "$TARGET" "$REVIEWED_SHA" >> "$GITHUB_STEP_SUMMARY"

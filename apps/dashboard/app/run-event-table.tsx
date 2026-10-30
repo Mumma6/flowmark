@@ -133,6 +133,11 @@ export function EventTable({ events }: { events: readonly RunEvent[] }) {
                 </TableCell>
                 <TableCell>
                   <div className="flex flex-wrap gap-2">
+                    {event.outcome != null && (
+                      <p className="text-sm">
+                        Business outcome: {event.outcome}
+                      </p>
+                    )}
                     {event.error && (
                       <Badge variant="destructive">{event.error.code}</Badge>
                     )}
@@ -203,7 +208,8 @@ export function EventTable({ events }: { events: readonly RunEvent[] }) {
                   {!event.error &&
                     !event.properties &&
                     !event.result &&
-                    !event.reason && (
+                    !event.reason &&
+                    !event.outcome && (
                       <p className="text-xs leading-6 text-muted-foreground">
                         No additional payload recorded.
                       </p>

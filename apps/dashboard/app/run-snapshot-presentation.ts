@@ -29,6 +29,7 @@ export function buildRunSnapshot(
     .reverse()
     .find((event) => event.type === "completed")
   const result = failure?.result ?? completed?.result
+  const outcome = (failure ?? completed)?.outcome
   const status = failure ? "Failed" : completed ? "Completed" : "Running"
   const lastProgress = [...events]
     .reverse()
@@ -63,11 +64,13 @@ export function buildRunSnapshot(
                 ? (event.error?.code ?? "Error observed")
                 : "Run started"
     const payload =
-      event.type === "progress"
-        ? { completed: event.completed, total: event.total, unit: event.unit }
-        : (event.error ??
-          event.result ??
-          event.properties ?? { type: event.type })
+      event.outcome != null
+        ? { outcome: event.outcome, result: event.result, error: event.error }
+        : event.type === "progress"
+          ? { completed: event.completed, total: event.total, unit: event.unit }
+          : (event.error ??
+            event.result ??
+            event.properties ?? { type: event.type })
     return {
       id: event.id,
       label,
@@ -88,11 +91,20 @@ export function buildRunSnapshot(
         : {}),
     }
   })
-  const metrics = getRunResultHighlights(result ?? {}).map((item) => ({
-    label: item.label,
-    value: item.value,
-    note: "Application-reported",
-  }))
+  const metrics = getRunResultHighlights(result ?? {})
+    .slice(0, outcome == null ? 4 : 3)
+    .map((item) => ({
+      label: item.label,
+      value: item.value,
+      note: "Application-reported",
+    }))
+  if (outcome != null) {
+    metrics.unshift({
+      label: "Business outcome",
+      value: outcome,
+      note: "Explicit application report",
+    })
+  }
   if (metrics.length > 0 && metrics.length < 4) {
     metrics.push({
       label: "Recorded events",

@@ -1,3 +1,6 @@
+import { ManageResultDeclarations } from "./features/result-declarations/use-cases/manage-result-declarations.js"
+import { ResultDeclarationsLive } from "./features/result-declarations/adapters/result-declarations.js"
+import { ResultDeclarationStore } from "@flowmark/db/persistence"
 import { Effect, Layer } from "effect"
 import { ApiSettings } from "./config.js"
 import { AuthorizeProject } from "./features/project-access/use-cases/authorize-project.js"
@@ -16,10 +19,12 @@ import { WorkflowRepositoryLive } from "./features/workflows/adapters/workflow-r
 import { ProjectCredentialsLive } from "./features/project-access/adapters/project-credentials.js"
 
 const persistence = Layer.mergeAll(
+  ResultDeclarationStore.Default,
   WorkflowStore.Default,
   ProjectCredentialsStore.Default,
 ).pipe(Layer.provide(DatabaseLive))
 const databaseAdapters = Layer.mergeAll(
+  ResultDeclarationsLive,
   WorkflowRepositoryLive,
   ProjectCredentialsLive,
 ).pipe(Layer.provide(persistence))
@@ -28,6 +33,7 @@ const dependencies = AuthorizeProject.layer.pipe(
 )
 
 export const ApiLive = Layer.mergeAll(
+  ManageResultDeclarations.layer,
   IngestWorkflowEvents.layer,
   GetProjectWorkflowData.layer,
   IngestBrowserWorkflowEvents.layer,
@@ -41,6 +47,7 @@ export function runApi<A, E>(
   operation: Effect.Effect<
     A,
     E,
+    | ManageResultDeclarations
     | IngestWorkflowEvents
     | GetProjectWorkflowData
     | IngestBrowserWorkflowEvents

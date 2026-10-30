@@ -28,6 +28,8 @@ function fixture(t) {
     mkdirSync(join(root, dir), { recursive: true })
   }
   for (const name of [
+    "db-migration-steps.mjs",
+    "db-migrate-ci.mjs",
     "db-env-neon.mjs",
     "db-migrate-local.mjs",
     "db-migrate-production.mjs",
@@ -77,6 +79,10 @@ process.exit(Number(process.env.FLOWMARK_TEST_CHILD_STATUS || 0));
   return {
     root,
     writeBranch,
+    clearBranches: () => {
+      for (const suffix of ["", ".preview", ".staging"])
+        rmSync(join(root, `packages/db/.env.neon${suffix}`))
+    },
     run: (name, args = [], overrides = {}) =>
       spawnSync(
         process.execPath,
@@ -167,7 +173,7 @@ for (const [name, flag] of [
     assert.equal(f.calls().length, 0)
     const result = f.run(name, [`--confirm-${flag}-migrate`])
     assert.equal(result.status, 0, result.stderr)
-    assert.deepEqual(f.calls()[0], {
+    assert.deepEqual(f.calls()[1], {
       args: ["--filter", "@flowmark/db", "db:migrate"],
       url: hostedUrl(name),
       wrapper: name,
@@ -192,4 +198,96 @@ test("staging wrapper refuses production, preview, loopback, and a wrong branch 
     assert.equal(f.calls().length, 0)
     assert.doesNotMatch(result.stderr + result.stdout, /secret|postgresql:\/\//)
   }
+})
+
+test("CI wrapper refuses missing approval without reading env files or launching pnpm", (t) => {
+  const f = fixture(t)
+  const result = f.run("ci")
+  assert.equal(result.status, 1)
+  assert.equal(f.calls().length, 0)
+  assert.doesNotMatch(result.stdout + result.stderr, /postgresql:\/\/|secret@/)
+})
+
+test("CI wrapper checks exact revision and distinct pinned hosts before any writes", (t) => {
+  const f = fixture(t)
+  f.clearBranches()
+  writeFileSync(
+    join(f.root, "bin/git"),
+    `#!/usr/bin/env node\nprocess.stdout.write("${"a".repeat(40)}\\n")\n`,
+    { mode: 0o755 },
+  )
+  const env = {
+    GITHUB_ACTIONS: "true",
+    FLOWMARK_MIGRATION_APPROVED: "true",
+    MIGRATION_TARGET: "staging",
+    MIGRATION_SHA: "a".repeat(40),
+    MIGRATION_DATABASE_URL:
+      "postgresql://user:secret@ep-staging.eu.aws.neon.tech/neondb?sslmode=require",
+    MIGRATION_PREVIEW_HOST: "ep-preview.eu.aws.neon.tech",
+    MIGRATION_STAGING_HOST: "ep-staging.eu.aws.neon.tech",
+    MIGRATION_PRODUCTION_HOST: "ep-production.eu.aws.neon.tech",
+  }
+  for (const overrides of [
+    { MIGRATION_SHA: "b".repeat(40) },
+    { MIGRATION_PRODUCTION_HOST: env.MIGRATION_STAGING_HOST },
+    {
+      MIGRATION_DATABASE_URL:
+        "postgresql://user:secret@ep-production.eu.aws.neon.tech/neondb?sslmode=require",
+    },
+  ]) {
+    assert.equal(f.run("ci", [], { ...env, ...overrides }).status, 1)
+    assert.equal(f.calls().length, 0)
+  }
+  const result = f.run("ci", [], env)
+  assert.equal(result.status, 0, result.stderr)
+  assert.deepEqual(
+    f.calls().map((call) => call.args),
+    [["db:migrate:staging", "--", "--confirm-staging-migrate"]],
+  )
+  assert.ok(!existsSync(join(f.root, "packages/db/.env.neon.staging")))
+  assert.doesNotMatch(result.stdout + result.stderr, /postgresql:\/\/|secret@/)
+})
+
+for (const name of ["production", "preview", "staging"]) {
+  test(`${name} migration stops at failed history preflight`, (t) => {
+    const f = fixture(t)
+    assert.equal(
+      f.run(name, [`--confirm-${name}-migrate`], {
+        FLOWMARK_TEST_CHILD_STATUS: "9",
+      }).status,
+      9,
+    )
+    assert.deepEqual(
+      f.calls().map((call) => call.args),
+      [["--filter", "@flowmark/db", "db:migrations:verify", "--allow-pending"]],
+    )
+  })
+}
+
+test("CI wrapper cleans temporary operator files after a failed child command", (t) => {
+  const f = fixture(t)
+  f.clearBranches()
+  writeFileSync(
+    join(f.root, "bin/git"),
+    `#!/usr/bin/env node\nprocess.stdout.write("${"a".repeat(40)}\\n")\n`,
+    { mode: 0o755 },
+  )
+  const result = f.run("ci", [], {
+    GITHUB_ACTIONS: "true",
+    FLOWMARK_MIGRATION_APPROVED: "true",
+    MIGRATION_TARGET: "preview",
+    MIGRATION_SHA: "a".repeat(40),
+    MIGRATION_DATABASE_URL:
+      "postgresql://user:secret@ep-preview.eu.aws.neon.tech/neondb?sslmode=require",
+    MIGRATION_PREVIEW_HOST: "ep-preview.eu.aws.neon.tech",
+    MIGRATION_STAGING_HOST: "ep-staging.eu.aws.neon.tech",
+    MIGRATION_PRODUCTION_HOST: "ep-production.eu.aws.neon.tech",
+    FLOWMARK_TEST_CHILD_STATUS: "9",
+  })
+  assert.equal(result.status, 1)
+  assert.equal(f.calls().length, 1)
+  for (const suffix of ["", ".preview", ".staging"]) {
+    assert.ok(!existsSync(join(f.root, `packages/db/.env.neon${suffix}`)))
+  }
+  assert.doesNotMatch(result.stdout + result.stderr, /secret@|postgresql:\/\//)
 })

@@ -10,6 +10,7 @@ export type StoredRun = {
   status: RunStatus
   durationMs: number | null
   step: string | null
+  outcome?: string | null
   result: WorkflowResult | null
   correlationId: string | null
   parentRunId: string | null

@@ -1,5 +1,6 @@
 "use client"
 
+import { BusinessResult } from "./business-result"
 import { useState } from "react"
 import Link from "next/link"
 import type { inferRouterOutputs } from "@trpc/server"
@@ -470,6 +471,14 @@ export function RunInvestigation({
               </CardDescription>
             </CardHeader>
             <CardContent>
+              <BusinessResult
+                workflow={first.workflow}
+                outcome={(failure ?? completed)?.outcome}
+                result={reportedResult}
+                properties={
+                  events.find((event) => event.type === "started")?.properties
+                }
+              />
               {reportedResult == null && (
                 <p className="text-xs leading-6 text-muted-foreground">
                   No business result was attached to this run.
