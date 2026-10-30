@@ -31,6 +31,7 @@ export type {
   WorkflowProgress,
   WorkflowOperationFailure,
   WorkflowResult,
+  WorkflowOutcome,
 } from "@flowmarkdev/core"
 
 /** Browser options: a public browser key for direct delivery, or a same-origin proxy path. Never include server secrets. */

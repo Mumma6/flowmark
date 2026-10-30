@@ -56,7 +56,15 @@ type WorkflowFailure = {
   readonly retryable?: boolean
 }
 
+type WorkflowDoneOptions = {
+  readonly outcome?: WorkflowOutcome
+  readonly result?: WorkflowResult
+}
+
+type WorkflowOutcome = string // ^[a-z][a-z0-9_-]{0,63}$, validated at runtime
+
 type WorkflowFailOptions = WorkflowFailure & {
+  readonly outcome?: WorkflowOutcome
   readonly result?: WorkflowResult
 }
 

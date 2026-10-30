@@ -1,4 +1,6 @@
 export enum DatabaseOperation {
+  ReadResultDeclarations = "read-result-declarations",
+  CreateResultDeclaration = "create-result-declaration",
   AppendEvent = "append-event",
   AddProjectMember = "add-project-member",
   Authenticate = "authenticate",

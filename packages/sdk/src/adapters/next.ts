@@ -24,6 +24,7 @@ export type {
   WorkflowProgress,
   WorkflowOperationFailure,
   WorkflowResult,
+  WorkflowOutcome,
 } from "@flowmarkdev/core"
 export { defineConfig } from "../config/define-config.js"
 

@@ -33,7 +33,7 @@ describe("browser client", () => {
       /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
     )
     flow.step("saved")
-    flow.done()
+    flow.done({ outcome: "partial" })
     await client.shutdown()
     expect(fetcher).toHaveBeenCalledTimes(3)
     const types: string[] = []
@@ -53,6 +53,10 @@ describe("browser client", () => {
       runIds.add(envelope.event.runId)
     }
     expect(types).toEqual(["started", "step", "completed"])
+    expect(
+      JSON.parse(await new Response(fetcher.mock.calls[2]?.[1]?.body).text())
+        .event.outcome,
+    ).toBe("partial")
     expect(runIds.size).toBe(1)
     const started = JSON.parse(
       await new Response(fetcher.mock.calls[0]?.[1]?.body).text(),

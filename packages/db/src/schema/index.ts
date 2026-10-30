@@ -17,6 +17,7 @@ import type {
   WorkflowFailure,
   WorkflowProperties,
   WorkflowResult,
+  ResultDeclaration,
 } from "@flowmarkdev/core"
 
 export { account, session, user, verification } from "./auth.js"
@@ -89,6 +90,7 @@ export const workflowRuns = pgTable(
     properties: jsonb("properties").$type<WorkflowProperties>(),
     error: jsonb("error").$type<StoredWorkflowError>(),
     result: jsonb("result").$type<WorkflowResult>(),
+    outcome: text("outcome"),
     environment: text("environment"),
     release: text("release"),
     correlationId: text("correlation_id"),
@@ -143,6 +145,7 @@ export const workflowEvents = pgTable(
     properties: jsonb("properties").$type<WorkflowProperties>(),
     error: jsonb("error").$type<StoredWorkflowError>(),
     result: jsonb("result").$type<WorkflowResult>(),
+    outcome: text("outcome"),
     occurredAt: timestamp("occurred_at", { withTimezone: true }).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
@@ -207,5 +210,29 @@ export const projectMembers = pgTable(
       table.projectId,
     ),
     index("project_members_user_id_idx").on(table.userId),
+  ],
+)
+
+/** Immutable workflow-owned presentation revisions; no runtime execution config. */
+export const workflowResultDeclarations = pgTable(
+  "workflow_result_declarations",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id),
+    workflow: text("workflow").notNull(),
+    revision: text("revision").notNull(),
+    declaration: jsonb("declaration").$type<ResultDeclaration>().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    uniqueIndex("workflow_result_declarations_revision_uidx").on(
+      table.projectId,
+      table.workflow,
+      table.revision,
+    ),
   ],
 )

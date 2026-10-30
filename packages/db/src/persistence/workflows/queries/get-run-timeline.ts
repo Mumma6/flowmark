@@ -28,6 +28,7 @@ export type RunTimelineEvent = {
   reason: string | null
   properties: WorkflowProperties | null
   error: WorkflowError | WorkflowFailure | null
+  outcome?: string | null
   result: WorkflowResult | null
   timestamp: string
   receivedAt: string
@@ -60,6 +61,7 @@ export const getRunTimeline = Effect.fn("getRunTimeline")(function* (
         properties: workflowEvents.properties,
         error: workflowEvents.error,
         result: workflowEvents.result,
+        outcome: workflowEvents.outcome,
         timestamp: workflowEvents.occurredAt,
         receivedAt: workflowEvents.createdAt,
         workflow: workflows.name,

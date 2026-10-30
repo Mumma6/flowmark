@@ -18,6 +18,28 @@ function event(
 }
 
 describe("shared run snapshot projection", () => {
+  it("shows business outcome separately from arbitrary result fields", () => {
+    const snapshot = buildRunSnapshot([
+      event("start", "started"),
+      event("done", "completed", {
+        outcome: "partial",
+        result: { outcome: "custom-result-value", imported: 80 },
+      }),
+    ])!
+    expect(snapshot.metrics[0]).toMatchObject({
+      label: "Business outcome",
+      value: "partial",
+    })
+    expect(snapshot.metrics[1]).toMatchObject({
+      label: "Outcome",
+      value: "custom-result-value",
+    })
+    expect(JSON.parse(snapshot.milestones.at(-1)!.payload)).toMatchObject({
+      outcome: "partial",
+      result: { outcome: "custom-result-value" },
+    })
+  })
+
   it("preserves completion separately from skipped records and handled errors", () => {
     const snapshot = buildRunSnapshot([
       event("1", "started"),

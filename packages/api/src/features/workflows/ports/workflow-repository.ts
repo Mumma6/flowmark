@@ -18,6 +18,7 @@ export interface StoredRun {
   readonly status: RunStatus
   readonly durationMs: number | null
   readonly step: string | null
+  readonly outcome?: string | null
   readonly result: WorkflowResult | null
   readonly correlationId: string | null
   readonly parentRunId: string | null
@@ -151,6 +152,7 @@ export interface RunTimelineEvent {
   readonly reason: string | null
   readonly properties: WorkflowProperties | null
   readonly error: WorkflowError | WorkflowFailure | null
+  readonly outcome?: string | null
   readonly result: WorkflowResult | null
   readonly timestamp: string
   readonly receivedAt: string

@@ -30,11 +30,20 @@ describe("Next.js integration", () => {
     )
     const flow = flowmark.workflow("todo.add")
     flow.step("saved")
-    flow.done()
+    flow.done({ outcome: "no-availability" })
     flowmark.workflow("todo.complete").done()
     expect(callbacks).toHaveLength(2)
     await Promise.all(callbacks.map((callback) => callback()))
     expect(fetcher).toHaveBeenCalledTimes(5)
+    const events = await Promise.all(
+      fetcher.mock.calls.map(
+        async ([, options]) =>
+          JSON.parse(await new Response(options?.body).text()).event,
+      ),
+    )
+    expect(
+      events.find((event) => event.outcome === "no-availability"),
+    ).toMatchObject({ type: "completed", workflow: "todo.add" })
   })
 
   it("logs failed delivery without rejecting Next's after callback", async () => {
