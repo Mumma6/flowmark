@@ -71,6 +71,9 @@
 
 ## Working practices
 
+- Start each normal PR from the latest `origin/staging` on its own
+  `codex/` feature branch, and explicitly target `staging` when opening it.
+  Release PRs retain the documented `staging` to `main` workflow.
 - Inspect existing code and prior art before editing. Prefer the simplest
   complete fix, not new abstractions or unrelated cleanup.
 - Preserve existing work; do not overwrite or revert changes you did not make.

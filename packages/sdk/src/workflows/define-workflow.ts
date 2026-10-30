@@ -2,7 +2,7 @@ import type {
   FlowmarkClient,
   WorkflowDefinition,
   WorkflowRunOptions,
-} from "../../types/index.js"
+} from "../types/index.js"
 
 /** Pure static view over the runtime-specific start boundary. No resources or events. */
 export function withWorkflowDefinitions<
