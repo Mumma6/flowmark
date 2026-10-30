@@ -124,6 +124,10 @@ them.
 
 ## Contributing
 
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for local setup, branch workflow, and
+self-hosting expectations. Report security issues through
+[SECURITY.md](./SECURITY.md).
+
 Create feature and infrastructure branches from `staging` and open PRs into
 `staging`. CI checks each PR; merging deploys Staging through Vercel. A reviewed
 release PR from `staging` into `main` deploys Production. Application GitHub

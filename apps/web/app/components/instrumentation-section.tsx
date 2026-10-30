@@ -12,41 +12,76 @@ export function InstrumentationSection() {
   return (
     <section
       id="how-it-works"
-      className="border-y border-border bg-[#0d1112] bg-[radial-gradient(ellipse_at_16%_0%,#b9f59705,transparent_55%)] py-16 sm:py-[6.25rem]"
+      className="border-t border-border bg-secondary/15 py-16 sm:py-24"
       aria-labelledby="how-title"
     >
       <div className={shellClassName}>
-        <div className="mb-8 flex flex-col items-start justify-between gap-4 sm:mb-10 sm:flex-row sm:items-end sm:gap-8">
+        <div className="mb-9 grid gap-5 lg:grid-cols-[1.2fr_0.8fr] lg:items-end lg:gap-16">
           <div>
             <p className={overlineClassName}>
-              A little code. A clearer account.
+              Small write API. A richer read experience.
             </p>
             <h2 id="how-title" className={`${sectionTitleClassName} mt-4`}>
-              Keep the logic. See the execution.
+              Your code, with a few
+              <br className="hidden sm:block" /> well-placed markers.
             </h2>
           </div>
-          <p className="max-w-md text-[13px] leading-7 text-muted-foreground">
-            Developers mark existing TypeScript with a small write API. The same
-            evidence opens one execution and, over time, what changed across
-            them. Flowmark does not run, schedule, or retry the work.
+          <p className="max-w-md text-sm leading-7 text-muted-foreground">
+            Use ordinary TypeScript and Promises. Name the workflow, mark what
+            matters, and attach a result. Your function keeps its return value
+            and its original errors.
           </p>
         </div>
         <CodeShowcase />
-        <p className="mt-5 border-t border-border pt-5 text-xs leading-7 text-muted-foreground">
-          Install with{" "}
-          <code className="font-mono text-[0.92em]">
+        <div className="mt-8 grid gap-5 border-t border-border pt-6 sm:grid-cols-3">
+          {[
+            {
+              n: "01",
+              title: "Create your project",
+              detail: "Open the dashboard and create a server-write key.",
+            },
+            {
+              n: "02",
+              title: "Configure the SDK",
+              detail: "Set your API URL and server key. Add one shared client.",
+            },
+            {
+              n: "03",
+              title: "Run your code normally",
+              detail:
+                "Report a result, drain delivery, and open the recorded run.",
+            },
+          ].map((item) => (
+            <div key={item.n}>
+              <p className="text-sm font-medium">
+                <span className="mr-2 font-mono text-[10px] text-primary">
+                  {item.n}
+                </span>
+                {item.title}
+              </p>
+              <p className="mt-2 text-xs leading-6 text-muted-foreground">
+                {item.detail}
+              </p>
+            </div>
+          ))}
+        </div>
+        <div className="mt-7 flex flex-wrap items-center justify-between gap-4 rounded-lg border border-border bg-background px-5 py-4">
+          <code className="text-xs sm:text-sm">
+            <span className="mr-3 text-muted-foreground" aria-hidden="true">
+              $
+            </span>
             npm i @flowmarkdev/node
           </code>
-          , then one shared server client:{" "}
-          <code className="font-mono text-[0.92em]">
-            const flowmark = createFlowmark()
-          </code>
-          . Business helpers belong to your app.{" "}
           <Button asChild variant="link" className="h-auto p-0 text-xs">
             <a href={docsUrl}>
-              SDK setup and framework guides <Arrow diagonal />
+              Follow the quickstart <Arrow />
             </a>
           </Button>
+        </div>
+        <p className="mt-4 text-xs leading-6 text-muted-foreground">
+          Examples assume a configured client; application helpers are your own
+          code. Node.js workers drain delivery with flush() or shutdown().
+          Next.js has a request-lifecycle adapter.
         </p>
       </div>
     </section>

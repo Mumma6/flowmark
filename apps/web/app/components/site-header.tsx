@@ -1,43 +1,63 @@
 import { Button } from "@flowmark/ui"
 import { Arrow, BrandLink } from "./brand"
+import { MobileNavigation } from "./mobile-navigation"
 import { shellClassName } from "./shell"
 import { appUrl, docsUrl, githubUrl } from "./site-links"
 
 export function SiteHeader() {
   return (
-    <header className="sticky top-0 z-20 border-b border-border bg-background/80 backdrop-blur-md">
+    <header className="sticky top-0 z-30 border-b border-border bg-background/90 backdrop-blur-xl">
       <div
-        className={`${shellClassName} flex min-h-16 items-center justify-between gap-6 sm:min-h-[4.5rem]`}
+        className={`${shellClassName} flex min-h-[72px] items-center justify-between gap-3`}
       >
         <BrandLink />
         <nav
-          className="flex shrink-0 items-center gap-2 whitespace-nowrap text-[13px] text-muted-foreground sm:gap-4"
           aria-label="Main navigation"
+          className="hidden items-center gap-7 text-[13px] text-muted-foreground md:flex"
         >
-          <a className="hidden hover:text-primary sm:inline" href="#product">
+          <a
+            className="py-3 transition-colors hover:text-foreground"
+            href="#product"
+          >
             Product
           </a>
           <a
-            className="hidden hover:text-primary sm:inline"
+            className="py-3 transition-colors hover:text-foreground"
             href="#how-it-works"
           >
-            How it works
+            Developers
           </a>
-          <a className="hidden hover:text-primary lg:inline" href="#faq">
-            FAQ
+          <a
+            className="py-3 transition-colors hover:text-foreground"
+            href="#outcomes"
+          >
+            Outcomes
           </a>
-          <Button asChild variant="ghost" size="sm">
-            <a href={githubUrl}>GitHub</a>
-          </Button>
-          <Button asChild variant="ghost" size="sm">
-            <a href={docsUrl}>Docs</a>
-          </Button>
-          <Button asChild size="sm">
+          <a
+            className="py-3 transition-colors hover:text-foreground"
+            href={docsUrl}
+          >
+            Docs
+          </a>
+          <a
+            className="py-3 transition-colors hover:text-foreground"
+            href={githubUrl}
+          >
+            GitHub <span aria-hidden="true">↗</span>
+          </a>
+        </nav>
+        <div className="flex items-center gap-2">
+          <Button
+            asChild
+            variant="outline"
+            className="hidden h-10 px-3 text-xs min-[360px]:inline-flex sm:px-4"
+          >
             <a href={appUrl}>
               Dashboard <Arrow />
             </a>
           </Button>
-        </nav>
+          <MobileNavigation />
+        </div>
       </div>
     </header>
   )

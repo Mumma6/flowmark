@@ -1,80 +1,85 @@
-import { Button } from "@flowmark/ui"
-import { Arrow } from "./brand"
+import { FlowmarkMark } from "@flowmark/ui"
 import {
   overlineClassName,
   sectionTitleClassName,
   shellClassName,
 } from "./shell"
-import { docsUrl } from "./site-links"
-
-const contrasts = [
-  {
-    alternative: "APM and OpenTelemetry",
-    strength: "Flexible traces, logs, and metrics",
-    distinction:
-      "an opinionated workflow and run model — investigation and reported outcomes without a custom dashboard",
-  },
-  {
-    alternative: "Workflow engines",
-    strength: "Inspection of work they execute",
-    distinction:
-      "observation of existing application code, without moving that code into an engine",
-  },
-  {
-    alternative: "Job monitors and error trackers",
-    strength: "Health, duration, and failures",
-    distinction:
-      "a full account of a process: milestones, operations, recovery, progress, and what it reported accomplishing",
-  },
-] as const
 
 export function ArchitectureSection() {
   return (
     <section
       id="positioning"
-      className="border-y border-border bg-[#0b0f10] bg-[radial-gradient(ellipse_at_88%_12%,#b9f59705,transparent_54%)] py-16 sm:py-[6.25rem]"
+      className="py-16 sm:py-24"
       aria-labelledby="positioning-title"
     >
       <div className={shellClassName}>
-        <div className="max-w-2xl">
-          <p className={overlineClassName}>Where Flowmark sits</p>
-          <h2
-            id="positioning-title"
-            className={`${sectionTitleClassName} mt-4`}
-          >
-            Between job monitoring and general observability.
-          </h2>
-          <p className="mt-4 max-w-xl text-sm leading-7 text-muted-foreground">
-            The application names the process and reports the evidence. Flowmark
-            does not infer a business process from generic traces, and it does
-            not take over the work.
-          </p>
-        </div>
-        <ul className="mt-12 space-y-0 border-t border-border">
-          {contrasts.map((row) => (
-            <li
-              key={row.alternative}
-              className="grid gap-3 border-b border-border py-6 sm:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] sm:gap-10 sm:py-7"
+        <div className="grid gap-8 lg:grid-cols-[1fr_1fr] lg:gap-20">
+          <div className="min-w-0">
+            <p className={overlineClassName}>
+              Fits the application you already have
+            </p>
+            <h2
+              id="positioning-title"
+              className={`${sectionTitleClassName} mt-4`}
             >
-              <div>
-                <p className="text-[15px] font-medium tracking-tight">
-                  {row.alternative}
+              Keep your runtime.
+              <br />
+              Add understanding.
+            </h2>
+            <p className="mt-5 max-w-md text-sm leading-7 text-muted-foreground">
+              An import script. A background worker. A checkout. A process that
+              continues across requests. Mark the work where it already happens.
+            </p>
+            <div className="mt-8 flex min-w-0 items-center gap-2 rounded-lg border border-border bg-card p-4 text-xs sm:gap-3 sm:p-5">
+              <span className="shrink-0 rounded border border-border bg-background px-2 py-2 font-mono text-[10px] sm:px-3 sm:text-xs">
+                Your application
+              </span>
+              <span
+                className="flex-1 border-t border-dashed border-primary/40"
+                aria-hidden="true"
+              />
+              <span className="text-[10px] text-muted-foreground">
+                <span className="hidden sm:inline">telemetry </span>→
+              </span>
+              <span className="flex items-center gap-2 font-medium">
+                <FlowmarkMark className="size-5 text-primary" />
+                Flowmark
+              </span>
+            </div>
+            <p className="mt-3 text-xs leading-6 text-muted-foreground">
+              Your code owns execution, scheduling, and retries. Flowmark
+              observes what it reports.
+            </p>
+          </div>
+          <div className="min-w-0 divide-y divide-border border-y border-border">
+            {[
+              {
+                title: "Alongside your logs",
+                detail:
+                  "Logs preserve individual messages. Flowmark groups explicit milestones, progress, and results into a named process and its runs.",
+              },
+              {
+                title: "Alongside your APM",
+                detail:
+                  "APM helps explain service and request performance. Flowmark gives the application process its own lifecycle, reported result, and investigation view.",
+              },
+              {
+                title: "Without adopting a workflow engine",
+                detail:
+                  "Keep your existing functions, queue, or job runner. Flowmark does not execute, schedule, or retry application work.",
+              },
+            ].map((item) => (
+              <article key={item.title} className="py-6">
+                <h3 className="text-base font-medium tracking-tight">
+                  {item.title}
+                </h3>
+                <p className="mt-2 text-sm leading-7 text-muted-foreground">
+                  {item.detail}
                 </p>
-                <p className="mt-1 text-[12px] leading-6 text-muted-foreground">
-                  Strong at {row.strength.toLowerCase()}
-                </p>
-              </div>
-              <p className="text-sm leading-7 text-foreground/90">
-                Flowmark gives you {row.distinction}.
-              </p>
-            </li>
-          ))}
-        </ul>
-        <Button asChild className="mt-10" size="lg" variant="outline">
-          <a href={docsUrl}>
-            Explore the integration <Arrow diagonal />
-          </a>
-        </Button>
+              </article>
+            ))}
+          </div>
+        </div>
       </div>
     </section>
   )

@@ -5,6 +5,7 @@ import Link from "next/link"
 import type { inferRouterOutputs } from "@trpc/server"
 import type { AppRouter } from "@flowmark/server/trpc"
 import {
+  RunSnapshot,
   Accordion,
   AccordionContent,
   AccordionItem,
@@ -32,7 +33,6 @@ import {
 } from "@flowmark/ui"
 import {
   formatReportedProgress,
-  getRunDurationMs,
   getRunResultHighlights,
   latestReportedProgress,
 } from "./run-presentation"
@@ -50,7 +50,9 @@ import {
   stringifyExport,
 } from "./run-export"
 import { EventTable, JsonData, type RunEvent } from "./run-event-table"
+import { RunEventTimeline } from "./run-event-timeline"
 import { OperationWaterfall, ProgressStrip } from "./run-waterfall"
+import { buildRunSnapshot } from "./run-snapshot-presentation"
 
 type RunRelationships = inferRouterOutputs<AppRouter>["run"]["related"]
 type RunComparison = inferRouterOutputs<AppRouter>["run"]["compare"]
@@ -359,9 +361,9 @@ export function RunInvestigation({
   comparisonLoading?: boolean
   comparisonError?: string
 }) {
-  const [timelineView, setTimelineView] = useState<"waterfall" | "events">(
-    "waterfall",
-  )
+  const [timelineView, setTimelineView] = useState<
+    "timeline" | "waterfall" | "events"
+  >("timeline")
   const first = events[0]
   if (!first) {
     return null
@@ -381,78 +383,47 @@ export function RunInvestigation({
   const state = failure ? "Failed" : completed ? "Completed" : "Running"
   const progress = latestReportedProgress(events)
   const reportedResult = failure?.result ?? completed?.result
-  const highlights = getRunResultHighlights(reportedResult ?? {})
+  const snapshot = buildRunSnapshot(events)
   const errors = events.filter((event) => event.type === "error")
   const operations = events.filter(
     (event) => event.type === "operation_started",
   )
   return (
     <div className="grid min-w-0 gap-6">
-      <Card className="overflow-hidden shadow-none">
-        <CardHeader className="flex-row flex-wrap items-start justify-between gap-4 space-y-0">
-          <div>
-            <p className="mb-2 text-xs font-medium text-muted-foreground">
-              Application-reported execution
-            </p>
-            <CardTitle className="text-base">Reported outcome</CardTitle>
-            <CardDescription>
-              <code className="break-all">{first.externalId}</code>
-            </CardDescription>
-          </div>
-          <StatusBadge status={state} />
-        </CardHeader>
-        <CardContent>
-          <div className="mb-4 grid grid-cols-2 gap-2 sm:flex">
-            {first.environment && (
-              <Badge variant="outline">{first.environment}</Badge>
-            )}
-            {first.release && (
-              <Badge variant="outline">Release {first.release}</Badge>
-            )}
-            <Badge
-              variant="outline"
-              title="Elapsed from started to done() or fail(), when recorded"
-            >
-              {formatDuration(getRunDurationMs(events))}
-            </Badge>
-            <Badge
-              variant="outline"
-              title="Persisted telemetry events for this run"
-            >
-              {events.length} events
-            </Badge>
-          </div>
-          <p className="mb-4 text-xs leading-6 text-muted-foreground">
-            Duration measures elapsed time to the reported final outcome. A run
-            without a final outcome is not proof of active work.
-          </p>
-          <div className="flex flex-wrap items-center gap-2">
-            <ViewLink href={`/workflows/${encodeURIComponent(first.workflow)}`}>
-              View workflow
-            </ViewLink>
-            {(() => {
-              const runExport = buildRunExport(events)
-              const timelineExport = buildTimelineExport(events)
-              return (
-                <>
-                  {runExport && (
-                    <CopyButton
-                      label="Copy run JSON"
-                      value={stringifyExport(runExport)}
-                    />
-                  )}
-                  {timelineExport && (
-                    <CopyButton
-                      label="Copy timeline JSON"
-                      value={stringifyExport(timelineExport)}
-                    />
-                  )}
-                </>
-              )
-            })()}
-          </div>
-        </CardContent>
-      </Card>
+      {snapshot && (
+        <RunSnapshot
+          {...snapshot}
+          actions={
+            <>
+              <ViewLink
+                href={`/workflows/${encodeURIComponent(first.workflow)}`}
+              >
+                View workflow
+              </ViewLink>
+              {(() => {
+                const runExport = buildRunExport(events)
+                const timelineExport = buildTimelineExport(events)
+                return (
+                  <>
+                    {runExport && (
+                      <CopyButton
+                        label="Copy run JSON"
+                        value={stringifyExport(runExport)}
+                      />
+                    )}
+                    {timelineExport && (
+                      <CopyButton
+                        label="Copy timeline JSON"
+                        value={stringifyExport(timelineExport)}
+                      />
+                    )}
+                  </>
+                )
+              })()}
+            </>
+          }
+        />
+      )}
       <Tabs defaultValue="outcome" className="min-w-0">
         <TabsList
           variant="line"
@@ -499,24 +470,9 @@ export function RunInvestigation({
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {highlights.length > 0 ? (
-                <dl className="mb-5 grid grid-cols-2 gap-6 sm:grid-cols-4 [&>div]:min-w-0 [&_dt]:text-xs [&_dt]:text-muted-foreground [&_dd]:mt-2 [&_dd]:break-all [&_dd]:text-3xl [&_dd]:font-medium [&_dd]:tabular-nums">
-                  {highlights.map((item) => (
-                    <div key={item.key}>
-                      <dt>{item.label}</dt>
-                      <dd>{item.value}</dd>
-                    </div>
-                  ))}
-                </dl>
-              ) : (
+              {reportedResult == null && (
                 <p className="text-xs leading-6 text-muted-foreground">
-                  {reportedResult != null
-                    ? "Result recorded. Expand raw result data to inspect it."
-                    : failure
-                      ? "No business result was attached to the failure."
-                      : completed
-                        ? "No business result was attached to completion."
-                        : "No business result recorded."}
+                  No business result was attached to this run.
                 </p>
               )}
               {reportedResult != null && (
@@ -586,15 +542,30 @@ export function RunInvestigation({
                 <CardTitle>
                   {timelineView === "waterfall"
                     ? "Operation waterfall"
-                    : "Event timeline"}
+                    : timelineView === "events"
+                      ? "Event table"
+                      : "Event timeline"}
                 </CardTitle>
                 <CardDescription className="mt-2">
                   {timelineView === "waterfall"
                     ? "Recorded operation intervals, overlap, and idle gaps between endpoints."
-                    : "Checkpoints, operations, progress and failures. Filter before expanding payloads."}
+                    : timelineView === "events"
+                      ? "Filter and expand rows for full payloads and timestamps."
+                      : "Checkpoints, operations, progress, and failures in order. Expand rows with payloads."}
                 </CardDescription>
               </div>
               <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={
+                    timelineView === "timeline" ? "secondary" : "outline"
+                  }
+                  aria-pressed={timelineView === "timeline"}
+                  onClick={() => setTimelineView("timeline")}
+                >
+                  Timeline
+                </Button>
                 <Button
                   type="button"
                   size="sm"
@@ -604,7 +575,7 @@ export function RunInvestigation({
                   aria-pressed={timelineView === "waterfall"}
                   onClick={() => setTimelineView("waterfall")}
                 >
-                  Waterfall
+                  Operations
                 </Button>
                 <Button
                   type="button"
@@ -613,15 +584,17 @@ export function RunInvestigation({
                   aria-pressed={timelineView === "events"}
                   onClick={() => setTimelineView("events")}
                 >
-                  Events
+                  Table
                 </Button>
               </div>
             </CardHeader>
             <CardContent className="p-0">
               {timelineView === "waterfall" ? (
                 <OperationWaterfall events={events} />
-              ) : (
+              ) : timelineView === "events" ? (
                 <EventTable events={events} />
+              ) : (
+                <RunEventTimeline events={events} />
               )}
             </CardContent>
           </Card>

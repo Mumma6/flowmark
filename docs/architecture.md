@@ -19,12 +19,15 @@ Dashboard
 ```
 
 The reference API is `https://api.flowmark.dev` and the dashboard is
-`https://app.flowmark.dev`. The Neon database behind them, the Vercel
-projects, and the environment variables are in the
-[infrastructure guide](./infrastructure). The same shape runs locally. The
-server application is a replaceable HTTP/framework shell; API use cases,
-ports, and persistence adapters live in the separate `@flowmark/api`
-package.
+`https://app.flowmark.dev`. Maintainer operating notes for that deployment
+stay outside the public tree. The same application shape runs locally and
+can be self-hosted: any PostgreSQL reachable through `DATABASE_URL` is
+enough for storage. Neon and Vercel are the maintainers' reference stack, not
+a requirement for every install ([ADR 0006](./decisions/0006-mvp-0.1-infrastructure.md)).
+Flowmark is software you deploy; it is not a separate hosted enterprise product
+or SSO platform. The server application is a replaceable HTTP/framework shell;
+API use cases, ports, and persistence adapters live in the separate
+`@flowmark/api` package.
 
 ## Core domain package
 

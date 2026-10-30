@@ -1,6 +1,6 @@
 {
   "name": "@flowmarkdev/node",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Workflow observability for processes your Node.js and Next.js apps already run",
   "license": "MIT",
   "type": "module",

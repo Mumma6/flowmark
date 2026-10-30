@@ -30,7 +30,7 @@
     "db:setup": "pnpm --filter @flowmark/db db:setup",
     "db:setup-demo": "pnpm --filter @flowmark/db db:setup",
     "db:reset-local-telemetry": "pnpm --filter @flowmark/db db:reset-local-telemetry",
-    "test": "node --test scripts/prepare-dev.test.mjs scripts/db-env-neon.test.mjs scripts/db-migrate.test.mjs scripts/github-workflows.test.mjs && turbo test",
+    "test": "node --test scripts/prepare-dev.test.mjs scripts/db-env-neon.test.mjs scripts/db-migrate.test.mjs scripts/github-workflows.test.mjs scripts/vercel-should-deploy.test.mjs && turbo test",
     "typecheck": "turbo typecheck"
   },
   "devDependencies": {
@@ -38,6 +38,7 @@
     "eslint": "^9.35.0",
     "prettier": "^3.6.2",
     "turbo": "^2.5.6",
+    "turbo-ignore": "2.11.10",
     "typescript": "^5.9.2",
     "typescript-eslint": "^8.43.0"
   }

@@ -66,6 +66,12 @@ Each app's `vercel.json` already sets Next.js, function region `fra1`, and
 the monorepo install and Turbo build. Node is 22.x. Leave those unless the
 infrastructure guide is updated in the same change.
 
+Each app also sets `ignoreCommand` to `scripts/vercel-should-deploy.mjs`,
+which runs Turbo's affected check through `npx turbo-ignore` (Vercel runs
+this before `pnpm install`). Only turbo-ignore exit code `1` continues the
+build; `0` and errors exit `0` so Vercel skips the deployment. Shared
+dependency changes still rebuild every consumer.
+
 ## Deploy
 
 A push to `main` builds all four projects from that commit. Uncommitted

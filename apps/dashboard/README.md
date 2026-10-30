@@ -42,6 +42,14 @@ use Tailwind 3; web/docs use Tailwind 4. Recharts composes through shared chart
 primitives. The mobile navigation Sheet uses Base UI focus management. Theme
 preferences include system/light/dark with dark as the default.
 
+Run detail and the landing illustration use the same `RunSnapshot` component
+from `@flowmark/ui`, not separate imitations. `buildRunSnapshot` projects live
+recorded events into its presentation props: up to four scalar result fields,
+explicit lifecycle, duration and up to eight recent milestones. Raw results,
+full Timeline/Operations/Table views, progress history, comparisons, related
+runs and JSON exports remain available. The projection keeps partial results
+on failure and does not infer activity from missing terminal telemetry.
+
 ## Validation
 
 ```bash

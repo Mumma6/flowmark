@@ -82,7 +82,14 @@ primitives. Keep `FlowmarkMark` and the wordmark accent dot.
 
 Use a Card for one coherent data panel. Open sections and metric strips can use
 semantic HTML and structural dividers. Workflow summaries, result highlights,
-run lists and Overview composition belong to `apps/dashboard`. Add a primitive
+run lists and Overview composition belong to `apps/dashboard`.
+`RunSnapshot` is a deliberate shared product presentation: both the public landing
+and dashboard run detail render the same identity/status, result strip, milestone
+selector and payload inspection. The dashboard owns the projection from recorded
+events; the landing passes synthetic illustration props. This component performs
+no fetching and owns no SDK, API, persistence or business-outcome classification.
+Its Tailwind 3/4-compatible classes and dark palette/system fonts match across
+both consumers. Add a primitive
 to `packages/ui` only when missing reusable behavior warrants it. Do not create
 an app-local UI kit or thin wrappers around every semantic element.
 

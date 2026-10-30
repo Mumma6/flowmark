@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og"
 
-export const alt = "Flowmark — Understand every execution"
+export const alt = "Flowmark — Know what your workflows actually accomplish"
 export const size = { width: 1200, height: 630 }
 export const contentType = "image/png"
 
@@ -65,7 +65,7 @@ export default function OpenGraphImage() {
             maxWidth: 900,
           }}
         >
-          Understand every execution.
+          Know what your workflows actually accomplish.
         </div>
         <div
           style={{
@@ -75,13 +75,13 @@ export default function OpenGraphImage() {
             maxWidth: 760,
           }}
         >
-          Discover what matters across them.
+          Workflow observability for the code you already run.
         </div>
       </div>
       <div style={{ display: "flex", gap: 28, color: "#b9f597", fontSize: 20 }}>
-        <span>SDK</span>
+        <span>Open source</span>
         <span>Investigation</span>
-        <span>Intelligence</span>
+        <span>Reported results</span>
       </div>
     </div>,
     size,

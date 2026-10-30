@@ -2,6 +2,9 @@
 
 Contributor guides that ship with the public repository:
 
+- [Contributing](../CONTRIBUTING.md): onboarding, branches, local-only apps,
+  and self-hosting expectations.
+- [Security policy](../SECURITY.md): private vulnerability reporting.
 - [Development setup](./development): workspace commands, local demo, database,
   and checks.
 - [Database integration tests](./development#database-integration-tests): local

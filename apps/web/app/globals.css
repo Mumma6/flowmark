@@ -7,40 +7,48 @@
   --color-card: var(--surface);
   --color-card-foreground: var(--text);
   --color-primary: var(--accent);
-  --color-primary-foreground: #10180d;
+  --color-primary-foreground: hsl(100 30% 7%);
   --color-secondary: var(--surface-raised);
   --color-secondary-foreground: var(--text);
   --color-muted: var(--surface-raised);
   --color-muted-foreground: var(--muted);
-  --color-accent: var(--surface-raised);
-  --color-accent-foreground: var(--text);
+  --color-accent: hsl(165 15% 14%);
+  --color-accent-foreground: var(--accent);
   --color-border: var(--border);
   --color-input: var(--border);
   --color-ring: var(--accent);
-  --color-destructive: #dc2626;
-  --color-destructive-foreground: #ffffff;
-  --font-sans: var(--font-geist-sans), Arial, Helvetica, sans-serif;
-  --font-mono:
-    var(--font-geist-mono), ui-monospace, SFMono-Regular, Consolas, monospace;
+  --color-destructive: hsl(0 88% 73%);
+  --color-destructive-foreground: #101517;
+  --color-success: hsl(var(--success));
+  --color-info: hsl(205 65% 72%);
+  --color-warning: hsl(40 80% 68%);
+  --font-sans:
+    ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
+    "Segoe UI Symbol", "Noto Color Emoji";
+  --font-mono: ui-monospace, SFMono-Regular, Consolas, monospace;
+  --animate-arrive: arrive 700ms cubic-bezier(0.2, 0.7, 0.3, 1) both;
   --animate-spotlight: spotlight-in 2.4s ease-out 0.3s 1 both;
-  --animate-dashboard: dashboard-arrive 950ms cubic-bezier(0.2, 0.75, 0.25, 1)
-    both;
-  --animate-orbit: orbit 28s linear infinite;
   --animate-meteor: meteor 8s linear infinite;
   --animate-beam-travel: beam-travel 9s linear infinite;
   --animate-spotlight-pan: spotlight-pan 9s ease-in-out infinite;
   --animate-spotlight-pan-reverse: spotlight-pan-reverse 9s ease-in-out infinite;
+  --radius-lg: 0.7rem;
+  --radius-md: calc(0.7rem - 2px);
+  --radius-sm: calc(0.7rem - 4px);
 }
 
 :root {
   color-scheme: dark;
-  --bg: #090c0e;
-  --surface: #101517;
-  --surface-raised: #141b1b;
-  --text: #edf2ef;
-  --muted: #9ba8a3;
-  --accent: #b9f597;
-  --border: #ffffff15;
+  --bg: hsl(204 24% 4.5%);
+  --surface: hsl(165 10% 8%);
+  --surface-raised: hsl(165 15% 12%);
+  --text: hsl(144 16% 94%);
+  --muted: hsl(157 7% 63%);
+  --accent: hsl(98 82% 78%);
+  --border: hsl(160 7% 18%);
+  --success: 152 42% 65%;
+  --success-foreground: 152 42% 65%;
+  --hero-glow: #7cbd4730;
 }
 
 @layer base {
@@ -69,33 +77,25 @@
   }
 }
 
+@keyframes arrive {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @keyframes spotlight-in {
   from {
     opacity: 0;
     transform: translateY(-14px) scale(0.97);
   }
-
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
-  }
-}
-
-@keyframes dashboard-arrive {
-  from {
-    transform: translateY(18px) rotateY(-3deg);
-    opacity: 0;
-  }
-
-  to {
-    transform: translateY(0) rotateY(0);
-    opacity: 1;
-  }
-}
-
-@keyframes orbit {
-  to {
-    transform: rotate(360deg);
   }
 }
 
@@ -104,11 +104,9 @@
     transform: rotate(215deg) translateX(0);
     opacity: 1;
   }
-
   70% {
     opacity: 1;
   }
-
   100% {
     transform: rotate(215deg) translateX(-32rem);
     opacity: 0;
@@ -120,7 +118,6 @@
     stroke-dasharray: 48 720;
     stroke-dashoffset: 768;
   }
-
   100% {
     stroke-dasharray: 48 720;
     stroke-dashoffset: -768;
@@ -132,7 +129,6 @@
   100% {
     transform: translateX(0);
   }
-
   50% {
     transform: translateX(5rem);
   }
@@ -143,7 +139,6 @@
   100% {
     transform: translateX(0);
   }
-
   50% {
     transform: translateX(-5rem);
   }

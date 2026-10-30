@@ -19,13 +19,13 @@ export default function HomePage() {
         Skip to content
       </a>
       <SiteHeader />
-      <main id="main">
+      <main id="main" tabIndex={-1}>
         <HeroSection />
-        <InstrumentationSection />
+        <ValueSection />
         <ProductSection />
         <InsightsSection />
-        <ValueSection />
         <ArchitectureSection />
+        <InstrumentationSection />
         <FaqSection />
         <ClosingSection />
       </main>
