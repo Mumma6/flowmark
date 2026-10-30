@@ -5,8 +5,8 @@ import {
   FlowmarkQueueError,
   WorkflowTransportError,
   type DeliveryFailure,
-} from "../../errors/index.js"
-import type { InstrumentationErrorHandler } from "../../types/index.js"
+} from "../errors/index.js"
+import type { InstrumentationErrorHandler } from "../types/index.js"
 import { WorkflowTransport } from "./ports/workflow-transport.js"
 
 export interface DeliveryQueueService {

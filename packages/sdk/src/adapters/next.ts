@@ -1,4 +1,4 @@
-import { withWorkflowDefinitions } from "../features/workflows/define-workflow.js"
+import { withWorkflowDefinitions } from "../workflows/define-workflow.js"
 import { after } from "next/server"
 import { createFlowmark as createClient } from "../client/create-client.js"
 import type { FlowmarkClient, FlowmarkConfig } from "../types/index.js"

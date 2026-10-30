@@ -2,7 +2,7 @@ import { Effect, Layer, Schema } from "effect"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { WorkflowEventSchema } from "@flowmarkdev/core"
 import { makeClient } from "../src/client/runtime.js"
-import { WorkflowTransport } from "../src/features/delivery/ports/workflow-transport.js"
+import { WorkflowTransport } from "../src/delivery/ports/workflow-transport.js"
 import { createFlowmark, MemoryTransport, workflow } from "../src/index.js"
 import { createFlowmark as browserClient } from "../src/browser/index.js"
 

@@ -1,10 +1,10 @@
 import { FetchHttpClient } from "@effect/platform"
 import { Layer } from "effect"
-import { HttpTransportLive } from "../features/delivery/adapters/http.js"
+import { HttpTransportLive } from "../delivery/adapters/http.js"
 import { FlowmarkSettings, resolveSettings } from "../config/settings.js"
 import { FlowmarkConfigError } from "../errors/index.js"
 import { makeClient } from "./runtime.js"
-import { WorkflowTransport } from "../features/delivery/ports/workflow-transport.js"
+import { WorkflowTransport } from "../delivery/ports/workflow-transport.js"
 import type {
   Flow,
   FlowmarkClient,

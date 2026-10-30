@@ -12,7 +12,7 @@ import type {
   WorkflowStepName,
 } from "@flowmarkdev/core"
 import type { DeliveryFailure } from "../errors/index.js"
-import type { WorkflowTransport } from "../features/delivery/ports/workflow-transport.js"
+import type { WorkflowTransport } from "../delivery/ports/workflow-transport.js"
 
 /**
  * Receives delivery/validation failures without throwing them into application code.

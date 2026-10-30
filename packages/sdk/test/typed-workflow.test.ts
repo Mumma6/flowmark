@@ -14,7 +14,7 @@ import type {
   TypedFlow as BrowserFlow,
 } from "../src/browser/index.js"
 import { makeClient } from "../src/client/runtime.js"
-import { WorkflowTransport } from "../src/features/delivery/ports/workflow-transport.js"
+import { WorkflowTransport } from "../src/delivery/ports/workflow-transport.js"
 
 interface ImportContext {
   batchId: string

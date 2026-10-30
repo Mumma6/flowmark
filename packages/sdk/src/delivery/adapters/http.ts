@@ -1,5 +1,5 @@
 import { Effect, Layer } from "effect"
-import { FlowmarkSettings } from "../../../config/settings.js"
+import { FlowmarkSettings } from "../../config/settings.js"
 import { WorkflowTransport } from "../ports/workflow-transport.js"
 import { makeHttpTransport } from "./http-transport.js"
 

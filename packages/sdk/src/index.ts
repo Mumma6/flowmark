@@ -7,8 +7,8 @@ export {
   FlowmarkQueueError,
   WorkflowTransportError,
 } from "./errors/index.js"
-export { WorkflowTransport } from "./features/delivery/ports/workflow-transport.js"
-export { MemoryTransport } from "./features/delivery/adapters/memory-transport.js"
+export { WorkflowTransport } from "./delivery/ports/workflow-transport.js"
+export { MemoryTransport } from "./delivery/adapters/memory-transport.js"
 export type {
   WorkflowDefinition,
   TypedFlow,

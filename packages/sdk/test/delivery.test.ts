@@ -6,11 +6,13 @@ import {
 import { Context, Deferred, Effect, Either, Layer, Redacted } from "effect"
 import { describe, expect, it, vi } from "vitest"
 import type { WorkflowEvent, WorkflowProperties } from "@flowmarkdev/core"
-import { HttpTransportLive } from "../../src/features/delivery/adapters/http.js"
-import { FlowmarkSettings } from "../../src/config/settings.js"
-import { DeliveryQueue } from "../../src/features/delivery/delivery-queue.js"
-import { WorkflowTransport } from "../../src/features/delivery/ports/workflow-transport.js"
-import { WorkflowEngine } from "../../src/features/workflows/workflow-engine.js"
+import { HttpTransportLive } from "../src/delivery/adapters/http.js"
+import { FlowmarkSettings } from "../src/config/settings.js"
+import { DeliveryQueue } from "../src/delivery/delivery-queue.js"
+import { WorkflowTransport } from "../src/delivery/ports/workflow-transport.js"
+import { WorkflowEngine } from "../src/workflows/workflow-engine.js"
+import { WorkflowEvents } from "../src/workflows/workflow-events.js"
+import { WorkflowRuns } from "../src/workflows/run-lifecycle.js"
 
 const event: WorkflowEvent = {
   type: "started",
@@ -195,7 +197,15 @@ describe("workflow delivery feature", () => {
       yield* flow.done()
       yield* flow.step("ignored")
       yield* flow.fail({ code: "ignored" })
-    }).pipe(Effect.provide(WorkflowEngine.layer.pipe(Layer.provide(delivery))))
+    }).pipe(
+      Effect.provide(
+        WorkflowEngine.layer.pipe(
+          Layer.provide(WorkflowRuns.layer),
+          Layer.provide(WorkflowEvents.layer),
+          Layer.provide(delivery),
+        ),
+      ),
+    )
 
     expect(events).toHaveLength(0)
     await Effect.runPromise(operation)
