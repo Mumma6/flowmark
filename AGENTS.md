@@ -41,10 +41,14 @@
 - Before `@flowmark/db`, Drizzle, SQL, query, migration, or seed changes, read
   and apply
   [flowmark-persistence](./.agents/skills/flowmark-persistence/SKILL.md).
-- Every schema migration must be applied and verified in both the local
-  loopback database and Neon `production` before the change is considered
-  complete. Use the committed migration through `pnpm db:migrate`; never seed
-  Neon or leave a manually applied migration out of Drizzle's history.
+- Include schema, generated SQL/Drizzle metadata and affected stack changes in
+  the same PR. Follow [database rollout](./docs/migrations.md): local/CI checks,
+  Preview verification, Staging migration before feature merge, Production
+  migration only before release. Track implementation completion separately
+  from environment rollout; Production is not a feature PR completion gate.
+  Use guarded commands or the approved migration workflow. Never seed Neon,
+  edit applied migrations or bypass Drizzle history. Hosted mutation still
+  requires approval for the exact environment and reviewed revision.
 - Keep API use cases in `packages/api`; `apps/server` is the framework/protocol
   shell. Keep database-specific work behind persistence boundaries.
 - Before Vercel, domain, or hosted environment changes, read and apply

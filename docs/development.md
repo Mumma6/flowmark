@@ -92,46 +92,16 @@ also refuses the preview host. Neither command runs from a Vercel build.
 
 ### Applying migrations safely
 
-`pnpm db:migrate` (including the direct `@flowmark/db` command) only accepts
-loopback URLs by default. It loads the server env files and checks the final
-URL, preferring `DATABASE_MIGRATION_URL` over `DATABASE_URL`. A remote URL is
-refused before connecting. `pnpm db:migrate:local` additionally requires demo
-mode and a non-production environment, and pins the exact local URL it checked.
+The [database rollout guide](./migrations.md) is the source of truth for feature
+PR vs release gates, migration-before-deploy ordering, protected Actions setup,
+and workstation fallback. Include schema, SQL/Drizzle metadata and the complete
+stack change in the same PR. Local/CI verification completes implementation;
+Production migration belongs to release, not ordinary feature PR completion.
 
-Hosted migrations use a dedicated workstation command and direct Neon URL:
-
-| Target     | Command                                                | Local operator env file         |
-| ---------- | ------------------------------------------------------ | ------------------------------- |
-| Preview    | `pnpm db:migrate:preview -- --confirm-preview-migrate` | `packages/db/.env.neon.preview` |
-| Staging    | `pnpm db:migrate:staging -- --confirm-staging-migrate` | `packages/db/.env.neon.staging` |
-| Production | `pnpm db:migrate:prod -- --confirm-production-migrate` | `packages/db/.env.neon`         |
-
-Unset exported `DATABASE_MIGRATION_URL` before using these wrappers. They
-validate their target, then pass the checked host and branch to the CLI through
-`FLOWMARK_MIGRATION_TARGET_HOST`, `FLOWMARK_MIGRATION_WRAPPER`, and `NEON_BRANCH`.
-The CLI checks that handoff against the actual direct URL. These internal
-markers prevent accidental invocation; they are not authentication or proof of
-Neon branch identity. Do not set them in app env files, Vercel, or CI.
-Hosted migrations require maintainer approval. Never seed Neon.
-
-For each schema release, follow this order:
-
-1. Create and inspect a new committed Drizzle migration. Keep the old app's
-   reads and writes compatible with additive columns/tables and their defaults.
-2. Apply and verify it locally, then in the isolated hosted test environments
-   with approval. Check schema and Drizzle history; do not infer applied state
-   from Git alone.
-3. Before merging the release to main, apply and verify the required additive
-   Production migration with explicit approval. The old revision must keep
-   working while this happens.
-4. Merge the approved release and verify the deployed app. Perform any required
-   backfill as a separately approved operation and verify its result.
-5. Remove old fields or constraints only in a later migration, after every
-   supported app/rollback revision no longer depends on them. A rollback of
-   the app does not undo SQL.
-
-See [application releases](./releases.md) for release coordination. Vercel
-builds, requests, and GitHub Actions do not apply hosted migrations.
+Bare `pnpm db:migrate` accepts loopback only. Existing environment wrappers and
+the approved **Migrate database** Actions job delegate to that guarded command.
+Ordinary PR checks receive no hosted credentials. Never seed Neon or migrate
+inside Vercel builds/requests. See the guide for exact commands and approvals.
 
 The dashboard uses a same-origin server proxy for tRPC and Better Auth. Its
 server-side `FLOWMARK_API_URL` defaults to `http://localhost:3003`. Dashboard

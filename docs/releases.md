@@ -111,12 +111,15 @@ explicitly approved backfill, and contract only in a later migration when old
 revisions no longer need the old shape. Check defaults, nullability, and writes
 from the previous revision as well as reads. A rollback must remain compatible.
 
-Hosted migrations are manual operator commands requiring explicit approval,
-using the environment-specific wrappers. Never run them in Vercel builds or
-PR checks. Do not merge a release until required pre-deploy migrations are
-confirmed. Command-guard hardening (TASK-007) must be completed before the
-first release containing schema changes. See [development](./development.md)
-for database commands. No release preparation authorizes seed, reset, or restore.
+Use the approved **Migrate database** Actions workflow once configured, or the
+guarded workstation fallback. Follow [database rollout](./migrations.md):
+Preview verification → Staging migration before feature merge → deployed Staging
+verification → approved Production migration before release merge → Production
+verification. Apply exactly the reviewed commit's migrations and record the run
+and schema/history evidence. Production migration is a release gate, not a gate
+for ordinary feature PR completion. A migration job does not merge or deploy;
+Vercel Git integration still deploys after merge. Stop on a failed migration.
+No release preparation authorizes seed, reset, restore or hosted mutation.
 
 ## Complete and verify a release
 

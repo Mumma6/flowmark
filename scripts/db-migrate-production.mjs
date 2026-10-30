@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { spawnSync } from "node:child_process"
+import { runMigrationSteps } from "./db-migration-steps.mjs"
 import console from "node:console"
 import process from "node:process"
 import { fileURLToPath } from "node:url"
@@ -76,10 +76,4 @@ const childEnv = {
 delete childEnv.DATABASE_URL
 delete childEnv.FLOWMARK_DEMO_MODE
 
-const result = spawnSync("pnpm", ["--filter", "@flowmark/db", "db:migrate"], {
-  cwd: repoRoot,
-  stdio: "inherit",
-  env: childEnv,
-})
-
-process.exit(result.status ?? 1)
+process.exit(runMigrationSteps(repoRoot, childEnv))

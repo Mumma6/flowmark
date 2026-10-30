@@ -28,4 +28,4 @@
 
 ### Deployment Notes
 
-<!-- Manual steps before or after merge. Merging to `main` deploys Production. Write "None" if none. -->
+<!-- Schema changes: record reviewed SHA, Preview verification, Staging migration before feature merge, and separate Production migration before release. Link the approved workflow run when available. See docs/migrations.md. Merging to main deploys Production. Write "None" if none. -->

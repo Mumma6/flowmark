@@ -34,7 +34,12 @@ creating a PR is not permission to merge or deploy.
    red. For changes that truly cannot use the full monorepo check, run the
    narrowest equivalent and say so in **Verification** — default is always
    `pnpm check`.
-7. Note database migrations, infrastructure changes, Vercel or Neon impact,
+7. For schema changes, follow [database rollout](../../../docs/migrations.md).
+   Include generated migrations with the stack change. Separate implementation,
+   feature merge readiness (Preview plus Staging schema prerequisite), and release
+   readiness. Never require Production mutation merely to finish a feature PR.
+   Record tested SHA, per-environment migration/smoke results and pending gates.
+   Note infrastructure changes, Vercel or Neon impact,
    and any manual deployment steps.
 8. Before reporting a PR ready to merge, inspect both CI jobs: the fast
    `Format, lint, typecheck, and test` check and `PostgreSQL integration tests`.

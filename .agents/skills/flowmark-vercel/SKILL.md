@@ -72,6 +72,16 @@ this before `pnpm install`). Only turbo-ignore exit code `1` continues the
 build; `0` and errors exit `0` so Vercel skips the deployment. Shared
 dependency changes still rebuild every consumer.
 
+## Database-dependent deploys
+
+Follow [database rollout](../../../docs/migrations.md). Feature code/migrations
+share a PR, but each database has its own applied history. Apply compatible
+Staging migrations before feature merge, and Production migrations before release
+merge. Prefer the protected exact-SHA migration job once activated; it never
+merges or deploys. Do not migrate inside Vercel builds/requests or ordinary PR CI.
+Production rollout is separate from feature completion. A failed migration blocks
+deployment; a green Vercel build alone does not prove schema or user-flow health.
+
 ## Deploy
 
 A push to `main` builds all four projects from that commit. Uncommitted

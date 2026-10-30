@@ -79,3 +79,25 @@ test("main ruleset requires the pull-request job check name", () => {
     "update rule restricts merge/push on main to bypass only",
   )
 })
+
+test("hosted migrations require explicit dispatch, protected environment and exact revision", () => {
+  const yaml = readWorkflow("database-migrate.yml")
+  assert.match(yaml, /workflow_dispatch:/)
+  assert.doesNotMatch(
+    yaml,
+    /^\s+(pull_request|pull_request_target|push|schedule):/m,
+  )
+  assert.match(yaml, /github.ref == 'refs\/heads\/main'/)
+  assert.match(yaml, /required_reviewers/)
+  assert.match(yaml, /can_admins_bypass, false/)
+  assert.match(yaml, /environment: database-\$\{\{ inputs.target \}\}/)
+  assert.match(yaml, /needs: preflight/)
+  assert.match(yaml, /cancel-in-progress: false/)
+  assert.match(yaml, /ref: \$\{\{ inputs.sha \}\}/)
+  assert.match(yaml, /persist-credentials: false/)
+  assert.match(
+    yaml,
+    /git merge-base --is-ancestor "\$REVIEWED_SHA" origin\/staging/,
+  )
+  assert.doesNotMatch(yaml, /db:seed|db:reset|confirm-.*baseline/)
+})
