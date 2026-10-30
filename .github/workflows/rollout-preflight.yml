@@ -1,0 +1,54 @@
+name: Verify rollout credentials
+
+on:
+  workflow_dispatch:
+  # Temporary bootstrap trigger; removed after verification before merge.
+  push:
+    branches: [codex/sdk-business-outcomes]
+    paths: [.github/workflows/rollout-preflight.yml]
+
+permissions:
+  contents: read
+
+jobs:
+  preflight:
+    name: Verify ${{ matrix.target }} rollout credentials
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: staging
+            branch: staging
+            environment: deploy-staging
+          - target: production
+            branch: main
+            environment: deploy-production
+    environment: ${{ matrix.environment }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: "24"
+      - name: Install reviewed CLI without hosted credentials
+        run: npm install --global vercel@65.7.0
+      - name: Prepare target metadata in disposable checkout
+        env:
+          TARGET_BRANCH: ${{ matrix.branch }}
+        run: git checkout -B "$TARGET_BRANCH" "$GITHUB_SHA"
+      - name: Read-only project and credential preflight
+        env:
+          TARGET_BRANCH: ${{ matrix.branch }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
+          VERCEL_API_PROJECT_ID: ${{ vars.VERCEL_API_PROJECT_ID }}
+          VERCEL_DASHBOARD_PROJECT_ID: ${{ vars.VERCEL_DASHBOARD_PROJECT_ID }}
+          VERCEL_DOCS_PROJECT_ID: ${{ vars.VERCEL_DOCS_PROJECT_ID }}
+          VERCEL_WEB_PROJECT_ID: ${{ vars.VERCEL_WEB_PROJECT_ID }}
+        run: |
+          GITHUB_REF_NAME="$TARGET_BRANCH" FLOWMARK_RELEASE_PIPELINE_ENABLED=true node scripts/release-deployment.mjs --preflight
+          echo "Read-only Vercel credential/project preflight passed for $TARGET_BRANCH at $GITHUB_SHA. No migration or deployment ran." >> "$GITHUB_STEP_SUMMARY"
