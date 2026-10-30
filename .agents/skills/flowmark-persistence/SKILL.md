@@ -102,31 +102,33 @@ export class WorkflowStore extends Effect.Service<WorkflowStore>()(
   terminal events stay Running. Do not change SQL meaning to tidy files.
 - Every read and write stays project-scoped.
 
-## Required migration workflow
+## Migration and rollout gates
 
-A database-backed change is not complete when the schema and migration file
-exist only in Git. Every committed schema migration must be applied and
-verified in both database environments:
+Follow [database rollout](../../../docs/migrations.md), the single maintained
+procedure. Keep schema, SQL/Drizzle metadata and the complete stack change in
+one feature PR. Do not edit applied migrations or bypass Drizzle history.
 
-1. Generate the migration from the schema change and inspect the SQL. Never
-   edit an already-applied migration; create a new migration instead.
-2. Apply the committed migration to the local loopback database:
-   `pnpm db:migrate`. The CLI loads `apps/server/.env.local`; it must not
-   point the local demo at Neon.
-3. Apply the same committed migration to the Neon `production` branch using
-   the secure migration connection (`DATABASE_MIGRATION_URL`), from a
-   workstation. Do not put the URL in Git, chat, or a Vercel runtime env.
-4. Verify the changed tables/constraints and Drizzle migration history in both
-   environments. The migration command must update Drizzle's bookkeeping; do
-   not apply raw SQL and leave the migration unrecorded.
-5. Run the narrow database/API tests, typecheck, and lint. If either database
-   cannot be migrated, stop and report that as an incomplete implementation;
-   do not claim the schema change is finished.
-
-Schema migrations run separately from Vercel builds and requests. A migration
-does not authorize seeding, resetting telemetry, deleting data, or restoring a
-database. Never seed Neon; local fixture setup remains an explicit,
-separate operation.
+- Implementation: inspect SQL, apply locally and pass relevant local/CI tests.
+  Use a disposable loopback DB for test writes; include upgrade coverage when
+  existing rows/defaults/constraints/backfills are affected.
+- Feature merge: verify Preview and confirm pipeline activation. Migrate before
+  dependent app deployment. Once the merge pipeline is activated, feature merge
+  triggers checks → Staging migration → deploy → verify; no manual pre-merge
+  migration is required.
+- Release: approved merge into main triggers checks → Production migration →
+  deploy → verify after deliberate pipeline activation. Production is not a feature implementation/merge gate.
+- Track implementation and per-environment rollout separately. Do not keep an
+  otherwise complete implementation open solely for a future Production release.
+- Prefer the controlled **Migrate and deploy** pipeline for long-lived branches.
+  A maintainer-approved merge authorizes that environment/SHA rollout after
+  activation; do not ask again. Standalone **Migrate database** is for Preview
+  or an explicitly approved manual/recovery operation. Exact
+  environment/SHA approval is enough; honor it without repeated permission asks.
+  Workstation wrappers remain the fallback. Both check history before migration,
+  migrate through `pnpm db:migrate`, and verify hashes/timestamps afterwards.
+- Never migrate inside Vercel builds/requests or ordinary PR CI. No hosted job
+  activation, migration, seed, reset, backfill or restore is implied by code work.
+  Record schema checks and user-flow evidence; history alone does not prove them.
 
 ## Adding work
 

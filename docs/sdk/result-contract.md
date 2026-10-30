@@ -1,8 +1,9 @@
 # Proposed SDK outcome and report contract
 
-This is a design contract for TASK-001, not an available SDK API. TASK-004
-implements outcomes, TASK-010 implements reports, and TASK-013 implements typed
-definitions. Current applications should use the compatibility examples below.
+This contract was established in TASK-001. TASK-004 implements terminal outcomes
+in source (not yet published); TASK-010 reports and TASK-013 typed definitions
+remain proposed. Published SDK consumers should use the compatibility examples
+below until a separately coordinated release.
 The executable synthetic references live in
 `packages/sdk/test/result-contract.test.ts`; they are not runtime exports.
 
@@ -27,11 +28,9 @@ reported empty object. `null` is not a valid result object. Both results and
 reports reuse the existing bounded JSON object limits: five nested levels, 128
 keys, 128-character keys, 2,048-character strings and 16 KiB encoded bytes.
 
-Legacy `result.outcome` remains ordinary JSON forever. Readers must not promote
-it automatically, including when the top-level outcome is absent. If both fields
-exist, show the canonical outcome separately and preserve the raw legacy value.
-An application may explicitly map its own legacy vocabulary when writing a new
-run; historical events are never rewritten.
+Only the top-level terminal `outcome` defines the business outcome. Fields inside
+`result` are ordinary application data. There are no outcome mappings, inferred
+outcomes or reserved default declaration revisions.
 
 ## Absolute reports
 
@@ -129,20 +128,21 @@ available. Generic types are compile-time guidance, never uploaded declarations
 or a substitute for server validation. TASK-013 must test inference and rejected
 invalid calls without requiring consumers to add index signatures.
 
-TASK-004 owns minimal bounded result declarations. Use a workflow-owned
+TASK-004 implements minimal bounded result declarations. Use a workflow-owned
 `definitionRevision` to version outcome vocabulary, field meanings, units,
 denominators, reason codes and categorical dimensions; this is distinct from the
 application release and from snapshot ordering. A semantic change requires a new
-revision; absent revisions remain undeclared legacy data. Do not aggregate across
+revision; absent revisions remain undeclared data. Do not aggregate across
 incompatible revisions. No universal reconciliation equation applies: the import
 fixture partitions rows, whereas CRM counts operations and recurring checks count
-ledger entries. TASK-004 must settle the declaration wire format without treating
+ledger entries. The declaration format uses immutable revisions, ordered field paths/labels,
+count/category/reasons kinds and optional units, without treating
 TypeScript generics as runtime metadata.
 
-## Current API compatibility reference
+## Marker reference before outcome support
 
 This code uses only today's markers. It does not produce canonical outcomes or
-live result reports, and nested outcome strings remain legacy JSON.
+live result reports, and nested outcome strings remain ordinary result data.
 
 ```ts
 const flow = flowmark.workflow("customer.import", {
@@ -173,9 +173,7 @@ The harness is synthetic; no external customer source or adoption was validated.
 Real-workflow feedback is a later learning opportunity, not a dependency.
 
 TASK-001 changes no runtime exports, wire payloads, storage or package versions.
-For later tasks, deploy accepting ingestion, persistence and readers before
-opting writers into new fields/events. An older reader may reject a report or
-silently strip unknown outcome fields; neither is evidence of successful support.
-Do not auto-fallback reports into properties or promote them to terminal results.
-Keep existing untyped clients and historical JSON interpretation intact. Publishing,
+For new wire capabilities, apply the migration and deploy ingestion, persistence
+and readers before enabling writers. Verify the stored value end to end. Do not
+add fallback representations or promote reports into final results. Publishing,
 deployment and exact release versions require separate release coordination.

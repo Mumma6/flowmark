@@ -56,6 +56,15 @@ const dashboardCookie = Effect.fn("dashboardCookie")(function* () {
     .join("; ")
 })
 
+function apiSessionHeaders(cookie: string) {
+  const headers = new Headers({ cookie })
+  const protectionBypass = process.env.FLOWMARK_VERCEL_PROTECTION_BYPASS
+  if (protectionBypass) {
+    headers.set("x-vercel-protection-bypass", protectionBypass)
+  }
+  return headers
+}
+
 export const readDashboardSession = Effect.fn("readDashboardSession")(
   function* () {
     const apiUrl = yield* dashboardApiUrl()
@@ -66,8 +75,9 @@ export const readDashboardSession = Effect.fn("readDashboardSession")(
     const response = yield* Effect.tryPromise({
       try: () =>
         fetch(new URL("/api/auth/get-session", apiUrl), {
-          headers: { cookie },
+          headers: apiSessionHeaders(cookie),
           cache: "no-store",
+          redirect: "manual",
           signal: AbortSignal.timeout(8000),
         }),
       catch: (cause) => new DashboardSessionError({ cause }),
@@ -104,8 +114,9 @@ export const readDashboardOnboarding = Effect.fn("readDashboardOnboarding")(
     const response = yield* Effect.tryPromise({
       try: () =>
         fetch(new URL("/api/trpc/onboarding.state", apiUrl), {
-          headers: { cookie },
+          headers: apiSessionHeaders(cookie),
           cache: "no-store",
+          redirect: "manual",
           signal: AbortSignal.timeout(8000),
         }),
       catch: (cause) => new DashboardSessionError({ cause }),

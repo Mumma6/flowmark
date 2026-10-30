@@ -31,8 +31,9 @@ deployments. Keep private operating records out of PRs and release notes.
    evidence is a blocker, not a passed check. Do not create customer records
    just to prepare a release.
 3. Inspect changed migrations, journal, schemas, infrastructure, and required
-   manual operations. Stop a schema release until TASK-007 is complete and
-   required approved pre-deploy migration results are recorded. Do not run a
+   manual operations. Follow [database rollout](../../../docs/migrations.md):
+   schema-changing features require Preview/Staging evidence; release completion
+   requires verified Production rollout at the reviewed merged commit. Do not run a
    hosted migration during preparation. Git history is not database history.
 4. Find application tags matching `vMAJOR.MINOR.PATCH` reachable from main;
    ignore `sdk-v*`. Inspect the full range since the previous app tag and the
@@ -54,11 +55,16 @@ deployments. Keep private operating records out of PRs and release notes.
    Staging evidence, and migration prerequisites. Check current permission and
    merge settings. Honor existing authorization for the exact operation; ask
    only for missing approval. Renew review if the candidate has changed.
-2. Merge only with explicit approval, using a merge commit and retaining
+2. Confirm the controlled rollout pipeline is activated and the SQL can run while
+   the serving revision is still active. In the normal path, approved release
+   merge triggers checks, Production migration, deploy and verification; do not
+   run a redundant manual Production migration first. Manual recovery requires
+   separate exact-target authorization. Merge only with explicit approval, using
+   a merge commit and retaining
    staging. With `gh`, use `--merge --match-head-commit <reviewed-head-sha>`;
    do not use auto-merge, delete the branch, or bypass failed checks.
 3. Record the resulting main merge SHA. Observe all four Production projects
-   using the Vercel skill. Confirm deployed SHA, Ready state, canonical-domain
+   using the Vercel skill and the **Migrate and deploy** workflow result. Confirm deployed SHA, Ready state, canonical-domain
    alias, health, relevant auth/ingest behavior, database compatibility, and
    unexpected env changes. Report failures and propose recovery using the
    guide; no automatic rollback or tag publication.

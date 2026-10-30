@@ -17,6 +17,7 @@ export interface ExportableRunEvent {
   readonly reason: string | null
   readonly properties: Record<string, unknown> | null
   readonly error: unknown
+  readonly outcome?: string | null
   readonly result: Record<string, unknown> | null
   readonly timestamp: string
   readonly receivedAt: string
@@ -86,6 +87,11 @@ export function buildRunExport(events: ReadonlyArray<ExportableRunEvent>) {
     correlationId: first.correlationId,
     parentRunId: first.parentRunId,
     context: mergedContext(events),
+    outcome:
+      (
+        events.find((event) => event.type === "failed") ??
+        [...events].reverse().find((event) => event.type === "completed")
+      )?.outcome ?? null,
     result,
     resultHighlights: result ? getRunResultHighlights(result) : [],
     lastReportedProgress: progress ?? null,
@@ -125,6 +131,7 @@ export function buildTimelineExport(events: ReadonlyArray<ExportableRunEvent>) {
       properties: event.properties,
       error: event.error,
       result: event.result,
+      outcome: event.outcome ?? null,
     })),
   }
 }

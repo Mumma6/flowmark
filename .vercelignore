@@ -28,3 +28,6 @@ coverage
 backups
 dumps
 .agents
+
+# Maintainer-local plans and operations records must never be uploaded.
+private

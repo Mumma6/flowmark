@@ -64,6 +64,13 @@
       "when": 1793090138665,
       "tag": "0008_regular_caretaker",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1793348934714,
+      "tag": "0009_late_giant_girl",
+      "breakpoints": true
     }
   ]
 }

@@ -31,3 +31,15 @@ These are normal agent workflow — still do **not** merge, push to `main`
 
 When in doubt, stop and ask before push-to-`main`, merge, deploy, force-push,
 or destructive production operations.
+
+## Activated merge pipeline
+
+After explicit one-time activation of the controlled migration/deployment
+pipeline, maintainer approval to merge the reviewed schema change into staging,
+or the reviewed release into main, authorizes that branch's documented migration
+and deployment steps. Do not request a duplicate confirmation for those same
+steps. Tests must pass on the exact merged commit before mutation. Preparing or
+updating a PR does not authorize activating the pipeline, changing hosted
+credentials/settings, running a migration, merging, or deploying. Seed, reset,
+restore, destructive maintenance, npm publication and tag/release publication
+remain separate operations. See [database rollout](../../docs/migrations.md).

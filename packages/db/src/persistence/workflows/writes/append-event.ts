@@ -31,6 +31,7 @@ const runUpdates = (
   const changes: {
     properties?: WorkflowProperties | null | SQL
     error?: StoredWorkflowError
+    outcome?: string | null
     result?: WorkflowResult
     environment?: string | null
     release?: string | null
@@ -50,6 +51,9 @@ const runUpdates = (
     result !== undefined
   ) {
     changes.result = result
+  }
+  if (event.type === "completed" || event.type === "failed") {
+    changes.outcome = event.outcome ?? null
   }
   return changes
 }
@@ -137,6 +141,7 @@ export const appendEvent = Effect.fn("appendEvent")(function* (
           properties: properties ?? null,
           error,
           result: result ?? null,
+          outcome: "outcome" in event ? (event.outcome ?? null) : null,
         })
         .onConflictDoNothing({ target: workflowEvents.eventId })
         .returning({ id: workflowEvents.id })

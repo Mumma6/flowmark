@@ -151,3 +151,32 @@ during render.
 ## License
 
 MIT · [Mumma6/flowmark](https://github.com/Mumma6/flowmark)
+
+### Business outcomes (unreleased source capability)
+
+```ts
+const flow = flowmark.workflow("customer.import", {
+  properties: { definitionRevision: "import-v1" },
+})
+// Your application performs its existing work.
+flow.done({ outcome: "partial", result: { imported: 988, skipped: 12 } })
+// Alternative terminal call on a failed run:
+// flow.fail({ code: "CRM_TIMEOUT", outcome: "partial", result: { updated: 80 } })
+```
+
+Optional `outcome` is a case-sensitive 1–64 character code matching
+`^[a-z][a-z0-9_-]{0,63}$`. It is independent of technical completion/failure and
+optional bounded result details; absence means unknown. Fields within `result` are ordinary application data; no mapping to outcome is performed. Invalid codes use instrumentation diagnostics. Node, Next,
+browser and advanced marker APIs share this behavior.
+
+Optional immutable workflow presentation revisions label ordered counts, units,
+categories and nested reasons in the dashboard. Start properties select
+`definitionRevision`; runs without one use the default result view.
+Canonical outcome needs no configuration. Browser reports are untrusted.
+
+Deploy accepting server/schema/readers before enabling this field in a writer;
+verify persistence end to end. Package publication is a separate
+release, so do not assume the currently published SDK supports this capability.
+See [the completion reference](https://docs.flowmark.dev/docs/reference/completion)
+and the local `examples/outcomes.mjs` demonstration. Report snapshots and typed
+workflow definitions are not implemented by this change.

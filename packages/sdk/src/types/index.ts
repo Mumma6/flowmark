@@ -1,5 +1,6 @@
 import type {
   WorkflowEvent,
+  WorkflowOutcome,
   WorkflowName,
   WorkflowCorrelationId,
   WorkflowError,
@@ -78,6 +79,8 @@ export interface WorkflowStepOptions {
 
 /** Optional JSON-safe result recorded when the workflow completes. */
 export interface WorkflowDoneOptions {
+  /** Application-reported business outcome, independent of execution status. */
+  readonly outcome?: WorkflowOutcome
   readonly result?: WorkflowResult
 }
 
@@ -86,6 +89,8 @@ export interface WorkflowDoneOptions {
  * bounded business summary accepted by done().
  */
 export interface WorkflowFailOptions extends WorkflowFailure {
+  /** Optional business outcome; useful work may accompany technical failure. */
+  readonly outcome?: WorkflowOutcome
   readonly result?: WorkflowResult
 }
 

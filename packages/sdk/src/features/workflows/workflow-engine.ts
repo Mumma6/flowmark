@@ -135,6 +135,9 @@ export class WorkflowEngine extends Context.Tag(
               workflow,
               runId,
               timestamp,
+              ...(doneOptions?.outcome === undefined
+                ? {}
+                : { outcome: doneOptions.outcome }),
               ...(doneOptions?.result === undefined
                 ? {}
                 : { result: doneOptions.result }),
@@ -166,13 +169,14 @@ export class WorkflowEngine extends Context.Tag(
           yield* Ref.set(completionRequested, false)
           yield* Ref.set(pendingCompletion, undefined)
           yield* Ref.set(activeOperations, new Set())
-          const { result, ...failure } = options
+          const { result, outcome, ...failure } = options
           yield* record((timestamp) => ({
             type: "failed",
             workflow,
             runId,
             timestamp,
             failure,
+            ...(outcome === undefined ? {} : { outcome }),
             ...(result === undefined ? {} : { result }),
           }))
         })

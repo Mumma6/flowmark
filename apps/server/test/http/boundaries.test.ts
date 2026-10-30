@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 import { InvalidInput } from "@flowmark/api"
 import { readJsonBody } from "../../src/adapters/request-body"
 import { POST } from "../../app/v1/events/route"
+import { GET as health } from "../../app/api/health/route"
 import { appRouter } from "../../src/adapters/trpc"
 
 afterEach(() => {
@@ -21,6 +22,19 @@ const input = {
 }
 
 describe("HTTP boundaries", () => {
+  it("exposes the deployed revision without caching the health response", async () => {
+    const sha = "a".repeat(40)
+    vi.stubEnv("FLOWMARK_DEPLOYMENT_SHA", sha)
+    vi.stubEnv("VERCEL_GIT_COMMIT_SHA", "different-build-context")
+    const response = health()
+    expect(response.headers.get("cache-control")).toBe("no-store")
+    expect(await response.json()).toEqual({
+      status: "ok",
+      service: "flowmark-api",
+      commit: sha,
+    })
+  })
+
   it("decodes JSON using Schema and preserves malformed JSON errors", async () => {
     expect(
       await Effect.runPromise(

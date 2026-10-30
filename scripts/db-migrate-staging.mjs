@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { runMigrationSteps } from "./db-migration-steps.mjs"
 import { spawnSync } from "node:child_process"
 import console from "node:console"
 import process from "node:process"
@@ -132,5 +133,4 @@ if (confirmBaseline) {
   }
 }
 
-const result = runPackageScript("db:migrate")
-process.exit(result.status ?? 1)
+process.exit(runMigrationSteps(repoRoot, childEnv))

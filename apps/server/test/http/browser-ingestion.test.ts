@@ -184,13 +184,18 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
       expect((await send(body)).status).toBe(202)
       expect((await send(body)).status).toBe(202)
       expect(
-        (await send(envelope({ ...started(), type: "completed" }))).status,
+        (
+          await send(
+            envelope({ ...started(), type: "completed", outcome: "partial" }),
+          )
+        ).status,
       ).toBe(202)
       const snapshot = await reader().project.snapshot()
       expect(snapshot.runs).toHaveLength(1)
       expect(snapshot.runs[0]).toMatchObject({
         workflow: "browser.checkout",
         status: "Completed",
+        outcome: "partial",
       })
       expect(
         await reader().run.detail({ id: snapshot.runs[0].id }),

@@ -68,6 +68,7 @@ async function sendRun(key: string, runId = randomUUID()) {
       workflow: "integration.import",
       runId,
       timestamp,
+      outcome: "partial",
       result: { processed: 3 },
     },
   ]) {
@@ -140,17 +141,20 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         externalId,
         workflow: "integration.import",
         status: "Completed",
+        outcome: "partial",
       })
       const timeline = await owner.run.detail({ id: run.id })
       expect(timeline.map((event) => event.type)).toEqual([
         "started",
         "completed",
       ])
+      expect(timeline[1].outcome).toBe("partial")
       expect(timeline[1].result).toEqual({ processed: 3 })
       const [storedRun] = await connection.db
-        .select({ result: workflowRuns.result })
+        .select({ result: workflowRuns.result, outcome: workflowRuns.outcome })
         .from(workflowRuns)
         .where(eq(workflowRuns.id, run.id))
+      expect(storedRun.outcome).toBe("partial")
       expect(storedRun.result).toEqual({ processed: 3 })
     })
 
@@ -195,6 +199,61 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         (await aliceReader.project.keys(alice.project.id)).apiKeys,
       ).toHaveLength(2)
       expect(await aliceReader.run.detail({ id: run.id })).toHaveLength(2)
+    })
+
+    it("scopes immutable result declarations to authenticated project owners", async () => {
+      const alice = await createOwner("Result definitions")
+      const bob = await createOwner("Other results")
+      const input = {
+        projectId: alice.project.id,
+        workflow: "integration.import",
+        declaration: {
+          revision: "v1",
+          fields: [
+            {
+              path: ["processed"],
+              label: "Imported",
+              kind: "count" as const,
+              unit: "rows",
+            },
+          ],
+        },
+      }
+      const owner = caller(alice.cookie, alice.project.id)
+      await expect(owner.resultDeclarations.create(input)).resolves.toEqual(
+        input.declaration,
+      )
+      await expect(
+        owner.resultDeclarations.create(input),
+      ).rejects.toMatchObject({ code: "BAD_REQUEST" })
+      expect(await owner.resultDeclarations.list(input)).toEqual([
+        input.declaration,
+      ])
+      await expect(
+        caller(bob.cookie).resultDeclarations.list(input),
+      ).rejects.toMatchObject({ code: "UNAUTHORIZED" })
+      await expect(
+        caller(bob.cookie).resultDeclarations.create({
+          ...input,
+          declaration: { ...input.declaration, revision: "v2" },
+        }),
+      ).rejects.toMatchObject({ code: "UNAUTHORIZED" })
+      await expect(
+        caller("").resultDeclarations.list(input),
+      ).rejects.toMatchObject({ code: "UNAUTHORIZED" })
+      await expect(
+        owner.resultDeclarations.create({
+          ...input,
+          declaration: {
+            ...input.declaration,
+            revision: "v2",
+            fields: Array.from(
+              { length: 13 },
+              () => input.declaration.fields[0],
+            ),
+          },
+        }),
+      ).rejects.toMatchObject({ code: "BAD_REQUEST" })
     })
 
     it("reuses a bounded auth pool and releases API pools across repeated request waves", async () => {

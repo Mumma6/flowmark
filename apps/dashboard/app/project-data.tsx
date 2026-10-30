@@ -26,6 +26,7 @@ import {
 import Link from "next/link"
 import { useTRPC } from "../lib/trpc"
 import { WorkflowDirectory } from "./workflow-directory"
+import { ResultDeclarationEditor } from "./result-declaration-editor"
 import { RunInvestigation } from "./run-investigation"
 import { DataState, PageHeading, ViewLink } from "./dashboard-components"
 import {
@@ -304,6 +305,9 @@ export function ProjectRuns({
           }}
         />
       </PageHeading>
+      {workflow && (
+        <ResultDeclarationEditor key={workflow} workflow={workflow} />
+      )}
       <DataState
         pending={isPending}
         error={error}

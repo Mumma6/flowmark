@@ -33,3 +33,5 @@ export * from "./workflows/types.js"
 export * from "./workflows/workflow-store.js"
 export * from "./workflows/writes/append-event.js"
 export * from "./workflows/writes/continue-run.js"
+
+export { ResultDeclarationStore } from "./result-declarations/result-declaration-store.js"

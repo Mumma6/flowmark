@@ -1,6 +1,8 @@
 import { initTRPC, TRPCError } from "@trpc/server"
 import { Effect, Exit, Match, Option, Schema } from "effect"
 import {
+  ManageResultDeclarations,
+  ResultDeclarationSchema,
   ConfigurationError,
   GetProjectWorkflowData,
   InvalidInput,
@@ -91,7 +93,10 @@ async function executeQuery<A>(
   operation: Effect.Effect<
     A,
     Unauthorized | PersistenceError | ConfigurationError | InvalidInput,
-    GetProjectWorkflowData | ManageProject | Onboarding
+    | GetProjectWorkflowData
+    | ManageProject
+    | Onboarding
+    | ManageResultDeclarations
   >,
 ) {
   const result = await runApi(
@@ -182,7 +187,7 @@ function sessionQuery<A>(
   ) => Effect.Effect<
     A,
     Unauthorized | PersistenceError | InvalidInput,
-    ManageProject
+    ManageProject | ManageResultDeclarations
   >,
 ) {
   return executeQuery(
@@ -354,6 +359,52 @@ export const appRouter = t.router({
         Effect.flatMap(Onboarding, (onboarding) => onboarding.complete(userId)),
       ),
     ),
+  }),
+  resultDeclarations: t.router({
+    list: t.procedure
+      .input(
+        Schema.standardSchemaV1(
+          Schema.Struct({
+            projectId: Schema.UUID,
+            workflow: Schema.String.pipe(
+              Schema.minLength(1),
+              Schema.maxLength(200),
+            ),
+          }),
+        ),
+      )
+      .query(({ ctx, input }) =>
+        sessionQuery(ctx.request, (userId) =>
+          Effect.flatMap(ManageResultDeclarations, (manage) =>
+            manage.list(userId, input.projectId, input.workflow),
+          ),
+        ),
+      ),
+    create: t.procedure
+      .input(
+        Schema.standardSchemaV1(
+          Schema.Struct({
+            projectId: Schema.UUID,
+            workflow: Schema.String.pipe(
+              Schema.minLength(1),
+              Schema.maxLength(200),
+            ),
+            declaration: ResultDeclarationSchema,
+          }),
+        ),
+      )
+      .mutation(({ ctx, input }) =>
+        sessionQuery(ctx.request, (userId) =>
+          Effect.flatMap(ManageResultDeclarations, (manage) =>
+            manage.create(
+              userId,
+              input.projectId,
+              input.workflow,
+              input.declaration,
+            ),
+          ),
+        ),
+      ),
   }),
   workflow: t.router({
     list: t.procedure.query(({ ctx }) =>

@@ -27,19 +27,30 @@ import { useProject } from "./project-context"
 
 function ReportedResult({ run }: { run: Run }) {
   const highlights = getRunResultHighlights(run.result ?? {})
-  return highlights.length > 0 ? (
-    <span className="flex min-w-0 flex-wrap gap-x-3 gap-y-1 [overflow-wrap:anywhere]">
-      {highlights.map((item) => (
-        <span key={item.key} className="text-xs">
-          <span className="text-muted-foreground">{item.label}</span>{" "}
-          <span className="font-medium tabular-nums">{item.value}</span>
+  return (
+    <div className="space-y-1">
+      <p className="text-xs">
+        <span className="text-muted-foreground">Business outcome: </span>
+        {run.outcome ?? "Not reported"}
+        {run.workflow.startsWith("browser.")
+          ? " · Untrusted browser report"
+          : ""}
+      </p>
+      {highlights.length > 0 ? (
+        <span className="flex min-w-0 flex-wrap gap-x-3 gap-y-1 [overflow-wrap:anywhere]">
+          {highlights.map((item) => (
+            <span key={item.key} className="text-xs">
+              <span className="text-muted-foreground">{item.label}</span>{" "}
+              <span className="font-medium tabular-nums">{item.value}</span>
+            </span>
+          ))}
         </span>
-      ))}
-    </span>
-  ) : (
-    <span className="text-xs text-muted-foreground">
-      {run.result == null ? "Not reported" : "Open run for result"}
-    </span>
+      ) : (
+        <span className="text-xs text-muted-foreground">
+          {run.result == null ? "Not reported" : "Open run for result"}
+        </span>
+      )}
+    </div>
   )
 }
 

@@ -107,6 +107,83 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
       ).toBe(409)
     })
 
+    it("persists terminal outcomes without result and accepts calls without outcome", async () => {
+      const outcomeProjectId = randomUUID()
+      const outcomeWriteKey = randomUUID()
+      const outcomeReadKey = randomUUID()
+      await connection.db.insert(projects).values({
+        id: outcomeProjectId,
+        workspaceId,
+        name: "Outcome fixtures only",
+      })
+      await connection.db.insert(projectApiKeys).values([
+        {
+          projectId: outcomeProjectId,
+          keyHash: hashApiKey(outcomeWriteKey),
+          permission: "write",
+        },
+        {
+          projectId: outcomeProjectId,
+          keyHash: hashApiKey(outcomeReadKey),
+          permission: "read",
+        },
+      ])
+      for (const terminal of [
+        { type: "completed", outcome: "complete", result: { imported: 3 } },
+        { type: "completed", outcome: "no-availability" },
+        {
+          type: "failed",
+          outcome: "partial",
+          failure: { code: "CRM_TIMEOUT" },
+          result: { updated: 80 },
+        },
+        { type: "completed", result: { outcome: "custom-result-value" } },
+        { type: "completed" },
+      ]) {
+        const externalId = randomUUID()
+        const base = {
+          workflow: "outcomes",
+          runId: externalId,
+          timestamp: new Date().toISOString(),
+        }
+        expect(
+          (await send({ ...base, type: "started" }, outcomeWriteKey)).status,
+        ).toBe(202)
+        expect(
+          (
+            await send(
+              { ...base, ...terminal, outcome: "INVALID" },
+              outcomeWriteKey,
+            )
+          ).status,
+        ).toBe(400)
+        const envelopeId = randomUUID()
+        expect(
+          (await send({ ...base, ...terminal }, outcomeWriteKey, envelopeId))
+            .status,
+        ).toBe(202)
+        expect(
+          (await send({ ...base, ...terminal }, outcomeWriteKey, envelopeId))
+            .status,
+        ).toBe(202)
+        const page = await caller(outcomeReadKey).run.list({ externalId })
+        expect(page.runs[0]).toMatchObject({
+          outcome: "outcome" in terminal ? terminal.outcome : null,
+          status: terminal.type === "failed" ? "Failed" : "Completed",
+        })
+        const timeline = await caller(outcomeReadKey).run.detail({
+          id: page.runs[0].id,
+        })
+        expect(timeline).toHaveLength(2)
+        expect(timeline[1].outcome).toBe(
+          "outcome" in terminal ? terminal.outcome : null,
+        )
+        expect(
+          await caller(otherReadKey).run.detail({ id: page.runs[0].id }),
+        ).toEqual([])
+      }
+    })
+
     it("bounds streamed bodies and cancels without reading the remainder", async () => {
       const cancel = vi.fn()
       const body = new ReadableStream<Uint8Array>(

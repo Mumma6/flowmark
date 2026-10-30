@@ -31,3 +31,6 @@ export {
   decodeWorkflowEvent,
 } from "./events.js"
 export type { WorkflowEvent } from "./events.js"
+
+export { WorkflowOutcomeSchema, ResultDeclarationSchema } from "./results.js"
+export type { WorkflowOutcome, ResultDeclaration } from "./results.js"
