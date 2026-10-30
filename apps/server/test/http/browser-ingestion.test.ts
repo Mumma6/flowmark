@@ -183,6 +183,13 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
       const body = envelope()
       expect((await send(body)).status).toBe(202)
       expect((await send(body)).status).toBe(202)
+      const report = envelope({
+        ...started(),
+        type: "report",
+        result: { imported: 20 },
+      })
+      expect((await send(report)).status).toBe(202)
+      expect((await send(report)).status).toBe(202)
       expect(
         (
           await send(
@@ -197,9 +204,13 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         status: "Completed",
         outcome: "partial",
       })
-      expect(
-        await reader().run.detail({ id: snapshot.runs[0].id }),
-      ).toHaveLength(2)
+      const timeline = await reader().run.detail({ id: snapshot.runs[0].id })
+      expect(timeline).toHaveLength(3)
+      expect(timeline.find((row) => row.isLatestReport)).toMatchObject({
+        workflow: "browser.checkout",
+        result: { imported: 20 },
+      })
+      expect(snapshot.runs[0].result).toBeNull()
     })
 
     it("enforces the exact shared limit atomically and resets after the window expires", async () => {

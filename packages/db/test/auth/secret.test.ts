@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
-import { Effect, Either } from "effect"
+import { Effect, Result } from "effect"
 import { LOCAL_DEV_AUTH_SECRET } from "../../src/fixtures/demo.js"
 import { readAuthSecret } from "../../src/auth/create-auth.js"
 
@@ -24,9 +24,9 @@ test("falls back to the local demo secret outside production", () => {
 })
 
 test("refuses a missing secret outside local demo mode", () => {
-  Either.match(Effect.runSync(Effect.either(readAuthSecret({}))), {
-    onLeft: (error) => assert.equal(error._tag, "AuthConfigurationError"),
-    onRight: () => {
+  Result.match(Effect.runSync(Effect.result(readAuthSecret({}))), {
+    onFailure: (error) => assert.equal(error._tag, "AuthConfigurationError"),
+    onSuccess: () => {
       throw new Error("expected AuthConfigurationError")
     },
   })

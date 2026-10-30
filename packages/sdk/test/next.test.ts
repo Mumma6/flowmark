@@ -28,19 +28,28 @@ describe("Next.js integration", () => {
         apiUrl: "http://localhost",
       }),
     )
-    const flow = flowmark.workflow("todo.add")
+    const definition = flowmark.defineWorkflow<
+      Record<never, never>,
+      { saved: number }
+    >("todo.add")
+    expect(callbacks).toHaveLength(0)
+    const flow = definition.start()
     flow.step("saved")
+    flow.report({ saved: 1 })
     flow.done({ outcome: "no-availability" })
     flowmark.workflow("todo.complete").done()
     expect(callbacks).toHaveLength(2)
     await Promise.all(callbacks.map((callback) => callback()))
-    expect(fetcher).toHaveBeenCalledTimes(5)
+    expect(fetcher).toHaveBeenCalledTimes(6)
     const events = await Promise.all(
       fetcher.mock.calls.map(
         async ([, options]) =>
           JSON.parse(await new Response(options?.body).text()).event,
       ),
     )
+    expect(events.find((event) => event.type === "report")).toMatchObject({
+      result: { saved: 1 },
+    })
     expect(
       events.find((event) => event.outcome === "no-availability"),
     ).toMatchObject({ type: "completed", workflow: "todo.add" })

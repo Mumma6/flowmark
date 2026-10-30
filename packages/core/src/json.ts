@@ -20,7 +20,9 @@ export type JsonValue =
   | number
   | string
   | JsonValue[]
-  | { readonly [key: string]: JsonValue }
+  | {
+      readonly [key: string]: JsonValue
+    }
 /** Bounded JSON-safe context object accepted on starts, steps, and amendments. */
 export type WorkflowProperties = Record<string, JsonValue>
 /** Bounded JSON-safe object recorded when a run completes. */
@@ -94,11 +96,10 @@ const isBoundedJsonObject = (input: unknown): input is WorkflowProperties => {
     return false
   }
 }
-
-const WorkflowJsonObjectSchema = Schema.Record({
-  key: Schema.String,
-  value: Schema.Unknown,
-}).pipe(Schema.filter(isBoundedJsonObject))
+const WorkflowJsonObjectSchema = Schema.Record(
+  Schema.String,
+  Schema.Unknown,
+).pipe(Schema.refine(isBoundedJsonObject))
 
 export const WorkflowPropertiesSchema = WorkflowJsonObjectSchema
 export const WorkflowResultSchema = WorkflowJsonObjectSchema

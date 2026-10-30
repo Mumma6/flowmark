@@ -155,6 +155,8 @@ export interface RunTimelineEvent {
   readonly outcome?: string | null
   readonly result: WorkflowResult | null
   readonly timestamp: string
+  readonly isLatestReport?: boolean
+  readonly receiptOrder?: number
   readonly receivedAt: string
   readonly workflow: string
   readonly externalId: string
@@ -231,7 +233,7 @@ export interface WorkflowRepositoryService {
     query: IntelligenceQuery,
   ) => Effect.Effect<WorkflowIntelligence, PersistenceError>
 }
-
-export class WorkflowRepository extends Context.Tag(
-  "@flowmark/api/WorkflowRepository",
-)<WorkflowRepository, WorkflowRepositoryService>() {}
+export class WorkflowRepository extends Context.Service<
+  WorkflowRepository,
+  WorkflowRepositoryService
+>()("@flowmark/api/WorkflowRepository") {}

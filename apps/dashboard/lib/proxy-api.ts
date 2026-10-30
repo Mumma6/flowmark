@@ -69,7 +69,9 @@ export async function proxyToApiHandler(request: Request, pathname: string) {
   return Exit.match(result, {
     onSuccess: (response) => response,
     onFailure: (cause) =>
-      Match.value(cause).pipe(
+      Match.value(
+        cause.reasons.length === 1 ? cause.reasons[0] : undefined,
+      ).pipe(
         Match.tag("Fail", ({ error }) =>
           Match.value(error).pipe(
             Match.tag("DashboardConfigurationError", (error) =>

@@ -12,20 +12,33 @@ import { WorkflowErrorSchema, WorkflowProgressFields } from "./telemetry.js"
 import { WorkflowOutcomeSchema } from "./results.js"
 import { WorkflowFailureSchema } from "./errors.js"
 
+// The wire contract validates UUID shape, without imposing RFC version/variant bits.
+const UuidSchema = Schema.String.check(
+  Schema.isPattern(
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+  ),
+)
+
 const StartedEventSchema = Schema.Struct({
   type: Schema.Literal("started"),
   workflow: WorkflowNameSchema,
   runId: WorkflowRunIdSchema,
   timestamp: Schema.String,
   properties: Schema.optional(WorkflowPropertiesSchema),
-  environment: Schema.optional(Schema.String.pipe(Schema.maxLength(128))),
-  release: Schema.optional(Schema.String.pipe(Schema.maxLength(256))),
+  environment: Schema.optional(
+    Schema.String.pipe(Schema.check(Schema.isMaxLength(128))),
+  ),
+  release: Schema.optional(
+    Schema.String.pipe(Schema.check(Schema.isMaxLength(256))),
+  ),
   correlationId: Schema.optional(WorkflowCorrelationIdSchema),
   parentRunId: Schema.optional(WorkflowLinkIdSchema),
 }).pipe(
-  Schema.filter(
-    ({ runId, parentRunId }) =>
-      parentRunId === undefined || parentRunId !== runId,
+  Schema.check(
+    Schema.makeFilter(
+      ({ runId, parentRunId }) =>
+        parentRunId === undefined || parentRunId !== runId,
+    ),
   ),
 )
 
@@ -46,6 +59,14 @@ const PropertiesEventSchema = Schema.Struct({
   properties: WorkflowPropertiesSchema,
 })
 
+const ReportEventSchema = Schema.Struct({
+  type: Schema.Literal("report"),
+  workflow: WorkflowNameSchema,
+  runId: WorkflowRunIdSchema,
+  timestamp: Schema.String,
+  result: WorkflowResultSchema,
+})
+
 const CompletedEventSchema = Schema.Struct({
   type: Schema.Literal("completed"),
   workflow: WorkflowNameSchema,
@@ -60,7 +81,9 @@ const FailedEventSchema = Schema.Struct({
   workflow: WorkflowNameSchema,
   runId: WorkflowRunIdSchema,
   timestamp: Schema.String,
-  reason: Schema.optional(Schema.String.pipe(Schema.maxLength(2048))),
+  reason: Schema.optional(
+    Schema.String.pipe(Schema.check(Schema.isMaxLength(2048))),
+  ),
   failure: Schema.optional(WorkflowFailureSchema),
   result: Schema.optional(WorkflowResultSchema),
   outcome: Schema.optional(WorkflowOutcomeSchema),
@@ -75,12 +98,14 @@ const ErrorEventSchema = Schema.Struct({
 })
 
 const OperationDurationSchema = Schema.Number.pipe(
-  Schema.filter((duration) => Number.isFinite(duration) && duration >= 0),
+  Schema.check(
+    Schema.makeFilter((duration) => Number.isFinite(duration) && duration >= 0),
+  ),
 )
 const OperationNameSchema = Schema.String.pipe(
-  Schema.minLength(1),
-  Schema.maxLength(200),
-  Schema.filter((value) => value.trim().length > 0),
+  Schema.check(Schema.isMinLength(1)),
+  Schema.check(Schema.isMaxLength(200)),
+  Schema.check(Schema.makeFilter((value) => value.trim().length > 0)),
 )
 
 const OperationStartedEventSchema = Schema.Struct({
@@ -88,7 +113,7 @@ const OperationStartedEventSchema = Schema.Struct({
   workflow: WorkflowNameSchema,
   runId: WorkflowRunIdSchema,
   timestamp: Schema.String,
-  operationId: Schema.UUID,
+  operationId: UuidSchema,
   operationName: OperationNameSchema,
   properties: Schema.optional(WorkflowPropertiesSchema),
 })
@@ -98,7 +123,7 @@ const OperationCompletedEventSchema = Schema.Struct({
   workflow: WorkflowNameSchema,
   runId: WorkflowRunIdSchema,
   timestamp: Schema.String,
-  operationId: Schema.UUID,
+  operationId: UuidSchema,
   operationName: OperationNameSchema,
   durationMs: OperationDurationSchema,
 })
@@ -108,7 +133,7 @@ const OperationFailedEventSchema = Schema.Struct({
   workflow: WorkflowNameSchema,
   runId: WorkflowRunIdSchema,
   timestamp: Schema.String,
-  operationId: Schema.UUID,
+  operationId: UuidSchema,
   operationName: OperationNameSchema,
   durationMs: OperationDurationSchema,
   failure: WorkflowFailureSchema,
@@ -121,12 +146,13 @@ const ProgressEventSchema = Schema.Struct({
   timestamp: Schema.String,
   ...WorkflowProgressFields,
 }).pipe(
-  Schema.filter(
-    ({ completed, total }) => total === undefined || completed <= total,
+  Schema.check(
+    Schema.makeFilter(
+      ({ completed, total }) => total === undefined || completed <= total,
+    ),
   ),
 )
-
-export const WorkflowEventSchema = Schema.Union(
+export const WorkflowEventSchema = Schema.Union([
   StartedEventSchema,
   StepEventSchema,
   PropertiesEventSchema,
@@ -137,39 +163,41 @@ export const WorkflowEventSchema = Schema.Union(
   OperationCompletedEventSchema,
   OperationFailedEventSchema,
   ProgressEventSchema,
-)
-
-export type WorkflowEvent = Schema.Schema.Type<typeof WorkflowEventSchema>
+  ReportEventSchema,
+])
+export type WorkflowEvent = typeof WorkflowEventSchema.Type
 
 export const EventEnvelopeSchema = Schema.Struct({
-  eventId: Schema.UUID,
+  eventId: UuidSchema,
   event: WorkflowEventSchema.pipe(
-    Schema.filter(
-      (event: WorkflowEvent) =>
-        Number.isFinite(Date.parse(event.timestamp)) &&
-        Schema.is(IngestionIdentifierSchema)(event.workflow) &&
-        Schema.is(IngestionIdentifierSchema)(event.runId) &&
-        (event.type !== "started" ||
-          ((event.correlationId === undefined ||
-            Schema.is(WorkflowCorrelationIdSchema)(event.correlationId)) &&
-            (event.parentRunId === undefined ||
-              (Schema.is(WorkflowLinkIdSchema)(event.parentRunId) &&
-                event.parentRunId !== event.runId)))) &&
-        Match.value(event).pipe(
-          Match.when({ type: "step" }, ({ step }) =>
-            Schema.is(IngestionIdentifierSchema)(step),
+    Schema.check(
+      Schema.makeFilter(
+        (event: WorkflowEvent) =>
+          Number.isFinite(Date.parse(event.timestamp)) &&
+          Schema.is(IngestionIdentifierSchema)(event.workflow) &&
+          Schema.is(IngestionIdentifierSchema)(event.runId) &&
+          (event.type !== "started" ||
+            ((event.correlationId === undefined ||
+              Schema.is(WorkflowCorrelationIdSchema)(event.correlationId)) &&
+              (event.parentRunId === undefined ||
+                (Schema.is(WorkflowLinkIdSchema)(event.parentRunId) &&
+                  event.parentRunId !== event.runId)))) &&
+          Match.value(event).pipe(
+            Match.when({ type: "step" }, ({ step }) =>
+              Schema.is(IngestionIdentifierSchema)(step),
+            ),
+            Match.when({ type: "operation_started" }, ({ operationName }) =>
+              Schema.is(IngestionIdentifierSchema)(operationName),
+            ),
+            Match.when({ type: "operation_completed" }, ({ operationName }) =>
+              Schema.is(IngestionIdentifierSchema)(operationName),
+            ),
+            Match.when({ type: "operation_failed" }, ({ operationName }) =>
+              Schema.is(IngestionIdentifierSchema)(operationName),
+            ),
+            Match.orElse(() => true),
           ),
-          Match.when({ type: "operation_started" }, ({ operationName }) =>
-            Schema.is(IngestionIdentifierSchema)(operationName),
-          ),
-          Match.when({ type: "operation_completed" }, ({ operationName }) =>
-            Schema.is(IngestionIdentifierSchema)(operationName),
-          ),
-          Match.when({ type: "operation_failed" }, ({ operationName }) =>
-            Schema.is(IngestionIdentifierSchema)(operationName),
-          ),
-          Match.orElse(() => true),
-        ),
+      ),
     ),
   ),
 })
@@ -183,7 +211,7 @@ export class WorkflowEventValidationError extends Data.TaggedError(
 
 export const decodeWorkflowEvent = Effect.fn("Flowmark.decodeWorkflowEvent")(
   (input: unknown) =>
-    Schema.decodeUnknown(WorkflowEventSchema)(input).pipe(
+    Schema.decodeUnknownEffect(WorkflowEventSchema)(input).pipe(
       Effect.mapError(
         (cause) => new WorkflowEventValidationError({ input, cause }),
       ),

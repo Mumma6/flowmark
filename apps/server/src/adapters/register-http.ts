@@ -12,14 +12,14 @@ class AuthConflict extends Data.TaggedError("AuthConflict")<{
 const RegisterBody = Schema.Struct({
   name: Schema.optional(Schema.String),
   email: Schema.NonEmptyString,
-  password: Schema.String.pipe(Schema.minLength(8)),
+  password: Schema.String.pipe(Schema.check(Schema.isMinLength(8))),
 })
 
 export const handleRegister = Effect.fn("handleRegister")(function* (
   request: Request,
 ) {
   const json = yield* readJsonBody(request)
-  const body = yield* Schema.decodeUnknown(RegisterBody)(json).pipe(
+  const body = yield* Schema.decodeUnknownEffect(RegisterBody)(json).pipe(
     Effect.mapError((cause) => new InvalidInput({ cause })),
   )
   const name = body.name?.trim() || body.email

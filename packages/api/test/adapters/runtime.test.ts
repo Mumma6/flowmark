@@ -1,5 +1,5 @@
 import { inspect } from "node:util"
-import { Effect, Either, Layer, Match, Redacted } from "effect"
+import { Effect, Result, Layer, Match, Redacted } from "effect"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import * as database from "@flowmark/db"
 import { Database, DatabaseOperation } from "@flowmark/db/persistence"
@@ -50,20 +50,20 @@ describe("API request resource scope", () => {
       throw cause
     })
     const result = await Effect.runPromise(
-      Effect.either(
+      Effect.result(
         Database.pipe(
           Effect.provide(DatabaseLive.pipe(Layer.provide(settings))),
         ),
       ),
     )
-    Either.match(result, {
-      onLeft: (error) =>
+    Result.match(result, {
+      onFailure: (error) =>
         expect(error).toMatchObject({
           _tag: "DatabaseError",
           operation: DatabaseOperation.Connect,
           cause,
         }),
-      onRight: () => expect.fail("expected a database connect failure"),
+      onSuccess: () => expect.fail("expected a database connect failure"),
     })
   })
 
@@ -86,7 +86,7 @@ describe("API request resource scope", () => {
         }),
       ),
     )
-    Match.value(result).pipe(
+    Match.value(result?.reasons[0]).pipe(
       Match.tag("Die", ({ defect }) =>
         expect(defect).toMatchObject({
           _tag: "DatabaseError",
@@ -109,11 +109,11 @@ describe("API request resource scope", () => {
     expect(Redacted.value(value.databaseUrl)).toBe(url)
     vi.stubEnv("DATABASE_URL", "")
     const result = await Effect.runPromise(
-      Effect.either(ApiSettings.pipe(Effect.provide(ApiSettings.layer))),
+      Effect.result(ApiSettings.pipe(Effect.provide(ApiSettings.layer))),
     )
-    Either.match(result, {
-      onLeft: (error) => expect(error._tag).toBe("ConfigurationError"),
-      onRight: () => expect.fail("Empty database URL must fail"),
+    Result.match(result, {
+      onFailure: (error) => expect(error._tag).toBe("ConfigurationError"),
+      onSuccess: () => expect.fail("Empty database URL must fail"),
     })
   })
 
@@ -122,11 +122,11 @@ describe("API request resource scope", () => {
     vi.stubEnv("FLOWMARK_DEMO_MODE", "true")
     vi.stubEnv("NODE_ENV", "production")
     const result = await Effect.runPromise(
-      Effect.either(ApiSettings.pipe(Effect.provide(ApiSettings.layer))),
+      Effect.result(ApiSettings.pipe(Effect.provide(ApiSettings.layer))),
     )
-    Either.match(result, {
-      onLeft: (error) => expect(error._tag).toBe("ConfigurationError"),
-      onRight: () => expect.fail("Production demo mode must fail"),
+    Result.match(result, {
+      onFailure: (error) => expect(error._tag).toBe("ConfigurationError"),
+      onSuccess: () => expect.fail("Production demo mode must fail"),
     })
   })
 
@@ -138,14 +138,15 @@ describe("API request resource scope", () => {
     vi.stubEnv("VERCEL_ENV", "preview")
     vi.stubEnv("FLOWMARK_DATABASE_BRANCH", "")
     const result = await Effect.runPromise(
-      Effect.either(ApiSettings.pipe(Effect.provide(ApiSettings.layer))),
+      Effect.result(ApiSettings.pipe(Effect.provide(ApiSettings.layer))),
     )
-    Either.match(result, {
-      onLeft: (error) => {
+    Result.match(result, {
+      onFailure: (error) => {
         expect(error._tag).toBe("ConfigurationError")
         expect(String(error.cause)).not.toContain("secret")
       },
-      onRight: () => expect.fail("Preview without the branch marker must fail"),
+      onSuccess: () =>
+        expect.fail("Preview without the branch marker must fail"),
     })
   })
 })

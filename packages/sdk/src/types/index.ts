@@ -12,7 +12,7 @@ import type {
   WorkflowStepName,
 } from "@flowmarkdev/core"
 import type { DeliveryFailure } from "../errors/index.js"
-import type { WorkflowTransport } from "../features/delivery/ports/workflow-transport.js"
+import type { WorkflowTransport } from "../delivery/ports/workflow-transport.js"
 
 /**
  * Receives delivery/validation failures without throwing them into application code.
@@ -173,10 +173,75 @@ export interface Flow {
   ): Promise<T>
   /** Records an absolute progress snapshot; invalid values are rejected by validation. */
   progress(progress: WorkflowProgress): void
+
+  /** Absolute non-final result snapshot. Omitted fields become unknown; never inherited by done/fail. */
+  report(snapshot: WorkflowResult): void
+}
+
+/** JSON-shaped static view; runtime validation remains authoritative. */
+export type WorkflowJson<T> = T extends
+  string | number | boolean | null | undefined
+  ? T
+  : T extends readonly (infer Item)[]
+    ? readonly WorkflowJson<Item>[]
+    : T extends (...args: never[]) => unknown
+      ? never
+      : T extends object
+        ? { [Key in keyof T]: WorkflowJson<T[Key]> }
+        : never
+
+export type TypedWorkflowOptions<Context extends object> = Omit<
+  WorkflowRunOptions,
+  "properties"
+> &
+  (Record<never, never> extends Context
+    ? { readonly properties?: WorkflowJson<Context> }
+    : { readonly properties: WorkflowJson<Context> })
+
+export type TypedFlow<
+  Context extends object,
+  Result extends object,
+  Outcome extends string = string,
+> = Omit<Flow, "setProperties" | "report" | "done" | "fail"> & {
+  setProperties(properties: Partial<WorkflowJson<Context>>): void
+  report(snapshot: Partial<WorkflowJson<Result>>): void
+  done(
+    options?: Omit<WorkflowDoneOptions, "result" | "outcome"> & {
+      readonly result?: WorkflowJson<Result>
+      readonly outcome?: Outcome
+    },
+  ): void
+  fail(
+    options: Omit<WorkflowFailOptions, "result" | "outcome"> & {
+      readonly result?: WorkflowJson<Result>
+      readonly outcome?: Outcome
+    },
+  ): void
+}
+
+export interface WorkflowDefinition<
+  Context extends object,
+  Result extends object,
+  Outcome extends string = string,
+> {
+  start(
+    ...args: Record<never, never> extends Context
+      ? [options?: TypedWorkflowOptions<Context>]
+      : [options: TypedWorkflowOptions<Context>]
+  ): TypedFlow<Context, Result, Outcome>
 }
 
 /** Ordinary TypeScript client; Effect execution is managed internally. */
 export interface FlowmarkClient {
+  /** Inert reusable instrumentation definition; start uses this client's existing lifecycle. */
+  defineWorkflow<
+    Context extends object,
+    Result extends object,
+    Outcome extends string = string,
+  >(
+    name: WorkflowName,
+  ): WorkflowDefinition<Context, Result, Outcome>
+
   /**
    * Starts a run, or continues one when `options.id` matches an existing run
    * of the same workflow name. Omit `id` for a new execution.

@@ -85,7 +85,10 @@ export interface ProjectCredentialsService {
   ) => Effect.Effect<void, PersistenceError>
   readonly createOwnedProject: (
     userId: string,
-    names: { readonly workspace: string; readonly project: string },
+    names: {
+      readonly workspace: string
+      readonly project: string
+    },
   ) => Effect.Effect<
     {
       readonly projectId: string
@@ -99,7 +102,10 @@ export interface ProjectCredentialsService {
     workspaceId: string,
     name: string,
   ) => Effect.Effect<
-    { readonly projectId: string; readonly writeKey: CreatedSecret },
+    {
+      readonly projectId: string
+      readonly writeKey: CreatedSecret
+    },
     PersistenceError
   >
   readonly renameProject: (
@@ -114,7 +120,10 @@ export interface ProjectCredentialsService {
   ) => Effect.Effect<ReadonlyArray<BrowserKeySummary>, PersistenceError>
   readonly createApiKey: (
     projectId: string,
-    input: { readonly name: string; readonly permission: "read" | "write" },
+    input: {
+      readonly name: string
+      readonly permission: "read" | "write"
+    },
   ) => Effect.Effect<CreatedSecret, PersistenceError>
   readonly revokeApiKey: (
     projectId: string,
@@ -122,14 +131,17 @@ export interface ProjectCredentialsService {
   ) => Effect.Effect<boolean, PersistenceError>
   readonly createBrowserKey: (
     projectId: string,
-    input: { readonly name: string; readonly origins: ReadonlyArray<string> },
+    input: {
+      readonly name: string
+      readonly origins: ReadonlyArray<string>
+    },
   ) => Effect.Effect<CreatedSecret, PersistenceError>
   readonly revokeBrowserKey: (
     projectId: string,
     keyId: string,
   ) => Effect.Effect<boolean, PersistenceError>
 }
-
-export class ProjectCredentials extends Context.Tag(
-  "@flowmark/api/ProjectCredentials",
-)<ProjectCredentials, ProjectCredentialsService>() {}
+export class ProjectCredentials extends Context.Service<
+  ProjectCredentials,
+  ProjectCredentialsService
+>()("@flowmark/api/ProjectCredentials") {}

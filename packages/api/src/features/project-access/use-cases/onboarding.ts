@@ -40,11 +40,10 @@ export interface OnboardingService {
     userId: string,
   ) => Effect.Effect<void, InvalidInput | PersistenceError>
 }
-
-export class Onboarding extends Context.Tag("@flowmark/api/Onboarding")<
+export class Onboarding extends Context.Service<
   Onboarding,
   OnboardingService
->() {
+>()("@flowmark/api/Onboarding") {
   static readonly layer = Layer.effect(
     Onboarding,
     Effect.gen(function* () {

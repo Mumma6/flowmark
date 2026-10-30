@@ -71,7 +71,10 @@ read key in the `Authorization` header.
 
 `run.detail` returns the append-only event timeline, including measured
 operations (`operation_started`, `operation_completed`, `operation_failed`)
-and absolute `progress` snapshots. Operation events include `operationId` and
+and absolute `progress` snapshots. Non-final `report` events carry a bounded
+`result` snapshot. Timeline rows expose `receiptOrder` and `isLatestReport`; the
+latest report uses server receipt order, not application timestamps. Report data
+is separate from terminal results and excluded from final-result aggregates. Operation events include `operationId` and
 `operationName`; terminal events include the monotonic `durationMs`. Progress
 events include `completed`, optional `total`, and optional `unit`. Each event
 also includes its occurrence `timestamp` and persistence `receivedAt`. Run

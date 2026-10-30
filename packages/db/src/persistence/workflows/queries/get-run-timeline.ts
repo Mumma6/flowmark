@@ -31,6 +31,8 @@ export type RunTimelineEvent = {
   outcome?: string | null
   result: WorkflowResult | null
   timestamp: string
+  isLatestReport?: boolean
+  receiptOrder?: number
   receivedAt: string
   workflow: string
   externalId: string
@@ -64,6 +66,7 @@ export const getRunTimeline = Effect.fn("getRunTimeline")(function* (
         outcome: workflowEvents.outcome,
         timestamp: workflowEvents.occurredAt,
         receivedAt: workflowEvents.createdAt,
+        receiptOrder: workflowEvents.receiptOrder,
         workflow: workflows.name,
         externalId: workflowRuns.externalId,
         environment: workflowRuns.environment,
@@ -79,7 +82,14 @@ export const getRunTimeline = Effect.fn("getRunTimeline")(function* (
       )
       .orderBy(workflowEvents.occurredAt, workflowEvents.createdAt),
   )
+  const latestReportOrder = rows.reduce(
+    (latest, row) =>
+      row.type === "report" ? Math.max(latest, row.receiptOrder) : latest,
+    0,
+  )
   return rows.map((row) => ({
+    isLatestReport:
+      row.type === "report" && row.receiptOrder === latestReportOrder,
     ...row,
     timestamp: row.timestamp.toISOString(),
     receivedAt: row.receivedAt.toISOString(),

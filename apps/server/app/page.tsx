@@ -261,7 +261,7 @@ Array<{
     response: `// Schema of result.data
 Array<{
   id: UUID,
-  type: "started" | "step" | "properties" | "error" | "operation_started" | "operation_completed" | "operation_failed" | "progress" | "completed" | "failed",
+  type: "started" | "step" | "properties" | "error" | "operation_started" | "operation_completed" | "operation_failed" | "progress" | "report" | "completed" | "failed",
   step: string | null, reason: string | null,
   operationId: UUID | null, operationName: string | null,
   durationMs: number | null,
@@ -586,8 +586,8 @@ export default function ApiHome() {
                     Required:{" "}
                     <code>
                       started | step | properties | error | operation_started |
-                      operation_completed | operation_failed | progress |
-                      completed | failed
+                      operation_completed | operation_failed | progress | report
+                      | completed | failed
                     </code>
                     .
                   </td>
@@ -667,7 +667,10 @@ export default function ApiHome() {
                     <code>event.result</code>
                   </th>
                   <td>
-                    Optional bounded JSON object on <code>completed</code>.
+                    Required bounded whole JSON snapshot on <code>report</code>;
+                    optional on <code>completed</code> and <code>failed</code>.
+                    Reports are non-final and never become terminal results
+                    implicitly.
                   </td>
                 </tr>
                 <tr>

@@ -1,8 +1,11 @@
+import { withWorkflowDefinitions } from "../workflows/define-workflow.js"
 import { Effect, Layer, ManagedRuntime } from "effect"
 import { FlowmarkConfigError } from "../errors/index.js"
-import { DeliveryQueue } from "../features/delivery/delivery-queue.js"
-import { WorkflowTransport } from "../features/delivery/ports/workflow-transport.js"
-import { WorkflowEngine } from "../features/workflows/workflow-engine.js"
+import { DeliveryQueue } from "../delivery/delivery-queue.js"
+import { WorkflowTransport } from "../delivery/ports/workflow-transport.js"
+import { WorkflowEngine } from "../workflows/workflow-engine.js"
+import { WorkflowEvents } from "../workflows/workflow-events.js"
+import { WorkflowRuns } from "../workflows/run-lifecycle.js"
 import { withOperationCallback } from "../utils/operation-callback.js"
 import { splitOperationArgs } from "../utils/operation-args.js"
 import type {
@@ -21,8 +24,10 @@ export function makeClient(
   defaults: Pick<WorkflowRunOptions, "environment" | "release"> = {},
 ): FlowmarkClient {
   const delivery = DeliveryQueue.layer(onError).pipe(Layer.provide(transport))
+  const events = WorkflowEvents.layer.pipe(Layer.provideMerge(delivery))
+  const runs = WorkflowRuns.layer.pipe(Layer.provideMerge(events))
   const runtime = ManagedRuntime.make(
-    WorkflowEngine.layer.pipe(Layer.provideMerge(delivery)),
+    WorkflowEngine.layer.pipe(Layer.provideMerge(runs)),
   )
   const engine = runtime.runSync(WorkflowEngine)
   const queue = runtime.runSync(DeliveryQueue)
@@ -36,7 +41,7 @@ export function makeClient(
     runtime.runSync(command)
   }
 
-  return {
+  return withWorkflowDefinitions<Omit<FlowmarkClient, "defineWorkflow">>({
     workflow(name, options = {}) {
       if (shutdownResult) {
         throw new FlowmarkConfigError({ cause: "Client has been shut down" })
@@ -89,6 +94,7 @@ export function makeClient(
         error: (error) => runMarker(handle.error(error)),
         setProperties: (properties) =>
           runMarker(handle.setProperties(properties)),
+        report: (snapshot) => runMarker(handle.report(snapshot)),
         operation,
         progress: (progress: WorkflowProgress) =>
           runMarker(handle.progress(progress)),
@@ -103,5 +109,5 @@ export function makeClient(
         .finally(() => runtime.dispose())
       return shutdownResult
     },
-  }
+  })
 }

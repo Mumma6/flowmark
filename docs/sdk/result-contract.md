@@ -1,9 +1,8 @@
-# Proposed SDK outcome and report contract
+# SDK outcome and report contract
 
-This contract was established in TASK-001. TASK-004 implements terminal outcomes
-in source (not yet published); TASK-010 reports and TASK-013 typed definitions
-remain proposed. Published SDK consumers should use the compatibility examples
-below until a separately coordinated release.
+This contract was established in TASK-001. TASK-004 implements terminal outcomes and TASK-010 implements reports in source;
+TASK-013 implements optional typed definitions in source. Availability in published packages
+is tracked separately through the SDK release process.
 The executable synthetic references live in
 `packages/sdk/test/result-contract.test.ts`; they are not runtime exports.
 
@@ -14,7 +13,7 @@ Execution status remains `completed` or `failed`. A completed import can have a
 with `unavailable`. A failed CRM sync can still report committed updates. Neither
 status nor outcome verifies business correctness.
 
-The proposed terminal calls are `done({ outcome?, result? })` and
+The terminal calls are `done({ outcome?, result? })` and
 `fail({ code, outcome?, result? })`, retaining existing failure fields and marker
 lifecycle behavior. The terminal event's top-level `outcome` is the only canonical
 business outcome. Codes are case-sensitive ASCII identifiers matching
@@ -34,14 +33,14 @@ outcomes or reserved default declaration revisions.
 
 ## Absolute reports
 
-Proposed `flow.report(snapshot)` records an absolute, non-final business result
+`flow.report(snapshot)` records an absolute, non-final business result
 snapshot. It neither closes a run nor changes progress, context, or final result.
 Every accepted report replaces the entire previous snapshot, including nested
 objects: omitted fields become unknown, rather than retaining earlier values.
 Zero is explicit zero; omission is unknown. Counts describe application-reported
 committed work at that observation, not predicted completion or unique entities.
 
-TASK-010 should use a distinct `report` event with a `result` object and the
+TASK-010 uses a distinct `report` event with a `result` object and the
 existing event timestamp and envelope event ID. Use persisted event order, not
 client timestamps, to choose the latest accepted report. Duplicate envelope IDs
 must not advance that order. No new caller-controlled revision field is needed;
@@ -91,7 +90,7 @@ opaque case/batch references are lookup identifiers, never grouping dimensions.
 Do not include names, email addresses, credentials or raw customer records.
 Reason taxonomies must be bounded workflow-owned codes, not exception messages.
 
-## Proposed typed examples — unavailable until TASK-013
+## Typed workflow definitions
 
 ```ts
 interface ImportContext {
@@ -125,7 +124,7 @@ reuses existing lifecycle and delivery. Context types constrain start properties
 and partial context amendments; result types constrain final results and partial
 reports; outcome types constrain terminal codes. The untyped marker API stays
 available. Generic types are compile-time guidance, never uploaded declarations
-or a substitute for server validation. TASK-013 must test inference and rejected
+or a substitute for server validation. TASK-013 tests inference and rejected
 invalid calls without requiring consumers to add index signatures.
 
 TASK-004 implements minimal bounded result declarations. Use a workflow-owned
@@ -139,40 +138,22 @@ ledger entries. The declaration format uses immutable revisions, ordered field p
 count/category/reasons kinds and optional units, without treating
 TypeScript generics as runtime metadata.
 
-## Marker reference before outcome support
-
-This code uses only today's markers. It does not produce canonical outcomes or
-live result reports, and nested outcome strings remain ordinary result data.
-
-```ts
-const flow = flowmark.workflow("customer.import", {
-  properties: { batchRef: "synthetic-batch-1", synthetic: true },
-})
-flow.progress({ completed: 6000, total: 10000, unit: "rows" })
-flow.done({
-  result: {
-    outcome: "partial",
-    imported: 9600,
-    skipped: 300,
-    rejected: 100,
-    inputRows: 10000,
-  },
-})
-// CRM: flow.fail({ code: "CRM_TIMEOUT", result: { updated: 400 } })
-// Booking: flow.done({ result: { outcome: "unavailable", reserved: 0 } })
-// Recurring: progress checkpoints; no terminal call when work is interrupted.
-// Investigation: flow.done() preserves the absence of business evidence.
-```
-
 ## Source evidence and rollout
 
-Inspected SDK types, core event/JSON schemas and local business-harness source
-already support bounded terminal results, batched progress, handled errors and
-application-owned operations. They do not expose canonical outcomes or reports.
+At TASK-001, inspected SDK types, core event/JSON schemas and local business-harness source
+already supported bounded terminal results, batched progress, handled errors and
+application-owned operations. Canonical outcomes and reports were not yet exposed; TASK-004 and TASK-010 now implement them in source.
 The harness is synthetic; no external customer source or adoption was validated.
 Real-workflow feedback is a later learning opportunity, not a dependency.
 
-TASK-001 changes no runtime exports, wire payloads, storage or package versions.
+TASK-001 changed no runtime exports, wire payloads, storage or package versions.
+TASK-010 adds report events and migration 0010 (event enum and persisted receipt
+sequence); run-scoped transactional locking orders accepted appends against
+terminal markers. Read APIs identify the latest report separately from final results.
+Existing rows receive sequence values during migration; they contain no reports
+and their historical meaning stays unchanged. The additive bigserial column may
+rewrite/lock the event table during migration; verify duration in Preview before
+merging. No backfill of business data, retention change or new service is required.
 For new wire capabilities, apply the migration and deploy ingestion, persistence
 and readers before enabling writers. Verify the stored value end to end. Do not
 add fallback representations or promote reports into final results. Publishing,

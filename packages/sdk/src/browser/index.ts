@@ -1,9 +1,10 @@
-import { FetchHttpClient } from "@effect/platform"
-import { Either, Layer, Redacted, Schema } from "effect"
-import { makeHttpTransport } from "../features/delivery/adapters/http-transport.js"
+import { withWorkflowDefinitions } from "../workflows/define-workflow.js"
+import { fetchClientLayer } from "../delivery/adapters/fetch-client.js"
+import { Result, Layer, Redacted, Schema } from "effect"
+import { makeHttpTransport } from "../delivery/adapters/http-transport.js"
 import { FlowmarkConfigError } from "../errors/index.js"
 import { makeClient } from "../client/runtime.js"
-import { WorkflowTransport } from "../features/delivery/ports/workflow-transport.js"
+import { WorkflowTransport } from "../delivery/ports/workflow-transport.js"
 import type {
   FlowmarkClient,
   InstrumentationErrorHandler,
@@ -11,6 +12,9 @@ import type {
 import { ApiOriginSchema } from "../config/api-origin.js"
 
 export type {
+  WorkflowDefinition,
+  TypedFlow,
+  TypedWorkflowOptions,
   Flow,
   FlowmarkClient,
   WorkflowDoneOptions,
@@ -116,18 +120,18 @@ export function createFlowmark(
               "Choose either direct browser delivery or proxyPath, not both",
           })
         }
-        const settings = Either.match(
-          Schema.decodeUnknownEither(
+        const settings = Result.match(
+          Schema.decodeUnknownResult(
             Schema.Struct({
               publicKey: Schema.NonEmptyString,
               apiUrl: ApiOriginSchema,
             }),
           )({ publicKey: config.publicKey, apiUrl: config.apiUrl }),
           {
-            onLeft: (cause) => {
+            onFailure: (cause) => {
               throw new FlowmarkConfigError({ cause })
             },
-            onRight: (value) => value,
+            onSuccess: (value) => value,
           },
         )
         endpoint = new URL("/v1/browser-events", settings.apiUrl)
@@ -152,15 +156,11 @@ export function createFlowmark(
           })
         }
       }
-      const http = FetchHttpClient.layer.pipe(
-        Layer.provide(
-          Layer.succeed(FetchHttpClient.RequestInit, {
-            credentials: direct ? "omit" : "same-origin",
-            mode: direct ? "cors" : "same-origin",
-            keepalive: true,
-          }),
-        ),
-      )
+      const http = fetchClientLayer({
+        credentials: direct ? "omit" : "same-origin",
+        mode: direct ? "cors" : "same-origin",
+        keepalive: true,
+      })
       client = makeClient(
         Layer.effect(
           WorkflowTransport,
@@ -178,12 +178,12 @@ export function createFlowmark(
     return client
   }
 
-  return {
+  return withWorkflowDefinitions<Omit<FlowmarkClient, "defineWorkflow">>({
     workflow: (name, options) => getClient().workflow(name, options),
     flush: () => client?.flush() ?? Promise.resolve(),
     shutdown() {
       closed = true
       return client?.shutdown() ?? Promise.resolve()
     },
-  }
+  })
 }

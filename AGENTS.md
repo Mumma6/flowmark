@@ -35,7 +35,7 @@
   apply
   [flowmark-effect](./.agents/skills/flowmark-effect/SKILL.md) and
   [flowmark-architecture](./.agents/skills/flowmark-architecture/SKILL.md).
-  Use modern Effect as the default (pipe, Match, Either.match, catchTags,
+  Use modern Effect as the default (pipe, Match, Result.match, catchTags,
   Layers, Scope, services). Keep typed errors, small ports/adapters, and an
   ordinary TypeScript/Promise SDK boundary.
 - Before `@flowmark/db`, Drizzle, SQL, query, migration, or seed changes, read
@@ -71,6 +71,9 @@
 
 ## Working practices
 
+- Start each normal PR from the latest `origin/staging` on its own
+  `codex/` feature branch, and explicitly target `staging` when opening it.
+  Release PRs retain the documented `staging` to `main` workflow.
 - Inspect existing code and prior art before editing. Prefer the simplest
   complete fix, not new abstractions or unrelated cleanup.
 - Preserve existing work; do not overwrite or revert changes you did not make.

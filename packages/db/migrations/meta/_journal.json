@@ -71,6 +71,13 @@
       "when": 1793348934714,
       "tag": "0009_late_giant_girl",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1793365072498,
+      "tag": "0010_simple_devos",
+      "breakpoints": true
     }
   ]
 }

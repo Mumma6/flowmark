@@ -1,10 +1,10 @@
-import { FetchHttpClient } from "@effect/platform"
+import { fetchClientLayer } from "../delivery/adapters/fetch-client.js"
 import { Layer } from "effect"
-import { HttpTransportLive } from "../features/delivery/adapters/http.js"
+import { HttpTransportLive } from "../delivery/adapters/http.js"
 import { FlowmarkSettings, resolveSettings } from "../config/settings.js"
 import { FlowmarkConfigError } from "../errors/index.js"
 import { makeClient } from "./runtime.js"
-import { WorkflowTransport } from "../features/delivery/ports/workflow-transport.js"
+import { WorkflowTransport } from "../delivery/ports/workflow-transport.js"
 import type {
   Flow,
   FlowmarkClient,
@@ -33,7 +33,7 @@ export function createFlowmark(config: FlowmarkConfig = {}): FlowmarkClient {
   const settings = resolveSettings(config)
   const transport = HttpTransportLive.pipe(
     Layer.provide(Layer.succeed(FlowmarkSettings, settings)),
-    Layer.provide(FetchHttpClient.layer),
+    Layer.provide(fetchClientLayer()),
   )
   return makeClient(transport, config.onInstrumentationError, {
     environment: config.environment,
@@ -161,6 +161,11 @@ export function workflow(name: WorkflowName, options: WorkflowOptions): Flow {
     setProperties: (properties) => {
       if (!finished && !completionRequested) {
         flow.setProperties(properties)
+      }
+    },
+    report: (snapshot) => {
+      if (!finished && !completionRequested) {
+        flow.report(snapshot)
       }
     },
     operation,

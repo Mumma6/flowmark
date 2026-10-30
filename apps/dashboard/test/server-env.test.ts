@@ -1,15 +1,21 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { Effect, Either } from "effect"
+import { Effect, Result } from "effect"
 import { dashboardApiUrl, dashboardDemoModeEnabled } from "../lib/server-env"
 
 afterEach(() => {
   vi.unstubAllEnvs()
 })
-
-const leftReason = <A>(effect: Effect.Effect<A, { readonly reason: string }>) =>
-  Either.match(Effect.runSync(Effect.either(effect)), {
-    onLeft: (error) => error.reason,
-    onRight: () => {
+const leftReason = <A>(
+  effect: Effect.Effect<
+    A,
+    {
+      readonly reason: string
+    }
+  >,
+) =>
+  Result.match(Effect.runSync(Effect.result(effect)), {
+    onFailure: (error) => error.reason,
+    onSuccess: () => {
       throw new Error("expected a typed configuration failure")
     },
   })

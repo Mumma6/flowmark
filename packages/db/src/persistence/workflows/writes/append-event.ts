@@ -65,98 +65,126 @@ export const appendEvent = Effect.fn("appendEvent")(function* (
 ) {
   const db = yield* Database
   const accepted = yield* runQuery(DatabaseOperation.AppendEvent, () =>
-    db.transaction(async (tx) => {
-      await tx
-        .insert(workflows)
-        .values({ projectId, name: event.workflow })
-        .onConflictDoNothing({
-          target: [workflows.projectId, workflows.name],
-        })
-      const [definition] = await tx
-        .select()
-        .from(workflows)
-        .where(
-          and(
-            eq(workflows.projectId, projectId),
-            eq(workflows.name, event.workflow),
-          ),
-        )
-      if (event.type === "started") {
-        await tx
-          .insert(workflowRuns)
-          .values({
-            workflowId: definition.id,
-            externalId: event.runId,
-            startedAt: new Date(event.timestamp),
-            correlationId: event.correlationId ?? null,
-            parentRunId: event.parentRunId ?? null,
-          })
-          .onConflictDoNothing({
-            target: [workflowRuns.workflowId, workflowRuns.externalId],
-          })
-      }
-      const [run] = await tx
-        .select()
-        .from(workflowRuns)
-        .where(
-          and(
-            eq(workflowRuns.workflowId, definition.id),
-            eq(workflowRuns.externalId, event.runId),
-          ),
-        )
-      if (!run) {
-        return false
-      }
-      const recorded = await tx
-        .select({ type: workflowEvents.type })
-        .from(workflowEvents)
-        .where(eq(workflowEvents.runId, run.id))
-      const types = new Set(recorded.map((row) => row.type))
-      if (event.type === "started" && types.has("started")) {
-        return true
-      }
-      if (ignoreContinuedEvent(runTerminal(types), event.type)) {
-        return true
-      }
-      const failure = eventFailure(event)
-      const error = eventError(event, failure)
-      const properties = eventProperties(event)
-      const result = eventResult(event)
-      const [inserted] = await tx
-        .insert(workflowEvents)
-        .values({
-          eventId,
-          runId: run.id,
-          type: event.type,
-          occurredAt: new Date(event.timestamp),
-          step: event.type === "step" ? event.step : null,
-          operationId: "operationId" in event ? event.operationId : null,
-          operationName: "operationName" in event ? event.operationName : null,
-          durationMs: "durationMs" in event ? event.durationMs : null,
-          progressCompleted: event.type === "progress" ? event.completed : null,
-          progressTotal:
-            event.type === "progress" ? (event.total ?? null) : null,
-          progressUnit: event.type === "progress" ? (event.unit ?? null) : null,
-          reason: event.type === "failed" ? event.reason : null,
-          properties: properties ?? null,
-          error,
-          result: result ?? null,
-          outcome: "outcome" in event ? (event.outcome ?? null) : null,
-        })
-        .onConflictDoNothing({ target: workflowEvents.eventId })
-        .returning({ id: workflowEvents.id })
-      if (!inserted) {
-        return true
-      }
-      const changes = runUpdates(event, error, result)
-      if (Object.keys(changes).length > 0) {
-        await tx
-          .update(workflowRuns)
-          .set(changes)
-          .where(eq(workflowRuns.id, run.id))
-      }
-      return true
-    }),
+    // Drizzle owns the transaction lifetime; bridge at its Promise callback boundary.
+    db.transaction((tx) =>
+      Effect.runPromise(
+        Effect.gen(function* () {
+          yield* runQuery(DatabaseOperation.AppendEvent, () =>
+            tx
+              .insert(workflows)
+              .values({ projectId, name: event.workflow })
+              .onConflictDoNothing({
+                target: [workflows.projectId, workflows.name],
+              }),
+          )
+          const [definition] = yield* runQuery(
+            DatabaseOperation.AppendEvent,
+            () =>
+              tx
+                .select()
+                .from(workflows)
+                .where(
+                  and(
+                    eq(workflows.projectId, projectId),
+                    eq(workflows.name, event.workflow),
+                  ),
+                ),
+          )
+          if (event.type === "started") {
+            yield* runQuery(DatabaseOperation.AppendEvent, () =>
+              tx
+                .insert(workflowRuns)
+                .values({
+                  workflowId: definition.id,
+                  externalId: event.runId,
+                  startedAt: new Date(event.timestamp),
+                  correlationId: event.correlationId ?? null,
+                  parentRunId: event.parentRunId ?? null,
+                })
+                .onConflictDoNothing({
+                  target: [workflowRuns.workflowId, workflowRuns.externalId],
+                }),
+            )
+          }
+          const [run] = yield* runQuery(DatabaseOperation.AppendEvent, () =>
+            tx
+              .select()
+              .from(workflowRuns)
+              .where(
+                and(
+                  eq(workflowRuns.workflowId, definition.id),
+                  eq(workflowRuns.externalId, event.runId),
+                ),
+              )
+              .for("update"),
+          )
+          if (!run) {
+            return false
+          }
+          const recorded = yield* runQuery(DatabaseOperation.AppendEvent, () =>
+            tx
+              .select({ type: workflowEvents.type })
+              .from(workflowEvents)
+              .where(eq(workflowEvents.runId, run.id)),
+          )
+          const types = new Set(recorded.map((row) => row.type))
+          if (event.type === "started" && types.has("started")) {
+            return true
+          }
+          if (ignoreContinuedEvent(runTerminal(types), event.type)) {
+            return true
+          }
+          const failure = eventFailure(event)
+          const error = eventError(event, failure)
+          const properties = eventProperties(event)
+          const result = eventResult(event)
+          const [inserted] = yield* runQuery(
+            DatabaseOperation.AppendEvent,
+            () =>
+              tx
+                .insert(workflowEvents)
+                .values({
+                  eventId,
+                  runId: run.id,
+                  type: event.type,
+                  occurredAt: new Date(event.timestamp),
+                  step: event.type === "step" ? event.step : null,
+                  operationId:
+                    "operationId" in event ? event.operationId : null,
+                  operationName:
+                    "operationName" in event ? event.operationName : null,
+                  durationMs: "durationMs" in event ? event.durationMs : null,
+                  progressCompleted:
+                    event.type === "progress" ? event.completed : null,
+                  progressTotal:
+                    event.type === "progress" ? (event.total ?? null) : null,
+                  progressUnit:
+                    event.type === "progress" ? (event.unit ?? null) : null,
+                  reason: event.type === "failed" ? event.reason : null,
+                  properties: properties ?? null,
+                  error,
+                  result: result ?? null,
+                  outcome: "outcome" in event ? (event.outcome ?? null) : null,
+                })
+                .onConflictDoNothing({ target: workflowEvents.eventId })
+                .returning({ id: workflowEvents.id }),
+          )
+          if (!inserted) {
+            return true
+          }
+          const changes = runUpdates(event, error, result)
+          if (Object.keys(changes).length > 0) {
+            yield* runQuery(DatabaseOperation.AppendEvent, () =>
+              tx
+                .update(workflowRuns)
+                .set(changes)
+                .where(eq(workflowRuns.id, run.id)),
+            )
+          }
+          return true
+        }),
+      ),
+    ),
   )
   if (!accepted) {
     return yield* Effect.fail(new MissingRunError({ runId: event.runId }))

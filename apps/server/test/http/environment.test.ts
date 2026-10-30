@@ -1,12 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { Effect, Either } from "effect"
+import { Effect, Result } from "effect"
 import { serverOrigins } from "../../src/server-env"
 import { handleTrpc, handleTrpcOptions } from "../../src/adapters/trpc-http"
 
 const reason = (env: NodeJS.ProcessEnv) =>
-  Either.match(Effect.runSync(Effect.either(serverOrigins(env))), {
-    onLeft: (error) => error.reason,
-    onRight: () => "unexpected success",
+  Result.match(Effect.runSync(Effect.result(serverOrigins(env))), {
+    onFailure: (error) => error.reason,
+    onSuccess: () => "unexpected success",
   })
 afterEach(() => vi.unstubAllEnvs())
 

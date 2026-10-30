@@ -1,10 +1,7 @@
 import { Context, type Effect } from "effect"
 import type { ResultDeclaration } from "@flowmarkdev/core"
 import type { PersistenceError } from "../../../errors.js"
-
-export class ResultDeclarations extends Context.Tag(
-  "@flowmark/api/ResultDeclarations",
-)<
+export class ResultDeclarations extends Context.Service<
   ResultDeclarations,
   {
     readonly list: (
@@ -17,4 +14,4 @@ export class ResultDeclarations extends Context.Tag(
       declaration: ResultDeclaration,
     ) => Effect.Effect<boolean, PersistenceError>
   }
->() {}
+>()("@flowmark/api/ResultDeclarations") {}

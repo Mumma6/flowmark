@@ -1,35 +1,35 @@
-import { Context, Effect, FiberSet, Layer, Ref } from "effect"
+import { Context, Effect, FiberSet, Layer, Ref, Semaphore } from "effect"
 import { decodeWorkflowEvent, type WorkflowEvent } from "@flowmarkdev/core"
 import {
   FlowmarkDeliveryError,
   FlowmarkQueueError,
   WorkflowTransportError,
   type DeliveryFailure,
-} from "../../errors/index.js"
-import type { InstrumentationErrorHandler } from "../../types/index.js"
+} from "../errors/index.js"
+import type { InstrumentationErrorHandler } from "../types/index.js"
 import { WorkflowTransport } from "./ports/workflow-transport.js"
 
 export interface DeliveryQueueService {
   readonly enqueue: (
     event: WorkflowEvent,
-    ordering: Effect.Semaphore,
+    ordering: Semaphore.Semaphore,
   ) => Effect.Effect<void>
   readonly flush: Effect.Effect<void, FlowmarkDeliveryError>
   readonly shutdown: Effect.Effect<void, FlowmarkDeliveryError>
 }
-
-export class DeliveryQueue extends Context.Tag(
-  "@flowmarkdev/node/DeliveryQueue",
-)<DeliveryQueue, DeliveryQueueService>() {
+export class DeliveryQueue extends Context.Service<
+  DeliveryQueue,
+  DeliveryQueueService
+>()("@flowmarkdev/node/DeliveryQueue") {
   static layer(onError?: InstrumentationErrorHandler) {
-    return Layer.scoped(
+    return Layer.effect(
       DeliveryQueue,
       Effect.gen(function* () {
         const transport = yield* WorkflowTransport
         const pending = yield* FiberSet.make<void, never>()
         const failures = yield* Ref.make<ReadonlyArray<DeliveryFailure>>([])
         const closed = yield* Ref.make(false)
-        const queueAccess = yield* Effect.makeSemaphore(1)
+        const queueAccess = yield* Semaphore.make(1)
 
         const report = Effect.fn("Flowmark.DeliveryQueue.report")(function* (
           error: DeliveryFailure,
@@ -38,7 +38,7 @@ export class DeliveryQueue extends Context.Tag(
           yield* Ref.update(failures, (errors) => [...errors, error])
           if (onError) {
             yield* Effect.sync(() => onError(error, event)).pipe(
-              Effect.catchAllCause(() =>
+              Effect.catchCause(() =>
                 Effect.logWarning(
                   "[Flowmark] Instrumentation error callback failed",
                 ),
@@ -61,7 +61,7 @@ export class DeliveryQueue extends Context.Tag(
           yield* transport
             .emit(decoded)
             .pipe(
-              Effect.catchAllCause((cause) =>
+              Effect.catchCause((cause) =>
                 Effect.fail(
                   new WorkflowTransportError({ event: decoded, cause }),
                 ),
@@ -70,7 +70,7 @@ export class DeliveryQueue extends Context.Tag(
         })
 
         const enqueue = Effect.fn("Flowmark.DeliveryQueue.enqueue")(
-          function* (event: WorkflowEvent, ordering: Effect.Semaphore) {
+          function* (event: WorkflowEvent, ordering: Semaphore.Semaphore) {
             const isClosed = yield* Ref.get(closed)
             if (isClosed || (yield* FiberSet.size(pending)) >= 1000) {
               return yield* report(
@@ -85,8 +85,8 @@ export class DeliveryQueue extends Context.Tag(
               pending,
               ordering.withPermits(1)(
                 deliver(event).pipe(
-                  Effect.catchAll((error) => report(error, event)),
-                  Effect.catchAllCause((cause) =>
+                  Effect.catch((error) => report(error, event)),
+                  Effect.catchCause((cause) =>
                     report(new WorkflowTransportError({ event, cause }), event),
                   ),
                 ),

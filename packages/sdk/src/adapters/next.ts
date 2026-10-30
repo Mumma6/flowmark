@@ -1,8 +1,12 @@
+import { withWorkflowDefinitions } from "../workflows/define-workflow.js"
 import { after } from "next/server"
 import { createFlowmark as createClient } from "../client/create-client.js"
 import type { FlowmarkClient, FlowmarkConfig } from "../types/index.js"
 
 export type {
+  WorkflowDefinition,
+  TypedFlow,
+  TypedWorkflowOptions,
   Flow,
   FlowmarkClient,
   FlowmarkConfig,
@@ -42,8 +46,8 @@ export { defineConfig } from "../config/define-config.js"
  */
 export function createFlowmark(
   config: FlowmarkConfig = {},
-): Pick<FlowmarkClient, "workflow"> {
-  return {
+): Pick<FlowmarkClient, "workflow" | "defineWorkflow"> {
+  return withWorkflowDefinitions<Pick<FlowmarkClient, "workflow">>({
     workflow(name, options) {
       const lifecycle: { client?: FlowmarkClient } = {}
       // Register before starting work so unsupported contexts cannot orphan delivery.
@@ -65,5 +69,5 @@ export function createFlowmark(
       lifecycle.client = client
       return client.workflow(name, options)
     },
-  }
+  })
 }

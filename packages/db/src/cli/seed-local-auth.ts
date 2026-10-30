@@ -47,7 +47,7 @@ export const seedLocalAuthUser = Effect.fn("seedLocalAuthUser")(function* (
         try: () => context.internalAdapter.findUserByEmail(LOCAL_DEV_EMAIL),
         catch: seedFailure,
       })
-      yield* Option.match(Option.fromNullable(existing?.user.id), {
+      yield* Option.match(Option.fromNullishOr(existing?.user.id), {
         onSome: () => Effect.void,
         onNone: () =>
           Effect.gen(function* () {
@@ -88,7 +88,7 @@ export const seedLocalAuthUser = Effect.fn("seedLocalAuthUser")(function* (
             .limit(1),
         catch: seedFailure,
       })
-      return yield* Option.match(Option.fromNullable(rows[0]?.id), {
+      return yield* Option.match(Option.fromNullishOr(rows[0]?.id), {
         onNone: () =>
           Effect.fail(
             seedFailure(
