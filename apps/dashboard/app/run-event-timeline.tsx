@@ -1,5 +1,6 @@
 "use client"
 
+import { Match } from "effect"
 import { useState } from "react"
 import { Badge, Button } from "@flowmark/ui"
 import { ChevronDown, ChevronRight } from "lucide-react"
@@ -18,6 +19,9 @@ export type RunTimelineKind =
   | "terminal-done"
 
 export function getRunTimelineKind(event: RunEvent): RunTimelineKind {
+  if (event.type === "report") {
+    return "context"
+  }
   switch (event.type) {
     case "started":
       return "start"
@@ -81,6 +85,13 @@ export function runTimelineStatusClass(kind: RunTimelineKind) {
 }
 
 export function runTimelineDetail(event: RunEvent): string | null {
+  const report = Match.value(event).pipe(
+    Match.when({ type: "report" }, () => "Whole business snapshot · non-final"),
+    Match.orElse(() => null),
+  )
+  if (report !== null) {
+    return report
+  }
   switch (event.type) {
     case "step":
       return event.step ?? null

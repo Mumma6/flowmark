@@ -43,6 +43,8 @@ export function eventLabel(event: RunEvent) {
       return event.error && "handled" in event.error && event.error.handled
         ? "Handled error"
         : "Error observed"
+    case "report":
+      return "Business snapshot reported (non-final)"
     case "progress":
       return "Progress reported"
     case "completed":
@@ -92,6 +94,7 @@ export function EventTable({ events }: { events: readonly RunEvent[] }) {
             { value: "step", label: "Checkpoints" },
             { value: "operations", label: "Operations" },
             { value: "progress", label: "Progress" },
+            { value: "report", label: "Business snapshots" },
             { value: "errors", label: "Errors and failures" },
             { value: "properties", label: "Context updates" },
           ]}

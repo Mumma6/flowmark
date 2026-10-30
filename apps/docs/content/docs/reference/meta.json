@@ -12,6 +12,7 @@
     "step",
     "operation",
     "progress",
+    "report",
     "error",
     "completion",
     "properties",

@@ -1,3 +1,5 @@
+import { Effect } from "effect"
+import { createFlowmark } from "../../../../packages/sdk/src/index.js"
 import { randomUUID } from "node:crypto"
 import { eq, sql } from "drizzle-orm"
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest"
@@ -106,6 +108,186 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
       await connection?.close()
       vi.unstubAllEnvs()
     })
+
+    it("preserves SDK snapshots through HTTP, receipt ordering and scoped reads without final-result inheritance", () =>
+      Effect.runPromise(
+        Effect.gen(function* () {
+          const {
+            cookie,
+            project,
+            writeKey: key,
+          } = yield* Effect.promise(() => createOwner("Report integration"))
+          const projectId = project.id
+          const owner = caller(cookie, projectId)
+          const externalId = randomUUID()
+          const event = (
+            type: string,
+            result?: Record<string, unknown>,
+            timestamp = "2026-01-01T00:00:00Z",
+          ) => ({
+            type,
+            workflow: "integration.reports",
+            runId: externalId,
+            timestamp,
+            ...(result === undefined ? {} : { result }),
+          })
+          const send = Effect.fn("test.sendReport")(
+            (payload: unknown, eventId = randomUUID()) =>
+              Effect.promise(() =>
+                ingest(
+                  new Request("http://localhost/v1/events", {
+                    method: "POST",
+                    headers: { authorization: `Bearer ${key.secret}` },
+                    body: JSON.stringify({ eventId, event: payload }),
+                  }),
+                ),
+              ).pipe(
+                Effect.tap((response) =>
+                  Effect.sync(() => expect(response.status).toBe(202)),
+                ),
+              ),
+          )
+          yield* send(event("started"))
+          const duplicateId = randomUUID()
+          yield* send(
+            event(
+              "report",
+              { imported: 10, rejected: 2 },
+              "2026-01-03T00:00:00Z",
+            ),
+            duplicateId,
+          )
+          yield* send(event("report", { imported: 20 }, "2026-01-02T00:00:00Z"))
+          yield* send(
+            event(
+              "report",
+              { imported: 10, rejected: 2 },
+              "2026-01-03T00:00:00Z",
+            ),
+            duplicateId,
+          )
+          let snapshot = yield* Effect.promise(() => owner.project.snapshot())
+          const run = snapshot.runs.find(
+            (row) => row.externalId === externalId,
+          )!
+          expect(run).toMatchObject({
+            status: "Running",
+            result: null,
+            outcome: null,
+          })
+          let timeline = yield* Effect.promise(() =>
+            owner.run.detail({ id: run.id }),
+          )
+          expect(timeline.filter((row) => row.type === "report")).toHaveLength(
+            2,
+          )
+          expect(timeline.find((row) => row.isLatestReport)).toMatchObject({
+            result: { imported: 20 },
+            timestamp: "2026-01-02T00:00:00.000Z",
+          })
+          const another = yield* Effect.promise(() =>
+            createOwner("Other report project"),
+          )
+          expect(
+            yield* Effect.promise(() =>
+              caller(another.cookie, another.project.id).run.detail({
+                id: run.id,
+              }),
+            ),
+          ).toEqual([])
+          yield* Effect.all(
+            [
+              send(event("report", { imported: 30 })),
+              send(event("report", { imported: 40 })),
+            ],
+            { concurrency: 2 },
+          )
+          timeline = yield* Effect.promise(() =>
+            owner.run.detail({ id: run.id }),
+          )
+          const reports = timeline.filter((row) => row.type === "report")
+          expect(timeline.filter((row) => row.isLatestReport)).toHaveLength(1)
+          expect(timeline.find((row) => row.isLatestReport)?.receiptOrder).toBe(
+            Math.max(...reports.map((row) => row.receiptOrder!)),
+          )
+          yield* send(event("report", {}))
+          yield* send(event("completed"))
+          yield* send(event("report", { imported: 999 }))
+          timeline = yield* Effect.promise(() =>
+            owner.run.detail({ id: run.id }),
+          )
+          expect(timeline.filter((row) => row.type === "report")).toHaveLength(
+            5,
+          )
+          expect(timeline.find((row) => row.isLatestReport)?.result).toEqual({})
+          snapshot = yield* Effect.promise(() => owner.project.snapshot())
+          expect(snapshot.runs.find((row) => row.id === run.id)).toMatchObject({
+            status: "Completed",
+            result: null,
+          })
+          const [stored] = yield* Effect.promise(() =>
+            connection.db
+              .select()
+              .from(workflowRuns)
+              .where(eq(workflowRuns.id, run.id)),
+          )
+          expect(stored.result).toBeNull()
+
+          // Exercise the public SDK and its real HTTP adapter against the route boundary.
+          vi.stubGlobal(
+            "fetch",
+            (input: RequestInfo | URL, init?: RequestInit) =>
+              ingest(new Request(input, init)),
+          )
+          const client = createFlowmark({
+            apiKey: key.secret,
+            apiUrl: "http://localhost",
+          })
+          yield* Effect.gen(function* () {
+            const flow = client.workflow("integration.sdk-reports")
+            flow.report({
+              imported: 6000,
+              rejected: 50,
+              reasons: { invalid: 50 },
+            })
+            yield* Effect.promise(() => client.flush())
+            const data = yield* Effect.promise(() => owner.project.snapshot())
+            const sdkRun = data.runs.find(
+              (row) => row.externalId === flow.runId,
+            )!
+            expect(sdkRun).toMatchObject({ status: "Running", result: null })
+            const evidence = yield* Effect.promise(() =>
+              owner.run.detail({ id: sdkRun.id }),
+            )
+            expect(evidence.find((row) => row.isLatestReport)).toMatchObject({
+              type: "report",
+              result: {
+                imported: 6000,
+                rejected: 50,
+                reasons: { invalid: 50 },
+              },
+            })
+            flow.done({ outcome: "partial", result: { imported: 5900 } })
+            yield* Effect.promise(() => client.flush())
+            const finalData = yield* Effect.promise(() =>
+              owner.project.snapshot(),
+            )
+            expect(
+              finalData.runs.find((row) => row.id === sdkRun.id),
+            ).toMatchObject({
+              status: "Completed",
+              outcome: "partial",
+              result: { imported: 5900 },
+            })
+          }).pipe(
+            Effect.ensuring(
+              Effect.promise(() => client.shutdown()).pipe(
+                Effect.ensuring(Effect.sync(() => vi.unstubAllGlobals())),
+              ),
+            ),
+          )
+        }),
+      ))
 
     it("registers, signs in, creates a project/key, ingests, persists, and reads with its session", async () => {
       const cookie = await registerAndSignIn()

@@ -163,6 +163,11 @@ export function workflow(name: WorkflowName, options: WorkflowOptions): Flow {
         flow.setProperties(properties)
       }
     },
+    report: (snapshot) => {
+      if (!finished && !completionRequested) {
+        flow.report(snapshot)
+      }
+    },
     operation,
     progress: (progress: WorkflowProgress) => {
       if (!finished && !completionRequested) {

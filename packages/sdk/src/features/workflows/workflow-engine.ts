@@ -5,6 +5,7 @@ import type {
   WorkflowName,
   WorkflowOperationFailure,
   WorkflowProperties,
+  WorkflowResult,
   WorkflowProgress,
   WorkflowStepName,
 } from "@flowmarkdev/core"
@@ -39,6 +40,7 @@ export interface WorkflowHandle {
     name: WorkflowStepName,
     options?: WorkflowOperationOptions,
   ) => Effect.Effect<WorkflowOperationHandle>
+  readonly report: (snapshot: WorkflowResult) => Effect.Effect<void>
   readonly progress: (progress: WorkflowProgress) => Effect.Effect<void>
 }
 
@@ -233,6 +235,24 @@ export class WorkflowEngine extends Context.Tag(
           },
         )
 
+        const report = Effect.fn("Flowmark.WorkflowEngine.report")(function* (
+          result: WorkflowResult,
+        ) {
+          if (
+            (yield* Ref.get(finished)) ||
+            (yield* Ref.get(completionRequested))
+          ) {
+            return
+          }
+          yield* record((timestamp) => ({
+            type: "report",
+            workflow,
+            runId,
+            timestamp,
+            result,
+          }))
+        })
+
         const operation = Effect.fn("Flowmark.WorkflowEngine.operation")(
           function* (
             operationName: WorkflowStepName,
@@ -342,6 +362,7 @@ export class WorkflowEngine extends Context.Tag(
           setProperties,
           operation,
           progress,
+          report,
         } satisfies WorkflowHandle
       })
 

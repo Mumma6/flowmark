@@ -180,3 +180,29 @@ release, so do not assume the currently published SDK supports this capability.
 See [the completion reference](https://docs.flowmark.dev/docs/reference/completion)
 and the local `examples/outcomes.mjs` demonstration. Report snapshots and typed
 workflow definitions are not implemented by this change.
+
+## Live business snapshots
+
+`flow.report(snapshot)` records a bounded, absolute non-final business result.
+Each snapshot replaces the whole previous snapshot; omitted fields are unknown.
+Use one cumulative reporter and report after committed batches. Latest means
+latest received by the server, not greatest application timestamp. Reports never
+become final results implicitly, change progress or set a business outcome.
+
+```ts
+flow.report({ imported: 6000, rejected: 50, reasons: { invalid: 50 } })
+flow.report({ imported: 9600 }) // rejected and reasons are now unknown
+flow.done() // final result remains unknown
+```
+
+The dashboard keeps last-reported work and its timestamps separate from final
+results. Interrupted telemetry proves neither liveness nor failure. Reports
+remain in the timeline after completion; post-terminal reports are ignored.
+Browser-reported evidence remains untrusted. Optional result declarations also
+label non-final snapshots using the original start's explicit definitionRevision.
+
+Requires accepting server/storage support (migration 0010) before writer use.
+Older servers reject report events through normal delivery diagnostics; there is
+no fallback encoding. Package publication is separate. Existing queue limits and
+runtime-specific drains still apply. See the report reference for bounds and
+single-reporter ordering limitations.

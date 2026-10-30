@@ -89,6 +89,7 @@ export function makeClient(
         error: (error) => runMarker(handle.error(error)),
         setProperties: (properties) =>
           runMarker(handle.setProperties(properties)),
+        report: (snapshot) => runMarker(handle.report(snapshot)),
         operation,
         progress: (progress: WorkflowProgress) =>
           runMarker(handle.progress(progress)),
