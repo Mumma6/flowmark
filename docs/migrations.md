@@ -123,6 +123,12 @@ before merging the cutover, and record the observed activation state in the PR:
   the competing Git deploy when this PR reaches each long-lived branch. Do not
   leave an independent Deploy Hook/workflow deploying those branches in parallel.
 
+Before activation, verify each environment credential with the same read-only
+project preflight used by the rollout. Record the Actions run and reviewed SHA.
+Remove any explicitly approved bootstrap branch exception and temporary workflow
+trigger before reporting setup complete. Secret presence alone is not proof that
+the runner can access the intended projects.
+
 The push workflow is available on `staging` as soon as this PR merges there;
 it does not wait for the default branch to receive it. First activate and verify
 Staging, then release the workflow/config to main and verify Production. If the
