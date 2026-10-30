@@ -145,6 +145,11 @@ test/
 - Keep the ordinary public TypeScript/Promise surface at the SDK boundary and
   the transport, sequencing, validation, concurrency, and resource management
   in composable Effect 4 services.
+- Prefer cohesive services resolved with `yield*` for dependencyful SDK behavior.
+  Keep run-state transitions separate from lifecycle/event coordination. Allocate
+  run-local services at the run creation boundary; use a local layer when an
+  enclosing memoized service must not be reused. Capture the instance in handles
+  without creating another runtime. Keep stateless transformations as functions.
 - Keep network destinations behind a transport port. HTTP, memory, browser,
   proxy, and framework lifecycle integrations are adapters.
 - Do not allow instrumentation failures to unexpectedly alter application
