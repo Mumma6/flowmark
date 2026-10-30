@@ -159,11 +159,14 @@ consult their infrastructure recovery notes before any database action.
 
 ## Permissions and first test
 
-The workflow preserves main protection and maintainer bypass. Staging protection
-is a separate live setting: it is not added by these docs. Require the existing
-CI check operationally even if a maintainer can bypass GitHub rules. Changes to
-repository settings require approval; no plan upgrade or second reviewer is
-required by this workflow.
+The reference setup protects both main and staging and requires the fast CI
+check plus PostgreSQL integration tests. It preserves the existing owner-only
+update rule and specific maintainer bypass. GitHub can therefore report a green,
+conflict-free PR as blocked for ordinary actors; the owner merges using that
+existing bypass after checking both jobs. This does not authorize agents to
+merge or bypass failed checks. The rollout independently reruns both verification
+jobs on the merged SHA before database mutation. Changes to repository settings
+require approval; no plan upgrade or second reviewer is required by this workflow.
 
 Test this change with a feature PR into staging, CI, and a read-only release
 status/preparation review. Check the candidate diff without merging to main or
