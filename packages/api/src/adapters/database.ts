@@ -6,8 +6,7 @@ import {
   DatabaseOperation,
 } from "@flowmark/db/persistence"
 import { ApiSettings } from "../config.js"
-
-export const DatabaseLive = Layer.scoped(
+export const DatabaseLive = Layer.effect(
   Database,
   Effect.gen(function* () {
     const settings = yield* ApiSettings

@@ -14,9 +14,10 @@ export interface WorkflowEngineService {
 }
 
 /** Coordinates run creation and the public handle's internal capabilities. */
-export class WorkflowEngine extends Context.Tag(
-  "@flowmarkdev/node/WorkflowEngine",
-)<WorkflowEngine, WorkflowEngineService>() {
+export class WorkflowEngine extends Context.Service<
+  WorkflowEngine,
+  WorkflowEngineService
+>()("@flowmarkdev/node/WorkflowEngine") {
   static readonly layer = Layer.effect(
     WorkflowEngine,
     Effect.gen(function* () {

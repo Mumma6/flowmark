@@ -19,9 +19,9 @@ import { WorkflowRepositoryLive } from "./features/workflows/adapters/workflow-r
 import { ProjectCredentialsLive } from "./features/project-access/adapters/project-credentials.js"
 
 const persistence = Layer.mergeAll(
-  ResultDeclarationStore.Default,
-  WorkflowStore.Default,
-  ProjectCredentialsStore.Default,
+  ResultDeclarationStore.layer,
+  WorkflowStore.layer,
+  ProjectCredentialsStore.layer,
 ).pipe(Layer.provide(DatabaseLive))
 const databaseAdapters = Layer.mergeAll(
   ResultDeclarationsLive,

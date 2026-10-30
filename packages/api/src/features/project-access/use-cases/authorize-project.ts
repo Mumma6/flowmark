@@ -18,10 +18,10 @@ export interface AuthorizeProjectService {
     projectId?: string,
   ) => Effect.Effect<string, Unauthorized | PersistenceError>
 }
-
-export class AuthorizeProject extends Context.Tag(
-  "@flowmark/api/AuthorizeProject",
-)<AuthorizeProject, AuthorizeProjectService>() {
+export class AuthorizeProject extends Context.Service<
+  AuthorizeProject,
+  AuthorizeProjectService
+>()("@flowmark/api/AuthorizeProject") {
   static readonly layer = Layer.effect(
     AuthorizeProject,
     Effect.gen(function* () {

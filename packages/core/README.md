@@ -12,3 +12,9 @@ npm i @flowmarkdev/node
 ```
 
 Docs: [docs.flowmark.dev](https://docs.flowmark.dev)
+
+The repository now uses Effect 4.1.0. Exported schemas require the v4 Schema
+API; for example, use `Schema.decodeUnknownEffect(schema)` and
+`typeof schema.Type`. Telemetry JSON contracts are unchanged. This source
+migration does not publish a new package version; upgrade core and the Node
+SDK together when the migration is released.

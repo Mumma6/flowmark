@@ -35,7 +35,7 @@
   apply
   [flowmark-effect](./.agents/skills/flowmark-effect/SKILL.md) and
   [flowmark-architecture](./.agents/skills/flowmark-architecture/SKILL.md).
-  Use modern Effect as the default (pipe, Match, Either.match, catchTags,
+  Use modern Effect as the default (pipe, Match, Result.match, catchTags,
   Layers, Scope, services). Keep typed errors, small ports/adapters, and an
   ordinary TypeScript/Promise SDK boundary.
 - Before `@flowmark/db`, Drizzle, SQL, query, migration, or seed changes, read

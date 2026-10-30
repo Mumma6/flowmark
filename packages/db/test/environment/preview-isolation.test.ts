@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs"
 import { join } from "node:path"
 import { test } from "node:test"
 import { fileURLToPath } from "node:url"
-import { Effect, Either, Option } from "effect"
+import { Effect, Result, Option } from "effect"
 import {
   committedMigrationHash,
   decidePreviewBaseline,
@@ -24,11 +24,17 @@ import {
 const migrationsFolder = fileURLToPath(
   new URL("../../migrations", import.meta.url),
 )
-
-const leftReason = <A>(effect: Effect.Effect<A, { readonly reason: string }>) =>
-  Either.match(Effect.runSync(Effect.either(effect)), {
-    onLeft: (error) => error.reason,
-    onRight: () => {
+const leftReason = <A>(
+  effect: Effect.Effect<
+    A,
+    {
+      readonly reason: string
+    }
+  >,
+) =>
+  Result.match(Effect.runSync(Effect.result(effect)), {
+    onFailure: (error) => error.reason,
+    onSuccess: () => {
       throw new Error("expected a typed command failure")
     },
   })

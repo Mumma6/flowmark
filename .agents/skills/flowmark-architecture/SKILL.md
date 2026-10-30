@@ -7,7 +7,7 @@ description: "Use when adding or refactoring Flowmark SDK, API, core, or persist
 
 Apply this skill when implementing or refactoring Flowmark's internal SDK, API,
 core, or persistence architecture. For Effect API style (pipe, Match,
-Either.match, catchTags, Layers, Scope, services), also apply
+Result.match, catchTags, Layers, Scope, services), also apply
 [flowmark-effect](../flowmark-effect/SKILL.md).
 
 ## Architectural goals
@@ -37,7 +37,7 @@ apps/server (Next.js / tRPC / HTTP) ──> @flowmark/api use cases ──> port
   not depend on SDK, API, framework, or persistence implementations.
 - Use cases compose application behavior with `Effect.gen` and named
   `Effect.fn` functions. They depend on port tags and domain contracts.
-- `ports/` defines narrow service interfaces and their Effect `Context.Tag`s.
+- `ports/` defines narrow service interfaces and their Effect `Context.Service`s.
   Port contracts must not import types from the adapter they abstract.
 - `adapters/` implements ports and translates framework, network, and storage
   details into application-level values and tagged errors.
@@ -76,7 +76,7 @@ apps/server (Next.js / tRPC / HTTP) ──> @flowmark/api use cases ──> port
   and the original cause.
 - Validate untrusted input with Effect Schema at the boundary. Keep expected
   failures explicit in the error channel.
-- Keep injected services as plain interfaces registered with `Context.Tag`;
+- Keep injected services as plain interfaces registered with `Context.Service`;
   provide implementations with `Layer`. Use scoped resources for acquired
   clients, connections, fibers, and request lifetimes.
 - Do not execute Effects inside internal helpers. Execute them at an explicit
@@ -125,7 +125,8 @@ test/
 - Keep tests out of `src/`; place them under a package-level `test/` tree and
   group them by use case or adapter when that improves discovery.
 - In `packages/sdk/src`, keep only the public `index.ts` at the source root.
-  Put SDK domain behavior under feature folders, with each feature's own
+  Put SDK domain behavior directly under `workflows/` and `delivery/` (without
+  an extra `features/` prefix), with each feature's own
   `use-cases/`, `ports/`, `adapters/`, `rules/`, and `types.ts` only when they
   are useful. Keep genuinely shared entry points and concerns in folders such
   as `client/`, `config/`, `types/`, `errors/`, and `utils/`; keep framework
@@ -143,7 +144,7 @@ test/
 - The SDK observes application work; it does not own or execute that work.
 - Keep the ordinary public TypeScript/Promise surface at the SDK boundary and
   the transport, sequencing, validation, concurrency, and resource management
-  in composable Effect services.
+  in composable Effect 4 services.
 - Keep network destinations behind a transport port. HTTP, memory, browser,
   proxy, and framework lifecycle integrations are adapters.
 - Do not allow instrumentation failures to unexpectedly alter application

@@ -18,10 +18,10 @@ export interface IngestWorkflowEventsService {
     Unauthorized | InvalidInput | PersistenceError | RunNotFound
   >
 }
-
-export class IngestWorkflowEvents extends Context.Tag(
-  "@flowmark/api/IngestWorkflowEvents",
-)<IngestWorkflowEvents, IngestWorkflowEventsService>() {
+export class IngestWorkflowEvents extends Context.Service<
+  IngestWorkflowEvents,
+  IngestWorkflowEventsService
+>()("@flowmark/api/IngestWorkflowEvents") {
   static readonly layer = Layer.effect(
     IngestWorkflowEvents,
     Effect.gen(function* () {
@@ -35,7 +35,7 @@ export class IngestWorkflowEvents extends Context.Tag(
         const projectId = yield* authorization.authorize(header, "write")
         const { eventId, event } = yield* input.pipe(
           Effect.flatMap((value) =>
-            Schema.decodeUnknown(EventEnvelopeSchema)(value).pipe(
+            Schema.decodeUnknownEffect(EventEnvelopeSchema)(value).pipe(
               Effect.mapError((cause) => new InvalidInput({ cause })),
             ),
           ),

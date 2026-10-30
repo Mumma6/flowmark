@@ -16,7 +16,7 @@ export const hashApiKey = (key: string) =>
   createHash("sha256").update(key).digest("hex")
 
 export const apiKeyPrefix = (key: string) => key.slice(0, 16)
-export const Database = Context.GenericTag<FlowmarkDatabase>(
+export const Database = Context.Service<FlowmarkDatabase>(
   "@flowmark/db/Database",
 )
 export const provideDatabase =

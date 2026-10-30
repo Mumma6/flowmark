@@ -8,6 +8,46 @@ afterEach(() => {
 })
 
 describe("configured HTTP client", () => {
+  it("keeps each client's captured fetch implementation independent", async () => {
+    const firstFetch = vi.fn<typeof fetch>(
+      async () => new Response(null, { status: 202 }),
+    )
+    const secondFetch = vi.fn<typeof fetch>(
+      async () => new Response(null, { status: 202 }),
+    )
+    vi.stubGlobal("fetch", firstFetch)
+    const first = createFlowmark({
+      apiKey: "first-key",
+      apiUrl: "http://localhost",
+    })
+    first.workflow("first").done()
+    await first.flush()
+    vi.stubGlobal("fetch", secondFetch)
+    const second = createFlowmark({
+      apiKey: "second-key",
+      apiUrl: "http://localhost",
+    })
+    second.workflow("second").done()
+    first.workflow("first-again").done()
+    await Promise.all([first.shutdown(), second.shutdown()])
+    expect(firstFetch).toHaveBeenCalledTimes(4)
+    expect(secondFetch).toHaveBeenCalledTimes(2)
+    expect(
+      firstFetch.mock.calls.every(
+        ([, options]) =>
+          new Headers(options?.headers).get("authorization") ===
+          "Bearer first-key",
+      ),
+    ).toBe(true)
+    expect(
+      secondFetch.mock.calls.every(
+        ([, options]) =>
+          new Headers(options?.headers).get("authorization") ===
+          "Bearer second-key",
+      ),
+    ).toBe(true)
+  })
+
   it("delivers authenticated events in order and generates separate run IDs", async () => {
     const fetcher = vi.fn<typeof fetch>(
       async () => new Response(null, { status: 202 }),

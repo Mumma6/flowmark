@@ -56,8 +56,8 @@ importers:
         specifier: ^1.7.13
         version: 1.7.13(drizzle-kit@0.31.11)(drizzle-orm@0.44.7(kysely@0.29.7)(postgres@3.4.9))(next@16.4.2(@types/node@22.20.5)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(vitest@3.2.7(@types/debug@4.1.13)(@types/node@22.20.5)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.23.15)(yaml@2.9.1))
       effect:
-        specifier: ^3.22.4
-        version: 3.22.4
+        specifier: 4.1.0
+        version: 4.1.0
       lucide-react:
         specifier: ^0.468.0
         version: 0.468.0(react@19.3.1)
@@ -108,8 +108,8 @@ importers:
         specifier: workspace:*
         version: link:../../packages/sdk
       effect:
-        specifier: ^3.22.4
-        version: 3.22.4
+        specifier: 4.1.0
+        version: 4.1.0
       next:
         specifier: ^16.4.2
         version: 16.4.2(@types/node@22.20.5)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
@@ -240,8 +240,8 @@ importers:
         specifier: ^1.7.13
         version: 1.7.13(drizzle-kit@0.31.11)(drizzle-orm@0.44.7(kysely@0.29.7)(postgres@3.4.9))(next@16.4.2(@types/node@22.20.5)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(vitest@3.2.7(@types/debug@4.1.13)(@types/node@22.20.5)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.23.15)(yaml@2.9.1))
       effect:
-        specifier: ^3.22.4
-        version: 3.22.4
+        specifier: 4.1.0
+        version: 4.1.0
       next:
         specifier: ^16.4.2
         version: 16.4.2(@types/node@22.20.5)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
@@ -311,8 +311,8 @@ importers:
         specifier: workspace:*
         version: link:../core
       effect:
-        specifier: ^3.22.4
-        version: 3.22.4
+        specifier: 4.1.0
+        version: 4.1.0
     devDependencies:
       "@types/node":
         specifier: ^22.18.6
@@ -329,8 +329,8 @@ importers:
   packages/core:
     dependencies:
       effect:
-        specifier: ^3.22.4
-        version: 3.22.4
+        specifier: 4.1.0
+        version: 4.1.0
     devDependencies:
       typescript:
         specifier: ^5.9.2
@@ -354,8 +354,8 @@ importers:
         specifier: ^0.44.5
         version: 0.44.7(kysely@0.29.7)(postgres@3.4.9)
       effect:
-        specifier: ^3.22.4
-        version: 3.22.4
+        specifier: 4.1.0
+        version: 4.1.0
       postgres:
         specifier: ^3.4.7
         version: 3.4.9
@@ -384,15 +384,12 @@ importers:
 
   packages/sdk:
     dependencies:
-      "@effect/platform":
-        specifier: ^0.97.2
-        version: 0.97.2(effect@3.22.4)
       "@flowmarkdev/core":
         specifier: workspace:*
         version: link:../core
       effect:
-        specifier: ^3.22.4
-        version: 3.22.4
+        specifier: 4.1.0
+        version: 4.1.0
     devDependencies:
       "@types/node":
         specifier: ^22.18.6
@@ -641,14 +638,6 @@ packages:
       {
         integrity: sha512-z33Il7l5dKjUgGULTqBsQBQwckHh5AbIuxhdsIxDDiZAzBOrZO6q9ogcWC65kU382AfynTfgNumVcNIjuIua6w==,
       }
-
-  "@effect/platform@0.97.2":
-    resolution:
-      {
-        integrity: sha512-fof9J+pId374/b1WAt0P1H8QmvulzpHTjS6SUHiG20U/sFjkBUS5vGMy1/XfdTAVKX1IY+Z87dFhi/RFDfgBPQ==,
-      }
-    peerDependencies:
-      effect: ^3.22.2
 
   "@emnapi/runtime@1.11.3":
     resolution:
@@ -1775,54 +1764,6 @@ packages:
         integrity: sha512-j37dj/h6p6pots1L7pLPPNuABEEu9WP4OYg9pW1g+nYG331j0+3canE9OagtYdytYvdSAMG+2fKU5cxep6LgjA==,
       }
     engines: { node: ">=22.12.0" }
-
-  "@msgpackr-extract/msgpackr-extract-darwin-arm64@3.0.4":
-    resolution:
-      {
-        integrity: sha512-LCkGo6JDfaBhgST7UpPWgNgLINpcpabaHfyz5OBx75nUYxBsaEPxjnyNjWpeb/xBup/682QnBfRBy2/LvPutZQ==,
-      }
-    cpu: [arm64]
-    os: [darwin]
-
-  "@msgpackr-extract/msgpackr-extract-darwin-x64@3.0.4":
-    resolution:
-      {
-        integrity: sha512-zExlW9zUJKZH/tOtVMttwjKa4Xm/3KcNjnE3dPN92uCktwavMxpgCA3MoJK/DOnTWsQgo224OaST27/mPNAf+w==,
-      }
-    cpu: [x64]
-    os: [darwin]
-
-  "@msgpackr-extract/msgpackr-extract-linux-arm64@3.0.4":
-    resolution:
-      {
-        integrity: sha512-dgX0P/9wGPJeHFBG+ZmhgE6bmtMt7NP5CRBGyyktpopdk/mW4POnrpQsSLtKI1dwpc+pPLuXHDh6vvskyQE/sw==,
-      }
-    cpu: [arm64]
-    os: [linux]
-
-  "@msgpackr-extract/msgpackr-extract-linux-arm@3.0.4":
-    resolution:
-      {
-        integrity: sha512-Tg3yX65f5GbtXLkrYEHE5oibZG9epyYWas7FogTTEJeDEF9JlXJzKgXaNhT3UXlTOeA+AfZpYZYZ0uPj7Cfquw==,
-      }
-    cpu: [arm]
-    os: [linux]
-
-  "@msgpackr-extract/msgpackr-extract-linux-x64@3.0.4":
-    resolution:
-      {
-        integrity: sha512-8TNXMEjJc3QEy7R/x1INhgiU+XakDAFUzBhaz7+Rbrs8NH5UQeHQxxmzsSBJGyV6I1jW79undiQm8tOI+D+8FQ==,
-      }
-    cpu: [x64]
-    os: [linux]
-
-  "@msgpackr-extract/msgpackr-extract-win32-x64@3.0.4":
-    resolution:
-      {
-        integrity: sha512-CmCXPQrkbwExx3j946/PtHWHbYJiCRBRDl4BlkRQcJB/YOwQxJRTpoo7aTsortjgoJ1x7opzTSxn7C+ASSLVjQ==,
-      }
-    cpu: [x64]
-    os: [win32]
 
   "@napi-rs/keyring-darwin-arm64@1.3.0":
     resolution:
@@ -4538,12 +4479,6 @@ packages:
       sqlite3:
         optional: true
 
-  effect@3.22.4:
-    resolution:
-      {
-        integrity: sha512-RNshu7AXVxxDh6aS4lothhJ+QoZ4xSykbWNaaVdvDN72RMyVwhCGdALkyl1TbEydgAmRIdD1eTyJqBUGwSBGDA==,
-      }
-
   electron-to-chromium@1.5.463:
     resolution:
       {
@@ -4789,13 +4724,6 @@ packages:
         integrity: sha512-fjquC59cD7CyW6urNXK0FBufkZcoiGG80wTuPujX590cB5Ttln20E2UB4S/WARVqhXffZl2LNgS+gQdPIIim/g==,
       }
 
-  fast-check@3.23.2:
-    resolution:
-      {
-        integrity: sha512-h5+1OzzfCC3Ef7VbtKdcv7zsstUQwUDlYpUTvjeUsJAssPgLn7QzbboPtL5ro04Mq0rPOsMzl7q5hIbRs2wD1A==,
-      }
-    engines: { node: ">=8.0.0" }
-
   fast-deep-equal@3.1.3:
     resolution:
       {
@@ -4852,12 +4780,6 @@ packages:
         integrity: sha512-YsGpe3WHLK8ZYi4tWDg2Jy3ebRz2rXowDxnld4bkQB00cc/1Zw9AWnC0i9ztDJitivtQvaI9KaLyKrc+hBW0yg==,
       }
     engines: { node: ">=8" }
-
-  find-my-way-ts@0.1.6:
-    resolution:
-      {
-        integrity: sha512-a85L9ZoXtNAey3Y6Z+eBWW658kO/MwR7zIafkIUPUMf3isZG0NCs2pjW2wtjxAKuJPxMAsHUIP4ZPGv0o5gyTA==,
-      }
 
   find-up@5.0.0:
     resolution:
@@ -6001,25 +5923,6 @@ packages:
         integrity: sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA==,
       }
 
-  msgpackr-extract@3.0.4:
-    resolution:
-      {
-        integrity: sha512-4kmO/MdyUIkLIvTPr8VHLil4AtoKIoniWPIEk5+CDy0xnWC84azhSFmuJ7PxZdsYtiP5kEeQsORAVIeMgxT+Hw==,
-      }
-    hasBin: true
-
-  msgpackr@1.12.1:
-    resolution:
-      {
-        integrity: sha512-4EUH9tQHnMmEgzW/MdAP0KIfa1T9AF+htl0ffe2n5vb2EKn9y2co8ccpgWko6S52Jy1PQZKwRnx5/KkYjtd9MQ==,
-      }
-
-  multipasta@0.2.9:
-    resolution:
-      {
-        integrity: sha512-kAovZHgxryqb0xTFz7OTCPxbas8UBTTwCDhfrlaNecp1/z6xcMfp5PVhDxsW7jONHyDF10/ccp30MxA2+66GJw==,
-      }
-
   mz@2.7.0:
     resolution:
       {
@@ -6079,13 +5982,6 @@ packages:
         optional: true
       sass:
         optional: true
-
-  node-gyp-build-optional-packages@5.2.2:
-    resolution:
-      {
-        integrity: sha512-s+w+rBWnpTMwSFbaE0UXsRlg7hU4FjekKU4eyAih5T8nJuNZT1nNsskXpxmeqSK9UzkBl6UgRlnKc8hz8IEqOw==,
-      }
-    hasBin: true
 
   node-releases@2.0.60:
     resolution:
@@ -6361,12 +6257,6 @@ packages:
         integrity: sha512-vYt7UD1U9Wg6138shLtLOvdAu+8DsC/ilFtEVHcH+wydcSpNE20AfSOduf6MkRFahL5FY7X1oU7nKVZFtfq8Fg==,
       }
     engines: { node: ">=6" }
-
-  pure-rand@6.1.0:
-    resolution:
-      {
-        integrity: sha512-bVWawvoZoBYpp6yIoQtQXHZjmz35RSVHnUOTefl8Vcjr8snTPY1wnpSPMWekcFwbxI6gtmT7rSYPFvz71ldiOA==,
-      }
 
   queue-microtask@1.2.3:
     resolution:
@@ -7384,6 +7274,9 @@ packages:
       {
         integrity: sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A==,
       }
+  effect@4.1.0:
+    resolution:
+      integrity: sha512-lGx2MJJyrXA8RZb2UpQ/0Nkb5Utaimby7oD92+18noBxLPE85IFOvptdzau8dvcxAOwfwHo9iqapbKeFzqQM/Q==
 
 snapshots:
   "@alloc/quick-lru@5.3.0": {}
@@ -7488,13 +7381,6 @@ snapshots:
   "@chevrotain/utils@13.2.0": {}
 
   "@drizzle-team/brocli@0.10.2": {}
-
-  "@effect/platform@0.97.2(effect@3.22.4)":
-    dependencies:
-      effect: 3.22.4
-      find-my-way-ts: 0.1.6
-      msgpackr: 1.12.1
-      multipasta: 0.2.9
 
   "@emnapi/runtime@1.11.3":
     dependencies:
@@ -7992,24 +7878,6 @@ snapshots:
   "@mermaid-js/parser@2.0.1":
     dependencies:
       "@chevrotain/types": 13.2.0
-
-  "@msgpackr-extract/msgpackr-extract-darwin-arm64@3.0.4":
-    optional: true
-
-  "@msgpackr-extract/msgpackr-extract-darwin-x64@3.0.4":
-    optional: true
-
-  "@msgpackr-extract/msgpackr-extract-linux-arm64@3.0.4":
-    optional: true
-
-  "@msgpackr-extract/msgpackr-extract-linux-arm@3.0.4":
-    optional: true
-
-  "@msgpackr-extract/msgpackr-extract-linux-x64@3.0.4":
-    optional: true
-
-  "@msgpackr-extract/msgpackr-extract-win32-x64@3.0.4":
-    optional: true
 
   "@napi-rs/keyring-darwin-arm64@1.3.0":
     optional: true
@@ -9531,11 +9399,6 @@ snapshots:
       kysely: 0.29.7
       postgres: 3.4.9
 
-  effect@3.22.4:
-    dependencies:
-      "@standard-schema/spec": 1.1.0
-      fast-check: 3.23.2
-
   electron-to-chromium@1.5.463: {}
 
   elkjs@0.9.3: {}
@@ -9769,10 +9632,6 @@ snapshots:
 
   extend@3.0.2: {}
 
-  fast-check@3.23.2:
-    dependencies:
-      pure-rand: 6.1.0
-
   fast-deep-equal@3.1.3: {}
 
   fast-glob@3.3.3:
@@ -9802,8 +9661,6 @@ snapshots:
   fill-range@7.1.1:
     dependencies:
       to-regex-range: 5.0.1
-
-  find-my-way-ts@0.1.6: {}
 
   find-up@5.0.0:
     dependencies:
@@ -10726,24 +10583,6 @@ snapshots:
 
   ms@2.1.3: {}
 
-  msgpackr-extract@3.0.4:
-    dependencies:
-      node-gyp-build-optional-packages: 5.2.2
-    optionalDependencies:
-      "@msgpackr-extract/msgpackr-extract-darwin-arm64": 3.0.4
-      "@msgpackr-extract/msgpackr-extract-darwin-x64": 3.0.4
-      "@msgpackr-extract/msgpackr-extract-linux-arm": 3.0.4
-      "@msgpackr-extract/msgpackr-extract-linux-arm64": 3.0.4
-      "@msgpackr-extract/msgpackr-extract-linux-x64": 3.0.4
-      "@msgpackr-extract/msgpackr-extract-win32-x64": 3.0.4
-    optional: true
-
-  msgpackr@1.12.1:
-    optionalDependencies:
-      msgpackr-extract: 3.0.4
-
-  multipasta@0.2.9: {}
-
   mz@2.7.0:
     dependencies:
       any-promise: 1.3.0
@@ -10785,11 +10624,6 @@ snapshots:
       - "@babel/core"
       - "@types/node"
       - babel-plugin-macros
-
-  node-gyp-build-optional-packages@5.2.2:
-    dependencies:
-      detect-libc: 2.1.2
-    optional: true
 
   node-releases@2.0.60: {}
 
@@ -10923,8 +10757,6 @@ snapshots:
   property-information@7.2.0: {}
 
   punycode@2.3.1: {}
-
-  pure-rand@6.1.0: {}
 
   queue-microtask@1.2.3: {}
 
@@ -11754,3 +11586,4 @@ snapshots:
   zod@4.6.7: {}
 
   zwitch@2.0.4: {}
+  effect@4.1.0: {}

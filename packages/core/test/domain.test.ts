@@ -1,8 +1,40 @@
-import { Effect, Either } from "effect"
+import { Effect, Result, Schema } from "effect"
 import { describe, expect, it } from "vitest"
-import { decodeWorkflowEvent } from "../src/index.js"
+import { decodeWorkflowEvent, EventEnvelopeSchema } from "../src/index.js"
 
 describe("workflow event schema", () => {
+  it.each([
+    "00000000-0000-1000-0000-000000000000",
+    "00000000-0000-9000-0000-000000000000",
+    "ABCDEFAB-CDEF-ABCD-EFAB-CDEFABCDEFAB",
+    "00000000-0000-0000-0000-000000000000",
+  ])(
+    "preserves UUID-shape acceptance for event and operation IDs: %s",
+    (id) => {
+      const event = {
+        type: "operation_completed",
+        workflow: "import",
+        runId: "run-1",
+        timestamp: "2026-10-30T12:00:00.000Z",
+        operationId: id,
+        operationName: "save",
+        durationMs: 1,
+      }
+      expect(
+        Schema.decodeUnknownSync(EventEnvelopeSchema)({ eventId: id, event }),
+      ).toEqual({ eventId: id, event })
+      expect(
+        Schema.is(EventEnvelopeSchema)({ eventId: id.slice(1), event }),
+      ).toBe(false)
+      expect(
+        Schema.is(EventEnvelopeSchema)({
+          eventId: id,
+          event: { ...event, operationId: id.replaceAll("-", "") },
+        }),
+      ).toBe(false)
+    },
+  )
+
   it("decodes a valid event without changing its data", () => {
     const event = {
       type: "started",
@@ -11,26 +43,24 @@ describe("workflow event schema", () => {
       timestamp: "2026-10-23T12:00:00.000Z",
       properties: { provider: "stripe" },
     } as const
-
-    const result = Effect.runSync(Effect.either(decodeWorkflowEvent(event)))
-
-    Either.match(result, {
-      onLeft: () => expect.fail("Expected a valid workflow event"),
-      onRight: (decoded) => expect(decoded).toEqual(event),
+    const result = Effect.runSync(Effect.result(decodeWorkflowEvent(event)))
+    Result.match(result, {
+      onFailure: () => expect.fail("Expected a valid workflow event"),
+      onSuccess: (decoded) => expect(decoded).toEqual(event),
     })
   })
 
   it("returns a tagged validation error with the rejected input and parse cause", () => {
     const input = { type: "unknown", workflow: "checkout" }
-    const result = Effect.runSync(Effect.either(decodeWorkflowEvent(input)))
-
-    Either.match(result, {
-      onLeft: (error) => {
+    const result = Effect.runSync(Effect.result(decodeWorkflowEvent(input)))
+    Result.match(result, {
+      onFailure: (error) => {
         expect(error._tag).toBe("WorkflowEventValidationError")
         expect(error.input).toBe(input)
         expect(error.cause).toBeDefined()
       },
-      onRight: () => expect.fail("Expected a workflow event validation error"),
+      onSuccess: () =>
+        expect.fail("Expected a workflow event validation error"),
     })
   })
 
@@ -173,9 +203,9 @@ describe("workflow event schema", () => {
       { parentRunId: "p".repeat(201) },
       { parentRunId: "child-run" },
     ]) {
-      Either.match(
+      Result.match(
         Effect.runSync(
-          Effect.either(
+          Effect.result(
             decodeWorkflowEvent({
               ...event,
               ...metadata,
@@ -183,8 +213,8 @@ describe("workflow event schema", () => {
           ),
         ),
         {
-          onLeft: () => undefined,
-          onRight: () => expect.fail("expected invalid run metadata"),
+          onFailure: () => undefined,
+          onSuccess: () => expect.fail("expected invalid run metadata"),
         },
       )
     }
@@ -328,10 +358,10 @@ describe("workflow event schema", () => {
       },
     },
   ])("rejects $name", ({ event }) => {
-    const result = Effect.runSync(Effect.either(decodeWorkflowEvent(event)))
-    Either.match(result, {
-      onLeft: () => undefined,
-      onRight: () => expect.fail("expected an invalid workflow event"),
+    const result = Effect.runSync(Effect.result(decodeWorkflowEvent(event)))
+    Result.match(result, {
+      onFailure: () => undefined,
+      onSuccess: () => expect.fail("expected an invalid workflow event"),
     })
   })
 })

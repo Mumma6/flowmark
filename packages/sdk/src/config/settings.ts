@@ -1,10 +1,12 @@
-import { Context, Either, Redacted, Schema } from "effect"
+import { Context, Result, Redacted, Schema } from "effect"
 import { FlowmarkConfigError } from "../errors/index.js"
 import type { FlowmarkConfig } from "../types/index.js"
 import { ApiOriginSchema } from "./api-origin.js"
 
 const SettingsSchema = Schema.Struct({
-  apiKey: Schema.RedactedFromSelf(Schema.String.pipe(Schema.minLength(1))),
+  apiKey: Schema.Redacted(
+    Schema.String.pipe(Schema.check(Schema.isMinLength(1))),
+  ),
   apiUrl: ApiOriginSchema,
 })
 
@@ -12,11 +14,10 @@ export interface FlowmarkSettingsService {
   readonly apiKey: Redacted.Redacted<string>
   readonly apiUrl: string
 }
-
-export class FlowmarkSettings extends Context.Tag("@flowmarkdev/node/Settings")<
+export class FlowmarkSettings extends Context.Service<
   FlowmarkSettings,
   FlowmarkSettingsService
->() {}
+>()("@flowmarkdev/node/Settings") {}
 
 export function resolveSettings(
   config: FlowmarkConfig,
@@ -28,7 +29,7 @@ export function resolveSettings(
         "A server write key is required. Set FLOWMARK_API_KEY in the server environment or pass apiKey to createFlowmark(). For the local repository demo, run pnpm dev:setup first. Never put a server key in browser configuration.",
     })
   }
-  const decoded = Schema.decodeUnknownEither(SettingsSchema)({
+  const decoded = Schema.decodeUnknownResult(SettingsSchema)({
     apiKey: apiKey === undefined ? undefined : Redacted.make(apiKey),
     apiUrl:
       config.apiUrl ??
@@ -37,10 +38,10 @@ export function resolveSettings(
         ? "http://localhost:3003"
         : undefined),
   })
-  return Either.match(decoded, {
-    onLeft: (cause) => {
+  return Result.match(decoded, {
+    onFailure: (cause) => {
       throw new FlowmarkConfigError({ cause })
     },
-    onRight: (settings) => settings,
+    onSuccess: (settings) => settings,
   })
 }

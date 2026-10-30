@@ -6,24 +6,28 @@ import {
 
 export class ServerConfigurationError extends Data.TaggedError(
   "ServerConfigurationError",
-)<{ readonly reason: string }> {}
+)<{
+  readonly reason: string
+}> {}
 
 const HttpOrigin = Schema.String.pipe(
-  Schema.filter((value) => {
-    try {
-      const url = new URL(value)
-      return (
-        (url.protocol === "https:" || url.protocol === "http:") &&
-        !url.username &&
-        !url.password &&
-        !url.search &&
-        !url.hash &&
-        url.pathname === "/"
-      )
-    } catch {
-      return false
-    }
-  }),
+  Schema.check(
+    Schema.makeFilter((value) => {
+      try {
+        const url = new URL(value)
+        return (
+          (url.protocol === "https:" || url.protocol === "http:") &&
+          !url.username &&
+          !url.password &&
+          !url.search &&
+          !url.hash &&
+          url.pathname === "/"
+        )
+      } catch {
+        return false
+      }
+    }),
+  ),
 )
 
 const readOrigin = Effect.fn("readOrigin")(function* (
@@ -35,7 +39,7 @@ const readOrigin = Effect.fn("readOrigin")(function* (
       reason: `${name} is required in hosted environments.`,
     })
   }
-  yield* Schema.decodeUnknown(HttpOrigin)(value).pipe(
+  yield* Schema.decodeUnknownEffect(HttpOrigin)(value).pipe(
     Effect.mapError(
       () =>
         new ServerConfigurationError({

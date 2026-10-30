@@ -3,7 +3,7 @@ import { Context, Effect, Layer, Redacted, Schema } from "effect"
 import { ConfigurationError } from "./errors.js"
 
 const SettingsSchema = Schema.Struct({
-  databaseUrl: Schema.RedactedFromSelf(Schema.NonEmptyString),
+  databaseUrl: Schema.Redacted(Schema.NonEmptyString),
   demoMode: Schema.Boolean,
 })
 
@@ -11,11 +11,10 @@ export interface ApiSettingsService {
   readonly databaseUrl: Redacted.Redacted<string>
   readonly demoMode: boolean
 }
-
-export class ApiSettings extends Context.Tag("@flowmark/api/Settings")<
+export class ApiSettings extends Context.Service<
   ApiSettings,
   ApiSettingsService
->() {
+>()("@flowmark/api/Settings") {
   static readonly layer = Layer.effect(
     ApiSettings,
     Effect.gen(function* () {
@@ -54,7 +53,7 @@ export class ApiSettings extends Context.Tag("@flowmark/api/Settings")<
             Effect.fail(new ConfigurationError({ cause: error })),
         }),
       )
-      return yield* Schema.decodeUnknown(SettingsSchema)(input).pipe(
+      return yield* Schema.decodeUnknownEffect(SettingsSchema)(input).pipe(
         Effect.mapError((cause) => new ConfigurationError({ cause })),
       )
     }),

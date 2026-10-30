@@ -8,6 +8,6 @@ export interface WorkflowTransport {
 }
 
 /** Effect dependency tag for replacing delivery implementations. */
-export const WorkflowTransport = Context.GenericTag<WorkflowTransport>(
+export const WorkflowTransport = Context.Service<WorkflowTransport>(
   "@flowmarkdev/node/WorkflowTransport",
 )

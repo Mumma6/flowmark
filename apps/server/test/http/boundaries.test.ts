@@ -1,4 +1,4 @@
-import { Effect, Either } from "effect"
+import { Effect, Result } from "effect"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { InvalidInput } from "@flowmark/api"
 import { readJsonBody } from "../../src/adapters/request-body"
@@ -47,7 +47,7 @@ describe("HTTP boundaries", () => {
       ),
     ).toEqual(input)
     const result = await Effect.runPromise(
-      Effect.either(
+      Effect.result(
         readJsonBody(
           new Request("http://localhost", {
             method: "POST",
@@ -56,9 +56,10 @@ describe("HTTP boundaries", () => {
         ),
       ),
     )
-    Either.match(result, {
-      onLeft: (error) => expect(error).toMatchObject({ _tag: "InvalidInput" }),
-      onRight: () => expect.fail("expected invalid JSON"),
+    Result.match(result, {
+      onFailure: (error) =>
+        expect(error).toMatchObject({ _tag: "InvalidInput" }),
+      onSuccess: () => expect.fail("expected invalid JSON"),
     })
   })
 
@@ -68,17 +69,19 @@ describe("HTTP boundaries", () => {
     const body = new ReadableStream<Uint8Array>({
       start: (controller) => controller.error(cause),
     })
-    const options: RequestInit & { duplex: "half" } = {
+    const options: RequestInit & {
+      duplex: "half"
+    } = {
       method: "POST",
       body,
       duplex: "half",
     }
     const result = await Effect.runPromise(
-      Effect.either(readJsonBody(new Request("http://localhost", options))),
+      Effect.result(readJsonBody(new Request("http://localhost", options))),
     )
-    Either.match(result, {
-      onLeft: (error) => expect(error).toEqual(new InvalidInput({ cause })),
-      onRight: () => expect.fail("expected a streamed read failure"),
+    Result.match(result, {
+      onFailure: (error) => expect(error).toEqual(new InvalidInput({ cause })),
+      onSuccess: () => expect.fail("expected a streamed read failure"),
     })
     expect(body.locked).toBe(false)
   })
@@ -95,6 +98,23 @@ describe("HTTP boundaries", () => {
     ).rejects.toMatchObject({
       code: "UNAUTHORIZED",
       message: "Sign in required.",
+    })
+  })
+
+  it("keeps PostgreSQL UUID shapes valid before tRPC authorization", async () => {
+    vi.stubEnv("DATABASE_URL", "postgresql://localhost:5432/flowmark")
+    vi.stubEnv("FLOWMARK_DEMO_MODE", "true")
+    const caller = appRouter.createCaller({
+      request: new Request("http://localhost"),
+    })
+    await expect(
+      caller.project.keys("00000000-0000-9000-0000-000000000000"),
+    ).rejects.toMatchObject({
+      code: "UNAUTHORIZED",
+      message: "Sign in required.",
+    })
+    await expect(caller.project.keys("not-a-uuid")).rejects.toMatchObject({
+      code: "BAD_REQUEST",
     })
   })
 

@@ -233,7 +233,7 @@ export interface WorkflowRepositoryService {
     query: IntelligenceQuery,
   ) => Effect.Effect<WorkflowIntelligence, PersistenceError>
 }
-
-export class WorkflowRepository extends Context.Tag(
-  "@flowmark/api/WorkflowRepository",
-)<WorkflowRepository, WorkflowRepositoryService>() {}
+export class WorkflowRepository extends Context.Service<
+  WorkflowRepository,
+  WorkflowRepositoryService
+>()("@flowmark/api/WorkflowRepository") {}

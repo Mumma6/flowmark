@@ -14,56 +14,70 @@ import {
   Unauthorized,
 } from "@flowmark/api"
 import { getAuth } from "../auth"
-
-const t = initTRPC.context<{ request: Request }>().create()
-
-const Uuid = Schema.standardSchemaV1(Schema.UUID)
-const ProjectName = Schema.standardSchemaV1(
-  Schema.Struct({ name: Schema.Trim.pipe(Schema.minLength(1)) }),
+const t = initTRPC
+  .context<{
+    request: Request
+  }>()
+  .create()
+// Keep the existing UUID-shape contract, including PostgreSQL UUID variants.
+const UuidSchema = Schema.String.check(
+  Schema.isPattern(
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+  ),
 )
-const ProjectIdName = Schema.standardSchemaV1(
+const Uuid = Schema.toStandardSchemaV1(UuidSchema)
+const ProjectName = Schema.toStandardSchemaV1(
   Schema.Struct({
-    projectId: Schema.UUID,
-    name: Schema.Trim.pipe(Schema.minLength(1)),
+    name: Schema.Trim.pipe(Schema.check(Schema.isMinLength(1))),
   }),
 )
-const ProjectKey = Schema.standardSchemaV1(
+const ProjectIdName = Schema.toStandardSchemaV1(
   Schema.Struct({
-    projectId: Schema.UUID,
-    keyId: Schema.UUID,
+    projectId: UuidSchema,
+    name: Schema.Trim.pipe(Schema.check(Schema.isMinLength(1))),
   }),
 )
-const BrowserKeyInput = Schema.standardSchemaV1(
+const ProjectKey = Schema.toStandardSchemaV1(
   Schema.Struct({
-    projectId: Schema.UUID,
-    name: Schema.Trim.pipe(Schema.minLength(1)),
-    origins: Schema.Array(Schema.Trim.pipe(Schema.minLength(1))),
+    projectId: UuidSchema,
+    keyId: UuidSchema,
   }),
 )
-const IntelligenceInput = Schema.standardSchemaV1(
+const BrowserKeyInput = Schema.toStandardSchemaV1(
   Schema.Struct({
-    workflow: Schema.optional(Schema.String.pipe(Schema.maxLength(200))),
+    projectId: UuidSchema,
+    name: Schema.Trim.pipe(Schema.check(Schema.isMinLength(1))),
+    origins: Schema.Array(
+      Schema.Trim.pipe(Schema.check(Schema.isMinLength(1))),
+    ),
+  }),
+)
+const IntelligenceInput = Schema.toStandardSchemaV1(
+  Schema.Struct({
+    workflow: Schema.optional(
+      Schema.String.pipe(Schema.check(Schema.isMaxLength(200))),
+    ),
     currentStartedAfter: Schema.String.pipe(
-      Schema.minLength(1),
-      Schema.maxLength(40),
+      Schema.check(Schema.isMinLength(1)),
+      Schema.check(Schema.isMaxLength(40)),
     ),
     currentStartedBefore: Schema.String.pipe(
-      Schema.minLength(1),
-      Schema.maxLength(40),
+      Schema.check(Schema.isMinLength(1)),
+      Schema.check(Schema.isMaxLength(40)),
     ),
     previousStartedAfter: Schema.String.pipe(
-      Schema.minLength(1),
-      Schema.maxLength(40),
+      Schema.check(Schema.isMinLength(1)),
+      Schema.check(Schema.isMaxLength(40)),
     ),
     previousStartedBefore: Schema.String.pipe(
-      Schema.minLength(1),
-      Schema.maxLength(40),
+      Schema.check(Schema.isMinLength(1)),
+      Schema.check(Schema.isMaxLength(40)),
     ),
   }),
 )
-const OnboardingStep = Schema.standardSchemaV1(
+const OnboardingStep = Schema.toStandardSchemaV1(
   Schema.Struct({
-    step: Schema.Literal("project", "key", "install", "instrument", "run"),
+    step: Schema.Literals(["project", "key", "install", "instrument", "run"]),
   }),
 )
 
@@ -80,12 +94,12 @@ const sessionUserId = Effect.fn("sessionUserId")(function* (request: Request) {
     catch: (cause) =>
       new PersistenceError({ operation: "auth-session", cause }),
   })
-  return Option.fromNullable(session?.user.id)
+  return Option.fromNullishOr(session?.user.id)
 })
 
 function requestedProjectId(request: Request) {
   const value = request.headers.get("x-flowmark-project-id")?.trim()
-  return value && Schema.is(Schema.UUID)(value) ? value : undefined
+  return value && Schema.is(UuidSchema)(value) ? value : undefined
 }
 
 async function executeQuery<A>(
@@ -134,7 +148,9 @@ async function executeQuery<A>(
   return Exit.match(result, {
     onSuccess: (value) => value,
     onFailure: (cause) =>
-      Match.value(cause).pipe(
+      Match.value(
+        cause.reasons.length === 1 ? cause.reasons[0] : undefined,
+      ).pipe(
         Match.tag("Fail", ({ error }) =>
           Match.value(error).pipe(
             Match.when(Match.instanceOf(TRPCError), (error) => {
@@ -363,12 +379,12 @@ export const appRouter = t.router({
   resultDeclarations: t.router({
     list: t.procedure
       .input(
-        Schema.standardSchemaV1(
+        Schema.toStandardSchemaV1(
           Schema.Struct({
-            projectId: Schema.UUID,
+            projectId: UuidSchema,
             workflow: Schema.String.pipe(
-              Schema.minLength(1),
-              Schema.maxLength(200),
+              Schema.check(Schema.isMinLength(1)),
+              Schema.check(Schema.isMaxLength(200)),
             ),
           }),
         ),
@@ -382,12 +398,12 @@ export const appRouter = t.router({
       ),
     create: t.procedure
       .input(
-        Schema.standardSchemaV1(
+        Schema.toStandardSchemaV1(
           Schema.Struct({
-            projectId: Schema.UUID,
+            projectId: UuidSchema,
             workflow: Schema.String.pipe(
-              Schema.minLength(1),
-              Schema.maxLength(200),
+              Schema.check(Schema.isMinLength(1)),
+              Schema.check(Schema.isMaxLength(200)),
             ),
             declaration: ResultDeclarationSchema,
           }),
@@ -424,13 +440,15 @@ export const appRouter = t.router({
   run: t.router({
     list: t.procedure
       .input(
-        Schema.standardSchemaV1(
+        Schema.toStandardSchemaV1(
           Schema.Struct({
             workflow: Schema.optional(Schema.String),
             status: Schema.optional(
-              Schema.Literal("Completed", "Failed", "Running"),
+              Schema.Literals(["Completed", "Failed", "Running"]),
             ),
-            search: Schema.optional(Schema.String.pipe(Schema.maxLength(200))),
+            search: Schema.optional(
+              Schema.String.pipe(Schema.check(Schema.isMaxLength(200))),
+            ),
             externalId: Schema.optional(Schema.String),
             failCode: Schema.optional(Schema.String),
             environment: Schema.optional(Schema.String),
@@ -438,13 +456,16 @@ export const appRouter = t.router({
             correlationId: Schema.optional(Schema.String),
             parentRunId: Schema.optional(Schema.String),
             namespace: Schema.optional(
-              Schema.Literal("browser", "application"),
+              Schema.Literals(["browser", "application"]),
             ),
             startedAfter: Schema.optional(Schema.String),
             startedBefore: Schema.optional(Schema.String),
             cursor: Schema.optional(Schema.String),
             limit: Schema.optional(
-              Schema.Number.pipe(Schema.int(), Schema.between(1, 100)),
+              Schema.Number.pipe(
+                Schema.check(Schema.isInt()),
+                Schema.check(Schema.isBetween({ minimum: 1, maximum: 100 })),
+              ),
             ),
           }),
         ),
@@ -463,7 +484,7 @@ export const appRouter = t.router({
         ),
       ),
     detail: t.procedure
-      .input(Schema.standardSchemaV1(Schema.Struct({ id: Schema.UUID })))
+      .input(Schema.toStandardSchemaV1(Schema.Struct({ id: UuidSchema })))
       .query(({ ctx, input }) =>
         readQuery(
           ctx.request,
@@ -478,7 +499,7 @@ export const appRouter = t.router({
         ),
       ),
     related: t.procedure
-      .input(Schema.standardSchemaV1(Schema.Struct({ id: Schema.UUID })))
+      .input(Schema.toStandardSchemaV1(Schema.Struct({ id: UuidSchema })))
       .query(({ ctx, input }) =>
         readQuery(
           ctx.request,
@@ -493,7 +514,7 @@ export const appRouter = t.router({
         ),
       ),
     compare: t.procedure
-      .input(Schema.standardSchemaV1(Schema.Struct({ id: Schema.UUID })))
+      .input(Schema.toStandardSchemaV1(Schema.Struct({ id: UuidSchema })))
       .query(({ ctx, input }) =>
         readQuery(
           ctx.request,

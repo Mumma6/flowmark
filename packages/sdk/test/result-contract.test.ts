@@ -6,7 +6,7 @@ import { MemoryTransport, workflow } from "../src/index.js"
 // Synthetic TASK-001 contract references only. These are not SDK exports or
 // claims that outcome/report events are accepted by current ingestion.
 const ProposedOutcome = Schema.String.pipe(
-  Schema.pattern(/^[a-z][a-z0-9_-]{0,63}$/),
+  Schema.check(Schema.isPattern(/^[a-z][a-z0-9_-]{0,63}$/)),
 )
 const proposedReports = [
   { checked: 200, mismatches: 3 },

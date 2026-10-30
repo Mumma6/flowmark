@@ -87,7 +87,10 @@ export interface ManageProjectService {
   readonly createBrowserKey: (
     userId: string,
     projectId: string,
-    input: { readonly name: string; readonly origins: ReadonlyArray<string> },
+    input: {
+      readonly name: string
+      readonly origins: ReadonlyArray<string>
+    },
   ) => Effect.Effect<
     CreatedSecret,
     InvalidInput | Unauthorized | PersistenceError
@@ -106,11 +109,10 @@ export interface ManageProjectService {
     InvalidInput | Unauthorized | PersistenceError
   >
 }
-
-export class ManageProject extends Context.Tag("@flowmark/api/ManageProject")<
+export class ManageProject extends Context.Service<
   ManageProject,
   ManageProjectService
->() {
+>()("@flowmark/api/ManageProject") {
   static readonly layer = Layer.effect(
     ManageProject,
     Effect.gen(function* () {

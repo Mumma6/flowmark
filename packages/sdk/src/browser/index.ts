@@ -1,6 +1,6 @@
 import { withWorkflowDefinitions } from "../workflows/define-workflow.js"
-import { FetchHttpClient } from "@effect/platform"
-import { Either, Layer, Redacted, Schema } from "effect"
+import { fetchClientLayer } from "../delivery/adapters/fetch-client.js"
+import { Result, Layer, Redacted, Schema } from "effect"
 import { makeHttpTransport } from "../delivery/adapters/http-transport.js"
 import { FlowmarkConfigError } from "../errors/index.js"
 import { makeClient } from "../client/runtime.js"
@@ -120,18 +120,18 @@ export function createFlowmark(
               "Choose either direct browser delivery or proxyPath, not both",
           })
         }
-        const settings = Either.match(
-          Schema.decodeUnknownEither(
+        const settings = Result.match(
+          Schema.decodeUnknownResult(
             Schema.Struct({
               publicKey: Schema.NonEmptyString,
               apiUrl: ApiOriginSchema,
             }),
           )({ publicKey: config.publicKey, apiUrl: config.apiUrl }),
           {
-            onLeft: (cause) => {
+            onFailure: (cause) => {
               throw new FlowmarkConfigError({ cause })
             },
-            onRight: (value) => value,
+            onSuccess: (value) => value,
           },
         )
         endpoint = new URL("/v1/browser-events", settings.apiUrl)
@@ -156,15 +156,11 @@ export function createFlowmark(
           })
         }
       }
-      const http = FetchHttpClient.layer.pipe(
-        Layer.provide(
-          Layer.succeed(FetchHttpClient.RequestInit, {
-            credentials: direct ? "omit" : "same-origin",
-            mode: direct ? "cors" : "same-origin",
-            keepalive: true,
-          }),
-        ),
-      )
+      const http = fetchClientLayer({
+        credentials: direct ? "omit" : "same-origin",
+        mode: direct ? "cors" : "same-origin",
+        keepalive: true,
+      })
       client = makeClient(
         Layer.effect(
           WorkflowTransport,
