@@ -101,3 +101,32 @@ test("hosted migrations require explicit dispatch, protected environment and exa
   )
   assert.doesNotMatch(yaml, /db:seed|db:reset|confirm-.*baseline/)
 })
+
+test("merge rollout verifies, migrates and deploys in order with no parallel Git deploy", () => {
+  const yaml = readWorkflow("deploy-release.yml")
+  assert.match(yaml, /branches: \[staging, main\]/)
+  assert.match(yaml, /needs: verify/)
+  assert.match(yaml, /uses: .\/.github\/workflows\/pull-request.yml/)
+  assert.match(yaml, /group: flowmark-database-migrations/)
+  assert.match(yaml, /cancel-in-progress: false/)
+  assert.ok(
+    yaml.indexOf("run: node scripts/db-migrate-ci.mjs") <
+      yaml.indexOf("run: node scripts/release-deployment.mjs\n"),
+  )
+  assert.match(yaml, /vercel@65\.7\.0/)
+  assert.doesNotMatch(yaml, /--token|secrets: inherit|pull_request_target/)
+  assert.match(yaml, /ref: \$\{\{ github.sha \}\}/)
+  for (const app of ["server", "dashboard", "docs", "web"]) {
+    const config = JSON.parse(
+      readFileSync(join(repoRoot, "apps", app, "vercel.json"), "utf8"),
+    )
+    assert.deepEqual(config.git.deploymentEnabled, {
+      staging: false,
+      main: false,
+    })
+  }
+  assert.match(
+    readFileSync(join(repoRoot, ".vercelignore"), "utf8"),
+    /^private$/m,
+  )
+})

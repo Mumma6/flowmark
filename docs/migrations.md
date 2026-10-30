@@ -5,66 +5,133 @@ in one coherent feature PR. Generate once; apply the same committed migrations
 in each database. Never edit an applied migration or use ad hoc SQL to bypass
 Drizzle history. A Git merge does not migrate a database.
 
-## Who does what
+## Who does what after activation
 
-The agent prepares the full-stack PR, migration SQL, tests and rollout evidence.
-The maintainer approves the reviewed change and merges it when its environment
-prerequisites are satisfied. Automation runs only the authorized environment's
-migrations and records the result; release approval remains with the maintainer.
+- The agent prepares one full-stack feature PR with schema, generated migrations,
+  API/SDK/UI changes, tests and rollout notes.
+- The maintainer reviews and merges the feature PR into `staging`.
+- **Migrate and deploy** verifies the merged commit, migrates Staging, deploys
+  API first and then dashboard/docs/web, and verifies deployment results.
+- The agent prepares a release PR from `staging` into `main` after Staging
+  verification. The maintainer reviews and merges it.
+- The same pipeline applies only still-pending Production migrations, then
+  deploys and verifies Production. Already-recorded migrations are not replayed.
 
-**Current implementation:** the protected migration job is dispatched separately
-before merge; Vercel still auto-deploys on merge. Merge alone does not start this
-migration job. The agent/operator handles the approved migration step so the
-maintainer does not have to type database commands.
-
-**Desired fully automatic flow:** merge into Staging or main starts one controlled
-pipeline: migrate the target database, stop on failure, deploy the apps, then
-verify. Before enabling this, replace the independent Vercel Git deploy trigger
-with that pipeline so deployments cannot race migrations. This PR does not change
-Vercel project settings or implement that deployment orchestrator. Do not describe
-the separate migration job as automatic migration-on-merge. Production then applies
-all still-pending migrations included in the reviewed release; it does not replay
-already-recorded migrations.
+Merge approval authorizes that reviewed change's migration/deployment to the
+branch's environment once the pipeline is deliberately activated. No separate
+chat approval is needed for those same steps. GitHub Environment reviewers may
+be added if a second production approval is desired; the merge is the default
+maintainer gate for this workflow. Seed, reset, restore, data cleanup, backfills,
+SDK publishing and destructive maintenance are not included in that approval.
 
 ## Order and completion gates
 
-1. **Implement locally.** Generate and inspect SQL. Apply it to the local loopback
-   database; test the affected flow using a separate disposable database. PR CI
-   applies migrations and runs real HTTP/PostgreSQL tests without hosted secrets.
-   Also test upgrades with representative synthetic data when existing rows,
-   defaults, constraints or backfills are affected. An empty-database pass alone
-   is not upgrade evidence.
-2. **Verify Preview.** Apply the reviewed PR commit's migrations to `preview`,
-   then test its deployed API/dashboard. A feature implementation can be complete
-   after code review and local/CI verification; record hosted rollout separately.
-   Feature merge readiness requires relevant Preview verification and the Staging
-   schema prerequisite below, not a Production migration.
-3. **Prepare Staging, then merge.** Apply and verify compatible migrations from
-   the reviewed feature commit to `staging` **before** merging its PR. Merge
-   triggers Vercel deployment, so waiting until after merge can break the app.
-   Verify the deployed Staging revision and affected user flow after merge.
-4. **Prepare Production at release time.** After Staging verification and release
-   approval, migrate `production` using the reviewed release candidate's commit,
-   verify, then merge the release PR into `main`. Verify deployed applications.
-   Production migration is a release gate, never a prerequisite for completing
-   an ordinary feature PR into Staging. SDK publication follows accepting backend
-   deployment and remains separately approved.
+1. **Implement locally.** Generate and inspect SQL; apply locally. Test the flow
+   using disposable loopback PostgreSQL. PR checks have no hosted secrets.
+   Add upgrade coverage with representative synthetic data when rows, defaults,
+   constraints or backfills are affected; an empty-DB pass is not upgrade proof.
+2. **Verify Preview before feature merge.** Preview remains separate from Staging.
+   Apply approved PR migrations there using the standalone migration workflow or
+   guarded workstation wrapper, and verify the PR deployment. Shared Preview
+   schema changes must be coordinated. Per-PR Neon branches are future separate
+   provisioning/lifecycle work, not created by this PR.
+3. **Merge to Staging.** The `push` workflow reuses both PR verification jobs on
+   the exact merged SHA. Only after success does it preflight the four Vercel
+   projects, check migration history, migrate Staging, verify history, deploy and
+   verify. No manual migration before merge is needed once activated.
+4. **Release to main.** Review Staging evidence and the release PR. Merge starts
+   the same ordered pipeline for Production. Production migration belongs to
+   release, not feature implementation acceptance. SDK publication remains a
+   separately approved operation after accepting backend deployment.
 
-For additive changes, such as nullable columns and new tables, migrate before
-code deployment. The currently deployed revision must still work with the expanded
-schema. This is deployment sequencing, not a product compatibility layer. A
-migration can succeed while a later deployment fails: normally keep additive
-schema and roll back the app to a compatible revision. App rollback does not undo
-SQL. Never automatically reverse a migration.
+Implementation completion, feature merge readiness, Staging rollout and Production
+release are separate states. Do not hold an otherwise completed implementation
+open solely for a future Production release. Record tested commits and environment
+results in PR/release notes.
 
-Renames, removals, required fields on populated tables and large backfills need
-an explicit staged plan: add the new shape, deploy its use, backfill when needed,
-then remove unused shape in a later release. No real users does not make schema
-reset, data deletion or history rewriting part of routine migration work.
+For additive changes, migrate before deploying dependent code. The app currently
+serving traffic must still work with the expanded schema during rollout; this is
+deployment sequencing, not a product compatibility layer. App rollback does not
+undo SQL. Keep additive schema if deployment fails and investigate before retrying;
+there is no automatic rollback, reset or reverse migration.
+
+Renames/removals, required fields on populated tables and large backfills need an
+explicit staged plan: add the new shape, deploy its use, backfill when approved,
+then remove unused shape in a later release. Do not merge destructive maintenance
+into the routine automatic rollout. No real users does not make resetting data
+or rewriting migration history part of ordinary migration work.
+
+## Controlled merge pipeline
+
+`.github/workflows/deploy-release.yml` runs on pushes to `staging` and `main`.
+It is opt-in through `FLOWMARK_RELEASE_PIPELINE_ENABLED=true`. Until setup is
+complete it fails before any mutation. All four app `vercel.json` files disable
+independent Vercel Git deployments for these **two** branches. Feature-branch
+PR previews stay enabled. The migration and deployment jobs share a concurrency
+lock with standalone migrations; running rollouts are never cancelled by a newer
+push. A failed check/migration prevents deployment.
+
+The pipeline checks out the push's exact SHA, sets its branch metadata in a
+throwaway checkout, builds database dependencies without hosted credentials,
+checks existing project IDs/team/root directories, then uses the guarded
+migrations and verifier. No secrets or pulled app env files are uploaded as
+artifacts. The database URL is exposed only to the migration step; the Vercel
+token only to authenticated deployment/preflight steps. Ordinary verification
+jobs never receive them.
+
+Deployment uses pinned Vercel CLI 65.7.0 and remote builds, preserving Vercel's
+existing branch-scoped variables and monorepo settings. It builds all four
+projects for a consistent revision; this deliberately costs four builds per
+successful rollout. API deploys first. Production builds are staged with
+`--skip-domain`, checked, then promoted one project at a time. Staging API and
+dashboard are assigned their existing canonical domains; Staging web/docs use
+their unique Preview deployment URLs. No new domains or projects are created.
+
+Verification checks project, READY state, exact SHA and target, API health with
+reported SHA, HTTP responses and canonical aliases. Protected URLs use
+`vercel curl`; protection is not disabled. These are automated availability and
+revision checks, not proof of every authenticated business flow. Relevant auth,
+ingestion and investigation behavior still needs release acceptance evidence.
+A later failure can leave some projects updated and others on the previous
+revision; the workflow stops and reports failure, never claims an atomic rollout
+or automatically reverses successful migrations/promotions.
+
+### One-time activation before merging this infrastructure change
+
+The source is prepared in the PR; no GitHub/Vercel settings or hosted databases
+have been changed by implementation. Configure and review these before merging:
+
+- GitHub Environments `deploy-staging` and `deploy-production`, restricted to
+  `staging` and `main` respectively. Protect both branches so only reviewed,
+  authorized changes can merge. Disable administrator environment bypass.
+  Optional required reviewers add an extra approval step; omit that extra gate
+  when maintainer merge approval is the intended authorization.
+- Each environment's secrets: `MIGRATION_DATABASE_URL` (only its own database's
+  direct TLS URL, `sslmode=require`) and `VERCEL_TOKEN` (scoped to the existing
+  team/projects). Configure tokens directly in GitHub, never paste them in chat.
+- Repository variables: `VERCEL_ORG_ID`, `VERCEL_API_PROJECT_ID`,
+  `VERCEL_DASHBOARD_PROJECT_ID`, `VERCEL_DOCS_PROJECT_ID`, `VERCEL_WEB_PROJECT_ID`;
+  and distinct direct `MIGRATION_PREVIEW_HOST`, `MIGRATION_STAGING_HOST`,
+  `MIGRATION_PRODUCTION_HOST` without credentials. Verify IDs/branch identity
+  against the existing Vercel/Neon projects. Keep Vercel system environment
+  variables exposed so the checked-out branch metadata reaches the existing
+  Staging guards and branch-scoped settings. These names are setup inputs, not
+  claims of remotely configured state.
+- Set `FLOWMARK_RELEASE_PIPELINE_ENABLED=true` only when the above is complete
+  and rollout activation is approved. Source `git.deploymentEnabled` disables
+  the competing Git deploy when this PR reaches each long-lived branch. Do not
+  leave an independent Deploy Hook/workflow deploying those branches in parallel.
+
+The push workflow is available on `staging` as soon as this PR merges there;
+it does not wait for the default branch to receive it. First activate and verify
+Staging, then release the workflow/config to main and verify Production. If the
+flag/config is missing after merge, the old deployment stays serving and the new
+rollout fails; finish setup and rerun the failed workflow rather than bypassing
+migration checks. Review the source/config cutover before merging.
 
 ## Automated hosted migration job
 
-The **Migrate database** workflow (`database-migrate.yml`) is a separate,
+The separate **Migrate database** workflow (`database-migrate.yml`) is a separate,
 manual-dispatch Actions job. It does not run on pushes or PRs, deploy an app,
 merge code, seed, reset, restore, baseline or publish packages.
 
@@ -76,8 +143,9 @@ gh workflow run database-migrate.yml --ref main \
   -f target=preview -f sha=<reviewed-40-character-commit-sha>
 ```
 
-Repeat for `staging` before feature merge. Use `production` only for a reviewed
-release candidate reachable from Staging. Review the SQL **and** candidate code,
+The routine Staging/Production path is the merge pipeline above. Standalone
+Staging/Production migrations are an explicitly approved recovery/manual fallback;
+use `production` only for a reviewed release candidate reachable from Staging. Review the SQL **and** candidate code,
 since the job executes that commit. Dispatch from `main`, where the workflow is
 reviewed; do not dispatch a modified feature-branch workflow. A changed candidate
 requires renewed affected verification and approval.

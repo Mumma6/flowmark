@@ -99,7 +99,7 @@ stack change in the same PR. Local/CI verification completes implementation;
 Production migration belongs to release, not ordinary feature PR completion.
 
 Bare `pnpm db:migrate` accepts loopback only. Existing environment wrappers and
-the approved **Migrate database** Actions job delegate to that guarded command.
+the controlled merge pipeline or approved standalone **Migrate database** job delegate to that guarded command.
 Ordinary PR checks receive no hosted credentials. Never seed Neon or migrate
 inside Vercel builds/requests. See the guide for exact commands and approvals.
 

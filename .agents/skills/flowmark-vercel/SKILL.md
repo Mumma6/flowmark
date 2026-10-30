@@ -74,17 +74,23 @@ dependency changes still rebuild every consumer.
 
 ## Database-dependent deploys
 
-Follow [database rollout](../../../docs/migrations.md). Feature code/migrations
-share a PR, but each database has its own applied history. Apply compatible
-Staging migrations before feature merge, and Production migrations before release
-merge. Prefer the protected exact-SHA migration job once activated; it never
-merges or deploys. Do not migrate inside Vercel builds/requests or ordinary PR CI.
-Production rollout is separate from feature completion. A failed migration blocks
-deployment; a green Vercel build alone does not prove schema or user-flow health.
+Follow [database rollout](../../../docs/migrations.md). The controlled merge
+pipeline owns staging/main rollout after explicit one-time activation: checks →
+migration/history verification → API deploy → remaining apps → readiness/commit/
+domain checks. Merge approval authorizes that branch's rollout; no duplicate
+permission ask. Each app disables competing Git deploy on staging/main only.
+Feature PR previews remain Git based. Do not merge the cutover until scoped
+secrets, project IDs, branch-restricted environments and activation flag are ready.
+Use standalone migration dispatch only for Preview or approved manual recovery.
+Never migrate in Vercel builds/requests or ordinary PR CI. No seed or publication.
+A green availability check does not prove authenticated business-flow correctness.
 
 ## Deploy
 
-A push to `main` builds all four projects from that commit. Uncommitted
+After pipeline activation, a push to `main` migrates Production and deploys all
+four projects from that commit through Actions; Vercel does not independently
+Git-deploy main/staging. Until cutover, follow the documented activation/fallback
+procedure. Uncommitted
 files are not in a Git build. Prefer that path once the change is committed.
 
 Use a CLI production deploy only when the user has asked to deploy the

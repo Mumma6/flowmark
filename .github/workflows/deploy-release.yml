@@ -1,0 +1,76 @@
+name: Migrate and deploy
+run-name: Release ${{ github.ref_name }} at ${{ github.sha }}
+
+on:
+  push:
+    branches: [staging, main]
+
+permissions:
+  contents: read
+
+# Includes the standalone migration job's lock: no overlapping DB/deploy rollout.
+concurrency:
+  group: flowmark-database-migrations
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    uses: ./.github/workflows/pull-request.yml
+
+  rollout:
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    environment: ${{ github.ref_name == 'main' && 'deploy-production' || 'deploy-staging' }}
+    env:
+      FLOWMARK_RELEASE_PIPELINE_ENABLED: ${{ vars.FLOWMARK_RELEASE_PIPELINE_ENABLED }}
+      MIGRATION_TARGET: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
+      MIGRATION_SHA: ${{ github.sha }}
+    steps:
+      - name: Require deliberate activation
+        run: |
+          test "$FLOWMARK_RELEASE_PIPELINE_ENABLED" = "true" || { echo "Configure rollout environments before merge; see docs/migrations.md"; exit 1; }
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Set exact branch metadata in this disposable checkout
+        run: git checkout -B "$GITHUB_REF_NAME" "$GITHUB_SHA"
+      - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
+        with:
+          version: 10.18.1
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: "24"
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Build migration dependencies without hosted credentials
+        run: pnpm --filter @flowmark/db... build
+      - name: Install reviewed deployment CLI
+        run: npm install --global vercel@65.7.0
+      - name: Check deployment targets before database mutation
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
+          VERCEL_API_PROJECT_ID: ${{ vars.VERCEL_API_PROJECT_ID }}
+          VERCEL_DASHBOARD_PROJECT_ID: ${{ vars.VERCEL_DASHBOARD_PROJECT_ID }}
+          VERCEL_DOCS_PROJECT_ID: ${{ vars.VERCEL_DOCS_PROJECT_ID }}
+          VERCEL_WEB_PROJECT_ID: ${{ vars.VERCEL_WEB_PROJECT_ID }}
+        run: node scripts/release-deployment.mjs --preflight
+      - name: Verify history, apply pending migrations, verify complete history
+        env:
+          FLOWMARK_MIGRATION_APPROVED: "true"
+          MIGRATION_DATABASE_URL: ${{ secrets.MIGRATION_DATABASE_URL }}
+          MIGRATION_PREVIEW_HOST: ${{ vars.MIGRATION_PREVIEW_HOST }}
+          MIGRATION_STAGING_HOST: ${{ vars.MIGRATION_STAGING_HOST }}
+          MIGRATION_PRODUCTION_HOST: ${{ vars.MIGRATION_PRODUCTION_HOST }}
+        run: node scripts/db-migrate-ci.mjs
+      - name: Deploy API first, smoke test, deploy remaining apps and verify aliases
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
+          VERCEL_API_PROJECT_ID: ${{ vars.VERCEL_API_PROJECT_ID }}
+          VERCEL_DASHBOARD_PROJECT_ID: ${{ vars.VERCEL_DASHBOARD_PROJECT_ID }}
+          VERCEL_DOCS_PROJECT_ID: ${{ vars.VERCEL_DOCS_PROJECT_ID }}
+          VERCEL_WEB_PROJECT_ID: ${{ vars.VERCEL_WEB_PROJECT_ID }}
+        run: node scripts/release-deployment.mjs

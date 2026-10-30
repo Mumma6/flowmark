@@ -36,7 +36,7 @@ creating a PR is not permission to merge or deploy.
    `pnpm check`.
 7. For schema changes, follow [database rollout](../../../docs/migrations.md).
    Include generated migrations with the stack change. Separate implementation,
-   feature merge readiness (Preview plus Staging schema prerequisite), and release
+   feature merge readiness (Preview plus activated ordered rollout), and release
    readiness. Never require Production mutation merely to finish a feature PR.
    Record tested SHA, per-environment migration/smoke results and pending gates.
    Note infrastructure changes, Vercel or Neon impact,

@@ -1,23 +1,19 @@
 # Application releases
 
-Flowmark uses GitHub pull requests and the existing Vercel Git integration:
+Flowmark keeps feature PRs into `staging` and release PRs from `staging` into
+`main`. The prepared **Migrate and deploy** pipeline owns both long-lived branch
+rollouts after one-time activation: exact merged commit checks → target database
+migration/history verification → Vercel API deployment → remaining apps →
+availability/revision/domain verification. See [database rollout](./migrations.md)
+for activation, responsibilities, commands and recovery.
 
-```text
-feature branch → PR into staging → Staging verification
-  → release PR into main → Production verification → application GitHub Release
-```
-
-GitHub Actions runs PR checks. Vercel builds a hosted app only when that
-project or one of its workspace dependencies changed in the commit. All four
-projects enable Vercel's **Skip unaffected projects** setting
-(`enableAffectedProjectsDeployments=true`), which skips unaffected deployments
-before allocating a build slot. Changes outside the workspace packages can
-still affect all projects. This applies to Preview and Production.
-The Turbo `ignoreCommand` per app remains an additional check. If it fails, the deployment is skipped
-rather than forced, so a broken check does not consume the daily deploy
-quota. There is no separate release deployment Action. Agent skills
-help an operator perform this workflow when requested; they are not background
-automation. `apps/dev-harness` and `apps/internal-docs` remain local-only.
+The four app configs disable Vercel's independent Git deploy for `staging` and
+`main` to prevent it racing the migration. Feature-branch PR previews remain Git
+based. No live settings are changed merely by preparing this code, but the configs
+take effect on merge: configure/approve activation before merging this change.
+The pipeline fails before mutation if not enabled/configured. No new services,
+projects, domains or SDK publication are included. `apps/dev-harness` and
+`apps/internal-docs` remain local-only.
 
 ## Branches and merge policy
 
@@ -111,14 +107,13 @@ explicitly approved backfill, and contract only in a later migration when old
 revisions no longer need the old shape. Check defaults, nullability, and writes
 from the previous revision as well as reads. A rollback must remain compatible.
 
-Use the approved **Migrate database** Actions workflow once configured, or the
-guarded workstation fallback. Follow [database rollout](./migrations.md):
-Preview verification → Staging migration before feature merge → deployed Staging
-verification → approved Production migration before release merge → Production
-verification. Apply exactly the reviewed commit's migrations and record the run
-and schema/history evidence. Production migration is a release gate, not a gate
-for ordinary feature PR completion. A migration job does not merge or deploy;
-Vercel Git integration still deploys after merge. Stop on a failed migration.
+The routine path is **Migrate and deploy** on branch push: merge approval,
+verification, target migration, deployment, then verification. Production is a
+release gate, not a feature implementation gate. Before merge, confirm activation,
+environment isolation and that the pending SQL is compatible with the serving app.
+No manual pre-merge Staging/Production migration is needed for the activated
+pipeline. Standalone protected dispatch/workstation wrappers are fallback only;
+never run them in parallel with a rollout. A failed migration blocks deployment.
 No release preparation authorizes seed, reset, restore or hosted mutation.
 
 ## Complete and verify a release
@@ -128,7 +123,7 @@ evidence, mergeability, and migration prerequisites. If the reviewed candidate
 changes, renew the affected verification and approval. Obtain explicit approval
 for the exact release PR and merge commit operation. Keep `staging` intact.
 
-Merging into main triggers Vercel. Record the resulting main merge SHA and
+Merging into main triggers the controlled migration/deployment pipeline. Record the resulting main merge SHA and
 verify **each** project: `flowmark-web`, `flowmark-docs`, `flowmark-dashboard`,
 and `flowmark-api`. Confirm Ready state, Production target, deployed SHA, and
 the canonical domain's current deployment. A green build or working old domain
