@@ -1,3 +1,4 @@
+import { withWorkflowDefinitions } from "../features/workflows/define-workflow.js"
 import { FetchHttpClient } from "@effect/platform"
 import { Either, Layer, Redacted, Schema } from "effect"
 import { makeHttpTransport } from "../features/delivery/adapters/http-transport.js"
@@ -11,6 +12,9 @@ import type {
 import { ApiOriginSchema } from "../config/api-origin.js"
 
 export type {
+  WorkflowDefinition,
+  TypedFlow,
+  TypedWorkflowOptions,
   Flow,
   FlowmarkClient,
   WorkflowDoneOptions,
@@ -178,12 +182,12 @@ export function createFlowmark(
     return client
   }
 
-  return {
+  return withWorkflowDefinitions<Omit<FlowmarkClient, "defineWorkflow">>({
     workflow: (name, options) => getClient().workflow(name, options),
     flush: () => client?.flush() ?? Promise.resolve(),
     shutdown() {
       closed = true
       return client?.shutdown() ?? Promise.resolve()
     },
-  }
+  })
 }

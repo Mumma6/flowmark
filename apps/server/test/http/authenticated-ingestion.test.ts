@@ -244,7 +244,16 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
             apiUrl: "http://localhost",
           })
           yield* Effect.gen(function* () {
-            const flow = client.workflow("integration.sdk-reports")
+            const definition = client.defineWorkflow<
+              Record<never, never>,
+              {
+                imported: number
+                rejected?: number
+                reasons?: { invalid: number }
+              },
+              "partial"
+            >("integration.sdk-reports")
+            const flow = definition.start()
             flow.report({
               imported: 6000,
               rejected: 50,

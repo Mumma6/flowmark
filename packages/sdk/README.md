@@ -206,3 +206,27 @@ Older servers reject report events through normal delivery diagnostics; there is
 no fallback encoding. Package publication is separate. Existing queue limits and
 runtime-specific drains still apply. See the report reference for bounds and
 single-reporter ordering limitations.
+
+## Typed workflow definitions
+
+Optionally bind context, result and outcome types to a reusable workflow name:
+
+```ts
+const imports = flowmark.defineWorkflow<
+  { batchId: string },
+  { imported: number; rejected: number },
+  "complete" | "partial"
+>("customer.import")
+const flow = imports.start({ properties: { batchId: "synthetic-42" } })
+flow.report({ imported: 6000 })
+flow.done({ outcome: "partial", result: { imported: 9600, rejected: 100 } })
+```
+
+Creating a definition is inert; start uses the existing runtime/client lifecycle.
+Required context is required at start; reports and context amendments are shallow
+partials, while provided terminal results must be complete. Types are erased and
+do not replace runtime input validation or register dashboard declarations.
+Existing untyped workflow calls remain supported. This is an additive source API
+with unchanged wire data; package publication is separate. See the
+[definition reference](https://docs.flowmark.dev/docs/reference/define-workflow)
+for CRM examples, type errors and migration guidance.

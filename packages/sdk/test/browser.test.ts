@@ -11,6 +11,11 @@ describe("browser client", () => {
   it("can be imported and configured during SSR without accessing browser globals", async () => {
     vi.stubGlobal("location", undefined)
     const client = createFlowmark()
+    const definition = client.defineWorkflow<
+      Record<never, never>,
+      { imported: number }
+    >("ssr")
+    expect(() => definition.start()).toThrow(FlowmarkConfigError)
     await client.flush()
     expect(() => client.workflow("ssr")).toThrow(FlowmarkConfigError)
     await client.shutdown()

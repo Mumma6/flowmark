@@ -1,0 +1,101 @@
+---
+title: defineWorkflow
+description: Reuse typed context, results and outcome vocabulary without changing execution ownership.
+---
+
+## Define once, start each execution
+
+```ts
+interface ImportContext {
+  batchId: string
+  provider?: "crm-a" | "crm-b"
+}
+interface ImportResult {
+  imported: number
+  rejected: number
+}
+
+const imports = flowmark.defineWorkflow<
+  ImportContext,
+  ImportResult,
+  "complete" | "partial"
+>("customer.import")
+const flow = imports.start({ properties: { batchId: "batch-42" } })
+flow.report({ imported: 6000 })
+flow.setProperties({ provider: "crm-a" })
+flow.done({ outcome: "partial", result: { imported: 9600, rejected: 100 } })
+```
+
+`defineWorkflow<Context, Result, Outcome = string>(name)` is client-bound and
+returns a reusable `WorkflowDefinition`. Creating it emits nothing, accesses no
+browser globals and registers no Next.js `after()` callback. `.start()` delegates
+to that runtime's existing `workflow()` boundary. Each start gets a new run ID
+unless `id` is explicitly supplied. Existing Node drains, Next after-drain and
+browser shutdown rules apply. A definition cannot start after its client closes.
+
+## Static contract
+
+Required context fields require start options and `properties`. When all context
+fields are optional (or context is `{}`), `.start()` may omit options. Context
+amendments and report snapshots are shallow partials; provided final results must
+contain all required result fields. Reports still replace the whole snapshot:
+omitted fields become unknown, not merged with earlier reports. Final result and
+outcome remain optional.
+Step and operation properties remain independent JSON objects; operation callback
+return inference and original errors are unchanged.
+
+```ts
+// With the definition above:
+// @ts-expect-error required context is missing
+imports.start()
+// @ts-expect-error report counts must be numeric
+flow.report({ imported: "many" })
+// @ts-expect-error final result is incomplete
+flow.done({ result: { imported: 9600 } })
+// @ts-expect-error outcome must belong to the declared union
+flow.done({ outcome: "unknown" })
+```
+
+Ordinary interfaces need no index signatures or Effect schemas. Types provide
+static guidance; they are erased and do not validate external inputs, finite
+numbers, JSON bounds or outcome code syntax. The existing runtime validation and
+instrumentation diagnostics still apply. Generic types are never uploaded and do
+not register dashboard declarations. Optional result labels, units and reason
+presentation still require explicitly configured declarations and an original
+start `definitionRevision`.
+
+## CRM example
+
+For a CRM sync, define the result once and report only committed checkpoints:
+
+```ts
+const crm = flowmark.defineWorkflow<
+  { batchId: string },
+  { updated: number; remaining: number },
+  "complete" | "partial"
+>("crm.sync")
+const sync = crm.start({ properties: { batchId: "synthetic-crm-42" } })
+sync.report({ updated: 400 })
+sync.fail({
+  code: "CRM_TIMEOUT",
+  outcome: "partial",
+  result: { updated: 400, remaining: 200 },
+})
+```
+
+## Optional adoption and compatibility
+
+Adoption is optional. The minimal untyped path remains:
+
+```ts
+const flow = flowmark.workflow("customer.import")
+flow.report({ imported: 6000 })
+flow.done({ result: { imported: 9600 } })
+```
+
+To migrate, define the name on the same client, replace `workflow(name, options)`
+with `definition.start(options)` and fix reported shape errors. This adds no wire
+fields, backend model, migration or execution framework. Node, Next and browser
+export `WorkflowDefinition`, `TypedFlow` and `TypedWorkflowOptions`. Backend
+compatibility is inherited from the markers used (outcomes/reports require their
+accepting server). Package publication remains a separate release operation.

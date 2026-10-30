@@ -1,7 +1,7 @@
 # SDK outcome and report contract
 
 This contract was established in TASK-001. TASK-004 implements terminal outcomes and TASK-010 implements reports in source;
-TASK-013 typed definitions remain proposed. Availability in published packages
+TASK-013 implements optional typed definitions in source. Availability in published packages
 is tracked separately through the SDK release process.
 The executable synthetic references live in
 `packages/sdk/test/result-contract.test.ts`; they are not runtime exports.
@@ -90,7 +90,7 @@ opaque case/batch references are lookup identifiers, never grouping dimensions.
 Do not include names, email addresses, credentials or raw customer records.
 Reason taxonomies must be bounded workflow-owned codes, not exception messages.
 
-## Proposed typed examples — unavailable until TASK-013
+## Typed workflow definitions
 
 ```ts
 interface ImportContext {
@@ -124,7 +124,7 @@ reuses existing lifecycle and delivery. Context types constrain start properties
 and partial context amendments; result types constrain final results and partial
 reports; outcome types constrain terminal codes. The untyped marker API stays
 available. Generic types are compile-time guidance, never uploaded declarations
-or a substitute for server validation. TASK-013 must test inference and rejected
+or a substitute for server validation. TASK-013 tests inference and rejected
 invalid calls without requiring consumers to add index signatures.
 
 TASK-004 implements minimal bounded result declarations. Use a workflow-owned
