@@ -98,8 +98,8 @@ or automatically reverses successful migrations/promotions.
 
 ### One-time activation before merging this infrastructure change
 
-The source is prepared in the PR; no GitHub/Vercel settings or hosted databases
-have been changed by implementation. Configure and review these before merging:
+Source configuration and live activation are separate. Verify these settings
+before merging the cutover, and record the observed activation state in the PR:
 
 - GitHub Environments `deploy-staging` and `deploy-production`, restricted to
   `staging` and `main` respectively. Protect both branches so only reviewed,
@@ -116,7 +116,8 @@ have been changed by implementation. Configure and review these before merging:
   against the existing Vercel/Neon projects. Keep Vercel system environment
   variables exposed so the checked-out branch metadata reaches the existing
   Staging guards and branch-scoped settings. These names are setup inputs, not
-  claims of remotely configured state.
+  claims of remotely configured state. A connected agent plugin or interactive
+  CLI login does not supply the independent credential used by GitHub Actions.
 - Set `FLOWMARK_RELEASE_PIPELINE_ENABLED=true` only when the above is complete
   and rollout activation is approved. Source `git.deploymentEnabled` disables
   the competing Git deploy when this PR reaches each long-lived branch. Do not
