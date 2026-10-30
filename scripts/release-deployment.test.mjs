@@ -43,7 +43,10 @@ function fixture(overrides = {}, fail = () => false) {
       })
     }
     if (args[0] === "deploy") {
-      return `https://${child.VERCEL_PROJECT_ID.toLowerCase()}.vercel.app`
+      assert.ok(args.includes("--json"))
+      return JSON.stringify({
+        url: `https://${child.VERCEL_PROJECT_ID.toLowerCase()}.vercel.app`,
+      })
     }
     if (args[0] === "api" && args[1].startsWith("/v13/deployments/")) {
       return JSON.stringify({
@@ -181,4 +184,32 @@ test("a healthy response from the wrong API revision is not accepted", () => {
   )
   assert.ok(!f.calls.some((c) => c.args[0] === "promote"))
   assert.equal(f.calls.filter((c) => c.args[0] === "deploy").length, 1)
+})
+
+test("accepts the pinned CLI's non-interactive JSON envelope", () => {
+  const f = fixture()
+  const run = (command, args, child) => {
+    const output = f.run(command, args, child)
+    return args[0] === "deploy"
+      ? JSON.stringify({ status: "ok", deployment: JSON.parse(output) })
+      : output
+  }
+  assert.equal(deployRelease(f.target, run).deployed.length, 4)
+})
+
+test("refuses CLI error or missing URL before deployment verification and aliases", () => {
+  for (const output of [
+    { status: "error", deployment: { url: "https://wrong.vercel.app" } },
+    { status: "ok", deployment: {} },
+  ]) {
+    const f = fixture()
+    const run = (command, args, child) =>
+      args[0] === "deploy"
+        ? JSON.stringify(output)
+        : f.run(command, args, child)
+    assert.throws(() => deployRelease(f.target, run))
+    assert.ok(
+      !f.calls.some((c) => ["curl", "alias", "promote"].includes(c.args[0])),
+    )
+  }
 })

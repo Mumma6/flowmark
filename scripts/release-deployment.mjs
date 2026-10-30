@@ -130,28 +130,36 @@ export function deployRelease(env, run, onDeployed = () => {}) {
   const deployed = []
   for (const project of config.projects) {
     const childEnv = { ...env, VERCEL_PROJECT_ID: project.id }
-    const url = run(
-      "vercel",
-      [
-        "deploy",
-        "--yes",
-        "--project",
-        project.id,
-        "--environment",
-        config.production ? "production" : "preview",
-        ...scope,
-        "--build-env",
-        "FLOWMARK_CONTROLLED_DEPLOY=true",
-        "--env",
-        `FLOWMARK_DEPLOYMENT_SHA=${config.sha}`,
-        "--meta",
-        `githubCommitRef=${config.branch}`,
-        "--meta",
-        `githubCommitSha=${config.sha}`,
-        ...(config.production ? ["--skip-domain"] : []),
-      ],
-      childEnv,
-    ).trim()
+    const output = JSON.parse(
+      run(
+        "vercel",
+        [
+          "deploy",
+          "--json",
+          "--yes",
+          "--project",
+          project.id,
+          "--environment",
+          config.production ? "production" : "preview",
+          ...scope,
+          "--build-env",
+          "FLOWMARK_CONTROLLED_DEPLOY=true",
+          "--env",
+          `FLOWMARK_DEPLOYMENT_SHA=${config.sha}`,
+          "--meta",
+          `githubCommitRef=${config.branch}`,
+          "--meta",
+          `githubCommitSha=${config.sha}`,
+          ...(config.production ? ["--skip-domain"] : []),
+        ],
+        childEnv,
+      ),
+    )
+    requireValue(
+      output.status === undefined || output.status === "ok",
+      "Deployment command did not report success.",
+    )
+    const url = (output.deployment ?? output).url
     const parsed = new URL(url)
     requireValue(
       parsed.protocol === "https:" &&
