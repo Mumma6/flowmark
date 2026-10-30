@@ -73,7 +73,7 @@
     "next": "^16.4.2",
     "@types/node": "^22.18.6",
     "typescript": "^5.9.2",
-    "vitest": "^3.2.4"
+    "vitest": "^4.1.11"
   },
   "keywords": [
     "workflow",
