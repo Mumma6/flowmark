@@ -30,14 +30,13 @@ const SessionBody = Schema.Struct({
 })
 
 const OnboardingState = Schema.Struct({
-  step: Schema.Literal("project", "key", "install", "instrument", "run"),
+  step: Schema.Literals(["project", "key", "install", "instrument", "run"]),
   completedAt: Schema.NullOr(Schema.String),
 })
-
-const OnboardingData = Schema.Union(
+const OnboardingData = Schema.Union([
   OnboardingState,
   Schema.Struct({ json: OnboardingState }),
-)
+])
 
 const OnboardingBody = Schema.Struct({
   result: Schema.Struct({
@@ -97,7 +96,7 @@ export const readDashboardSession = Effect.fn("readDashboardSession")(
     if (json == null) {
       return Option.none<DashboardSession>()
     }
-    const session = yield* Schema.decodeUnknown(SessionBody)(json).pipe(
+    const session = yield* Schema.decodeUnknownEffect(SessionBody)(json).pipe(
       Effect.mapError((cause) => new DashboardSessionError({ cause })),
     )
     return Option.some(session)
@@ -133,9 +132,9 @@ export const readDashboardOnboarding = Effect.fn("readDashboardOnboarding")(
       try: () => response.json(),
       catch: (cause) => new DashboardSessionError({ cause }),
     })
-    const onboarding = yield* Schema.decodeUnknown(OnboardingBody)(json).pipe(
-      Effect.mapError((cause) => new DashboardSessionError({ cause })),
-    )
+    const onboarding = yield* Schema.decodeUnknownEffect(OnboardingBody)(
+      json,
+    ).pipe(Effect.mapError((cause) => new DashboardSessionError({ cause })))
     return Option.some(
       "json" in onboarding.result.data
         ? onboarding.result.data.json

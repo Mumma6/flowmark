@@ -1,4 +1,4 @@
-import { Effect } from "effect"
+import { Context, Effect, Layer } from "effect"
 import type { WorkflowEvent } from "@flowmarkdev/core"
 import {
   Database,
@@ -56,12 +56,10 @@ export interface WorkflowStoreService {
     query: IntelligenceQuery,
   ) => Effect.Effect<WorkflowIntelligence, DatabaseError>
 }
-
-export class WorkflowStore extends Effect.Service<WorkflowStore>()(
+export class WorkflowStore extends Context.Service<WorkflowStore>()(
   "@flowmark/db/WorkflowStore",
   {
-    accessors: true,
-    effect: Effect.gen(function* () {
+    make: Effect.gen(function* () {
       const provide = provideDatabase(yield* Database)
       return {
         append: (projectId, eventId, event) =>
@@ -79,4 +77,6 @@ export class WorkflowStore extends Effect.Service<WorkflowStore>()(
       } satisfies WorkflowStoreService
     }),
   },
-) {}
+) {
+  static readonly layer = Layer.effect(this, this.make)
+}

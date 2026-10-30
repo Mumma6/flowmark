@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto"
 import { inspect } from "node:util"
-import { Cause, Exit, FiberId } from "effect"
+import { Cause, Exit } from "effect"
 import { afterEach, expect, it, vi } from "vitest"
 import { DatabaseError, DatabaseOperation } from "@flowmark/db/persistence"
 import { ConfigurationError, PersistenceError } from "../../src/errors"
@@ -58,9 +58,9 @@ it("logs known operation/code labels without driver SQL, values, URLs or credent
 it("sanitizes composite causes, cleanup defects and unknown labels", () => {
   const privateValue = randomUUID()
   const log = vi.spyOn(console, "error").mockImplementation(() => {})
-  const cause = Cause.parallel(
+  const cause = Cause.combine(
     Cause.fail(new ConfigurationError({ cause: new Error(privateValue) })),
-    Cause.sequential(
+    Cause.combine(
       Cause.fail(
         new PersistenceError({
           operation: privateValue,
@@ -94,6 +94,6 @@ it("does not print unexpected error text and handles interruption and success", 
   expect(log).not.toHaveBeenCalled()
   logFailure(Exit.die(new Error(privateValue)))
   expect(inspect(log.mock.calls).includes(privateValue)).toBe(false)
-  logFailure(Exit.interrupt(FiberId.none))
+  logFailure(Exit.interrupt())
   expect(log.mock.calls.at(-1)?.[1]).toMatchObject({ interrupted: true })
 })

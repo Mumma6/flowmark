@@ -2,7 +2,7 @@ import { Effect, Schema } from "effect"
 import { InvalidInput } from "@flowmark/api"
 
 const maximumBodyBytes = 65536
-const JsonSchema = Schema.parseJson(Schema.Unknown)
+const JsonSchema = Schema.fromJsonString(Schema.Unknown)
 
 /** Web streams and their resource lifetime belong to the HTTP adapter. */
 export const readJsonBody = Effect.fn("Http.readJsonBody")(function* (
@@ -48,7 +48,7 @@ export const readJsonBody = Effect.fn("Http.readJsonBody")(function* (
             try: () => reader.cancel(),
             catch: (cause) => new InvalidInput({ cause }),
           }).pipe(
-            Effect.catchAll((error) =>
+            Effect.catch((error) =>
               Effect.logWarning(
                 "Could not cancel ingestion request body",
                 error,
@@ -58,7 +58,7 @@ export const readJsonBody = Effect.fn("Http.readJsonBody")(function* (
           )
         : Effect.void,
   )
-  return yield* Schema.decodeUnknown(JsonSchema)(text).pipe(
+  return yield* Schema.decodeUnknownEffect(JsonSchema)(text).pipe(
     Effect.mapError((cause) => new InvalidInput({ cause })),
   )
 })

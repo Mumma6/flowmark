@@ -1,6 +1,6 @@
 ---
 name: flowmark-persistence
-description: "Use when adding or refactoring Flowmark database, Drizzle, SQL, query, migration, seed, or @flowmark/db persistence code. Organize packages/db by schema, persistence services, CLI, and environment; split feature folders into queries, writes, and sql; use Effect.Service stores and DatabaseOperation instead of free operation strings."
+description: "Use when adding or refactoring Flowmark database, Drizzle, SQL, query, migration, seed, or @flowmark/db persistence code. Organize packages/db by schema, persistence services, CLI, and environment; split feature folders into queries, writes, and sql; use Context.Service stores and DatabaseOperation instead of free operation strings."
 ---
 
 # Flowmark Persistence
@@ -65,28 +65,32 @@ Group by domain (`workflows`, `project-access`), then by kind:
 - Do not leave raw SQL inside a query file when another query reuses it.
 - Pure field mapping stays next to the write that uses it
   (`writes/event-fields.ts`).
-- The `*Store` file only wires `Effect.Service` methods to queries/writes.
+- The `*Store` file only wires `Context.Service` methods to queries/writes.
 
 ## Effect services
 
 ```ts
-export class WorkflowStore extends Effect.Service<WorkflowStore>()(
+export class WorkflowStore extends Context.Service<WorkflowStore>()(
   "@flowmark/db/WorkflowStore",
   {
-    accessors: true,
-    effect: Effect.gen(function* () {
+    make: Effect.gen(function* () {
       const provide = provideDatabase(yield* Database)
       return {
         snapshot: (projectId) => provide(getProjectSnapshot(projectId)),
       } satisfies WorkflowStoreService
     }),
   },
-) {}
+) {
+  static readonly layer = Layer.effect(this, this.make)
+}
 ```
 
-- Declare a small service interface; `satisfies` it in `Effect.Service`.
+- Declare a small service interface; `satisfies` it in `Context.Service`'s
+  `make` effect. Import `Context`, `Effect`, and `Layer` from `effect`.
+- Define `.layer` explicitly with `Layer.effect(this, this.make)`; v4 does not
+  generate `.Default` or static method accessors. Resolve stores with `yield*`.
 - Provide `Database` inside the store so API adapters see `R = never`.
-- Compose `WorkflowStore.Default` / `ProjectCredentialsStore.Default` in
+- Compose `WorkflowStore.layer` / `ProjectCredentialsStore.layer` in
   `packages/api` with `DatabaseLive`.
 - Adapters `yield*` the store and map `DatabaseError` / `MissingRunError` to
   API errors. They must not run SQL.

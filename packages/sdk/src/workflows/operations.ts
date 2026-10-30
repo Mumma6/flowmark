@@ -5,7 +5,7 @@ import type {
 } from "@flowmarkdev/core"
 import type { WorkflowOperationOptions } from "../types/index.js"
 import type { WorkflowEventData } from "./events.js"
-import type { RunLifecycle } from "./run-lifecycle.js"
+import type { RunLifecycle } from "./types.js"
 import type { WorkflowOperationHandle } from "./types.js"
 
 /** Each handle owns its idempotency and duration; run state owns completion. */

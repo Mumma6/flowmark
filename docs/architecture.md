@@ -88,9 +88,11 @@ causation. Browser-supplied links remain untrusted.
 
 The SDK groups its internal domains directly under `src/workflows/` and
 `src/delivery/`, without an extra `features/` directory. The workflow engine
-coordinates two internal services: `WorkflowRuns` owns run-local state and
-terminal coordination, and `WorkflowEvents` creates recorders that attach run
-identity and timestamps before enqueueing events with per-run delivery ordering.
+coordinates `WorkflowRuns` for terminal event coordination and `WorkflowEvents`
+for recorders that attach run identity and timestamps before enqueueing events
+with per-run delivery ordering.
+Each run resolves `RunState` for its completion requests, terminal guards and
+active-operation membership. State transitions construct no events.
 Operation handles own their IDs, monotonic durations and terminal idempotency;
 they notify run state after recording their terminal event, so deferred run
 completion follows the last operation terminal. Marker factories and pure event
@@ -101,14 +103,17 @@ events rather than SDK-maintained aggregates.
 → event recorders → run lifecycle → workflow engine. Each client owns one managed
 runtime. Each run allocates fresh state and a delivery semaphore even when the
 caller reuses an external run ID. Each operation owns a fresh completion flag.
-These run/operation values need no additional runtime or resource scope; the
-client's scoped delivery service owns asynchronous work and cleanup. Tests can
+`WorkflowRuns.start` provides a local `RunState.layer` for each run, so even an
+enclosing service context cannot cause two runs to share state. The handle
+captures that state; its references need no resource finalizers or runtime.
+The client's scoped delivery service owns asynchronous work and cleanup. Tests can
 replace the delivery or event service independently.
 
-The installed Effect version is 3.22.4. Services use `Context.Tag` and `Layer`,
-the installed counterpart of v4's `Context.Service` model. An Effect v4 upgrade
-is a separate migration because shared core schemas and the public custom
-transport contract also expose Effect types.
+All Effect consumers use the same pinned Effect 4.1.0 version. Services use
+`Context.Service` and explicit `Layer.effect` constructors, including scoped
+acquisition. Persistence services expose `.layer` rather than generated v3
+`.Default` layers. See [Effect v4 migration](./effect-v4-migration.md) for the
+advanced SDK compatibility boundary and measured SDK costs.
 
 Browser, proxy, and Next.js entry points remain separate integration adapters.
 Public package exports remain ordinary TypeScript, including the existing
@@ -116,8 +121,12 @@ advanced custom Effect transport entry point. The runtime is the explicit
 Effect execution boundary. The root `src/index.ts` remains the only source-root
 file, with client/runtime, browser entry, configuration, errors, shared types,
 and utilities grouped separately.
-The HTTP adapter uses `@effect/platform/HttpClient` with scoped request cleanup;
+The HTTP adapter uses `effect/http` with scoped request cleanup;
 tests replace its HTTP service rather than requiring real network access.
+The fetch layer captures the current fetch implementation explicitly at each
+client/request boundary; v4 Reference defaults are cached and would otherwise
+reuse the first observed global fetch. Browser request options and server
+credentials stay confined to their respective adapters.
 Delivery fibers belong to a scoped `FiberSet`, and a managed runtime owns their
 lifetime. Effect execution is confined to the public client boundary; the
 services themselves only return composable Effects.
@@ -226,7 +235,7 @@ The API follows feature-first ports-and-adapters:
 - Feature use cases compose Effect workflows without depending on HTTP, tRPC,
   or persistence-library details.
 - Feature ports declare API-owned contracts and read models with Effect
-  `Context.Tag`s; they do not derive their public types from database
+  `Context.Service` keys; they do not derive their public types from database
   implementation types.
 - Feature adapters implement those ports using the current database package
   and translate persistence failures into API-owned tagged errors. Their names

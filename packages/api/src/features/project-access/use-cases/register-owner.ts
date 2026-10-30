@@ -7,11 +7,10 @@ import { Context, Effect, Layer } from "effect"
 export interface RegisterOwnerService {
   readonly provision: (userId: string, name: string) => Effect.Effect<void>
 }
-
-export class RegisterOwner extends Context.Tag("@flowmark/api/RegisterOwner")<
+export class RegisterOwner extends Context.Service<
   RegisterOwner,
   RegisterOwnerService
->() {
+>()("@flowmark/api/RegisterOwner") {
   static readonly layer = Layer.succeed(
     RegisterOwner,
     RegisterOwner.of({

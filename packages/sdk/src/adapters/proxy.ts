@@ -1,9 +1,6 @@
-import {
-  FetchHttpClient,
-  HttpClient,
-  HttpClientRequest,
-} from "@effect/platform"
+import { HttpClient, HttpClientRequest } from "effect/http"
 import { Data, Effect, Exit, Match, Schema, Stream } from "effect"
+import { fetchClientLayer } from "../delivery/adapters/fetch-client.js"
 import { EventEnvelopeSchema } from "@flowmarkdev/core"
 import { resolveSettings } from "../config/settings.js"
 import type { FlowmarkConfig } from "../types/index.js"
@@ -48,21 +45,24 @@ const readEnvelope = Effect.fn("Flowmark.Proxy.readEnvelope")(function* (
     onError: (cause) => new InvalidProxyInput({ cause }),
     releaseLockOnEnd: true,
   }).pipe(
-    Stream.runFoldEffect({ size: 0, text: "" }, (state, chunk) => {
-      const size = state.size + chunk.byteLength
-      return size > 65536
-        ? Effect.fail(new InvalidProxyInput({ cause: "Body exceeds 64 KiB" }))
-        : Effect.succeed({
-            size,
-            text: state.text + decoder.decode(chunk, { stream: true }),
-          })
-    }),
+    Stream.runFoldEffect(
+      () => ({ size: 0, text: "" }),
+      (state, chunk) => {
+        const size = state.size + chunk.byteLength
+        return size > 65536
+          ? Effect.fail(new InvalidProxyInput({ cause: "Body exceeds 64 KiB" }))
+          : Effect.succeed({
+              size,
+              text: state.text + decoder.decode(chunk, { stream: true }),
+            })
+      },
+    ),
     Effect.ensuring(
       Effect.tryPromise({
         try: () => stream.cancel(),
         catch: (cause) => new InvalidProxyInput({ cause }),
       }).pipe(
-        Effect.catchAll((error) =>
+        Effect.catch((error) =>
           Effect.logWarning(
             "[Flowmark proxy] Could not cancel request body",
             error,
@@ -71,9 +71,11 @@ const readEnvelope = Effect.fn("Flowmark.Proxy.readEnvelope")(function* (
       ),
     ),
   )
-  return yield* Schema.decodeUnknown(Schema.parseJson(EventEnvelopeSchema))(
-    body.text + decoder.decode(),
-  ).pipe(Effect.mapError((cause) => new InvalidProxyInput({ cause })))
+  return yield* Schema.decodeUnknownEffect(
+    Schema.fromJsonString(EventEnvelopeSchema),
+  )(body.text + decoder.decode()).pipe(
+    Effect.mapError((cause) => new InvalidProxyInput({ cause })),
+  )
 })
 
 /**
@@ -159,7 +161,7 @@ export function createFlowmarkProxy(config: FlowmarkProxyConfig = {}) {
             ),
           ),
       }),
-      Effect.provide(FetchHttpClient.layer),
+      Effect.provide(fetchClientLayer()),
     )
     const result = await Effect.runPromiseExit(operation, {
       signal: request.signal,

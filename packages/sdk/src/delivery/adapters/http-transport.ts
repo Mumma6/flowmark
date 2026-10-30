@@ -1,5 +1,5 @@
-import { HttpClient, HttpClientRequest } from "@effect/platform"
-import { Effect, Match, Schedule, type Redacted } from "effect"
+import { HttpClient, HttpClientRequest } from "effect/http"
+import { Effect, Schedule, type Redacted } from "effect"
 import type { WorkflowEvent } from "@flowmarkdev/core"
 import { FlowmarkHttpError } from "../../errors/index.js"
 import { WorkflowTransport } from "../ports/workflow-transport.js"
@@ -36,26 +36,23 @@ export const makeHttpTransport = Effect.fn("Flowmark.HttpTransport.make")(
         Effect.mapError(
           (cause) =>
             new FlowmarkHttpError({
-              status: Match.value(cause).pipe(
-                Match.tag("ResponseError", ({ response }) => response.status),
-                Match.tag("RequestError", () => undefined),
-                Match.exhaustive,
-              ),
+              status: cause.response?.status,
               cause,
             }),
         ),
-        Effect.timeoutFail({
+        Effect.timeoutOrElse({
           duration: "3 seconds",
-          onTimeout: () =>
-            new FlowmarkHttpError({
-              status: undefined,
-              cause: "Ingestion timed out",
-            }),
+          orElse: () =>
+            Effect.fail(
+              new FlowmarkHttpError({
+                status: undefined,
+                cause: "Ingestion timed out",
+              }),
+            ),
         }),
         Effect.retry({
-          schedule: Schedule.exponential("100 millis").pipe(
-            Schedule.intersect(Schedule.recurs(2)),
-          ),
+          schedule: Schedule.exponential("100 millis"),
+          times: 2,
           while: (error) =>
             error.status === undefined ||
             error.status === 429 ||

@@ -1,4 +1,4 @@
-import { Clock, Context, Effect, Layer } from "effect"
+import { Clock, Context, Effect, Layer, Semaphore } from "effect"
 import type { WorkflowName } from "@flowmarkdev/core"
 import { DeliveryQueue } from "../delivery/delivery-queue.js"
 import type { WorkflowEventData } from "./events.js"
@@ -15,9 +15,10 @@ export interface WorkflowEventsService {
 }
 
 /** Client-owned service; each recorder has its own delivery ordering semaphore. */
-export class WorkflowEvents extends Context.Tag(
-  "@flowmarkdev/node/WorkflowEvents",
-)<WorkflowEvents, WorkflowEventsService>() {
+export class WorkflowEvents extends Context.Service<
+  WorkflowEvents,
+  WorkflowEventsService
+>()("@flowmarkdev/node/WorkflowEvents") {
   static readonly layer = Layer.effect(
     WorkflowEvents,
     Effect.gen(function* () {
@@ -26,7 +27,7 @@ export class WorkflowEvents extends Context.Tag(
         workflow: WorkflowName,
         runId: string,
       ) {
-        const ordering = yield* Effect.makeSemaphore(1)
+        const ordering = yield* Semaphore.make(1)
         const record = Effect.fn("Flowmark.WorkflowEvents.record")(function* (
           event: WorkflowEventData,
         ) {

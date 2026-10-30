@@ -47,7 +47,7 @@ export const runDatabaseCommand = <A>(
             process.exitCode = 1
           }),
       }),
-      Effect.catchAllCause((cause) =>
+      Effect.catchCause((cause) =>
         Effect.sync(() => {
           console.error(Cause.pretty(cause))
           process.exitCode = 1

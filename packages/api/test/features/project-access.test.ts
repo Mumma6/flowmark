@@ -1,4 +1,4 @@
-import { Effect, Either, Layer, Redacted } from "effect"
+import { Effect, Result, Layer, Redacted } from "effect"
 import { describe, expect, it, vi } from "vitest"
 import { ApiSettings } from "../../src/config"
 import { AuthorizeProject } from "../../src/features/project-access/use-cases/authorize-project"
@@ -8,11 +8,10 @@ import {
   ProjectCredentials,
   type ProjectCredentialsService,
 } from "../../src/features/project-access/ports/project-credentials"
-
-const expectLeft = <E>(result: Either.Either<unknown, E>, expected: unknown) =>
-  Either.match(result, {
-    onLeft: (error) => expect(error).toMatchObject(expected as object),
-    onRight: () => expect.fail("expected a failure"),
+const expectLeft = <E>(result: Result.Result<unknown, E>, expected: unknown) =>
+  Result.match(result, {
+    onFailure: (error) => expect(error).toMatchObject(expected as object),
+    onSuccess: () => expect.fail("expected a failure"),
   })
 
 function projectCredentials(
@@ -116,7 +115,7 @@ describe("ManageProject", () => {
   it("rejects a blank project name", async () => {
     const result = await Effect.runPromise(
       Effect.flatMap(ManageProject, (manage) =>
-        Effect.either(manage.create("user-1", "   ")),
+        Effect.result(manage.create("user-1", "   ")),
       ).pipe(Effect.provide(provide())),
     )
     expectLeft(result, { _tag: "InvalidInput" })
@@ -162,7 +161,7 @@ describe("ManageProject", () => {
   it("rejects browser keys without an http origin", async () => {
     const result = await Effect.runPromise(
       Effect.flatMap(ManageProject, (manage) =>
-        Effect.either(
+        Effect.result(
           manage.createBrowserKey("user-1", "project-1", {
             name: "Web",
             origins: ["localhost:3000"],
@@ -196,7 +195,7 @@ describe("Onboarding", () => {
   it("requires a project before advancing", async () => {
     const result = await Effect.runPromise(
       Effect.flatMap(Onboarding, (onboarding) =>
-        Effect.either(onboarding.advance("user-1", "key")),
+        Effect.result(onboarding.advance("user-1", "key")),
       ).pipe(
         Effect.provide(
           provideOnboarding(
@@ -214,7 +213,7 @@ describe("Onboarding", () => {
   it("requires a write key before completing", async () => {
     const result = await Effect.runPromise(
       Effect.flatMap(Onboarding, (onboarding) =>
-        Effect.either(onboarding.complete("user-1")),
+        Effect.result(onboarding.complete("user-1")),
       ).pipe(
         Effect.provide(
           provideOnboarding(

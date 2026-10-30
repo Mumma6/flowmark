@@ -2,34 +2,37 @@ import { Schema } from "effect"
 
 /** Canonical, application-owned terminal business code. No normalization. */
 export const WorkflowOutcomeSchema = Schema.String.pipe(
-  Schema.pattern(/^[a-z][a-z0-9_-]{0,63}$/),
+  Schema.check(Schema.isPattern(/^[a-z][a-z0-9_-]{0,63}$/)),
 )
-export type WorkflowOutcome = Schema.Schema.Type<typeof WorkflowOutcomeSchema>
+export type WorkflowOutcome = typeof WorkflowOutcomeSchema.Type
 const Label = Schema.String.pipe(
-  Schema.minLength(1),
-  Schema.maxLength(80),
-  Schema.filter((s) => s.trim().length > 0),
+  Schema.check(Schema.isMinLength(1)),
+  Schema.check(Schema.isMaxLength(80)),
+  Schema.check(Schema.makeFilter((s) => s.trim().length > 0)),
 )
 const Path = Schema.Array(
-  Schema.String.pipe(Schema.minLength(1), Schema.maxLength(128)),
-).pipe(Schema.minItems(1), Schema.maxItems(5))
+  Schema.String.pipe(
+    Schema.check(Schema.isMinLength(1)),
+    Schema.check(Schema.isMaxLength(128)),
+  ),
+).pipe(Schema.check(Schema.isMinLength(1)), Schema.check(Schema.isMaxLength(5)))
 const Field = Schema.Struct({
   path: Path,
   label: Label,
-  kind: Schema.Literal("count", "category", "reasons"),
+  kind: Schema.Literals(["count", "category", "reasons"]),
   unit: Schema.optional(Label),
 })
 /** Ordered bounded presentation metadata. Revisions cannot be overwritten. */
 export const ResultDeclarationSchema = Schema.Struct({
   revision: WorkflowOutcomeSchema,
-  fields: Schema.Array(Field).pipe(Schema.maxItems(12)),
+  fields: Schema.Array(Field).pipe(Schema.check(Schema.isMaxLength(12))),
 }).pipe(
-  Schema.filter(
-    (declaration) =>
-      new Set(declaration.fields.map((field) => JSON.stringify(field.path)))
-        .size === declaration.fields.length,
+  Schema.check(
+    Schema.makeFilter(
+      (declaration) =>
+        new Set(declaration.fields.map((field) => JSON.stringify(field.path)))
+          .size === declaration.fields.length,
+    ),
   ),
 )
-export type ResultDeclaration = Schema.Schema.Type<
-  typeof ResultDeclarationSchema
->
+export type ResultDeclaration = typeof ResultDeclarationSchema.Type

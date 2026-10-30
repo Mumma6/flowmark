@@ -1,11 +1,11 @@
-import { Effect, Either, Schema } from "effect"
+import { Effect, Result, Schema } from "effect"
 import { createFlowmark } from "@flowmarkdev/node"
 import { createFlowmark as createNextFlowmark } from "@flowmarkdev/node/next"
 import { runScenario, scenarioIds } from "../../../lib/sdk-scenarios"
 
 const RequestSchema = Schema.Struct({
-  scenario: Schema.Literal(...scenarioIds),
-  runtime: Schema.Literal("next", "node"),
+  scenario: Schema.Literals(scenarioIds),
+  runtime: Schema.Literals(["next", "node"]),
 })
 
 const decodeRequest = Effect.fn("decodeSdkTestRequest")(function* (
@@ -15,18 +15,18 @@ const decodeRequest = Effect.fn("decodeSdkTestRequest")(function* (
     try: () => request.json(),
     catch: () => new Error("invalid-json"),
   })
-  return yield* Schema.decodeUnknown(RequestSchema)(body)
+  return yield* Schema.decodeUnknownEffect(RequestSchema)(body)
 })
 
 export async function POST(request: Request) {
-  const decoded = await Effect.runPromise(Effect.either(decodeRequest(request)))
-  return Either.match(decoded, {
-    onLeft: () =>
+  const decoded = await Effect.runPromise(Effect.result(decodeRequest(request)))
+  return Result.match(decoded, {
+    onFailure: () =>
       Response.json(
         { error: "Unknown SDK scenario or runtime." },
         { status: 400 },
       ),
-    onRight: async ({ scenario, runtime }) => {
+    onSuccess: async ({ scenario, runtime }) => {
       if (runtime === "next") {
         const client = createNextFlowmark({
           apiKey: "fm_diagnostics_write_local_only",

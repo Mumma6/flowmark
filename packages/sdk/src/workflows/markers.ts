@@ -8,7 +8,7 @@ import type {
 } from "@flowmarkdev/core"
 import type { WorkflowStepOptions } from "../types/index.js"
 import type { WorkflowEventData } from "./events.js"
-import type { RunLifecycle } from "./run-lifecycle.js"
+import type { RunLifecycle } from "./types.js"
 
 /** Markers observe application-reported evidence; they keep no aggregate state. */
 export function makeMarkers(run: RunLifecycle) {

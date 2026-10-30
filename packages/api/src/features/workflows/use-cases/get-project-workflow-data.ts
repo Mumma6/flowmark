@@ -86,10 +86,10 @@ export interface GetProjectWorkflowDataService {
     projectId?: string,
   ) => Effect.Effect<WorkflowIntelligence, Unauthorized | PersistenceError>
 }
-
-export class GetProjectWorkflowData extends Context.Tag(
-  "@flowmark/api/GetProjectWorkflowData",
-)<GetProjectWorkflowData, GetProjectWorkflowDataService>() {
+export class GetProjectWorkflowData extends Context.Service<
+  GetProjectWorkflowData,
+  GetProjectWorkflowDataService
+>()("@flowmark/api/GetProjectWorkflowData") {
   static readonly layer = Layer.effect(
     GetProjectWorkflowData,
     Effect.gen(function* () {

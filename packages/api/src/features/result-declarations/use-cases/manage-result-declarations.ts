@@ -23,9 +23,9 @@ const make = Effect.gen(function* () {
       input: unknown,
     ) {
       const authorized = yield* authorization.authorizeUser(userId, projectId)
-      const declaration = yield* Schema.decodeUnknown(ResultDeclarationSchema)(
-        input,
-      ).pipe(Effect.mapError((cause) => new InvalidInput({ cause })))
+      const declaration = yield* Schema.decodeUnknownEffect(
+        ResultDeclarationSchema,
+      )(input).pipe(Effect.mapError((cause) => new InvalidInput({ cause })))
       const created = yield* declarations.create(
         authorized,
         workflow,
@@ -41,8 +41,9 @@ const make = Effect.gen(function* () {
     }),
   }
 })
-export class ManageResultDeclarations extends Context.Tag(
-  "@flowmark/api/ManageResultDeclarations",
-)<ManageResultDeclarations, Effect.Effect.Success<typeof make>>() {
+export class ManageResultDeclarations extends Context.Service<
+  ManageResultDeclarations,
+  Effect.Success<typeof make>
+>()("@flowmark/api/ManageResultDeclarations") {
   static readonly layer = Layer.effect(ManageResultDeclarations, make)
 }

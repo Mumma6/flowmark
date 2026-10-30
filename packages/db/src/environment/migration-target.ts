@@ -1,11 +1,10 @@
 import { Effect, Schema } from "effect"
 import { CommandConfigurationError } from "./error.js"
-
-const HostedMigrationWrapper = Schema.Literal(
+const HostedMigrationWrapper = Schema.Literals([
   "production",
   "preview",
   "staging",
-)
+])
 
 export const assertMigrationTarget = Effect.fn("assertMigrationTarget")(
   function* (url: string, env: NodeJS.ProcessEnv = process.env) {
@@ -24,7 +23,7 @@ export const assertMigrationTarget = Effect.fn("assertMigrationTarget")(
     if (["localhost", "127.0.0.1", "[::1]"].includes(target.hostname)) {
       return
     }
-    const wrapper = yield* Schema.decodeUnknown(HostedMigrationWrapper)(
+    const wrapper = yield* Schema.decodeUnknownEffect(HostedMigrationWrapper)(
       env.FLOWMARK_MIGRATION_WRAPPER,
     ).pipe(
       Effect.mapError(

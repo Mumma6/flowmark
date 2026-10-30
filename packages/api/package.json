@@ -23,7 +23,7 @@
   "dependencies": {
     "@flowmarkdev/core": "workspace:*",
     "@flowmark/db": "workspace:*",
-    "effect": "^3.22.4"
+    "effect": "4.1.0"
   },
   "devDependencies": {
     "@types/node": "^22.18.6",

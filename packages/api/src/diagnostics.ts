@@ -72,9 +72,13 @@ export function logFailure(exit: Exit.Exit<unknown, unknown>) {
     onSuccess: () => undefined,
     onFailure: (cause) => {
       console.error("[Flowmark API] Request failed", {
-        failures: Array.from(Cause.failures(cause), describeFailure),
-        defects: Array.from(Cause.defects(cause), describeFailure),
-        interrupted: Cause.isInterrupted(cause),
+        failures: cause.reasons
+          .filter(Cause.isFailReason)
+          .map(({ error }) => describeFailure(error)),
+        defects: cause.reasons
+          .filter(Cause.isDieReason)
+          .map(({ defect }) => describeFailure(defect)),
+        interrupted: Cause.hasInterrupts(cause),
       })
     },
   })

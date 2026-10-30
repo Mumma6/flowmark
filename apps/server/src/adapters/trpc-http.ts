@@ -1,5 +1,5 @@
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch"
-import { Effect, Either } from "effect"
+import { Effect, Result } from "effect"
 import { serverOrigins } from "../server-env"
 import { appRouter } from "./trpc"
 
@@ -25,9 +25,10 @@ function withCors(
 }
 
 export const handleTrpc = async (req: Request) =>
-  Either.match(await Effect.runPromise(Effect.either(serverOrigins())), {
-    onLeft: (error) => Response.json({ error: error.reason }, { status: 500 }),
-    onRight: async ({ dashboardOrigin }) =>
+  Result.match(await Effect.runPromise(Effect.result(serverOrigins())), {
+    onFailure: (error) =>
+      Response.json({ error: error.reason }, { status: 500 }),
+    onSuccess: async ({ dashboardOrigin }) =>
       withCors(
         req,
         await fetchRequestHandler({
@@ -41,8 +42,9 @@ export const handleTrpc = async (req: Request) =>
   })
 
 export const handleTrpcOptions = async (req: Request) =>
-  Either.match(await Effect.runPromise(Effect.either(serverOrigins())), {
-    onLeft: (error) => Response.json({ error: error.reason }, { status: 500 }),
-    onRight: ({ dashboardOrigin }) =>
+  Result.match(await Effect.runPromise(Effect.result(serverOrigins())), {
+    onFailure: (error) =>
+      Response.json({ error: error.reason }, { status: 500 }),
+    onSuccess: ({ dashboardOrigin }) =>
       withCors(req, new Response(null, { status: 204 }), dashboardOrigin),
   })

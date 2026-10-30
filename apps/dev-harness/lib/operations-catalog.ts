@@ -135,16 +135,16 @@ export const order = {
 } as const
 
 export const ExecutionSchema = Schema.Struct({
-  scenario: Schema.Literal(...scenarioIds),
+  scenario: Schema.Literals(scenarioIds),
   workflow: Schema.String,
   runId: Schema.String,
   reference: Schema.String,
-  status: Schema.Literal("completed", "failed"),
+  status: Schema.Literals(["completed", "failed"]),
   summary: Schema.String,
   nextAction: Schema.String,
-  result: Schema.Record({
-    key: Schema.String,
-    value: Schema.Union(Schema.String, Schema.Number, Schema.Boolean),
-  }),
+  result: Schema.Record(
+    Schema.String,
+    Schema.Union([Schema.String, Schema.Number, Schema.Boolean]),
+  ),
 })
 export type Execution = typeof ExecutionSchema.Type

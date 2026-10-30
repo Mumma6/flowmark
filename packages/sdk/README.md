@@ -16,6 +16,15 @@ npm i @flowmarkdev/node
 Docs: [docs.flowmark.dev](https://docs.flowmark.dev) · Product:
 [flowmark.dev](https://flowmark.dev)
 
+## Effect compatibility (repository migration)
+
+The repository has migrated to Effect 4.1.0; this does not publish a new SDK
+version. Ordinary client calls remain TypeScript/Promises with the same event
+JSON. Advanced custom transports and code consuming exported core schemas must
+use matching Effect v4 values. Underlying Effect Cause/HTTP errors and Promise
+failure wrappers differ from v3; avoid relying on v3 error internals. Core and
+Node packages should be upgraded together when this migration is released.
+
 ## Quick start
 
 **Next.js** (Route Handler or Server Action):

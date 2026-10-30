@@ -1,4 +1,4 @@
-import { Effect } from "effect"
+import { Context, Effect, Layer } from "effect"
 import { Database, DatabaseError, provideDatabase } from "../database.js"
 import { browserOriginAllowed } from "./queries/allow-browser-origin.js"
 import { authenticateBrowserKey } from "./queries/authenticate-browser-key.js"
@@ -83,7 +83,10 @@ export interface ProjectCredentialsStoreService {
   ) => Effect.Effect<void, DatabaseError>
   readonly createOwnedProject: (
     userId: string,
-    names: { readonly workspace: string; readonly project: string },
+    names: {
+      readonly workspace: string
+      readonly project: string
+    },
   ) => Effect.Effect<
     {
       readonly projectId: string
@@ -97,7 +100,10 @@ export interface ProjectCredentialsStoreService {
     workspaceId: string,
     name: string,
   ) => Effect.Effect<
-    { readonly projectId: string; readonly writeKey: CreatedSecret },
+    {
+      readonly projectId: string
+      readonly writeKey: CreatedSecret
+    },
     DatabaseError
   >
   readonly renameProject: (
@@ -112,7 +118,10 @@ export interface ProjectCredentialsStoreService {
   ) => Effect.Effect<ReadonlyArray<BrowserKeySummary>, DatabaseError>
   readonly createApiKey: (
     projectId: string,
-    input: { readonly name: string; readonly permission: "read" | "write" },
+    input: {
+      readonly name: string
+      readonly permission: "read" | "write"
+    },
   ) => Effect.Effect<CreatedSecret, DatabaseError>
   readonly revokeApiKey: (
     projectId: string,
@@ -120,19 +129,20 @@ export interface ProjectCredentialsStoreService {
   ) => Effect.Effect<boolean, DatabaseError>
   readonly createBrowserKey: (
     projectId: string,
-    input: { readonly name: string; readonly origins: ReadonlyArray<string> },
+    input: {
+      readonly name: string
+      readonly origins: ReadonlyArray<string>
+    },
   ) => Effect.Effect<CreatedSecret, DatabaseError>
   readonly revokeBrowserKey: (
     projectId: string,
     keyId: string,
   ) => Effect.Effect<boolean, DatabaseError>
 }
-
-export class ProjectCredentialsStore extends Effect.Service<ProjectCredentialsStore>()(
+export class ProjectCredentialsStore extends Context.Service<ProjectCredentialsStore>()(
   "@flowmark/db/ProjectCredentialsStore",
   {
-    accessors: true,
-    effect: Effect.gen(function* () {
+    make: Effect.gen(function* () {
       const provide = provideDatabase(yield* Database)
       return {
         authenticate: (key, permission) =>
@@ -169,4 +179,6 @@ export class ProjectCredentialsStore extends Effect.Service<ProjectCredentialsSt
       } satisfies ProjectCredentialsStoreService
     }),
   },
-) {}
+) {
+  static readonly layer = Layer.effect(this, this.make)
+}

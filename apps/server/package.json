@@ -21,7 +21,7 @@
     "@flowmark/db": "workspace:*",
     "@trpc/server": "^11.19.0",
     "better-auth": "^1.7.13",
-    "effect": "^3.22.4",
+    "effect": "4.1.0",
     "next": "^16.4.2",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"

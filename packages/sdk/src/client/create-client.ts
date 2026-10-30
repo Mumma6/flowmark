@@ -1,4 +1,4 @@
-import { FetchHttpClient } from "@effect/platform"
+import { fetchClientLayer } from "../delivery/adapters/fetch-client.js"
 import { Layer } from "effect"
 import { HttpTransportLive } from "../delivery/adapters/http.js"
 import { FlowmarkSettings, resolveSettings } from "../config/settings.js"
@@ -33,7 +33,7 @@ export function createFlowmark(config: FlowmarkConfig = {}): FlowmarkClient {
   const settings = resolveSettings(config)
   const transport = HttpTransportLive.pipe(
     Layer.provide(Layer.succeed(FlowmarkSettings, settings)),
-    Layer.provide(FetchHttpClient.layer),
+    Layer.provide(fetchClientLayer()),
   )
   return makeClient(transport, config.onInstrumentationError, {
     environment: config.environment,

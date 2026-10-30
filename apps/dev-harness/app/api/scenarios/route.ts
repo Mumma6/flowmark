@@ -1,10 +1,10 @@
-import { Effect, Either, Schema } from "effect"
+import { Effect, Result, Schema } from "effect"
 import { flowmark } from "../../../lib/flowmark"
 import { runBusinessScenario } from "../../../lib/business-scenarios"
 import { scenarioIds } from "../../../lib/operations-catalog"
 
 const RequestSchema = Schema.Struct({
-  scenario: Schema.Literal(...scenarioIds),
+  scenario: Schema.Literals(scenarioIds),
 })
 
 const decodeScenario = Effect.fn("decodeScenario")(function* (
@@ -14,20 +14,20 @@ const decodeScenario = Effect.fn("decodeScenario")(function* (
     try: () => request.json(),
     catch: () => new Error("invalid-json"),
   })
-  return yield* Schema.decodeUnknown(RequestSchema)(body)
+  return yield* Schema.decodeUnknownEffect(RequestSchema)(body)
 })
 
 export async function POST(request: Request) {
   const decoded = await Effect.runPromise(
-    Effect.either(decodeScenario(request)),
+    Effect.result(decodeScenario(request)),
   )
-  return Either.match(decoded, {
-    onLeft: () =>
+  return Result.match(decoded, {
+    onFailure: () =>
       Response.json(
         { error: "Choose one of the supported operations scenarios." },
         { status: 400 },
       ),
-    onRight: async ({ scenario }) =>
+    onSuccess: async ({ scenario }) =>
       Response.json(await runBusinessScenario(flowmark, scenario)),
   })
 }

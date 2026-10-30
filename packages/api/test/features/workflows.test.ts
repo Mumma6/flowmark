@@ -1,4 +1,4 @@
-import { Effect, Either, Layer, Redacted } from "effect"
+import { Effect, Result, Layer, Redacted } from "effect"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import {
   DEMO_READ_KEY,
@@ -25,11 +25,10 @@ afterEach(() => {
   vi.unstubAllEnvs()
   vi.restoreAllMocks()
 })
-
-const expectLeft = <E>(result: Either.Either<unknown, E>, expected: unknown) =>
-  Either.match(result, {
-    onLeft: (error) => expect(error).toMatchObject(expected as object),
-    onRight: () => expect.fail("expected a failure"),
+const expectLeft = <E>(result: Result.Result<unknown, E>, expected: unknown) =>
+  Result.match(result, {
+    onFailure: (error) => expect(error).toMatchObject(expected as object),
+    onSuccess: () => expect.fail("expected a failure"),
   })
 
 const input = {
@@ -191,7 +190,7 @@ describe("API Effect services", () => {
     const authenticate = vi.fn(projectCredentials().authenticate)
     const result = await Effect.runPromise(
       Effect.flatMap(AuthorizeProject, (service) =>
-        Effect.either(
+        Effect.result(
           service.authorize(`Bearer ${DIAGNOSTICS_WRITE_KEY}`, "write"),
         ),
       ).pipe(
@@ -213,7 +212,7 @@ describe("API Effect services", () => {
     const body = vi.fn(() => input)
     const result = await Effect.runPromise(
       Effect.flatMap(IngestBrowserWorkflowEvents, (service) =>
-        Effect.either(
+        Effect.result(
           service.ingest(
             `Bearer ${DIAGNOSTICS_BROWSER_KEY}`,
             "http://localhost:3004",
@@ -273,7 +272,7 @@ describe("API Effect services", () => {
     const append = vi.fn(repository().append)
     const result = await Effect.runPromise(
       Effect.flatMap(IngestWorkflowEvents, (service) =>
-        Effect.either(service.ingest(null, Effect.sync(body))),
+        Effect.result(service.ingest(null, Effect.sync(body))),
       ).pipe(
         Effect.provide(
           IngestWorkflowEvents.layer.pipe(
@@ -297,7 +296,7 @@ describe("API Effect services", () => {
       const authenticate = vi.fn(projectCredentials().authenticate)
       const result = await Effect.runPromise(
         Effect.flatMap(AuthorizeProject, (service) =>
-          Effect.either(service.authorize(`Bearer ${key}`, permission)),
+          Effect.result(service.authorize(`Bearer ${key}`, permission)),
         ).pipe(
           Effect.provide(
             dependencies(
@@ -354,7 +353,7 @@ describe("API Effect services", () => {
   it("rejects a requested project the user does not belong to", async () => {
     const result = await Effect.runPromise(
       Effect.flatMap(AuthorizeProject, (service) =>
-        Effect.either(service.authorizeUser("user-1", "other-project")),
+        Effect.result(service.authorizeUser("user-1", "other-project")),
       ).pipe(
         Effect.provide(
           dependencies(
@@ -373,7 +372,7 @@ describe("API Effect services", () => {
   it("rejects a signed-in user without project membership", async () => {
     const result = await Effect.runPromise(
       Effect.flatMap(AuthorizeProject, (service) =>
-        Effect.either(service.authorizeUser("user-1")),
+        Effect.result(service.authorizeUser("user-1")),
       ).pipe(
         Effect.provide(
           dependencies(
@@ -420,7 +419,7 @@ describe("API Effect services", () => {
     const append = vi.fn(repository().append)
     const result = await Effect.runPromise(
       Effect.flatMap(IngestWorkflowEvents, (service) =>
-        Effect.either(service.ingest("Bearer key", Effect.succeed(invalid))),
+        Effect.result(service.ingest("Bearer key", Effect.succeed(invalid))),
       ).pipe(
         Effect.provide(
           IngestWorkflowEvents.layer.pipe(
@@ -437,7 +436,7 @@ describe("API Effect services", () => {
     const cause = new Error("database unavailable")
     const error = new PersistenceError({ operation: "append-event", cause })
     const operation = Effect.flatMap(IngestWorkflowEvents, (service) =>
-      Effect.either(service.ingest("Bearer key", Effect.succeed(input))),
+      Effect.result(service.ingest("Bearer key", Effect.succeed(input))),
     ).pipe(
       Effect.provide(
         IngestWorkflowEvents.layer.pipe(
@@ -447,12 +446,12 @@ describe("API Effect services", () => {
         ),
       ),
     )
-    Either.match(await Effect.runPromise(operation), {
-      onLeft: (failure) => {
+    Result.match(await Effect.runPromise(operation), {
+      onFailure: (failure) => {
         expect(failure).toBeInstanceOf(PersistenceError)
         expect(failure.cause).toBe(cause)
       },
-      onRight: () => expect.fail("Expected persistence failure"),
+      onSuccess: () => expect.fail("Expected persistence failure"),
     })
   })
 
@@ -460,7 +459,7 @@ describe("API Effect services", () => {
     const error = new RunNotFound({ runId: "test-run" })
     const result = await Effect.runPromise(
       Effect.flatMap(IngestWorkflowEvents, (service) =>
-        Effect.either(service.ingest("Bearer key", Effect.succeed(input))),
+        Effect.result(service.ingest("Bearer key", Effect.succeed(input))),
       ).pipe(
         Effect.provide(
           IngestWorkflowEvents.layer.pipe(
@@ -502,7 +501,7 @@ describe("API Effect services", () => {
     const timeline = vi.fn(repository().timeline)
     const result = await Effect.runPromise(
       Effect.flatMap(GetProjectWorkflowData, (queries) =>
-        Effect.either(queries.timeline("Bearer bad-key", "run-id")),
+        Effect.result(queries.timeline("Bearer bad-key", "run-id")),
       ).pipe(
         Effect.provide(
           GetProjectWorkflowData.layer.pipe(

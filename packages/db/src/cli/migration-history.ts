@@ -3,13 +3,16 @@ import { CommandConfigurationError } from "../environment/error.js"
 
 /** Applied history must be an exact prefix of the reviewed commit. */
 export const verifyMigrationHistory = Effect.fn("verifyMigrationHistory")((
-  expected: readonly { readonly hash: string; readonly folderMillis: number }[],
+  expected: readonly {
+    readonly hash: string
+    readonly folderMillis: number
+  }[],
   actual: readonly {
     readonly hash: string
     readonly created_at: string | number
   }[],
   allowPending: boolean,
-) => {
+): Effect.Effect<void, CommandConfigurationError> => {
   const matches =
     actual.length <= expected.length &&
     actual.every(

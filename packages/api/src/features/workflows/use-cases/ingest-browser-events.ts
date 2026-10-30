@@ -31,10 +31,10 @@ export interface IngestBrowserWorkflowEventsService {
     | RunNotFound
   >
 }
-
-export class IngestBrowserWorkflowEvents extends Context.Tag(
-  "@flowmark/api/IngestBrowserWorkflowEvents",
-)<IngestBrowserWorkflowEvents, IngestBrowserWorkflowEventsService>() {
+export class IngestBrowserWorkflowEvents extends Context.Service<
+  IngestBrowserWorkflowEvents,
+  IngestBrowserWorkflowEventsService
+>()("@flowmark/api/IngestBrowserWorkflowEvents") {
   static readonly layer = Layer.effect(
     IngestBrowserWorkflowEvents,
     Effect.gen(function* () {
@@ -71,7 +71,7 @@ export class IngestBrowserWorkflowEvents extends Context.Tag(
         }
         const envelope = yield* input.pipe(
           Effect.flatMap((value) =>
-            Schema.decodeUnknown(EventEnvelopeSchema)(value).pipe(
+            Schema.decodeUnknownEffect(EventEnvelopeSchema)(value).pipe(
               Effect.mapError((cause) => new InvalidInput({ cause })),
             ),
           ),

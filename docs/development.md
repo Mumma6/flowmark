@@ -187,6 +187,12 @@ Next.js delivery lifecycle. Domain validation and delivery are composed as
 Effects; only explicit application/SDK boundaries execute them. Apps can build
 without a database, but workflow ingestion and queries require PostgreSQL.
 
+All Effect consumers use pinned Effect 4.1.0. The
+[migration notes](./effect-v4-migration.md) cover native v4 conventions,
+advanced SDK compatibility, and the local mocked-delivery benchmark. Keep the
+version aligned across packages; check the installed Effect sources/declarations
+before adapting APIs, especially HTTP and Schema.
+
 API unit tests run without PostgreSQL using injected authorization/repository
 services. They cover lazy ingestion, Schema validation, project scoping, typed
 failures, redacted settings, and scoped connection cleanup on success, failure,

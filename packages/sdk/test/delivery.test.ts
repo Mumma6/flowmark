@@ -2,8 +2,16 @@ import {
   HttpClient,
   HttpClientResponse,
   type HttpClientRequest,
-} from "@effect/platform"
-import { Context, Deferred, Effect, Either, Layer, Redacted } from "effect"
+} from "effect/http"
+import {
+  Context,
+  Deferred,
+  Effect,
+  Result,
+  Layer,
+  Redacted,
+  Semaphore,
+} from "effect"
 import { describe, expect, it, vi } from "vitest"
 import type { WorkflowEvent, WorkflowProperties } from "@flowmarkdev/core"
 import { HttpTransportLive } from "../src/delivery/adapters/http.js"
@@ -71,18 +79,20 @@ describe("workflow delivery feature", () => {
     )
     const result = await Effect.runPromise(
       Effect.flatMap(WorkflowTransport, (transport) =>
-        Effect.either(transport.emit(event)),
+        Effect.result(transport.emit(event)),
       ).pipe(Effect.provide(httpLayer(HttpClient.make(execute)))),
     )
-
-    Either.match(result, {
-      onLeft: (error) =>
+    Result.match(result, {
+      onFailure: (error) =>
         expect(error).toMatchObject({
           _tag: "FlowmarkHttpError",
           status: 401,
-          cause: { _tag: "ResponseError" },
+          cause: {
+            _tag: "HttpClientError",
+            reason: { _tag: "StatusCodeError" },
+          },
         }),
-      onRight: () => expect.fail("expected an unauthorized HTTP failure"),
+      onSuccess: () => expect.fail("expected an unauthorized HTTP failure"),
     })
     expect(execute).toHaveBeenCalledOnce()
   })
@@ -104,14 +114,13 @@ describe("workflow delivery feature", () => {
     circular.push(circular)
     const result = await Effect.runPromise(
       Effect.flatMap(WorkflowTransport, (transport) =>
-        Effect.either(transport.emit({ ...event, properties })),
+        Effect.result(transport.emit({ ...event, properties })),
       ).pipe(Effect.provide(httpLayer(HttpClient.make(execute)))),
     )
-
-    Either.match(result, {
-      onLeft: (error) =>
+    Result.match(result, {
+      onFailure: (error) =>
         expect(error).toMatchObject({ _tag: "FlowmarkHttpError" }),
-      onRight: () => expect.fail("expected an encoding failure"),
+      onSuccess: () => expect.fail("expected an encoding failure"),
     })
     expect(execute).not.toHaveBeenCalled()
   })
@@ -131,7 +140,7 @@ describe("workflow delivery feature", () => {
             ),
           )
           const queue = Context.get(services, DeliveryQueue)
-          const ordering = yield* Effect.makeSemaphore(1)
+          const ordering = yield* Semaphore.make(1)
           yield* Effect.forEach(
             Array.from({ length: 1001 }),
             () => queue.enqueue(event, ordering),
@@ -142,14 +151,14 @@ describe("workflow delivery feature", () => {
           )
           expect(onError).toHaveBeenCalledOnce()
           yield* Deferred.succeed(gate, undefined)
-          const result = yield* Effect.either(queue.shutdown)
-          Either.match(result, {
-            onLeft: (error) =>
+          const result = yield* Effect.result(queue.shutdown)
+          Result.match(result, {
+            onFailure: (error) =>
               expect(error).toMatchObject({
                 _tag: "FlowmarkDeliveryError",
                 failures: [{ _tag: "FlowmarkQueueError", reason: "capacity" }],
               }),
-            onRight: () => expect.fail("expected a bounded queue overflow"),
+            onSuccess: () => expect.fail("expected a bounded queue overflow"),
           })
         }),
       ),
@@ -162,8 +171,8 @@ describe("workflow delivery feature", () => {
     }
     const operation = Effect.gen(function* () {
       const queue = yield* DeliveryQueue
-      yield* queue.enqueue(event, yield* Effect.makeSemaphore(1))
-      return yield* Effect.either(queue.flush)
+      yield* queue.enqueue(event, yield* Semaphore.make(1))
+      return yield* Effect.result(queue.flush)
     }).pipe(
       Effect.provide(
         DeliveryQueue.layer(vi.fn()).pipe(
@@ -171,12 +180,12 @@ describe("workflow delivery feature", () => {
         ),
       ),
     )
-    Either.match(await Effect.runPromise(operation), {
-      onLeft: (error) =>
+    Result.match(await Effect.runPromise(operation), {
+      onFailure: (error) =>
         expect(error).toMatchObject({
           failures: [{ _tag: "WorkflowTransportError" }],
         }),
-      onRight: () => expect.fail("expected a delivery defect"),
+      onSuccess: () => expect.fail("expected a delivery defect"),
     })
   })
 

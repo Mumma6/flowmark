@@ -1,4 +1,4 @@
-import { Effect, Either, Option } from "effect"
+import { Effect, Result, Option } from "effect"
 import { afterEach, beforeEach, expect, it, vi } from "vitest"
 import { readDashboardOnboarding, readDashboardSession } from "../lib/session"
 
@@ -77,11 +77,11 @@ it("fails explicitly on an upstream redirect instead of following it with creden
     "fetch",
     vi.fn().mockResolvedValue(new Response(null, { status: 302 })),
   )
-  const result = await Effect.runPromise(Effect.either(readDashboardSession()))
-  Either.match(result, {
-    onLeft: (error) =>
+  const result = await Effect.runPromise(Effect.result(readDashboardSession()))
+  Result.match(result, {
+    onFailure: (error) =>
       expect(error).toMatchObject({ _tag: "DashboardSessionError" }),
-    onRight: () => {
+    onSuccess: () => {
       throw new Error("Redirect must fail session lookup")
     },
   })
