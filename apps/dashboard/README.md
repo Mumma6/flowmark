@@ -19,8 +19,9 @@ to verify presentation changes.
 - **Runs:** full history through `run.list`, 25 rows per page, filtered on the
   server by workflow, lifecycle, search, namespace, failure code, environment,
   release and dates. Advanced filters are disclosed and applied values stay
-  visible. Search supports the existing IDs/workflow/failure-code contract;
-  arbitrary business properties and result predicates are not indexed.
+  visible. Free-text search covers the existing IDs, workflow, and failure-code
+  contract. Exact business-reference filters apply only to keys enabled for
+  that workflow. Result predicates apply only to declared fields.
 - **Run detail:** workflow identity, recorded lifecycle and application-reported
   result; Outcome, Timeline, Context, Compare and Related runs tabs. Timeline
   offers a waterfall and paginated event table. Peer sample size and recorded

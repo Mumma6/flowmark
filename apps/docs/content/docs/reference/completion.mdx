@@ -71,7 +71,7 @@ ignored acknowledgment. Local pending operation waits are not global locks.
 Final outcome/result are never replaced by a later terminal. Previously stored
 mixed-terminal history is preserved. See [terminal decisions](/docs/concepts/runs#terminal-decisions).
 
-## Business outcome (unreleased source capability)
+## Business outcome
 
 `outcome` is an optional canonical business code on both terminal methods,
 independent of execution status and `result`. A completed run may be `partial` or
@@ -90,11 +90,10 @@ Use a new revision when units or meaning change; context amendments cannot switc
 it. Runs without an explicit revision use the default result view. Missing and wrong-type fields are shown separately from zero.
 Raw results stay available. Declarations do not verify results or reconcile counts.
 
-This capability requires the accepting server/schema/reader from TASK-004 before
-using a writer that emits `outcome`. Deploy
-accepting readers first, verify persistence, then coordinate a separate aligned
-core/node package release. No minimum published version is claimed yet. Reports
-and typed workflow definitions remain proposed and unavailable.
+`outcome` is included in `@flowmarkdev/node` and `@flowmarkdev/core` 0.2.0.
+Use it only against a server that accepts the field. An older server reports a
+delivery failure instead of storing a stripped outcome. Reports and typed
+workflow definitions are in the same package version.
 
 ## Expected confirmations
 
