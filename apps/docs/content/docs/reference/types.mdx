@@ -11,6 +11,7 @@ import type {
   FlowmarkClient,
   FlowmarkConfig,
   WorkflowRunOptions,
+  WorkflowRunReference,
   WorkflowStepOptions,
   WorkflowDoneOptions,
   WorkflowFailOptions,
@@ -103,3 +104,11 @@ The Node entry additionally exports `WorkflowEvent`, `JsonValue`,
 `WorkflowOptions`, and `InstrumentationErrorHandler`.
 See [advanced exports](/docs/reference/advanced) for Effect-based transports
 and diagnostics errors. Ordinary consumers do not need to use Effect.
+
+## Continued execution identity
+
+`WorkflowRunReference` is `{ readonly workflow: string; readonly runId: string }`,
+where runId is the external SDK execution ID. All public runtime entries export
+this type. It carries no authorization or live state; the application explicitly
+validates, saves and forwards it. Resume through the existing workflow method
+using the same name and ID. Project scope is derived from credentials.

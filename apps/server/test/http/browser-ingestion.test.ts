@@ -197,6 +197,19 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
           )
         ).status,
       ).toBe(202)
+      const conflict = await send(
+        envelope({
+          ...started(),
+          type: "failed",
+          failure: { code: "LATE_FAILURE" },
+        }),
+      )
+      expect(conflict.status).toBe(409)
+      expect(conflict.headers.get("access-control-allow-origin")).toBe(origin)
+      expect(await conflict.json()).toMatchObject({
+        accepted: false,
+        disposition: "conflict",
+      })
       const snapshot = await reader().project.snapshot()
       expect(snapshot.runs).toHaveLength(1)
       expect(snapshot.runs[0]).toMatchObject({

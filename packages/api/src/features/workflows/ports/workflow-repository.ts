@@ -3,6 +3,7 @@ import type {
   WorkflowError,
   WorkflowFailure,
   WorkflowEvent,
+  AppendDisposition,
   WorkflowProperties,
   WorkflowResult,
 } from "@flowmarkdev/core"
@@ -210,7 +211,7 @@ export interface WorkflowRepositoryService {
     projectId: string,
     eventId: string,
     event: WorkflowEvent,
-  ) => Effect.Effect<void, PersistenceError | RunNotFound>
+  ) => Effect.Effect<AppendDisposition, PersistenceError | RunNotFound>
   readonly snapshot: (
     projectId: string,
   ) => Effect.Effect<ProjectSnapshot, PersistenceError>

@@ -1,5 +1,5 @@
 import { Context, Effect, Layer } from "effect"
-import type { WorkflowEvent } from "@flowmarkdev/core"
+import type { AppendDisposition, WorkflowEvent } from "@flowmarkdev/core"
 import {
   Database,
   DatabaseError,
@@ -31,7 +31,7 @@ export interface WorkflowStoreService {
     projectId: string,
     eventId: string,
     event: WorkflowEvent,
-  ) => Effect.Effect<void, DatabaseError | MissingRunError>
+  ) => Effect.Effect<AppendDisposition, DatabaseError | MissingRunError>
   readonly snapshot: (
     projectId: string,
   ) => Effect.Effect<ProjectSnapshot, DatabaseError>

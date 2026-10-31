@@ -1,7 +1,6 @@
 import { Match } from "effect"
-import type { WorkflowEvent } from "@flowmarkdev/core"
 
-/** Last persisted terminal on a run. Failed wins over completed. */
+/** Existing historical mixed terminals retain their failed projection. New terminals never supersede. */
 export type RunTerminal = "open" | "completed" | "failed"
 
 export const runTerminal = (types: ReadonlySet<string>): RunTerminal => {
@@ -16,15 +15,12 @@ export const runTerminal = (types: ReadonlySet<string>): RunTerminal => {
 
 /**
  * Events that must not append once a terminal is stored.
- * A later fail() may supersede completed. A second started is handled separately.
+ * All new markers are ignored after a terminal; terminal conflicts are acknowledged separately.
  */
-export const ignoreContinuedEvent = (
-  terminal: RunTerminal,
-  eventType: WorkflowEvent["type"],
-) =>
+export const ignoreContinuedEvent = (terminal: RunTerminal) =>
   Match.value(terminal).pipe(
     Match.when("open", () => false),
     Match.when("failed", () => true),
-    Match.when("completed", () => eventType !== "failed"),
+    Match.when("completed", () => true),
     Match.exhaustive,
   )

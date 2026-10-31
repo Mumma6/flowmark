@@ -55,3 +55,10 @@ first browser workflow, flush is a no-op; shutdown still closes the client.
 
 Read [delivery and diagnostics](/docs/delivery) for queue limits and error
 reporting without replacing your business result.
+
+## Conflicting terminal reports
+
+A new terminal event ID after the server has accepted a terminal returns HTTP 409. It is not automatically retried. The original final result/outcome stay
+unchanged; the conflict reaches onInstrumentationError and explicit drain
+failures. A real retry reuses the envelope event ID and is acknowledged as a
+duplicate. An older backend may still apply its previous terminal policy.

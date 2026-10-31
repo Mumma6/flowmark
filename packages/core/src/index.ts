@@ -5,6 +5,7 @@ export {
   WorkflowStepNameSchema,
 } from "./identifiers.js"
 export type {
+  WorkflowRunReference,
   WorkflowCorrelationId,
   WorkflowName,
   WorkflowRunId,
@@ -41,3 +42,6 @@ export {
   BusinessValueSchema,
 } from "./search-fields.js"
 export type { SearchFields } from "./search-fields.js"
+
+export { IngestionReceiptSchema } from "./ingestion.js"
+export type { AppendDisposition } from "./ingestion.js"

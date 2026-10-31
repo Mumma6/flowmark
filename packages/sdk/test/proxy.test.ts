@@ -37,8 +37,8 @@ function request(
 
 describe("server-only workflow proxy", () => {
   it("forwards validated events to a fixed API with a server-only key and stable event ID", async () => {
-    const fetcher = vi.fn<typeof fetch>(
-      async () => new Response(null, { status: 202 }),
+    const fetcher = vi.fn<typeof fetch>(async () =>
+      Response.json({ accepted: true }, { status: 202 }),
     )
     vi.stubGlobal("fetch", fetcher)
     const incoming = request({
@@ -85,8 +85,8 @@ describe("server-only workflow proxy", () => {
   })
 
   it("allows authenticated same-origin submissions", async () => {
-    const fetcher = vi.fn<typeof fetch>(
-      async () => new Response(null, { status: 202 }),
+    const fetcher = vi.fn<typeof fetch>(async () =>
+      Response.json({ accepted: true }, { status: 202 }),
     )
     vi.stubGlobal("fetch", fetcher)
     const authorize = vi.fn(async () => true)
@@ -105,6 +105,25 @@ describe("server-only workflow proxy", () => {
     expect((await createFlowmarkProxy(config)(incoming)).status).toBe(403)
     expect(fetcher).not.toHaveBeenCalled()
   })
+
+  it.each(["recorded", "duplicate", "ignored"] as const)(
+    "preserves the %s upstream receipt without exposing extra fields",
+    async (disposition) => {
+      const receipt = { accepted: disposition !== "ignored", disposition }
+      vi.stubGlobal(
+        "fetch",
+        vi.fn<typeof fetch>(async () =>
+          Response.json(
+            { ...receipt, privateField: "not-forwarded" },
+            { status: 202 },
+          ),
+        ),
+      )
+      const response = await createFlowmarkProxy(config)(request())
+      expect(response.status).toBe(202)
+      expect(await response.json()).toEqual(receipt)
+    },
+  )
 
   it("rejects malformed JSON without forwarding", async () => {
     const fetcher = vi.fn()
@@ -175,8 +194,8 @@ describe("server-only workflow proxy", () => {
   it.each([65536, 65537])(
     "enforces the exact byte boundary for a %i-byte payload",
     async (bytes) => {
-      const fetcher = vi.fn<typeof fetch>(
-        async () => new Response(null, { status: 202 }),
+      const fetcher = vi.fn<typeof fetch>(async () =>
+        Response.json({ accepted: true }, { status: 202 }),
       )
       vi.stubGlobal("fetch", fetcher)
       const json = JSON.stringify(input)

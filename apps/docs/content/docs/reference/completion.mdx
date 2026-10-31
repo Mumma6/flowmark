@@ -63,7 +63,13 @@ try {
 }
 ```
 
-Once terminal, later run markers are ignored.
+Once terminal, later calls on that local handle are ignored. For independent
+handles/requests, the server accepts only the first terminal. A new terminal
+event ID then returns HTTP 409 `EVENT_CONFLICT`; a replay of the stored envelope
+ID returns a duplicate acknowledgment. Ordinary late markers return an explicit
+ignored acknowledgment. Local pending operation waits are not global locks.
+Final outcome/result are never replaced by a later terminal. Previously stored
+mixed-terminal history is preserved. See [terminal decisions](/docs/concepts/runs#terminal-decisions).
 
 ## Business outcome (unreleased source capability)
 

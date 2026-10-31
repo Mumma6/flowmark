@@ -8,6 +8,39 @@ afterEach(() => {
 })
 
 describe("browser client", () => {
+  it("reports terminal HTTP 409 without retrying or replacing the application return", async () => {
+    vi.stubGlobal("location", { origin: "https://customer.example" })
+    const fetcher = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(
+        Response.json(
+          { accepted: false, disposition: "ignored" },
+          { status: 202 },
+        ),
+      )
+      .mockResolvedValueOnce(
+        Response.json(
+          { accepted: false, disposition: "conflict" },
+          { status: 409 },
+        ),
+      )
+    vi.stubGlobal("fetch", fetcher)
+    const diagnostic = vi.fn()
+    const client = createFlowmark({ onInstrumentationError: diagnostic })
+    const flow = client.workflow("browser.callback", { id: "already-finished" })
+    flow.done()
+    await expect(client.flush()).rejects.toMatchObject({
+      _tag: "FlowmarkDeliveryError",
+    })
+    expect(fetcher).toHaveBeenCalledTimes(2)
+    expect(diagnostic).toHaveBeenCalledOnce()
+    expect(diagnostic.mock.calls[0]?.[1]).toMatchObject({ type: "completed" })
+    await expect(
+      flow.operation("application-work", () => Promise.resolve(42)),
+    ).resolves.toBe(42)
+    await client.shutdown()
+  })
+
   it("can be imported and configured during SSR without accessing browser globals", async () => {
     vi.stubGlobal("location", undefined)
     const client = createFlowmark()

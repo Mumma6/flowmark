@@ -34,7 +34,6 @@ flowchart TB
   operation --> callback["or callback Promise"]
   terminal --> done["done({ result? })"]
   terminal --> fail["fail({ code, result? })"]
-  fail -.->|can supersede| done
 ```
 
 | API                                                | Purpose                                             |

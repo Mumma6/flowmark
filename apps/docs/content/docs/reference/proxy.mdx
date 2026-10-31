@@ -50,7 +50,7 @@ the server's key and sends to private `/v1/events`.
 
 | Status    | Meaning                                                     |
 | --------- | ----------------------------------------------------------- |
-| 202       | Upstream accepted the event                                 |
+| 202       | Upstream receipt (recorded, duplicate or ignored)           |
 | 400       | Invalid envelope/body or upstream validation rejection      |
 | 403       | Method/origin/access check rejected                         |
 | 409 / 429 | Upstream conflict / throttling                              |
@@ -58,3 +58,10 @@ the server's key and sends to private `/v1/events`.
 
 Private-route forwarding does not make browser reports trustworthy. Do not use
 them as proof of payments or business identity.
+
+Successful upstream JSON receipts are validated and forwarded, including
+`accepted: false, disposition: "ignored"`. The proxy never labels a known ignored
+marker as newly recorded evidence. Older `{ accepted: true }` acknowledgments
+remain valid without an invented disposition; they do not prove the newer
+terminal policy is deployed. Malformed successful responses produce 502.
+Terminal conflicts propagate as HTTP 409 delivery failures and are not retried.

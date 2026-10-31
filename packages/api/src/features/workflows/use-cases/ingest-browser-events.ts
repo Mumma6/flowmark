@@ -1,6 +1,6 @@
 import { Context, Effect, Layer, Redacted, Schema } from "effect"
 import { DEMO_BROWSER_KEY, DIAGNOSTICS_BROWSER_KEY } from "@flowmark/db/demo"
-import { EventEnvelopeSchema } from "@flowmarkdev/core"
+import { type AppendDisposition, EventEnvelopeSchema } from "@flowmarkdev/core"
 import { ApiSettings } from "../../../config.js"
 import {
   BrowserForbidden,
@@ -22,7 +22,7 @@ export interface IngestBrowserWorkflowEventsService {
     origin: string | null,
     input: Effect.Effect<unknown, InvalidInput>,
   ) => Effect.Effect<
-    void,
+    AppendDisposition,
     | BrowserUnauthorized
     | BrowserForbidden
     | BrowserRateLimited
@@ -77,12 +77,16 @@ export class IngestBrowserWorkflowEvents extends Context.Service<
           ),
         )
         const event = envelope.event
-        yield* repository.append(credential.projectId, envelope.eventId, {
-          ...event,
-          workflow: event.workflow.startsWith("browser.")
-            ? event.workflow
-            : `browser.${event.workflow}`,
-        })
+        return yield* repository.append(
+          credential.projectId,
+          envelope.eventId,
+          {
+            ...event,
+            workflow: event.workflow.startsWith("browser.")
+              ? event.workflow
+              : `browser.${event.workflow}`,
+          },
+        )
       })
       return IngestBrowserWorkflowEvents.of({
         ingest,
