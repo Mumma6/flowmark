@@ -14,6 +14,7 @@ import type {
 import { ApiOriginSchema } from "../config/api-origin.js"
 
 export type {
+  OperationErrorMapper,
   DeliveryOptions,
   DeliveryHealth,
   WorkflowDefinition,

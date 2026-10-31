@@ -1,6 +1,10 @@
+import {
+  genericOperationFailure,
+  mapOperationFailure,
+} from "../utils/map-operation-failure.js"
 import { withWorkflowDefinitions } from "../workflows/define-workflow.js"
 import { Effect, Layer, ManagedRuntime, Result, Schema } from "effect"
-import { FlowmarkConfigError } from "../errors/index.js"
+import { FlowmarkConfigError, type DeliveryFailure } from "../errors/index.js"
 import { DeliveryQueue } from "../delivery/delivery-queue.js"
 import { WorkflowTransport } from "../delivery/ports/workflow-transport.js"
 import { WorkflowEngine } from "../workflows/workflow-engine.js"
@@ -16,7 +20,22 @@ import type {
   WorkflowOperationOptions,
   WorkflowRunOptions,
 } from "../types/index.js"
-import type { WorkflowStepName, WorkflowProgress } from "@flowmarkdev/core"
+import type {
+  WorkflowEvent,
+  WorkflowStepName,
+  WorkflowProgress,
+} from "@flowmarkdev/core"
+
+/** Internal client capability; not exported from public SDK entry points. */
+export const reportInstrumentationFailure = Symbol(
+  "Flowmark.reportInstrumentationFailure",
+)
+type InternalClient = FlowmarkClient & {
+  readonly [reportInstrumentationFailure]: (
+    error: DeliveryFailure,
+    event: WorkflowEvent,
+  ) => void
+}
 
 /** Shared execution boundary; this module has no Node.js or framework imports. */
 export function makeClient(
@@ -24,7 +43,7 @@ export function makeClient(
   onError?: InstrumentationErrorHandler,
   defaults: Pick<WorkflowRunOptions, "environment" | "release"> = {},
   deliveryOptions: DeliveryOptions = {},
-): FlowmarkClient {
+): InternalClient {
   const options = Result.match(
     Schema.decodeUnknownResult(
       Schema.Struct({
@@ -59,9 +78,12 @@ export function makeClient(
     runtime.runSync(command)
   }
 
-  return withWorkflowDefinitions<Omit<FlowmarkClient, "defineWorkflow">>({
+  return withWorkflowDefinitions<Omit<InternalClient, "defineWorkflow">>({
+    [reportInstrumentationFailure]: (error, event) =>
+      runMarker(queue.diagnose(error, event)),
     deliveryHealth: () => finalHealth ?? runtime.runSync(queue.health),
     workflow(name, options = {}) {
+      const nameOfWorkflow = name
       if (shutdownResult) {
         throw new FlowmarkConfigError({ cause: "Client has been shut down" })
       }
@@ -103,7 +125,27 @@ export function makeClient(
         if (args.callback === undefined) {
           return operationHandle
         }
-        return withOperationCallback(operationHandle, args.callback)
+        return withOperationCallback(operationHandle, args.callback, (cause) =>
+          runMarker(
+            mapOperationFailure(cause, args.options).pipe(
+              Effect.catchTag("FlowmarkErrorMappingError", (error) =>
+                queue
+                  .diagnose(error, {
+                    type: "operation_failed",
+                    workflow: nameOfWorkflow,
+                    runId: handle.runId,
+                    operationId: operationHandle.operationId,
+                    operationName: name,
+                    durationMs: 0,
+                    timestamp: new Date().toISOString(),
+                    failure: genericOperationFailure,
+                  })
+                  .pipe(Effect.as(genericOperationFailure)),
+              ),
+              Effect.flatMap(effectHandle.fail),
+            ),
+          ),
+        )
       }
       return {
         runId: handle.runId,

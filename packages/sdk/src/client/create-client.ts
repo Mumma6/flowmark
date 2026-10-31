@@ -1,9 +1,13 @@
+import {
+  genericOperationFailure,
+  mapOperationFailure,
+} from "../utils/map-operation-failure.js"
 import { fetchClientLayer } from "../delivery/adapters/fetch-client.js"
-import { Layer } from "effect"
+import { Effect, Layer } from "effect"
 import { HttpTransportLive } from "../delivery/adapters/http.js"
 import { FlowmarkSettings, resolveSettings } from "../config/settings.js"
 import { FlowmarkConfigError } from "../errors/index.js"
-import { makeClient } from "./runtime.js"
+import { makeClient, reportInstrumentationFailure } from "./runtime.js"
 import { WorkflowTransport } from "../delivery/ports/workflow-transport.js"
 import type {
   Flow,
@@ -68,6 +72,7 @@ export function workflow(name: WorkflowName, options: WorkflowOptions): Flow {
     {},
     options.delivery,
   )
+  const nameOfWorkflow = name
   const flow = client.workflow(name, options)
   let finished = false
   let completionRequested = false
@@ -107,7 +112,7 @@ export function workflow(name: WorkflowName, options: WorkflowOptions): Flow {
       }
       return args.callback === undefined
         ? ignored
-        : withOperationCallback(ignored, args.callback)
+        : withOperationCallback(ignored, args.callback, () => undefined)
     }
     const handle = flow.operation(name, args.options)
     activeOperations.add(handle.operationId)
@@ -139,7 +144,35 @@ export function workflow(name: WorkflowName, options: WorkflowOptions): Flow {
     }
     return args.callback === undefined
       ? operationHandle
-      : withOperationCallback(operationHandle, args.callback)
+      : withOperationCallback(operationHandle, args.callback, (cause) => {
+          const failure = Effect.runSync(
+            mapOperationFailure(cause, args.options).pipe(
+              Effect.catchTag("FlowmarkErrorMappingError", (error) =>
+                Effect.sync(() => {
+                  const event = {
+                    type: "operation_failed" as const,
+                    workflow: nameOfWorkflow,
+                    runId: flow.runId,
+                    operationId: operationHandle.operationId,
+                    operationName: name,
+                    durationMs: 0,
+                    timestamp: new Date().toISOString(),
+                    failure: genericOperationFailure,
+                  }
+                  client[reportInstrumentationFailure](error, event)
+                }).pipe(
+                  Effect.catchCause(() =>
+                    Effect.logWarning(
+                      "[Flowmark] Instrumentation error callback failed",
+                    ),
+                  ),
+                  Effect.as(genericOperationFailure),
+                ),
+              ),
+            ),
+          )
+          operationHandle.fail(failure)
+        })
   }
   return {
     runId: flow.runId,

@@ -1,6 +1,7 @@
 export { createFlowmark, workflow } from "./client/create-client.js"
 export { defineConfig } from "./config/define-config.js"
 export {
+  FlowmarkErrorMappingError,
   FlowmarkConfigError,
   FlowmarkDeliveryError,
   FlowmarkHttpError,
@@ -10,6 +11,7 @@ export {
 export { WorkflowTransport } from "./delivery/ports/workflow-transport.js"
 export { MemoryTransport } from "./delivery/adapters/memory-transport.js"
 export type {
+  OperationErrorMapper,
   DeliveryOptions,
   DeliveryHealth,
   WorkflowDefinition,

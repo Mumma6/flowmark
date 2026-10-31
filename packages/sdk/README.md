@@ -306,3 +306,34 @@ Keep browser payloads small: keepalive quotas and unload/offline limits still
 apply. Node jobs should explicitly drain at process exit while preserving their
 original return/error. See the [bulk import example](https://github.com/Mumma6/flowmark/blob/staging/packages/sdk/examples/bulk-import.mjs)
 and [delivery documentation](https://docs.flowmark.dev/docs/delivery).
+
+## Safe callback error mapping
+
+Operation callbacks preserve their exact original rejection. By default, Flowmark
+still copies bounded structured failures and `Error.message`. To choose safe
+telemetry fields explicitly, use a synchronous per-operation mapper:
+
+```ts
+await flow.operation("crm-request", () => crm.request(), {
+  mapError: (_cause) => ({
+    code: "CRM_UNAVAILABLE",
+    message: "CRM temporarily unavailable",
+    retryable: true,
+  }),
+})
+```
+
+`mapError` receives `unknown` and returns `WorkflowFailure`. Only validated
+`code`, optional `message` and optional `retryable` are sent; no original message
+or stack is appended. Throwing/invalid mappers use `{ code: "operation_failed" }`
+and report `FlowmarkErrorMappingError` (`reason: "threw" | "invalid"`) through
+instrumentation diagnostics and explicit drain failures. Diagnostics retain no
+original cause or invalid mapped payload. Async mappers are unsupported; their
+returned promises are not awaited and rejected results are contained.
+
+This option works in Node, Next.js, browser and custom-transport callbacks.
+Manual operation handles keep their explicit `fail()` behavior. An operation
+failure does not fail the run automatically; recovery can still end with `done()`.
+Expected domain rejections belong in reported result/reason counts. Mapping is
+not automatic redaction of context, results, or fields you select yourself.
+See the [CRM import example](https://github.com/Mumma6/flowmark/blob/staging/packages/sdk/examples/safe-operation-errors.mjs).

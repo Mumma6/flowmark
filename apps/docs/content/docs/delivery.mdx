@@ -101,7 +101,7 @@ const health = flowmark.deliveryHealth()
 
 `pendingProgress` counts currently replaceable progress slots. `coalesced`
 counts replaced submissions; `dropped` counts capacity/closed refusals; `failed`
-counts validation and exhausted transport failures. Successful HTTP retries do
+counts validation, error-mapping and exhausted transport failures. Successful HTTP retries do
 not increment failed. Counters and the last failure tag are cumulative for the
 client lifetime, survive flush/shutdown, and never reset on a drain. Health
 contains no run IDs, keys, payloads or raw causes. It measures local delivery,
