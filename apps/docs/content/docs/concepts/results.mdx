@@ -65,11 +65,11 @@ remain in the timeline after completion; post-terminal reports are ignored.
 Browser-reported evidence remains untrusted. Optional result declarations also
 label non-final snapshots using the original start's explicit definitionRevision.
 
-Requires accepting server/storage support (migration 0010) before writer use.
-Older servers reject report events through normal delivery diagnostics; there is
-no fallback encoding. Package publication is separate. Existing queue limits and
-runtime-specific drains still apply. See the report reference for bounds and
-single-reporter ordering limitations.
+`report()` is included in `@flowmarkdev/node` 0.2.0. It still requires
+accepting server storage (migration 0010) before writer use. Older servers
+reject report events through normal delivery diagnostics; there is no fallback
+encoding. Existing queue limits and runtime-specific drains still apply. See
+the report reference for bounds and single-reporter ordering limitations.
 
 ## Explicit aggregation
 

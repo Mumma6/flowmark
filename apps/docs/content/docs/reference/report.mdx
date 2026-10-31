@@ -9,9 +9,10 @@ description: Record absolute, non-final business results during application-owne
 run.report(snapshot: WorkflowResult): void
 ```
 
-Available in source on Node, Next.js, browser and the advanced custom-transport
-surface. Package publication is separate. Deploy a server accepting `report`
-events and apply migration `0010` before enabling a writer that uses this method.
+`report()` is included in `@flowmarkdev/node` 0.2.0 on Node, Next.js, the
+browser and the advanced custom-transport surface. Deploy a server accepting
+`report` events and apply migration `0010` before enabling a writer that uses
+this method.
 An older server rejects the event; delivery diagnostics and explicit drains
 report failure. There is no fallback to a checkpoint or final result.
 

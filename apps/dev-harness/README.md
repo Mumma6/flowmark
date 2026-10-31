@@ -36,8 +36,7 @@ explicit. Successful runs attach business results. Failed runs retain
 checkpoints rather than attaching a fake completion result.
 
 The operations UI shows source records, outcomes and a concrete next action.
-Execution links prefill the dashboard search with the SDK run ID, so only
-that execution is listed (within the dashboard's latest-100-run snapshot).
+Execution links prefill the dashboard run search with the SDK run ID.
 The execution list retains the last 30 results in the current page session;
 reloading clears it. PostgreSQL retains Flowmark history. Switching cases
 shows that case's source and most recent execution, not another case's status.

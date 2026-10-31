@@ -61,8 +61,9 @@ Old wire envelopes still validate. Existing clients also see terminal conflicts
 as non-retryable HTTP 409 delivery failures. New receipt fields are additive;
 the proxy preserves real older-server accepted responses without inventing a
 disposition. The first-terminal policy is a backend requirement: an older server
-still applies its old rules. Deploy accepting backend/proxy readers before
-relying on the new behavior. Package publication is a separate release operation.
+still applies its old rules. Deploy accepting backend and proxy readers before
+relying on the new behavior. The client behavior ships in `@flowmarkdev/node`
+0.2.0.
 
 Reports remain non-final and cannot be appended after termination. Terminal
 completion never fulfills or cancels expectations. The

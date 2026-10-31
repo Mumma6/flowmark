@@ -19,11 +19,11 @@ at most 12 workflows; selecting one opens its summary and recent executions.
 Open **Runs** to search SDK run IDs, workflow names, last checkpoints,
 correlation IDs or parent IDs. Combine workflow, status and naming-namespace
 filters; sort by start time or duration; optionally group rows by workflow.
-Each page contains at most 15 runs.
+Each page requests 25 runs. Enabled business-reference keys and declared
+result fields can add an exact filter. Arbitrary JSON is not searchable.
 
-Run browsing filters and paginates the project's latest **100 runs**.
-Metrics cover recorded runs and daily volume covers 30 days. Naming
-namespace is inferred from workflow name prefixes.
+Run history is the project's recorded runs, not only the overview's latest 100. Metrics on the overview use their labelled populations. Daily volume
+covers 30 days. Naming namespace is inferred from workflow name prefixes.
 
 ## Open an execution
 
@@ -35,8 +35,9 @@ Run details open on **Outcome**. Separate tabs keep investigation focused:
   times, operation timing, properties, progress and safe error details.
   Each page contains at most 15 events.
 - **Context:** properties, environment, release and the external SDK run ID.
-- **Compare:** this run versus the last 20 of the same workflow — duration
-  against the peer median and p95, plus each peer's outcome.
+- **Compare:** this run versus up to 50 earlier runs of the same workflow.
+  The default window is 30 days and the same environment. Duration is compared
+  with the peer median and p95.
 - **Related runs:** explicitly declared parent matches and correlated runs,
   paginated independently at 10 rows per table.
 
