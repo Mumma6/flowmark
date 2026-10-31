@@ -55,3 +55,5 @@ export {
   WorkflowRetryReferenceSchema,
 } from "./attempts.js"
 export type { WorkflowAttempt, WorkflowRetryReference } from "./attempts.js"
+
+export * from "./expectations.js"

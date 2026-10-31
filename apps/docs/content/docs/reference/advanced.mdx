@@ -59,3 +59,11 @@ is `reason: "threw" | "invalid"`; it deliberately retains neither the original
 application cause nor the rejected mapped value. It is reported through the
 existing diagnostics/drain channels when callback `mapError` fails. The advanced
 custom-transport `workflow()` boundary uses the same mapping and queue accounting.
+
+## Expected confirmations
+
+See [Expected confirmations](/docs/reference/expectations) for `flow.expect()`, client-level `resolveExpectation()` and `cancelExpectation()`, the serializable reference, bounded deadlines and delivery/runtime restrictions. These reports remain separate from execution status and final run results.
+
+`createFlowmarkWithTransport({ transport, onInstrumentationError?, delivery? })` owns one shared client lifecycle for custom transports, including settlement-only requests. It returns the ordinary `FlowmarkClient`; call `flush()`/`shutdown()` explicitly. Custom HTTP transports must honor the accepting-server capability and server protocol marker documented in the expectation guide.
+
+The Node root export `FlowmarkExpectationError` carries only a bounded `reason`: `invalid-input`, `run-closed` or `source-forbidden`. It participates in existing instrumentation diagnostics, failure samples and delivery-health counters. A returned expectation reference is never delivery proof.

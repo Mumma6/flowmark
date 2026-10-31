@@ -488,12 +488,15 @@ export function RunInvestigation({
   comparisonError?: string
 }) {
   const routeParams = useSearchParams()
+  const linkedEventId = events.find(
+    (event) => event.id === routeParams.get("event"),
+  )?.id
   const [evidenceSelection, setEvidenceSelection] = useState<
     { id: string; revision: number } | undefined
-  >()
+  >(linkedEventId ? { id: linkedEventId, revision: 0 } : undefined)
   const [timelineView, setTimelineView] = useState<
     "timeline" | "waterfall" | "events"
-  >("timeline")
+  >(linkedEventId ? "events" : "timeline")
   const first = events[0]
   if (!first) {
     return null
@@ -559,7 +562,11 @@ export function RunInvestigation({
       )}
       <Tabs
         defaultValue={
-          routeParams.get("view") === "compare" ? "compare" : "outcome"
+          linkedEventId
+            ? "timeline"
+            : routeParams.get("view") === "compare"
+              ? "compare"
+              : "outcome"
         }
         className="min-w-0"
       >

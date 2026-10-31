@@ -43,6 +43,13 @@ const input = {
 
 function repository(overrides: Partial<WorkflowRepositoryService> = {}) {
   return WorkflowRepository.of({
+    expectations: () =>
+      Effect.succeed({
+        asOf: new Date(0).toISOString(),
+        expectations: [],
+        unmatched: [],
+        unavailableCount: 0,
+      }),
     businessInsights: () => Effect.die("Not used by this fixture"),
     append: () => Effect.succeed("recorded"),
     snapshot: () =>

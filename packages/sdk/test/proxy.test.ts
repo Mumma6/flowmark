@@ -36,6 +36,39 @@ function request(
 }
 
 describe("server-only workflow proxy", () => {
+  it("rejects expectation reports before forwarding a server credential", async () => {
+    const fetcher = vi.fn<typeof fetch>()
+    vi.stubGlobal("fetch", fetcher)
+    const handler = createFlowmarkProxy({
+      apiKey: "server-secret",
+      apiUrl: "http://localhost",
+    })
+    const response = await handler(
+      new Request("https://customer.example/api/flowmark", {
+        method: "POST",
+        headers: {
+          origin: "https://customer.example",
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          eventId: crypto.randomUUID(),
+          event: {
+            type: "expectation_resolved",
+            workflow: "booking",
+            runId: "existing",
+            expectationId: "confirmation",
+            timestamp: new Date().toISOString(),
+          },
+        }),
+      }),
+    )
+    expect(response.status).toBe(403)
+    expect(await response.json()).toMatchObject({
+      code: "EXPECTATION_SOURCE_FORBIDDEN",
+    })
+    expect(fetcher).not.toHaveBeenCalled()
+  })
+
   it("forwards validated events to a fixed API with a server-only key and stable event ID", async () => {
     const fetcher = vi.fn<typeof fetch>(async () =>
       Response.json({ accepted: true }, { status: 202 }),

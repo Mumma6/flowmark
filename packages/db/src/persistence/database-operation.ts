@@ -1,4 +1,7 @@
 export enum DatabaseOperation {
+  AppendExpectation = "append-expectation",
+  ReadExpectations = "read-expectations",
+  RebuildExpectations = "rebuild-expectations",
   ReadBusinessInsights = "read-business-insights",
   VerifyMigrations = "verify-migrations",
   ReadResultDeclarations = "read-result-declarations",

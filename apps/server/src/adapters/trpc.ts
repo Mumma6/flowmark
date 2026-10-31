@@ -1,3 +1,4 @@
+import { ExpectationStateSchema } from "@flowmark/api"
 import { PeerSelectionSchema } from "@flowmark/api"
 import {
   BusinessTimestampSchema,
@@ -513,6 +514,7 @@ export const appRouter = t.router({
         Schema.toStandardSchemaV1(
           Schema.Struct({
             workflow: Schema.optional(Schema.String),
+            expectationState: Schema.optional(ExpectationStateSchema),
             resultSelection: Schema.optional(ResultSelectionSchema),
             ratioSelection: Schema.optional(RatioSelectionSchema),
             outcome: Schema.optional(
@@ -586,6 +588,21 @@ export const appRouter = t.router({
           (header) =>
             Effect.flatMap(GetProjectWorkflowData, (queries) =>
               queries.timeline(header, input.id),
+            ),
+        ),
+      ),
+    expectations: t.procedure
+      .input(Schema.toStandardSchemaV1(Schema.Struct({ id: UuidSchema })))
+      .query(({ ctx, input }) =>
+        readQuery(
+          ctx.request,
+          (userId, projectId) =>
+            Effect.flatMap(GetProjectWorkflowData, (queries) =>
+              queries.expectationsForUser(userId, input.id, projectId),
+            ),
+          (header) =>
+            Effect.flatMap(GetProjectWorkflowData, (queries) =>
+              queries.expectations(header, input.id),
             ),
         ),
       ),

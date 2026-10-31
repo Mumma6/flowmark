@@ -17,6 +17,36 @@ afterEach(() => {
 })
 
 describe("Next.js integration", () => {
+  it("registers and drains settlement-only requests without creating a workflow", async () => {
+    const fetcher = vi.fn<typeof fetch>(async () =>
+      Response.json(
+        { accepted: true, capabilities: ["expectations-v1"] },
+        { status: 202 },
+      ),
+    )
+    vi.stubGlobal("fetch", fetcher)
+    const client = createFlowmark({ apiKey: "key", apiUrl: "http://localhost" })
+    client.resolveExpectation(
+      {
+        version: 1,
+        workflow: "booking",
+        runId: "existing-run",
+        expectationId: "confirmation",
+      },
+      { outcome: "no-availability", result: { reserved: 0 } },
+    )
+    expect(callbacks).toHaveLength(1)
+    await callbacks[0]!()
+    expect(fetcher).toHaveBeenCalledTimes(1)
+    expect(
+      JSON.parse(String(fetcher.mock.calls[0]?.[1]?.body)).event,
+    ).toMatchObject({
+      type: "expectation_resolved",
+      runId: "existing-run",
+      result: { reserved: 0 },
+    })
+  })
+
   it("keeps attempt metadata through Next request drains", async () => {
     const fetcher = vi.fn<typeof fetch>(async () =>
       Response.json(

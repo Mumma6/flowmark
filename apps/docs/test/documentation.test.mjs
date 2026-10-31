@@ -102,6 +102,7 @@ import { createFlowmark, workflow, MemoryTransport } from "../src/index.js"
 import { createFlowmark as createBrowserFlowmark } from "../src/browser/index.js"
 import { createFlowmark as createNextFlowmark } from "../src/adapters/next.js"
 import { createFlowmarkProxy } from "../src/adapters/proxy.js"
+declare const confirmationId: string
 declare const batchId: string
 declare const logger: { error(context: unknown, message: string): void }
 declare function loadInvoices(id: string): Promise<unknown[]>
@@ -116,6 +117,10 @@ declare const supplierId: string
 const flowmark = createFlowmark()
 const run = flowmark.workflow("test.run")
 ${blocks("/docs/sdk")[1].replace(/^import .+$/gm, "")}
+function expectationExamples() {
+${blocks("/docs/reference/expectations")[0]}
+${blocks("/docs/reference/expectations")[2]}
+}
 async function operationExamples() {
 ${blocks("/docs/reference/operation")[1]}
 ${blocks("/docs/reference/operation")[2]}

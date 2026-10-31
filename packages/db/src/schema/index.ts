@@ -1,5 +1,8 @@
+import { sql } from "drizzle-orm"
 import type { WorkflowAttempt, WorkflowRetryReference } from "@flowmarkdev/core"
 import {
+  type AnyPgColumn,
+  boolean,
   index,
   bigint,
   bigserial,
@@ -28,6 +31,9 @@ export { account, session, user, verification } from "./auth.js"
 export type StoredWorkflowError = WorkflowError | WorkflowFailure
 
 export const workflowEventType = pgEnum("workflow_event_type", [
+  "expectation_declared",
+  "expectation_resolved",
+  "expectation_cancelled",
   "started",
   "step",
   "properties",
@@ -146,6 +152,20 @@ export const workflowEvents = pgTable(
     type: workflowEventType("type").notNull(),
     step: text("step"),
     operationId: uuid("operation_id"),
+    expectationEffective: boolean("expectation_effective")
+      .notNull()
+      .default(false),
+    expectationOwnerId: uuid("expectation_owner_id").references(
+      (): AnyPgColumn => workflowExpectations.id,
+      { onDelete: "cascade" },
+    ),
+    expectation:
+      jsonb("expectation").$type<
+        import("@flowmarkdev/core").ExpectationEvent
+      >(),
+    expectationObservedAt: timestamp("expectation_observed_at", {
+      withTimezone: true,
+    }),
     operationName: text("operation_name"),
     attempt: jsonb("attempt").$type<WorkflowAttempt>(),
     durationMs: doublePrecision("duration_ms"),
@@ -263,5 +283,40 @@ export const workflowSearchFields = pgTable(
       table.projectId,
       table.workflow,
     ),
+  ],
+)
+
+/** Bounded canonical facts. Cascades prevent projection-only archives after retention. */
+export const workflowExpectations = pgTable(
+  "workflow_expectations",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    runId: uuid("run_id")
+      .notNull()
+      .references(() => workflowRuns.id, { onDelete: "cascade" }),
+    expectationId: text("expectation_id").notNull(),
+    declarationEventId: uuid("declaration_event_id").references(
+      () => workflowEvents.id,
+      { onDelete: "cascade" },
+    ),
+    settlementEventId: uuid("settlement_event_id").references(
+      () => workflowEvents.id,
+      { onDelete: "cascade" },
+    ),
+    declaredAt: timestamp("declared_at", { withTimezone: true }),
+    deadlineAt: timestamp("deadline_at", { withTimezone: true }),
+    settledAt: timestamp("settled_at", { withTimezone: true }),
+    settlementType: text("settlement_type", {
+      enum: ["expectation_resolved", "expectation_cancelled"],
+    }),
+  },
+  (table) => [
+    uniqueIndex("workflow_expectations_run_identity_uidx").on(
+      table.runId,
+      table.expectationId,
+    ),
+    index("workflow_expectations_deadline_idx")
+      .on(table.deadlineAt, table.runId)
+      .where(sql`${table.settlementEventId} is null`),
   ],
 )

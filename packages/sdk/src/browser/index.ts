@@ -181,6 +181,7 @@ export function createFlowmark(
         config.onInstrumentationError,
         { environment: config.environment, release: config.release },
         config.delivery,
+        direct ? "browser" : "proxy",
       )
     }
     return client
@@ -189,6 +190,10 @@ export function createFlowmark(
   return withWorkflowDefinitions<Omit<FlowmarkClient, "defineWorkflow">>({
     deliveryHealth: () => client?.deliveryHealth() ?? emptyDeliveryHealth(),
     workflow: (name, options) => getClient().workflow(name, options),
+    resolveExpectation: (reference, options) =>
+      getClient().resolveExpectation(reference, options),
+    cancelExpectation: (reference, options) =>
+      getClient().cancelExpectation(reference, options),
     flush: () => client?.flush() ?? Promise.resolve(),
     shutdown() {
       closed = true
@@ -198,3 +203,10 @@ export function createFlowmark(
 }
 
 export type { WorkflowAttempt, WorkflowRetryReference } from "@flowmarkdev/core"
+
+export type {
+  ExpectationReference,
+  ExpectationOptions,
+  ExpectationResolution,
+  ExpectationCancellation,
+} from "@flowmarkdev/core"

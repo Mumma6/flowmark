@@ -65,6 +65,9 @@ still applies its old rules. Deploy accepting backend/proxy readers before
 relying on the new behavior. Package publication is a separate release operation.
 
 Reports remain non-final and cannot be appended after termination. Terminal
-completion never fulfills or cancels expectations. The planned
-[expectation contract](./expectations.md) specifies TASK-014's narrowly scoped
-post-terminal settlement channel; it is not implemented by the contract note.
+completion never fulfills or cancels expectations. The
+[expectation contract](./expectations.md) describes the dedicated resolve/cancel
+channel implemented by TASK-014. These facts may follow terminal completion
+without changing its status, final outcome/result or duration. A new declaration
+still requires an open run; an existing matching declaration can be replayed
+idempotently. All ordinary markers retain the transition policy above.

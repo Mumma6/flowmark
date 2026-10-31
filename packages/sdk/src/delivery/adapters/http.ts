@@ -8,6 +8,7 @@ export const HttpTransportLive = Layer.effect(
   Effect.gen(function* () {
     const settings = yield* FlowmarkSettings
     return yield* makeHttpTransport({
+      expectationProtocol: true,
       endpoint: new URL("/v1/events", settings.apiUrl).toString(),
       apiKey: settings.apiKey,
     })

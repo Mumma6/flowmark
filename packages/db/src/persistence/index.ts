@@ -37,3 +37,7 @@ export * from "./workflows/writes/continue-run.js"
 export { ResultDeclarationStore } from "./result-declarations/result-declaration-store.js"
 
 export { InvalidResultQuery } from "./database.js"
+
+export { ExpectationObservationClock } from "./workflows/observation-clock.js"
+
+export { rebuildExpectations } from "./workflows/writes/rebuild-expectations.js"

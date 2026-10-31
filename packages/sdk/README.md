@@ -359,3 +359,27 @@ const retry = flowmark.workflow("crm.sync", {
 Groups are scoped to one run and operation name (nonblank, maximum 128 characters); ordinals are positive safe integers. Each attempt has a new operation ID; `retryOf` starts a separate execution with its own run ID. Earlier failure evidence and reported results remain unchanged. Repeated unannotated operations are not inferred retries. Cross-run results are reported work, not deduplicated items. Qualified references resolve only within the authorized project.
 
 Deploy the TASK-009 schema, API and readers before using these options. HTTP delivery requires the `attempts-v1` capability receipt; older servers that omit it produce diagnostics and failed drains rather than silently claiming metadata support. They may already have accepted a stripped event. Update same-origin proxies too; custom transports own compatibility. Calls without these options remain unchanged. See the [attempt contract](https://docs.flowmark.dev/docs/reference/attempts) and the runnable loopback example `examples/explicit-attempts.mjs`.
+
+### Expected confirmations
+
+```ts
+const flow = flowmark.workflow("booking.submit")
+const confirmation = flow.expect("provider-response", {
+  id: confirmationId,
+  within: "5m",
+})
+flow.done({ outcome: "submitted", result: { submitted: 1 } })
+// Persist/forward the reference explicitly; the application owns its callback.
+// Later, on an authenticated server callback using a configured client:
+flowmark.resolveExpectation(confirmation, {
+  outcome: "no-availability",
+  result: { reserved: 0 },
+})
+// Alternative: flowmark.cancelExpectation(confirmation, { code: "BOOKING_CANCELLED" })
+```
+
+Declarations fix a server-observed deadline; resolution timing does not verify business success. Explicit settlement survives process restarts and may follow terminal completion without reopening the run or changing its final result. References are not credentials or delivery acknowledgments. Node drains explicitly; Next registers settlement-only requests.
+
+IDs/names are nonblank, at most 128 characters; durations are positive integer `ms|s|m|h|d`, 1 ms–7 days. The retained lifetime limit is 100 IDs/run, including unmatched settlements. Identical declarations never reset deadlines; first accepted settlement wins. Missing/incomplete evidence stays unknown. Reads evaluate pending/overdue/on-time/late/cancelled states; no scheduler or notification is installed and retention is unchanged.
+
+Deploy the accepting `expectations-v1` storage/API/readers before enabling these methods; aligned package publication is separate. Direct browser mode uses untrusted `browser.` references. The generic server-key proxy rejects expectation events. Advanced clients can use `createFlowmarkWithTransport({ transport })` for a shared settlement/drain lifecycle. See the [expectation guide](https://docs.flowmark.dev/docs/reference/expectations) and the loopback-only `examples/durable-expectations.mjs`.

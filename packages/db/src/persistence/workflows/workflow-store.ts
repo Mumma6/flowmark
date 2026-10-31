@@ -1,3 +1,5 @@
+import { getRunExpectations } from "./queries/get-run-expectations.js"
+import type { RunExpectations } from "@flowmarkdev/core"
 import type { PeerSelection } from "@flowmarkdev/core"
 import type { BusinessInsightsQuery, BusinessInsights } from "@flowmarkdev/core"
 import { getBusinessInsights } from "./queries/get-business-insights.js"
@@ -31,6 +33,10 @@ import type {
 } from "./types.js"
 
 export interface WorkflowStoreService {
+  readonly expectations: (
+    projectId: string,
+    runId: string,
+  ) => Effect.Effect<RunExpectations, DatabaseError>
   readonly businessInsights: (
     projectId: string,
     query: BusinessInsightsQuery,
@@ -71,6 +77,8 @@ export class WorkflowStore extends Context.Service<WorkflowStore>()(
     make: Effect.gen(function* () {
       const provide = provideDatabase(yield* Database)
       return {
+        expectations: (projectId, runId) =>
+          provide(getRunExpectations(projectId, runId)),
         businessInsights: (projectId, query) =>
           provide(getBusinessInsights(projectId, query)),
         append: (projectId, eventId, event) =>

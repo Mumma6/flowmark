@@ -45,3 +45,13 @@ export type {
 } from "@flowmarkdev/core"
 
 export type { WorkflowAttempt, WorkflowRetryReference } from "@flowmarkdev/core"
+
+export type {
+  ExpectationReference,
+  ExpectationOptions,
+  ExpectationResolution,
+  ExpectationCancellation,
+} from "@flowmarkdev/core"
+
+export { createFlowmarkWithTransport } from "./client/create-client.js"
+export { FlowmarkExpectationError } from "./errors/index.js"

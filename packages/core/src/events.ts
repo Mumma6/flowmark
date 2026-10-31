@@ -1,4 +1,9 @@
 import {
+  ExpectationDeclaredSchema,
+  ExpectationResolvedSchema,
+  ExpectationCancelledSchema,
+} from "./expectations.js"
+import {
   WorkflowAttemptSchema,
   WorkflowRetryReferenceSchema,
 } from "./attempts.js"
@@ -164,6 +169,9 @@ const ProgressEventSchema = Schema.Struct({
   ),
 )
 export const WorkflowEventSchema = Schema.Union([
+  ExpectationDeclaredSchema,
+  ExpectationResolvedSchema,
+  ExpectationCancelledSchema,
   StartedEventSchema,
   StepEventSchema,
   PropertiesEventSchema,

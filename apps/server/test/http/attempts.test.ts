@@ -237,7 +237,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
       expect((await send(terminal, eventId)).status).toBe(202)
       expect(await (await send(terminal, eventId)).json()).toMatchObject({
         disposition: "duplicate",
-        capabilities: ["attempts-v1"],
+        capabilities: expect.arrayContaining(["attempts-v1"]),
       })
       expect(
         (

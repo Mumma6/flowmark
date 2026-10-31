@@ -132,3 +132,9 @@ Next drains also remain subject to the host's request duration limit.
 ## Explicit application-owned attempts
 
 See [Attempts and retries](/docs/reference/attempts) for operation `attempt: { groupId, number }`, qualified new-run `retryOf` links, bounds, project scoping and the required `attempts-v1` accepting-server acknowledgment. Supplying these options is explicit opt-in; deploy accepting storage/API/readers before enabling them. Transport retries remain separate from business attempts.
+
+## Expectation evidence
+
+[Expected confirmations](/docs/reference/expectations) require the accepting `expectations-v1` server and migrations. Resolve/cancel are explicit, project-scoped evidence reports and may follow a terminal run without changing its outcome/result. Direct browser evidence stays untrusted; the existing generic server-key proxy rejects expectation events. Deadlines are evaluated on read from server observation, without background notifications or a retention extension.
+
+Expectation input/source errors also contribute to local failure counters and explicit drain failures. The permanent per-run `EXPECTATION_LIMIT_REACHED` HTTP 429 is not retried; ordinary transient throttling keeps its existing bounded retry policy. Calls after client shutdown retain the usual ignored-marker warning behavior.

@@ -1,7 +1,13 @@
 import { Schema } from "effect"
 
 export type AppendDisposition =
-  "recorded" | "duplicate" | "ignored" | "conflict"
+  | "recorded"
+  | "duplicate"
+  | "ignored"
+  | "conflict"
+  | "expectation_conflict"
+  | "expectation_closed"
+  | "expectation_limit"
 /** Older accepting servers omit disposition; do not infer their terminal policy. */
 export const IngestionReceiptSchema = Schema.Struct({
   accepted: Schema.Boolean,

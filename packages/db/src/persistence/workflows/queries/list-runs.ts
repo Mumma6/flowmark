@@ -1,3 +1,4 @@
+import { ExpectationObservationClock } from "../observation-clock.js"
 import { validateResultSelection } from "./validate-result-query.js"
 import { Effect } from "effect"
 import { Database, InvalidResultQuery } from "../../database.js"
@@ -55,6 +56,7 @@ export const listRuns = Effect.fn("listRuns")(function* (
   const limit = Math.min(MAX_LIMIT, Math.max(1, query.limit ?? DEFAULT_LIMIT))
   const cursor = decodeCursor(query.cursor)
   const filter = {
+    expectationState: query.expectationState,
     ratioSelection: query.ratioSelection,
     resultField,
     resultSelection: query.resultSelection,
@@ -80,41 +82,82 @@ export const listRuns = Effect.fn("listRuns")(function* (
     cursorId: cursor?.id,
     limit,
   }
-  const rows = yield* runQuery(DatabaseOperation.ListRuns, () =>
-    db.execute<ListedRun>(listRunsSql(projectId, filter)),
-  )
-  const [countRow] = yield* runQuery(DatabaseOperation.ListRuns, () =>
-    db.execute<{ count: number }>(
-      listRunsCountSql(projectId, {
-        ratioSelection: filter.ratioSelection,
-        resultField: filter.resultField,
-        resultSelection: filter.resultSelection,
-        outcome: filter.outcome,
-        definitionRevision: filter.definitionRevision,
-        terminalOnly: filter.terminalOnly,
-        startedBeforeExclusive: filter.startedBeforeExclusive,
-        workflow: filter.workflow,
-        businessKey: filter.businessKey,
-        businessValue: filter.businessValue,
-        status: filter.status,
-        search: filter.search,
-        externalId: filter.externalId,
-        failCode: filter.failCode,
-        environment: filter.environment,
-        release: filter.release,
-        correlationId: filter.correlationId,
-        parentRunId: filter.parentRunId,
-        namespace: filter.namespace,
-        startedAfter: filter.startedAfter,
-        startedBefore: filter.startedBefore,
-      }),
-    ),
+  const clock = yield* ExpectationObservationClock
+  const end = query.startedBefore ?? (yield* clock.now(db)).toISOString()
+  const endMs = Date.parse(end)
+  const start =
+    query.startedAfter ??
+    (query.expectationState && Number.isFinite(endMs)
+      ? new Date(endMs - 30 * 86400000).toISOString()
+      : undefined)
+  const bounded =
+    start !== undefined &&
+    Number.isFinite(endMs) &&
+    endMs >= Date.parse(start) &&
+    endMs - Date.parse(start) <= 90 * 86400000
+  if (
+    query.expectationState &&
+    (!bounded ||
+      (query.limit !== undefined &&
+        (!Number.isInteger(query.limit) ||
+          query.limit < 1 ||
+          query.limit > 100)))
+  ) {
+    return yield* new InvalidResultQuery({
+      message:
+        "Expectation discovery requires a valid window of at most 90 days and page size 1–100.",
+    })
+  }
+  const { rows, countRow, asOf } = yield* runQuery(
+    DatabaseOperation.ListRuns,
+    () =>
+      db.transaction(
+        (tx) =>
+          Effect.runPromise(
+            Effect.gen(function* () {
+              const now = yield* clock.now(tx)
+              const asOf = now.toISOString()
+              const scoped = {
+                ...filter,
+                ...(query.expectationState
+                  ? { startedAfter: start, startedBefore: end }
+                  : {}),
+                asOf,
+              }
+              const rows = yield* runQuery(DatabaseOperation.ListRuns, () =>
+                tx.execute<ListedRun>(listRunsSql(projectId, scoped)),
+              )
+              const [countRow] = yield* runQuery(
+                DatabaseOperation.ListRuns,
+                () =>
+                  tx.execute<{
+                    count: number
+                    totalRuns: number
+                    overdueRuns: number
+                    overdueExpectations: number
+                  }>(listRunsCountSql(projectId, scoped)),
+              )
+              return { rows, countRow, asOf, bounded }
+            }),
+          ),
+        { isolationLevel: "repeatable read" },
+      ),
   )
   const page = Array.from(rows)
   const hasMore = page.length > limit
   const runs = hasMore ? page.slice(0, limit) : page
   const last = runs[runs.length - 1]
   return {
+    ...(bounded && countRow
+      ? {
+          attention: {
+            asOf,
+            totalRuns: countRow.totalRuns,
+            overdueRuns: countRow.overdueRuns,
+            overdueExpectations: countRow.overdueExpectations,
+          },
+        }
+      : {}),
     runs,
     nextCursor: hasMore && last ? `${last.startedAt}|${last.id}` : null,
     total: countRow?.count ?? runs.length,

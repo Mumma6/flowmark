@@ -1,22 +1,54 @@
+import { Match } from "effect"
 import type { AppendDisposition } from "@flowmark/api"
 
-/** Acknowledges what was persisted without exposing another run's identifiers. */
+/** Acknowledges only authorized effective facts; no foreign identifiers. */
 export const ingestionReceipt = (disposition: AppendDisposition) =>
-  disposition === "conflict"
-    ? Response.json(
+  Match.value(disposition).pipe(
+    Match.when("conflict", () =>
+      Response.json(
         {
           accepted: false,
-          disposition,
+          disposition: "conflict",
           code: "EVENT_CONFLICT",
           error: "Event conflicts with previously accepted telemetry.",
         },
         { status: 409 },
-      )
-    : Response.json(
+      ),
+    ),
+    Match.when("expectation_conflict", () =>
+      Response.json(
         {
-          accepted: disposition !== "ignored",
-          disposition,
-          capabilities: ["attempts-v1"],
+          accepted: false,
+          disposition: "conflict",
+          code: "EXPECTATION_CONFLICT",
+        },
+        { status: 409 },
+      ),
+    ),
+    Match.when("expectation_closed", () =>
+      Response.json(
+        {
+          accepted: false,
+          disposition: "conflict",
+          code: "EXPECTATION_DECLARATION_CLOSED",
+        },
+        { status: 409 },
+      ),
+    ),
+    Match.when("expectation_limit", () =>
+      Response.json(
+        { accepted: false, code: "EXPECTATION_LIMIT_REACHED" },
+        { status: 429 },
+      ),
+    ),
+    Match.orElse((value) =>
+      Response.json(
+        {
+          accepted: value !== "ignored",
+          disposition: value,
+          capabilities: ["attempts-v1", "expectations-v1"],
         },
         { status: 202 },
-      )
+      ),
+    ),
+  )
