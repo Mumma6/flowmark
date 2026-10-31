@@ -1,5 +1,6 @@
 "use client"
 
+import { useSearchParams, usePathname } from "next/navigation"
 import { useMemo, useState } from "react"
 import Link from "next/link"
 import { useQuery } from "@tanstack/react-query"
@@ -169,6 +170,8 @@ export function RunsTable({
 }
 
 type ExplorerFilters = {
+  businessKey: string
+  businessValue: string
   search: string
   status: string
   workflow: string
@@ -181,6 +184,8 @@ type ExplorerFilters = {
 }
 
 const defaults: ExplorerFilters = {
+  businessKey: "",
+  businessValue: "",
   search: "",
   status: "all",
   workflow: "all",
@@ -195,7 +200,6 @@ const defaults: ExplorerFilters = {
 export function RunExplorer({
   workflow,
   workflowNames = [],
-  initialSearch = "",
 }: {
   workflow?: string
   workflowNames?: readonly string[]
@@ -203,21 +207,80 @@ export function RunExplorer({
 }) {
   const trpc = useTRPC()
   const { current } = useProject()
-  const [filters, setFilters] = useState<ExplorerFilters>(() => ({
-    ...defaults,
-    search: initialSearch,
-  }))
-  const [cursorStack, setCursorStack] = useState<(string | null)[]>([null])
+  const params = useSearchParams()
+  const pathname = usePathname()
+  const signature = params.toString()
+  const filters = useMemo(
+    () =>
+      Object.fromEntries(
+        Object.entries(defaults).map(([key, fallback]) => [
+          key,
+          params.get(key) ?? fallback,
+        ]),
+      ) as ExplorerFilters,
+    [params],
+  )
+  const setFilters = (next: ExplorerFilters) => {
+    const url = new URLSearchParams(params.toString())
+    for (const [key, value] of Object.entries(next)) {
+      if (value === defaults[key as keyof ExplorerFilters]) {
+        url.delete(key)
+      } else {
+        url.set(key, value)
+      }
+    }
+    window.history.replaceState(
+      null,
+      "",
+      `${pathname}${url.size ? `?${url}` : ""}`,
+    )
+  }
+  const [pagination, setPagination] = useState<{
+    signature: string
+    stack: (string | null)[]
+  }>({ signature: "", stack: [null] })
+  const cursorStack =
+    pagination.signature === signature ? pagination.stack : [null]
+  const setCursorStack = (
+    next: (string | null)[] | ((stack: (string | null)[]) => (string | null)[]),
+  ) =>
+    setPagination({
+      signature,
+      stack: typeof next === "function" ? next(cursorStack) : next,
+    })
   const pageIndex = cursorStack.length - 1
   const cursor = cursorStack[pageIndex] ?? null
   const update = (key: keyof ExplorerFilters, value: string) => {
-    setFilters((currentFilters) => ({ ...currentFilters, [key]: value }))
+    setFilters({
+      ...filters,
+      [key]: value,
+      ...(key === "workflow" ? { businessKey: "", businessValue: "" } : {}),
+    })
     setCursorStack([null])
   }
+  const selectedWorkflow =
+    workflow ?? (filters.workflow !== "all" ? filters.workflow : "")
+  const searchFields = useQuery(
+    trpc.resultDeclarations.searchFields.queryOptions(
+      { projectId: current?.id ?? "", workflow: selectedWorkflow },
+      { enabled: Boolean(current && selectedWorkflow) },
+    ),
+  )
+  const selectedField = searchFields.data?.find(
+    (field) => field.key === filters.businessKey,
+  )
   const queryInput = useMemo(
     () => ({
       workflow:
         workflow ?? (filters.workflow !== "all" ? filters.workflow : undefined),
+      businessKey:
+        selectedWorkflow && filters.businessKey && filters.businessValue
+          ? filters.businessKey
+          : undefined,
+      businessValue:
+        selectedWorkflow && filters.businessKey && filters.businessValue
+          ? filters.businessValue
+          : undefined,
       status:
         filters.status === "all"
           ? undefined
@@ -241,7 +304,7 @@ export function RunExplorer({
       cursor: cursor ?? undefined,
       limit: 25,
     }),
-    [workflow, filters, cursor],
+    [workflow, filters, cursor, selectedWorkflow],
   )
   const list = useQuery({
     ...trpc.run.list.queryOptions(queryInput),
@@ -308,6 +371,91 @@ export function RunExplorer({
             onChange={(event) => update("startedBefore", event.target.value)}
           />
         </label>
+      </div>
+      <div className="grid gap-3 border-b border-border p-5 sm:grid-cols-2">
+        <p className="text-sm text-muted-foreground sm:col-span-2">
+          Business reference or category · exact current-context match. Choose a
+          workflow first. Browser context is untrusted.
+        </p>
+        {selectedWorkflow && searchFields.isPending && (
+          <p role="status">Loading searchable fields…</p>
+        )}
+        {selectedWorkflow && searchFields.error && (
+          <p role="alert">
+            Could not load searchable fields.{" "}
+            <Button
+              variant="outline"
+              onClick={() => void searchFields.refetch()}
+            >
+              Retry
+            </Button>
+          </p>
+        )}
+        {selectedWorkflow && searchFields.data?.length === 0 && (
+          <p className="text-sm">
+            No business fields enabled. Configure them on the workflow page.
+          </p>
+        )}
+        <FilterSelect
+          label="Business field"
+          value={filters.businessKey || "__no_filter__"}
+          onChange={(value) => {
+            setFilters({
+              ...filters,
+              businessKey: value === "__no_filter__" ? "" : value,
+              businessValue: "",
+            })
+            setCursorStack([null])
+          }}
+          options={[
+            { value: "__no_filter__", label: "No business filter" },
+            ...(searchFields.data ?? []).map((field) => ({
+              value: field.key,
+              label: `${field.key} · ${field.role === "lookup" ? "Reference" : "Category"}`,
+            })),
+          ]}
+        />
+        {selectedField?.role === "dimension" ? (
+          <FilterSelect
+            label="Exact business value"
+            value={
+              filters.businessValue
+                ? `value:${filters.businessValue}`
+                : "__unset__"
+            }
+            onChange={(value) =>
+              update(
+                "businessValue",
+                value === "__unset__" ? "" : value.slice(6),
+              )
+            }
+            options={[
+              { value: "__unset__", label: "Choose category" },
+              ...selectedField.values.map((value) => ({
+                value: `value:${value}`,
+                label: value,
+              })),
+            ]}
+          />
+        ) : (
+          <label className="grid gap-2 text-xs text-muted-foreground">
+            Exact business value
+            <Input
+              disabled={!selectedWorkflow || !filters.businessKey}
+              value={filters.businessValue}
+              maxLength={256}
+              onChange={(event) => update("businessValue", event.target.value)}
+              placeholder="Exact, case-sensitive reference"
+            />
+          </label>
+        )}
+        {filters.businessKey && filters.businessValue && (
+          <p className="break-words text-sm sm:col-span-2">
+            Matching current {filters.businessKey}:{" "}
+            <strong>{filters.businessValue}</strong>. Initial properties plus
+            accepted amendments; step properties are excluded.
+          </p>
+        )}
       </div>
       <Accordion className="border-b border-border px-5">
         <AccordionItem value="advanced-filters">
@@ -403,6 +551,8 @@ export function RunExplorer({
                 {
                   (
                     {
+                      businessKey: "Business field",
+                      businessValue: "Business value",
                       search: "Search",
                       workflow: "Workflow",
                       status: "Status",

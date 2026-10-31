@@ -1,5 +1,7 @@
 "use client"
 
+import { WorkflowSearchFields } from "./workflow-search-fields"
+
 import { useMemo } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { RefreshCw } from "lucide-react"
@@ -306,7 +308,13 @@ export function ProjectRuns({
         />
       </PageHeading>
       {workflow && (
-        <ResultDeclarationEditor key={workflow} workflow={workflow} />
+        <>
+          <WorkflowSearchFields
+            key={`search:${workflow}`}
+            workflow={workflow}
+          />
+          <ResultDeclarationEditor key={workflow} workflow={workflow} />
+        </>
       )}
       <DataState
         pending={isPending}

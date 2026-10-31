@@ -65,3 +65,9 @@ export { ApiLive, logFailure, runApi } from "./runtime.js"
 export { ManageResultDeclarations } from "./features/result-declarations/use-cases/manage-result-declarations.js"
 
 export { ResultDeclarationSchema } from "@flowmarkdev/core"
+
+export {
+  SearchFieldsSchema,
+  BusinessKeySchema,
+  BusinessValueSchema,
+} from "@flowmarkdev/core"

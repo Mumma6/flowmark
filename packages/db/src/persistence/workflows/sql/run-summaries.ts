@@ -1,10 +1,33 @@
 import { sql } from "drizzle-orm"
 
+type BusinessFilter = {
+  workflow?: string
+  businessKey?: string
+  businessValue?: string
+}
+const businessPredicate = (projectId: string, filter?: BusinessFilter) =>
+  filter?.businessKey === undefined
+    ? sql`true`
+    : sql`
+  w.name = ${filter.workflow ?? null}
+  AND jsonb_typeof(r.properties -> ${filter.businessKey}::text) = 'string'
+  AND r.properties @> jsonb_build_object(${filter.businessKey}::text, ${filter.businessValue ?? null}::text)
+  AND EXISTS (
+    SELECT 1 FROM workflow_search_fields config,
+    jsonb_array_elements(config.fields) field
+    WHERE config.project_id = ${projectId} AND config.workflow = w.name
+    AND field ->> 'key' = ${filter.businessKey}
+    AND (field ->> 'role' = 'lookup' OR (field ->> 'role' = 'dimension' AND (field -> 'values') ? ${filter.businessValue ?? ""}))
+  )
+`
 /**
  * One row per project run, with last-reported terminal status.
  * Failed wins over completed; missing terminal events stay Running.
  */
-export const projectRunSummaries = (projectId: string) => sql`
+export const projectRunSummaries = (
+  projectId: string,
+  business?: BusinessFilter,
+) => sql`
   WITH runs AS (
     SELECT
       r.id,
@@ -42,7 +65,7 @@ export const projectRunSummaries = (projectId: string) => sql`
     FROM workflow_runs r
     JOIN workflows w ON w.id = r.workflow_id
     LEFT JOIN workflow_events e ON e.run_id = r.id
-    WHERE w.project_id = ${projectId}
+    WHERE w.project_id = ${projectId} AND ${businessPredicate(projectId, business)}
     GROUP BY r.id, w.name
   )
 `
@@ -179,6 +202,8 @@ export const peerRunsSql = (projectId: string, runId: string) => sql`
 `
 
 export type ListRunsFilter = {
+  readonly businessKey?: string
+  readonly businessValue?: string
   readonly workflow?: string
   readonly status?: "Completed" | "Failed" | "Running"
   readonly search?: string
@@ -201,7 +226,7 @@ export const listRunsSql = (projectId: string, filter: ListRunsFilter) => {
   const like =
     search && search.length > 0 ? `%${search.replaceAll("%", "")}%` : null
   return sql`
-  ${projectRunSummaries(projectId)}
+  ${projectRunSummaries(projectId, filter)}
   SELECT
     id,
     "externalId",
@@ -267,7 +292,7 @@ export const listRunsCountSql = (
   const like =
     search && search.length > 0 ? `%${search.replaceAll("%", "")}%` : null
   return sql`
-  ${projectRunSummaries(projectId)}
+  ${projectRunSummaries(projectId, filter)}
   SELECT count(*)::int AS count
   FROM runs
   WHERE

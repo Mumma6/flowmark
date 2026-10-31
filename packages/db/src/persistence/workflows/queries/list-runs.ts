@@ -30,6 +30,8 @@ export const listRuns = Effect.fn("listRuns")(function* (
   const cursor = decodeCursor(query.cursor)
   const filter = {
     workflow: query.workflow,
+    businessKey: query.businessKey,
+    businessValue: query.businessValue,
     status: query.status,
     search: query.search,
     externalId: query.externalId,
@@ -52,6 +54,8 @@ export const listRuns = Effect.fn("listRuns")(function* (
     db.execute<{ count: number }>(
       listRunsCountSql(projectId, {
         workflow: filter.workflow,
+        businessKey: filter.businessKey,
+        businessValue: filter.businessValue,
         status: filter.status,
         search: filter.search,
         externalId: filter.externalId,

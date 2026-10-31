@@ -155,6 +155,8 @@ export type ListedRun = StoredRun & {
 }
 
 export type ListRunsQuery = {
+  readonly businessKey?: string
+  readonly businessValue?: string
   readonly workflow?: string
   readonly status?: RunStatus
   readonly search?: string

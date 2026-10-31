@@ -109,3 +109,26 @@ Compare with application logs before deciding whether to retry.
 
 Next: [business results](/docs/concepts/results) and the
 [workflow API](/docs/reference/workflow).
+
+## Find runs by business reference
+
+Put safe application references in run-level properties, for example
+`{ batchId: "synthetic-batch-42", provider: "crm-a" }`. In the workflow page,
+explicitly enable `batchId` as a reference and `provider` as a category with
+allowed values such as `crm-a` and `crm-b`. Up to eight top-level string keys are
+supported, with up to twenty values per category. Enabling a key makes its
+already stored values searchable; avoid secrets and personal identifiers.
+
+In Run history, choose the workflow, business field and exact value. Reference
+matching is case-sensitive, with no substring matching or whitespace trimming.
+Categories accept only explicitly configured values. Filters apply to the full
+recorded history, not just the latest overview snapshot. The URL preserves the
+selected filters and can be copied or reopened. Pagination and match counts use
+the same population.
+
+Matching uses current run context: initial properties plus accepted shallow
+`setProperties()` amendments. Step and operation properties do not participate.
+A matched amended value does not prove that earlier operations used that value.
+Missing, non-string, unconfigured and disabled properties produce no business
+matches. Disabling a key also disables direct API filtering for that key.
+Browser properties remain untrusted application-reported context.

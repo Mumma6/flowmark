@@ -35,6 +35,8 @@ export enum DatabaseOperation {
   ReadRun = "read-run",
   ReadWorkflowSummaries = "read-workflow-summaries",
   ReadWorkflowIntelligence = "read-workflow-intelligence",
+  ReadSearchFields = "read-search-fields",
+  SetSearchFields = "set-search-fields",
   ListRuns = "list-runs",
   Reset = "reset",
   Seed = "seed",

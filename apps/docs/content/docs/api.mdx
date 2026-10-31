@@ -101,3 +101,31 @@ The seeded `local@dev` account is a loopback fixture for the operations
 project, not a hosted owner. Registration creates a real local account and
 project. Hosted API operations, key-rotation UI, alerting, and durable
 offline delivery are not implemented.
+
+## Declared business search
+
+`run.list` accepts `workflow`, `businessKey` and `businessValue` for one exact
+current-context predicate. Both business inputs and a workflow are required
+together. Keys use ASCII letters, digits and underscores, start with a letter
+and contain at most 64 characters. Values are non-empty strings up to 256
+characters. Existing built-in filters, cursors and counts combine with the
+business predicate; ordinary free-text search keeps its existing behavior.
+
+Authenticated project members manage workflow search permissions using
+`resultDeclarations.searchFields({ projectId, workflow })` and
+`resultDeclarations.setSearchFields({ projectId, workflow, fields })`.
+A field is `{ key, role: "lookup" }` or
+`{ key, role: "dimension", values: ["crm-a", "crm-b"] }`. The array is a complete
+replacement (at most eight distinct keys; one to twenty distinct category
+values). An empty array disables all business search fields for that workflow.
+This reuses workflow configuration boundaries alongside result declarations;
+search permissions are mutable and do not reinterpret immutable result revisions.
+
+Read-key callers may use enabled filters but cannot manage configuration.
+Malformed filters are rejected; unconfigured, disabled, wrong-workflow or
+out-of-vocabulary filters return an empty scoped result. Stored context is
+matched using JSON string containment before event aggregation. Migration 0011
+creates the scoped configuration table and a GIN index over run properties.
+Apply it before deploying the accepting API. Index creation scans existing runs
+and can block writes; verify its duration in isolated Preview before merge.
+Production rollout and npm publication remain separate operations.
