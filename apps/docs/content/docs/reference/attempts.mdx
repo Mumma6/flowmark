@@ -1,0 +1,67 @@
+---
+title: Attempts and retries
+description: Observe application-owned operation retries and new execution links.
+---
+
+Flowmark records retries performed by your application. It does not run a retry loop, choose a policy, schedule work, or apply backoff.
+
+## Operation attempts
+
+Use `attempt: { groupId, number }` on either operation overload. A group belongs to **one execution and one operation name**. Use a new group for each logical item or batch; repeated pages without this option remain ordinary occurrences.
+
+```ts
+const flow = flowmark.workflow("crm.sync")
+const first = flow.operation("push-to-crm", {
+  attempt: { groupId: "customer-batch-42", number: 1 },
+})
+// Your application performs its request and reports the observed failure.
+first.fail({ code: "CRM_UNAVAILABLE", retryable: true })
+
+// Your application decides to try again and performs its existing work.
+await flow.operation("push-to-crm", () => pushToCrm(), {
+  attempt: { groupId: "customer-batch-42", number: 2 },
+  mapError: () => ({ code: "CRM_UNAVAILABLE", retryable: true }),
+})
+flow.done({ outcome: "complete", result: { imported: 3 } })
+```
+
+`groupId` must be nonblank and at most 128 characters. `number` is a positive JavaScript safe integer. A group/number may identify only one operation ID for that operation name in the owning run. Conflicting metadata receives HTTP 409. Each start/completion/failure event carries the same metadata. Re-delivery of an envelope keeps the event ID and cannot add another effective attempt.
+
+The dashboard's reported operation attempts retain each failed and successful occurrence, actual ordinal, recorded duration and evidence event. Missing starts or ordinal gaps remain unknown. Terminal events may arrive before operation starts; no missing attempts are invented. An open occurrence means no terminal evidence was recorded, not proof that work is currently active.
+
+## Retry a separate execution
+
+`retryOf` takes a **qualified external execution reference**, with a nonblank workflow name and external run ID, each at most 200 characters. It starts a separate execution; it never reopens its target. Omit `id` for a new generated UUID, or supply a fresh execution ID. A run cannot reference itself. Continuation with the same workflow and ID preserves the first accepted start metadata, including its retry reference.
+
+```ts
+const previous = flowmark.workflow("booking.confirm")
+previous.fail({
+  code: "PROVIDER_UNAVAILABLE",
+  outcome: "partial",
+  result: { confirmed: 2, remaining: 1 },
+})
+
+const recovery = flowmark.workflow("booking.confirm", {
+  retryOf: { workflow: "booking.confirm", runId: previous.runId },
+})
+await recovery.operation("confirm-remaining", () => confirmRemaining(), {
+  attempt: { groupId: "remaining-reservation", number: 1 },
+})
+recovery.done({ outcome: "complete", result: { confirmed: 1, remaining: 0 } })
+```
+
+Both executions keep their own status and result. The earlier failure remains failed. Run counts, operation attempt counts and reported item counts have separate denominators. Results across executions are reported work, not deduplicated business entities.
+
+Related runs show the previous execution and incoming retry links. Resolution uses workflow plus external run ID **inside the authorized project**. An absent or inaccessible target stays unresolved without disclosing another project's data; a later arriving predecessor can resolve the link. A reference is application-reported evidence, not verified causality or an authorization token. Cross-workflow references are allowed; no arbitrary graph traversal or cycle inference is performed.
+
+Legacy `parentRunId` and `correlationId` keep their existing behavior. Unqualified parents may match multiple workflows; retry links do not reinterpret or repair those matches. Direct browser ingestion qualifies both the owning workflow and retry reference into the `browser.` namespace. Same-origin proxy ingestion keeps the configured server workflow names.
+
+## Compatibility and rollout
+
+Supplying `attempt` or `retryOf` explicitly opts into the **`attempts-v1` accepting-server contract**. Do this only after deploying the TASK-009 schema, accepting API and dashboard readers. Ordinary calls without these options retain their envelopes and work with older servers.
+
+The HTTP SDK requires `capabilities: ["attempts-v1"]` in the accepting response for events carrying this metadata. A missing/malformed acknowledgment reports a delivery failure through instrumentation diagnostics and rejects explicit `flush()`/`shutdown()`. An older server might already have stored a stripped event; the SDK cannot restore discarded metadata or undo that write. Stop using the new options until the accepting server is upgraded. This check is acknowledgment after submission, not a preflight or transaction across events. Existing partial-delivery semantics apply.
+
+Same-origin proxies must preserve the capability receipt; update the Flowmark proxy alongside the SDK. Advanced custom transports are responsible for their own accepting-server compatibility. These options and types are available through Node, Next, browser and typed workflow definitions. SDK publication is a separate release step after accepting backend rollout.
+
+A full synthetic loopback example is available in `packages/sdk/examples/explicit-attempts.mjs` in the source repository. It demonstrates manual and callback CRM recovery and partial booking recovery without a retry engine.

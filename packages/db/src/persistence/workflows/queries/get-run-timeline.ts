@@ -1,6 +1,8 @@
 import { and, eq } from "drizzle-orm"
 import { Effect } from "effect"
 import type {
+  WorkflowAttempt,
+  WorkflowRetryReference,
   WorkflowError,
   WorkflowFailure,
   WorkflowProperties,
@@ -20,6 +22,8 @@ export type RunTimelineEvent = {
   type: string
   step: string | null
   operationId: string | null
+  attempt?: WorkflowAttempt | null
+  retryOf?: WorkflowRetryReference | null
   operationName: string | null
   durationMs: number | null
   completed: number | null
@@ -55,6 +59,8 @@ export const getRunTimeline = Effect.fn("getRunTimeline")(function* (
         step: workflowEvents.step,
         operationId: workflowEvents.operationId,
         operationName: workflowEvents.operationName,
+        attempt: workflowEvents.attempt,
+        retryOf: workflowRuns.retryOf,
         durationMs: workflowEvents.durationMs,
         completed: workflowEvents.progressCompleted,
         total: workflowEvents.progressTotal,

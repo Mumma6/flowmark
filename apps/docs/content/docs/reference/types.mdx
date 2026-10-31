@@ -128,3 +128,7 @@ for counter, sample and queue limits.
 for callback operations. The ordinary Promise return type is unchanged; manual
 handles still take explicit failure fields. Invalid/throwing mappers report the
 Node-exported `FlowmarkErrorMappingError` through the shared diagnostics union.
+
+## Explicit application-owned attempts
+
+See [Attempts and retries](/docs/reference/attempts) for operation `attempt: { groupId, number }`, qualified new-run `retryOf` links, bounds, project scoping and the required `attempts-v1` accepting-server acknowledgment. Supplying these options is explicit opt-in; deploy accepting storage/API/readers before enabling them. Transport retries remain separate from business attempts.

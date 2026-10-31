@@ -12,6 +12,7 @@
     "workflow",
     "step",
     "operation",
+    "attempts",
     "progress",
     "report",
     "error",

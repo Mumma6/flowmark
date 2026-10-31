@@ -101,3 +101,5 @@ export function createFlowmark(
     },
   })
 }
+
+export type { WorkflowAttempt, WorkflowRetryReference } from "@flowmarkdev/core"

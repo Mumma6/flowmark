@@ -17,6 +17,32 @@ afterEach(() => {
 })
 
 describe("Next.js integration", () => {
+  it("keeps attempt metadata through Next request drains", async () => {
+    const fetcher = vi.fn<typeof fetch>(async () =>
+      Response.json(
+        { accepted: true, capabilities: ["attempts-v1"] },
+        { status: 202 },
+      ),
+    )
+    vi.stubGlobal("fetch", fetcher)
+    const client = createFlowmark({ apiKey: "key", apiUrl: "http://localhost" })
+    const flow = client.workflow("crm.retry", {
+      retryOf: { workflow: "crm.retry", runId: "earlier" },
+    })
+    flow.operation("push", { attempt: { groupId: "batch", number: 2 } }).done()
+    flow.done()
+    await Promise.all(callbacks.map((callback) => callback()))
+    const events = fetcher.mock.calls.map(
+      ([, options]) => JSON.parse(String(options?.body)).event,
+    )
+    expect(events[0]).toMatchObject({
+      retryOf: { workflow: "crm.retry", runId: "earlier" },
+    })
+    expect(
+      events.find((event) => event.type === "operation_completed"),
+    ).toMatchObject({ attempt: { number: 2 } })
+  })
+
   it("sends only safely mapped callback failure fields and preserves recovery", async () => {
     const fetcher = vi.fn<typeof fetch>(
       async () => new Response(null, { status: 202 }),

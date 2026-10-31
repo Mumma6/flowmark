@@ -157,6 +157,8 @@ export type ProjectSnapshot = {
 }
 
 export type RelatedRuns = {
+  readonly retryMatches?: ReadonlyArray<RelatedRun>
+  readonly retries?: ReadonlyArray<RelatedRun>
   readonly parentMatches: ReadonlyArray<RelatedRun>
   readonly related: ReadonlyArray<RelatedRun>
 }

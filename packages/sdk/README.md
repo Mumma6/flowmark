@@ -337,3 +337,25 @@ failure does not fail the run automatically; recovery can still end with `done()
 Expected domain rejections belong in reported result/reason counts. Mapping is
 not automatic redaction of context, results, or fields you select yourself.
 See the [CRM import example](https://github.com/Mumma6/flowmark/blob/staging/packages/sdk/examples/safe-operation-errors.mjs).
+
+### Explicit application-owned attempts
+
+After deploying a server that acknowledges `attempts-v1`, opt in per operation:
+
+```ts
+const first = flow.operation("push-to-crm", {
+  attempt: { groupId: "batch-42", number: 1 },
+})
+first.fail({ code: "CRM_UNAVAILABLE", retryable: true })
+// Your application decides to retry and executes the work itself.
+await flow.operation("push-to-crm", () => pushToCrm(), {
+  attempt: { groupId: "batch-42", number: 2 },
+})
+const retry = flowmark.workflow("crm.sync", {
+  retryOf: { workflow: "crm.sync", runId: previous.runId },
+})
+```
+
+Groups are scoped to one run and operation name (nonblank, maximum 128 characters); ordinals are positive safe integers. Each attempt has a new operation ID; `retryOf` starts a separate execution with its own run ID. Earlier failure evidence and reported results remain unchanged. Repeated unannotated operations are not inferred retries. Cross-run results are reported work, not deduplicated items. Qualified references resolve only within the authorized project.
+
+Deploy the TASK-009 schema, API and readers before using these options. HTTP delivery requires the `attempts-v1` capability receipt; older servers that omit it produce diagnostics and failed drains rather than silently claiming metadata support. They may already have accepted a stripped event. Update same-origin proxies too; custom transports own compatibility. Calls without these options remain unchanged. See the [attempt contract](https://docs.flowmark.dev/docs/reference/attempts) and the runnable loopback example `examples/explicit-attempts.mjs`.

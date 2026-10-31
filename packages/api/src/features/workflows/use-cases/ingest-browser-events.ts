@@ -77,15 +77,30 @@ export class IngestBrowserWorkflowEvents extends Context.Service<
           ),
         )
         const event = envelope.event
+        const browserWorkflow = (name: string) =>
+          name.startsWith("browser.") ? name : `browser.${name}`
+        // Qualify retry references into the same untrusted browser namespace as their owning run.
+        const canonical = yield* Schema.decodeUnknownEffect(
+          EventEnvelopeSchema,
+        )({
+          ...envelope,
+          event: {
+            ...event,
+            workflow: browserWorkflow(event.workflow),
+            ...(event.type === "started" && event.retryOf
+              ? {
+                  retryOf: {
+                    ...event.retryOf,
+                    workflow: browserWorkflow(event.retryOf.workflow),
+                  },
+                }
+              : {}),
+          },
+        }).pipe(Effect.mapError((cause) => new InvalidInput({ cause })))
         return yield* repository.append(
           credential.projectId,
-          envelope.eventId,
-          {
-            ...event,
-            workflow: event.workflow.startsWith("browser.")
-              ? event.workflow
-              : `browser.${event.workflow}`,
-          },
+          canonical.eventId,
+          canonical.event,
         )
       })
       return IngestBrowserWorkflowEvents.of({

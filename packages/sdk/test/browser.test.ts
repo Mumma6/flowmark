@@ -8,6 +8,35 @@ afterEach(() => {
 })
 
 describe("browser client", () => {
+  it("carries attempt and retry references through the browser transport with capability acknowledgment", async () => {
+    vi.stubGlobal("location", { origin: "https://customer.example" })
+    const fetcher = vi.fn<typeof fetch>(async () =>
+      Response.json(
+        { accepted: true, capabilities: ["attempts-v1"] },
+        { status: 202 },
+      ),
+    )
+    vi.stubGlobal("fetch", fetcher)
+    const client = createFlowmark({})
+    const flow = client.workflow("crm.retry", {
+      retryOf: { workflow: "crm.retry", runId: "earlier" },
+    })
+    await flow.operation("push", () => Promise.resolve(1), {
+      attempt: { groupId: "batch", number: 2 },
+    })
+    flow.done()
+    await client.shutdown()
+    const events = fetcher.mock.calls.map(
+      ([, options]) => JSON.parse(String(options?.body)).event,
+    )
+    expect(events[0]).toMatchObject({
+      retryOf: { workflow: "crm.retry", runId: "earlier" },
+    })
+    expect(
+      events.filter((event) => event.type.startsWith("operation_")),
+    ).toMatchObject([{ attempt: { number: 2 } }, { attempt: { number: 2 } }])
+  })
+
   it("sends only safely mapped callback failure fields and preserves recovery", async () => {
     vi.stubGlobal("location", { origin: "https://customer.example" })
     const fetcher = vi.fn<typeof fetch>(

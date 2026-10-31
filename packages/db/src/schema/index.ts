@@ -1,3 +1,4 @@
+import type { WorkflowAttempt, WorkflowRetryReference } from "@flowmarkdev/core"
 import {
   index,
   bigint,
@@ -98,6 +99,7 @@ export const workflowRuns = pgTable(
     release: text("release"),
     correlationId: text("correlation_id"),
     parentRunId: text("parent_run_id"),
+    retryOf: jsonb("retry_of").$type<WorkflowRetryReference>(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
@@ -145,6 +147,7 @@ export const workflowEvents = pgTable(
     step: text("step"),
     operationId: uuid("operation_id"),
     operationName: text("operation_name"),
+    attempt: jsonb("attempt").$type<WorkflowAttempt>(),
     durationMs: doublePrecision("duration_ms"),
     progressCompleted: bigint("progress_completed", { mode: "number" }),
     progressTotal: bigint("progress_total", { mode: "number" }),

@@ -1,5 +1,6 @@
 "use client"
 
+import { RunAttempts } from "./run-attempts"
 import { BusinessResult } from "./business-result"
 import { useSearchParams, usePathname } from "next/navigation"
 import { useState } from "react"
@@ -487,6 +488,9 @@ export function RunInvestigation({
   comparisonError?: string
 }) {
   const routeParams = useSearchParams()
+  const [evidenceSelection, setEvidenceSelection] = useState<
+    { id: string; revision: number } | undefined
+  >()
   const [timelineView, setTimelineView] = useState<
     "timeline" | "waterfall" | "events"
   >("timeline")
@@ -773,10 +777,29 @@ export function RunInvestigation({
               </div>
             </CardHeader>
             <CardContent className="p-0">
+              <RunAttempts
+                events={events}
+                onEvidence={(id) => {
+                  setEvidenceSelection((previous) => ({
+                    id,
+                    revision: (previous?.revision ?? 0) + 1,
+                  }))
+                  setTimelineView("events")
+                  requestAnimationFrame(() =>
+                    document
+                      .getElementById(`event-${id}`)
+                      ?.scrollIntoView({ block: "center" }),
+                  )
+                }}
+              />
               {timelineView === "waterfall" ? (
                 <OperationWaterfall events={events} />
               ) : timelineView === "events" ? (
-                <EventTable events={events} />
+                <EventTable
+                  key={evidenceSelection?.revision}
+                  events={events}
+                  initialEventId={evidenceSelection?.id}
+                />
               ) : (
                 <RunEventTimeline events={events} />
               )}
@@ -888,6 +911,30 @@ export function RunInvestigation({
                 <p role="status">Loading linked runs…</p>
               ) : (
                 <>
+                  {first.retryOf && (
+                    <p className="my-3 text-sm">
+                      Retry of{" "}
+                      <code>
+                        {first.retryOf.workflow} / {first.retryOf.runId}
+                      </code>
+                      . This execution has its own status and reported result;
+                      totals across executions are not deduplicated items.
+                    </p>
+                  )}
+                  <RelatedRunsTable
+                    title="Previous execution (explicit retry link)"
+                    runs={relationships?.retryMatches ?? []}
+                    empty={
+                      first.retryOf
+                        ? "Referenced execution not recorded or not accessible in this project."
+                        : "No retry-of reference supplied."
+                    }
+                  />
+                  <RelatedRunsTable
+                    title="Later executions retrying this run"
+                    runs={relationships?.retries ?? []}
+                    empty="No later retry links recorded in this project."
+                  />
                   <RelatedRunsTable
                     title="Parent matches"
                     runs={relationships?.parentMatches ?? []}

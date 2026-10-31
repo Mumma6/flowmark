@@ -49,3 +49,9 @@ export type { AppendDisposition } from "./ingestion.js"
 export * from "./business-insights.js"
 
 export * from "./peer-selection.js"
+
+export {
+  WorkflowAttemptSchema,
+  WorkflowRetryReferenceSchema,
+} from "./attempts.js"
+export type { WorkflowAttempt, WorkflowRetryReference } from "./attempts.js"
