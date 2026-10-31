@@ -6,9 +6,15 @@ description: Understand best-effort instrumentation and handle telemetry failure
 ## Automatic, not durable
 
 Run markers queue delivery in the background. The current in-memory queue
-allows at most 1,000 pending events. It has no durable offline storage.
+allows at most 1,000 pending events (including in-flight delivery and fibers
+waiting for their handle). New progress and business report snapshots are refused
+when total pending reaches 900, reserving 100 slots for other markers, including
+start, operation lifecycle and terminal events. No queued event is evicted.
+Critical-event overload can fill those slots too; new markers then fail with a
+capacity diagnostic. Operation pairs and terminal delivery are not guaranteed
+under such overload. There is no durable offline storage.
 Network failures, queue overflow, browser shutdown, or process exit can lose
-events. Events in a run are delivered in order; separate runs may deliver
+events. Events from one handle are delivered in order; separate handles may deliver
 concurrently.
 
 Delivery is best-effort. Application work continues regardless of telemetry.
@@ -69,3 +75,56 @@ Do not shut down a shared client until all work using it has finished.
 
 See [lifecycle API](/docs/reference/delivery), [typed errors](/docs/reference/advanced#typed-errors),
 and [troubleshooting](/docs/troubleshooting).
+
+## Bulk progress and local health
+
+Enable progress replacement explicitly; the default remains `"all"`:
+
+```ts
+const flowmark = createFlowmark({ delivery: { progress: "latest" } })
+```
+
+Adjacent unsent absolute progress snapshots for one handle can share a bounded
+queue slot. Every other marker and flush boundary seals that slot. Already
+in-flight snapshots are never changed. There is no timer or minimum interval;
+this reduces bursts while a handle waits for delivery. Separate handles, even
+with the same workflow/run ID, do not share slots or delivery ordering. The slot
+map is bounded by pending work and cleared as events start or drains begin.
+See [progress](/docs/reference/progress) for whole-snapshot semantics.
+
+Node and browser clients expose a synchronous, read-only local snapshot:
+
+```ts
+const health = flowmark.deliveryHealth()
+// { pending, pendingProgress, coalesced, dropped, failed, lastFailure }
+```
+
+`pendingProgress` counts currently replaceable progress slots. `coalesced`
+counts replaced submissions; `dropped` counts capacity/closed refusals; `failed`
+counts validation and exhausted transport failures. Successful HTTP retries do
+not increment failed. Counters and the last failure tag are cumulative for the
+client lifetime, survive flush/shutdown, and never reset on a drain. Health
+contains no run IDs, keys, payloads or raw causes. It measures local delivery,
+not server persistence or business success. An uninitialized browser reports
+zeroes without accessing browser globals.
+
+A drain rejects if any failures occurred since the preceding drain, retaining
+only the first 20 original causes in `error.failures`. `failureCount` counts all
+failures and `omittedFailureCount` counts those outside the sample. Drains clear
+that sample/count; health stays cumulative. The diagnostic callback still runs
+for every failure; avoid retaining payloads yourself.
+
+The Next.js adapter keeps its workflow-only lifecycle surface. Pass
+`onDeliveryHealth(health)` directly to its `createFlowmark()` for final health
+after each request-scoped workflow drains, including failed drains. Callback
+errors are contained. It does not expose flush/shutdown or coordinate workers.
+
+Business `report()` snapshots remain separate, individually queued events;
+report per batch rather than per record. They never become a terminal result.
+Queue reservations do not guarantee delivery when many runs/critical markers
+compete. No batch ingestion protocol is introduced.
+
+Browser keepalive is constrained by browser-managed request/body quotas
+; a 1,000-slot local queue does not increase
+that quota. Flush before navigation when possible and keep payloads small.
+Next drains also remain subject to the host's request duration limit.

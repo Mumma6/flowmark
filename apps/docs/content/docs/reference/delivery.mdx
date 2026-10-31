@@ -8,6 +8,7 @@ description: Explicit delivery boundaries for Node.js and browser clients.
 ```ts
 flowmark.flush(): Promise<void>
 flowmark.shutdown(): Promise<void>
+flowmark.deliveryHealth(): DeliveryHealth
 ```
 
 Available on Node.js and browser clients. The Next.js adapter exposes neither;
@@ -27,7 +28,10 @@ try {
 }
 ```
 
-Recorded failures are collected by the drain and cleared afterward. Do not
+Recorded failures are counted by the drain, with at most 20 original causes
+retained in `failures`; `failureCount` includes all of them. This per-drain state
+is cleared afterward. Cumulative `deliveryHealth()` counters remain available,
+including after shutdown. Do not
 interpret a later clean flush as proof that previously lost events arrived.
 
 ## shutdown

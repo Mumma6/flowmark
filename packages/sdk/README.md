@@ -279,3 +279,30 @@ package publication is included here.
 
 See [the continuation decision and transition matrix](https://github.com/Mumma6/flowmark/blob/staging/docs/sdk/run-continuation.md)
 and [the booking example](https://github.com/Mumma6/flowmark/blob/staging/packages/sdk/examples/booking-continuation.mjs).
+
+## Bulk work and delivery health
+
+Progress remains per call by default. For bursts, opt into
+`createFlowmark({ delivery: { progress: "latest" } })` on Node, Next.js or browser.
+Adjacent unsent progress for one handle is replaced by the latest validated whole
+absolute snapshot. Other markers, flush boundaries and in-flight delivery seal
+it in order. Historical progress density changes only with this opt-in.
+Business `report()` snapshots remain separate; report them per useful batch.
+
+The queue holds at most 1,000 pending events. Progress/report admission stops at
+900 total pending, reserving 100 slots for other markers. Queued events are never
+evicted. Critical overload can still drop new markers; this is best-effort delivery.
+Drains reject with at most 20 original `failures`, plus `failureCount` and
+`omittedFailureCount`. The callback still receives every failure.
+
+Node/browser `flowmark.deliveryHealth()` returns pending/replaceable slot counts,
+cumulative coalesced/dropped/failed counters and a last failure tag. It contains
+no payloads/credentials and stays available after shutdown. Drains clear their
+failure samples, not health. Next accepts `onDeliveryHealth` directly on its
+`createFlowmark()` for final request-local health after each workflow drains;
+it keeps its automatic `after()` lifecycle and contains callback errors.
+
+Keep browser payloads small: keepalive quotas and unload/offline limits still
+apply. Node jobs should explicitly drain at process exit while preserving their
+original return/error. See the [bulk import example](https://github.com/Mumma6/flowmark/blob/staging/packages/sdk/examples/bulk-import.mjs)
+and [delivery documentation](https://docs.flowmark.dev/docs/delivery).

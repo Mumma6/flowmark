@@ -17,6 +17,83 @@ afterEach(() => {
 })
 
 describe("Next.js integration", () => {
+  it("drains opt-in progress in order and reports final request-local health", async () => {
+    let release = () => {}
+    const gate = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    const fetcher = vi.fn<typeof fetch>(async () => {
+      await gate
+      return new Response(null, { status: 202 })
+    })
+    vi.stubGlobal("fetch", fetcher)
+    const onDeliveryHealth = vi.fn()
+    const client = createFlowmark(
+      defineConfig({
+        apiKey: "key",
+        apiUrl: "http://localhost",
+        delivery: { progress: "latest" },
+        onDeliveryHealth,
+      }),
+    )
+    const flow = client.workflow("bulk.request")
+    for (let completed = 1; completed <= 1000; completed++) {
+      flow.progress({ completed })
+    }
+    flow.done({ result: { saved: 1000 } })
+    expect(client).not.toHaveProperty("flush")
+    expect(onDeliveryHealth).not.toHaveBeenCalled()
+    release()
+    await callbacks[0]()
+    expect(onDeliveryHealth).toHaveBeenCalledWith({
+      pending: 0,
+      pendingProgress: 0,
+      coalesced: 999,
+      dropped: 0,
+      failed: 0,
+      lastFailure: null,
+    })
+    const events = await Promise.all(
+      fetcher.mock.calls.map(
+        async ([, options]) =>
+          JSON.parse(await new Response(options?.body).text()).event,
+      ),
+    )
+    expect(events.map((event) => event.type)).toEqual([
+      "started",
+      "progress",
+      "completed",
+    ])
+    expect(events[1].completed).toBe(1000)
+    expect(events[2].result).toEqual({ saved: 1000 })
+  })
+
+  it("reports bounded final health after failures and contains a throwing health callback", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn<typeof fetch>(async () => new Response(null, { status: 401 })),
+    )
+    vi.spyOn(console, "error").mockImplementation(() => {})
+    const onDeliveryHealth = vi.fn(() => {
+      throw new Error("observer failed")
+    })
+    const client = createFlowmark({
+      apiKey: "key",
+      apiUrl: "http://localhost",
+      onDeliveryHealth,
+      onInstrumentationError: vi.fn(),
+    })
+    client.workflow("failure").done()
+    await expect(callbacks[0]()).resolves.toBeUndefined()
+    expect(onDeliveryHealth).toHaveBeenCalledWith(
+      expect.objectContaining({
+        pending: 0,
+        failed: 2,
+        lastFailure: { type: "WorkflowTransportError" },
+      }),
+    )
+  })
+
   it("automatically drains independent workflows after each request", async () => {
     const fetcher = vi.fn<typeof fetch>(
       async () => new Response(null, { status: 202 }),

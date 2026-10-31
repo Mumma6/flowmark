@@ -1,9 +1,16 @@
 import { withWorkflowDefinitions } from "../workflows/define-workflow.js"
 import { after } from "next/server"
+import { Effect } from "effect"
 import { createFlowmark as createClient } from "../client/create-client.js"
-import type { FlowmarkClient, FlowmarkConfig } from "../types/index.js"
+import type {
+  DeliveryHealth,
+  FlowmarkClient,
+  FlowmarkConfig,
+} from "../types/index.js"
 
 export type {
+  DeliveryOptions,
+  DeliveryHealth,
   WorkflowDefinition,
   TypedFlow,
   TypedWorkflowOptions,
@@ -31,7 +38,18 @@ export type {
   WorkflowResult,
   WorkflowOutcome,
 } from "@flowmarkdev/core"
-export { defineConfig } from "../config/define-config.js"
+
+/** Request-local final health; callback errors are contained like instrumentation diagnostics. */
+export interface NextFlowmarkConfig extends FlowmarkConfig {
+  readonly onDeliveryHealth?: (health: DeliveryHealth) => void
+}
+
+/** Inert configuration helper, including Next-specific final health reporting. */
+export function defineConfig<const T extends NextFlowmarkConfig>(
+  config: T & Record<Exclude<keyof T, keyof NextFlowmarkConfig>, never>,
+): T {
+  return config
+}
 
 /**
  * Next.js server client. Import from `@flowmarkdev/node/next` only.
@@ -46,7 +64,7 @@ export { defineConfig } from "../config/define-config.js"
  * flow.done({ result: { ok: true } })
  */
 export function createFlowmark(
-  config: FlowmarkConfig = {},
+  config: NextFlowmarkConfig = {},
 ): Pick<FlowmarkClient, "workflow" | "defineWorkflow"> {
   return withWorkflowDefinitions<Pick<FlowmarkClient, "workflow">>({
     workflow(name, options) {
@@ -63,6 +81,16 @@ export function createFlowmark(
           console.error(
             "[Flowmark] Workflow delivery failed; application changes are unaffected.",
             cause,
+          )
+        } finally {
+          await Effect.runPromise(
+            Effect.sync(() =>
+              config.onDeliveryHealth?.(client.deliveryHealth()),
+            ).pipe(
+              Effect.catchCause(() =>
+                Effect.logWarning("[Flowmark] Delivery health callback failed"),
+              ),
+            ),
           )
         }
       })

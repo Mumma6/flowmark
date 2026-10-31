@@ -64,7 +64,10 @@ automatically when the final operation closes; an explicit workflow failure
 supersedes pending completion. The Promise callback overload records operation
 failure and rethrows the original application cause without failing the
 workflow. Progress values are validated nonnegative absolute snapshots; they
-are persisted individually without aggregation or coalescing.
+are queued individually by default. An opt-in SDK `delivery.progress: "latest"`
+policy replaces adjacent unsent progress for one handle with the latest validated
+whole snapshot; in-flight events, other markers and drain boundaries seal order.
+Reports remain separate, individually queued snapshots.
 
 `WorkflowProperties` and `WorkflowResult` are bounded plain JSON-safe records:
 maximum depth 5, 128 total keys, 128 characters per key, 2,048 characters per
@@ -383,3 +386,19 @@ Read models intentionally keep the failed projection for historical stored runs
 with both terminal kinds. No history rewrite, schema migration, global worker
 coordination or background execution is introduced. See the
 [approved transition/compatibility decision](sdk/run-continuation.md).
+
+### Bounded SDK delivery
+
+The client queue has at most 1,000 pending delivery fibers, including in-flight
+work. Progress/report admission stops at 900 total pending; other markers can use
+the remaining reservation, but critical overload can still refuse new events.
+No queued lifecycle/operation events are evicted. There is no universal delivery
+guarantee. Replaceable progress state is bounded by pending work, not all runs
+ever observed. Event-ID creation/retry policy and wire envelopes are unchanged.
+
+Drains retain at most 20 original failure samples plus counts. Local health exposes
+only pending/replaceable counts, cumulative coalesced/dropped/failed counts and a
+last failure tag. Drains clear their error sample/count, not cumulative health;
+health remains readable after disposal. Next reports final request-local health
+through an optional callback, with no new drain surface. No database change or
+batch ingestion protocol is involved.

@@ -1,5 +1,5 @@
 import { withWorkflowDefinitions } from "../workflows/define-workflow.js"
-import { Effect, Layer, ManagedRuntime } from "effect"
+import { Effect, Layer, ManagedRuntime, Result, Schema } from "effect"
 import { FlowmarkConfigError } from "../errors/index.js"
 import { DeliveryQueue } from "../delivery/delivery-queue.js"
 import { WorkflowTransport } from "../delivery/ports/workflow-transport.js"
@@ -9,6 +9,7 @@ import { WorkflowRuns } from "../workflows/run-lifecycle.js"
 import { withOperationCallback } from "../utils/operation-callback.js"
 import { splitOperationArgs } from "../utils/operation-args.js"
 import type {
+  DeliveryOptions,
   FlowmarkClient,
   InstrumentationErrorHandler,
   WorkflowOperation,
@@ -22,8 +23,24 @@ export function makeClient(
   transport: Layer.Layer<WorkflowTransport>,
   onError?: InstrumentationErrorHandler,
   defaults: Pick<WorkflowRunOptions, "environment" | "release"> = {},
+  deliveryOptions: DeliveryOptions = {},
 ): FlowmarkClient {
-  const delivery = DeliveryQueue.layer(onError).pipe(Layer.provide(transport))
+  const options = Result.match(
+    Schema.decodeUnknownResult(
+      Schema.Struct({
+        progress: Schema.optional(Schema.Literals(["all", "latest"])),
+      }),
+    )(deliveryOptions),
+    {
+      onFailure: (cause) => {
+        throw new FlowmarkConfigError({ cause })
+      },
+      onSuccess: (value) => value,
+    },
+  )
+  const delivery = DeliveryQueue.layer(onError, options).pipe(
+    Layer.provide(transport),
+  )
   const events = WorkflowEvents.layer.pipe(Layer.provideMerge(delivery))
   const runs = WorkflowRuns.layer.pipe(Layer.provideMerge(events))
   const runtime = ManagedRuntime.make(
@@ -31,6 +48,7 @@ export function makeClient(
   )
   const engine = runtime.runSync(WorkflowEngine)
   const queue = runtime.runSync(DeliveryQueue)
+  let finalHealth: ReturnType<FlowmarkClient["deliveryHealth"]> | undefined
   let shutdownResult: Promise<void> | undefined
 
   const runMarker = (command: Effect.Effect<void>) => {
@@ -42,6 +60,7 @@ export function makeClient(
   }
 
   return withWorkflowDefinitions<Omit<FlowmarkClient, "defineWorkflow">>({
+    deliveryHealth: () => finalHealth ?? runtime.runSync(queue.health),
     workflow(name, options = {}) {
       if (shutdownResult) {
         throw new FlowmarkConfigError({ cause: "Client has been shut down" })
@@ -104,9 +123,10 @@ export function makeClient(
       return shutdownResult ?? runtime.runPromise(queue.flush)
     },
     shutdown() {
-      shutdownResult ??= runtime
-        .runPromise(queue.shutdown)
-        .finally(() => runtime.dispose())
+      shutdownResult ??= runtime.runPromise(queue.shutdown).finally(() => {
+        finalHealth = runtime.runSync(queue.health)
+        return runtime.dispose()
+      })
       return shutdownResult
     },
   })

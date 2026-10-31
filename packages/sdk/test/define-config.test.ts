@@ -69,6 +69,17 @@ describe("defineConfig", () => {
     )
   })
 
+  it("shares opt-in progress typing across runtimes and rejects invalid policies", () => {
+    const server = defineConfig({ delivery: { progress: "latest" } })
+    const browser = defineBrowserConfig({ delivery: { progress: "latest" } })
+    expectTypeOf(server.delivery.progress).toEqualTypeOf<"latest">()
+    expectTypeOf(browser.delivery.progress).toEqualTypeOf<"latest">()
+    // @ts-expect-error Unsupported coalescing policy.
+    defineConfig({ delivery: { progress: "sometimes" } })
+    // @ts-expect-error Unsupported coalescing policy.
+    defineBrowserConfig({ delivery: { progress: "sometimes" } })
+  })
+
   it("rejects misspelled options and server secrets in browser config at compile time", () => {
     // @ts-expect-error Unknown server option.
     defineConfig({ apiUrL: "http://localhost:3003" })

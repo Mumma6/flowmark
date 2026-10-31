@@ -9,6 +9,8 @@ description: Public types for run markers and the values safe to send.
 import type {
   Flow,
   FlowmarkClient,
+  DeliveryOptions,
+  DeliveryHealth,
   FlowmarkConfig,
   WorkflowRunOptions,
   WorkflowRunReference,
@@ -112,3 +114,11 @@ where runId is the external SDK execution ID. All public runtime entries export
 this type. It carries no authorization or live state; the application explicitly
 validates, saves and forwards it. Resume through the existing workflow method
 using the same name and ID. Project scope is derived from credentials.
+
+## Delivery policy and health
+
+`DeliveryOptions` and `DeliveryHealth` are shared Node/Next/browser types.
+`delivery.progress` is `"all"` (default) or `"latest"` (opt-in). Node/browser
+clients provide `deliveryHealth()`; Next exports `NextFlowmarkConfig` with
+`onDeliveryHealth` for final request-local health. See [delivery](/docs/delivery)
+for counter, sample and queue limits.
