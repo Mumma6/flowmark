@@ -4,6 +4,7 @@ import { BusinessOutcomes } from "./business-outcomes"
 
 import { WorkflowSearchFields } from "./workflow-search-fields"
 
+import { useSearchParams } from "next/navigation"
 import { useMemo } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { RefreshCw } from "lucide-react"
@@ -462,6 +463,22 @@ export function ProjectWorkflows() {
 }
 
 export function RunDetail({ id }: { id: string }) {
+  const params = useSearchParams()
+  const days = Number(params.get("peerDays") ?? 30)
+  const selection = {
+    days,
+    environment:
+      params.get("peerEnvironment") === "all"
+        ? ("all" as const)
+        : ("same" as const),
+    sameRelease: params.get("peerRelease") === "same",
+    ...(params.get("peerDimension")
+      ? {
+          dimensionKey: params.get("peerDimension") ?? "",
+          dimensionValue: params.get("peerValue") ?? "",
+        }
+      : {}),
+  }
   const trpc = useTRPC()
   const { current } = useProject()
   const { data, isPending, error, refetch } = useQuery({
@@ -473,7 +490,7 @@ export function RunDetail({ id }: { id: string }) {
     enabled: Boolean(current),
   })
   const comparison = useQuery({
-    ...trpc.run.compare.queryOptions({ id }),
+    ...trpc.run.compare.queryOptions({ id, selection }),
     enabled: Boolean(current),
   })
   return (

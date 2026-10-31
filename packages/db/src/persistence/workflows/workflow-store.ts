@@ -1,3 +1,4 @@
+import type { PeerSelection } from "@flowmarkdev/core"
 import type { BusinessInsightsQuery, BusinessInsights } from "@flowmarkdev/core"
 import { getBusinessInsights } from "./queries/get-business-insights.js"
 import { Context, Effect, Layer } from "effect"
@@ -57,7 +58,8 @@ export interface WorkflowStoreService {
   readonly compare: (
     projectId: string,
     runId: string,
-  ) => Effect.Effect<RunComparison, DatabaseError>
+    selection?: PeerSelection,
+  ) => Effect.Effect<RunComparison, DatabaseError | InvalidResultQuery>
   readonly intelligence: (
     projectId: string,
     query: IntelligenceQuery,
@@ -79,8 +81,8 @@ export class WorkflowStore extends Context.Service<WorkflowStore>()(
           provide(getRunTimeline(projectId, runId)),
         related: (projectId, runId) =>
           provide(getRelatedRuns(projectId, runId)),
-        compare: (projectId, runId) =>
-          provide(getRunComparison(projectId, runId)),
+        compare: (projectId, runId, selection) =>
+          provide(getRunComparison(projectId, runId, selection)),
         intelligence: (projectId, query) =>
           provide(getWorkflowIntelligence(projectId, query)),
       } satisfies WorkflowStoreService

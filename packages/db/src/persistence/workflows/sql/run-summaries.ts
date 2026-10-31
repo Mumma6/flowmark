@@ -7,6 +7,7 @@ import { resultPredicate } from "./result-filters.js"
 import { sql } from "drizzle-orm"
 
 type BusinessFilter = {
+  runId?: string
   workflow?: string
   businessKey?: string
   businessValue?: string
@@ -79,6 +80,7 @@ export const projectRunSummaries = (
     JOIN workflows w ON w.id = r.workflow_id
     LEFT JOIN workflow_events e ON e.run_id = r.id
     WHERE w.project_id = ${projectId} AND ${businessPredicate(projectId, business)}
+      AND (${business?.runId ?? null}::uuid IS NULL OR r.id = ${business?.runId ?? null}::uuid)
       AND (${business?.workflow ?? null}::text IS NULL OR w.name = ${business?.workflow ?? null})
       AND (${business?.startedAfter ?? null}::timestamptz IS NULL OR r.started_at >= ${business?.startedAfter ?? null}::timestamptz)
       AND (${business?.startedBeforeExclusive ?? null}::timestamptz IS NULL OR r.started_at < ${business?.startedBeforeExclusive ?? null}::timestamptz)
@@ -187,7 +189,7 @@ export const dailyInsightsSql = (projectId: string) => sql`
 `
 
 export const currentRunSql = (projectId: string, runId: string) => sql`
-  ${projectRunSummaries(projectId)}
+  ${projectRunSummaries(projectId, { runId })}
   SELECT
     id,
     "externalId",
@@ -204,28 +206,33 @@ export const currentRunSql = (projectId: string, runId: string) => sql`
   WHERE id = ${runId}
 `
 
-export const peerRunsSql = (projectId: string, runId: string) => sql`
-  ${projectRunSummaries(projectId)},
-  current_run AS (
-    SELECT workflow, id FROM runs WHERE id = ${runId}
+export const peerRunsSql = (
+  projectId: string,
+  runId: string,
+  selection: import("@flowmarkdev/core").PeerSelection = {},
+) => sql`
+  WITH current_run AS (
+    SELECT r.id, r.workflow_id, r.started_at, r.environment, r.release FROM workflow_runs r
+    JOIN workflows w ON w.id = r.workflow_id WHERE w.project_id = ${projectId} AND r.id = ${runId}
+  ), eligible AS (
+    SELECT r.id FROM workflow_runs r JOIN current_run c ON c.workflow_id = r.workflow_id
+    WHERE (r.started_at, r.id) < (c.started_at, c.id)
+      AND r.started_at >= c.started_at - (${selection.days ?? 30} * interval '24 hours')
+      AND (${selection.environment === "all"} OR r.environment IS NOT DISTINCT FROM c.environment)
+      AND (${selection.sameRelease ?? false} = false OR r.release IS NOT DISTINCT FROM c.release)
+      AND (${selection.dimensionKey ?? null}::text IS NULL OR (
+        jsonb_typeof(r.properties -> ${selection.dimensionKey ?? ""}) = 'string'
+        AND r.properties ->> ${selection.dimensionKey ?? ""} = ${selection.dimensionValue ?? ""}
+        AND EXISTS (SELECT 1 FROM workflow_search_fields config, jsonb_array_elements(config.fields) field
+          WHERE config.project_id = ${projectId} AND config.workflow = (SELECT name FROM workflows WHERE id = c.workflow_id)
+          AND field ->> 'role' = 'dimension' AND field ->> 'key' = ${selection.dimensionKey ?? ""}
+          AND (field -> 'values') ? ${selection.dimensionValue ?? ""})
+      ))
   )
-  SELECT
-    runs.id,
-    runs."externalId",
-    runs.workflow,
-    runs."startedAt"::text AS "startedAt",
-    runs.status,
-    runs."durationMs",
-    runs.step,
-    runs.result,
-    runs.outcome,
-    runs."correlationId",
-    runs."parentRunId"
-  FROM runs
-  JOIN current_run ON current_run.workflow = runs.workflow
-  WHERE runs.id != current_run.id
-  ORDER BY runs."startedAt" DESC
-  LIMIT 50
+  SELECT r.id, count(*) OVER ()::int AS eligible,
+    c.environment, c.release
+  FROM eligible e JOIN workflow_runs r ON r.id = e.id CROSS JOIN current_run c
+  ORDER BY r.started_at DESC, r.id DESC LIMIT 50
 `
 
 export type ListRunsFilter = {

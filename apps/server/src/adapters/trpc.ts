@@ -1,3 +1,4 @@
+import { PeerSelectionSchema } from "@flowmark/api"
 import {
   BusinessTimestampSchema,
   BusinessInsightsQuerySchema,
@@ -604,17 +605,29 @@ export const appRouter = t.router({
         ),
       ),
     compare: t.procedure
-      .input(Schema.toStandardSchemaV1(Schema.Struct({ id: UuidSchema })))
+      .input(
+        Schema.toStandardSchemaV1(
+          Schema.Struct({
+            id: UuidSchema,
+            selection: Schema.optional(PeerSelectionSchema),
+          }),
+        ),
+      )
       .query(({ ctx, input }) =>
         readQuery(
           ctx.request,
           (userId, projectId) =>
             Effect.flatMap(GetProjectWorkflowData, (queries) =>
-              queries.compareForUser(userId, input.id, projectId),
+              queries.compareForUser(
+                userId,
+                input.id,
+                projectId,
+                input.selection,
+              ),
             ),
           (header) =>
             Effect.flatMap(GetProjectWorkflowData, (queries) =>
-              queries.compare(header, input.id),
+              queries.compare(header, input.id, input.selection),
             ),
         ),
       ),

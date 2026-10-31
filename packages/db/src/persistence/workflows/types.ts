@@ -1,3 +1,4 @@
+import type { PeerPopulation } from "@flowmarkdev/core"
 import type { RatioSelection } from "@flowmarkdev/core"
 import type { ResultSelection } from "@flowmarkdev/core"
 import type { WorkflowResult } from "@flowmarkdev/core"
@@ -109,15 +110,25 @@ export type IntelligenceQuery = {
 }
 
 export type OperationCompareRow = {
+  readonly currentOccurrenceCount?: number
+  readonly currentOpenCount?: number
+  readonly currentFailedCount?: number
+  readonly currentMedianOccurrenceDurationMs?: number | null
+  readonly currentTotalRecordedDurationMs?: number | null
   readonly name: string
   readonly currentDurationMs: number | null
   readonly currentStatus: "completed" | "failed" | "open" | "absent"
+  readonly peerMedianOccurrenceDurationMs?: number | null
+  readonly peerMedianTotalRecordedDurationMs?: number | null
+  readonly peerOpenRunCount?: number
+  readonly peerFailedRunCount?: number
   readonly peerMedianDurationMs: number | null
   readonly peerPresentCount: number
   readonly peerRunIds: ReadonlyArray<string>
 }
 
 export type RunComparison = {
+  readonly population?: PeerPopulation
   readonly current: StoredRun | null
   readonly peers: ReadonlyArray<StoredRun>
   readonly peerSuccessRate: number | null

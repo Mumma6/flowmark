@@ -80,3 +80,5 @@ export {
   ResultSelectionSchema,
   RatioSelectionSchema,
 } from "@flowmarkdev/core"
+
+export { PeerSelectionSchema } from "@flowmarkdev/core"
