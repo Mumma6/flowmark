@@ -128,3 +128,7 @@ Browser keepalive is constrained by browser-managed request/body quotas
 ; a 1,000-slot local queue does not increase
 that quota. Flush before navigation when possible and keep payloads small.
 Next drains also remain subject to the host's request duration limit.
+
+## Explicit application-owned attempts
+
+See [Attempts and retries](/docs/reference/attempts) for operation `attempt: { groupId, number }`, qualified new-run `retryOf` links, bounds, project scoping and the required `attempts-v1` accepting-server acknowledgment. Supplying these options is explicit opt-in; deploy accepting storage/API/readers before enabling them. Transport retries remain separate from business attempts.

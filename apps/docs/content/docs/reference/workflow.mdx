@@ -64,3 +64,7 @@ A repeated start is acknowledged as ignored and never rewrites the original
 properties/environment/release/correlation/parent metadata. Accepted amendments
 use `setProperties`. A later attempt uses a fresh ID. See
 [cross-request terminal decisions](/docs/concepts/runs#terminal-decisions).
+
+## Explicit application-owned attempts
+
+See [Attempts and retries](/docs/reference/attempts) for operation `attempt: { groupId, number }`, qualified new-run `retryOf` links, bounds, project scoping and the required `attempts-v1` accepting-server acknowledgment. Supplying these options is explicit opt-in; deploy accepting storage/API/readers before enabling them. Transport retries remain separate from business attempts.

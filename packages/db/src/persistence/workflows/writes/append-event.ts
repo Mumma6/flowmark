@@ -130,6 +130,7 @@ export const appendEvent = Effect.fn("appendEvent")(function* (
                   startedAt: new Date(event.timestamp),
                   correlationId: event.correlationId ?? null,
                   parentRunId: event.parentRunId ?? null,
+                  retryOf: event.retryOf ?? null,
                 })
                 .onConflictDoNothing({
                   target: [workflowRuns.workflowId, workflowRuns.externalId],
@@ -156,6 +157,9 @@ export const appendEvent = Effect.fn("appendEvent")(function* (
               .select({
                 type: workflowEvents.type,
                 eventId: workflowEvents.eventId,
+                operationId: workflowEvents.operationId,
+                operationName: workflowEvents.operationName,
+                attempt: workflowEvents.attempt,
               })
               .from(workflowEvents)
               .where(eq(workflowEvents.runId, run.id)),
@@ -171,6 +175,27 @@ export const appendEvent = Effect.fn("appendEvent")(function* (
             return event.type === "completed" || event.type === "failed"
               ? ("conflict" as const)
               : ("ignored" as const)
+          }
+          if ("operationId" in event) {
+            const attempt = event.attempt ?? null
+            const conflicts = recorded.some((row) => {
+              if (row.operationId === event.operationId) {
+                return (
+                  row.operationName !== event.operationName ||
+                  row.attempt?.groupId !== attempt?.groupId ||
+                  row.attempt?.number !== attempt?.number
+                )
+              }
+              return (
+                attempt !== null &&
+                row.operationName === event.operationName &&
+                row.attempt?.groupId === attempt.groupId &&
+                row.attempt.number === attempt.number
+              )
+            })
+            if (conflicts) {
+              return "conflict" as const
+            }
           }
           const failure = eventFailure(event)
           const error = eventError(event, failure)
@@ -192,6 +217,7 @@ export const appendEvent = Effect.fn("appendEvent")(function* (
                   operationName:
                     "operationName" in event ? event.operationName : null,
                   durationMs: "durationMs" in event ? event.durationMs : null,
+                  attempt: "attempt" in event ? (event.attempt ?? null) : null,
                   progressCompleted:
                     event.type === "progress" ? event.completed : null,
                   progressTotal:

@@ -1,3 +1,4 @@
+import { retryRunsSql } from "../sql/retry-runs.js"
 import { Effect } from "effect"
 import { Database } from "../../database.js"
 import { DatabaseOperation } from "../../database-operation.js"
@@ -25,8 +26,24 @@ export const getRelatedRuns = Effect.fn("getRelatedRuns")(function* (
       relatedRunsSql(projectId, runId),
     ),
   )
+  const retryRows = yield* runQuery(DatabaseOperation.ReadRelatedRuns, () =>
+    db.execute<RelatedRun & { relationship: "retryOf" | "retry" }>(
+      retryRunsSql(projectId, runId),
+    ),
+  )
   const related = Array.from(rows)
+  const retries = Array.from(retryRows)
   return {
+    ...(retries.length === 0
+      ? {}
+      : {
+          retryMatches: retries
+            .filter((row) => row.relationship === "retryOf")
+            .map(toRelatedRun),
+          retries: retries
+            .filter((row) => row.relationship === "retry")
+            .map(toRelatedRun),
+        }),
     parentMatches: related
       .filter((row) => row.relationship === "parent")
       .map(toRelatedRun),

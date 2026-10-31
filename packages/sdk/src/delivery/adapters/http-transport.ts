@@ -1,5 +1,6 @@
 import { HttpClient, HttpClientRequest } from "effect/http"
-import { Effect, Schedule, type Redacted } from "effect"
+import { IngestionReceiptSchema } from "@flowmarkdev/core"
+import { Effect, Schedule, Schema, type Redacted } from "effect"
 import type { WorkflowEvent } from "@flowmarkdev/core"
 import { FlowmarkHttpError } from "../../errors/index.js"
 import { WorkflowTransport } from "../ports/workflow-transport.js"
@@ -32,14 +33,41 @@ export const makeHttpTransport = Effect.fn("Flowmark.HttpTransport.make")(
           (cause) => new FlowmarkHttpError({ status: undefined, cause }),
         ),
       )
-      yield* Effect.scoped(client.execute(request)).pipe(
-        Effect.mapError(
-          (cause) =>
-            new FlowmarkHttpError({
-              status: cause.response?.status,
-              cause,
-            }),
+      const requiresAttempts =
+        ("attempt" in event && event.attempt !== undefined) ||
+        (event.type === "started" && event.retryOf !== undefined)
+      yield* Effect.scoped(
+        client.execute(request).pipe(
+          Effect.mapError(
+            (cause) =>
+              new FlowmarkHttpError({ status: cause.response?.status, cause }),
+          ),
+          Effect.flatMap((response) =>
+            requiresAttempts
+              ? response.json.pipe(
+                  Effect.flatMap(
+                    Schema.decodeUnknownEffect(IngestionReceiptSchema),
+                  ),
+                  Effect.mapError(
+                    (cause) =>
+                      new FlowmarkHttpError({ status: response.status, cause }),
+                  ),
+                  Effect.flatMap((receipt) =>
+                    receipt.capabilities?.includes("attempts-v1")
+                      ? Effect.void
+                      : Effect.fail(
+                          new FlowmarkHttpError({
+                            status: response.status,
+                            cause:
+                              "Server did not acknowledge attempts-v1; upgrade the accepting server before opting in.",
+                          }),
+                        ),
+                  ),
+                )
+              : Effect.void,
+          ),
         ),
+      ).pipe(
         Effect.timeoutOrElse({
           duration: "3 seconds",
           orElse: () =>

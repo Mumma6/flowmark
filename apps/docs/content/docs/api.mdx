@@ -224,3 +224,7 @@ per-occurrence median and total recorded duration distinguish repeated work.
 Totals across overlapping operations are not elapsed run time. No SDK or schema
 migration is required. The default baseline intentionally no longer mixes all
 environments or includes later runs.
+
+## Explicit application-owned attempts
+
+See [Attempts and retries](/docs/reference/attempts) for operation `attempt: { groupId, number }`, qualified new-run `retryOf` links, bounds, project scoping and the required `attempts-v1` accepting-server acknowledgment. Supplying these options is explicit opt-in; deploy accepting storage/API/readers before enabling them. Transport retries remain separate from business attempts.

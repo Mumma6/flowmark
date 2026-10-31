@@ -1,4 +1,6 @@
 import type {
+  WorkflowAttempt,
+  WorkflowRetryReference,
   WorkflowEvent,
   WorkflowOutcome,
   WorkflowName,
@@ -64,6 +66,8 @@ export interface FlowmarkConfig {
 
 /** Optional metadata for one execution of a workflow. */
 export interface WorkflowRunOptions {
+  /** Explicit opt-in: requires the TASK-009 accepting server. Starts a distinct run, never continues the target. */
+  readonly retryOf?: WorkflowRetryReference
   /**
    * ID for this execution. A UUID is generated if omitted.
    * Same name + same id on a later request continues this run (second started is ignored).
@@ -117,6 +121,8 @@ export type OperationErrorMapper = (cause: unknown) => WorkflowFailure
 
 /** Optional context attached when an operation starts. */
 export interface WorkflowOperationOptions {
+  /** Explicit opt-in: requires the TASK-009 accepting server. Group is scoped to this run and operation name. */
+  readonly attempt?: WorkflowAttempt
   /** Callback overload only. Omitted: existing automatic conversion. Manual fail() is unchanged. */
   readonly mapError?: OperationErrorMapper
   readonly properties?: WorkflowProperties

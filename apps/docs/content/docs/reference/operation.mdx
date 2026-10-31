@@ -110,3 +110,7 @@ Use result/reason counts for expected domain rejections (such as an invalid
 email), and mapped operation failures for technical failures (such as a CRM
 request failing). This is developer-controlled field selection, not a global
 redactor for arbitrary properties, results or your own logs.
+
+## Explicit application-owned attempts
+
+See [Attempts and retries](/docs/reference/attempts) for operation `attempt: { groupId, number }`, qualified new-run `retryOf` links, bounds, project scoping and the required `attempts-v1` accepting-server acknowledgment. Supplying these options is explicit opt-in; deploy accepting storage/API/readers before enabling them. Transport retries remain separate from business attempts.

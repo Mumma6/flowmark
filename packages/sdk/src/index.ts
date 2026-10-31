@@ -43,3 +43,5 @@ export type {
   WorkflowResult,
   WorkflowOutcome,
 } from "@flowmarkdev/core"
+
+export type { WorkflowAttempt, WorkflowRetryReference } from "@flowmarkdev/core"

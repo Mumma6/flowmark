@@ -1,3 +1,7 @@
+import {
+  WorkflowAttemptSchema,
+  WorkflowRetryReferenceSchema,
+} from "./attempts.js"
 import { Data, Effect, Match, Schema } from "effect"
 import {
   IngestionIdentifierSchema,
@@ -33,11 +37,15 @@ const StartedEventSchema = Schema.Struct({
   ),
   correlationId: Schema.optional(WorkflowCorrelationIdSchema),
   parentRunId: Schema.optional(WorkflowLinkIdSchema),
+  retryOf: Schema.optional(WorkflowRetryReferenceSchema),
 }).pipe(
   Schema.check(
     Schema.makeFilter(
-      ({ runId, parentRunId }) =>
-        parentRunId === undefined || parentRunId !== runId,
+      ({ workflow, runId, parentRunId, retryOf }) =>
+        (parentRunId === undefined || parentRunId !== runId) &&
+        (retryOf === undefined ||
+          retryOf.workflow !== workflow ||
+          retryOf.runId !== runId),
     ),
   ),
 )
@@ -115,6 +123,7 @@ const OperationStartedEventSchema = Schema.Struct({
   timestamp: Schema.String,
   operationId: UuidSchema,
   operationName: OperationNameSchema,
+  attempt: Schema.optional(WorkflowAttemptSchema),
   properties: Schema.optional(WorkflowPropertiesSchema),
 })
 
@@ -125,6 +134,7 @@ const OperationCompletedEventSchema = Schema.Struct({
   timestamp: Schema.String,
   operationId: UuidSchema,
   operationName: OperationNameSchema,
+  attempt: Schema.optional(WorkflowAttemptSchema),
   durationMs: OperationDurationSchema,
 })
 
@@ -135,6 +145,7 @@ const OperationFailedEventSchema = Schema.Struct({
   timestamp: Schema.String,
   operationId: UuidSchema,
   operationName: OperationNameSchema,
+  attempt: Schema.optional(WorkflowAttemptSchema),
   durationMs: OperationDurationSchema,
   failure: WorkflowFailureSchema,
 })

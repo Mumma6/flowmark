@@ -13,6 +13,10 @@ export const ingestionReceipt = (disposition: AppendDisposition) =>
         { status: 409 },
       )
     : Response.json(
-        { accepted: disposition !== "ignored", disposition },
+        {
+          accepted: disposition !== "ignored",
+          disposition,
+          capabilities: ["attempts-v1"],
+        },
         { status: 202 },
       )

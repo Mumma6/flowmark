@@ -1,3 +1,4 @@
+import type { WorkflowAttempt, WorkflowRetryReference } from "@flowmarkdev/core"
 import type { PeerPopulation, PeerSelection } from "@flowmarkdev/core"
 import type { RatioSelection } from "@flowmarkdev/core"
 import type {
@@ -162,6 +163,8 @@ export interface IntelligenceQuery {
 }
 
 export interface RunTimelineEvent {
+  readonly attempt?: WorkflowAttempt | null
+  readonly retryOf?: WorkflowRetryReference | null
   readonly id: string
   readonly type: string
   readonly step: string | null
@@ -191,6 +194,8 @@ export interface RunTimelineEvent {
 export type RelatedRun = Omit<StoredRun, "durationMs" | "step" | "result">
 
 export interface RelatedRuns {
+  readonly retryMatches?: ReadonlyArray<RelatedRun>
+  readonly retries?: ReadonlyArray<RelatedRun>
   readonly parentMatches: ReadonlyArray<RelatedRun>
   readonly related: ReadonlyArray<RelatedRun>
 }

@@ -109,7 +109,11 @@ describe("server-only workflow proxy", () => {
   it.each(["recorded", "duplicate", "ignored"] as const)(
     "preserves the %s upstream receipt without exposing extra fields",
     async (disposition) => {
-      const receipt = { accepted: disposition !== "ignored", disposition }
+      const receipt = {
+        accepted: disposition !== "ignored",
+        disposition,
+        capabilities: ["attempts-v1"],
+      }
       vi.stubGlobal(
         "fetch",
         vi.fn<typeof fetch>(async () =>
