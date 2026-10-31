@@ -1,6 +1,8 @@
 import { and, eq } from "drizzle-orm"
 import { Effect } from "effect"
 import type {
+  WorkflowAttempt,
+  WorkflowRetryReference,
   WorkflowError,
   WorkflowFailure,
   WorkflowProperties,
@@ -16,10 +18,14 @@ import { DatabaseOperation } from "../../database-operation.js"
 import { runQuery } from "../../run-query.js"
 
 export type RunTimelineEvent = {
+  expectation?: import("@flowmarkdev/core").ExpectationEvent | null
+  expectationObservedAt?: string | null
   id: string
   type: string
   step: string | null
   operationId: string | null
+  attempt?: WorkflowAttempt | null
+  retryOf?: WorkflowRetryReference | null
   operationName: string | null
   durationMs: number | null
   completed: number | null
@@ -51,10 +57,14 @@ export const getRunTimeline = Effect.fn("getRunTimeline")(function* (
     db
       .select({
         id: workflowEvents.eventId,
+        expectation: workflowEvents.expectation,
+        expectationObservedAt: workflowEvents.expectationObservedAt,
         type: workflowEvents.type,
         step: workflowEvents.step,
         operationId: workflowEvents.operationId,
         operationName: workflowEvents.operationName,
+        attempt: workflowEvents.attempt,
+        retryOf: workflowRuns.retryOf,
         durationMs: workflowEvents.durationMs,
         completed: workflowEvents.progressCompleted,
         total: workflowEvents.progressTotal,
@@ -80,7 +90,11 @@ export const getRunTimeline = Effect.fn("getRunTimeline")(function* (
       .where(
         and(eq(workflows.projectId, projectId), eq(workflowRuns.id, runId)),
       )
-      .orderBy(workflowEvents.occurredAt, workflowEvents.createdAt),
+      .orderBy(
+        workflowEvents.occurredAt,
+        workflowEvents.createdAt,
+        workflowEvents.id,
+      ),
   )
   const latestReportOrder = rows.reduce(
     (latest, row) =>
@@ -92,7 +106,8 @@ export const getRunTimeline = Effect.fn("getRunTimeline")(function* (
       row.type === "report" && row.receiptOrder === latestReportOrder,
     ...row,
     timestamp: row.timestamp.toISOString(),
-    receivedAt: row.receivedAt.toISOString(),
+    expectationObservedAt: row.expectationObservedAt?.toISOString() ?? null,
+    receivedAt: (row.expectationObservedAt ?? row.receivedAt).toISOString(),
     properties: row.properties ?? null,
     error: row.error ?? null,
     result: row.result ?? null,

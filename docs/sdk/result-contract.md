@@ -45,7 +45,7 @@ existing event timestamp and envelope event ID. Use persisted event order, not
 client timestamps, to choose the latest accepted report. Duplicate envelope IDs
 must not advance that order. No new caller-controlled revision field is needed;
 ordering follows the existing append-event boundary. Clock skew cannot reorder
-snapshots. This does not settle cross-request terminal conflicts (TASK-003).
+snapshots. Cross-request terminal decisions follow [the first-accepted policy](run-continuation.md).
 
 Reports obey the existing handle's terminal lifecycle; calls after a terminal
 request are ignored, including while completion waits for open operations.

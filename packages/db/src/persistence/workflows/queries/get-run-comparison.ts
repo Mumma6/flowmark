@@ -1,9 +1,13 @@
+import { sql } from "drizzle-orm"
+import { PeerSelectionSchema, type PeerSelection } from "@flowmarkdev/core"
+import { Schema } from "effect"
+import { getSearchFields } from "../../result-declarations/queries/get-search-fields.js"
 import { Effect } from "effect"
-import { Database } from "../../database.js"
+import { Database, InvalidResultQuery } from "../../database.js"
 import { DatabaseOperation } from "../../database-operation.js"
 import { runQuery } from "../../run-query.js"
 import { currentRunSql, peerRunsSql } from "../sql/run-summaries.js"
-import { getRunTimeline } from "./get-run-timeline.js"
+import { getOperationFacts } from "./get-operation-facts.js"
 import type { OperationCompareRow, RunComparison, StoredRun } from "../types.js"
 
 const percentile = (values: readonly number[], p: number) => {
@@ -25,13 +29,18 @@ const percentile = (values: readonly number[], p: number) => {
   return lower + (upper - lower) * (index - low)
 }
 
-type OpSummary = {
+export type OpSummary = {
+  readonly occurrenceCount: number
+  readonly openCount: number
+  readonly failedCount: number
+  readonly medianDurationMs: number | null
+  readonly totalRecordedDurationMs: number | null
   readonly name: string
   readonly durationMs: number | null
   readonly status: "completed" | "failed" | "open"
 }
 
-function operationSummaries(
+export function operationSummaries(
   events: ReadonlyArray<{
     readonly type: string
     readonly operationId: string | null
@@ -55,6 +64,9 @@ function operationSummaries(
       continue
     }
     if (event.type === "operation_started") {
+      if (byId.has(id)) {
+        continue
+      }
       byId.set(id, {
         name: event.operationName ?? "Operation",
         durationMs: null,
@@ -66,30 +78,53 @@ function operationSummaries(
       event.type === "operation_failed"
     ) {
       const existing = byId.get(id)
-      if (!existing) {
-        continue
-      }
       byId.set(id, {
-        ...existing,
-        durationMs:
-          event.durationMs ??
-          Date.parse(event.timestamp) - Date.parse(existing.startedAt),
+        ...(existing ?? {
+          name: event.operationName ?? "Operation",
+          startedAt: event.timestamp,
+        }),
+        durationMs: event.durationMs,
         status: event.type === "operation_failed" ? "failed" : "completed",
       })
     }
   }
-  const byName = new Map<string, OpSummary>()
-  for (const summary of byId.values()) {
-    const prior = byName.get(summary.name)
-    if (!prior || (summary.durationMs ?? 0) > (prior.durationMs ?? 0)) {
-      byName.set(summary.name, {
-        name: summary.name,
-        durationMs: summary.durationMs,
-        status: summary.status,
-      })
-    }
+  const groups = new Map<
+    string,
+    Array<typeof byId extends Map<string, infer V> ? V : never>
+  >()
+  for (const occurrence of byId.values()) {
+    const group = groups.get(occurrence.name) ?? []
+    group.push(occurrence)
+    groups.set(occurrence.name, group)
   }
-  return [...byName.values()]
+  return [...groups].map(([name, occurrences]) => {
+    const durations = occurrences.flatMap((item) =>
+      item.durationMs === null ? [] : [item.durationMs],
+    )
+    return {
+      name,
+      occurrenceCount: occurrences.length,
+      openCount: occurrences.filter((item) => item.status === "open").length,
+      failedCount: occurrences.filter((item) => item.status === "failed")
+        .length,
+      medianDurationMs: percentile(durations, 0.5),
+      totalRecordedDurationMs: durations.length
+        ? durations.reduce((sum, value) => sum + value, 0)
+        : null,
+      // Preserve the existing longest-occurrence field for old readers.
+      durationMs: durations.length
+        ? durations.reduce(
+            (longest, duration) => Math.max(longest, duration),
+            0,
+          )
+        : null,
+      status: occurrences.some((item) => item.status === "failed")
+        ? ("failed" as const)
+        : occurrences.some((item) => item.status === "open")
+          ? ("open" as const)
+          : ("completed" as const),
+    }
+  })
 }
 
 function buildOperationCompare(
@@ -105,6 +140,7 @@ function buildOperationCompare(
   ])
   return [...names]
     .sort((left, right) => left.localeCompare(right))
+    .slice(0, 100)
     .map((name) => {
       const currentOp = current.find((item) => item.name === name)
       const peerDurations = peers.flatMap(({ operations }) => {
@@ -119,8 +155,38 @@ function buildOperationCompare(
       return {
         name,
         currentDurationMs: currentOp?.durationMs ?? null,
+        currentOccurrenceCount: currentOp?.occurrenceCount ?? 0,
+        currentOpenCount: currentOp?.openCount ?? 0,
+        currentFailedCount: currentOp?.failedCount ?? 0,
+        currentMedianOccurrenceDurationMs: currentOp?.medianDurationMs ?? null,
+        currentTotalRecordedDurationMs:
+          currentOp?.totalRecordedDurationMs ?? null,
         currentStatus: currentOp?.status ?? "absent",
         peerMedianDurationMs: percentile(peerDurations, 0.5),
+        peerMedianOccurrenceDurationMs: percentile(
+          peers.flatMap(({ operations }) => {
+            const value = operations.find(
+              (item) => item.name === name,
+            )?.medianDurationMs
+            return value == null ? [] : [value]
+          }),
+          0.5,
+        ),
+        peerMedianTotalRecordedDurationMs: percentile(
+          peers.flatMap(({ operations }) => {
+            const value = operations.find(
+              (item) => item.name === name,
+            )?.totalRecordedDurationMs
+            return value == null ? [] : [value]
+          }),
+          0.5,
+        ),
+        peerOpenRunCount: peers.filter(({ operations }) =>
+          operations.some((item) => item.name === name && item.openCount > 0),
+        ).length,
+        peerFailedRunCount: peers.filter(({ operations }) =>
+          operations.some((item) => item.name === name && item.failedCount > 0),
+        ).length,
         peerPresentCount: peers.filter((list) =>
           list.operations.some((item) => item.name === name),
         ).length,
@@ -141,7 +207,15 @@ const emptyComparison: RunComparison = {
 export const getRunComparison = Effect.fn("getRunComparison")(function* (
   projectId: string,
   runId: string,
+  input: PeerSelection = {},
 ) {
+  const selection = yield* Schema.decodeUnknownEffect(PeerSelectionSchema)(
+    input,
+  ).pipe(
+    Effect.mapError(
+      () => new InvalidResultQuery({ message: "Invalid peer selection." }),
+    ),
+  )
   const db = yield* Database
   const [current] = yield* runQuery(DatabaseOperation.ReadRun, () =>
     db.execute<StoredRun>(currentRunSql(projectId, runId)),
@@ -149,20 +223,53 @@ export const getRunComparison = Effect.fn("getRunComparison")(function* (
   if (!current) {
     return emptyComparison
   }
-  const peers = yield* runQuery(DatabaseOperation.ReadPeerRuns, () =>
-    db.execute<StoredRun>(peerRunsSql(projectId, runId)),
+  if (selection.dimensionKey !== undefined) {
+    const fields = yield* getSearchFields(projectId, current.workflow)
+    if (
+      !fields.some(
+        (field) =>
+          field.role === "dimension" &&
+          field.key === selection.dimensionKey &&
+          field.values.includes(selection.dimensionValue ?? ""),
+      )
+    ) {
+      return yield* new InvalidResultQuery({
+        message: "Select a configured bounded dimension.",
+      })
+    }
+  }
+  const selected = yield* runQuery(DatabaseOperation.ReadPeerRuns, () =>
+    db.execute<{
+      id: string
+      eligible: number
+      environment: string | null
+      release: string | null
+    }>(peerRunsSql(projectId, runId, selection)),
   )
-  const peerList = Array.from(peers)
+  const peerList = yield* Effect.forEach(
+    Array.from(selected),
+    (peer) =>
+      runQuery(DatabaseOperation.ReadRun, () =>
+        db.execute<StoredRun>(currentRunSql(projectId, peer.id)),
+      ).pipe(Effect.map((rows) => rows[0])),
+    { concurrency: 4 },
+  )
   const finished = peerList.filter((run) => run.status !== "Running")
   const durations = peerList.flatMap((run) =>
     run.durationMs == null ? [] : [run.durationMs],
   )
   const completed = finished.filter((run) => run.status === "Completed").length
-  const currentTimeline = yield* getRunTimeline(projectId, runId)
+  const currentTimeline = yield* getOperationFacts(projectId, runId)
+  const [metadata] = yield* runQuery(DatabaseOperation.ReadRun, () =>
+    db.execute<{ environment: string | null; release: string | null }>(sql`
+      SELECT r.environment, r.release FROM workflow_runs r JOIN workflows w ON w.id = r.workflow_id
+      WHERE r.id = ${runId}::uuid AND w.project_id = ${projectId}
+    `),
+  )
   const peerTimelines = yield* Effect.forEach(
     peerList,
     (peer) =>
-      getRunTimeline(projectId, peer.id).pipe(
+      getOperationFacts(projectId, peer.id).pipe(
         Effect.map((timeline) => ({
           runId: peer.id,
           operations: operationSummaries(timeline),
@@ -175,6 +282,17 @@ export const getRunComparison = Effect.fn("getRunComparison")(function* (
     peerTimelines,
   )
   return {
+    population: {
+      eligible: selected[0]?.eligible ?? 0,
+      selected: peerList.length,
+      durationObservations: durations.length,
+      minimumSample: 5,
+      days: selection.days ?? 30,
+      environment: selected[0]?.environment ?? metadata?.environment ?? null,
+      allEnvironments: selection.environment === "all",
+      sameRelease: selection.sameRelease ?? false,
+      release: metadata?.release ?? null,
+    },
     current,
     peers: peerList,
     peerSuccessRate:

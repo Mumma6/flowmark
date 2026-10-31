@@ -1,12 +1,26 @@
+import type { RunExpectations } from "@flowmarkdev/core"
+import type { WorkflowAttempt, WorkflowRetryReference } from "@flowmarkdev/core"
+import type { PeerPopulation, PeerSelection } from "@flowmarkdev/core"
+import type { RatioSelection } from "@flowmarkdev/core"
+import type {
+  ResultSelection,
+  BusinessInsightsQuery,
+  BusinessInsights,
+} from "@flowmarkdev/core"
 import { Context, type Effect } from "effect"
 import type {
   WorkflowError,
   WorkflowFailure,
   WorkflowEvent,
+  AppendDisposition,
   WorkflowProperties,
   WorkflowResult,
 } from "@flowmarkdev/core"
-import type { PersistenceError, RunNotFound } from "../../../errors.js"
+import type {
+  InvalidInput,
+  PersistenceError,
+  RunNotFound,
+} from "../../../errors.js"
 
 export type RunStatus = "Completed" | "Failed" | "Running"
 
@@ -74,15 +88,25 @@ export interface ProjectSnapshot {
 }
 
 export interface OperationCompareRow {
+  readonly currentOccurrenceCount?: number
+  readonly currentOpenCount?: number
+  readonly currentFailedCount?: number
+  readonly currentMedianOccurrenceDurationMs?: number | null
+  readonly currentTotalRecordedDurationMs?: number | null
   readonly name: string
   readonly currentDurationMs: number | null
   readonly currentStatus: "completed" | "failed" | "open" | "absent"
+  readonly peerMedianOccurrenceDurationMs?: number | null
+  readonly peerMedianTotalRecordedDurationMs?: number | null
+  readonly peerOpenRunCount?: number
+  readonly peerFailedRunCount?: number
   readonly peerMedianDurationMs: number | null
   readonly peerPresentCount: number
   readonly peerRunIds: ReadonlyArray<string>
 }
 
 export interface RunComparison {
+  readonly population?: PeerPopulation
   readonly current: StoredRun | null
   readonly peers: ReadonlyArray<StoredRun>
   readonly peerSuccessRate: number | null
@@ -140,6 +164,10 @@ export interface IntelligenceQuery {
 }
 
 export interface RunTimelineEvent {
+  readonly expectation?: import("@flowmarkdev/core").ExpectationEvent | null
+  readonly expectationObservedAt?: string | null
+  readonly attempt?: WorkflowAttempt | null
+  readonly retryOf?: WorkflowRetryReference | null
   readonly id: string
   readonly type: string
   readonly step: string | null
@@ -169,6 +197,8 @@ export interface RunTimelineEvent {
 export type RelatedRun = Omit<StoredRun, "durationMs" | "step" | "result">
 
 export interface RelatedRuns {
+  readonly retryMatches?: ReadonlyArray<RelatedRun>
+  readonly retries?: ReadonlyArray<RelatedRun>
   readonly parentMatches: ReadonlyArray<RelatedRun>
   readonly related: ReadonlyArray<RelatedRun>
 }
@@ -180,6 +210,15 @@ export interface ListedRun extends StoredRun {
 }
 
 export interface ListRunsQuery {
+  readonly expectationState?: import("@flowmarkdev/core").ExpectationState
+  readonly ratioSelection?: RatioSelection
+  readonly resultSelection?: ResultSelection
+  readonly outcome?: string
+  readonly definitionRevision?: string
+  readonly terminalOnly?: boolean
+  readonly startedBeforeExclusive?: string
+  readonly businessKey?: string
+  readonly businessValue?: string
   readonly workflow?: string
   readonly status?: RunStatus
   readonly search?: string
@@ -197,6 +236,7 @@ export interface ListRunsQuery {
 }
 
 export interface ListedRunsPage {
+  readonly attention?: import("@flowmarkdev/core").ExpectationAttention
   readonly runs: ReadonlyArray<ListedRun>
   readonly nextCursor: string | null
   readonly total: number
@@ -204,18 +244,26 @@ export interface ListedRunsPage {
 }
 
 export interface WorkflowRepositoryService {
+  readonly expectations: (
+    projectId: string,
+    runId: string,
+  ) => Effect.Effect<RunExpectations, PersistenceError>
+  readonly businessInsights: (
+    projectId: string,
+    query: BusinessInsightsQuery,
+  ) => Effect.Effect<BusinessInsights, PersistenceError | InvalidInput>
   readonly append: (
     projectId: string,
     eventId: string,
     event: WorkflowEvent,
-  ) => Effect.Effect<void, PersistenceError | RunNotFound>
+  ) => Effect.Effect<AppendDisposition, PersistenceError | RunNotFound>
   readonly snapshot: (
     projectId: string,
   ) => Effect.Effect<ProjectSnapshot, PersistenceError>
   readonly listRuns: (
     projectId: string,
     query: ListRunsQuery,
-  ) => Effect.Effect<ListedRunsPage, PersistenceError>
+  ) => Effect.Effect<ListedRunsPage, PersistenceError | InvalidInput>
   readonly timeline: (
     projectId: string,
     runId: string,
@@ -227,7 +275,8 @@ export interface WorkflowRepositoryService {
   readonly compare: (
     projectId: string,
     runId: string,
-  ) => Effect.Effect<RunComparison, PersistenceError>
+    selection?: PeerSelection,
+  ) => Effect.Effect<RunComparison, PersistenceError | InvalidInput>
   readonly intelligence: (
     projectId: string,
     query: IntelligenceQuery,

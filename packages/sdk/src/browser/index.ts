@@ -3,15 +3,20 @@ import { fetchClientLayer } from "../delivery/adapters/fetch-client.js"
 import { Result, Layer, Redacted, Schema } from "effect"
 import { makeHttpTransport } from "../delivery/adapters/http-transport.js"
 import { FlowmarkConfigError } from "../errors/index.js"
+import { emptyDeliveryHealth } from "../delivery/delivery-queue.js"
 import { makeClient } from "../client/runtime.js"
 import { WorkflowTransport } from "../delivery/ports/workflow-transport.js"
 import type {
+  DeliveryOptions,
   FlowmarkClient,
   InstrumentationErrorHandler,
 } from "../types/index.js"
 import { ApiOriginSchema } from "../config/api-origin.js"
 
 export type {
+  OperationErrorMapper,
+  DeliveryOptions,
+  DeliveryHealth,
   WorkflowDefinition,
   TypedFlow,
   TypedWorkflowOptions,
@@ -27,6 +32,7 @@ export type {
 } from "../types/index.js"
 export type {
   JsonValue,
+  WorkflowRunReference,
   WorkflowRunId,
   WorkflowError,
   WorkflowCorrelationId,
@@ -40,6 +46,7 @@ export type {
 
 /** Browser options: a public browser key for direct delivery, or a same-origin proxy path. Never include server secrets. */
 export interface BrowserFlowmarkConfig {
+  readonly delivery?: DeliveryOptions
   /** Same-origin absolute proxy path, default "/api/flowmark". External URLs, queries, and fragments are rejected. */
   readonly proxyPath?: string
   /**
@@ -173,13 +180,20 @@ export function createFlowmark(
         ).pipe(Layer.provide(http)),
         config.onInstrumentationError,
         { environment: config.environment, release: config.release },
+        config.delivery,
+        direct ? "browser" : "proxy",
       )
     }
     return client
   }
 
   return withWorkflowDefinitions<Omit<FlowmarkClient, "defineWorkflow">>({
+    deliveryHealth: () => client?.deliveryHealth() ?? emptyDeliveryHealth(),
     workflow: (name, options) => getClient().workflow(name, options),
+    resolveExpectation: (reference, options) =>
+      getClient().resolveExpectation(reference, options),
+    cancelExpectation: (reference, options) =>
+      getClient().cancelExpectation(reference, options),
     flush: () => client?.flush() ?? Promise.resolve(),
     shutdown() {
       closed = true
@@ -187,3 +201,12 @@ export function createFlowmark(
     },
   })
 }
+
+export type { WorkflowAttempt, WorkflowRetryReference } from "@flowmarkdev/core"
+
+export type {
+  ExpectationReference,
+  ExpectationOptions,
+  ExpectationResolution,
+  ExpectationCancellation,
+} from "@flowmarkdev/core"

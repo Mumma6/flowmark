@@ -20,6 +20,7 @@ export function startedEvent(
 ): WorkflowEventData<"started"> {
   return {
     type: "started",
+    ...(options.retryOf === undefined ? {} : { retryOf: options.retryOf }),
     ...(options.properties === undefined
       ? {}
       : { properties: options.properties }),

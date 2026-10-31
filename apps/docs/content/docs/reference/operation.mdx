@@ -70,3 +70,47 @@ An unclosed handle can leave the run open indefinitely.
 
 Calling an operation callback after the run is terminal still executes your
 callback. The run stays closed.
+
+## Opt-in safe callback errors
+
+```ts
+await run.operation("crm-request", () => crm.request(), {
+  mapError: (_cause) => ({
+    code: "CRM_UNAVAILABLE",
+    message: "CRM temporarily unavailable",
+    retryable: true,
+  }),
+})
+```
+
+`mapError?: OperationErrorMapper` is synchronous: `(cause: unknown) => WorkflowFailure`.
+It is available on Node, Next.js, browser and custom-transport callback overloads.
+The mapper receives the original cause, but the application still catches that
+exact original object/value. Callback success and return inference are unchanged.
+Only validated mapped `code`, `message?` and `retryable?` fields enter telemetry;
+extra fields are discarded and original exception details are never appended.
+
+When omitted, the existing automatic structured/Error.message conversion above
+remains. Manual `operation.fail(...)` is unchanged and does not invoke the mapper.
+Throwing/invalid mappers produce a bounded `FlowmarkErrorMappingError` diagnostic
+and generic `{ code: "operation_failed" }` telemetry, never an operation success
+or raw-message fallback. Explicit drains report these failures; Next contains and
+logs its automatic drain failure. The local failed-health counter includes mapping
+failures. A mapper must not return a Promise; async results are rejected without
+waiting, and rejected promises are contained.
+
+The diagnostic contains only a reason (`threw` or `invalid`) plus safe event
+context; neither the original cause nor invalid mapper result is retained.
+Diagnostic context is not an additional emitted event. Throwing diagnostic
+callbacks are contained as usual. A mapped operation failure still does not
+fail the workflow: recover if appropriate and report your final result with
+`done()` or deliberately fail the run.
+
+Use result/reason counts for expected domain rejections (such as an invalid
+email), and mapped operation failures for technical failures (such as a CRM
+request failing). This is developer-controlled field selection, not a global
+redactor for arbitrary properties, results or your own logs.
+
+## Explicit application-owned attempts
+
+See [Attempts and retries](/docs/reference/attempts) for operation `attempt: { groupId, number }`, qualified new-run `retryOf` links, bounds, project scoping and the required `attempts-v1` accepting-server acknowledgment. Supplying these options is explicit opt-in; deploy accepting storage/API/readers before enabling them. Transport retries remain separate from business attempts.

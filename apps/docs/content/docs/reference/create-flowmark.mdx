@@ -16,16 +16,17 @@ const flowmark = createFlowmark({
 })
 ```
 
-| Option                   | Type                     | Required                                   |
-| ------------------------ | ------------------------ | ------------------------------------------ |
-| `apiKey`                 | `string`                 | Option or `FLOWMARK_API_KEY`               |
-| `apiUrl`                 | `string`                 | Option or `FLOWMARK_API_URL` in production |
-| `environment`            | `string`                 | No                                         |
-| `release`                | `string`                 | No                                         |
-| `onInstrumentationError` | `(error, event) => void` | No; defaults to warning logs               |
+| Option                   | Type                               | Required                                   |
+| ------------------------ | ---------------------------------- | ------------------------------------------ |
+| `apiKey`                 | `string`                           | Option or `FLOWMARK_API_KEY`               |
+| `apiUrl`                 | `string`                           | Option or `FLOWMARK_API_URL` in production |
+| `environment`            | `string`                           | No                                         |
+| `release`                | `string`                           | No                                         |
+| `delivery`               | `{ progress?: "all" \| "latest" }` | No; defaults to per-call progress          |
+| `onInstrumentationError` | `(error, event) => void`           | No; defaults to warning logs               |
 
 The client returns [`workflow()`](/docs/reference/workflow),
-[`flush()` and `shutdown()`](/docs/reference/delivery). Reuse it across work;
+[`flush()`, `shutdown()` and `deliveryHealth()`](/docs/reference/delivery). Reuse it across work;
 close it at the process boundary. Creating it validates server settings and
 can throw `FlowmarkConfigError`. Starting a workflow can also throw for invalid
 run context or a closed client.
@@ -38,12 +39,15 @@ See [configuration](/docs/configuration) for URL rules and precedence.
 import { createFlowmark } from "@flowmarkdev/node/next"
 
 const flowmark = createFlowmark()
-// Exposes workflow() only; no flush() or shutdown().
+// Exposes workflow/definition and expectation settlement methods; no manual drains.
 ```
 
 Accepts the same server options but creates a request-scoped delivery client
-when `workflow()` is called. Call it only in supported Route Handler or
+when a workflow starts or an expectation settlement is reported. Call it only in supported Route Handler or
 Server Action contexts; `after()` drains after the response.
+Pass `onDeliveryHealth(health)` to the Next `createFlowmark()` or `defineConfig()` to observe
+final request-local counters after each workflow drains; it runs on failed drains
+too and callback errors are contained. This option belongs to `NextFlowmarkConfig`.
 Invalid configuration/context can throw when starting the run.
 See [Next.js integration](/docs/nextjs).
 
@@ -65,6 +69,7 @@ const flowmark = createFlowmark({
 | `apiUrl`                 | API origin, required with `publicKey`                   |
 | `proxyPath`              | Same-origin absolute route; defaults to `/api/flowmark` |
 | `environment`, `release` | Default run metadata                                    |
+| `delivery`               | Shared opt-in progress policy; default `"all"`          |
 | `onInstrumentationError` | Optional delivery/validation failure callback           |
 
 Direct settings and `proxyPath` are mutually exclusive. Creation is SSR-safe;

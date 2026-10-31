@@ -241,3 +241,10 @@ environment, migration/history outcome and smoke-test result in PR/release notes
 - [Drizzle migrations](https://orm.drizzle.team/docs/migrations)
 - [GitHub deployment environments and approvals](https://docs.github.com/en/actions/reference/workflows-and-actions/deployments-and-environments)
 - [GitHub environment API](https://docs.github.com/en/rest/deployments/environments)
+
+## Historical fact projections
+
+Migrations 0015/0016 add same-transaction run/metric projections without an automatic
+historical scan. Follow [historical facts](historical-facts.md) for bounded
+backfill, reconciliation, old-writer compatibility and retention ownership.
+Hosted backfill is separately approved and is not part of the merge pipeline.

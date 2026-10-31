@@ -1,3 +1,6 @@
+import type { PeerPopulation } from "@flowmarkdev/core"
+import type { RatioSelection } from "@flowmarkdev/core"
+import type { ResultSelection } from "@flowmarkdev/core"
 import type { WorkflowResult } from "@flowmarkdev/core"
 
 export type RunStatus = "Completed" | "Failed" | "Running"
@@ -107,15 +110,25 @@ export type IntelligenceQuery = {
 }
 
 export type OperationCompareRow = {
+  readonly currentOccurrenceCount?: number
+  readonly currentOpenCount?: number
+  readonly currentFailedCount?: number
+  readonly currentMedianOccurrenceDurationMs?: number | null
+  readonly currentTotalRecordedDurationMs?: number | null
   readonly name: string
   readonly currentDurationMs: number | null
   readonly currentStatus: "completed" | "failed" | "open" | "absent"
+  readonly peerMedianOccurrenceDurationMs?: number | null
+  readonly peerMedianTotalRecordedDurationMs?: number | null
+  readonly peerOpenRunCount?: number
+  readonly peerFailedRunCount?: number
   readonly peerMedianDurationMs: number | null
   readonly peerPresentCount: number
   readonly peerRunIds: ReadonlyArray<string>
 }
 
 export type RunComparison = {
+  readonly population?: PeerPopulation
   readonly current: StoredRun | null
   readonly peers: ReadonlyArray<StoredRun>
   readonly peerSuccessRate: number | null
@@ -144,6 +157,8 @@ export type ProjectSnapshot = {
 }
 
 export type RelatedRuns = {
+  readonly retryMatches?: ReadonlyArray<RelatedRun>
+  readonly retries?: ReadonlyArray<RelatedRun>
   readonly parentMatches: ReadonlyArray<RelatedRun>
   readonly related: ReadonlyArray<RelatedRun>
 }
@@ -155,6 +170,15 @@ export type ListedRun = StoredRun & {
 }
 
 export type ListRunsQuery = {
+  readonly expectationState?: import("@flowmarkdev/core").ExpectationState
+  readonly ratioSelection?: RatioSelection
+  readonly resultSelection?: ResultSelection
+  readonly outcome?: string
+  readonly definitionRevision?: string
+  readonly terminalOnly?: boolean
+  readonly startedBeforeExclusive?: string
+  readonly businessKey?: string
+  readonly businessValue?: string
   readonly workflow?: string
   readonly status?: RunStatus
   readonly search?: string
@@ -172,6 +196,7 @@ export type ListRunsQuery = {
 }
 
 export type ListedRunsPage = {
+  readonly attention?: import("@flowmarkdev/core").ExpectationAttention
   readonly runs: ReadonlyArray<ListedRun>
   readonly nextCursor: string | null
   readonly total: number

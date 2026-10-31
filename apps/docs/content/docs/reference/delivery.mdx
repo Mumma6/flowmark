@@ -8,6 +8,7 @@ description: Explicit delivery boundaries for Node.js and browser clients.
 ```ts
 flowmark.flush(): Promise<void>
 flowmark.shutdown(): Promise<void>
+flowmark.deliveryHealth(): DeliveryHealth
 ```
 
 Available on Node.js and browser clients. The Next.js adapter exposes neither;
@@ -27,7 +28,10 @@ try {
 }
 ```
 
-Recorded failures are collected by the drain and cleared afterward. Do not
+Recorded failures are counted by the drain, with at most 20 original causes
+retained in `failures`; `failureCount` includes all of them. This per-drain state
+is cleared afterward. Cumulative `deliveryHealth()` counters remain available,
+including after shutdown. Do not
 interpret a later clean flush as proof that previously lost events arrived.
 
 ## shutdown
@@ -55,3 +59,10 @@ first browser workflow, flush is a no-op; shutdown still closes the client.
 
 Read [delivery and diagnostics](/docs/delivery) for queue limits and error
 reporting without replacing your business result.
+
+## Conflicting terminal reports
+
+A new terminal event ID after the server has accepted a terminal returns HTTP 409. It is not automatically retried. The original final result/outcome stay
+unchanged; the conflict reaches onInstrumentationError and explicit drain
+failures. A real retry reuses the envelope event ID and is acknowledged as a
+duplicate. An older backend may still apply its previous terminal policy.

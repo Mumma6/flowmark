@@ -1,9 +1,13 @@
+import {
+  genericOperationFailure,
+  mapOperationFailure,
+} from "../utils/map-operation-failure.js"
 import { fetchClientLayer } from "../delivery/adapters/fetch-client.js"
-import { Layer } from "effect"
+import { Effect, Layer } from "effect"
 import { HttpTransportLive } from "../delivery/adapters/http.js"
 import { FlowmarkSettings, resolveSettings } from "../config/settings.js"
 import { FlowmarkConfigError } from "../errors/index.js"
-import { makeClient } from "./runtime.js"
+import { makeClient, reportInstrumentationFailure } from "./runtime.js"
 import { WorkflowTransport } from "../delivery/ports/workflow-transport.js"
 import type {
   Flow,
@@ -35,10 +39,15 @@ export function createFlowmark(config: FlowmarkConfig = {}): FlowmarkClient {
     Layer.provide(Layer.succeed(FlowmarkSettings, settings)),
     Layer.provide(fetchClientLayer()),
   )
-  return makeClient(transport, config.onInstrumentationError, {
-    environment: config.environment,
-    release: config.release,
-  })
+  return makeClient(
+    transport,
+    config.onInstrumentationError,
+    {
+      environment: config.environment,
+      release: config.release,
+    },
+    config.delivery,
+  )
 }
 
 /**
@@ -60,7 +69,10 @@ export function workflow(name: WorkflowName, options: WorkflowOptions): Flow {
   const client = makeClient(
     Layer.succeed(WorkflowTransport, options.transport),
     options.onInstrumentationError,
+    {},
+    options.delivery,
   )
+  const nameOfWorkflow = name
   const flow = client.workflow(name, options)
   let finished = false
   let completionRequested = false
@@ -100,7 +112,7 @@ export function workflow(name: WorkflowName, options: WorkflowOptions): Flow {
       }
       return args.callback === undefined
         ? ignored
-        : withOperationCallback(ignored, args.callback)
+        : withOperationCallback(ignored, args.callback, () => undefined)
     }
     const handle = flow.operation(name, args.options)
     activeOperations.add(handle.operationId)
@@ -132,9 +144,38 @@ export function workflow(name: WorkflowName, options: WorkflowOptions): Flow {
     }
     return args.callback === undefined
       ? operationHandle
-      : withOperationCallback(operationHandle, args.callback)
+      : withOperationCallback(operationHandle, args.callback, (cause) => {
+          const failure = Effect.runSync(
+            mapOperationFailure(cause, args.options).pipe(
+              Effect.catchTag("FlowmarkErrorMappingError", (error) =>
+                Effect.sync(() => {
+                  const event = {
+                    type: "operation_failed" as const,
+                    workflow: nameOfWorkflow,
+                    runId: flow.runId,
+                    operationId: operationHandle.operationId,
+                    operationName: name,
+                    durationMs: 0,
+                    timestamp: new Date().toISOString(),
+                    failure: genericOperationFailure,
+                  }
+                  client[reportInstrumentationFailure](error, event)
+                }).pipe(
+                  Effect.catchCause(() =>
+                    Effect.logWarning(
+                      "[Flowmark] Instrumentation error callback failed",
+                    ),
+                  ),
+                  Effect.as(genericOperationFailure),
+                ),
+              ),
+            ),
+          )
+          operationHandle.fail(failure)
+        })
   }
   return {
+    expect: (name, options) => flow.expect(name, options),
     runId: flow.runId,
     step(name, stepOptions) {
       if (!finished && !completionRequested) {
@@ -175,4 +216,18 @@ export function workflow(name: WorkflowName, options: WorkflowOptions): Flow {
       }
     },
   }
+}
+
+/** Advanced shared lifecycle for custom transports, including settlement-only reporting. */
+export function createFlowmarkWithTransport(config: {
+  readonly transport: WorkflowTransport
+  readonly onInstrumentationError?: import("../types/index.js").InstrumentationErrorHandler
+  readonly delivery?: import("../types/index.js").DeliveryOptions
+}): FlowmarkClient {
+  return makeClient(
+    Layer.succeed(WorkflowTransport, config.transport),
+    config.onInstrumentationError,
+    {},
+    config.delivery,
+  )
 }

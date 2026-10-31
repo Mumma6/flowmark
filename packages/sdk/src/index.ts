@@ -1,6 +1,7 @@
 export { createFlowmark, workflow } from "./client/create-client.js"
 export { defineConfig } from "./config/define-config.js"
 export {
+  FlowmarkErrorMappingError,
   FlowmarkConfigError,
   FlowmarkDeliveryError,
   FlowmarkHttpError,
@@ -10,6 +11,9 @@ export {
 export { WorkflowTransport } from "./delivery/ports/workflow-transport.js"
 export { MemoryTransport } from "./delivery/adapters/memory-transport.js"
 export type {
+  OperationErrorMapper,
+  DeliveryOptions,
+  DeliveryHealth,
   WorkflowDefinition,
   TypedFlow,
   TypedWorkflowOptions,
@@ -27,6 +31,7 @@ export type {
 } from "./types/index.js"
 export type {
   JsonValue,
+  WorkflowRunReference,
   WorkflowRunId,
   WorkflowError,
   WorkflowCorrelationId,
@@ -38,3 +43,15 @@ export type {
   WorkflowResult,
   WorkflowOutcome,
 } from "@flowmarkdev/core"
+
+export type { WorkflowAttempt, WorkflowRetryReference } from "@flowmarkdev/core"
+
+export type {
+  ExpectationReference,
+  ExpectationOptions,
+  ExpectationResolution,
+  ExpectationCancellation,
+} from "@flowmarkdev/core"
+
+export { createFlowmarkWithTransport } from "./client/create-client.js"
+export { FlowmarkExpectationError } from "./errors/index.js"

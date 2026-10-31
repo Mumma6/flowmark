@@ -27,13 +27,14 @@ export const flowmark = createFlowmark({
 })
 ```
 
-| Option                   | Default            | Meaning                               |
-| ------------------------ | ------------------ | ------------------------------------- |
-| `apiKey`                 | `FLOWMARK_API_KEY` | Required private project write key    |
-| `apiUrl`                 | `FLOWMARK_API_URL` | API origin; required in production    |
-| `environment`            | Not set            | Default run environment               |
-| `release`                | Not set            | Default run release/version           |
-| `onInstrumentationError` | SDK warning log    | Receives delivery/validation failures |
+| Option                   | Default            | Meaning                                             |
+| ------------------------ | ------------------ | --------------------------------------------------- |
+| `apiKey`                 | `FLOWMARK_API_KEY` | Required private project write key                  |
+| `apiUrl`                 | `FLOWMARK_API_URL` | API origin; required in production                  |
+| `environment`            | Not set            | Default run environment                             |
+| `release`                | Not set            | Default run release/version                         |
+| `delivery.progress`      | `"all"`            | Opt into `"latest"` for unsent progress replacement |
+| `onInstrumentationError` | SDK warning log    | Receives delivery/validation failures               |
 
 Explicit options take precedence over environment variables. Outside production,
 the API URL falls back to `http://localhost:3003`. Production has no URL
@@ -66,6 +67,10 @@ Direct mode requires both `publicKey` and `apiUrl` and cannot be combined with
 `proxyPath`. Without direct settings, `proxyPath` defaults to `/api/flowmark`.
 Browser configuration does not read server environment variables. See the
 [browser guide](/docs/browser) for the distinct security models.
+
+The same `delivery` option is available in browser configuration. The Next entry
+also accepts `onDeliveryHealth` to observe final health after its automatic drain;
+its `defineConfig` supports that callback. See [delivery limits and health](/docs/delivery).
 
 ## Optional configuration helper
 

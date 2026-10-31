@@ -1,3 +1,9 @@
+import { expectationDuration } from "@flowmarkdev/core"
+import type {
+  ExpectationOptions,
+  ExpectationReference,
+} from "@flowmarkdev/core"
+import { FlowmarkExpectationError } from "../errors/index.js"
 import { Effect } from "effect"
 import type {
   WorkflowError,
@@ -11,7 +17,7 @@ import type { WorkflowEventData } from "./events.js"
 import type { RunLifecycle } from "./types.js"
 
 /** Markers observe application-reported evidence; they keep no aggregate state. */
-export function makeMarkers(run: RunLifecycle) {
+export function makeMarkers(run: RunLifecycle, workflow: string) {
   const whenOpen = Effect.fn("Flowmark.WorkflowMarkers.record")(function* (
     createEvent: () => WorkflowEventData,
   ) {
@@ -20,6 +26,32 @@ export function makeMarkers(run: RunLifecycle) {
     }
   })
   return {
+    expect: Effect.fn("Flowmark.expect")(function* (
+      name: string,
+      options: ExpectationOptions,
+    ) {
+      const reference: ExpectationReference = {
+        version: 1,
+        workflow,
+        runId: run.runId,
+        expectationId: options.id,
+      }
+      const event = {
+        type: "expectation_declared" as const,
+        name,
+        expectationId: options.id,
+        withinMs: expectationDuration(options.within) ?? 0,
+      }
+      if (!(yield* run.isOpen)) {
+        yield* run.diagnose(
+          new FlowmarkExpectationError({ reason: "run-closed" }),
+          event,
+        )
+      } else {
+        yield* run.record(event)
+      }
+      return reference
+    }),
     step: (step: WorkflowStepName, options?: WorkflowStepOptions) =>
       whenOpen(() => ({
         type: "step",

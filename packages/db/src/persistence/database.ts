@@ -8,6 +8,10 @@ export class DatabaseError extends Data.TaggedError("DatabaseError")<{
   readonly cause: unknown
 }> {}
 
+export class InvalidResultQuery extends Data.TaggedError("InvalidResultQuery")<{
+  readonly message: string
+}> {}
+
 export class MissingRunError extends Data.TaggedError("MissingRunError")<{
   readonly runId: string
 }> {}

@@ -64,7 +64,10 @@ automatically when the final operation closes; an explicit workflow failure
 supersedes pending completion. The Promise callback overload records operation
 failure and rethrows the original application cause without failing the
 workflow. Progress values are validated nonnegative absolute snapshots; they
-are persisted individually without aggregation or coalescing.
+are queued individually by default. An opt-in SDK `delivery.progress: "latest"`
+policy replaces adjacent unsent progress for one handle with the latest validated
+whole snapshot; in-flight events, other markers and drain boundaries seal order.
+Reports remain separate, individually queued snapshots.
 
 `WorkflowProperties` and `WorkflowResult` are bounded plain JSON-safe records:
 maximum depth 5, 128 total keys, 128 characters per key, 2,048 characters per
@@ -363,3 +366,67 @@ durable delivery, and a backup restore drill are not implemented. A
 register-and-ingest pass against that deployment has not been recorded.
 The direct browser-key quota is a basic per-key limit, not production-grade
 abuse prevention. No offline queue or durable delivery guarantee exists.
+
+## Continued runs and terminal arbitration
+
+Application-owned `WorkflowRunReference` values identify a workflow/external run
+ID within credential-derived project scope. Repeated starts are no-op metadata
+reports, never context amendments. New attempts get new execution IDs.
+
+Persistence reserves envelope identity with a transaction-scoped advisory lock
+and then locks the owning run row before terminal checks/insertion. First
+accepted terminal wins for future writes; duplicate, ignored and conflicting
+outcomes are explicit. Closed-run ordinary markers cannot reopen execution or
+amend final results. HTTP edges map conflicts to 409 and successful receipts to
+202; SDK delivery diagnostics and explicit drains preserve application errors.
+The proxy validates and forwards receipt JSON without inventing disposition for
+older accepting backends.
+
+Read models intentionally keep the failed projection for historical stored runs
+with both terminal kinds. No history rewrite, schema migration, global worker
+coordination or background execution is introduced. See the
+[approved transition/compatibility decision](sdk/run-continuation.md).
+
+### Bounded SDK delivery
+
+The client queue has at most 1,000 pending delivery fibers, including in-flight
+work. Progress/report admission stops at 900 total pending; other markers can use
+the remaining reservation, but critical overload can still refuse new events.
+No queued lifecycle/operation events are evicted. There is no universal delivery
+guarantee. Replaceable progress state is bounded by pending work, not all runs
+ever observed. Event-ID creation/retry policy and wire envelopes are unchanged.
+
+Drains retain at most 20 original failure samples plus counts. Local health exposes
+only pending/replaceable counts, cumulative coalesced/dropped/failed counts and a
+last failure tag. Drains clear their error sample/count, not cumulative health;
+health remains readable after disposal. Next reports final request-local health
+through an optional callback, with no new drain surface. No database change or
+batch ingestion protocol is involved.
+
+### Reported business outcome cohorts
+
+Business outcome reads reuse project/workflow-scoped start cohorts and historical
+run projection, preserving independent technical statistics. Explicitly aggregatable
+immutable result fields select count/category/reason metrics; bounded vocabularies
+are required for category/reason aggregation. Original-start revisions remain
+immutable in meaning even when current run properties are amended.
+
+SQL restricts project/workflow and both half-open intervals before aggregation.
+Run and metric reads use same-transaction compact facts; only unbackfilled runs
+reconstruct raw history. See [historical facts](historical-facts.md) for the
+unchanged telemetry lifetime, deterministic ordering, bounded backfill and repair.
+It returns bounded aggregates (four scopes, 20 outcome/category rows, daily UTC
+start cohorts), never an unbounded evidence-ID array. Exact numeric sums use decimal
+strings. Weighted ratios share one jointly valid run population. Missing/incompatible,
+wrong-type and unknown values remain coverage gaps. Non-final reports are excluded;
+failed-with-result contributes business evidence while remaining technically failed.
+
+Result filters validate against the project/workflow/revision declaration before
+building parameterized predicates. Listing/count/evidence share the same rules,
+including complete reason-map coverage and exclusive period bounds. Release
+comparison requires compatible finished revisions and minimum known coverage;
+it is descriptive, not causal. These reads use existing JSON storage and require
+no new migration or compact-fact framework.
+
+See the [business outcome metric contract](sdk/business-insights.md) for cohort,
+coverage, weighted denominator, evidence and comparison rules.

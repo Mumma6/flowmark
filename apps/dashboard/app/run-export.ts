@@ -5,10 +5,20 @@ import {
 } from "./run-presentation"
 
 export interface ExportableRunEvent {
+  readonly expectation?: unknown
+  readonly expectationObservedAt?: string | null
   readonly id: string
   readonly type: string
   readonly step: string | null
   readonly operationId: string | null
+  readonly attempt?: {
+    readonly groupId: string
+    readonly number: number
+  } | null
+  readonly retryOf?: {
+    readonly workflow: string
+    readonly runId: string
+  } | null
   readonly operationName: string | null
   readonly durationMs: number | null
   readonly completed: number | null
@@ -88,6 +98,7 @@ export function buildRunExport(events: ReadonlyArray<ExportableRunEvent>) {
     release: first.release,
     correlationId: first.correlationId,
     parentRunId: first.parentRunId,
+    retryOf: first.retryOf ?? null,
     context: mergedContext(events),
     outcome:
       (
@@ -120,8 +131,11 @@ export function buildTimelineExport(events: ReadonlyArray<ExportableRunEvent>) {
     workflow: first.workflow,
     externalId: first.externalId,
     status: runStatus(events),
+    retryOf: first.retryOf ?? null,
     events: events.map((event) => ({
       id: event.id,
+      expectation: event.expectation ?? null,
+      expectationObservedAt: event.expectationObservedAt ?? null,
       type: event.type,
       timestamp: event.timestamp,
       receivedAt: event.receivedAt,
@@ -130,6 +144,7 @@ export function buildTimelineExport(events: ReadonlyArray<ExportableRunEvent>) {
       step: event.step,
       operationId: event.operationId,
       operationName: event.operationName,
+      attempt: event.attempt ?? null,
       durationMs: event.durationMs,
       completed: event.completed,
       total: event.total,

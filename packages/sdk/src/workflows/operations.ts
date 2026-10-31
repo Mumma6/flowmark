@@ -14,6 +14,8 @@ export function makeOperations(run: RunLifecycle) {
     operationName: WorkflowStepName,
     options?: WorkflowOperationOptions,
   ) {
+    const attempt =
+      options?.attempt === undefined ? {} : { attempt: { ...options.attempt } }
     const operationId = yield* Effect.sync(() => globalThis.crypto.randomUUID())
     const startedAt = yield* Effect.sync(() => performance.now())
     const finished = yield* Ref.make(false)
@@ -21,6 +23,7 @@ export function makeOperations(run: RunLifecycle) {
     if (canStart) {
       yield* run.record({
         type: "operation_started",
+        ...attempt,
         operationId,
         operationName,
         ...(options?.properties === undefined
@@ -51,6 +54,7 @@ export function makeOperations(run: RunLifecycle) {
       operationId,
       done: finish((durationMs) => ({
         type: "operation_completed",
+        ...attempt,
         operationId,
         operationName,
         durationMs,
@@ -58,6 +62,7 @@ export function makeOperations(run: RunLifecycle) {
       fail: (failure: WorkflowOperationFailure) =>
         finish((durationMs) => ({
           type: "operation_failed",
+          ...attempt,
           operationId,
           operationName,
           durationMs,

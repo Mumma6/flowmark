@@ -1,9 +1,15 @@
+import { getRunExpectations } from "./queries/get-run-expectations.js"
+import type { RunExpectations } from "@flowmarkdev/core"
+import type { PeerSelection } from "@flowmarkdev/core"
+import type { BusinessInsightsQuery, BusinessInsights } from "@flowmarkdev/core"
+import { getBusinessInsights } from "./queries/get-business-insights.js"
 import { Context, Effect, Layer } from "effect"
-import type { WorkflowEvent } from "@flowmarkdev/core"
+import type { AppendDisposition, WorkflowEvent } from "@flowmarkdev/core"
 import {
   Database,
   DatabaseError,
   MissingRunError,
+  InvalidResultQuery,
   provideDatabase,
 } from "../database.js"
 import { getProjectSnapshot } from "./queries/get-project-snapshot.js"
@@ -27,18 +33,26 @@ import type {
 } from "./types.js"
 
 export interface WorkflowStoreService {
+  readonly expectations: (
+    projectId: string,
+    runId: string,
+  ) => Effect.Effect<RunExpectations, DatabaseError>
+  readonly businessInsights: (
+    projectId: string,
+    query: BusinessInsightsQuery,
+  ) => Effect.Effect<BusinessInsights, DatabaseError | InvalidResultQuery>
   readonly append: (
     projectId: string,
     eventId: string,
     event: WorkflowEvent,
-  ) => Effect.Effect<void, DatabaseError | MissingRunError>
+  ) => Effect.Effect<AppendDisposition, DatabaseError | MissingRunError>
   readonly snapshot: (
     projectId: string,
   ) => Effect.Effect<ProjectSnapshot, DatabaseError>
   readonly listRuns: (
     projectId: string,
     query: ListRunsQuery,
-  ) => Effect.Effect<ListedRunsPage, DatabaseError>
+  ) => Effect.Effect<ListedRunsPage, DatabaseError | InvalidResultQuery>
   readonly timeline: (
     projectId: string,
     runId: string,
@@ -50,7 +64,8 @@ export interface WorkflowStoreService {
   readonly compare: (
     projectId: string,
     runId: string,
-  ) => Effect.Effect<RunComparison, DatabaseError>
+    selection?: PeerSelection,
+  ) => Effect.Effect<RunComparison, DatabaseError | InvalidResultQuery>
   readonly intelligence: (
     projectId: string,
     query: IntelligenceQuery,
@@ -62,6 +77,10 @@ export class WorkflowStore extends Context.Service<WorkflowStore>()(
     make: Effect.gen(function* () {
       const provide = provideDatabase(yield* Database)
       return {
+        expectations: (projectId, runId) =>
+          provide(getRunExpectations(projectId, runId)),
+        businessInsights: (projectId, query) =>
+          provide(getBusinessInsights(projectId, query)),
         append: (projectId, eventId, event) =>
           provide(appendEvent(projectId, eventId, event)),
         snapshot: (projectId) => provide(getProjectSnapshot(projectId)),
@@ -70,8 +89,8 @@ export class WorkflowStore extends Context.Service<WorkflowStore>()(
           provide(getRunTimeline(projectId, runId)),
         related: (projectId, runId) =>
           provide(getRelatedRuns(projectId, runId)),
-        compare: (projectId, runId) =>
-          provide(getRunComparison(projectId, runId)),
+        compare: (projectId, runId, selection) =>
+          provide(getRunComparison(projectId, runId, selection)),
         intelligence: (projectId, query) =>
           provide(getWorkflowIntelligence(projectId, query)),
       } satisfies WorkflowStoreService

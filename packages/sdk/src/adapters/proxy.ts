@@ -1,7 +1,8 @@
+import { isExpectationEvent } from "@flowmarkdev/core"
 import { HttpClient, HttpClientRequest } from "effect/http"
 import { Data, Effect, Exit, Match, Schema, Stream } from "effect"
 import { fetchClientLayer } from "../delivery/adapters/fetch-client.js"
-import { EventEnvelopeSchema } from "@flowmarkdev/core"
+import { IngestionReceiptSchema, EventEnvelopeSchema } from "@flowmarkdev/core"
 import { resolveSettings } from "../config/settings.js"
 import type { FlowmarkConfig } from "../types/index.js"
 
@@ -114,6 +115,15 @@ export function createFlowmarkProxy(config: FlowmarkProxyConfig = {}) {
         }
       }
       const envelope = yield* readEnvelope(request)
+      if (isExpectationEvent(envelope.event)) {
+        return Response.json(
+          {
+            error: "Browser expectations require direct public-key delivery.",
+            code: "EXPECTATION_SOURCE_FORBIDDEN",
+          },
+          { status: 403 },
+        )
+      }
       const settings = yield* Effect.try(() => resolveSettings(config))
       const client = (yield* HttpClient.HttpClient).pipe(HttpClient.withScope)
       const upstream = yield* HttpClientRequest.post(
@@ -122,13 +132,17 @@ export function createFlowmarkProxy(config: FlowmarkProxyConfig = {}) {
         HttpClientRequest.bearerToken(settings.apiKey),
         HttpClientRequest.bodyJson(envelope),
       )
-      const response = yield* Effect.scoped(client.execute(upstream)).pipe(
-        Effect.timeout("10 seconds"),
-      )
+      const response = yield* client
+        .execute(upstream)
+        .pipe(Effect.timeout("10 seconds"))
+      if (response.status === 202) {
+        const receipt = yield* response.json.pipe(
+          Effect.timeout("10 seconds"),
+          Effect.flatMap(Schema.decodeUnknownEffect(IngestionReceiptSchema)),
+        )
+        return Response.json(receipt, { status: 202 })
+      }
       return Match.value(response.status).pipe(
-        Match.when(202, () =>
-          Response.json({ accepted: true }, { status: 202 }),
-        ),
         Match.when(
           (status) => [400, 409, 429].includes(status),
           (status) =>
@@ -145,6 +159,7 @@ export function createFlowmarkProxy(config: FlowmarkProxyConfig = {}) {
         }),
       )
     }).pipe(
+      Effect.scoped,
       Effect.catchTags({
         ProxyForbidden: () =>
           Effect.succeed(

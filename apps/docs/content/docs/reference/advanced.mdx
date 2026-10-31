@@ -38,13 +38,13 @@ This is for testing, not durable storage or an offline queue.
 
 These error classes are exported by the **Node entry**:
 
-| Export                   | Meaning                                                              |
-| ------------------------ | -------------------------------------------------------------------- |
-| `FlowmarkConfigError`    | Invalid settings, run context, unsupported context, or closed client |
-| `FlowmarkDeliveryError`  | Explicit drain rejected; `failures` contains collected diagnostics   |
-| `FlowmarkHttpError`      | HTTP/encoding/network failure; optional `status`, original `cause`   |
-| `WorkflowTransportError` | Failed event and Effect cause, potentially wrapping HTTP failure     |
-| `FlowmarkQueueError`     | Event could not queue; `reason` is `capacity` or `closed`            |
+| Export                   | Meaning                                                                                |
+| ------------------------ | -------------------------------------------------------------------------------------- |
+| `FlowmarkConfigError`    | Invalid settings, run context, unsupported context, or closed client                   |
+| `FlowmarkDeliveryError`  | Explicit drain rejected; `failures` samples up to 20 causes; `failureCount` counts all |
+| `FlowmarkHttpError`      | HTTP/encoding/network failure; optional `status`, original `cause`                     |
+| `WorkflowTransportError` | Failed event and Effect cause, potentially wrapping HTTP failure                       |
+| `FlowmarkQueueError`     | Event could not queue; `reason` is `capacity` or `closed`                              |
 
 Diagnostics can also contain the core `WorkflowEventValidationError`.
 `onInstrumentationError` receives a `DeliveryFailure` union rather than
@@ -53,3 +53,17 @@ do not assume every failure has an HTTP status.
 
 Browser and Next.js entry points do not re-export these runtime error classes.
 See [delivery and diagnostics](/docs/delivery) for normal error handling.
+
+`FlowmarkErrorMappingError` is also exported by the Node entry. Its only payload
+is `reason: "threw" | "invalid"`; it deliberately retains neither the original
+application cause nor the rejected mapped value. It is reported through the
+existing diagnostics/drain channels when callback `mapError` fails. The advanced
+custom-transport `workflow()` boundary uses the same mapping and queue accounting.
+
+## Expected confirmations
+
+See [Expected confirmations](/docs/reference/expectations) for `flow.expect()`, client-level `resolveExpectation()` and `cancelExpectation()`, the serializable reference, bounded deadlines and delivery/runtime restrictions. These reports remain separate from execution status and final run results.
+
+`createFlowmarkWithTransport({ transport, onInstrumentationError?, delivery? })` owns one shared client lifecycle for custom transports, including settlement-only requests. It returns the ordinary `FlowmarkClient`; call `flush()`/`shutdown()` explicitly. Custom HTTP transports must honor the accepting-server capability and server protocol marker documented in the expectation guide.
+
+The Node root export `FlowmarkExpectationError` carries only a bounded `reason`: `invalid-input`, `run-closed` or `source-forbidden`. It participates in existing instrumentation diagnostics, failure samples and delivery-health counters. A returned expectation reference is never delivery proof.

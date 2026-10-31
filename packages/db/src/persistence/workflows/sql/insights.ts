@@ -1,3 +1,4 @@
+import { metricFactsSql } from "./metric-facts.js"
 import { sql } from "drizzle-orm"
 import { projectRunSummaries } from "./run-summaries.js"
 
@@ -16,7 +17,7 @@ export const operationInsightsSql = (projectId: string) => sql`
       0
     )::float8 AS "p95DurationMs",
     coalesce(sum(e.duration_ms), 0)::float8 AS "totalDurationMs"
-  FROM workflow_events e
+  FROM ${metricFactsSql(projectId)} e
   JOIN workflow_runs r ON r.id = e.run_id
   JOIN workflows w ON w.id = r.workflow_id
   WHERE w.project_id = ${projectId}
@@ -29,17 +30,17 @@ export const operationInsightsSql = (projectId: string) => sql`
 
 export const failureCodeInsightsSql = (projectId: string) => sql`
   SELECT
-    e.error->>'code' AS code,
+    e.fail_code AS code,
     w.name AS workflow,
     count(*)::int AS count
-  FROM workflow_events e
+  FROM ${metricFactsSql(projectId)} e
   JOIN workflow_runs r ON r.id = e.run_id
   JOIN workflows w ON w.id = r.workflow_id
   WHERE w.project_id = ${projectId}
     AND e.type = 'failed'
-    AND e.error->>'code' IS NOT NULL
-    AND e.error->>'code' <> ''
-  GROUP BY e.error->>'code', w.name
+    AND e.fail_code IS NOT NULL
+    AND e.fail_code <> ''
+  GROUP BY e.fail_code, w.name
   ORDER BY count(*) DESC, code
   LIMIT 20
 `
@@ -117,7 +118,7 @@ export const operationAttributionSql = (
     percentile_cont(0.5) WITHIN GROUP (ORDER BY e.duration_ms)
       FILTER (WHERE e.duration_ms IS NOT NULL)::float8 AS "medianDurationMs",
     array_agg(DISTINCT r.id::text) FILTER (WHERE r.id IS NOT NULL) AS "runIds"
-  FROM workflow_events e
+  FROM ${metricFactsSql(projectId)} e
   JOIN workflow_runs r ON r.id = e.run_id
   JOIN workflows w ON w.id = r.workflow_id
   WHERE w.project_id = ${projectId}
@@ -154,16 +155,16 @@ export const failureCodeAttributionSql = (
         THEN 'current'
       ELSE 'previous'
     END AS period,
-    e.error->>'code' AS code,
+    e.fail_code AS code,
     count(DISTINCT r.id)::int AS count,
     array_agg(DISTINCT r.id::text) FILTER (WHERE r.id IS NOT NULL) AS "runIds"
-  FROM workflow_events e
+  FROM ${metricFactsSql(projectId)} e
   JOIN workflow_runs r ON r.id = e.run_id
   JOIN workflows w ON w.id = r.workflow_id
   WHERE w.project_id = ${projectId}
     AND e.type = 'failed'
-    AND e.error->>'code' IS NOT NULL
-    AND e.error->>'code' <> ''
+    AND e.fail_code IS NOT NULL
+    AND e.fail_code <> ''
     AND (
       (
         r.started_at >= ${current.startedAfter}::timestamptz
@@ -178,6 +179,6 @@ export const failureCodeAttributionSql = (
       ${workflow ?? null}::text IS NULL
       OR w.name = ${workflow ?? null}
     )
-  GROUP BY period, e.error->>'code'
-  ORDER BY e.error->>'code', period
+  GROUP BY period, e.fail_code
+  ORDER BY e.fail_code, period
 `

@@ -5,6 +5,7 @@ import {
   logFailure,
   runApi,
 } from "@flowmark/api"
+import { ingestionReceipt } from "./ingestion-receipt"
 import { readJsonBody } from "./request-body"
 
 function withCors(origin: string, response: Response) {
@@ -71,7 +72,7 @@ export async function handleBrowserIngestion(request: Request) {
         readJsonBody(request),
       )
       .pipe(
-        Effect.as(Response.json({ accepted: true }, { status: 202 })),
+        Effect.map(ingestionReceipt),
         Effect.catchTags({
           InvalidInput: () =>
             Effect.succeed(
@@ -83,7 +84,10 @@ export async function handleBrowserIngestion(request: Request) {
           RunNotFound: () =>
             Effect.succeed(
               Response.json(
-                { error: "Send the started event before other run events." },
+                {
+                  error: "Send the started event before other run events.",
+                  code: "RUN_NOT_FOUND",
+                },
                 { status: 409 },
               ),
             ),

@@ -8,6 +8,154 @@ afterEach(() => {
 })
 
 describe("browser client", () => {
+  it("carries attempt and retry references through the browser transport with capability acknowledgment", async () => {
+    vi.stubGlobal("location", { origin: "https://customer.example" })
+    const fetcher = vi.fn<typeof fetch>(async () =>
+      Response.json(
+        { accepted: true, capabilities: ["attempts-v1"] },
+        { status: 202 },
+      ),
+    )
+    vi.stubGlobal("fetch", fetcher)
+    const client = createFlowmark({})
+    const flow = client.workflow("crm.retry", {
+      retryOf: { workflow: "crm.retry", runId: "earlier" },
+    })
+    await flow.operation("push", () => Promise.resolve(1), {
+      attempt: { groupId: "batch", number: 2 },
+    })
+    flow.done()
+    await client.shutdown()
+    const events = fetcher.mock.calls.map(
+      ([, options]) => JSON.parse(String(options?.body)).event,
+    )
+    expect(events[0]).toMatchObject({
+      retryOf: { workflow: "crm.retry", runId: "earlier" },
+    })
+    expect(
+      events.filter((event) => event.type.startsWith("operation_")),
+    ).toMatchObject([{ attempt: { number: 2 } }, { attempt: { number: 2 } }])
+  })
+
+  it("sends only safely mapped callback failure fields and preserves recovery", async () => {
+    vi.stubGlobal("location", { origin: "https://customer.example" })
+    const fetcher = vi.fn<typeof fetch>(
+      async () => new Response(null, { status: 202 }),
+    )
+    vi.stubGlobal("fetch", fetcher)
+    const client = createFlowmark({})
+    const flow = client.workflow("crm.safe-error")
+    const original = new Error("RUNTIME_SYNTHETIC_SECRET_008")
+    await expect(
+      flow.operation("request", () => Promise.reject(original), {
+        mapError: () => ({
+          code: "CRM_UNAVAILABLE",
+          message: "CRM unavailable",
+          retryable: true,
+        }),
+      }),
+    ).rejects.toBe(original)
+    flow.done({ result: { imported: 0 } })
+    await client.shutdown()
+    const envelopes = await Promise.all(
+      fetcher.mock.calls.map(async ([, options]) =>
+        JSON.parse(await new Response(options?.body).text()),
+      ),
+    )
+    expect(JSON.stringify(envelopes)).not.toContain(
+      "RUNTIME_SYNTHETIC_SECRET_008",
+    )
+    expect(
+      envelopes.find((item) => item.event.type === "operation_failed")?.event
+        .failure,
+    ).toEqual({
+      code: "CRM_UNAVAILABLE",
+      message: "CRM unavailable",
+      retryable: true,
+    })
+    expect(envelopes.at(-1)?.event.type).toBe("completed")
+  })
+
+  it("coalesces browser bursts, drains explicitly and retains safe health after shutdown", async () => {
+    vi.stubGlobal("location", { origin: "https://customer.example" })
+    let release = () => {}
+    const gate = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    const fetcher = vi.fn<typeof fetch>(async () => {
+      await gate
+      return new Response(null, { status: 202 })
+    })
+    vi.stubGlobal("fetch", fetcher)
+    const client = createFlowmark({ delivery: { progress: "latest" } })
+    expect(client.deliveryHealth().pending).toBe(0)
+    const flow = client.workflow("bulk.ui")
+    for (let completed = 1; completed <= 1000; completed++) {
+      flow.progress({ completed })
+    }
+    flow.done()
+    expect(client.deliveryHealth()).toMatchObject({
+      coalesced: 999,
+      pending: 3,
+    })
+    release()
+    await client.flush()
+    await client.shutdown()
+    expect(client.deliveryHealth()).toMatchObject({
+      pending: 0,
+      coalesced: 999,
+    })
+    expect(fetcher).toHaveBeenCalledTimes(3)
+    const events = await Promise.all(
+      fetcher.mock.calls.map(
+        async ([, options]) =>
+          JSON.parse(await new Response(options?.body).text()).event,
+      ),
+    )
+    expect(events.map((event) => event.type)).toEqual([
+      "started",
+      "progress",
+      "completed",
+    ])
+    expect(events[1].completed).toBe(1000)
+    expect(
+      fetcher.mock.calls.every(([, options]) => options?.keepalive === true),
+    ).toBe(true)
+  })
+
+  it("reports terminal HTTP 409 without retrying or replacing the application return", async () => {
+    vi.stubGlobal("location", { origin: "https://customer.example" })
+    const fetcher = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(
+        Response.json(
+          { accepted: false, disposition: "ignored" },
+          { status: 202 },
+        ),
+      )
+      .mockResolvedValueOnce(
+        Response.json(
+          { accepted: false, disposition: "conflict" },
+          { status: 409 },
+        ),
+      )
+    vi.stubGlobal("fetch", fetcher)
+    const diagnostic = vi.fn()
+    const client = createFlowmark({ onInstrumentationError: diagnostic })
+    const flow = client.workflow("browser.callback", { id: "already-finished" })
+    flow.done()
+    await expect(client.flush()).rejects.toMatchObject({
+      _tag: "FlowmarkDeliveryError",
+    })
+    expect(fetcher).toHaveBeenCalledTimes(2)
+    expect(diagnostic).toHaveBeenCalledOnce()
+    expect(diagnostic.mock.calls[0]?.[1]).toMatchObject({ type: "completed" })
+    await expect(
+      flow.operation("application-work", () => Promise.resolve(42)),
+    ).resolves.toBe(42)
+    await client.shutdown()
+  })
+
   it("can be imported and configured during SSR without accessing browser globals", async () => {
     vi.stubGlobal("location", undefined)
     const client = createFlowmark()

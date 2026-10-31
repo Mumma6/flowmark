@@ -32,8 +32,21 @@ to report, not before it.
 | `unit`      | `string` | Optional non-empty string, max 64 characters                    |
 
 Snapshots are absolute, not increments. Two reports of `completed: 100` do not
-mean 200 items. Every valid call is persisted; there is no aggregation or
-coalescing. Choose sensible reporting intervals instead of per-item spam.
+mean 200 items. By default (`delivery.progress: "all"`), every valid call queues its own event,
+subject to delivery and capacity limits. For bulk work, opt into
+`delivery: { progress: "latest" }` on Node, Next.js or browser clients.
+
+With `"latest"`, adjacent unsent progress for one handle is replaced by the latest
+whole absolute snapshot, including its timestamp. Omitted total/unit fields are
+not inherited. Every call is validated before replacement; invalid calls still
+reach diagnostics and never erase the previous valid snapshot. In-flight events
+are immutable. Any intervening marker or flush seals the previous snapshot in
+its existing order. Completion follows the last queued progress.
+
+This reduces historical progress density; it does not aggregate counts or
+coalesce business `report()` snapshots. Report progress per useful batch even
+with this option. Under pressure across many handles, bounded capacity can still
+drop new snapshots; see [delivery limits](/docs/delivery).
 
 ## Interpretation and invalid input
 

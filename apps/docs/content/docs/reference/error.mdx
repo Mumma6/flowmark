@@ -48,3 +48,9 @@ failed run. You can call `fail()` alone if a separate error event adds no useful
 detail. Retryability is descriptive; Flowmark never retries your business work.
 
 Error markers after completion request or terminal failure are ignored.
+
+For exceptions from operation callbacks, use the optional per-operation
+[`mapError`](/docs/reference/operation) to select safe failure fields. It does
+not change `handled`, automatically fail the workflow or replace the original
+application rejection. Mapper omission preserves existing automatic exception
+message capture.

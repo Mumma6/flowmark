@@ -16,6 +16,7 @@ describe("workflow run service", () => {
     const recorder = Layer.succeed(WorkflowEvents, {
       forRun: (workflow, runId) =>
         Effect.succeed({
+          diagnose: () => Effect.void,
           record: (event) =>
             Effect.sync(() => {
               events.push({ workflow, runId, event })

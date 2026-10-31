@@ -65,3 +65,25 @@ export { ApiLive, logFailure, runApi } from "./runtime.js"
 export { ManageResultDeclarations } from "./features/result-declarations/use-cases/manage-result-declarations.js"
 
 export { ResultDeclarationSchema } from "@flowmarkdev/core"
+
+export {
+  SearchFieldsSchema,
+  BusinessKeySchema,
+  BusinessValueSchema,
+} from "@flowmarkdev/core"
+
+export type { AppendDisposition } from "@flowmarkdev/core"
+
+export {
+  BusinessTimestampSchema,
+  BusinessInsightsQuerySchema,
+  ResultSelectionSchema,
+  RatioSelectionSchema,
+} from "@flowmarkdev/core"
+
+export { PeerSelectionSchema } from "@flowmarkdev/core"
+
+export { ExpectationStateSchema } from "@flowmarkdev/core"
+export type { RunExpectations, ExpectationAttention } from "@flowmarkdev/core"
+
+export { ExpectationSourceForbidden } from "./errors.js"

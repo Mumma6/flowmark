@@ -51,3 +51,24 @@ Invalid start context/configuration or a shut-down client can throw
 `FlowmarkConfigError`. Delivery errors after starting use instrumentation
 diagnostics. `workflow()` after shutdown is not supported.
 See [delivery and diagnostics](/docs/delivery).
+
+## Qualified execution reference
+
+Node, Next and browser exports include the plain `WorkflowRunReference` type:
+`{ readonly workflow: string; readonly runId: string }`. Persist/transport it in
+your application and resume with `workflow(ref.workflow, { id: ref.runId })`.
+Validate and authorize application callbacks yourself. This does not query remote
+state, transmit TypeScript types, coordinate work or grant project access.
+
+A repeated start is acknowledged as ignored and never rewrites the original
+properties/environment/release/correlation/parent metadata. Accepted amendments
+use `setProperties`. A later attempt uses a fresh ID. See
+[cross-request terminal decisions](/docs/concepts/runs#terminal-decisions).
+
+## Explicit application-owned attempts
+
+See [Attempts and retries](/docs/reference/attempts) for operation `attempt: { groupId, number }`, qualified new-run `retryOf` links, bounds, project scoping and the required `attempts-v1` accepting-server acknowledgment. Supplying these options is explicit opt-in; deploy accepting storage/API/readers before enabling them. Transport retries remain separate from business attempts.
+
+## Expected confirmations
+
+See [Expected confirmations](/docs/reference/expectations) for `flow.expect()`, client-level `resolveExpectation()` and `cancelExpectation()`, the serializable reference, bounded deadlines and delivery/runtime restrictions. These reports remain separate from execution status and final run results.

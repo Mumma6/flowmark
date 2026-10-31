@@ -19,6 +19,7 @@ export class FlowmarkConfigError extends Data.TaggedError(
 
 /** HTTP delivery failure; status is undefined for encoding, network, or timeout failures. Preserves the original cause. */
 export class FlowmarkHttpError extends Data.TaggedError("FlowmarkHttpError")<{
+  readonly retryable?: boolean
   readonly status: number | undefined
   readonly cause: unknown
 }> {}
@@ -31,19 +32,34 @@ export class WorkflowTransportError extends Data.TaggedError(
   readonly cause: Cause.Cause<unknown>
 }> {}
 
-/** An event could not be queued because the 1,000-event limit was reached or delivery was closed. */
+/** An event could not be queued because its bounded admission limit was reached or delivery was closed. */
 export class FlowmarkQueueError extends Data.TaggedError("FlowmarkQueueError")<{
   readonly event: WorkflowEvent
   readonly reason: "capacity" | "closed"
 }> {}
 
+/** Bounded mapper diagnostic: deliberately excludes the original cause/payload. */
+export class FlowmarkErrorMappingError extends Data.TaggedError(
+  "FlowmarkErrorMappingError",
+)<{ readonly reason: "threw" | "invalid" }> {}
+
+export class FlowmarkExpectationError extends Data.TaggedError(
+  "FlowmarkExpectationError",
+)<{ readonly reason: "invalid-input" | "run-closed" | "source-forbidden" }> {}
+
 /** Failures reported to onInstrumentationError or collected by flush()/shutdown(). */
 export type DeliveryFailure =
-  WorkflowTransportError | WorkflowEventValidationError | FlowmarkQueueError
+  | FlowmarkExpectationError
+  | WorkflowTransportError
+  | WorkflowEventValidationError
+  | FlowmarkQueueError
+  | FlowmarkErrorMappingError
 
-/** Rejection from flush()/shutdown(). The failures array preserves each reported delivery/validation error. */
+/** Rejection from flush()/shutdown(). At most 20 original failures are retained; counts include every failure since the previous drain. */
 export class FlowmarkDeliveryError extends Data.TaggedError(
   "FlowmarkDeliveryError",
 )<{
   readonly failures: ReadonlyArray<DeliveryFailure>
+  readonly failureCount: number
+  readonly omittedFailureCount: number
 }> {}

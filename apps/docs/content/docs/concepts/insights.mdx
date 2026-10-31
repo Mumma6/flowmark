@@ -30,15 +30,15 @@ end, and monotonic duration, so you can see which unit of work was slow.
 
 Open one execution when the numbers need a story:
 
-| Insight      | Where it comes from                                |
-| ------------ | -------------------------------------------------- |
-| Outcome      | `done()` or `fail()`                               |
-| Result       | The JSON summary attached to that terminal call    |
-| Progress     | The last `progress()` snapshot                     |
-| Operations   | Each named unit of work, with duration             |
-| Compare      | This run versus the last 20 of the same workflow   |
-| Errors       | `error({ handled })` events and operation failures |
-| Related runs | `correlationId` and `parentRunId` you passed       |
+| Insight      | Where it comes from                                        |
+| ------------ | ---------------------------------------------------------- |
+| Outcome      | `done()` or `fail()`                                       |
+| Result       | The JSON summary attached to that terminal call            |
+| Progress     | The last `progress()` snapshot                             |
+| Operations   | Each named unit of work, with duration                     |
+| Compare      | This run versus up to 50 explicitly selected earlier peers |
+| Errors       | `error({ handled })` events and operation failures         |
+| Related runs | `correlationId` and `parentRunId` you passed               |
 
 Compare shows this run's duration against the peer median and p95, plus
 each earlier run's status and duration delta.
@@ -59,3 +59,78 @@ Use progress while work is still moving:
 See [workflows and runs](/docs/concepts/runs) for the lifecycle, and
 [reading the dashboard](/docs/concepts/dashboard) for where these numbers
 appear.
+
+## Reported business outcomes
+
+Each workflow has a business outcome panel with explicit definition, UTC start
+cohort, field coverage and independent technical failure counts. Select current
+and previous intervals (up to 31 days each), an aggregatable result field and
+optionally a bounded configured dimension. Daily rows show reported count/reason
+totals for observed start cohorts. Partial work reported on failed runs still
+contributes; `report()` snapshots never become final observations.
+
+Enable aggregation in a **new immutable result revision** using `aggregate: true`.
+For categories/reasons, also declare 1–20 distinct `values`. Existing presentation
+revisions remain presentation-only. Original-start `properties.definitionRevision`
+selects the definition; later context amendments do not change it.
+
+The cohort is start >= after and start < before, in UTC. Each run/attempt counts
+once, so retries with a new run ID count again. Late terminal evidence can change
+a historical start cohort. Canonical outcome counts use all finished runs; field
+totals use only compatible finished results, including failed-with-result.
+Missing results/fields/revisions, wrong types and unknown categories are visible
+coverage gaps, not zeroes. Counts mean reported items across runs, not unique
+entities. Absent reason keys remain unknown; an explicit zero is a known zero.
+
+Choose numerator and denominator count fields for a weighted ratio: sum of the
+numerators / sum of the denominators over the same jointly valid finished runs.
+For 1/2 and 9/100, the ratio is 10/102, not an average of per-run percentages.
+An overall zero denominator or no valid pairs is unavailable. Ratios may exceed
+one and are not inferred business-success scores.
+
+Outcome/category/reason links open historical Run Explorer evidence with the
+same workflow, period, dimension, release and definition/result selection. Numeric
+predicates support equals/at least/at most; categories support exact equality.
+Reason evidence requires a fully valid declared map, matching the aggregate.
+
+Two releases can be compared in the current interval when all finished revisions
+are compatible and each release has at least five known observations (also five
+jointly valid observations for a selected ratio). Coverage and unavailable states
+remain explicit. This threshold does not imply statistical significance; avoid
+causal/regression conclusions from small cohorts. Responses cap outcomes at 20
+with an explicit other bucket, declared categories/reasons at 20 and scopes at
+four. Count totals are exact decimal strings; missing totals are null.
+
+## Comparable runs and repeated operations
+
+Run comparison defaults to the same workflow and environment during the 30 days
+before the current run. Missing environment matches missing only. Start timestamp
+and internal ID define strict earlier ordering, including deterministic ties; the
+current and later runs never enter the baseline. At most 50 peers are selected,
+with total eligible count and the five-peer descriptive sample threshold visible.
+Use the comparison controls to select 1–90 days, deliberately broaden to all
+environments, require the same release, or select an enabled bounded dimension.
+Missing releases match missing when same-release selection is enabled. There is
+no automatic broader fallback. Selectors remain in the shared run URL.
+
+Operation rows distinguish repeated occurrences, open and failed occurrences,
+per-occurrence median and total recorded duration. Repeated names do not mean
+retries. Overlapping operations can have summed durations greater than the run's
+wall time; totals are recorded work, not a critical path or causal attribution.
+Missing duration stays unknown. For compatibility, the older duration field and
+peer median still describe the longest occurrence per run and are labeled as
+such. Operation comparison is capped at 100 names in alphabetical order; inspect
+the timeline for complete event evidence. Peers without a name remain absent,
+not zero-duration operations. The workflow intelligence view uses its own
+terminal-occurrence population and is not the same metric.
+
+Workload normalization is unavailable until a stable input-volume field and its
+meaning are validated. Final results and progress are context, not inferred work
+volume. Small samples do not establish a regression.
+
+Peer occurrence statistics also show the median of each present peer's occurrence
+median and the median total recorded work per present peer. These are run-weighted
+summaries, not a pooled occurrence distribution. Absent peers never contribute
+zeroes. Open/failed peer counts describe runs with at least one such occurrence
+and can overlap. Terminal-only operation evidence remains present when its start
+is missing; later receipt of a start does not reopen observed terminal evidence.

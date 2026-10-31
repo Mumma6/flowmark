@@ -1,3 +1,8 @@
+import {
+  createFlowmark,
+  type WorkflowRunReference,
+} from "../../../../packages/sdk/src/index.js"
+import { Effect } from "effect"
 import { randomUUID } from "node:crypto"
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest"
 import {
@@ -5,6 +10,7 @@ import {
   projectApiKeys,
   projects,
   workflowRuns,
+  workflowEvents,
   workspaces,
   workflows,
 } from "@flowmark/db"
@@ -601,6 +607,378 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
       ])
     })
 
+    it("continues a booking across fresh SDK clients without changing the first terminal or application errors", () =>
+      Effect.runPromise(
+        Effect.gen(function* () {
+          const originalFetch = vi.fn<typeof fetch>((input, init) =>
+            POST(new Request(input, init)),
+          )
+          vi.stubGlobal("fetch", originalFetch)
+          const config = { apiKey: writeKey, apiUrl: "http://localhost" }
+          const submission = createFlowmark(config)
+          const flow = submission.workflow("booking.create", {
+            properties: { bookingRef: "synthetic-booking-42" },
+            environment: "test",
+            release: "submission",
+          })
+          const reference: WorkflowRunReference = {
+            workflow: "booking.create",
+            runId: flow.runId,
+          }
+          flow.step("awaiting-confirmation")
+          flow.report({ reserved: 0 })
+          yield* Effect.promise(() => submission.shutdown())
+          const open = yield* Effect.promise(() =>
+            caller(readKey).run.list({
+              workflow: reference.workflow,
+              externalId: reference.runId,
+            }),
+          )
+          const openRun = open.runs.find(
+            (row) => row.externalId === reference.runId,
+          )!
+          expect(openRun).toMatchObject({
+            status: "Running",
+            result: null,
+            outcome: null,
+          })
+          const callback = createFlowmark(config)
+          const continuation = callback.workflow(reference.workflow, {
+            id: reference.runId,
+            release: "must-not-replace",
+            properties: { mustNotReplace: true },
+          })
+          continuation.setProperties({ callbackSeen: true })
+          continuation.done({ outcome: "confirmed", result: { reserved: 1 } })
+          yield* Effect.promise(() => callback.shutdown())
+          const diagnostic = vi.fn()
+          const duplicateCallback = createFlowmark({
+            ...config,
+            onInstrumentationError: diagnostic,
+          })
+          const duplicate = duplicateCallback.workflow(reference.workflow, {
+            id: reference.runId,
+          })
+          duplicate.fail({
+            code: "LATE_CALLBACK",
+            outcome: "rejected",
+            result: { reserved: 0 },
+          })
+          yield* Effect.promise(() =>
+            expect(duplicateCallback.flush()).rejects.toMatchObject({
+              _tag: "FlowmarkDeliveryError",
+            }),
+          )
+          expect(diagnostic).toHaveBeenCalledOnce()
+          expect(diagnostic.mock.calls[0]?.[1]).toMatchObject({
+            type: "failed",
+          })
+          const applicationCause = new Error("original application error")
+          yield* Effect.promise(() =>
+            expect(
+              duplicate.operation("late-callback", () =>
+                Promise.reject(applicationCause),
+              ),
+            ).rejects.toBe(applicationCause),
+          )
+          yield* Effect.promise(() => duplicateCallback.shutdown())
+          const final = yield* Effect.promise(() =>
+            caller(readKey).run.detail({ id: openRun.id }),
+          )
+          expect(
+            final.filter((event) =>
+              ["completed", "failed"].includes(event.type),
+            ),
+          ).toHaveLength(1)
+          expect(
+            final.find((event) => event.type === "completed"),
+          ).toMatchObject({ outcome: "confirmed", result: { reserved: 1 } })
+          expect(final[0]).toMatchObject({
+            release: "submission",
+            properties: { bookingRef: "synthetic-booking-42" },
+          })
+          const retry = createFlowmark(config)
+          const anotherAttempt = retry.workflow(reference.workflow)
+          expect(anotherAttempt.runId).not.toBe(reference.runId)
+          anotherAttempt.done({
+            outcome: "unavailable",
+            result: { reserved: 0 },
+          })
+          yield* Effect.promise(() => retry.shutdown())
+          vi.unstubAllGlobals()
+        }).pipe(Effect.ensuring(Effect.sync(() => vi.unstubAllGlobals()))),
+      ))
+
+    it("preserves historical mixed-terminal evidence without accepting another terminal", () =>
+      Effect.runPromise(
+        Effect.gen(function* () {
+          const id = randomUUID(),
+            workflow = "historical.mixed"
+          const base = {
+            workflow,
+            runId: id,
+            timestamp: "2026-01-01T00:00:00Z",
+          }
+          yield* Effect.promise(() => send({ ...base, type: "started" }))
+          yield* Effect.promise(() =>
+            send({
+              ...base,
+              type: "completed",
+              outcome: "complete",
+              result: { items: 5 },
+            }),
+          )
+          const snapshot = yield* Effect.promise(() =>
+            caller(readKey).run.list({ workflow, externalId: id }),
+          )
+          const run = snapshot.runs.find((row) => row.externalId === id)!
+          // Synthetic representation of events persisted before TASK-003. No history rewrite.
+          yield* Effect.promise(() =>
+            connection.db.insert(workflowEvents).values({
+              eventId: randomUUID(),
+              runId: run.id,
+              type: "failed",
+              occurredAt: new Date("2026-01-02T00:00:00Z"),
+              result: { items: 3 },
+              outcome: "partial",
+              error: { code: "OLD_FAILURE" },
+            }),
+          )
+          yield* Effect.promise(() =>
+            connection.db
+              .update(workflowRuns)
+              .set({ result: { items: 3 }, outcome: "partial" })
+              .where(eq(workflowRuns.id, run.id)),
+          )
+          expect(
+            (yield* Effect.promise(() => send({ ...base, type: "completed" })))
+              .status,
+          ).toBe(409)
+          const after = yield* Effect.promise(() =>
+            caller(readKey).run.list({ workflow, externalId: id }),
+          )
+          expect(after.runs.find((row) => row.id === run.id)).toMatchObject({
+            status: "Failed",
+            result: { items: 3 },
+            outcome: "partial",
+          })
+          expect(
+            (yield* Effect.promise(() =>
+              caller(readKey).run.detail({ id: run.id }),
+            )).map((event) => event.type),
+          ).toEqual(["started", "completed", "failed"])
+        }),
+      ))
+
+    it("serializes terminals across requests and acknowledges duplicates, ignores and conflicts explicitly", () =>
+      Effect.runPromise(
+        Effect.gen(function* () {
+          const id = randomUUID()
+          const startId = randomUUID()
+          const workflow = "booking.concurrent"
+          const base = {
+            workflow,
+            runId: id,
+            timestamp: "2026-01-02T00:00:00Z",
+          }
+          const receipt = Effect.fn("test.receipt")(function* (
+            event: unknown,
+            eventId = randomUUID(),
+          ) {
+            const response = yield* Effect.promise(() =>
+              send(event, writeKey, eventId),
+            )
+            return {
+              status: response.status,
+              body: yield* Effect.promise(() => response.json()),
+            }
+          })
+          const started = {
+            ...base,
+            type: "started",
+            properties: {
+              bookingRef: "synthetic-booking",
+              nested: { original: true },
+            },
+            environment: "test",
+            release: "first",
+            correlationId: "correlation-first",
+          }
+          expect(yield* receipt(started, startId)).toMatchObject({
+            status: 202,
+            body: { accepted: true, disposition: "recorded" },
+          })
+          expect(yield* receipt(started, startId)).toMatchObject({
+            status: 202,
+            body: { disposition: "duplicate" },
+          })
+          expect(
+            yield* receipt({
+              ...started,
+              properties: { replaced: true },
+              release: "second",
+              environment: "other",
+              correlationId: "other",
+            }),
+          ).toMatchObject({
+            status: 202,
+            body: { accepted: false, disposition: "ignored" },
+          })
+          yield* receipt({
+            ...base,
+            type: "properties",
+            properties: { callbackSeen: true, nested: { amended: true } },
+          })
+          yield* receipt({ ...base, type: "report", result: { reserved: 1 } })
+          const doneId = randomUUID(),
+            failId = randomUUID()
+          const completed = {
+            ...base,
+            type: "completed",
+            outcome: "confirmed",
+            result: { reserved: 1 },
+          }
+          const failed = {
+            ...base,
+            timestamp: "2025-01-01T00:00:00Z",
+            type: "failed",
+            failure: { code: "DECLINED" },
+            outcome: "rejected",
+            result: { reserved: 0 },
+          }
+          const decisions = yield* Effect.all(
+            [receipt(completed, doneId), receipt(failed, failId)],
+            { concurrency: 2 },
+          )
+          expect(decisions.map((decision) => decision.status).sort()).toEqual([
+            202, 409,
+          ])
+          const winner = decisions[0].status === 202 ? completed : failed
+          const winningId = decisions[0].status === 202 ? doneId : failId
+          expect(yield* receipt(winner, winningId)).toMatchObject({
+            status: 202,
+            body: { disposition: "duplicate" },
+          })
+          expect(yield* receipt(winner)).toMatchObject({
+            status: 409,
+            body: { code: "EVENT_CONFLICT", accepted: false },
+          })
+          for (const event of [
+            { ...base, type: "step", step: "late" },
+            {
+              ...base,
+              type: "properties",
+              properties: { callbackSeen: false },
+            },
+            { ...base, type: "progress", completed: 2 },
+            { ...base, type: "report", result: { reserved: 999 } },
+            {
+              ...base,
+              type: "operation_started",
+              operationId: randomUUID(),
+              operationName: "late",
+            },
+          ]) {
+            expect(yield* receipt(event)).toMatchObject({
+              status: 202,
+              body: { accepted: false, disposition: "ignored" },
+            })
+          }
+          const snapshot = yield* Effect.promise(() =>
+            caller(readKey).run.list({ workflow, externalId: id }),
+          )
+          const run = snapshot.runs.find((row) => row.externalId === id)!
+          expect(run).toMatchObject({
+            status: winner.type === "completed" ? "Completed" : "Failed",
+            outcome: winner.outcome,
+            result: winner.result,
+          })
+          const timeline = yield* Effect.promise(() =>
+            caller(readKey).run.detail({ id: run.id }),
+          )
+          expect(timeline).toHaveLength(4)
+          expect(
+            timeline.filter((event) =>
+              ["completed", "failed"].includes(event.type),
+            ),
+          ).toHaveLength(1)
+          expect(
+            timeline.find((event) => event.type === "started"),
+          ).toMatchObject({
+            properties: started.properties,
+            environment: "test",
+            release: "first",
+            correlationId: "correlation-first",
+          })
+          const [stored] = yield* Effect.promise(() =>
+            connection.db
+              .select()
+              .from(workflowRuns)
+              .where(eq(workflowRuns.id, run.id)),
+          )
+          expect(stored.properties).toEqual({
+            bookingRef: "synthetic-booking",
+            callbackSeen: true,
+            nested: { amended: true },
+          })
+          expect(stored.result).toEqual(winner.result)
+          expect(
+            yield* receipt({ ...completed, runId: randomUUID() }),
+          ).toMatchObject({ status: 409, body: { code: "RUN_NOT_FOUND" } })
+          const failedFirstId = randomUUID()
+          yield* receipt({ ...started, runId: failedFirstId })
+          expect(
+            yield* receipt({ ...failed, runId: failedFirstId }),
+          ).toMatchObject({ status: 202, body: { disposition: "recorded" } })
+          expect(
+            yield* receipt({ ...completed, runId: failedFirstId }),
+          ).toMatchObject({ status: 409, body: { disposition: "conflict" } })
+          const refusedStartId = randomUUID()
+          expect(
+            yield* receipt({ ...started, runId: refusedStartId }, winningId),
+          ).toMatchObject({ status: 409 })
+          expect(
+            (yield* Effect.promise(() =>
+              caller(readKey).run.list({
+                workflow,
+                externalId: refusedStartId,
+              }),
+            )).total,
+          ).toBe(0)
+          const otherWriteKey = randomUUID()
+          yield* Effect.promise(() =>
+            connection.db.insert(projectApiKeys).values({
+              projectId: otherProjectId,
+              keyHash: hashApiKey(otherWriteKey),
+              permission: "write",
+            }),
+          )
+          const crossProject = yield* Effect.promise(() =>
+            send({ ...started, runId: randomUUID() }, otherWriteKey, winningId),
+          )
+          expect(crossProject.status).toBe(409)
+          expect(yield* Effect.promise(() => crossProject.json())).toEqual({
+            accepted: false,
+            disposition: "conflict",
+            code: "EVENT_CONFLICT",
+            error: "Event conflicts with previously accepted telemetry.",
+          })
+          expect(
+            (yield* Effect.promise(() =>
+              caller(otherReadKey).run.list({ workflow }),
+            )).total,
+          ).toBe(0)
+          const otherId = randomUUID()
+          yield* receipt({ ...started, runId: otherId })
+          expect(
+            yield* receipt(
+              { ...base, runId: otherId, type: "step", step: "collision" },
+              winningId,
+            ),
+          ).toMatchObject({ status: 409, body: { code: "EVENT_CONFLICT" } })
+        }),
+      ))
+
     it("continues the same run when later requests reuse the execution id", async () => {
       const continuedRun = randomUUID()
       const workflow = "expedition.run"
@@ -640,7 +1018,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         timestamp,
         step: "ignored-after-done",
       })
-      await send({
+      const conflict = await send({
         type: "failed",
         workflow,
         runId: continuedRun,
@@ -649,21 +1027,25 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         result: { battlesWon: 2, abandoned: true },
       })
 
+      expect(conflict.status).toBe(409)
+      expect(await conflict.json()).toMatchObject({
+        accepted: false,
+        disposition: "conflict",
+        code: "EVENT_CONFLICT",
+      })
       const snapshot = await caller(readKey).project.snapshot()
       const summary = snapshot.runs.find(
         (run) => run.externalId === continuedRun,
       )!
-      expect(summary.status).toBe("Failed")
+      expect(summary.status).toBe("Completed")
       expect(summary.result).toEqual({
         battlesWon: 2,
-        abandoned: true,
       })
       const timeline = await caller(readKey).run.detail({ id: summary.id })
       expect(timeline.map((entry) => entry.type)).toEqual([
         "started",
         "step",
         "completed",
-        "failed",
       ])
       expect(timeline[0]).toMatchObject({
         properties: { battleCount: 3 },
@@ -672,7 +1054,6 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
       expect(timeline.map((entry) => entry.step)).toEqual([
         null,
         "battle-claimed",
-        null,
         null,
       ])
     })
@@ -727,7 +1108,10 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         result: { captured: false, reserved: true },
       })
       const snapshot = await caller(readKey).project.snapshot()
-      expect(snapshot.metrics.failedRuns).toBe(3)
+      const failedPopulation = await caller(readKey).run.list({
+        status: "Failed",
+      })
+      expect(snapshot.metrics.failedRuns).toBe(failedPopulation.total)
       expect(snapshot.failureCodes).toEqual(
         expect.arrayContaining([
           expect.objectContaining({

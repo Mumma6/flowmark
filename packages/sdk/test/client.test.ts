@@ -158,6 +158,68 @@ describe("configured HTTP client", () => {
     await client.shutdown()
   })
 
+  it("rejects invalid runtime queue policies at configuration without starting delivery", () => {
+    expect(() =>
+      createFlowmark({
+        apiKey: "key",
+        apiUrl: "http://localhost",
+        delivery: {
+          // @ts-expect-error Deliberately invalid untyped runtime input.
+          progress: "sometimes",
+        },
+      }),
+    ).toThrow(FlowmarkConfigError)
+  })
+
+  it("drains opt-in progress before terminal and retries its unchanged envelope", async () => {
+    let release = () => {}
+    const gate = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    const envelopes: {
+      eventId: string
+      event: { type: string; completed?: number }
+    }[] = []
+    let progressAttempts = 0
+    vi.stubGlobal(
+      "fetch",
+      vi.fn<typeof fetch>(async (_url, options) => {
+        await gate
+        const envelope = JSON.parse(await new Response(options?.body).text())
+        envelopes.push(envelope)
+        if (envelope.event.type === "progress" && ++progressAttempts === 1) {
+          return new Response(null, { status: 503 })
+        }
+        return new Response(null, { status: 202 })
+      }),
+    )
+    const client = createFlowmark({
+      apiKey: "key",
+      apiUrl: "http://localhost",
+      delivery: { progress: "latest" },
+    })
+    const flow = client.workflow("bulk.http")
+    for (let completed = 1; completed <= 1000; completed++) {
+      flow.progress({ completed })
+    }
+    flow.done()
+    release()
+    await client.shutdown()
+    expect(envelopes.map(({ event }) => event.type)).toEqual([
+      "started",
+      "progress",
+      "progress",
+      "completed",
+    ])
+    expect(envelopes[1]).toEqual(envelopes[2])
+    expect(envelopes[1].event.completed).toBe(1000)
+    expect(client.deliveryHealth()).toMatchObject({
+      coalesced: 999,
+      failed: 0,
+      pending: 0,
+    })
+  })
+
   it("retries transient failures with the same idempotency key", async () => {
     const bodies: string[] = []
     const fetcher = vi.fn(async (_url: string, options: RequestInit) => {

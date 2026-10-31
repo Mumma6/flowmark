@@ -33,6 +33,12 @@ export function JsonData({ value }: { value: unknown }) {
 
 export function eventLabel(event: RunEvent) {
   switch (event.type) {
+    case "expectation_declared":
+      return `Expected · ${event.expectation?.type === "expectation_declared" ? event.expectation.name : "Confirmation"}`
+    case "expectation_resolved":
+      return "Expectation resolution reported"
+    case "expectation_cancelled":
+      return "Expectation cancellation reported"
     case "started":
       return "Run started"
     case "step":
@@ -62,10 +68,27 @@ export function eventLabel(event: RunEvent) {
   }
 }
 
-export function EventTable({ events }: { events: readonly RunEvent[] }) {
+export function EventTable({
+  events,
+  initialEventId,
+}: {
+  events: readonly RunEvent[]
+  initialEventId?: string
+}) {
   const [type, setType] = useState("all")
-  const [page, setPage] = useState(1)
-  const [expanded, setExpanded] = useState<string | null>(null)
+  const [page, setPage] = useState(() =>
+    initialEventId
+      ? Math.floor(
+          Math.max(
+            0,
+            events.findIndex((event) => event.id === initialEventId),
+          ) / 15,
+        ) + 1
+      : 1,
+  )
+  const [expanded, setExpanded] = useState<string | null>(
+    initialEventId ?? null,
+  )
   const matching = events.filter(
     (event) =>
       type === "all" ||
@@ -190,6 +213,18 @@ export function EventTable({ events }: { events: readonly RunEvent[] }) {
                       </div>
                     )}
                   </dl>
+                  {event.expectation && (
+                    <JsonData
+                      value={{
+                        eventId: event.id,
+                        observedAt: event.expectationObservedAt,
+                        event: event.expectation,
+                      }}
+                    />
+                  )}
+                  {event.attempt && (
+                    <JsonData value={{ attempt: event.attempt }} />
+                  )}
                   {event.error && <JsonData value={event.error} />}
                   {!event.error && event.reason && <p>{event.reason}</p>}
                   {event.properties && (
@@ -212,7 +247,9 @@ export function EventTable({ events }: { events: readonly RunEvent[] }) {
                     !event.properties &&
                     !event.result &&
                     !event.reason &&
-                    !event.outcome && (
+                    !event.outcome &&
+                    !event.expectation &&
+                    !event.attempt && (
                       <p className="text-xs leading-6 text-muted-foreground">
                         No additional payload recorded.
                       </p>

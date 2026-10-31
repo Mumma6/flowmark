@@ -28,3 +28,7 @@ export class BrowserForbidden extends Data.TaggedError("BrowserForbidden") {}
 export class BrowserRateLimited extends Data.TaggedError(
   "BrowserRateLimited",
 ) {}
+
+export class ExpectationSourceForbidden extends Data.TaggedError(
+  "ExpectationSourceForbidden",
+) {}

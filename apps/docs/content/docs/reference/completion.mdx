@@ -63,7 +63,13 @@ try {
 }
 ```
 
-Once terminal, later run markers are ignored.
+Once terminal, later calls on that local handle are ignored. For independent
+handles/requests, the server accepts only the first terminal. A new terminal
+event ID then returns HTTP 409 `EVENT_CONFLICT`; a replay of the stored envelope
+ID returns a duplicate acknowledgment. Ordinary late markers return an explicit
+ignored acknowledgment. Local pending operation waits are not global locks.
+Final outcome/result are never replaced by a later terminal. Previously stored
+mixed-terminal history is preserved. See [terminal decisions](/docs/concepts/runs#terminal-decisions).
 
 ## Business outcome (unreleased source capability)
 
@@ -89,3 +95,7 @@ using a writer that emits `outcome`. Deploy
 accepting readers first, verify persistence, then coordinate a separate aligned
 core/node package release. No minimum published version is claimed yet. Reports
 and typed workflow definitions remain proposed and unavailable.
+
+## Expected confirmations
+
+See [Expected confirmations](/docs/reference/expectations) for `flow.expect()`, client-level `resolveExpectation()` and `cancelExpectation()`, the serializable reference, bounded deadlines and delivery/runtime restrictions. These reports remain separate from execution status and final run results.

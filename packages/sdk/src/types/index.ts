@@ -1,4 +1,12 @@
 import type {
+  ExpectationReference,
+  ExpectationOptions,
+  ExpectationResolution,
+  ExpectationCancellation,
+} from "@flowmarkdev/core"
+import type {
+  WorkflowAttempt,
+  WorkflowRetryReference,
   WorkflowEvent,
   WorkflowOutcome,
   WorkflowName,
@@ -23,8 +31,26 @@ export type InstrumentationErrorHandler = (
   event: WorkflowEvent,
 ) => void
 
+/** Local queue policy. Wire events and retries are unchanged. */
+export interface DeliveryOptions {
+  /** Default "all" preserves per-call progress history; "latest" replaces only adjacent unsent progress for one handle. */
+  readonly progress?: "all" | "latest"
+}
+
+/** Cumulative client-local counters; drains clear failure samples, never these counters. No payloads or credentials. */
+export interface DeliveryHealth {
+  readonly pending: number
+  /** Replaceable unsent progress slots, bounded by pending. */
+  readonly pendingProgress: number
+  readonly coalesced: number
+  readonly dropped: number
+  readonly failed: number
+  readonly lastFailure: { readonly type: DeliveryFailure["_tag"] } | null
+}
+
 /** Server-only client options. Omit values to read FLOWMARK_* environment variables. */
 export interface FlowmarkConfig {
+  readonly delivery?: DeliveryOptions
   /**
    * Secret project write key. Defaults to FLOWMARK_API_KEY.
    * Server only — never NEXT_PUBLIC_* or a browser bundle.
@@ -46,6 +72,8 @@ export interface FlowmarkConfig {
 
 /** Optional metadata for one execution of a workflow. */
 export interface WorkflowRunOptions {
+  /** Explicit opt-in: requires the TASK-009 accepting server. Starts a distinct run, never continues the target. */
+  readonly retryOf?: WorkflowRetryReference
   /**
    * ID for this execution. A UUID is generated if omitted.
    * Same name + same id on a later request continues this run (second started is ignored).
@@ -94,8 +122,15 @@ export interface WorkflowFailOptions extends WorkflowFailure {
   readonly result?: WorkflowResult
 }
 
+/** Synchronous opt-in selection of bounded, safe failure fields for a callback rejection. */
+export type OperationErrorMapper = (cause: unknown) => WorkflowFailure
+
 /** Optional context attached when an operation starts. */
 export interface WorkflowOperationOptions {
+  /** Explicit opt-in: requires the TASK-009 accepting server. Group is scoped to this run and operation name. */
+  readonly attempt?: WorkflowAttempt
+  /** Callback overload only. Omitted: existing automatic conversion. Manual fail() is unchanged. */
+  readonly mapError?: OperationErrorMapper
   readonly properties?: WorkflowProperties
 }
 
@@ -111,6 +146,7 @@ export interface WorkflowOperation {
 
 /** Advanced custom-transport options. Normal consumers should use createFlowmark(). */
 export interface WorkflowOptions extends WorkflowRunOptions {
+  readonly delivery?: DeliveryOptions
   /** Required, unique execution ID for the low-level workflow() API. */
   readonly id: WorkflowRunId
   /** Effect-based event destination; not required by configured clients. */
@@ -126,6 +162,8 @@ export interface WorkflowOptions extends WorkflowRunOptions {
  * strings, and 16 KiB encoded per object.
  */
 export interface Flow {
+  /** Declares bounded expected evidence; does not wait or execute work. Requires expectations-v1 server. */
+  expect(name: string, options: ExpectationOptions): ExpectationReference
   /** This run's SDK identifier (options.id, or a generated UUID). */
   readonly runId: WorkflowRunId
   /**
@@ -233,6 +271,17 @@ export interface WorkflowDefinition<
 
 /** Ordinary TypeScript client; Effect execution is managed internally. */
 export interface FlowmarkClient {
+  /** Record evidence for an existing expectation, including after run termination. No workflow is started. */
+  resolveExpectation(
+    reference: ExpectationReference,
+    options?: ExpectationResolution,
+  ): void
+  cancelExpectation(
+    reference: ExpectationReference,
+    options: ExpectationCancellation,
+  ): void
+  /** Read-only cumulative local delivery health, available after shutdown too. */
+  deliveryHealth(): DeliveryHealth
   /** Inert reusable instrumentation definition; start uses this client's existing lifecycle. */
   defineWorkflow<
     Context extends object,

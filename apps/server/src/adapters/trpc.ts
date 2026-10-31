@@ -1,3 +1,14 @@
+import { ExpectationStateSchema } from "@flowmark/api"
+import { PeerSelectionSchema } from "@flowmark/api"
+import {
+  BusinessTimestampSchema,
+  BusinessInsightsQuerySchema,
+  ResultSelectionSchema,
+  RatioSelectionSchema,
+  SearchFieldsSchema,
+  BusinessKeySchema,
+  BusinessValueSchema,
+} from "@flowmark/api"
 import { initTRPC, TRPCError } from "@trpc/server"
 import { Effect, Exit, Match, Option, Schema } from "effect"
 import {
@@ -171,14 +182,14 @@ function readQuery<A>(
     projectId?: string,
   ) => Effect.Effect<
     A,
-    Unauthorized | PersistenceError,
+    Unauthorized | PersistenceError | InvalidInput,
     GetProjectWorkflowData
   >,
   forKey: (
     header: string | null,
   ) => Effect.Effect<
     A,
-    Unauthorized | PersistenceError,
+    Unauthorized | PersistenceError | InvalidInput,
     GetProjectWorkflowData
   >,
 ) {
@@ -250,6 +261,21 @@ export const appRouter = t.router({
     })),
   }),
   project: t.router({
+    businessInsights: t.procedure
+      .input(Schema.toStandardSchemaV1(BusinessInsightsQuerySchema))
+      .query(({ ctx, input }) =>
+        readQuery(
+          ctx.request,
+          (userId, projectId) =>
+            Effect.flatMap(GetProjectWorkflowData, (queries) =>
+              queries.businessInsightsForUser(userId, input, projectId),
+            ),
+          (header) =>
+            Effect.flatMap(GetProjectWorkflowData, (queries) =>
+              queries.businessInsights(header, input),
+            ),
+        ),
+      ),
     snapshot: t.procedure.query(({ ctx }) =>
       readQuery(
         ctx.request,
@@ -377,6 +403,51 @@ export const appRouter = t.router({
     ),
   }),
   resultDeclarations: t.router({
+    searchFields: t.procedure
+      .input(
+        Schema.toStandardSchemaV1(
+          Schema.Struct({
+            projectId: UuidSchema,
+            workflow: Schema.String.check(
+              Schema.isMinLength(1),
+              Schema.isMaxLength(200),
+            ),
+          }),
+        ),
+      )
+      .query(({ ctx, input }) =>
+        sessionQuery(ctx.request, (userId) =>
+          Effect.flatMap(ManageResultDeclarations, (manage) =>
+            manage.searchFields(userId, input.projectId, input.workflow),
+          ),
+        ),
+      ),
+    setSearchFields: t.procedure
+      .input(
+        Schema.toStandardSchemaV1(
+          Schema.Struct({
+            projectId: UuidSchema,
+            workflow: Schema.String.check(
+              Schema.isMinLength(1),
+              Schema.isMaxLength(200),
+            ),
+            fields: SearchFieldsSchema,
+          }),
+        ),
+      )
+      .mutation(({ ctx, input }) =>
+        sessionQuery(ctx.request, (userId) =>
+          Effect.flatMap(ManageResultDeclarations, (manage) =>
+            manage.setSearchFields(
+              userId,
+              input.projectId,
+              input.workflow,
+              input.fields,
+            ),
+          ),
+        ),
+      ),
+
     list: t.procedure
       .input(
         Schema.toStandardSchemaV1(
@@ -443,6 +514,19 @@ export const appRouter = t.router({
         Schema.toStandardSchemaV1(
           Schema.Struct({
             workflow: Schema.optional(Schema.String),
+            expectationState: Schema.optional(ExpectationStateSchema),
+            resultSelection: Schema.optional(ResultSelectionSchema),
+            ratioSelection: Schema.optional(RatioSelectionSchema),
+            outcome: Schema.optional(
+              Schema.String.check(Schema.isMaxLength(64)),
+            ),
+            definitionRevision: Schema.optional(
+              Schema.String.check(Schema.isMaxLength(64)),
+            ),
+            terminalOnly: Schema.optional(Schema.Boolean),
+            startedBeforeExclusive: Schema.optional(BusinessTimestampSchema),
+            businessKey: Schema.optional(BusinessKeySchema),
+            businessValue: Schema.optional(BusinessValueSchema),
             status: Schema.optional(
               Schema.Literals(["Completed", "Failed", "Running"]),
             ),
@@ -467,7 +551,16 @@ export const appRouter = t.router({
                 Schema.check(Schema.isBetween({ minimum: 1, maximum: 100 })),
               ),
             ),
-          }),
+          }).check(
+            Schema.makeFilter(
+              (input) =>
+                (input.businessKey === undefined &&
+                  input.businessValue === undefined) ||
+                (input.businessKey !== undefined &&
+                  input.businessValue !== undefined &&
+                  Boolean(input.workflow)),
+            ),
+          ),
         ),
       )
       .query(({ ctx, input }) =>
@@ -498,6 +591,21 @@ export const appRouter = t.router({
             ),
         ),
       ),
+    expectations: t.procedure
+      .input(Schema.toStandardSchemaV1(Schema.Struct({ id: UuidSchema })))
+      .query(({ ctx, input }) =>
+        readQuery(
+          ctx.request,
+          (userId, projectId) =>
+            Effect.flatMap(GetProjectWorkflowData, (queries) =>
+              queries.expectationsForUser(userId, input.id, projectId),
+            ),
+          (header) =>
+            Effect.flatMap(GetProjectWorkflowData, (queries) =>
+              queries.expectations(header, input.id),
+            ),
+        ),
+      ),
     related: t.procedure
       .input(Schema.toStandardSchemaV1(Schema.Struct({ id: UuidSchema })))
       .query(({ ctx, input }) =>
@@ -514,17 +622,29 @@ export const appRouter = t.router({
         ),
       ),
     compare: t.procedure
-      .input(Schema.toStandardSchemaV1(Schema.Struct({ id: UuidSchema })))
+      .input(
+        Schema.toStandardSchemaV1(
+          Schema.Struct({
+            id: UuidSchema,
+            selection: Schema.optional(PeerSelectionSchema),
+          }),
+        ),
+      )
       .query(({ ctx, input }) =>
         readQuery(
           ctx.request,
           (userId, projectId) =>
             Effect.flatMap(GetProjectWorkflowData, (queries) =>
-              queries.compareForUser(userId, input.id, projectId),
+              queries.compareForUser(
+                userId,
+                input.id,
+                projectId,
+                input.selection,
+              ),
             ),
           (header) =>
             Effect.flatMap(GetProjectWorkflowData, (queries) =>
-              queries.compare(header, input.id),
+              queries.compare(header, input.id, input.selection),
             ),
         ),
       ),

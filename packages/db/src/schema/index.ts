@@ -1,4 +1,8 @@
+import { sql } from "drizzle-orm"
+import type { WorkflowAttempt, WorkflowRetryReference } from "@flowmarkdev/core"
 import {
+  type AnyPgColumn,
+  boolean,
   index,
   bigint,
   bigserial,
@@ -19,6 +23,7 @@ import type {
   WorkflowProperties,
   WorkflowResult,
   ResultDeclaration,
+  SearchFields,
 } from "@flowmarkdev/core"
 
 export { account, session, user, verification } from "./auth.js"
@@ -26,6 +31,9 @@ export { account, session, user, verification } from "./auth.js"
 export type StoredWorkflowError = WorkflowError | WorkflowFailure
 
 export const workflowEventType = pgEnum("workflow_event_type", [
+  "expectation_declared",
+  "expectation_resolved",
+  "expectation_cancelled",
   "started",
   "step",
   "properties",
@@ -97,11 +105,16 @@ export const workflowRuns = pgTable(
     release: text("release"),
     correlationId: text("correlation_id"),
     parentRunId: text("parent_run_id"),
+    retryOf: jsonb("retry_of").$type<WorkflowRetryReference>(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
   },
   (table) => [
+    index("workflow_runs_properties_gin_idx").using(
+      "gin",
+      table.properties.op("jsonb_path_ops"),
+    ),
     index("workflow_runs_workflow_started_idx").on(
       table.workflowId,
       table.startedAt,
@@ -139,7 +152,22 @@ export const workflowEvents = pgTable(
     type: workflowEventType("type").notNull(),
     step: text("step"),
     operationId: uuid("operation_id"),
+    expectationEffective: boolean("expectation_effective")
+      .notNull()
+      .default(false),
+    expectationOwnerId: uuid("expectation_owner_id").references(
+      (): AnyPgColumn => workflowExpectations.id,
+      { onDelete: "cascade" },
+    ),
+    expectation:
+      jsonb("expectation").$type<
+        import("@flowmarkdev/core").ExpectationEvent
+      >(),
+    expectationObservedAt: timestamp("expectation_observed_at", {
+      withTimezone: true,
+    }),
     operationName: text("operation_name"),
+    attempt: jsonb("attempt").$type<WorkflowAttempt>(),
     durationMs: doublePrecision("duration_ms"),
     progressCompleted: bigint("progress_completed", { mode: "number" }),
     progressTotal: bigint("progress_total", { mode: "number" }),
@@ -156,6 +184,45 @@ export const workflowEvents = pgTable(
   },
   (table) => [
     index("workflow_events_run_timeline_idx").on(table.runId, table.occurredAt),
+  ],
+)
+
+/** Same-lifetime projections; raw run/event ownership remains authoritative. */
+export const workflowRunFacts = pgTable("workflow_run_facts", {
+  runId: uuid("run_id")
+    .primaryKey()
+    .references(() => workflowRuns.id, { onDelete: "cascade" }),
+  version: integer("version").notNull(),
+  sourceReceipt: bigint("source_receipt", { mode: "number" }).notNull(),
+  selection: jsonb("selection").notNull(),
+  status: text("status").notNull(),
+  durationMs: doublePrecision("duration_ms"),
+  step: text("step"),
+  result: jsonb("result").$type<WorkflowResult>(),
+  definitionRevision: text("definition_revision"),
+  failCode: text("fail_code"),
+})
+
+/** Terminal metric samples and operation occurrences, never error/context payloads. */
+export const workflowMetricFacts = pgTable(
+  "workflow_metric_facts",
+  {
+    eventId: uuid("event_id")
+      .primaryKey()
+      .references(() => workflowEvents.id, { onDelete: "cascade" }),
+    runId: uuid("run_id")
+      .notNull()
+      .references(() => workflowRuns.id, { onDelete: "cascade" }),
+    type: workflowEventType("type").notNull(),
+    operationId: uuid("operation_id"),
+    operationName: text("operation_name"),
+    durationMs: doublePrecision("duration_ms"),
+    failCode: text("fail_code"),
+    occurredAt: timestamp("occurred_at", { withTimezone: true }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
+  },
+  (table) => [
+    index("workflow_metric_facts_run_idx").on(table.runId, table.occurredAt),
   ],
 )
 
@@ -237,5 +304,58 @@ export const workflowResultDeclarations = pgTable(
       table.workflow,
       table.revision,
     ),
+  ],
+)
+
+/** Mutable search permissions alongside immutable result presentation revisions. */
+export const workflowSearchFields = pgTable(
+  "workflow_search_fields",
+  {
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id),
+    workflow: text("workflow").notNull(),
+    fields: jsonb("fields").$type<SearchFields>().notNull(),
+  },
+  (table) => [
+    uniqueIndex("workflow_search_fields_scope_uidx").on(
+      table.projectId,
+      table.workflow,
+    ),
+  ],
+)
+
+/** Bounded canonical facts. Cascades prevent projection-only archives after retention. */
+export const workflowExpectations = pgTable(
+  "workflow_expectations",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    runId: uuid("run_id")
+      .notNull()
+      .references(() => workflowRuns.id, { onDelete: "cascade" }),
+    expectationId: text("expectation_id").notNull(),
+    declarationEventId: uuid("declaration_event_id").references(
+      () => workflowEvents.id,
+      { onDelete: "cascade" },
+    ),
+    settlementEventId: uuid("settlement_event_id").references(
+      () => workflowEvents.id,
+      { onDelete: "cascade" },
+    ),
+    declaredAt: timestamp("declared_at", { withTimezone: true }),
+    deadlineAt: timestamp("deadline_at", { withTimezone: true }),
+    settledAt: timestamp("settled_at", { withTimezone: true }),
+    settlementType: text("settlement_type", {
+      enum: ["expectation_resolved", "expectation_cancelled"],
+    }),
+  },
+  (table) => [
+    uniqueIndex("workflow_expectations_run_identity_uidx").on(
+      table.runId,
+      table.expectationId,
+    ),
+    index("workflow_expectations_deadline_idx")
+      .on(table.deadlineAt, table.runId)
+      .where(sql`${table.settlementEventId} is null`),
   ],
 )

@@ -40,3 +40,22 @@ the run.
 Dashboard sign-in is Better Auth email and password. Retention cleanup and
 key rotation in the UI are still upcoming. See
 [local development](./local-development) for the current stack.
+
+## Operation callback exceptions
+
+Without a mapper, operation callbacks still record bounded structured failures
+and `Error.message`. Do not assume arbitrary exception messages are safe.
+Use per-operation `mapError` to choose an existing failure code, safe message and
+retryability without appending the original exception message or stack. Mapper
+failures retain only a bounded diagnostic reason and emit a generic failure;
+the application receives its original rejection unchanged. See
+[operation error mapping](/docs/reference/operation).
+
+This does not redact arbitrary context/results, sanitize fields deliberately
+returned by your mapper or control application logging. Keep mappers synchronous,
+small and nonrecursive. Expected domain rejections should be result/reason counts;
+recovery from a technical operation failure may still end in a completed run.
+
+## Expectation evidence
+
+[Expected confirmations](/docs/reference/expectations) require the accepting `expectations-v1` server and migrations. Resolve/cancel are explicit, project-scoped evidence reports and may follow a terminal run without changing its outcome/result. Direct browser evidence stays untrusted; the existing generic server-key proxy rejects expectation events. Deadlines are evaluated on read from server observation, without background notifications or a retention extension.

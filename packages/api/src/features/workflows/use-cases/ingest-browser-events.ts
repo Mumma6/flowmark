@@ -1,6 +1,7 @@
+import { isExpectationEvent } from "@flowmarkdev/core"
 import { Context, Effect, Layer, Redacted, Schema } from "effect"
 import { DEMO_BROWSER_KEY, DIAGNOSTICS_BROWSER_KEY } from "@flowmark/db/demo"
-import { EventEnvelopeSchema } from "@flowmarkdev/core"
+import { type AppendDisposition, EventEnvelopeSchema } from "@flowmarkdev/core"
 import { ApiSettings } from "../../../config.js"
 import {
   BrowserForbidden,
@@ -22,7 +23,7 @@ export interface IngestBrowserWorkflowEventsService {
     origin: string | null,
     input: Effect.Effect<unknown, InvalidInput>,
   ) => Effect.Effect<
-    void,
+    AppendDisposition,
     | BrowserUnauthorized
     | BrowserForbidden
     | BrowserRateLimited
@@ -77,12 +78,38 @@ export class IngestBrowserWorkflowEvents extends Context.Service<
           ),
         )
         const event = envelope.event
-        yield* repository.append(credential.projectId, envelope.eventId, {
-          ...event,
-          workflow: event.workflow.startsWith("browser.")
-            ? event.workflow
-            : `browser.${event.workflow}`,
-        })
+        if (
+          isExpectationEvent(event) &&
+          event.type !== "expectation_declared" &&
+          !event.workflow.startsWith("browser.")
+        ) {
+          return yield* new BrowserForbidden()
+        }
+        const browserWorkflow = (name: string) =>
+          name.startsWith("browser.") ? name : `browser.${name}`
+        // Qualify retry references into the same untrusted browser namespace as their owning run.
+        const canonical = yield* Schema.decodeUnknownEffect(
+          EventEnvelopeSchema,
+        )({
+          ...envelope,
+          event: {
+            ...event,
+            workflow: browserWorkflow(event.workflow),
+            ...(event.type === "started" && event.retryOf
+              ? {
+                  retryOf: {
+                    ...event.retryOf,
+                    workflow: browserWorkflow(event.retryOf.workflow),
+                  },
+                }
+              : {}),
+          },
+        }).pipe(Effect.mapError((cause) => new InvalidInput({ cause })))
+        return yield* repository.append(
+          credential.projectId,
+          canonical.eventId,
+          canonical.event,
+        )
       })
       return IngestBrowserWorkflowEvents.of({
         ingest,

@@ -1,17 +1,30 @@
 import { Effect, Exit } from "effect"
 import { IngestWorkflowEvents, logFailure, runApi } from "@flowmark/api"
+import { ingestionReceipt } from "./ingestion-receipt"
 import { readJsonBody } from "./request-body"
 
 export async function handleIngestion(request: Request) {
   const operation = Effect.gen(function* () {
     const ingestion = yield* IngestWorkflowEvents
-    yield* ingestion.ingest(
+    const disposition = yield* ingestion.ingest(
       request.headers.get("authorization"),
       readJsonBody(request),
+      request.headers.get("x-flowmark-expectations") === "v1",
     )
-    return Response.json({ accepted: true }, { status: 202 })
+    return ingestionReceipt(disposition)
   }).pipe(
     Effect.catchTags({
+      ExpectationSourceForbidden: () =>
+        Effect.succeed(
+          Response.json(
+            {
+              error:
+                "Server expectation reporting requires the expectations-v1 SDK protocol.",
+              code: "EXPECTATION_SOURCE_FORBIDDEN",
+            },
+            { status: 403 },
+          ),
+        ),
       Unauthorized: () =>
         Effect.succeed(
           Response.json({ error: "Invalid ingestion key." }, { status: 401 }),
@@ -26,7 +39,10 @@ export async function handleIngestion(request: Request) {
       RunNotFound: () =>
         Effect.succeed(
           Response.json(
-            { error: "Send the started event before other run events." },
+            {
+              error: "Send the started event before other run events.",
+              code: "RUN_NOT_FOUND",
+            },
             { status: 409 },
           ),
         ),

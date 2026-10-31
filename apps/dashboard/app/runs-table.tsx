@@ -1,5 +1,7 @@
 "use client"
 
+import { useSearchParams, usePathname } from "next/navigation"
+import { Result, Schema } from "effect"
 import { useMemo, useState } from "react"
 import Link from "next/link"
 import { useQuery } from "@tanstack/react-query"
@@ -169,6 +171,23 @@ export function RunsTable({
 }
 
 type ExplorerFilters = {
+  expectationState: string
+  startedBeforeExact: string
+  ratioNumerator: string
+  ratioDenominator: string
+  definitionRevision: string
+  outcome: string
+  terminalOnly: string
+  startedAfterExact: string
+  startedBeforeExclusive: string
+  resultPath: string
+  resultOperator: string
+  resultValue: string
+  resultKind: string
+  resultReason: string
+
+  businessKey: string
+  businessValue: string
   search: string
   status: string
   workflow: string
@@ -181,6 +200,23 @@ type ExplorerFilters = {
 }
 
 const defaults: ExplorerFilters = {
+  expectationState: "all",
+  startedBeforeExact: "",
+  ratioNumerator: "",
+  ratioDenominator: "",
+  definitionRevision: "",
+  outcome: "",
+  terminalOnly: "",
+  startedAfterExact: "",
+  startedBeforeExclusive: "",
+  resultPath: "",
+  resultOperator: "",
+  resultValue: "",
+  resultKind: "",
+  resultReason: "",
+
+  businessKey: "",
+  businessValue: "",
   search: "",
   status: "all",
   workflow: "all",
@@ -195,7 +231,6 @@ const defaults: ExplorerFilters = {
 export function RunExplorer({
   workflow,
   workflowNames = [],
-  initialSearch = "",
 }: {
   workflow?: string
   workflowNames?: readonly string[]
@@ -203,21 +238,103 @@ export function RunExplorer({
 }) {
   const trpc = useTRPC()
   const { current } = useProject()
-  const [filters, setFilters] = useState<ExplorerFilters>(() => ({
-    ...defaults,
-    search: initialSearch,
-  }))
-  const [cursorStack, setCursorStack] = useState<(string | null)[]>([null])
+  const params = useSearchParams()
+  const pathname = usePathname()
+  const signature = params.toString()
+  const filters = useMemo(
+    () =>
+      Object.fromEntries(
+        Object.entries(defaults).map(([key, fallback]) => [
+          key,
+          params.get(key) ?? fallback,
+        ]),
+      ) as ExplorerFilters,
+    [params],
+  )
+  const setFilters = (next: ExplorerFilters) => {
+    const url = new URLSearchParams(params.toString())
+    for (const [key, value] of Object.entries(next)) {
+      if (value === defaults[key as keyof ExplorerFilters]) {
+        url.delete(key)
+      } else {
+        url.set(key, value)
+      }
+    }
+    window.history.replaceState(
+      null,
+      "",
+      `${pathname}${url.size ? `?${url}` : ""}`,
+    )
+  }
+  const [pagination, setPagination] = useState<{
+    signature: string
+    stack: (string | null)[]
+  }>({ signature: "", stack: [null] })
+  const cursorStack =
+    pagination.signature === signature ? pagination.stack : [null]
+  const setCursorStack = (
+    next: (string | null)[] | ((stack: (string | null)[]) => (string | null)[]),
+  ) =>
+    setPagination({
+      signature,
+      stack: typeof next === "function" ? next(cursorStack) : next,
+    })
   const pageIndex = cursorStack.length - 1
   const cursor = cursorStack[pageIndex] ?? null
   const update = (key: keyof ExplorerFilters, value: string) => {
-    setFilters((currentFilters) => ({ ...currentFilters, [key]: value }))
+    setFilters({
+      ...filters,
+      [key]: value,
+      ...(key === "workflow" ? { businessKey: "", businessValue: "" } : {}),
+    })
     setCursorStack([null])
   }
+  const selectedWorkflow =
+    workflow ?? (filters.workflow !== "all" ? filters.workflow : "")
+  const searchFields = useQuery(
+    trpc.resultDeclarations.searchFields.queryOptions(
+      { projectId: current?.id ?? "", workflow: selectedWorkflow },
+      { enabled: Boolean(current && selectedWorkflow) },
+    ),
+  )
+  const declarations = useQuery(
+    trpc.resultDeclarations.list.queryOptions(
+      { projectId: current?.id ?? "", workflow: selectedWorkflow },
+      { enabled: Boolean(current && selectedWorkflow) },
+    ),
+  )
+  const resultFields =
+    declarations.data?.find(
+      (item) => item.revision === filters.definitionRevision,
+    )?.fields ?? []
+  const resultPath = Result.match(
+    Schema.decodeUnknownResult(
+      Schema.fromJsonString(Schema.Array(Schema.String)),
+    )(filters.resultPath),
+    { onFailure: () => undefined, onSuccess: (value) => value },
+  )
+  const parseRatioPath = (value: string) =>
+    Result.match(
+      Schema.decodeUnknownResult(
+        Schema.fromJsonString(Schema.Array(Schema.String)),
+      )(value),
+      { onFailure: () => [], onSuccess: (path) => path },
+    )
+  const selectedField = searchFields.data?.find(
+    (field) => field.key === filters.businessKey,
+  )
   const queryInput = useMemo(
     () => ({
       workflow:
         workflow ?? (filters.workflow !== "all" ? filters.workflow : undefined),
+      businessKey:
+        selectedWorkflow && filters.businessKey && filters.businessValue
+          ? filters.businessKey
+          : undefined,
+      businessValue:
+        selectedWorkflow && filters.businessKey && filters.businessValue
+          ? filters.businessValue
+          : undefined,
       status:
         filters.status === "all"
           ? undefined
@@ -226,22 +343,59 @@ export function RunExplorer({
       failCode: filters.failCode.trim() || undefined,
       environment: filters.environment.trim() || undefined,
       release: filters.release.trim() || undefined,
+      outcome: filters.outcome || undefined,
+      ...(filters.ratioNumerator || filters.ratioDenominator
+        ? {
+            ratioSelection: {
+              revision: filters.definitionRevision,
+              numerator: parseRatioPath(filters.ratioNumerator),
+              denominator: parseRatioPath(filters.ratioDenominator),
+            },
+          }
+        : {}),
+      definitionRevision: filters.definitionRevision || undefined,
+      terminalOnly: filters.terminalOnly === "true" || undefined,
+      startedBeforeExclusive: filters.startedBeforeExclusive || undefined,
+      ...(filters.resultPath
+        ? {
+            resultSelection: {
+              revision: filters.definitionRevision,
+              path: resultPath ?? [],
+              operator: (filters.resultOperator || "eq") as
+                "eq" | "gte" | "lte",
+              value:
+                filters.resultKind === "category"
+                  ? filters.resultValue
+                  : filters.resultValue.trim()
+                    ? Number(filters.resultValue)
+                    : Number.NaN,
+              ...(filters.resultReason ? { reason: filters.resultReason } : {}),
+            },
+          }
+        : {}),
       namespace:
         filters.namespace === "browser"
           ? ("browser" as const)
           : filters.namespace === "server"
             ? ("application" as const)
             : undefined,
-      startedAfter: filters.startedAfter
-        ? `${filters.startedAfter}T00:00:00.000Z`
-        : undefined,
-      startedBefore: filters.startedBefore
-        ? `${filters.startedBefore}T23:59:59.999Z`
-        : undefined,
+      expectationState: (
+        ["pending", "overdue", "met-on-time", "met-late", "cancelled"] as const
+      ).find((state) => state === filters.expectationState),
+      startedAfter:
+        filters.startedAfterExact ||
+        (filters.startedAfter
+          ? `${filters.startedAfter}T00:00:00.000Z`
+          : undefined),
+      startedBefore:
+        filters.startedBeforeExact ||
+        (filters.startedBefore
+          ? `${filters.startedBefore}T23:59:59.999Z`
+          : undefined),
       cursor: cursor ?? undefined,
       limit: 25,
     }),
-    [workflow, filters, cursor],
+    [workflow, filters, cursor, selectedWorkflow, resultPath],
   )
   const list = useQuery({
     ...trpc.run.list.queryOptions(queryInput),
@@ -252,7 +406,28 @@ export function RunExplorer({
   const nextCursor = list.data?.nextCursor ?? null
   return (
     <div>
+      {filters.expectationState !== "all" &&
+        !filters.startedAfter &&
+        !filters.startedAfterExact && (
+          <p className="px-5 py-3 text-sm text-muted-foreground">
+            Expectation discovery uses the last 30 days unless dates are
+            supplied. Counts describe retained observed evidence.
+          </p>
+        )}
       <div className="flex flex-wrap items-end gap-3 border-b border-border/60 bg-muted/20 p-5">
+        <FilterSelect
+          label="Expectation state"
+          value={filters.expectationState}
+          onChange={(value) => update("expectationState", value)}
+          options={[
+            { value: "all", label: "All expectations" },
+            { value: "pending", label: "Pending confirmation" },
+            { value: "overdue", label: "Overdue — no resolution observed" },
+            { value: "met-on-time", label: "Observed on time" },
+            { value: "met-late", label: "Observed late" },
+            { value: "cancelled", label: "Cancelled" },
+          ]}
+        />
         <label className="grid min-w-0 flex-[1_1_240px] gap-2 text-xs text-muted-foreground sm:max-w-[360px]">
           <span>Search runs</span>
           <div className="relative">
@@ -308,6 +483,227 @@ export function RunExplorer({
             onChange={(event) => update("startedBefore", event.target.value)}
           />
         </label>
+      </div>
+      <section
+        aria-label="Final result filters"
+        className="grid gap-3 border-b border-border p-5 sm:grid-cols-2 xl:grid-cols-3"
+      >
+        <p className="text-sm text-muted-foreground sm:col-span-2 xl:col-span-3">
+          Final result selection · explicit original-start definition; completed
+          and failed runs. Between-period reports are excluded.
+        </p>
+        {declarations.error && (
+          <p role="alert">
+            Could not load result declarations.{" "}
+            <Button
+              variant="outline"
+              onClick={() => void declarations.refetch()}
+            >
+              Retry
+            </Button>
+          </p>
+        )}
+        <label className="text-xs">
+          Canonical outcome
+          <Input
+            value={filters.outcome}
+            maxLength={64}
+            onChange={(event) => update("outcome", event.target.value)}
+          />
+        </label>
+        <FilterSelect
+          label="Result definition revision"
+          value={filters.definitionRevision || "__all__"}
+          onChange={(value) => {
+            setFilters({
+              ...filters,
+              definitionRevision: value === "__all__" ? "" : value,
+              resultPath: "",
+              resultReason: "",
+            })
+            setCursorStack([null])
+          }}
+          options={[
+            { value: "__all__", label: "All definitions" },
+            ...(declarations.data ?? []).map((item) => ({
+              value: item.revision,
+              label: item.revision,
+            })),
+          ]}
+        />
+        <FilterSelect
+          label="Final result field"
+          value={filters.resultPath || "__none__"}
+          onChange={(value) => {
+            const selected = resultFields.find(
+              (item) => JSON.stringify(item.path) === value,
+            )
+            setFilters({
+              ...filters,
+              resultPath: value === "__none__" ? "" : value,
+              resultKind: selected?.kind === "category" ? "category" : "count",
+              resultOperator: "eq",
+              resultValue: "",
+              resultReason: "",
+            })
+            setCursorStack([null])
+          }}
+          options={[
+            { value: "__none__", label: "No result predicate" },
+            ...resultFields.map((item) => ({
+              value: JSON.stringify(item.path),
+              label: item.label,
+            })),
+          ]}
+        />
+        {filters.resultPath && (
+          <>
+            <FilterSelect
+              label="Result operator"
+              value={filters.resultOperator || "eq"}
+              onChange={(value) => update("resultOperator", value)}
+              options={
+                filters.resultKind === "category"
+                  ? [{ value: "eq", label: "Equals" }]
+                  : [
+                      { value: "eq", label: "Equals" },
+                      { value: "gte", label: "At least" },
+                      { value: "lte", label: "At most" },
+                    ]
+              }
+            />
+            <label className="text-xs">
+              Result value
+              <Input
+                type={filters.resultKind === "category" ? "text" : "number"}
+                min={0}
+                step={1}
+                value={filters.resultValue}
+                onChange={(event) => update("resultValue", event.target.value)}
+              />
+            </label>
+            {resultFields.find(
+              (item) => JSON.stringify(item.path) === filters.resultPath,
+            )?.kind === "reasons" && (
+              <label className="text-xs">
+                Declared reason
+                <Input
+                  value={filters.resultReason}
+                  onChange={(event) =>
+                    update("resultReason", event.target.value)
+                  }
+                />
+              </label>
+            )}
+          </>
+        )}
+        {(filters.startedAfterExact ||
+          filters.startedBeforeExact ||
+          filters.startedBeforeExclusive ||
+          filters.terminalOnly) && (
+          <p className="text-xs text-muted-foreground sm:col-span-2 xl:col-span-3">
+            Evidence cohort: {filters.startedAfterExact || "unbounded start"}{" "}
+            inclusive →{" "}
+            {filters.startedBeforeExact ||
+              filters.startedBeforeExclusive ||
+              "unbounded end"}{" "}
+            {filters.startedBeforeExact ? "inclusive" : "exclusive"};{" "}
+            {filters.startedBeforeExact && filters.startedBeforeExclusive && (
+              <>also before {filters.startedBeforeExclusive} exclusive; </>
+            )}
+            {filters.status !== "all"
+              ? filters.status
+              : filters.terminalOnly === "true"
+                ? "finished runs only"
+                : "all statuses"}
+            . Clear filters to leave this cohort.
+          </p>
+        )}
+      </section>
+      <div className="grid gap-3 border-b border-border p-5 sm:grid-cols-2">
+        <p className="text-sm text-muted-foreground sm:col-span-2">
+          Business reference or category · exact current-context match. Choose a
+          workflow first. Browser context is untrusted.
+        </p>
+        {selectedWorkflow && searchFields.isPending && (
+          <p role="status">Loading searchable fields…</p>
+        )}
+        {selectedWorkflow && searchFields.error && (
+          <p role="alert">
+            Could not load searchable fields.{" "}
+            <Button
+              variant="outline"
+              onClick={() => void searchFields.refetch()}
+            >
+              Retry
+            </Button>
+          </p>
+        )}
+        {selectedWorkflow && searchFields.data?.length === 0 && (
+          <p className="text-sm">
+            No business fields enabled. Configure them on the workflow page.
+          </p>
+        )}
+        <FilterSelect
+          label="Business field"
+          value={filters.businessKey || "__no_filter__"}
+          onChange={(value) => {
+            setFilters({
+              ...filters,
+              businessKey: value === "__no_filter__" ? "" : value,
+              businessValue: "",
+            })
+            setCursorStack([null])
+          }}
+          options={[
+            { value: "__no_filter__", label: "No business filter" },
+            ...(searchFields.data ?? []).map((field) => ({
+              value: field.key,
+              label: `${field.key} · ${field.role === "lookup" ? "Reference" : "Category"}`,
+            })),
+          ]}
+        />
+        {selectedField?.role === "dimension" ? (
+          <FilterSelect
+            label="Exact business value"
+            value={
+              filters.businessValue
+                ? `value:${filters.businessValue}`
+                : "__unset__"
+            }
+            onChange={(value) =>
+              update(
+                "businessValue",
+                value === "__unset__" ? "" : value.slice(6),
+              )
+            }
+            options={[
+              { value: "__unset__", label: "Choose category" },
+              ...selectedField.values.map((value) => ({
+                value: `value:${value}`,
+                label: value,
+              })),
+            ]}
+          />
+        ) : (
+          <label className="grid gap-2 text-xs text-muted-foreground">
+            Exact business value
+            <Input
+              disabled={!selectedWorkflow || !filters.businessKey}
+              value={filters.businessValue}
+              maxLength={256}
+              onChange={(event) => update("businessValue", event.target.value)}
+              placeholder="Exact, case-sensitive reference"
+            />
+          </label>
+        )}
+        {filters.businessKey && filters.businessValue && (
+          <p className="break-words text-sm sm:col-span-2">
+            Matching current {filters.businessKey}:{" "}
+            <strong>{filters.businessValue}</strong>. Initial properties plus
+            accepted amendments; step properties are excluded.
+          </p>
+        )}
       </div>
       <Accordion className="border-b border-border px-5">
         <AccordionItem value="advanced-filters">
@@ -403,6 +799,22 @@ export function RunExplorer({
                 {
                   (
                     {
+                      ratioNumerator: "Ratio numerator",
+                      ratioDenominator: "Ratio denominator",
+                      definitionRevision: "Definition",
+                      outcome: "Outcome",
+                      terminalOnly: "Finished only",
+                      expectationState: "Expectation state",
+                      startedBeforeExact: "Before (exact)",
+                      startedAfterExact: "After (exact)",
+                      startedBeforeExclusive: "Before (exclusive)",
+                      resultPath: "Result path",
+                      resultOperator: "Result operator",
+                      resultValue: "Result value",
+                      resultKind: "Result type",
+                      resultReason: "Reason",
+                      businessKey: "Business field",
+                      businessValue: "Business value",
                       search: "Search",
                       workflow: "Workflow",
                       status: "Status",

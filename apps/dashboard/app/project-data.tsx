@@ -1,5 +1,12 @@
 "use client"
 
+import { RunExpectations } from "./run-expectations"
+import { ExpectationAttention } from "./expectation-attention"
+import { BusinessOutcomes } from "./business-outcomes"
+
+import { WorkflowSearchFields } from "./workflow-search-fields"
+
+import { useSearchParams } from "next/navigation"
 import { useMemo } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { RefreshCw } from "lucide-react"
@@ -134,6 +141,7 @@ export function DashboardOverview() {
           </span>
         </div>
       </PageHeading>
+      <ExpectationAttention />
       <DataState
         pending={snapshot.isPending}
         error={snapshot.error}
@@ -306,7 +314,15 @@ export function ProjectRuns({
         />
       </PageHeading>
       {workflow && (
-        <ResultDeclarationEditor key={workflow} workflow={workflow} />
+        <>
+          <ExpectationAttention workflow={workflow} />
+          <BusinessOutcomes key={`outcomes:${workflow}`} workflow={workflow} />
+          <WorkflowSearchFields
+            key={`search:${workflow}`}
+            workflow={workflow}
+          />
+          <ResultDeclarationEditor key={workflow} workflow={workflow} />
+        </>
       )}
       <DataState
         pending={isPending}
@@ -451,6 +467,22 @@ export function ProjectWorkflows() {
 }
 
 export function RunDetail({ id }: { id: string }) {
+  const params = useSearchParams()
+  const days = Number(params.get("peerDays") ?? 30)
+  const selection = {
+    days,
+    environment:
+      params.get("peerEnvironment") === "all"
+        ? ("all" as const)
+        : ("same" as const),
+    sameRelease: params.get("peerRelease") === "same",
+    ...(params.get("peerDimension")
+      ? {
+          dimensionKey: params.get("peerDimension") ?? "",
+          dimensionValue: params.get("peerValue") ?? "",
+        }
+      : {}),
+  }
   const trpc = useTRPC()
   const { current } = useProject()
   const { data, isPending, error, refetch } = useQuery({
@@ -462,7 +494,7 @@ export function RunDetail({ id }: { id: string }) {
     enabled: Boolean(current),
   })
   const comparison = useQuery({
-    ...trpc.run.compare.queryOptions({ id }),
+    ...trpc.run.compare.queryOptions({ id, selection }),
     enabled: Boolean(current),
   })
   return (
@@ -484,15 +516,19 @@ export function RunDetail({ id }: { id: string }) {
         </Alert>
       )}
       {data && data.length > 0 && (
-        <RunInvestigation
-          events={data}
-          relationships={relationships.data}
-          relationshipsLoading={relationships.isPending}
-          relationshipsError={relationships.error?.message}
-          comparison={comparison.data}
-          comparisonLoading={comparison.isPending}
-          comparisonError={comparison.error?.message}
-        />
+        <>
+          <RunExpectations id={id} />
+          <RunInvestigation
+            key={`${id}:${params.get("event") ?? ""}`}
+            events={data}
+            relationships={relationships.data}
+            relationshipsLoading={relationships.isPending}
+            relationshipsError={relationships.error?.message}
+            comparison={comparison.data}
+            comparisonLoading={comparison.isPending}
+            comparisonError={comparison.error?.message}
+          />
+        </>
       )}
     </div>
   )

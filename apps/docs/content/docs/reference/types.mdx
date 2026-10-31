@@ -9,8 +9,11 @@ description: Public types for run markers and the values safe to send.
 import type {
   Flow,
   FlowmarkClient,
+  DeliveryOptions,
+  DeliveryHealth,
   FlowmarkConfig,
   WorkflowRunOptions,
+  WorkflowRunReference,
   WorkflowStepOptions,
   WorkflowDoneOptions,
   WorkflowFailOptions,
@@ -26,7 +29,7 @@ import type {
 
 The Next.js entry exports the common run/configuration types; the browser
 entry exports `BrowserFlowmarkConfig` instead of `FlowmarkConfig`.
-The Next.js client itself exposes only `workflow()`, not the full
+The Next.js client exposes workflow/definition and expectation settlement methods, not the full
 `FlowmarkClient` lifecycle.
 
 `Flow.report(snapshot: WorkflowResult): void` uses the same bounded result type on all runtime surfaces. It has no revision option.
@@ -103,3 +106,33 @@ The Node entry additionally exports `WorkflowEvent`, `JsonValue`,
 `WorkflowOptions`, and `InstrumentationErrorHandler`.
 See [advanced exports](/docs/reference/advanced) for Effect-based transports
 and diagnostics errors. Ordinary consumers do not need to use Effect.
+
+## Continued execution identity
+
+`WorkflowRunReference` is `{ readonly workflow: string; readonly runId: string }`,
+where runId is the external SDK execution ID. All public runtime entries export
+this type. It carries no authorization or live state; the application explicitly
+validates, saves and forwards it. Resume through the existing workflow method
+using the same name and ID. Project scope is derived from credentials.
+
+## Delivery policy and health
+
+`DeliveryOptions` and `DeliveryHealth` are shared Node/Next/browser types.
+`delivery.progress` is `"all"` (default) or `"latest"` (opt-in). Node/browser
+clients provide `deliveryHealth()`; Next exports `NextFlowmarkConfig` with
+`onDeliveryHealth` for final request-local health. See [delivery](/docs/delivery)
+for counter, sample and queue limits.
+
+`OperationErrorMapper` is exported as a type by Node, Next.js and browser entries:
+`(cause: unknown) => WorkflowFailure`. Pass it as `WorkflowOperationOptions.mapError`
+for callback operations. The ordinary Promise return type is unchanged; manual
+handles still take explicit failure fields. Invalid/throwing mappers report the
+Node-exported `FlowmarkErrorMappingError` through the shared diagnostics union.
+
+## Explicit application-owned attempts
+
+See [Attempts and retries](/docs/reference/attempts) for operation `attempt: { groupId, number }`, qualified new-run `retryOf` links, bounds, project scoping and the required `attempts-v1` accepting-server acknowledgment. Supplying these options is explicit opt-in; deploy accepting storage/API/readers before enabling them. Transport retries remain separate from business attempts.
+
+## Expected confirmations
+
+See [Expected confirmations](/docs/reference/expectations) for `flow.expect()`, client-level `resolveExpectation()` and `cancelExpectation()`, the serializable reference, bounded deadlines and delivery/runtime restrictions. These reports remain separate from execution status and final run results.
