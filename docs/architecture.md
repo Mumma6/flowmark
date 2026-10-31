@@ -411,7 +411,10 @@ immutable result fields select count/category/reason metrics; bounded vocabulari
 are required for category/reason aggregation. Original-start revisions remain
 immutable in meaning even when current run properties are amended.
 
-SQL restricts project/workflow and both half-open intervals before event aggregation.
+SQL restricts project/workflow and both half-open intervals before aggregation.
+Run and metric reads use same-transaction compact facts; only unbackfilled runs
+reconstruct raw history. See [historical facts](historical-facts.md) for the
+unchanged telemetry lifetime, deterministic ordering, bounded backfill and repair.
 It returns bounded aggregates (four scopes, 20 outcome/category rows, daily UTC
 start cohorts), never an unbounded evidence-ID array. Exact numeric sums use decimal
 strings. Weighted ratios share one jointly valid run population. Missing/incompatible,

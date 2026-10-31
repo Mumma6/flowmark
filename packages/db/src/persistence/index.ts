@@ -41,3 +41,5 @@ export { InvalidResultQuery } from "./database.js"
 export { ExpectationObservationClock } from "./workflows/observation-clock.js"
 
 export { rebuildExpectations } from "./workflows/writes/rebuild-expectations.js"
+
+export { backfillRunFacts } from "./workflows/writes/backfill-run-facts.js"

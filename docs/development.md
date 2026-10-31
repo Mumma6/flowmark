@@ -469,3 +469,9 @@ when requested. App releases do not publish SDK packages.
 `packages/sdk` is published as `@flowmarkdev/node` (with `@flowmarkdev/core`).
 Release uses a protected GitHub Actions workflow and npm trusted publishing.
 Do not publish from a laptop except for the documented bootstrap.
+
+## Compact historical projections
+
+See [historical facts](historical-facts.md) for same-lifetime projection semantics,
+local bounded dry-run/backfill/checkpoint commands, repair and rollout gates.
+Facts do not extend the reference deployment’s 30-day telemetry retention.

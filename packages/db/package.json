@@ -47,9 +47,10 @@
     "db:setup": "tsx src/cli/setup.ts",
     "db:setup-demo": "tsx src/cli/setup.ts",
     "db:reset-local-telemetry": "tsx src/cli/reset-local-telemetry.ts",
-    "test": "node --import tsx --test test/environment/runtime.test.ts test/environment/preview-isolation.test.ts test/auth/secret.test.ts test/persistence/continue-run.test.ts test/persistence/operation-summaries.test.ts test/cli/migration-history.test.ts",
+    "test": "node --import tsx --test test/environment/runtime.test.ts test/environment/preview-isolation.test.ts test/auth/secret.test.ts test/persistence/continue-run.test.ts test/persistence/operation-summaries.test.ts test/cli/migration-history.test.ts test/persistence/run-facts.test.ts test/cli/run-facts-options.test.ts",
     "typecheck": "tsc -p tsconfig.json",
-    "db:migrations:verify": "tsx src/cli/verify-migrations.ts"
+    "db:migrations:verify": "tsx src/cli/verify-migrations.ts",
+    "db:facts:backfill": "tsx src/cli/backfill-run-facts.ts"
   },
   "dependencies": {
     "@better-auth/drizzle-adapter": "^1.7.13",
