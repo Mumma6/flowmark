@@ -47,3 +47,5 @@ export { IngestionReceiptSchema } from "./ingestion.js"
 export type { AppendDisposition } from "./ingestion.js"
 
 export * from "./business-insights.js"
+
+export * from "./peer-selection.js"

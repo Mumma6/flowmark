@@ -30,15 +30,15 @@ end, and monotonic duration, so you can see which unit of work was slow.
 
 Open one execution when the numbers need a story:
 
-| Insight      | Where it comes from                                |
-| ------------ | -------------------------------------------------- |
-| Outcome      | `done()` or `fail()`                               |
-| Result       | The JSON summary attached to that terminal call    |
-| Progress     | The last `progress()` snapshot                     |
-| Operations   | Each named unit of work, with duration             |
-| Compare      | This run versus the last 20 of the same workflow   |
-| Errors       | `error({ handled })` events and operation failures |
-| Related runs | `correlationId` and `parentRunId` you passed       |
+| Insight      | Where it comes from                                        |
+| ------------ | ---------------------------------------------------------- |
+| Outcome      | `done()` or `fail()`                                       |
+| Result       | The JSON summary attached to that terminal call            |
+| Progress     | The last `progress()` snapshot                             |
+| Operations   | Each named unit of work, with duration                     |
+| Compare      | This run versus up to 50 explicitly selected earlier peers |
+| Errors       | `error({ handled })` events and operation failures         |
+| Related runs | `correlationId` and `parentRunId` you passed               |
 
 Compare shows this run's duration against the peer median and p95, plus
 each earlier run's status and duration delta.
@@ -100,3 +100,37 @@ remain explicit. This threshold does not imply statistical significance; avoid
 causal/regression conclusions from small cohorts. Responses cap outcomes at 20
 with an explicit other bucket, declared categories/reasons at 20 and scopes at
 four. Count totals are exact decimal strings; missing totals are null.
+
+## Comparable runs and repeated operations
+
+Run comparison defaults to the same workflow and environment during the 30 days
+before the current run. Missing environment matches missing only. Start timestamp
+and internal ID define strict earlier ordering, including deterministic ties; the
+current and later runs never enter the baseline. At most 50 peers are selected,
+with total eligible count and the five-peer descriptive sample threshold visible.
+Use the comparison controls to select 1–90 days, deliberately broaden to all
+environments, require the same release, or select an enabled bounded dimension.
+Missing releases match missing when same-release selection is enabled. There is
+no automatic broader fallback. Selectors remain in the shared run URL.
+
+Operation rows distinguish repeated occurrences, open and failed occurrences,
+per-occurrence median and total recorded duration. Repeated names do not mean
+retries. Overlapping operations can have summed durations greater than the run's
+wall time; totals are recorded work, not a critical path or causal attribution.
+Missing duration stays unknown. For compatibility, the older duration field and
+peer median still describe the longest occurrence per run and are labeled as
+such. Operation comparison is capped at 100 names in alphabetical order; inspect
+the timeline for complete event evidence. Peers without a name remain absent,
+not zero-duration operations. The workflow intelligence view uses its own
+terminal-occurrence population and is not the same metric.
+
+Workload normalization is unavailable until a stable input-volume field and its
+meaning are validated. Final results and progress are context, not inferred work
+volume. Small samples do not establish a regression.
+
+Peer occurrence statistics also show the median of each present peer's occurrence
+median and the median total recorded work per present peer. These are run-weighted
+summaries, not a pooled occurrence distribution. Absent peers never contribute
+zeroes. Open/failed peer counts describe runs with at least one such occurrence
+and can overlap. Terminal-only operation evidence remains present when its start
+is missing; later receipt of a start does not reopen observed terminal evidence.

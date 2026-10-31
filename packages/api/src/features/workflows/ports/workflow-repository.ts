@@ -1,3 +1,4 @@
+import type { PeerPopulation, PeerSelection } from "@flowmarkdev/core"
 import type { RatioSelection } from "@flowmarkdev/core"
 import type {
   ResultSelection,
@@ -85,15 +86,25 @@ export interface ProjectSnapshot {
 }
 
 export interface OperationCompareRow {
+  readonly currentOccurrenceCount?: number
+  readonly currentOpenCount?: number
+  readonly currentFailedCount?: number
+  readonly currentMedianOccurrenceDurationMs?: number | null
+  readonly currentTotalRecordedDurationMs?: number | null
   readonly name: string
   readonly currentDurationMs: number | null
   readonly currentStatus: "completed" | "failed" | "open" | "absent"
+  readonly peerMedianOccurrenceDurationMs?: number | null
+  readonly peerMedianTotalRecordedDurationMs?: number | null
+  readonly peerOpenRunCount?: number
+  readonly peerFailedRunCount?: number
   readonly peerMedianDurationMs: number | null
   readonly peerPresentCount: number
   readonly peerRunIds: ReadonlyArray<string>
 }
 
 export interface RunComparison {
+  readonly population?: PeerPopulation
   readonly current: StoredRun | null
   readonly peers: ReadonlyArray<StoredRun>
   readonly peerSuccessRate: number | null
@@ -250,7 +261,8 @@ export interface WorkflowRepositoryService {
   readonly compare: (
     projectId: string,
     runId: string,
-  ) => Effect.Effect<RunComparison, PersistenceError>
+    selection?: PeerSelection,
+  ) => Effect.Effect<RunComparison, PersistenceError | InvalidInput>
   readonly intelligence: (
     projectId: string,
     query: IntelligenceQuery,

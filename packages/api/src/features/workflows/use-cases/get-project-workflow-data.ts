@@ -1,3 +1,4 @@
+import type { PeerSelection } from "@flowmarkdev/core"
 import type { BusinessInsightsQuery, BusinessInsights } from "@flowmarkdev/core"
 import { Context, Effect, Layer } from "effect"
 import type {
@@ -64,7 +65,11 @@ export interface GetProjectWorkflowDataService {
   readonly compare: (
     header: string | null,
     runId: string,
-  ) => Effect.Effect<RunComparison, Unauthorized | PersistenceError>
+    selection?: PeerSelection,
+  ) => Effect.Effect<
+    RunComparison,
+    Unauthorized | PersistenceError | InvalidInput
+  >
   readonly intelligence: (
     header: string | null,
     query: IntelligenceQuery,
@@ -105,7 +110,11 @@ export interface GetProjectWorkflowDataService {
     userId: string,
     runId: string,
     projectId?: string,
-  ) => Effect.Effect<RunComparison, Unauthorized | PersistenceError>
+    selection?: PeerSelection,
+  ) => Effect.Effect<
+    RunComparison,
+    Unauthorized | PersistenceError | InvalidInput
+  >
   readonly intelligenceForUser: (
     userId: string,
     query: IntelligenceQuery,
@@ -156,9 +165,10 @@ export class GetProjectWorkflowData extends Context.Service<
       const compare = Effect.fn("GetProjectWorkflowData.compare")(function* (
         header: string | null,
         runId: string,
+        selection: PeerSelection = {},
       ) {
         const projectId = yield* authorization.authorize(header, "read")
-        return yield* repository.compare(projectId, runId)
+        return yield* repository.compare(projectId, runId, selection)
       })
       const intelligence = Effect.fn("GetProjectWorkflowData.intelligence")(
         function* (header: string | null, query: IntelligenceQuery) {
@@ -215,12 +225,17 @@ export class GetProjectWorkflowData extends Context.Service<
         },
       )
       const compareForUser = Effect.fn("GetProjectWorkflowData.compareForUser")(
-        function* (userId: string, runId: string, requestedProjectId?: string) {
+        function* (
+          userId: string,
+          runId: string,
+          requestedProjectId?: string,
+          selection: PeerSelection = {},
+        ) {
           const projectId = yield* authorization.authorizeUser(
             userId,
             requestedProjectId,
           )
-          return yield* repository.compare(projectId, runId)
+          return yield* repository.compare(projectId, runId, selection)
         },
       )
       const intelligenceForUser = Effect.fn(

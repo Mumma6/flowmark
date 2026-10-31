@@ -1,11 +1,14 @@
 "use client"
 
 import { BusinessResult } from "./business-result"
+import { useSearchParams, usePathname } from "next/navigation"
 import { useState } from "react"
 import Link from "next/link"
 import type { inferRouterOutputs } from "@trpc/server"
 import type { AppRouter } from "@flowmark/server/trpc"
 import {
+  Input,
+  NativeSelect,
   RunSnapshot,
   Accordion,
   AccordionContent,
@@ -138,6 +141,8 @@ function RunComparisonPanel({
   loading: boolean
   error?: string
 }) {
+  const params = useSearchParams()
+  const pathname = usePathname()
   const current = comparison?.current
   const peerCount = comparison?.peers.length ?? 0
   const vsMedian = durationDelta(
@@ -153,11 +158,85 @@ function RunComparisonPanel({
       <CardHeader>
         <CardTitle>Compared with up to 50 earlier runs</CardTitle>
         <CardDescription>
-          Same workflow. Duration, reported outcome, and named operations
-          against recent peers. Comparison does not state a cause.
+          Same workflow, strictly earlier by start timestamp and ID. Default:
+          previous 30 days and matching environment, including
+          missing-to-missing. No silent fallback. Comparison does not state a
+          cause.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
+        <form action={pathname} className="grid gap-3 sm:grid-cols-2">
+          <input type="hidden" name="view" value="compare" />
+          <label className="text-sm">
+            Previous days
+            <Input
+              name="peerDays"
+              type="number"
+              min={1}
+              max={90}
+              defaultValue={params.get("peerDays") ?? "30"}
+            />
+          </label>
+          <label className="text-sm">
+            Peer environment
+            <NativeSelect
+              name="peerEnvironment"
+              defaultValue={params.get("peerEnvironment") ?? "same"}
+            >
+              <option value="same">Same environment</option>
+              <option value="all">
+                All environments (explicit broadening)
+              </option>
+            </NativeSelect>
+          </label>
+          <label className="text-sm">
+            Peer release
+            <NativeSelect
+              name="peerRelease"
+              defaultValue={params.get("peerRelease") ?? "all"}
+            >
+              <option value="all">All releases</option>
+              <option value="same">
+                Same release (missing matches missing)
+              </option>
+            </NativeSelect>
+          </label>
+          <label className="text-sm">
+            Declared dimension key
+            <Input
+              name="peerDimension"
+              maxLength={128}
+              defaultValue={params.get("peerDimension") ?? ""}
+            />
+          </label>
+          <label className="text-sm">
+            Declared dimension value
+            <Input
+              name="peerValue"
+              maxLength={2048}
+              defaultValue={params.get("peerValue") ?? ""}
+            />
+          </label>
+          <Button type="submit">Apply peer selection</Button>
+        </form>
+        {comparison?.population && (
+          <p className="text-sm">
+            Eligible {comparison.population.eligible}; selected{" "}
+            {comparison.population.selected} (cap 50), minimum descriptive
+            sample {comparison.population.minimumSample}. Window:{" "}
+            {comparison.population.days} days before this run, UTC; environment:{" "}
+            {comparison.population.allEnvironments
+              ? "all (explicit)"
+              : (comparison.population.environment ?? "missing only")}
+            ; release:{" "}
+            {comparison.population.sameRelease
+              ? (comparison.population.release ?? "missing only")
+              : "all"}
+            . Workload normalization unavailable: no validated stable
+            input-volume definition. Recorded results are context, not inferred
+            workload.
+          </p>
+        )}
         {error ? (
           <Alert variant="destructive">
             <AlertDescription>
@@ -172,12 +251,15 @@ function RunComparisonPanel({
           </p>
         ) : (
           <>
-            {peerCount < 5 && (
+            {(peerCount < 5 ||
+              (comparison.population?.durationObservations ?? 0) < 5) && (
               <Alert>
                 <AlertTitle>Few peers</AlertTitle>
                 <AlertDescription>
-                  Only {peerCount} earlier run{peerCount === 1 ? "" : "s"}.
-                  Treat median and p95 as thin samples, not a regression signal.
+                  Selected {peerCount} earlier runs;{" "}
+                  {comparison.population?.durationObservations ?? 0} have
+                  terminal durations. Treat median and p95 as thin samples, not
+                  a regression signal.
                 </AlertDescription>
               </Alert>
             )}
@@ -229,15 +311,20 @@ function RunComparisonPanel({
               <section className="grid gap-3">
                 <h3 className="text-sm font-semibold">Operations vs peers</h3>
                 <p className="text-xs leading-6 text-muted-foreground">
-                  Presence and duration differences in recorded operations.
-                  Absent means this run did not record that operation name.
+                  Presence and duration differences in recorded operations (up
+                  to 100 names, alphabetical). Absent means this run did not
+                  record that operation name. Repeated names are occurrences,
+                  not inferred retries. Total recorded work can exceed wall time
+                  when operations overlap. The legacy peer median uses the
+                  longest occurrence per peer for compatibility; it is not the
+                  per-occurrence median.
                 </p>
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Operation</TableHead>
                       <TableHead>This run</TableHead>
-                      <TableHead>Peer median</TableHead>
+                      <TableHead>Peer operation statistics</TableHead>
                       <TableHead>In peers</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -251,15 +338,52 @@ function RunComparisonPanel({
                           </p>
                         </TableCell>
                         <TableCell>
-                          {formatDuration(row.currentDurationMs)}
+                          <p>
+                            {row.currentOccurrenceCount ?? 0} occurrences;{" "}
+                            {row.currentOpenCount ?? 0} open;{" "}
+                            {row.currentFailedCount ?? 0} failed
+                          </p>
+                          <p>
+                            Per-occurrence median{" "}
+                            {formatDuration(
+                              row.currentMedianOccurrenceDurationMs ?? null,
+                            )}
+                          </p>
+                          <p>
+                            Total recorded work{" "}
+                            {formatDuration(
+                              row.currentTotalRecordedDurationMs ?? null,
+                            )}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Longest (legacy):{" "}
+                            {formatDuration(row.currentDurationMs)}
+                          </p>
                         </TableCell>
                         <TableCell>
-                          {formatDuration(row.peerMedianDurationMs)}
+                          <p>
+                            Median of per-run occurrence medians:{" "}
+                            {formatDuration(
+                              row.peerMedianOccurrenceDurationMs ?? null,
+                            )}
+                          </p>
+                          <p>
+                            Median recorded work per present peer:{" "}
+                            {formatDuration(
+                              row.peerMedianTotalRecordedDurationMs ?? null,
+                            )}
+                          </p>
+                          <p>
+                            Longest-occurrence median (legacy):{" "}
+                            {formatDuration(row.peerMedianDurationMs)}
+                          </p>
                         </TableCell>
                         <TableCell>
                           <div className="grid gap-1">
                             <span>
-                              {row.peerPresentCount}/{peerCount}
+                              {row.peerPresentCount}/{peerCount};{" "}
+                              {row.peerOpenRunCount ?? 0} with open;{" "}
+                              {row.peerFailedRunCount ?? 0} with failures
                             </span>
                             {row.peerRunIds.length > 0 && (
                               <span className="flex flex-wrap gap-1 text-xs">
@@ -362,6 +486,7 @@ export function RunInvestigation({
   comparisonLoading?: boolean
   comparisonError?: string
 }) {
+  const routeParams = useSearchParams()
   const [timelineView, setTimelineView] = useState<
     "timeline" | "waterfall" | "events"
   >("timeline")
@@ -428,7 +553,12 @@ export function RunInvestigation({
           }
         />
       )}
-      <Tabs defaultValue="outcome" className="min-w-0">
+      <Tabs
+        defaultValue={
+          routeParams.get("view") === "compare" ? "compare" : "outcome"
+        }
+        className="min-w-0"
+      >
         <TabsList
           variant="line"
           aria-label="Run investigation sections"

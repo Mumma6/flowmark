@@ -206,3 +206,21 @@ aggregatable counts; only jointly valid finished observations match. It combines
 with period/dimension/release filters and uses the same count/pagination rules.
 This is the population behind a ratio, rather than two independently filtered
 lists with different missing values.
+
+## Peer comparison selection
+
+Existing `run.compare({ id })` calls continue to work. Optional `selection`
+accepts `days` (integer 1–90, default 30), `environment` (`same` or explicit `all`),
+`sameRelease` and a paired `dimensionKey`/`dimensionValue`. Dimensions must be
+currently configured bounded values for this workflow/project; lookup keys and
+unconfigured values are rejected. Authorization precedes comparison reads.
+
+Peers are strictly earlier by (startedAt, internal ID), in the same workflow;
+missing environments/releases match only missing values under matching filters.
+The response adds population metadata with eligible count, selected count (cap
+50), filters and descriptive sample threshold 5. Existing longest-occurrence
+operation fields remain; additive current occurrence/open/failed counts,
+per-occurrence median and total recorded duration distinguish repeated work.
+Totals across overlapping operations are not elapsed run time. No SDK or schema
+migration is required. The default baseline intentionally no longer mixes all
+environments or includes later runs.

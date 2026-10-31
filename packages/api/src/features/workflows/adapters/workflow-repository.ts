@@ -58,10 +58,14 @@ export const WorkflowRepositoryLive = Layer.effect(
             .pipe(Effect.mapError(toPersistenceError)),
       ),
       compare: Effect.fn("PostgresWorkflowRepository.compare")(
-        (projectId, runId) =>
-          store
-            .compare(projectId, runId)
-            .pipe(Effect.mapError(toPersistenceError)),
+        (projectId, runId, selection) =>
+          store.compare(projectId, runId, selection).pipe(
+            Effect.catchTags({
+              DatabaseError: toPersistenceError,
+              InvalidResultQuery: (error) =>
+                new InvalidInput({ cause: error.message }),
+            }),
+          ),
       ),
       intelligence: Effect.fn("PostgresWorkflowRepository.intelligence")(
         (projectId, query) =>
