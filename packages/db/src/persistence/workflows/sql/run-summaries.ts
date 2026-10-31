@@ -1,3 +1,4 @@
+import { rawRunFactFields } from "./run-fact-fields.js"
 import { expectationMatchSql, expectationStateSql } from "./expectations.js"
 import type {
   RatioSelection,
@@ -49,37 +50,28 @@ export const projectRunSummaries = (
       r.started_at AS "startedAt",
       r.correlation_id AS "correlationId",
       r.parent_run_id AS "parentRunId",
-      CASE
-        WHEN bool_or(e.type = 'failed') THEN 'Failed'
-        WHEN bool_or(e.type = 'completed') THEN 'Completed'
-        ELSE 'Running'
-      END AS status,
-      (
-        extract(epoch FROM (
-          max(e.occurred_at) FILTER (WHERE e.type IN ('completed', 'failed'))
-          - r.started_at
-        )) * 1000
-      )::float8 AS "durationMs",
-      (
-        array_agg(e.step ORDER BY e.occurred_at DESC, e.created_at DESC)
-        FILTER (WHERE e.step IS NOT NULL)
-      )[1] AS step,
-      (
-        array_agg(e.result ORDER BY e.occurred_at DESC, e.created_at DESC)
-        FILTER (WHERE e.type IN ('completed', 'failed') AND e.result IS NOT NULL)
-      )[1] AS result,
-      (array_agg(CASE WHEN jsonb_typeof(e.properties -> 'definitionRevision') = 'string' THEN e.properties ->> 'definitionRevision' END ORDER BY e.created_at, e.id)
-        FILTER (WHERE e.type = 'started'))[1] AS "definitionRevision",
-      r.outcome AS outcome,
-      max(r.environment) AS environment,
-      max(r.release) AS release,
-      (
-        array_agg(e.error ->> 'code' ORDER BY e.occurred_at DESC, e.created_at DESC)
-        FILTER (WHERE e.type = 'failed' AND e.error ->> 'code' IS NOT NULL)
-      )[1] AS "failCode"
+      f.status,
+      f."durationMs",
+      f.step,
+      f.result,
+      f."definitionRevision",
+      r.outcome,
+      r.environment,
+      r.release,
+      f."failCode"
     FROM workflow_runs r
     JOIN workflows w ON w.id = r.workflow_id
-    LEFT JOIN workflow_events e ON e.run_id = r.id
+    LEFT JOIN workflow_run_facts facts ON facts.run_id = r.id AND facts.version = 1
+    CROSS JOIN LATERAL (
+      SELECT facts.status, facts.duration_ms AS "durationMs", facts.step, facts.result,
+        facts.definition_revision AS "definitionRevision", facts.fail_code AS "failCode"
+      WHERE facts.run_id IS NOT NULL
+      UNION ALL
+      SELECT ${rawRunFactFields}
+      FROM workflow_events e
+      WHERE e.run_id = r.id AND facts.run_id IS NULL
+      HAVING facts.run_id IS NULL
+    ) f
     WHERE w.project_id = ${projectId} AND ${businessPredicate(projectId, business)}
       AND (${business?.runId ?? null}::uuid IS NULL OR r.id = ${business?.runId ?? null}::uuid)
       AND (${business?.workflow ?? null}::text IS NULL OR w.name = ${business?.workflow ?? null})
@@ -96,7 +88,6 @@ export const projectRunSummaries = (
             )
           : sql`true`
       })
-    GROUP BY r.id, w.name
   )
 `
 

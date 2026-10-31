@@ -1,4 +1,6 @@
 export enum DatabaseOperation {
+  ReadOperationFacts = "read-operation-facts",
+  BackfillRunFacts = "backfill-run-facts",
   AppendExpectation = "append-expectation",
   ReadExpectations = "read-expectations",
   RebuildExpectations = "rebuild-expectations",

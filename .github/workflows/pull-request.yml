@@ -85,6 +85,9 @@ jobs:
       - name: Apply committed migrations to disposable Postgres
         run: pnpm db:migrate
 
+      - name: Run persistence projection and command tests
+        run: pnpm --filter @flowmark/db test
+
       - name: Run server HTTP and database integration tests
         run: >-
           pnpm --filter @flowmark/server test

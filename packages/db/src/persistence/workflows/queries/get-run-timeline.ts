@@ -90,7 +90,11 @@ export const getRunTimeline = Effect.fn("getRunTimeline")(function* (
       .where(
         and(eq(workflows.projectId, projectId), eq(workflowRuns.id, runId)),
       )
-      .orderBy(workflowEvents.occurredAt, workflowEvents.createdAt),
+      .orderBy(
+        workflowEvents.occurredAt,
+        workflowEvents.createdAt,
+        workflowEvents.id,
+      ),
   )
   const latestReportOrder = rows.reduce(
     (latest, row) =>

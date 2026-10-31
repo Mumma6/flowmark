@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm"
 import { PeerSelectionSchema, type PeerSelection } from "@flowmarkdev/core"
 import { Schema } from "effect"
 import { getSearchFields } from "../../result-declarations/queries/get-search-fields.js"
@@ -6,7 +7,7 @@ import { Database, InvalidResultQuery } from "../../database.js"
 import { DatabaseOperation } from "../../database-operation.js"
 import { runQuery } from "../../run-query.js"
 import { currentRunSql, peerRunsSql } from "../sql/run-summaries.js"
-import { getRunTimeline } from "./get-run-timeline.js"
+import { getOperationFacts } from "./get-operation-facts.js"
 import type { OperationCompareRow, RunComparison, StoredRun } from "../types.js"
 
 const percentile = (values: readonly number[], p: number) => {
@@ -258,11 +259,17 @@ export const getRunComparison = Effect.fn("getRunComparison")(function* (
     run.durationMs == null ? [] : [run.durationMs],
   )
   const completed = finished.filter((run) => run.status === "Completed").length
-  const currentTimeline = yield* getRunTimeline(projectId, runId)
+  const currentTimeline = yield* getOperationFacts(projectId, runId)
+  const [metadata] = yield* runQuery(DatabaseOperation.ReadRun, () =>
+    db.execute<{ environment: string | null; release: string | null }>(sql`
+      SELECT r.environment, r.release FROM workflow_runs r JOIN workflows w ON w.id = r.workflow_id
+      WHERE r.id = ${runId}::uuid AND w.project_id = ${projectId}
+    `),
+  )
   const peerTimelines = yield* Effect.forEach(
     peerList,
     (peer) =>
-      getRunTimeline(projectId, peer.id).pipe(
+      getOperationFacts(projectId, peer.id).pipe(
         Effect.map((timeline) => ({
           runId: peer.id,
           operations: operationSummaries(timeline),
@@ -281,11 +288,10 @@ export const getRunComparison = Effect.fn("getRunComparison")(function* (
       durationObservations: durations.length,
       minimumSample: 5,
       days: selection.days ?? 30,
-      environment:
-        selected[0]?.environment ?? currentTimeline[0]?.environment ?? null,
+      environment: selected[0]?.environment ?? metadata?.environment ?? null,
       allEnvironments: selection.environment === "all",
       sameRelease: selection.sameRelease ?? false,
-      release: currentTimeline[0]?.release ?? null,
+      release: metadata?.release ?? null,
     },
     current,
     peers: peerList,

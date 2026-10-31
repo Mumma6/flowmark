@@ -187,6 +187,45 @@ export const workflowEvents = pgTable(
   ],
 )
 
+/** Same-lifetime projections; raw run/event ownership remains authoritative. */
+export const workflowRunFacts = pgTable("workflow_run_facts", {
+  runId: uuid("run_id")
+    .primaryKey()
+    .references(() => workflowRuns.id, { onDelete: "cascade" }),
+  version: integer("version").notNull(),
+  sourceReceipt: bigint("source_receipt", { mode: "number" }).notNull(),
+  selection: jsonb("selection").notNull(),
+  status: text("status").notNull(),
+  durationMs: doublePrecision("duration_ms"),
+  step: text("step"),
+  result: jsonb("result").$type<WorkflowResult>(),
+  definitionRevision: text("definition_revision"),
+  failCode: text("fail_code"),
+})
+
+/** Terminal metric samples and operation occurrences, never error/context payloads. */
+export const workflowMetricFacts = pgTable(
+  "workflow_metric_facts",
+  {
+    eventId: uuid("event_id")
+      .primaryKey()
+      .references(() => workflowEvents.id, { onDelete: "cascade" }),
+    runId: uuid("run_id")
+      .notNull()
+      .references(() => workflowRuns.id, { onDelete: "cascade" }),
+    type: workflowEventType("type").notNull(),
+    operationId: uuid("operation_id"),
+    operationName: text("operation_name"),
+    durationMs: doublePrecision("duration_ms"),
+    failCode: text("fail_code"),
+    occurredAt: timestamp("occurred_at", { withTimezone: true }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
+  },
+  (table) => [
+    index("workflow_metric_facts_run_idx").on(table.runId, table.occurredAt),
+  ],
+)
+
 export const projectApiKeys = pgTable("project_api_keys", {
   id: uuid("id").defaultRandom().primaryKey(),
   projectId: uuid("project_id")
