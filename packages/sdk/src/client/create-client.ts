@@ -35,10 +35,15 @@ export function createFlowmark(config: FlowmarkConfig = {}): FlowmarkClient {
     Layer.provide(Layer.succeed(FlowmarkSettings, settings)),
     Layer.provide(fetchClientLayer()),
   )
-  return makeClient(transport, config.onInstrumentationError, {
-    environment: config.environment,
-    release: config.release,
-  })
+  return makeClient(
+    transport,
+    config.onInstrumentationError,
+    {
+      environment: config.environment,
+      release: config.release,
+    },
+    config.delivery,
+  )
 }
 
 /**
@@ -60,6 +65,8 @@ export function workflow(name: WorkflowName, options: WorkflowOptions): Flow {
   const client = makeClient(
     Layer.succeed(WorkflowTransport, options.transport),
     options.onInstrumentationError,
+    {},
+    options.delivery,
   )
   const flow = client.workflow(name, options)
   let finished = false

@@ -38,13 +38,13 @@ This is for testing, not durable storage or an offline queue.
 
 These error classes are exported by the **Node entry**:
 
-| Export                   | Meaning                                                              |
-| ------------------------ | -------------------------------------------------------------------- |
-| `FlowmarkConfigError`    | Invalid settings, run context, unsupported context, or closed client |
-| `FlowmarkDeliveryError`  | Explicit drain rejected; `failures` contains collected diagnostics   |
-| `FlowmarkHttpError`      | HTTP/encoding/network failure; optional `status`, original `cause`   |
-| `WorkflowTransportError` | Failed event and Effect cause, potentially wrapping HTTP failure     |
-| `FlowmarkQueueError`     | Event could not queue; `reason` is `capacity` or `closed`            |
+| Export                   | Meaning                                                                                |
+| ------------------------ | -------------------------------------------------------------------------------------- |
+| `FlowmarkConfigError`    | Invalid settings, run context, unsupported context, or closed client                   |
+| `FlowmarkDeliveryError`  | Explicit drain rejected; `failures` samples up to 20 causes; `failureCount` counts all |
+| `FlowmarkHttpError`      | HTTP/encoding/network failure; optional `status`, original `cause`                     |
+| `WorkflowTransportError` | Failed event and Effect cause, potentially wrapping HTTP failure                       |
+| `FlowmarkQueueError`     | Event could not queue; `reason` is `capacity` or `closed`                              |
 
 Diagnostics can also contain the core `WorkflowEventValidationError`.
 `onInstrumentationError` receives a `DeliveryFailure` union rather than

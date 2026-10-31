@@ -31,7 +31,7 @@ export class WorkflowTransportError extends Data.TaggedError(
   readonly cause: Cause.Cause<unknown>
 }> {}
 
-/** An event could not be queued because the 1,000-event limit was reached or delivery was closed. */
+/** An event could not be queued because its bounded admission limit was reached or delivery was closed. */
 export class FlowmarkQueueError extends Data.TaggedError("FlowmarkQueueError")<{
   readonly event: WorkflowEvent
   readonly reason: "capacity" | "closed"
@@ -41,9 +41,11 @@ export class FlowmarkQueueError extends Data.TaggedError("FlowmarkQueueError")<{
 export type DeliveryFailure =
   WorkflowTransportError | WorkflowEventValidationError | FlowmarkQueueError
 
-/** Rejection from flush()/shutdown(). The failures array preserves each reported delivery/validation error. */
+/** Rejection from flush()/shutdown(). At most 20 original failures are retained; counts include every failure since the previous drain. */
 export class FlowmarkDeliveryError extends Data.TaggedError(
   "FlowmarkDeliveryError",
 )<{
   readonly failures: ReadonlyArray<DeliveryFailure>
+  readonly failureCount: number
+  readonly omittedFailureCount: number
 }> {}

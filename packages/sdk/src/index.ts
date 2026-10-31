@@ -10,6 +10,8 @@ export {
 export { WorkflowTransport } from "./delivery/ports/workflow-transport.js"
 export { MemoryTransport } from "./delivery/adapters/memory-transport.js"
 export type {
+  DeliveryOptions,
+  DeliveryHealth,
   WorkflowDefinition,
   TypedFlow,
   TypedWorkflowOptions,

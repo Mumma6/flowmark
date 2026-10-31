@@ -23,8 +23,26 @@ export type InstrumentationErrorHandler = (
   event: WorkflowEvent,
 ) => void
 
+/** Local queue policy. Wire events and retries are unchanged. */
+export interface DeliveryOptions {
+  /** Default "all" preserves per-call progress history; "latest" replaces only adjacent unsent progress for one handle. */
+  readonly progress?: "all" | "latest"
+}
+
+/** Cumulative client-local counters; drains clear failure samples, never these counters. No payloads or credentials. */
+export interface DeliveryHealth {
+  readonly pending: number
+  /** Replaceable unsent progress slots, bounded by pending. */
+  readonly pendingProgress: number
+  readonly coalesced: number
+  readonly dropped: number
+  readonly failed: number
+  readonly lastFailure: { readonly type: DeliveryFailure["_tag"] } | null
+}
+
 /** Server-only client options. Omit values to read FLOWMARK_* environment variables. */
 export interface FlowmarkConfig {
+  readonly delivery?: DeliveryOptions
   /**
    * Secret project write key. Defaults to FLOWMARK_API_KEY.
    * Server only — never NEXT_PUBLIC_* or a browser bundle.
@@ -111,6 +129,7 @@ export interface WorkflowOperation {
 
 /** Advanced custom-transport options. Normal consumers should use createFlowmark(). */
 export interface WorkflowOptions extends WorkflowRunOptions {
+  readonly delivery?: DeliveryOptions
   /** Required, unique execution ID for the low-level workflow() API. */
   readonly id: WorkflowRunId
   /** Effect-based event destination; not required by configured clients. */
@@ -233,6 +252,8 @@ export interface WorkflowDefinition<
 
 /** Ordinary TypeScript client; Effect execution is managed internally. */
 export interface FlowmarkClient {
+  /** Read-only cumulative local delivery health, available after shutdown too. */
+  deliveryHealth(): DeliveryHealth
   /** Inert reusable instrumentation definition; start uses this client's existing lifecycle. */
   defineWorkflow<
     Context extends object,

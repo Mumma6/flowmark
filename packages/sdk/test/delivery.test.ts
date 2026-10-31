@@ -165,29 +165,37 @@ describe("workflow delivery feature", () => {
     )
   })
 
-  it("does not hide unexpected delivery defects from flush", async () => {
-    const transport: WorkflowTransport = {
-      emit: () => Effect.die("unexpected defect"),
-    }
-    const operation = Effect.gen(function* () {
-      const queue = yield* DeliveryQueue
-      yield* queue.enqueue(event, yield* Semaphore.make(1))
-      return yield* Effect.result(queue.flush)
-    }).pipe(
-      Effect.provide(
-        DeliveryQueue.layer(vi.fn()).pipe(
-          Layer.provide(Layer.succeed(WorkflowTransport, transport)),
+  it.each(["effect", "synchronous"])(
+    "does not hide unexpected %s delivery defects from flush",
+    async (kind) => {
+      const transport: WorkflowTransport = {
+        emit: () => {
+          if (kind === "synchronous") {
+            throw new Error("unexpected defect")
+          }
+          return Effect.die("unexpected defect")
+        },
+      }
+      const operation = Effect.gen(function* () {
+        const queue = yield* DeliveryQueue
+        yield* queue.enqueue(event, yield* Semaphore.make(1))
+        return yield* Effect.result(queue.flush)
+      }).pipe(
+        Effect.provide(
+          DeliveryQueue.layer(vi.fn()).pipe(
+            Layer.provide(Layer.succeed(WorkflowTransport, transport)),
+          ),
         ),
-      ),
-    )
-    Result.match(await Effect.runPromise(operation), {
-      onFailure: (error) =>
-        expect(error).toMatchObject({
-          failures: [{ _tag: "WorkflowTransportError" }],
-        }),
-      onSuccess: () => expect.fail("expected a delivery defect"),
-    })
-  })
+      )
+      Result.match(await Effect.runPromise(operation), {
+        onFailure: (error) =>
+          expect(error).toMatchObject({
+            failures: [{ _tag: "WorkflowTransportError" }],
+          }),
+        onSuccess: () => expect.fail("expected a delivery defect"),
+      })
+    },
+  )
 
   it("composes workflows against an injected delivery service", async () => {
     const events: WorkflowEvent[] = []
@@ -196,6 +204,14 @@ describe("workflow delivery feature", () => {
         Effect.sync(() => {
           events.push(entry)
         }),
+      health: Effect.succeed({
+        pending: 0,
+        pendingProgress: 0,
+        coalesced: 0,
+        dropped: 0,
+        failed: 0,
+        lastFailure: null,
+      }),
       flush: Effect.void,
       shutdown: Effect.void,
     })

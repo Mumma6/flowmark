@@ -3,15 +3,19 @@ import { fetchClientLayer } from "../delivery/adapters/fetch-client.js"
 import { Result, Layer, Redacted, Schema } from "effect"
 import { makeHttpTransport } from "../delivery/adapters/http-transport.js"
 import { FlowmarkConfigError } from "../errors/index.js"
+import { emptyDeliveryHealth } from "../delivery/delivery-queue.js"
 import { makeClient } from "../client/runtime.js"
 import { WorkflowTransport } from "../delivery/ports/workflow-transport.js"
 import type {
+  DeliveryOptions,
   FlowmarkClient,
   InstrumentationErrorHandler,
 } from "../types/index.js"
 import { ApiOriginSchema } from "../config/api-origin.js"
 
 export type {
+  DeliveryOptions,
+  DeliveryHealth,
   WorkflowDefinition,
   TypedFlow,
   TypedWorkflowOptions,
@@ -41,6 +45,7 @@ export type {
 
 /** Browser options: a public browser key for direct delivery, or a same-origin proxy path. Never include server secrets. */
 export interface BrowserFlowmarkConfig {
+  readonly delivery?: DeliveryOptions
   /** Same-origin absolute proxy path, default "/api/flowmark". External URLs, queries, and fragments are rejected. */
   readonly proxyPath?: string
   /**
@@ -174,12 +179,14 @@ export function createFlowmark(
         ).pipe(Layer.provide(http)),
         config.onInstrumentationError,
         { environment: config.environment, release: config.release },
+        config.delivery,
       )
     }
     return client
   }
 
   return withWorkflowDefinitions<Omit<FlowmarkClient, "defineWorkflow">>({
+    deliveryHealth: () => client?.deliveryHealth() ?? emptyDeliveryHealth(),
     workflow: (name, options) => getClient().workflow(name, options),
     flush: () => client?.flush() ?? Promise.resolve(),
     shutdown() {

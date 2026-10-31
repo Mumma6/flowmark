@@ -8,6 +8,53 @@ afterEach(() => {
 })
 
 describe("browser client", () => {
+  it("coalesces browser bursts, drains explicitly and retains safe health after shutdown", async () => {
+    vi.stubGlobal("location", { origin: "https://customer.example" })
+    let release = () => {}
+    const gate = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    const fetcher = vi.fn<typeof fetch>(async () => {
+      await gate
+      return new Response(null, { status: 202 })
+    })
+    vi.stubGlobal("fetch", fetcher)
+    const client = createFlowmark({ delivery: { progress: "latest" } })
+    expect(client.deliveryHealth().pending).toBe(0)
+    const flow = client.workflow("bulk.ui")
+    for (let completed = 1; completed <= 1000; completed++) {
+      flow.progress({ completed })
+    }
+    flow.done()
+    expect(client.deliveryHealth()).toMatchObject({
+      coalesced: 999,
+      pending: 3,
+    })
+    release()
+    await client.flush()
+    await client.shutdown()
+    expect(client.deliveryHealth()).toMatchObject({
+      pending: 0,
+      coalesced: 999,
+    })
+    expect(fetcher).toHaveBeenCalledTimes(3)
+    const events = await Promise.all(
+      fetcher.mock.calls.map(
+        async ([, options]) =>
+          JSON.parse(await new Response(options?.body).text()).event,
+      ),
+    )
+    expect(events.map((event) => event.type)).toEqual([
+      "started",
+      "progress",
+      "completed",
+    ])
+    expect(events[1].completed).toBe(1000)
+    expect(
+      fetcher.mock.calls.every(([, options]) => options?.keepalive === true),
+    ).toBe(true)
+  })
+
   it("reports terminal HTTP 409 without retrying or replacing the application return", async () => {
     vi.stubGlobal("location", { origin: "https://customer.example" })
     const fetcher = vi
