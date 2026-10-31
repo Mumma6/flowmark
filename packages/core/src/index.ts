@@ -34,3 +34,10 @@ export type { WorkflowEvent } from "./events.js"
 
 export { WorkflowOutcomeSchema, ResultDeclarationSchema } from "./results.js"
 export type { WorkflowOutcome, ResultDeclaration } from "./results.js"
+
+export {
+  SearchFieldsSchema,
+  BusinessKeySchema,
+  BusinessValueSchema,
+} from "./search-fields.js"
+export type { SearchFields } from "./search-fields.js"

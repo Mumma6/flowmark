@@ -19,6 +19,7 @@ import type {
   WorkflowProperties,
   WorkflowResult,
   ResultDeclaration,
+  SearchFields,
 } from "@flowmarkdev/core"
 
 export { account, session, user, verification } from "./auth.js"
@@ -102,6 +103,10 @@ export const workflowRuns = pgTable(
       .notNull(),
   },
   (table) => [
+    index("workflow_runs_properties_gin_idx").using(
+      "gin",
+      table.properties.op("jsonb_path_ops"),
+    ),
     index("workflow_runs_workflow_started_idx").on(
       table.workflowId,
       table.startedAt,
@@ -236,6 +241,24 @@ export const workflowResultDeclarations = pgTable(
       table.projectId,
       table.workflow,
       table.revision,
+    ),
+  ],
+)
+
+/** Mutable search permissions alongside immutable result presentation revisions. */
+export const workflowSearchFields = pgTable(
+  "workflow_search_fields",
+  {
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id),
+    workflow: text("workflow").notNull(),
+    fields: jsonb("fields").$type<SearchFields>().notNull(),
+  },
+  (table) => [
+    uniqueIndex("workflow_search_fields_scope_uidx").on(
+      table.projectId,
+      table.workflow,
     ),
   ],
 )

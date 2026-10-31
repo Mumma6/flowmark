@@ -180,6 +180,8 @@ export interface ListedRun extends StoredRun {
 }
 
 export interface ListRunsQuery {
+  readonly businessKey?: string
+  readonly businessValue?: string
   readonly workflow?: string
   readonly status?: RunStatus
   readonly search?: string

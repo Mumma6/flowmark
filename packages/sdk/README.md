@@ -239,3 +239,21 @@ Existing untyped workflow calls remain supported. This is an additive source API
 with unchanged wire data; package publication is separate. See the
 [definition reference](https://docs.flowmark.dev/docs/reference/define-workflow)
 for CRM examples, type errors and migration guidance.
+
+## Searchable business references
+
+```ts
+const flow = flowmark.workflow("customer.import", {
+  properties: { batchId: "synthetic-batch-42", provider: "crm-a" },
+})
+// Application code performs the import.
+flow.done({ result: { imported: 9600 } })
+```
+
+Enable reviewed `batchId` reference search and bounded `provider` category values
+on the dashboard workflow page, then use the exact business filters in Run
+history. Search matches run-level initial properties plus accepted shallow
+amendments, never step/operation context. Existing stored values become searchable
+when enabled; disable the key to revoke filtering. Keep personal data and secrets
+out of telemetry. Execution IDs remain distinct from business references. No new
+SDK field or package release is required for this search capability.

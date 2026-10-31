@@ -1,3 +1,8 @@
+import {
+  SearchFieldsSchema,
+  BusinessKeySchema,
+  BusinessValueSchema,
+} from "@flowmark/api"
 import { initTRPC, TRPCError } from "@trpc/server"
 import { Effect, Exit, Match, Option, Schema } from "effect"
 import {
@@ -377,6 +382,51 @@ export const appRouter = t.router({
     ),
   }),
   resultDeclarations: t.router({
+    searchFields: t.procedure
+      .input(
+        Schema.toStandardSchemaV1(
+          Schema.Struct({
+            projectId: UuidSchema,
+            workflow: Schema.String.check(
+              Schema.isMinLength(1),
+              Schema.isMaxLength(200),
+            ),
+          }),
+        ),
+      )
+      .query(({ ctx, input }) =>
+        sessionQuery(ctx.request, (userId) =>
+          Effect.flatMap(ManageResultDeclarations, (manage) =>
+            manage.searchFields(userId, input.projectId, input.workflow),
+          ),
+        ),
+      ),
+    setSearchFields: t.procedure
+      .input(
+        Schema.toStandardSchemaV1(
+          Schema.Struct({
+            projectId: UuidSchema,
+            workflow: Schema.String.check(
+              Schema.isMinLength(1),
+              Schema.isMaxLength(200),
+            ),
+            fields: SearchFieldsSchema,
+          }),
+        ),
+      )
+      .mutation(({ ctx, input }) =>
+        sessionQuery(ctx.request, (userId) =>
+          Effect.flatMap(ManageResultDeclarations, (manage) =>
+            manage.setSearchFields(
+              userId,
+              input.projectId,
+              input.workflow,
+              input.fields,
+            ),
+          ),
+        ),
+      ),
+
     list: t.procedure
       .input(
         Schema.toStandardSchemaV1(
@@ -443,6 +493,8 @@ export const appRouter = t.router({
         Schema.toStandardSchemaV1(
           Schema.Struct({
             workflow: Schema.optional(Schema.String),
+            businessKey: Schema.optional(BusinessKeySchema),
+            businessValue: Schema.optional(BusinessValueSchema),
             status: Schema.optional(
               Schema.Literals(["Completed", "Failed", "Running"]),
             ),
@@ -467,7 +519,16 @@ export const appRouter = t.router({
                 Schema.check(Schema.isBetween({ minimum: 1, maximum: 100 })),
               ),
             ),
-          }),
+          }).check(
+            Schema.makeFilter(
+              (input) =>
+                (input.businessKey === undefined &&
+                  input.businessValue === undefined) ||
+                (input.businessKey !== undefined &&
+                  input.businessValue !== undefined &&
+                  Boolean(input.workflow)),
+            ),
+          ),
         ),
       )
       .query(({ ctx, input }) =>
