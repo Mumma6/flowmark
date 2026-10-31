@@ -112,8 +112,13 @@ export interface WorkflowFailOptions extends WorkflowFailure {
   readonly result?: WorkflowResult
 }
 
+/** Synchronous opt-in selection of bounded, safe failure fields for a callback rejection. */
+export type OperationErrorMapper = (cause: unknown) => WorkflowFailure
+
 /** Optional context attached when an operation starts. */
 export interface WorkflowOperationOptions {
+  /** Callback overload only. Omitted: existing automatic conversion. Manual fail() is unchanged. */
+  readonly mapError?: OperationErrorMapper
   readonly properties?: WorkflowProperties
 }
 

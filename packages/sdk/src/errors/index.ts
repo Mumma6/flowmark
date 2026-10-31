@@ -37,9 +37,17 @@ export class FlowmarkQueueError extends Data.TaggedError("FlowmarkQueueError")<{
   readonly reason: "capacity" | "closed"
 }> {}
 
+/** Bounded mapper diagnostic: deliberately excludes the original cause/payload. */
+export class FlowmarkErrorMappingError extends Data.TaggedError(
+  "FlowmarkErrorMappingError",
+)<{ readonly reason: "threw" | "invalid" }> {}
+
 /** Failures reported to onInstrumentationError or collected by flush()/shutdown(). */
 export type DeliveryFailure =
-  WorkflowTransportError | WorkflowEventValidationError | FlowmarkQueueError
+  | WorkflowTransportError
+  | WorkflowEventValidationError
+  | FlowmarkQueueError
+  | FlowmarkErrorMappingError
 
 /** Rejection from flush()/shutdown(). At most 20 original failures are retained; counts include every failure since the previous drain. */
 export class FlowmarkDeliveryError extends Data.TaggedError(

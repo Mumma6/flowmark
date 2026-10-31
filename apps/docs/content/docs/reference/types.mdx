@@ -122,3 +122,9 @@ using the same name and ID. Project scope is derived from credentials.
 clients provide `deliveryHealth()`; Next exports `NextFlowmarkConfig` with
 `onDeliveryHealth` for final request-local health. See [delivery](/docs/delivery)
 for counter, sample and queue limits.
+
+`OperationErrorMapper` is exported as a type by Node, Next.js and browser entries:
+`(cause: unknown) => WorkflowFailure`. Pass it as `WorkflowOperationOptions.mapError`
+for callback operations. The ordinary Promise return type is unchanged; manual
+handles still take explicit failure fields. Invalid/throwing mappers report the
+Node-exported `FlowmarkErrorMappingError` through the shared diagnostics union.

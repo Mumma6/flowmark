@@ -200,6 +200,7 @@ describe("workflow delivery feature", () => {
   it("composes workflows against an injected delivery service", async () => {
     const events: WorkflowEvent[] = []
     const delivery = Layer.succeed(DeliveryQueue, {
+      diagnose: () => Effect.void,
       enqueue: (entry) =>
         Effect.sync(() => {
           events.push(entry)

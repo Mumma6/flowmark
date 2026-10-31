@@ -17,6 +17,44 @@ afterEach(() => {
 })
 
 describe("Next.js integration", () => {
+  it("sends only safely mapped callback failure fields and preserves recovery", async () => {
+    const fetcher = vi.fn<typeof fetch>(
+      async () => new Response(null, { status: 202 }),
+    )
+    vi.stubGlobal("fetch", fetcher)
+    const client = createFlowmark({ apiKey: "key", apiUrl: "http://localhost" })
+    const flow = client.workflow("crm.safe-error")
+    const original = new Error("RUNTIME_SYNTHETIC_SECRET_008")
+    await expect(
+      flow.operation("request", () => Promise.reject(original), {
+        mapError: () => ({
+          code: "CRM_UNAVAILABLE",
+          message: "CRM unavailable",
+          retryable: true,
+        }),
+      }),
+    ).rejects.toBe(original)
+    flow.done({ result: { imported: 0 } })
+    await callbacks[0]()
+    const envelopes = await Promise.all(
+      fetcher.mock.calls.map(async ([, options]) =>
+        JSON.parse(await new Response(options?.body).text()),
+      ),
+    )
+    expect(JSON.stringify(envelopes)).not.toContain(
+      "RUNTIME_SYNTHETIC_SECRET_008",
+    )
+    expect(
+      envelopes.find((item) => item.event.type === "operation_failed")?.event
+        .failure,
+    ).toEqual({
+      code: "CRM_UNAVAILABLE",
+      message: "CRM unavailable",
+      retryable: true,
+    })
+    expect(envelopes.at(-1)?.event.type).toBe("completed")
+  })
+
   it("drains opt-in progress in order and reports final request-local health", async () => {
     let release = () => {}
     const gate = new Promise<void>((resolve) => {

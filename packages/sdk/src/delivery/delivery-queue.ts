@@ -23,6 +23,10 @@ export const emptyDeliveryHealth = (): DeliveryHealth => ({
 })
 
 export interface DeliveryQueueService {
+  readonly diagnose: (
+    error: DeliveryFailure,
+    event: WorkflowEvent,
+  ) => Effect.Effect<void>
   readonly enqueue: (
     event: WorkflowEvent,
     ordering: Semaphore.Semaphore,
@@ -197,6 +201,7 @@ export class DeliveryQueue extends Context.Service<
           }
         })
         return DeliveryQueue.of({
+          diagnose: report,
           enqueue,
           health,
           flush,

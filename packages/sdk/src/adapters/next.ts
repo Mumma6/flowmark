@@ -9,6 +9,7 @@ import type {
 } from "../types/index.js"
 
 export type {
+  OperationErrorMapper,
   DeliveryOptions,
   DeliveryHealth,
   WorkflowDefinition,

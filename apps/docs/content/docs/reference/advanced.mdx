@@ -53,3 +53,9 @@ do not assume every failure has an HTTP status.
 
 Browser and Next.js entry points do not re-export these runtime error classes.
 See [delivery and diagnostics](/docs/delivery) for normal error handling.
+
+`FlowmarkErrorMappingError` is also exported by the Node entry. Its only payload
+is `reason: "threw" | "invalid"`; it deliberately retains neither the original
+application cause nor the rejected mapped value. It is reported through the
+existing diagnostics/drain channels when callback `mapError` fails. The advanced
+custom-transport `workflow()` boundary uses the same mapping and queue accounting.
