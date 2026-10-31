@@ -109,201 +109,208 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
       vi.unstubAllEnvs()
     })
 
-    it("finds older runs by declared business properties with scoped, consistent filters", () =>
-      Effect.runPromise(
-        Effect.gen(function* () {
-          const owner = yield* Effect.promise(() =>
-            createOwner("Business search"),
-          )
-          const api = caller(owner.cookie, owner.project.id)
-          const workflow = "business.import"
-          const configure = (fields: unknown) =>
-            Effect.promise(() =>
-              api.resultDeclarations.setSearchFields({
-                projectId: owner.project.id,
-                workflow,
-                fields: fields as Parameters<
-                  typeof api.resultDeclarations.setSearchFields
-                >[0]["fields"],
-              }),
+    it(
+      "finds older runs by declared business properties with scoped, consistent filters",
+      () =>
+        Effect.runPromise(
+          Effect.gen(function* () {
+            const owner = yield* Effect.promise(() =>
+              createOwner("Business search"),
             )
-          const fields = [
-            { key: "batchId", role: "lookup" as const },
-            {
-              key: "provider",
-              role: "dimension" as const,
-              values: ["crm-a", "crm-b"],
-            },
-          ]
-          yield* configure(fields)
-          expect(
-            yield* Effect.promise(() =>
-              api.resultDeclarations.searchFields({
-                projectId: owner.project.id,
-                workflow,
-              }),
-            ),
-          ).toEqual(fields)
-          vi.stubGlobal(
-            "fetch",
-            (input: RequestInfo | URL, init?: RequestInit) =>
-              ingest(new Request(input, init)),
-          )
-          const client = createFlowmark({
-            apiKey: owner.writeKey.secret,
-            apiUrl: "http://localhost",
-          })
-          yield* Effect.gen(function* () {
-            const target = client.workflow(workflow, {
-              properties: { batchId: "old-reference", provider: "crm-a" },
-            })
-            target.setProperties({ batchId: "amended-reference" })
-            target.step("page", { properties: { batchId: "step-only" } })
-            target.done({ result: { imported: 8 } })
-            for (let index = 0; index < 105; index++) {
-              const flow = client.workflow(workflow, {
-                properties: {
-                  batchId: `new-${index}`,
-                  provider: index % 2 ? "crm-a" : "crm-b",
-                },
-              })
-              flow.done()
-              if (index % 5 === 4) {
-                yield* Effect.promise(() => client.flush())
-              }
-            }
-            client
-              .workflow(workflow, {
-                properties: { batchId: 123, provider: "crm-c" },
-              })
-              .done()
-            client
-              .workflow(workflow, { properties: { batchId: ["123"] } })
-              .done()
-            client.workflow(workflow).done()
-            yield* Effect.promise(() => client.flush())
-            const snapshot = yield* Effect.promise(() => api.project.snapshot())
+            const api = caller(owner.cookie, owner.project.id)
+            const workflow = "business.import"
+            const configure = (fields: unknown) =>
+              Effect.promise(() =>
+                api.resultDeclarations.setSearchFields({
+                  projectId: owner.project.id,
+                  workflow,
+                  fields: fields as Parameters<
+                    typeof api.resultDeclarations.setSearchFields
+                  >[0]["fields"],
+                }),
+              )
+            const fields = [
+              { key: "batchId", role: "lookup" as const },
+              {
+                key: "provider",
+                role: "dimension" as const,
+                values: ["crm-a", "crm-b"],
+              },
+            ]
+            yield* configure(fields)
             expect(
-              snapshot.runs.some((run) => run.externalId === target.runId),
-            ).toBe(false)
-            const reference = {
-              workflow,
-              businessKey: "batchId",
-              businessValue: "amended-reference",
-            }
-            const page = yield* Effect.promise(() => api.run.list(reference))
-            expect(page.total).toBe(1)
-            expect(page.runs[0]).toMatchObject({
-              externalId: target.runId,
-              result: { imported: 8 },
+              yield* Effect.promise(() =>
+                api.resultDeclarations.searchFields({
+                  projectId: owner.project.id,
+                  workflow,
+                }),
+              ),
+            ).toEqual(fields)
+            vi.stubGlobal(
+              "fetch",
+              (input: RequestInfo | URL, init?: RequestInit) =>
+                ingest(new Request(input, init)),
+            )
+            const client = createFlowmark({
+              apiKey: owner.writeKey.secret,
+              apiUrl: "http://localhost",
             })
-            for (const value of [
-              "123",
-              "old-reference",
-              "step-only",
-              "Amended-reference",
-              "missing",
-              "amended-reference' OR true --",
-            ]) {
+            yield* Effect.gen(function* () {
+              const target = client.workflow(workflow, {
+                properties: { batchId: "old-reference", provider: "crm-a" },
+              })
+              target.setProperties({ batchId: "amended-reference" })
+              target.step("page", { properties: { batchId: "step-only" } })
+              target.done({ result: { imported: 8 } })
+              for (let index = 0; index < 105; index++) {
+                const flow = client.workflow(workflow, {
+                  properties: {
+                    batchId: `new-${index}`,
+                    provider: index % 2 ? "crm-a" : "crm-b",
+                  },
+                })
+                flow.done()
+                if (index % 5 === 4) {
+                  yield* Effect.promise(() => client.flush())
+                }
+              }
+              client
+                .workflow(workflow, {
+                  properties: { batchId: 123, provider: "crm-c" },
+                })
+                .done()
+              client
+                .workflow(workflow, { properties: { batchId: ["123"] } })
+                .done()
+              client.workflow(workflow).done()
+              yield* Effect.promise(() => client.flush())
+              const snapshot = yield* Effect.promise(() =>
+                api.project.snapshot(),
+              )
+              expect(
+                snapshot.runs.some((run) => run.externalId === target.runId),
+              ).toBe(false)
+              const reference = {
+                workflow,
+                businessKey: "batchId",
+                businessValue: "amended-reference",
+              }
+              const page = yield* Effect.promise(() => api.run.list(reference))
+              expect(page.total).toBe(1)
+              expect(page.runs[0]).toMatchObject({
+                externalId: target.runId,
+                result: { imported: 8 },
+              })
+              for (const value of [
+                "123",
+                "old-reference",
+                "step-only",
+                "Amended-reference",
+                "missing",
+                "amended-reference' OR true --",
+              ]) {
+                expect(
+                  (yield* Effect.promise(() =>
+                    api.run.list({ ...reference, businessValue: value }),
+                  )).total,
+                ).toBe(0)
+              }
               expect(
                 (yield* Effect.promise(() =>
-                  api.run.list({ ...reference, businessValue: value }),
+                  api.run.list({ ...reference, businessKey: "unconfigured" }),
                 )).total,
               ).toBe(0)
-            }
-            expect(
-              (yield* Effect.promise(() =>
-                api.run.list({ ...reference, businessKey: "unconfigured" }),
-              )).total,
-            ).toBe(0)
-            expect(
-              (yield* Effect.promise(() =>
-                api.run.list({
-                  workflow,
-                  businessKey: "provider",
-                  businessValue: "crm-c",
-                }),
-              )).total,
-            ).toBe(0)
-            const category = {
-              workflow,
-              businessKey: "provider",
-              businessValue: "crm-a",
-              limit: 25,
-            }
-            const first = yield* Effect.promise(() => api.run.list(category))
-            expect(first.total).toBe(53)
-            expect(first.runs).toHaveLength(25)
-            const next = yield* Effect.promise(() =>
-              api.run.list({ ...category, cursor: first.nextCursor! }),
-            )
-            expect(next.total).toBe(first.total)
-            expect(next.runs).toHaveLength(25)
-            expect(
-              next.runs.some((row) =>
-                first.runs.some((prior) => prior.id === row.id),
+              expect(
+                (yield* Effect.promise(() =>
+                  api.run.list({
+                    workflow,
+                    businessKey: "provider",
+                    businessValue: "crm-c",
+                  }),
+                )).total,
+              ).toBe(0)
+              const category = {
+                workflow,
+                businessKey: "provider",
+                businessValue: "crm-a",
+                limit: 25,
+              }
+              const first = yield* Effect.promise(() => api.run.list(category))
+              expect(first.total).toBe(53)
+              expect(first.runs).toHaveLength(25)
+              const next = yield* Effect.promise(() =>
+                api.run.list({ ...category, cursor: first.nextCursor! }),
+              )
+              expect(next.total).toBe(first.total)
+              expect(next.runs).toHaveLength(25)
+              expect(
+                next.runs.some((row) =>
+                  first.runs.some((prior) => prior.id === row.id),
+                ),
+              ).toBe(false)
+              yield* configure([
+                { key: "provider", role: "dimension", values: ["crm-b"] },
+              ])
+              expect(
+                (yield* Effect.promise(() => api.run.list(category))).total,
+              ).toBe(0)
+              expect(
+                (yield* Effect.promise(() => api.run.list(reference))).total,
+              ).toBe(0)
+              yield* configure(fields)
+              const outsider = yield* Effect.promise(() =>
+                createOwner("Other business project"),
+              )
+              const other = caller(outsider.cookie, outsider.project.id)
+              expect(
+                (yield* Effect.promise(() => other.run.list(reference))).total,
+              ).toBe(0)
+              yield* Effect.promise(() =>
+                expect(
+                  other.resultDeclarations.searchFields({
+                    projectId: owner.project.id,
+                    workflow,
+                  }),
+                ).rejects.toMatchObject({ code: "UNAUTHORIZED" }),
+              )
+              yield* Effect.promise(() =>
+                expect(
+                  other.resultDeclarations.setSearchFields({
+                    projectId: owner.project.id,
+                    workflow,
+                    fields: [],
+                  }),
+                ).rejects.toMatchObject({ code: "UNAUTHORIZED" }),
+              )
+              yield* Effect.promise(() =>
+                expect(
+                  api.run.list({
+                    businessKey: "batchId",
+                    businessValue: "amended-reference",
+                  }),
+                ).rejects.toMatchObject({ code: "BAD_REQUEST" }),
+              )
+              yield* Effect.promise(() =>
+                expect(
+                  api.run.list({ workflow, businessKey: "batchId" }),
+                ).rejects.toMatchObject({ code: "BAD_REQUEST" }),
+              )
+              yield* configure([])
+              expect(
+                (yield* Effect.promise(() => api.run.list(reference))).total,
+              ).toBe(0)
+            }).pipe(
+              Effect.ensuring(
+                Effect.promise(() => client.shutdown()).pipe(
+                  Effect.ensuring(Effect.sync(() => vi.unstubAllGlobals())),
+                ),
               ),
-            ).toBe(false)
-            yield* configure([
-              { key: "provider", role: "dimension", values: ["crm-b"] },
-            ])
-            expect(
-              (yield* Effect.promise(() => api.run.list(category))).total,
-            ).toBe(0)
-            expect(
-              (yield* Effect.promise(() => api.run.list(reference))).total,
-            ).toBe(0)
-            yield* configure(fields)
-            const outsider = yield* Effect.promise(() =>
-              createOwner("Other business project"),
             )
-            const other = caller(outsider.cookie, outsider.project.id)
-            expect(
-              (yield* Effect.promise(() => other.run.list(reference))).total,
-            ).toBe(0)
-            yield* Effect.promise(() =>
-              expect(
-                other.resultDeclarations.searchFields({
-                  projectId: owner.project.id,
-                  workflow,
-                }),
-              ).rejects.toMatchObject({ code: "UNAUTHORIZED" }),
-            )
-            yield* Effect.promise(() =>
-              expect(
-                other.resultDeclarations.setSearchFields({
-                  projectId: owner.project.id,
-                  workflow,
-                  fields: [],
-                }),
-              ).rejects.toMatchObject({ code: "UNAUTHORIZED" }),
-            )
-            yield* Effect.promise(() =>
-              expect(
-                api.run.list({
-                  businessKey: "batchId",
-                  businessValue: "amended-reference",
-                }),
-              ).rejects.toMatchObject({ code: "BAD_REQUEST" }),
-            )
-            yield* Effect.promise(() =>
-              expect(
-                api.run.list({ workflow, businessKey: "batchId" }),
-              ).rejects.toMatchObject({ code: "BAD_REQUEST" }),
-            )
-            yield* configure([])
-            expect(
-              (yield* Effect.promise(() => api.run.list(reference))).total,
-            ).toBe(0)
-          }).pipe(
-            Effect.ensuring(
-              Effect.promise(() => client.shutdown()).pipe(
-                Effect.ensuring(Effect.sync(() => vi.unstubAllGlobals())),
-              ),
-            ),
-          )
-        }),
-      ))
+          }),
+        ),
+      // Full SDK/HTTP history fixture performs over 200 real ingestion requests.
+      20_000,
+    )
 
     it("preserves SDK snapshots through HTTP, receipt ordering and scoped reads without final-result inheritance", () =>
       Effect.runPromise(
