@@ -402,3 +402,28 @@ last failure tag. Drains clear their error sample/count, not cumulative health;
 health remains readable after disposal. Next reports final request-local health
 through an optional callback, with no new drain surface. No database change or
 batch ingestion protocol is involved.
+
+### Reported business outcome cohorts
+
+Business outcome reads reuse project/workflow-scoped start cohorts and historical
+run projection, preserving independent technical statistics. Explicitly aggregatable
+immutable result fields select count/category/reason metrics; bounded vocabularies
+are required for category/reason aggregation. Original-start revisions remain
+immutable in meaning even when current run properties are amended.
+
+SQL restricts project/workflow and both half-open intervals before event aggregation.
+It returns bounded aggregates (four scopes, 20 outcome/category rows, daily UTC
+start cohorts), never an unbounded evidence-ID array. Exact numeric sums use decimal
+strings. Weighted ratios share one jointly valid run population. Missing/incompatible,
+wrong-type and unknown values remain coverage gaps. Non-final reports are excluded;
+failed-with-result contributes business evidence while remaining technically failed.
+
+Result filters validate against the project/workflow/revision declaration before
+building parameterized predicates. Listing/count/evidence share the same rules,
+including complete reason-map coverage and exclusive period bounds. Release
+comparison requires compatible finished revisions and minimum known coverage;
+it is descriptive, not causal. These reads use existing JSON storage and require
+no new migration or compact-fact framework.
+
+See the [business outcome metric contract](sdk/business-insights.md) for cohort,
+coverage, weighted denominator, evidence and comparison rules.

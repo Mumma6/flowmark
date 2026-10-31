@@ -1,3 +1,5 @@
+import type { RatioSelection } from "@flowmarkdev/core"
+import type { ResultSelection } from "@flowmarkdev/core"
 import type { WorkflowResult } from "@flowmarkdev/core"
 
 export type RunStatus = "Completed" | "Failed" | "Running"
@@ -155,6 +157,12 @@ export type ListedRun = StoredRun & {
 }
 
 export type ListRunsQuery = {
+  readonly ratioSelection?: RatioSelection
+  readonly resultSelection?: ResultSelection
+  readonly outcome?: string
+  readonly definitionRevision?: string
+  readonly terminalOnly?: boolean
+  readonly startedBeforeExclusive?: string
   readonly businessKey?: string
   readonly businessValue?: string
   readonly workflow?: string

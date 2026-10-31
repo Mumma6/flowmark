@@ -1,4 +1,8 @@
 import {
+  BusinessTimestampSchema,
+  BusinessInsightsQuerySchema,
+  ResultSelectionSchema,
+  RatioSelectionSchema,
   SearchFieldsSchema,
   BusinessKeySchema,
   BusinessValueSchema,
@@ -176,14 +180,14 @@ function readQuery<A>(
     projectId?: string,
   ) => Effect.Effect<
     A,
-    Unauthorized | PersistenceError,
+    Unauthorized | PersistenceError | InvalidInput,
     GetProjectWorkflowData
   >,
   forKey: (
     header: string | null,
   ) => Effect.Effect<
     A,
-    Unauthorized | PersistenceError,
+    Unauthorized | PersistenceError | InvalidInput,
     GetProjectWorkflowData
   >,
 ) {
@@ -255,6 +259,21 @@ export const appRouter = t.router({
     })),
   }),
   project: t.router({
+    businessInsights: t.procedure
+      .input(Schema.toStandardSchemaV1(BusinessInsightsQuerySchema))
+      .query(({ ctx, input }) =>
+        readQuery(
+          ctx.request,
+          (userId, projectId) =>
+            Effect.flatMap(GetProjectWorkflowData, (queries) =>
+              queries.businessInsightsForUser(userId, input, projectId),
+            ),
+          (header) =>
+            Effect.flatMap(GetProjectWorkflowData, (queries) =>
+              queries.businessInsights(header, input),
+            ),
+        ),
+      ),
     snapshot: t.procedure.query(({ ctx }) =>
       readQuery(
         ctx.request,
@@ -493,6 +512,16 @@ export const appRouter = t.router({
         Schema.toStandardSchemaV1(
           Schema.Struct({
             workflow: Schema.optional(Schema.String),
+            resultSelection: Schema.optional(ResultSelectionSchema),
+            ratioSelection: Schema.optional(RatioSelectionSchema),
+            outcome: Schema.optional(
+              Schema.String.check(Schema.isMaxLength(64)),
+            ),
+            definitionRevision: Schema.optional(
+              Schema.String.check(Schema.isMaxLength(64)),
+            ),
+            terminalOnly: Schema.optional(Schema.Boolean),
+            startedBeforeExclusive: Schema.optional(BusinessTimestampSchema),
             businessKey: Schema.optional(BusinessKeySchema),
             businessValue: Schema.optional(BusinessValueSchema),
             status: Schema.optional(

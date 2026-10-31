@@ -35,3 +35,5 @@ export * from "./workflows/writes/append-event.js"
 export * from "./workflows/writes/continue-run.js"
 
 export { ResultDeclarationStore } from "./result-declarations/result-declaration-store.js"
+
+export { InvalidResultQuery } from "./database.js"

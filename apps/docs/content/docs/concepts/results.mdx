@@ -70,3 +70,12 @@ Older servers reject report events through normal delivery diagnostics; there is
 no fallback encoding. Package publication is separate. Existing queue limits and
 runtime-specific drains still apply. See the report reference for bounds and
 single-reporter ordering limitations.
+
+## Explicit aggregation
+
+Result presentation stays available without aggregation. To add workflow-level
+count/category/reason trends, create a new immutable revision with `aggregate: true`
+on the selected fields. Category/reason fields also need a bounded `values`
+vocabulary. This does not change terminal results, infer unique entities or
+promote `report()` snapshots into final evidence. See [insights](/docs/concepts/insights)
+for coverage, weighted ratios, evidence filters and release comparisons.

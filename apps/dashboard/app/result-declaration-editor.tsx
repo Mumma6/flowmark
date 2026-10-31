@@ -21,12 +21,16 @@ type Field = {
   label: string
   kind: "count" | "category" | "reasons"
   unit: string
+  aggregate: boolean
+  values: string
 }
 const blankField = (): Field => ({
   path: "",
   label: "",
   kind: "count",
   unit: "",
+  aggregate: false,
+  values: "",
 })
 
 export function ResultDeclarationEditor({ workflow }: { workflow: string }) {
@@ -76,7 +80,9 @@ function ResultDeclarationForm({
         <CardDescription>
           Optional ordered result fields. Revisions are permanent. Use a new
           revision whenever meaning, units or categories change. Canonical
-          outcomes require no setup.
+          outcomes require no setup. Aggregation is explicit: counts mean
+          reported items across runs, never unique entities. Configure bounded
+          categories/reasons before enabling aggregation.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -107,6 +113,7 @@ function ResultDeclarationForm({
                 <li key={i}>
                   {field.label} · {field.path.join(".")} · {field.kind}
                   {field.unit ? ` · ${field.unit}` : ""}
+                  {field.aggregate ? " · Aggregatable" : ""}
                 </li>
               ))}
             </ul>
@@ -122,6 +129,14 @@ function ResultDeclarationForm({
                 path: field.path.split("."),
                 label: field.label,
                 kind: field.kind,
+                aggregate: field.aggregate,
+                ...(field.kind !== "count" && field.values.trim()
+                  ? {
+                      values: field.values
+                        .split(",")
+                        .map((value) => value.trim()),
+                    }
+                  : {}),
                 ...(field.unit ? { unit: field.unit } : {}),
               })),
             }
@@ -199,6 +214,34 @@ function ResultDeclarationForm({
                   placeholder="rows"
                 />
               </label>
+              <label className="text-sm">
+                Aggregate across runs
+                <NativeSelect
+                  value={field.aggregate ? "yes" : "no"}
+                  onChange={(event) =>
+                    updateField(index, {
+                      aggregate: event.target.value === "yes",
+                    })
+                  }
+                >
+                  <option value="no">Presentation only</option>
+                  <option value="yes">
+                    Allow reported totals/distributions
+                  </option>
+                </NativeSelect>
+              </label>
+              {field.kind !== "count" && (
+                <label className="text-sm">
+                  Allowed categories/reasons (comma-separated, max 20)
+                  <Input
+                    required={field.aggregate}
+                    value={field.values}
+                    onChange={(event) =>
+                      updateField(index, { values: event.target.value })
+                    }
+                  />
+                </label>
+              )}
               <Button
                 type="button"
                 variant="outline"

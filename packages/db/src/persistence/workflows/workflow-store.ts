@@ -1,9 +1,12 @@
+import type { BusinessInsightsQuery, BusinessInsights } from "@flowmarkdev/core"
+import { getBusinessInsights } from "./queries/get-business-insights.js"
 import { Context, Effect, Layer } from "effect"
 import type { AppendDisposition, WorkflowEvent } from "@flowmarkdev/core"
 import {
   Database,
   DatabaseError,
   MissingRunError,
+  InvalidResultQuery,
   provideDatabase,
 } from "../database.js"
 import { getProjectSnapshot } from "./queries/get-project-snapshot.js"
@@ -27,6 +30,10 @@ import type {
 } from "./types.js"
 
 export interface WorkflowStoreService {
+  readonly businessInsights: (
+    projectId: string,
+    query: BusinessInsightsQuery,
+  ) => Effect.Effect<BusinessInsights, DatabaseError | InvalidResultQuery>
   readonly append: (
     projectId: string,
     eventId: string,
@@ -38,7 +45,7 @@ export interface WorkflowStoreService {
   readonly listRuns: (
     projectId: string,
     query: ListRunsQuery,
-  ) => Effect.Effect<ListedRunsPage, DatabaseError>
+  ) => Effect.Effect<ListedRunsPage, DatabaseError | InvalidResultQuery>
   readonly timeline: (
     projectId: string,
     runId: string,
@@ -62,6 +69,8 @@ export class WorkflowStore extends Context.Service<WorkflowStore>()(
     make: Effect.gen(function* () {
       const provide = provideDatabase(yield* Database)
       return {
+        businessInsights: (projectId, query) =>
+          provide(getBusinessInsights(projectId, query)),
         append: (projectId, eventId, event) =>
           provide(appendEvent(projectId, eventId, event)),
         snapshot: (projectId) => provide(getProjectSnapshot(projectId)),

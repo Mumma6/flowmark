@@ -59,3 +59,44 @@ Use progress while work is still moving:
 See [workflows and runs](/docs/concepts/runs) for the lifecycle, and
 [reading the dashboard](/docs/concepts/dashboard) for where these numbers
 appear.
+
+## Reported business outcomes
+
+Each workflow has a business outcome panel with explicit definition, UTC start
+cohort, field coverage and independent technical failure counts. Select current
+and previous intervals (up to 31 days each), an aggregatable result field and
+optionally a bounded configured dimension. Daily rows show reported count/reason
+totals for observed start cohorts. Partial work reported on failed runs still
+contributes; `report()` snapshots never become final observations.
+
+Enable aggregation in a **new immutable result revision** using `aggregate: true`.
+For categories/reasons, also declare 1–20 distinct `values`. Existing presentation
+revisions remain presentation-only. Original-start `properties.definitionRevision`
+selects the definition; later context amendments do not change it.
+
+The cohort is start >= after and start < before, in UTC. Each run/attempt counts
+once, so retries with a new run ID count again. Late terminal evidence can change
+a historical start cohort. Canonical outcome counts use all finished runs; field
+totals use only compatible finished results, including failed-with-result.
+Missing results/fields/revisions, wrong types and unknown categories are visible
+coverage gaps, not zeroes. Counts mean reported items across runs, not unique
+entities. Absent reason keys remain unknown; an explicit zero is a known zero.
+
+Choose numerator and denominator count fields for a weighted ratio: sum of the
+numerators / sum of the denominators over the same jointly valid finished runs.
+For 1/2 and 9/100, the ratio is 10/102, not an average of per-run percentages.
+An overall zero denominator or no valid pairs is unavailable. Ratios may exceed
+one and are not inferred business-success scores.
+
+Outcome/category/reason links open historical Run Explorer evidence with the
+same workflow, period, dimension, release and definition/result selection. Numeric
+predicates support equals/at least/at most; categories support exact equality.
+Reason evidence requires a fully valid declared map, matching the aggregate.
+
+Two releases can be compared in the current interval when all finished revisions
+are compatible and each release has at least five known observations (also five
+jointly valid observations for a selected ratio). Coverage and unavailable states
+remain explicit. This threshold does not imply statistical significance; avoid
+causal/regression conclusions from small cohorts. Responses cap outcomes at 20
+with an explicit other bucket, declared categories/reasons at 20 and scopes at
+four. Count totals are exact decimal strings; missing totals are null.

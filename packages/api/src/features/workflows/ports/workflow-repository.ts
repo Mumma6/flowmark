@@ -1,3 +1,9 @@
+import type { RatioSelection } from "@flowmarkdev/core"
+import type {
+  ResultSelection,
+  BusinessInsightsQuery,
+  BusinessInsights,
+} from "@flowmarkdev/core"
 import { Context, type Effect } from "effect"
 import type {
   WorkflowError,
@@ -7,7 +13,11 @@ import type {
   WorkflowProperties,
   WorkflowResult,
 } from "@flowmarkdev/core"
-import type { PersistenceError, RunNotFound } from "../../../errors.js"
+import type {
+  InvalidInput,
+  PersistenceError,
+  RunNotFound,
+} from "../../../errors.js"
 
 export type RunStatus = "Completed" | "Failed" | "Running"
 
@@ -181,6 +191,12 @@ export interface ListedRun extends StoredRun {
 }
 
 export interface ListRunsQuery {
+  readonly ratioSelection?: RatioSelection
+  readonly resultSelection?: ResultSelection
+  readonly outcome?: string
+  readonly definitionRevision?: string
+  readonly terminalOnly?: boolean
+  readonly startedBeforeExclusive?: string
   readonly businessKey?: string
   readonly businessValue?: string
   readonly workflow?: string
@@ -207,6 +223,10 @@ export interface ListedRunsPage {
 }
 
 export interface WorkflowRepositoryService {
+  readonly businessInsights: (
+    projectId: string,
+    query: BusinessInsightsQuery,
+  ) => Effect.Effect<BusinessInsights, PersistenceError | InvalidInput>
   readonly append: (
     projectId: string,
     eventId: string,
@@ -218,7 +238,7 @@ export interface WorkflowRepositoryService {
   readonly listRuns: (
     projectId: string,
     query: ListRunsQuery,
-  ) => Effect.Effect<ListedRunsPage, PersistenceError>
+  ) => Effect.Effect<ListedRunsPage, PersistenceError | InvalidInput>
   readonly timeline: (
     projectId: string,
     runId: string,

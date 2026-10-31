@@ -1,5 +1,10 @@
+import type { BusinessInsightsQuery, BusinessInsights } from "@flowmarkdev/core"
 import { Context, Effect, Layer } from "effect"
-import type { PersistenceError, Unauthorized } from "../../../errors.js"
+import type {
+  InvalidInput,
+  PersistenceError,
+  Unauthorized,
+} from "../../../errors.js"
 import { AuthorizeProject } from "../../project-access/use-cases/authorize-project.js"
 import {
   WorkflowRepository,
@@ -14,6 +19,21 @@ import {
 } from "../ports/workflow-repository.js"
 
 export interface GetProjectWorkflowDataService {
+  readonly businessInsights: (
+    header: string | null,
+    query: BusinessInsightsQuery,
+  ) => Effect.Effect<
+    BusinessInsights,
+    Unauthorized | PersistenceError | InvalidInput
+  >
+  readonly businessInsightsForUser: (
+    userId: string,
+    query: BusinessInsightsQuery,
+    projectId?: string,
+  ) => Effect.Effect<
+    BusinessInsights,
+    Unauthorized | PersistenceError | InvalidInput
+  >
   readonly snapshot: (
     header: string | null,
   ) => Effect.Effect<ProjectSnapshot, Unauthorized | PersistenceError>
@@ -26,7 +46,10 @@ export interface GetProjectWorkflowDataService {
   readonly listRuns: (
     header: string | null,
     query: ListRunsQuery,
-  ) => Effect.Effect<ListedRunsPage, Unauthorized | PersistenceError>
+  ) => Effect.Effect<
+    ListedRunsPage,
+    Unauthorized | PersistenceError | InvalidInput
+  >
   readonly timeline: (
     header: string | null,
     runId: string,
@@ -61,7 +84,10 @@ export interface GetProjectWorkflowDataService {
     userId: string,
     query: ListRunsQuery,
     projectId?: string,
-  ) => Effect.Effect<ListedRunsPage, Unauthorized | PersistenceError>
+  ) => Effect.Effect<
+    ListedRunsPage,
+    Unauthorized | PersistenceError | InvalidInput
+  >
   readonly timelineForUser: (
     userId: string,
     runId: string,
@@ -211,7 +237,29 @@ export class GetProjectWorkflowData extends Context.Service<
         return yield* repository.intelligence(projectId, query)
       })
 
+      const businessInsights = Effect.fn(
+        "GetProjectWorkflowData.businessInsights",
+      )(function* (header: string | null, query: BusinessInsightsQuery) {
+        return yield* repository.businessInsights(
+          yield* authorization.authorize(header, "read"),
+          query,
+        )
+      })
+      const businessInsightsForUser = Effect.fn(
+        "GetProjectWorkflowData.businessInsightsForUser",
+      )(function* (
+        userId: string,
+        query: BusinessInsightsQuery,
+        requestedProjectId?: string,
+      ) {
+        return yield* repository.businessInsights(
+          yield* authorization.authorizeUser(userId, requestedProjectId),
+          query,
+        )
+      })
       return GetProjectWorkflowData.of({
+        businessInsights,
+        businessInsightsForUser,
         snapshot,
         workflows,
         listRuns,
