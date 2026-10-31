@@ -145,7 +145,7 @@ key, or omit the key and proxy via `@flowmarkdev/node/next/proxy`.
   not fail the run by itself.
 - `error({ handled })` stays on the timeline. Only `fail()` makes the run
   failed.
-- `done()` / `fail()`: first terminal wins. Open operations delay completion;
+- `done()` / `fail()`: first terminal accepted by the server wins across requests. Open operations delay completion;
   `fail()` can supersede a pending `done()`.
 - `retryable` describes a failure. Flowmark does not retry your work.
 - Node: `await flowmark.shutdown()` before process exit. `flush()` /
@@ -257,3 +257,25 @@ amendments, never step/operation context. Existing stored values become searchab
 when enabled; disable the key to revoke filtering. Keep personal data and secrets
 out of telemetry. Execution IDs remain distinct from business references. No new
 SDK field or package release is required for this search capability.
+
+## Cross-request continuation
+
+Save and explicitly propagate a `WorkflowRunReference` (`{ workflow, runId }`)
+from the submission to an authorized callback, then call
+`flowmark.workflow(ref.workflow, { id: ref.runId })`. The reference is a plain
+identity within the credential's project, not an authorization token or remote
+state lookup. Repeated starts never amend original context/release/environment;
+use accepted `setProperties()` calls while open. A new attempt gets a new ID.
+
+Do not complete a booking submission while it still awaits its business callback.
+A later process/client may continue the open run. Local operation waiting cannot
+coordinate other handles. Replayed envelope IDs are duplicates; new terminal
+IDs after closing are HTTP 409 conflicts, even for identical payloads. Ordinary
+post-terminal markers are ignored explicitly. Conflicts reach diagnostics and
+explicit drain failures; application behavior is preserved. Historical mixed
+terminals retain their stored interpretation. The accepting backend is required
+for this policy; old backends keep their old behavior. No schema change or
+package publication is included here.
+
+See [the continuation decision and transition matrix](https://github.com/Mumma6/flowmark/blob/staging/docs/sdk/run-continuation.md)
+and [the booking example](https://github.com/Mumma6/flowmark/blob/staging/packages/sdk/examples/booking-continuation.mjs).

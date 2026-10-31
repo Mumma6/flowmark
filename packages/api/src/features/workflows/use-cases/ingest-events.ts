@@ -1,5 +1,5 @@
 import { Context, Effect, Layer, Schema } from "effect"
-import { EventEnvelopeSchema } from "@flowmarkdev/core"
+import { type AppendDisposition, EventEnvelopeSchema } from "@flowmarkdev/core"
 import {
   InvalidInput,
   PersistenceError,
@@ -14,7 +14,7 @@ export interface IngestWorkflowEventsService {
     authorization: string | null,
     input: Effect.Effect<unknown, InvalidInput>,
   ) => Effect.Effect<
-    void,
+    AppendDisposition,
     Unauthorized | InvalidInput | PersistenceError | RunNotFound
   >
 }
@@ -40,7 +40,7 @@ export class IngestWorkflowEvents extends Context.Service<
             ),
           ),
         )
-        yield* repository.append(projectId, eventId, event)
+        return yield* repository.append(projectId, eventId, event)
       })
 
       return IngestWorkflowEvents.of({ ingest })

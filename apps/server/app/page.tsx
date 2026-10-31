@@ -40,10 +40,16 @@ const eventExample = JSON.stringify(
 )
 
 const ingestionCodes: [string, string][] = [
-  ["202", 'Persisted, or duplicate event ID ignored. {"accepted":true}'],
+  [
+    "202",
+    "Explicit receipt: recorded, duplicate or ignored; ignored markers have accepted=false.",
+  ],
   ["400", "Invalid JSON, invalid event envelope, or body over 64 KiB."],
   ["401", "Missing, invalid, or wrong-purpose Bearer key."],
-  ["409", "Send the started event before other run events."],
+  [
+    "409",
+    "Missing start (RUN_NOT_FOUND) or terminal/event-ID conflict (EVENT_CONFLICT).",
+  ],
   ["503", "Configuration or event storage unavailable."],
 ]
 
@@ -105,7 +111,7 @@ const endpoints: Endpoint[] = [
   -H "Authorization: Bearer $FLOWMARK_WRITE_KEY" \\
   -H "Content-Type: application/json" \\
   --data '${eventExample}'`,
-    response: '{"accepted":true}',
+    response: '{"accepted":true,"disposition":"recorded"}',
     codes: ingestionCodes,
     notes:
       "Keep write keys on a trusted server. Never put them in NEXT_PUBLIC_* variables, browser bundles, screenshots, or client-side requests. Reuse the same eventId when retrying the same event.",
@@ -128,11 +134,14 @@ await fetch("${apiOrigin}/v1/browser-events", {
   },
   body: JSON.stringify(${eventExample}),
 });`,
-    response: '{"accepted":true}',
+    response: '{"accepted":true,"disposition":"recorded"}',
     codes: [
       ...ingestionCodes.slice(0, 3),
       ["403", "Missing Origin, or origin not allowed for this browser key."],
-      ["409", "Send the started event before other run events."],
+      [
+        "409",
+        "Missing start (RUN_NOT_FOUND) or terminal/event-ID conflict (EVENT_CONFLICT).",
+      ],
       ["429", "120 events/minute/key exceeded; Retry-After: 60."],
       ingestionCodes[4]!,
     ],

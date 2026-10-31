@@ -129,3 +129,24 @@ creates the scoped configuration table and a GIN index over run properties.
 Apply it before deploying the accepting API. Index creation scans existing runs
 and can block writes; verify its duration in isolated Preview before merge.
 Production rollout and npm publication remain separate operations.
+
+## Event acknowledgments and terminal ordering
+
+Private and direct browser ingestion return HTTP 202 with `accepted` and
+`disposition`: `recorded` for a new persisted event, `duplicate` for an existing
+event ID in that execution, or `ignored` for repeated starts/ordinary late
+markers. Ignored receipts have `accepted: false`; they are not new evidence.
+
+A new completed/failed event after any terminal is HTTP 409 with
+`{ accepted: false, disposition: "conflict", code: "EVENT_CONFLICT" }`.
+Event-ID collisions with another execution also return a generic conflict,
+without foreign identifiers. Missing starts use HTTP 409 `RUN_NOT_FOUND`.
+Duplicate IDs are checked before terminal decisions, so a real terminal retry
+remains idempotent. Reusing an ID never amends its original payload.
+
+First terminal accepted by persistence wins, independent of application clock
+order. Transaction-scoped locks reserve envelope identities and serialize writes
+per run; these only coordinate telemetry. Final results/outcomes and all original
+start metadata remain stable. Older stored mixed terminals retain their failed
+projection. No backfill/schema migration is required; deploying the accepting
+backend changes future writes. Older backends still use their existing policy.

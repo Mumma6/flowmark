@@ -363,3 +363,23 @@ durable delivery, and a backup restore drill are not implemented. A
 register-and-ingest pass against that deployment has not been recorded.
 The direct browser-key quota is a basic per-key limit, not production-grade
 abuse prevention. No offline queue or durable delivery guarantee exists.
+
+## Continued runs and terminal arbitration
+
+Application-owned `WorkflowRunReference` values identify a workflow/external run
+ID within credential-derived project scope. Repeated starts are no-op metadata
+reports, never context amendments. New attempts get new execution IDs.
+
+Persistence reserves envelope identity with a transaction-scoped advisory lock
+and then locks the owning run row before terminal checks/insertion. First
+accepted terminal wins for future writes; duplicate, ignored and conflicting
+outcomes are explicit. Closed-run ordinary markers cannot reopen execution or
+amend final results. HTTP edges map conflicts to 409 and successful receipts to
+202; SDK delivery diagnostics and explicit drains preserve application errors.
+The proxy validates and forwards receipt JSON without inventing disposition for
+older accepting backends.
+
+Read models intentionally keep the failed projection for historical stored runs
+with both terminal kinds. No history rewrite, schema migration, global worker
+coordination or background execution is introduced. See the
+[approved transition/compatibility decision](sdk/run-continuation.md).

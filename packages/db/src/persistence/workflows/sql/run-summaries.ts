@@ -22,7 +22,8 @@ const businessPredicate = (projectId: string, filter?: BusinessFilter) =>
 `
 /**
  * One row per project run, with last-reported terminal status.
- * Failed wins over completed; missing terminal events stay Running.
+ * First terminal wins for new writes; historical mixed terminals retain Failed.
+ * Missing terminal events stay Running.
  */
 export const projectRunSummaries = (
   projectId: string,

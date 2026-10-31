@@ -7,19 +7,15 @@ import {
 
 test("an open run accepts later markers", () => {
   assert.equal(runTerminal(new Set(["started", "step"])), "open")
-  assert.equal(ignoreContinuedEvent("open", "step"), false)
-  assert.equal(ignoreContinuedEvent("open", "completed"), false)
+  assert.equal(ignoreContinuedEvent("open"), false)
 })
 
-test("failed wins over completed and ignores later events", () => {
+test("historical mixed terminals remain failed and closed", () => {
   assert.equal(runTerminal(new Set(["completed", "failed"])), "failed")
-  assert.equal(ignoreContinuedEvent("failed", "step"), true)
-  assert.equal(ignoreContinuedEvent("failed", "failed"), true)
+  assert.equal(ignoreContinuedEvent("failed"), true)
 })
 
-test("completed ignores later markers except fail", () => {
+test("completed ignores all later markers", () => {
   assert.equal(runTerminal(new Set(["started", "completed"])), "completed")
-  assert.equal(ignoreContinuedEvent("completed", "step"), true)
-  assert.equal(ignoreContinuedEvent("completed", "completed"), true)
-  assert.equal(ignoreContinuedEvent("completed", "failed"), false)
+  assert.equal(ignoreContinuedEvent("completed"), true)
 })

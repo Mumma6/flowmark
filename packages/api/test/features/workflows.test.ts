@@ -43,7 +43,7 @@ const input = {
 
 function repository(overrides: Partial<WorkflowRepositoryService> = {}) {
   return WorkflowRepository.of({
-    append: () => Effect.void,
+    append: () => Effect.succeed("recorded"),
     snapshot: () =>
       Effect.succeed({
         runs: [],

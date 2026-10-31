@@ -63,3 +63,13 @@ terminal error and `fail(...)`.
 For the current stack and authentication, see
 [local development](./local-development) and
 [security and privacy](./security-privacy).
+
+## Callback reports HTTP 409 after completion
+
+Check whether another request already closed the same workflow and external
+run ID. EVENT_CONFLICT means the new report was not recorded; it does not change
+the existing final result. RUN_NOT_FOUND instead means no start was recorded in
+the credential's project. Do not complete a submission before an expected
+application callback if they belong to one execution. Application retries need
+a new execution ID; transport retries retain their envelope event ID. Flowmark
+does not deduplicate or retry the underlying business work.

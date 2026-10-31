@@ -20,6 +20,7 @@ export type {
 } from "../types/index.js"
 export type {
   JsonValue,
+  WorkflowRunReference,
   WorkflowRunId,
   WorkflowError,
   WorkflowCorrelationId,

@@ -55,21 +55,24 @@ describe("Next.js integration", () => {
     ).toMatchObject({ type: "completed", workflow: "todo.add" })
   })
 
-  it("logs failed delivery without rejecting Next's after callback", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn<typeof fetch>(async () => new Response(null, { status: 401 })),
-    )
-    const log = vi.spyOn(console, "error").mockImplementation(() => {})
-    const flowmark = createFlowmark({
-      apiKey: "key",
-      apiUrl: "http://localhost",
-      onInstrumentationError: vi.fn(),
-    })
-    flowmark.workflow("todo.add").done()
-    await expect(callbacks[0]()).resolves.toBeUndefined()
-    expect(log).toHaveBeenCalledOnce()
-  })
+  it.each([401, 409])(
+    "logs HTTP %s delivery failure without rejecting Next's after callback",
+    async (status) => {
+      vi.stubGlobal(
+        "fetch",
+        vi.fn<typeof fetch>(async () => new Response(null, { status })),
+      )
+      const log = vi.spyOn(console, "error").mockImplementation(() => {})
+      const flowmark = createFlowmark({
+        apiKey: "key",
+        apiUrl: "http://localhost",
+        onInstrumentationError: vi.fn(),
+      })
+      flowmark.workflow("todo.add").done()
+      await expect(callbacks[0]()).resolves.toBeUndefined()
+      expect(log).toHaveBeenCalledOnce()
+    },
+  )
 
   it("rejects unsupported Next.js contexts before initializing the client", () => {
     vi.mocked(after).mockImplementationOnce(() => {

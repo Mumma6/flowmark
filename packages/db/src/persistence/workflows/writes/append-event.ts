@@ -69,6 +69,36 @@ export const appendEvent = Effect.fn("appendEvent")(function* (
     db.transaction((tx) =>
       Effect.runPromise(
         Effect.gen(function* () {
+          // Reserve envelope identity before creating rows; a rejected start leaves no phantom run.
+          yield* runQuery(DatabaseOperation.AppendEvent, () =>
+            tx.execute(
+              sql`select pg_advisory_xact_lock(hashtextextended(${eventId}::text, 0))`,
+            ),
+          )
+          const [existing] = yield* runQuery(
+            DatabaseOperation.AppendEvent,
+            () =>
+              tx
+                .select({
+                  projectId: workflows.projectId,
+                  workflow: workflows.name,
+                  externalId: workflowRuns.externalId,
+                })
+                .from(workflowEvents)
+                .innerJoin(
+                  workflowRuns,
+                  eq(workflowEvents.runId, workflowRuns.id),
+                )
+                .innerJoin(workflows, eq(workflowRuns.workflowId, workflows.id))
+                .where(eq(workflowEvents.eventId, eventId)),
+          )
+          if (existing) {
+            return existing.projectId === projectId &&
+              existing.workflow === event.workflow &&
+              existing.externalId === event.runId
+              ? ("duplicate" as const)
+              : ("conflict" as const)
+          }
           yield* runQuery(DatabaseOperation.AppendEvent, () =>
             tx
               .insert(workflows)
@@ -119,20 +149,28 @@ export const appendEvent = Effect.fn("appendEvent")(function* (
               .for("update"),
           )
           if (!run) {
-            return false
+            return "missing" as const
           }
           const recorded = yield* runQuery(DatabaseOperation.AppendEvent, () =>
             tx
-              .select({ type: workflowEvents.type })
+              .select({
+                type: workflowEvents.type,
+                eventId: workflowEvents.eventId,
+              })
               .from(workflowEvents)
               .where(eq(workflowEvents.runId, run.id)),
           )
+          if (recorded.some((row) => row.eventId === eventId)) {
+            return "duplicate" as const
+          }
           const types = new Set(recorded.map((row) => row.type))
           if (event.type === "started" && types.has("started")) {
-            return true
+            return "ignored" as const
           }
-          if (ignoreContinuedEvent(runTerminal(types), event.type)) {
-            return true
+          if (ignoreContinuedEvent(runTerminal(types))) {
+            return event.type === "completed" || event.type === "failed"
+              ? ("conflict" as const)
+              : ("ignored" as const)
           }
           const failure = eventFailure(event)
           const error = eventError(event, failure)
@@ -170,7 +208,7 @@ export const appendEvent = Effect.fn("appendEvent")(function* (
                 .returning({ id: workflowEvents.id }),
           )
           if (!inserted) {
-            return true
+            return "conflict" as const
           }
           const changes = runUpdates(event, error, result)
           if (Object.keys(changes).length > 0) {
@@ -181,12 +219,13 @@ export const appendEvent = Effect.fn("appendEvent")(function* (
                 .where(eq(workflowRuns.id, run.id)),
             )
           }
-          return true
+          return "recorded" as const
         }),
       ),
     ),
   )
-  if (!accepted) {
+  if (accepted === "missing") {
     return yield* Effect.fail(new MissingRunError({ runId: event.runId }))
   }
+  return accepted
 })
