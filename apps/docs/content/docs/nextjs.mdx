@@ -73,11 +73,11 @@ See [local development](/docs/local-development) for the current stack and
 ## Request lifecycle
 
 Create the shared adapter in a server-only module, then start runs inside a
-supported request context. The adapter returns only `workflow()`; it does not
+supported request context. The adapter returns workflow/definition and expectation settlement methods; it does not
 expose manual `flush()` or `shutdown()`.
 
-Each call to `workflow()` creates a separate delivery client for that request
-lifecycle. No React provider, callback wrapper, or special configuration file
+Each workflow start or expectation settlement call creates a separate delivery
+client and registers its drain in that request lifecycle. No React provider, callback wrapper, or special configuration file
 is needed.
 
 ## Continue instrumenting
@@ -86,3 +86,7 @@ The returned run has the [standard marker API](/docs/reference):
 checkpoints, operations, progress, errors, properties, and completion.
 Use [`operation()`](/docs/reference/operation) for measured work and
 [`done({ result })`](/docs/reference/completion) for a bounded business summary.
+
+## Expectation evidence
+
+[Expected confirmations](/docs/reference/expectations) require the accepting `expectations-v1` server and migrations. Resolve/cancel are explicit, project-scoped evidence reports and may follow a terminal run without changing its outcome/result. Direct browser evidence stays untrusted; the existing generic server-key proxy rejects expectation events. Deadlines are evaluated on read from server observation, without background notifications or a retention extension.

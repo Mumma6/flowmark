@@ -1,0 +1,3 @@
+ALTER TABLE "workflow_events" ADD COLUMN "expectation_effective" boolean DEFAULT false NOT NULL;--> statement-breakpoint
+ALTER TABLE "workflow_events" ADD COLUMN "expectation_owner_id" uuid;--> statement-breakpoint
+ALTER TABLE "workflow_events" ADD CONSTRAINT "workflow_events_expectation_owner_id_workflow_expectations_id_fk" FOREIGN KEY ("expectation_owner_id") REFERENCES "public"."workflow_expectations"("id") ON DELETE cascade ON UPDATE no action;

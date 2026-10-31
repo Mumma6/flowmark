@@ -5,6 +5,8 @@ import {
 } from "./run-presentation"
 
 export interface ExportableRunEvent {
+  readonly expectation?: unknown
+  readonly expectationObservedAt?: string | null
   readonly id: string
   readonly type: string
   readonly step: string | null
@@ -132,6 +134,8 @@ export function buildTimelineExport(events: ReadonlyArray<ExportableRunEvent>) {
     retryOf: first.retryOf ?? null,
     events: events.map((event) => ({
       id: event.id,
+      expectation: event.expectation ?? null,
+      expectationObservedAt: event.expectationObservedAt ?? null,
       type: event.type,
       timestamp: event.timestamp,
       receivedAt: event.receivedAt,

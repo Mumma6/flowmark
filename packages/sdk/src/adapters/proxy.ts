@@ -1,3 +1,4 @@
+import { isExpectationEvent } from "@flowmarkdev/core"
 import { HttpClient, HttpClientRequest } from "effect/http"
 import { Data, Effect, Exit, Match, Schema, Stream } from "effect"
 import { fetchClientLayer } from "../delivery/adapters/fetch-client.js"
@@ -114,6 +115,15 @@ export function createFlowmarkProxy(config: FlowmarkProxyConfig = {}) {
         }
       }
       const envelope = yield* readEnvelope(request)
+      if (isExpectationEvent(envelope.event)) {
+        return Response.json(
+          {
+            error: "Browser expectations require direct public-key delivery.",
+            code: "EXPECTATION_SOURCE_FORBIDDEN",
+          },
+          { status: 403 },
+        )
+      }
       const settings = yield* Effect.try(() => resolveSettings(config))
       const client = (yield* HttpClient.HttpClient).pipe(HttpClient.withScope)
       const upstream = yield* HttpClientRequest.post(

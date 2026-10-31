@@ -1,4 +1,10 @@
 import type {
+  ExpectationReference,
+  ExpectationOptions,
+  ExpectationResolution,
+  ExpectationCancellation,
+} from "@flowmarkdev/core"
+import type {
   WorkflowAttempt,
   WorkflowRetryReference,
   WorkflowEvent,
@@ -156,6 +162,8 @@ export interface WorkflowOptions extends WorkflowRunOptions {
  * strings, and 16 KiB encoded per object.
  */
 export interface Flow {
+  /** Declares bounded expected evidence; does not wait or execute work. Requires expectations-v1 server. */
+  expect(name: string, options: ExpectationOptions): ExpectationReference
   /** This run's SDK identifier (options.id, or a generated UUID). */
   readonly runId: WorkflowRunId
   /**
@@ -263,6 +271,15 @@ export interface WorkflowDefinition<
 
 /** Ordinary TypeScript client; Effect execution is managed internally. */
 export interface FlowmarkClient {
+  /** Record evidence for an existing expectation, including after run termination. No workflow is started. */
+  resolveExpectation(
+    reference: ExpectationReference,
+    options?: ExpectationResolution,
+  ): void
+  cancelExpectation(
+    reference: ExpectationReference,
+    options: ExpectationCancellation,
+  ): void
   /** Read-only cumulative local delivery health, available after shutdown too. */
   deliveryHealth(): DeliveryHealth
   /** Inert reusable instrumentation definition; start uses this client's existing lifecycle. */

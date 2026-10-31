@@ -39,11 +39,11 @@ See [configuration](/docs/configuration) for URL rules and precedence.
 import { createFlowmark } from "@flowmarkdev/node/next"
 
 const flowmark = createFlowmark()
-// Exposes workflow() only; no flush() or shutdown().
+// Exposes workflow/definition and expectation settlement methods; no manual drains.
 ```
 
 Accepts the same server options but creates a request-scoped delivery client
-when `workflow()` is called. Call it only in supported Route Handler or
+when a workflow starts or an expectation settlement is reported. Call it only in supported Route Handler or
 Server Action contexts; `after()` drains after the response.
 Pass `onDeliveryHealth(health)` to the Next `createFlowmark()` or `defineConfig()` to observe
 final request-local counters after each workflow drains; it runs on failed drains

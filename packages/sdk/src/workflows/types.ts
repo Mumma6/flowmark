@@ -1,3 +1,7 @@
+import type {
+  ExpectationOptions,
+  ExpectationReference,
+} from "@flowmarkdev/core"
 import type { RunEventRecorder } from "./workflow-events.js"
 import type { Effect } from "effect"
 import type {
@@ -22,6 +26,10 @@ export interface WorkflowOperationHandle {
 }
 
 export interface WorkflowHandle {
+  readonly expect: (
+    name: string,
+    options: ExpectationOptions,
+  ) => Effect.Effect<ExpectationReference>
   readonly runId: string
   readonly step: (
     name: WorkflowStepName,

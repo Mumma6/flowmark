@@ -1,13 +1,14 @@
 # Durable expectations contract
 
-TASK-012 design decision, 31 October 2026. **Planned for TASK-014; none of the
-APIs, events, storage or UI below are implemented by this document.** This is the
-implementation contract, not a feature-activation proposal. Flowmark observes
+TASK-012 design decision, 31 October 2026; implemented in source by TASK-014.
+**Requires the accepting migrations/API/readers and a separately published aligned
+SDK release.** Source implementation does not establish hosted rollout or npm
+availability. This document records the implemented contract. Flowmark observes
 application-owned work; it never executes, schedules, retries or confirms it.
 
 ## Public API and identity
 
-Planned ordinary TypeScript signatures, available from Node, Next and browser:
+Ordinary TypeScript signatures, available from Node, Next and browser:
 
 ```ts
 import type { WorkflowOutcome, WorkflowResult } from "@flowmarkdev/core"
@@ -113,7 +114,7 @@ background observation or alert.
 
 ## Facts, acceptance and ordering
 
-Three planned wire events extend the existing `{ eventId, event }` envelope.
+Three wire events extend the existing `{ eventId, event }` envelope.
 All include `workflow`, `runId` and application `timestamp` as today:
 
 ```ts
@@ -237,7 +238,7 @@ prove its business event occurred.
 
 ## Persistence, reads, retention and UI
 
-TASK-014 adds the three event enum values and bounded expectation payload storage
+The implementation adds the three event enum values and bounded expectation payload storage
 on immutable workflow events, plus a minimal `workflow_expectations` projection
 keyed uniquely by owning internal run ID and expectation ID. Projection stores
 nullable declaration/action fact references, fixed declaration/deadline times,
@@ -299,7 +300,7 @@ not all business promises ever made. Cleanup policy itself is outside this task.
 
 ## Worked booking and acceptance scenarios
 
-Illustrative application-owned booking; these APIs are planned, not runnable yet:
+Illustrative application-owned booking, requiring an accepting backend:
 
 ```ts
 const flow = flowmark.workflow("booking.submit")
@@ -371,10 +372,10 @@ immutable facts/projection → read state → dashboard for each case in TASK-01
     a successful confirmation. Projection rebuild from retained intact facts
     preserves timestamps, deadline, first action and state.
 
-## TASK-014 implementation and rollout order
+## Implementation and rollout order
 
 1. Core schemas, pure state/grammar rules and fake-clock fixtures; public types
-   remain planned until the runtime is delivered. Cover every scenario above.
+   are delivered with the runtime. Cover every scenario above.
 2. Add enum/payload/projection migrations and transactional acceptance rules;
    verify a populated loopback upgrade, immutable facts and rebuild behavior.
 3. Implement authorized API reads/writes, full-cohort filter/count SQL and
@@ -401,11 +402,47 @@ properties or a locally successful promise. Accepting responses carry capability
 existing attempts acknowledgment pattern. Proxies must fail closed for the
 initial unsupported expectation path. A missing capability is a delivery failure;
 a post-submission acknowledgment cannot undo an older server's accepted write.
-Custom transports own compatibility and must document it.
+Server HTTP expectation writes additionally require `X-Flowmark-Expectations: v1`
+alongside the secret write credential. The server SDK sets it only for these
+reports. This is an explicit protocol opt-in, not an independent credential or a
+trusted browser source claim. The generic proxy never forwards caller headers
+and rejects expectation event types, so an older proxy with a newer core schema
+cannot accidentally attest these reports through its existing forwarding path.
+Custom transports targeting `/v1/events` must set the marker themselves; direct
+public-browser ingestion uses its own namespace/credential checks and needs no
+extra CORS header. Custom transports own compatibility and must document it.
 
 [Migration rollout](../migrations.md): verify locally, then approved exact-SHA
 Preview migration/behavior, then the activated approved Staging merge pipeline
 (migrate → API/readers → verify). Production belongs to an approved release.
 Only after accepting storage/API/readers are available may users enable the new
 SDK methods; aligned core/node publishing requires separate approval. This
-contract PR performs no migration, deployment, retention change or publication.
+implementation performs no hosted migration, deployment, retention-policy change
+or publication without separate authorization.
+
+## Implementation verification and storage ownership
+
+TASK-014 implements the three event types, ordinary SDK methods and advanced
+client factory, authenticated reads, full-cohort filtering/attention and dashboard
+evidence. The generic proxy deliberately rejects the new events; direct browser
+reports remain namespaced and untrusted. HTTP writers require `expectations-v1`.
+
+Migrations `0013_mysterious_onslaught.sql` and `0014_icy_night_thrasher.sql` are
+additive and must both precede the accepting code. Canonical receipts are marked
+server-side; later semantic duplicates remain immutable audit receipts. A
+nullable event owner points to its expectation identity anchor; canonical fact
+references point back. Deleting a canonical fact or identity anchor cascades
+through that expectation's owned receipts/projection, without deleting ordinary
+run events. This prevents a dangling projection from becoming an archive of
+expired evidence. Rebuild updates derived columns in place from canonical
+receipts and their original observation times; do not truncate/delete identity
+anchors as a cache rebuild. Incomplete canonical evidence is unavailable, not a
+new deadline. No public rebuild or cleanup endpoint is added.
+
+The persistence clock defaults to database observation and can be scoped with
+Effect for deterministic isolated tests. There is no hosted/environment clock
+override, scheduler or system-clock change. The test suite exercises boundary
+clocks, duplicates, unmatched/concurrent reports, two-project/browser trust,
+terminal immutability, retained ownership/rebuild and population counts beyond
+the first 100 runs. Preview and release environment verification remain separate
+rollout gates under the migration guide.

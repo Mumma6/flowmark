@@ -1,3 +1,4 @@
+import type { RunExpectations } from "@flowmarkdev/core"
 import type { WorkflowAttempt, WorkflowRetryReference } from "@flowmarkdev/core"
 import type { PeerPopulation, PeerSelection } from "@flowmarkdev/core"
 import type { RatioSelection } from "@flowmarkdev/core"
@@ -163,6 +164,8 @@ export interface IntelligenceQuery {
 }
 
 export interface RunTimelineEvent {
+  readonly expectation?: import("@flowmarkdev/core").ExpectationEvent | null
+  readonly expectationObservedAt?: string | null
   readonly attempt?: WorkflowAttempt | null
   readonly retryOf?: WorkflowRetryReference | null
   readonly id: string
@@ -207,6 +210,7 @@ export interface ListedRun extends StoredRun {
 }
 
 export interface ListRunsQuery {
+  readonly expectationState?: import("@flowmarkdev/core").ExpectationState
   readonly ratioSelection?: RatioSelection
   readonly resultSelection?: ResultSelection
   readonly outcome?: string
@@ -232,6 +236,7 @@ export interface ListRunsQuery {
 }
 
 export interface ListedRunsPage {
+  readonly attention?: import("@flowmarkdev/core").ExpectationAttention
   readonly runs: ReadonlyArray<ListedRun>
   readonly nextCursor: string | null
   readonly total: number
@@ -239,6 +244,10 @@ export interface ListedRunsPage {
 }
 
 export interface WorkflowRepositoryService {
+  readonly expectations: (
+    projectId: string,
+    runId: string,
+  ) => Effect.Effect<RunExpectations, PersistenceError>
   readonly businessInsights: (
     projectId: string,
     query: BusinessInsightsQuery,

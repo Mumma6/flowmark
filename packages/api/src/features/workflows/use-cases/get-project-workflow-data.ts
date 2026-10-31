@@ -1,3 +1,4 @@
+import type { RunExpectations } from "@flowmarkdev/core"
 import type { PeerSelection } from "@flowmarkdev/core"
 import type { BusinessInsightsQuery, BusinessInsights } from "@flowmarkdev/core"
 import { Context, Effect, Layer } from "effect"
@@ -20,6 +21,15 @@ import {
 } from "../ports/workflow-repository.js"
 
 export interface GetProjectWorkflowDataService {
+  readonly expectations: (
+    header: string | null,
+    runId: string,
+  ) => Effect.Effect<RunExpectations, Unauthorized | PersistenceError>
+  readonly expectationsForUser: (
+    userId: string,
+    runId: string,
+    projectId?: string,
+  ) => Effect.Effect<RunExpectations, Unauthorized | PersistenceError>
   readonly businessInsights: (
     header: string | null,
     query: BusinessInsightsQuery,
@@ -273,6 +283,22 @@ export class GetProjectWorkflowData extends Context.Service<
         )
       })
       return GetProjectWorkflowData.of({
+        expectations: Effect.fn("GetProjectWorkflowData.expectations")(
+          function* (header, runId) {
+            return yield* repository.expectations(
+              yield* authorization.authorize(header, "read"),
+              runId,
+            )
+          },
+        ),
+        expectationsForUser: Effect.fn(
+          "GetProjectWorkflowData.expectationsForUser",
+        )(function* (userId, runId, requestedProjectId) {
+          return yield* repository.expectations(
+            yield* authorization.authorizeUser(userId, requestedProjectId),
+            runId,
+          )
+        }),
         businessInsights,
         businessInsightsForUser,
         snapshot,

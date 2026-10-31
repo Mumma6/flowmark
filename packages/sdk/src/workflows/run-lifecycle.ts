@@ -33,7 +33,7 @@ export class WorkflowRuns extends Context.Service<
             options.id ??
             (yield* Effect.sync(() => globalThis.crypto.randomUUID()))
 
-          const { record } = yield* events.forRun(workflow, runId)
+          const { record, diagnose } = yield* events.forRun(workflow, runId)
 
           const state = yield* RunState
 
@@ -70,6 +70,7 @@ export class WorkflowRuns extends Context.Service<
           return {
             runId,
             record,
+            diagnose,
             isFinished: state.isFinished,
             isOpen: state.isOpen,
             done,

@@ -171,6 +171,8 @@ export function RunsTable({
 }
 
 type ExplorerFilters = {
+  expectationState: string
+  startedBeforeExact: string
   ratioNumerator: string
   ratioDenominator: string
   definitionRevision: string
@@ -198,6 +200,8 @@ type ExplorerFilters = {
 }
 
 const defaults: ExplorerFilters = {
+  expectationState: "all",
+  startedBeforeExact: "",
   ratioNumerator: "",
   ratioDenominator: "",
   definitionRevision: "",
@@ -375,14 +379,19 @@ export function RunExplorer({
           : filters.namespace === "server"
             ? ("application" as const)
             : undefined,
+      expectationState: (
+        ["pending", "overdue", "met-on-time", "met-late", "cancelled"] as const
+      ).find((state) => state === filters.expectationState),
       startedAfter:
         filters.startedAfterExact ||
         (filters.startedAfter
           ? `${filters.startedAfter}T00:00:00.000Z`
           : undefined),
-      startedBefore: filters.startedBefore
-        ? `${filters.startedBefore}T23:59:59.999Z`
-        : undefined,
+      startedBefore:
+        filters.startedBeforeExact ||
+        (filters.startedBefore
+          ? `${filters.startedBefore}T23:59:59.999Z`
+          : undefined),
       cursor: cursor ?? undefined,
       limit: 25,
     }),
@@ -397,7 +406,28 @@ export function RunExplorer({
   const nextCursor = list.data?.nextCursor ?? null
   return (
     <div>
+      {filters.expectationState !== "all" &&
+        !filters.startedAfter &&
+        !filters.startedAfterExact && (
+          <p className="px-5 py-3 text-sm text-muted-foreground">
+            Expectation discovery uses the last 30 days unless dates are
+            supplied. Counts describe retained observed evidence.
+          </p>
+        )}
       <div className="flex flex-wrap items-end gap-3 border-b border-border/60 bg-muted/20 p-5">
+        <FilterSelect
+          label="Expectation state"
+          value={filters.expectationState}
+          onChange={(value) => update("expectationState", value)}
+          options={[
+            { value: "all", label: "All expectations" },
+            { value: "pending", label: "Pending confirmation" },
+            { value: "overdue", label: "Overdue — no resolution observed" },
+            { value: "met-on-time", label: "Observed on time" },
+            { value: "met-late", label: "Observed late" },
+            { value: "cancelled", label: "Cancelled" },
+          ]}
+        />
         <label className="grid min-w-0 flex-[1_1_240px] gap-2 text-xs text-muted-foreground sm:max-w-[360px]">
           <span>Search runs</span>
           <div className="relative">
@@ -568,15 +598,24 @@ export function RunExplorer({
           </>
         )}
         {(filters.startedAfterExact ||
+          filters.startedBeforeExact ||
           filters.startedBeforeExclusive ||
           filters.terminalOnly) && (
           <p className="text-xs text-muted-foreground sm:col-span-2 xl:col-span-3">
             Evidence cohort: {filters.startedAfterExact || "unbounded start"}{" "}
-            inclusive → {filters.startedBeforeExclusive || "unbounded end"}{" "}
-            exclusive;{" "}
-            {filters.terminalOnly === "true"
-              ? "finished runs only"
-              : "all statuses"}
+            inclusive →{" "}
+            {filters.startedBeforeExact ||
+              filters.startedBeforeExclusive ||
+              "unbounded end"}{" "}
+            {filters.startedBeforeExact ? "inclusive" : "exclusive"};{" "}
+            {filters.startedBeforeExact && filters.startedBeforeExclusive && (
+              <>also before {filters.startedBeforeExclusive} exclusive; </>
+            )}
+            {filters.status !== "all"
+              ? filters.status
+              : filters.terminalOnly === "true"
+                ? "finished runs only"
+                : "all statuses"}
             . Clear filters to leave this cohort.
           </p>
         )}
@@ -765,6 +804,8 @@ export function RunExplorer({
                       definitionRevision: "Definition",
                       outcome: "Outcome",
                       terminalOnly: "Finished only",
+                      expectationState: "Expectation state",
+                      startedBeforeExact: "Before (exact)",
                       startedAfterExact: "After (exact)",
                       startedBeforeExclusive: "Before (exclusive)",
                       resultPath: "Result path",

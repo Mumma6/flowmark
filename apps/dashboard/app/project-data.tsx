@@ -1,5 +1,7 @@
 "use client"
 
+import { RunExpectations } from "./run-expectations"
+import { ExpectationAttention } from "./expectation-attention"
 import { BusinessOutcomes } from "./business-outcomes"
 
 import { WorkflowSearchFields } from "./workflow-search-fields"
@@ -139,6 +141,7 @@ export function DashboardOverview() {
           </span>
         </div>
       </PageHeading>
+      <ExpectationAttention />
       <DataState
         pending={snapshot.isPending}
         error={snapshot.error}
@@ -312,6 +315,7 @@ export function ProjectRuns({
       </PageHeading>
       {workflow && (
         <>
+          <ExpectationAttention workflow={workflow} />
           <BusinessOutcomes key={`outcomes:${workflow}`} workflow={workflow} />
           <WorkflowSearchFields
             key={`search:${workflow}`}
@@ -512,15 +516,19 @@ export function RunDetail({ id }: { id: string }) {
         </Alert>
       )}
       {data && data.length > 0 && (
-        <RunInvestigation
-          events={data}
-          relationships={relationships.data}
-          relationshipsLoading={relationships.isPending}
-          relationshipsError={relationships.error?.message}
-          comparison={comparison.data}
-          comparisonLoading={comparison.isPending}
-          comparisonError={comparison.error?.message}
-        />
+        <>
+          <RunExpectations id={id} />
+          <RunInvestigation
+            key={`${id}:${params.get("event") ?? ""}`}
+            events={data}
+            relationships={relationships.data}
+            relationshipsLoading={relationships.isPending}
+            relationshipsError={relationships.error?.message}
+            comparison={comparison.data}
+            comparisonLoading={comparison.isPending}
+            comparisonError={comparison.error?.message}
+          />
+        </>
       )}
     </div>
   )

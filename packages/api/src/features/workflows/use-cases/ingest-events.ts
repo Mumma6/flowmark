@@ -1,3 +1,5 @@
+import { isExpectationEvent } from "@flowmarkdev/core"
+import { ExpectationSourceForbidden } from "../../../errors.js"
 import { Context, Effect, Layer, Schema } from "effect"
 import { type AppendDisposition, EventEnvelopeSchema } from "@flowmarkdev/core"
 import {
@@ -13,9 +15,14 @@ export interface IngestWorkflowEventsService {
   readonly ingest: (
     authorization: string | null,
     input: Effect.Effect<unknown, InvalidInput>,
+    expectationProtocol?: boolean,
   ) => Effect.Effect<
     AppendDisposition,
-    Unauthorized | InvalidInput | PersistenceError | RunNotFound
+    | Unauthorized
+    | InvalidInput
+    | PersistenceError
+    | RunNotFound
+    | ExpectationSourceForbidden
   >
 }
 export class IngestWorkflowEvents extends Context.Service<
@@ -31,6 +38,7 @@ export class IngestWorkflowEvents extends Context.Service<
       const ingest = Effect.fn("IngestWorkflowEvents.ingest")(function* (
         header: string | null,
         input: Effect.Effect<unknown, InvalidInput>,
+        expectationProtocol = false,
       ) {
         const projectId = yield* authorization.authorize(header, "write")
         const { eventId, event } = yield* input.pipe(
@@ -40,6 +48,9 @@ export class IngestWorkflowEvents extends Context.Service<
             ),
           ),
         )
+        if (isExpectationEvent(event) && !expectationProtocol) {
+          return yield* new ExpectationSourceForbidden()
+        }
         return yield* repository.append(projectId, eventId, event)
       })
 

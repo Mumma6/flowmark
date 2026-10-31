@@ -1,3 +1,11 @@
+import { ExpectationReferenceSchema } from "@flowmarkdev/core"
+import type {
+  ExpectationReference,
+  ExpectationResolution,
+  ExpectationCancellation,
+  ExpectationEvent,
+} from "@flowmarkdev/core"
+import { FlowmarkExpectationError } from "../errors/index.js"
 import {
   genericOperationFailure,
   mapOperationFailure,
@@ -43,6 +51,7 @@ export function makeClient(
   onError?: InstrumentationErrorHandler,
   defaults: Pick<WorkflowRunOptions, "environment" | "release"> = {},
   deliveryOptions: DeliveryOptions = {},
+  source: "server" | "browser" | "proxy" = "server",
 ): InternalClient {
   const options = Result.match(
     Schema.decodeUnknownResult(
@@ -67,6 +76,7 @@ export function makeClient(
   )
   const engine = runtime.runSync(WorkflowEngine)
   const queue = runtime.runSync(DeliveryQueue)
+  const eventService = runtime.runSync(WorkflowEvents)
   let finalHealth: ReturnType<FlowmarkClient["deliveryHealth"]> | undefined
   let shutdownResult: Promise<void> | undefined
 
@@ -78,17 +88,76 @@ export function makeClient(
     runtime.runSync(command)
   }
 
+  const settle = (
+    reference: ExpectationReference,
+    options: ExpectationResolution | ExpectationCancellation,
+    type: "expectation_resolved" | "expectation_cancelled",
+  ) =>
+    runMarker(
+      Effect.gen(function* () {
+        const event = {
+          ...options,
+          type,
+          workflow: reference.workflow,
+          runId: reference.runId,
+          expectationId: reference.expectationId,
+          timestamp: new Date().toISOString(),
+        } as ExpectationEvent
+        if (!Schema.is(ExpectationReferenceSchema)(reference)) {
+          return yield* queue.diagnose(
+            new FlowmarkExpectationError({ reason: "invalid-input" }),
+            event,
+          )
+        }
+        if (
+          source === "proxy" ||
+          (source === "browser" && !reference.workflow.startsWith("browser."))
+        ) {
+          return yield* queue.diagnose(
+            new FlowmarkExpectationError({ reason: "source-forbidden" }),
+            event,
+          )
+        }
+        const recorder = yield* eventService.forRun(
+          reference.workflow,
+          reference.runId,
+        )
+        yield* recorder.record(event)
+      }).pipe(
+        Effect.catchCause(() =>
+          queue.diagnose(
+            new FlowmarkExpectationError({ reason: "invalid-input" }),
+            {
+              type,
+              workflow: "invalid",
+              runId: "invalid",
+              expectationId: "invalid",
+              timestamp: new Date().toISOString(),
+              ...(type === "expectation_cancelled" ? { code: "invalid" } : {}),
+            } as ExpectationEvent,
+          ),
+        ),
+      ),
+    )
   return withWorkflowDefinitions<Omit<InternalClient, "defineWorkflow">>({
+    resolveExpectation: (reference, options = {}) =>
+      settle(reference, options, "expectation_resolved"),
+    cancelExpectation: (reference, options) =>
+      settle(reference, options, "expectation_cancelled"),
     [reportInstrumentationFailure]: (error, event) =>
       runMarker(queue.diagnose(error, event)),
     deliveryHealth: () => finalHealth ?? runtime.runSync(queue.health),
     workflow(name, options = {}) {
-      const nameOfWorkflow = name
+      const workflowName =
+        source === "browser" && !name.startsWith("browser.")
+          ? `browser.${name}`
+          : name
+      const nameOfWorkflow = workflowName
       if (shutdownResult) {
         throw new FlowmarkConfigError({ cause: "Client has been shut down" })
       }
       const handle = runtime.runSync(
-        engine.start(name, {
+        engine.start(workflowName, {
           ...defaults,
           ...options,
           environment: options.environment ?? defaults.environment,
@@ -149,6 +218,59 @@ export function makeClient(
       }
       return {
         runId: handle.runId,
+        expect: (expectationName, expectationOptions) => {
+          const reference: ExpectationReference = {
+            version: 1,
+            workflow:
+              source === "browser" && !name.startsWith("browser.")
+                ? `browser.${name}`
+                : name,
+            runId: handle.runId,
+            expectationId: expectationOptions?.id ?? "",
+          }
+          if (shutdownResult) {
+            console.warn(
+              "[Flowmark] Ignored expectation declaration after client shutdown",
+            )
+            return reference
+          }
+          if (source === "proxy") {
+            runMarker(
+              queue.diagnose(
+                new FlowmarkExpectationError({ reason: "source-forbidden" }),
+                {
+                  type: "expectation_declared",
+                  workflow: name,
+                  runId: handle.runId,
+                  timestamp: new Date().toISOString(),
+                  expectationId: expectationOptions?.id ?? "",
+                  name: expectationName,
+                  withinMs: 0,
+                },
+              ),
+            )
+          } else {
+            runtime.runSync(
+              handle.expect(expectationName, expectationOptions).pipe(
+                Effect.catchCause(() =>
+                  queue.diagnose(
+                    new FlowmarkExpectationError({ reason: "invalid-input" }),
+                    {
+                      type: "expectation_declared",
+                      workflow: name,
+                      runId: handle.runId,
+                      timestamp: new Date().toISOString(),
+                      expectationId: reference.expectationId,
+                      name: expectationName,
+                      withinMs: 0,
+                    },
+                  ),
+                ),
+              ),
+            )
+          }
+          return reference
+        },
         step: (name, stepOptions) => runMarker(handle.step(name, stepOptions)),
         done: (doneOptions) => runMarker(handle.done(doneOptions)),
         fail: (options) => runMarker(handle.fail(options)),

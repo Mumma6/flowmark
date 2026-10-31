@@ -1,3 +1,4 @@
+import { isExpectationEvent } from "@flowmarkdev/core"
 import { Context, Effect, Layer, Redacted, Schema } from "effect"
 import { DEMO_BROWSER_KEY, DIAGNOSTICS_BROWSER_KEY } from "@flowmark/db/demo"
 import { type AppendDisposition, EventEnvelopeSchema } from "@flowmarkdev/core"
@@ -77,6 +78,13 @@ export class IngestBrowserWorkflowEvents extends Context.Service<
           ),
         )
         const event = envelope.event
+        if (
+          isExpectationEvent(event) &&
+          event.type !== "expectation_declared" &&
+          !event.workflow.startsWith("browser.")
+        ) {
+          return yield* new BrowserForbidden()
+        }
         const browserWorkflow = (name: string) =>
           name.startsWith("browser.") ? name : `browser.${name}`
         // Qualify retry references into the same untrusted browser namespace as their owning run.

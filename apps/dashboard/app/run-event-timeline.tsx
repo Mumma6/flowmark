@@ -146,6 +146,7 @@ function hasExpandablePayload(event: RunEvent) {
   return Boolean(
     event.outcome ||
     event.error ||
+    event.expectation ||
     event.properties ||
     event.result != null ||
     event.reason,
@@ -254,6 +255,15 @@ export function RunEventTimeline({ events }: { events: readonly RunEvent[] }) {
                     {event.error && <JsonData value={event.error} />}
                     {!event.error && event.reason && (
                       <p className="text-xs leading-6">{event.reason}</p>
+                    )}
+                    {event.expectation && (
+                      <JsonData
+                        value={{
+                          eventId: event.id,
+                          observedAt: event.expectationObservedAt,
+                          event: event.expectation,
+                        }}
+                      />
                     )}
                     {event.properties && <JsonData value={event.properties} />}
                     {event.result != null && <JsonData value={event.result} />}

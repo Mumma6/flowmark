@@ -66,40 +66,59 @@ export function defineConfig<const T extends NextFlowmarkConfig>(
  */
 export function createFlowmark(
   config: NextFlowmarkConfig = {},
-): Pick<FlowmarkClient, "workflow" | "defineWorkflow"> {
-  return withWorkflowDefinitions<Pick<FlowmarkClient, "workflow">>({
-    workflow(name, options) {
-      const lifecycle: { client?: FlowmarkClient } = {}
-      // Register before starting work so unsupported contexts cannot orphan delivery.
-      after(async () => {
-        const client = lifecycle.client
-        if (!client) {
-          return
-        }
-        try {
-          await client.shutdown()
-        } catch (cause) {
-          console.error(
-            "[Flowmark] Workflow delivery failed; application changes are unaffected.",
-            cause,
-          )
-        } finally {
-          await Effect.runPromise(
-            Effect.sync(() =>
-              config.onDeliveryHealth?.(client.deliveryHealth()),
-            ).pipe(
-              Effect.catchCause(() =>
-                Effect.logWarning("[Flowmark] Delivery health callback failed"),
-              ),
+): Pick<
+  FlowmarkClient,
+  "workflow" | "defineWorkflow" | "resolveExpectation" | "cancelExpectation"
+> {
+  const requestClient = () => {
+    const lifecycle: { client?: FlowmarkClient } = {}
+    // Register before starting work so unsupported contexts cannot orphan delivery.
+    after(async () => {
+      const client = lifecycle.client
+      if (!client) {
+        return
+      }
+      try {
+        await client.shutdown()
+      } catch (cause) {
+        console.error(
+          "[Flowmark] Workflow delivery failed; application changes are unaffected.",
+          cause,
+        )
+      } finally {
+        await Effect.runPromise(
+          Effect.sync(() =>
+            config.onDeliveryHealth?.(client.deliveryHealth()),
+          ).pipe(
+            Effect.catchCause(() =>
+              Effect.logWarning("[Flowmark] Delivery health callback failed"),
             ),
-          )
-        }
-      })
-      const client = createClient(config)
-      lifecycle.client = client
-      return client.workflow(name, options)
-    },
+          ),
+        )
+      }
+    })
+    const client = createClient(config)
+    lifecycle.client = client
+    return client
+  }
+  return withWorkflowDefinitions<
+    Pick<
+      FlowmarkClient,
+      "workflow" | "resolveExpectation" | "cancelExpectation"
+    >
+  >({
+    workflow: (name, options) => requestClient().workflow(name, options),
+    resolveExpectation: (reference, options) =>
+      requestClient().resolveExpectation(reference, options),
+    cancelExpectation: (reference, options) =>
+      requestClient().cancelExpectation(reference, options),
   })
 }
 
 export type { WorkflowAttempt, WorkflowRetryReference } from "@flowmarkdev/core"
+export type {
+  ExpectationReference,
+  ExpectationOptions,
+  ExpectationResolution,
+  ExpectationCancellation,
+} from "@flowmarkdev/core"

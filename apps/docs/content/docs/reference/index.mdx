@@ -5,19 +5,22 @@ description: The public TypeScript API, organized by what you want to record.
 
 ## Client and configuration
 
-| API                                                          | Purpose                                         |
-| ------------------------------------------------------------ | ----------------------------------------------- |
-| [`createFlowmark(config?)`](/docs/reference/create-flowmark) | Create a Node.js, Next.js, or browser client    |
-| [`defineConfig(config)`](/docs/reference/define-config)      | Type-check configuration without loading a file |
-| [`deliveryHealth()`](/docs/reference/delivery)               | Inspect cumulative local queue health           |
-| [`flush()` / `shutdown()`](/docs/reference/delivery)         | Wait for delivery or close a client             |
+| API                                                          | Purpose                                           |
+| ------------------------------------------------------------ | ------------------------------------------------- |
+| [`createFlowmark(config?)`](/docs/reference/create-flowmark) | Create a Node.js, Next.js, or browser client      |
+| [`defineConfig(config)`](/docs/reference/define-config)      | Type-check configuration without loading a file   |
+| [`deliveryHealth()`](/docs/reference/delivery)               | Inspect cumulative local queue health             |
+| [`resolveExpectation()`](/docs/reference/expectations)       | Record an explicit expected confirmation          |
+| [`cancelExpectation()`](/docs/reference/expectations)        | Record explicit expectation cancellation          |
+| [`createFlowmarkWithTransport()`](/docs/reference/advanced)  | Create an advanced shared custom-transport client |
+| [`flush()` / `shutdown()`](/docs/reference/delivery)         | Wait for delivery or close a client               |
 
 [`defineWorkflow()`](/docs/reference/define-workflow) creates optional reusable typed definitions.
 
 ## Run markers
 
 Get a run handle with `flowmark.workflow(name, options?)`.
-All marker methods below return `void` except `operation()`.
+All marker methods below return `void` except `operation()` and `expect()`.
 See [workflows and runs](/docs/concepts/runs) for the lifecycle map.
 
 ```mermaid
@@ -37,16 +40,17 @@ flowchart TB
   terminal --> fail["fail({ code, result? })"]
 ```
 
-| API                                                | Purpose                                             |
-| -------------------------------------------------- | --------------------------------------------------- |
-| [`workflow()` / `runId`](/docs/reference/workflow) | Start an independent execution and identify it      |
-| [`step()`](/docs/reference/step)                   | Record a semantic checkpoint without executing code |
-| [`operation()`](/docs/reference/operation)         | Measure an independently identified operation       |
-| [`progress()`](/docs/reference/progress)           | Record absolute progress so far                     |
-| [`report()`](/docs/reference/report)               | Record a whole non-final business snapshot          |
-| [`error()`](/docs/reference/error)                 | Record a problem without ending the run             |
-| [`done()` / `fail()`](/docs/reference/completion)  | Report terminal completion or failure               |
-| [`setProperties()`](/docs/reference/properties)    | Append discovered context                           |
+| API                                                | Purpose                                                         |
+| -------------------------------------------------- | --------------------------------------------------------------- |
+| [`workflow()` / `runId`](/docs/reference/workflow) | Start an independent execution and identify it                  |
+| [`step()`](/docs/reference/step)                   | Record a semantic checkpoint without executing code             |
+| [`operation()`](/docs/reference/operation)         | Measure an independently identified operation                   |
+| [`expect()`](/docs/reference/expectations)         | Declare expected evidence and return its serializable reference |
+| [`progress()`](/docs/reference/progress)           | Record absolute progress so far                                 |
+| [`report()`](/docs/reference/report)               | Record a whole non-final business snapshot                      |
+| [`error()`](/docs/reference/error)                 | Record a problem without ending the run                         |
+| [`done()` / `fail()`](/docs/reference/completion)  | Report terminal completion or failure                           |
+| [`setProperties()`](/docs/reference/properties)    | Append discovered context                                       |
 
 ## Types and adapters
 
@@ -58,9 +62,12 @@ flowchart TB
 
 ## Runtime differences
 
-The normal Node.js and browser clients expose `workflow`, `flush`, and
-`shutdown`. The Next.js adapter exposes **only `workflow`** and manages delivery
-with `after()`. Run handles have the same marker API across integrations.
+Node.js and browser clients expose workflow/definition methods, expectation
+settlement methods, local delivery health, `flush()` and `shutdown()`. The Next.js
+adapter exposes `workflow()`, `defineWorkflow()`, `resolveExpectation()` and
+`cancelExpectation()` and manages delivery through `after()`, including requests
+that only report settlement. Run handles share the marker API; browser
+expectations require direct public-key mode, not the generic server-key proxy.
 
 Need a runnable starting point rather than a method lookup? Read the
 [quickstart](/docs/sdk), [Next.js guide](/docs/nextjs), or

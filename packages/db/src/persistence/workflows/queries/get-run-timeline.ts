@@ -18,6 +18,8 @@ import { DatabaseOperation } from "../../database-operation.js"
 import { runQuery } from "../../run-query.js"
 
 export type RunTimelineEvent = {
+  expectation?: import("@flowmarkdev/core").ExpectationEvent | null
+  expectationObservedAt?: string | null
   id: string
   type: string
   step: string | null
@@ -55,6 +57,8 @@ export const getRunTimeline = Effect.fn("getRunTimeline")(function* (
     db
       .select({
         id: workflowEvents.eventId,
+        expectation: workflowEvents.expectation,
+        expectationObservedAt: workflowEvents.expectationObservedAt,
         type: workflowEvents.type,
         step: workflowEvents.step,
         operationId: workflowEvents.operationId,
@@ -98,7 +102,8 @@ export const getRunTimeline = Effect.fn("getRunTimeline")(function* (
       row.type === "report" && row.receiptOrder === latestReportOrder,
     ...row,
     timestamp: row.timestamp.toISOString(),
-    receivedAt: row.receivedAt.toISOString(),
+    expectationObservedAt: row.expectationObservedAt?.toISOString() ?? null,
+    receivedAt: (row.expectationObservedAt ?? row.receivedAt).toISOString(),
     properties: row.properties ?? null,
     error: row.error ?? null,
     result: row.result ?? null,

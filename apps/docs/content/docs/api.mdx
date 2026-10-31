@@ -228,3 +228,9 @@ environments or includes later runs.
 ## Explicit application-owned attempts
 
 See [Attempts and retries](/docs/reference/attempts) for operation `attempt: { groupId, number }`, qualified new-run `retryOf` links, bounds, project scoping and the required `attempts-v1` accepting-server acknowledgment. Supplying these options is explicit opt-in; deploy accepting storage/API/readers before enabling them. Transport retries remain separate from business attempts.
+
+## Expectation evidence
+
+[Expected confirmations](/docs/reference/expectations) require the accepting `expectations-v1` server and migrations. Resolve/cancel are explicit, project-scoped evidence reports and may follow a terminal run without changing its outcome/result. Direct browser evidence stays untrusted; the existing generic server-key proxy rejects expectation events. Deadlines are evaluated on read from server observation, without background notifications or a retention extension.
+
+The authenticated `run.expectations({ id })` read returns one server `asOf`, declared states, unmatched settlements and evidence availability. `run.list` accepts `expectationState`; its bounded `attention` population counts runs separately from expectations. State discovery defaults to 30 days, allows at most 90 days and uses page sizes 1–100. Raw `/v1/events` expectation writes require both a secret write key and `X-Flowmark-Expectations: v1`; server SDKs set the marker automatically. It is not a separate credential.

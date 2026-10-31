@@ -14,6 +14,10 @@ export const WorkflowRepositoryLive = Layer.effect(
   Effect.gen(function* () {
     const store = yield* WorkflowStore
     return WorkflowRepository.of({
+      expectations: (projectId, runId) =>
+        store
+          .expectations(projectId, runId)
+          .pipe(Effect.mapError(toPersistenceError)),
       businessInsights: (projectId, query) =>
         store.businessInsights(projectId, query).pipe(
           Effect.catchTags({

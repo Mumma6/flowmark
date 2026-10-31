@@ -1,3 +1,4 @@
+import { expectationMatchSql, expectationStateSql } from "./expectations.js"
 import type {
   RatioSelection,
   ResultDeclaration,
@@ -236,6 +237,8 @@ export const peerRunsSql = (
 `
 
 export type ListRunsFilter = {
+  readonly expectationState?: import("@flowmarkdev/core").ExpectationState
+  readonly asOf?: string
   readonly ratioSelection?: RatioSelection
   readonly resultField?: ResultDeclaration["fields"][number]
   readonly resultSelection?: ResultSelection
@@ -262,11 +265,49 @@ export type ListRunsFilter = {
   readonly limit: number
 }
 
-export const listRunsSql = (projectId: string, filter: ListRunsFilter) => {
+const listedRunsPredicate = (filter: Omit<ListRunsFilter, "limit">) => {
   const search = filter.search?.trim()
   const like =
     search && search.length > 0 ? `%${search.replaceAll("%", "")}%` : null
-  return sql`
+  return sql`    ${resultPredicate(filter.resultSelection, filter.resultField)}
+    AND ${filter.ratioSelection ? sql`${resultPredicate({ revision: filter.ratioSelection.revision, path: filter.ratioSelection.numerator, operator: "gte", value: 0 })} AND ${resultPredicate({ revision: filter.ratioSelection.revision, path: filter.ratioSelection.denominator, operator: "gte", value: 0 })}` : sql`true`}
+    AND (${filter.outcome ?? null}::text IS NULL OR outcome = ${filter.outcome ?? null})
+    AND (${filter.definitionRevision ?? null}::text IS NULL OR "definitionRevision" = ${filter.definitionRevision ?? null})
+    AND (${filter.terminalOnly ?? false} = false OR status <> 'Running')
+    AND (${filter.startedBeforeExclusive ?? null}::timestamptz IS NULL OR "startedAt" < ${filter.startedBeforeExclusive ?? null}::timestamptz)
+    AND (${filter.workflow ?? null}::text IS NULL OR workflow = ${filter.workflow ?? null})
+    AND (${filter.status ?? null}::text IS NULL OR status = ${filter.status ?? null})
+    AND (${filter.externalId ?? null}::text IS NULL OR "externalId" = ${filter.externalId ?? null})
+    AND (${filter.failCode ?? null}::text IS NULL OR "failCode" = ${filter.failCode ?? null})
+    AND (${filter.environment ?? null}::text IS NULL OR environment = ${filter.environment ?? null})
+    AND (${filter.release ?? null}::text IS NULL OR release = ${filter.release ?? null})
+    AND (${filter.correlationId ?? null}::text IS NULL OR "correlationId" = ${filter.correlationId ?? null})
+    AND (${filter.parentRunId ?? null}::text IS NULL OR "parentRunId" = ${filter.parentRunId ?? null})
+    AND (
+      ${filter.namespace ?? null}::text IS NULL
+      OR (
+        ${filter.namespace ?? null} = 'browser'
+        AND workflow LIKE 'browser.%'
+      )
+      OR (
+        ${filter.namespace ?? null} = 'application'
+        AND workflow NOT LIKE 'browser.%'
+      )
+    )
+    AND (${filter.startedAfter ?? null}::timestamptz IS NULL OR "startedAt" >= ${filter.startedAfter ?? null}::timestamptz)
+    AND (${filter.startedBefore ?? null}::timestamptz IS NULL OR "startedAt" <= ${filter.startedBefore ?? null}::timestamptz)
+    AND (
+      ${like}::text IS NULL
+      OR "externalId" ILIKE ${like}
+      OR workflow ILIKE ${like}
+      OR coalesce("correlationId", '') ILIKE ${like}
+      OR coalesce("parentRunId", '') ILIKE ${like}
+      OR coalesce(step, '') ILIKE ${like}
+      OR coalesce("failCode", '') ILIKE ${like}
+    )
+`
+}
+export const listRunsSql = (projectId: string, filter: ListRunsFilter) => sql`
   ${projectRunSummaries(projectId, filter)}
   SELECT
     id,
@@ -284,100 +325,20 @@ export const listRunsSql = (projectId: string, filter: ListRunsFilter) => {
     release,
     "failCode"
   FROM runs
-  WHERE
-    ${resultPredicate(filter.resultSelection, filter.resultField)}
-    AND ${filter.ratioSelection ? sql`${resultPredicate({ revision: filter.ratioSelection.revision, path: filter.ratioSelection.numerator, operator: "gte", value: 0 })} AND ${resultPredicate({ revision: filter.ratioSelection.revision, path: filter.ratioSelection.denominator, operator: "gte", value: 0 })}` : sql`true`}
-    AND (${filter.outcome ?? null}::text IS NULL OR outcome = ${filter.outcome ?? null})
-    AND (${filter.definitionRevision ?? null}::text IS NULL OR "definitionRevision" = ${filter.definitionRevision ?? null})
-    AND (${filter.terminalOnly ?? false} = false OR status <> 'Running')
-    AND (${filter.startedBeforeExclusive ?? null}::timestamptz IS NULL OR "startedAt" < ${filter.startedBeforeExclusive ?? null}::timestamptz)
-    AND (${filter.workflow ?? null}::text IS NULL OR workflow = ${filter.workflow ?? null})
-    AND (${filter.status ?? null}::text IS NULL OR status = ${filter.status ?? null})
-    AND (${filter.externalId ?? null}::text IS NULL OR "externalId" = ${filter.externalId ?? null})
-    AND (${filter.failCode ?? null}::text IS NULL OR "failCode" = ${filter.failCode ?? null})
-    AND (${filter.environment ?? null}::text IS NULL OR environment = ${filter.environment ?? null})
-    AND (${filter.release ?? null}::text IS NULL OR release = ${filter.release ?? null})
-    AND (${filter.correlationId ?? null}::text IS NULL OR "correlationId" = ${filter.correlationId ?? null})
-    AND (${filter.parentRunId ?? null}::text IS NULL OR "parentRunId" = ${filter.parentRunId ?? null})
-    AND (
-      ${filter.namespace ?? null}::text IS NULL
-      OR (
-        ${filter.namespace ?? null} = 'browser'
-        AND workflow LIKE 'browser.%'
-      )
-      OR (
-        ${filter.namespace ?? null} = 'application'
-        AND workflow NOT LIKE 'browser.%'
-      )
-    )
-    AND (${filter.startedAfter ?? null}::timestamptz IS NULL OR "startedAt" >= ${filter.startedAfter ?? null}::timestamptz)
-    AND (${filter.startedBefore ?? null}::timestamptz IS NULL OR "startedAt" <= ${filter.startedBefore ?? null}::timestamptz)
-    AND (
-      ${like}::text IS NULL
-      OR "externalId" ILIKE ${like}
-      OR workflow ILIKE ${like}
-      OR coalesce("correlationId", '') ILIKE ${like}
-      OR coalesce("parentRunId", '') ILIKE ${like}
-      OR coalesce(step, '') ILIKE ${like}
-      OR coalesce("failCode", '') ILIKE ${like}
-    )
-    AND (
-      ${filter.cursorStartedAt ?? null}::timestamptz IS NULL
-      OR ${filter.cursorId ?? null}::uuid IS NULL
-      OR ("startedAt", id) < (${filter.cursorStartedAt ?? null}::timestamptz, ${filter.cursorId ?? null}::uuid)
-    )
-  ORDER BY "startedAt" DESC, id DESC
-  LIMIT ${filter.limit + 1}
+  WHERE ${listedRunsPredicate(filter)}
+    AND ${expectationMatchSql(filter.expectationState, filter.asOf!)}
+    AND (${filter.cursorStartedAt ?? null}::timestamptz IS NULL OR ${filter.cursorId ?? null}::uuid IS NULL
+      OR ("startedAt", id) < (${filter.cursorStartedAt ?? null}::timestamptz, ${filter.cursorId ?? null}::uuid))
+  ORDER BY "startedAt" DESC, id DESC LIMIT ${filter.limit + 1}
 `
-}
-
 export const listRunsCountSql = (
   projectId: string,
   filter: Omit<ListRunsFilter, "limit" | "cursorStartedAt" | "cursorId">,
-) => {
-  const search = filter.search?.trim()
-  const like =
-    search && search.length > 0 ? `%${search.replaceAll("%", "")}%` : null
-  return sql`
+) => sql`
   ${projectRunSummaries(projectId, filter)}
-  SELECT count(*)::int AS count
-  FROM runs
-  WHERE
-    ${resultPredicate(filter.resultSelection, filter.resultField)}
-    AND ${filter.ratioSelection ? sql`${resultPredicate({ revision: filter.ratioSelection.revision, path: filter.ratioSelection.numerator, operator: "gte", value: 0 })} AND ${resultPredicate({ revision: filter.ratioSelection.revision, path: filter.ratioSelection.denominator, operator: "gte", value: 0 })}` : sql`true`}
-    AND (${filter.outcome ?? null}::text IS NULL OR outcome = ${filter.outcome ?? null})
-    AND (${filter.definitionRevision ?? null}::text IS NULL OR "definitionRevision" = ${filter.definitionRevision ?? null})
-    AND (${filter.terminalOnly ?? false} = false OR status <> 'Running')
-    AND (${filter.startedBeforeExclusive ?? null}::timestamptz IS NULL OR "startedAt" < ${filter.startedBeforeExclusive ?? null}::timestamptz)
-    AND (${filter.workflow ?? null}::text IS NULL OR workflow = ${filter.workflow ?? null})
-    AND (${filter.status ?? null}::text IS NULL OR status = ${filter.status ?? null})
-    AND (${filter.externalId ?? null}::text IS NULL OR "externalId" = ${filter.externalId ?? null})
-    AND (${filter.failCode ?? null}::text IS NULL OR "failCode" = ${filter.failCode ?? null})
-    AND (${filter.environment ?? null}::text IS NULL OR environment = ${filter.environment ?? null})
-    AND (${filter.release ?? null}::text IS NULL OR release = ${filter.release ?? null})
-    AND (${filter.correlationId ?? null}::text IS NULL OR "correlationId" = ${filter.correlationId ?? null})
-    AND (${filter.parentRunId ?? null}::text IS NULL OR "parentRunId" = ${filter.parentRunId ?? null})
-    AND (
-      ${filter.namespace ?? null}::text IS NULL
-      OR (
-        ${filter.namespace ?? null} = 'browser'
-        AND workflow LIKE 'browser.%'
-      )
-      OR (
-        ${filter.namespace ?? null} = 'application'
-        AND workflow NOT LIKE 'browser.%'
-      )
-    )
-    AND (${filter.startedAfter ?? null}::timestamptz IS NULL OR "startedAt" >= ${filter.startedAfter ?? null}::timestamptz)
-    AND (${filter.startedBefore ?? null}::timestamptz IS NULL OR "startedAt" <= ${filter.startedBefore ?? null}::timestamptz)
-    AND (
-      ${like}::text IS NULL
-      OR "externalId" ILIKE ${like}
-      OR workflow ILIKE ${like}
-      OR coalesce("correlationId", '') ILIKE ${like}
-      OR coalesce("parentRunId", '') ILIKE ${like}
-      OR coalesce(step, '') ILIKE ${like}
-      OR coalesce("failCode", '') ILIKE ${like}
-    )
+  SELECT count(*) FILTER (WHERE ${expectationMatchSql(filter.expectationState, filter.asOf!)})::int as count,
+    count(*)::int as "totalRuns",
+    count(*) FILTER (WHERE ${expectationMatchSql("overdue", filter.asOf!)})::int as "overdueRuns",
+    coalesce(sum((SELECT count(*) FROM workflow_expectations x WHERE x.run_id = runs.id AND ${expectationStateSql(filter.asOf!)} = 'overdue')), 0)::int as "overdueExpectations"
+  FROM runs WHERE ${listedRunsPredicate(filter)}
 `
-}

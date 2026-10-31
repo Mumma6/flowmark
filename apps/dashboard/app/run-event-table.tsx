@@ -33,6 +33,12 @@ export function JsonData({ value }: { value: unknown }) {
 
 export function eventLabel(event: RunEvent) {
   switch (event.type) {
+    case "expectation_declared":
+      return `Expected · ${event.expectation?.type === "expectation_declared" ? event.expectation.name : "Confirmation"}`
+    case "expectation_resolved":
+      return "Expectation resolution reported"
+    case "expectation_cancelled":
+      return "Expectation cancellation reported"
     case "started":
       return "Run started"
     case "step":
@@ -207,6 +213,15 @@ export function EventTable({
                       </div>
                     )}
                   </dl>
+                  {event.expectation && (
+                    <JsonData
+                      value={{
+                        eventId: event.id,
+                        observedAt: event.expectationObservedAt,
+                        event: event.expectation,
+                      }}
+                    />
+                  )}
                   {event.attempt && (
                     <JsonData value={{ attempt: event.attempt }} />
                   )}
@@ -233,6 +248,7 @@ export function EventTable({
                     !event.result &&
                     !event.reason &&
                     !event.outcome &&
+                    !event.expectation &&
                     !event.attempt && (
                       <p className="text-xs leading-6 text-muted-foreground">
                         No additional payload recorded.

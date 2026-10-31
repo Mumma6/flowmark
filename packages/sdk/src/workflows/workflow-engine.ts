@@ -29,7 +29,7 @@ export class WorkflowEngine extends Context.Service<
         const run = yield* runs.start(workflow, options)
         return {
           runId: run.runId,
-          ...makeMarkers(run),
+          ...makeMarkers(run, workflow),
           operation: makeOperations(run),
           done: run.done,
           fail: run.fail,

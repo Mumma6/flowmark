@@ -175,6 +175,7 @@ export function workflow(name: WorkflowName, options: WorkflowOptions): Flow {
         })
   }
   return {
+    expect: (name, options) => flow.expect(name, options),
     runId: flow.runId,
     step(name, stepOptions) {
       if (!finished && !completionRequested) {
@@ -215,4 +216,18 @@ export function workflow(name: WorkflowName, options: WorkflowOptions): Flow {
       }
     },
   }
+}
+
+/** Advanced shared lifecycle for custom transports, including settlement-only reporting. */
+export function createFlowmarkWithTransport(config: {
+  readonly transport: WorkflowTransport
+  readonly onInstrumentationError?: import("../types/index.js").InstrumentationErrorHandler
+  readonly delivery?: import("../types/index.js").DeliveryOptions
+}): FlowmarkClient {
+  return makeClient(
+    Layer.succeed(WorkflowTransport, config.transport),
+    config.onInstrumentationError,
+    {},
+    config.delivery,
+  )
 }

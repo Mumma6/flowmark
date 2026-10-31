@@ -19,6 +19,7 @@ export class FlowmarkConfigError extends Data.TaggedError(
 
 /** HTTP delivery failure; status is undefined for encoding, network, or timeout failures. Preserves the original cause. */
 export class FlowmarkHttpError extends Data.TaggedError("FlowmarkHttpError")<{
+  readonly retryable?: boolean
   readonly status: number | undefined
   readonly cause: unknown
 }> {}
@@ -42,8 +43,13 @@ export class FlowmarkErrorMappingError extends Data.TaggedError(
   "FlowmarkErrorMappingError",
 )<{ readonly reason: "threw" | "invalid" }> {}
 
+export class FlowmarkExpectationError extends Data.TaggedError(
+  "FlowmarkExpectationError",
+)<{ readonly reason: "invalid-input" | "run-closed" | "source-forbidden" }> {}
+
 /** Failures reported to onInstrumentationError or collected by flush()/shutdown(). */
 export type DeliveryFailure =
+  | FlowmarkExpectationError
   | WorkflowTransportError
   | WorkflowEventValidationError
   | FlowmarkQueueError

@@ -1,3 +1,6 @@
+import { ExpectationObservationClock } from "../observation-clock.js"
+import { isExpectationEvent } from "@flowmarkdev/core"
+import { appendExpectation } from "./append-expectation.js"
 import { and, eq, sql, type SQL } from "drizzle-orm"
 import { Effect } from "effect"
 import type {
@@ -64,6 +67,7 @@ export const appendEvent = Effect.fn("appendEvent")(function* (
   event: WorkflowEvent,
 ) {
   const db = yield* Database
+  const expectationClock = yield* ExpectationObservationClock
   const accepted = yield* runQuery(DatabaseOperation.AppendEvent, () =>
     // Drizzle owns the transaction lifetime; bridge at its Promise callback boundary.
     db.transaction((tx) =>
@@ -81,6 +85,8 @@ export const appendEvent = Effect.fn("appendEvent")(function* (
               tx
                 .select({
                   projectId: workflows.projectId,
+                  type: workflowEvents.type,
+                  expectation: workflowEvents.expectation,
                   workflow: workflows.name,
                   externalId: workflowRuns.externalId,
                 })
@@ -95,7 +101,11 @@ export const appendEvent = Effect.fn("appendEvent")(function* (
           if (existing) {
             return existing.projectId === projectId &&
               existing.workflow === event.workflow &&
-              existing.externalId === event.runId
+              existing.externalId === event.runId &&
+              ((!isExpectationEvent(event) && !isExpectationEvent(existing)) ||
+                (isExpectationEvent(event) &&
+                  existing.type === event.type &&
+                  existing.expectation?.expectationId === event.expectationId))
               ? ("duplicate" as const)
               : ("conflict" as const)
           }
@@ -170,6 +180,15 @@ export const appendEvent = Effect.fn("appendEvent")(function* (
           const types = new Set(recorded.map((row) => row.type))
           if (event.type === "started" && types.has("started")) {
             return "ignored" as const
+          }
+          if (isExpectationEvent(event)) {
+            return yield* appendExpectation(
+              tx,
+              run.id,
+              eventId,
+              event,
+              runTerminal(types) !== "open",
+            )
           }
           if (ignoreContinuedEvent(runTerminal(types))) {
             return event.type === "completed" || event.type === "failed"
@@ -246,7 +265,9 @@ export const appendEvent = Effect.fn("appendEvent")(function* (
             )
           }
           return "recorded" as const
-        }),
+        }).pipe(
+          Effect.provideService(ExpectationObservationClock, expectationClock),
+        ),
       ),
     ),
   )

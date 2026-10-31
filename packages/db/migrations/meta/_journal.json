@@ -92,6 +92,20 @@
       "when": 1793449918473,
       "tag": "0012_first_thunderball",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1793452837632,
+      "tag": "0013_mysterious_onslaught",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1793453670312,
+      "tag": "0014_icy_night_thrasher",
+      "breakpoints": true
     }
   ]
 }

@@ -9,10 +9,22 @@ export async function handleIngestion(request: Request) {
     const disposition = yield* ingestion.ingest(
       request.headers.get("authorization"),
       readJsonBody(request),
+      request.headers.get("x-flowmark-expectations") === "v1",
     )
     return ingestionReceipt(disposition)
   }).pipe(
     Effect.catchTags({
+      ExpectationSourceForbidden: () =>
+        Effect.succeed(
+          Response.json(
+            {
+              error:
+                "Server expectation reporting requires the expectations-v1 SDK protocol.",
+              code: "EXPECTATION_SOURCE_FORBIDDEN",
+            },
+            { status: 403 },
+          ),
+        ),
       Unauthorized: () =>
         Effect.succeed(
           Response.json({ error: "Invalid ingestion key." }, { status: 401 }),

@@ -13,6 +13,7 @@
     "step",
     "operation",
     "attempts",
+    "expectations",
     "progress",
     "report",
     "error",

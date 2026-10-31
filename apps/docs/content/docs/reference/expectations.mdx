@@ -1,0 +1,82 @@
+---
+title: Expected confirmations
+description: Observe explicit confirmations, deadlines and later resolution without scheduling work.
+---
+
+Expectations record evidence your application expects to receive. Flowmark does not execute the request, schedule a callback, retry work or send background deadline notifications.
+
+These methods require an accepting server with the `expectations-v1` capability and the expectation migrations/readers. Deploy storage, API and dashboard before enabling the methods. Source implementation and npm publication are separate release steps.
+
+## Declare expected evidence
+
+```ts
+const flow = flowmark.workflow("booking.submit")
+const confirmation = flow.expect("provider-response", {
+  id: confirmationId,
+  within: "5m",
+})
+// Persist/forward confirmation in your application's own storage or metadata.
+// Your application performs its existing submission.
+flow.done({ outcome: "submitted", result: { submitted: 1 } })
+```
+
+The synchronous return is a serializable reference, not proof of delivery or an authorization token:
+
+```ts
+interface ExpectationReference {
+  readonly version: 1
+  readonly workflow: string
+  readonly runId: string
+  readonly expectationId: string
+}
+```
+
+Credentials select the project. IDs and names are nonblank, case-sensitive strings of at most 128 characters without ASCII control characters. Repeated confirmations need fresh IDs. A repeated declaration with the same name and equivalent duration cannot reset its original deadline; changed meaning conflicts.
+
+`within` accepts a positive integer with `ms`, `s`, `m`, `h` or `d`: `500ms`, `30s`, `5m`. No spaces, leading zeros, fractions, composites or signs. The range is 1 millisecond through 7 days. Seven days does not extend retention. A run may reserve at most 100 expectation IDs, including unmatched settlements, over its retained lifetime. This limit is permanent for that run, so its HTTP 429 is not retried by the SDK.
+
+## Resolve or cancel in a later request
+
+```ts
+// Use an existing configured client in the authenticated callback handler.
+flowmark.resolveExpectation(confirmation, {
+  outcome: "no-availability",
+  result: { reserved: 0 },
+})
+// Alternative path, rather than another settlement of the same expectation:
+// flowmark.cancelExpectation(confirmation, { code: "BOOKING_CANCELLED" })
+```
+
+Both client methods enqueue telemetry and return `void`. They do not emit another run start. The first accepted settlement wins; identical reports are idempotent and conflicting resolve/cancel or changed payloads receive HTTP 409. Resolution timing does not imply business success: a negative provider response can be observed on time.
+
+Node clients use explicit `flush()`/`shutdown()` before exiting. You may flush the declaration before forwarding its reference. A fresh Node client can report a settlement after an application restart. The Next adapter registers `after()` in the reporting request even if no workflow is created. Preserve your own webhook authentication and application result/error handling; possessing a reference does not authenticate a provider callback.
+
+The owning run must already exist. A settlement arriving before its declaration is retained as unmatched evidence, within the same 100-ID limit. It has no promise state or deadline until the exact scoped declaration arrives. With no run, HTTP 409 exposes a delivery failure; no phantom run is created. Re-reporting telemetry is your application's decision, never an automatic business retry.
+
+New declarations require an open run. Dedicated resolve/cancel facts may arrive after a run completes or fails, without reopening it or changing its final outcome/result/duration. Run completion never fulfills or cancels an expectation and never waits for it. Ordinary post-terminal markers retain their existing policy.
+
+## Read the dashboard
+
+Run details show declaration and settlement receipt times, the fixed deadline, source trust, raw evidence and event references:
+
+- **Pending confirmation:** the deadline has not passed and no settlement is retained.
+- **Overdue — no resolution observed:** an unresolved declared expectation is past its deadline. This does not prove provider failure or that work is still active.
+- **Observed on time:** resolution was observed at or before the fixed deadline.
+- **Observed late:** resolution was observed after the deadline; delivery delay and clock differences mean the business event itself may have happened earlier.
+- **Cancelled:** an explicit cancellation. A late cancellation preserves the “Cancelled after deadline” qualification.
+
+Deadlines use the first accepted declaration's database receipt time, rather than the application's timestamp. Reads evaluate one server `asOf`; polling can refresh visible states, but no timer or background alert is installed. A settlement observed before its declaration keeps that original time and is labeled as out of order.
+
+Run Explorer filters by expectation state. Attention links use the same workflow/date population and show runs with overdue expectations separately from expectation counts. Completed or failed runs remain eligible. Results are retained observed evidence, not all business promises ever made; retention can remove evidence before a deadline. Missing or incomplete evidence never proves successful confirmation.
+
+## Browser and advanced transports
+
+Direct browser clients use public browser keys, origin/quota checks and canonical `browser.` references. Their evidence is untrusted and cannot settle an authoritative server expectation. The existing same-origin server-key proxy rejects expectation events before forwarding: use direct public-key delivery for browser expectations. Ordinary proxy telemetry is unchanged.
+
+Advanced integrations can create one shared `createFlowmarkWithTransport({ transport })` client, which supplies `workflow`, `resolveExpectation`, `cancelExpectation`, `flush` and `shutdown`. Custom transports own accepting-server compatibility. The older low-level `workflow()` function retains its auto-drain lifetime; use a client for later cross-request settlement.
+
+Server HTTP writes also require `X-Flowmark-Expectations: v1` with the write credential; the server SDK sets it automatically. This protocol opt-in prevents an older generic proxy forwarding new core events as server expectations. Custom server transports must set it; it is not an authentication token. Direct public-key browser delivery needs no additional CORS header.
+
+HTTP writers require capability acknowledgment for expectation events; missing support fails instrumentation diagnostics and explicit drains. An acknowledgment is after submission and cannot undo an older server's write. No fallback converts these events into ordinary steps or fabricated locally fulfilled promises.
+
+A loopback-only, separate-process declaration/resolve/cancel example is in `packages/sdk/examples/durable-expectations.mjs` in the repository. The design and rollout details are in `docs/sdk/expectations.md`.

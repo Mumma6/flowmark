@@ -170,6 +170,7 @@ export type ListedRun = StoredRun & {
 }
 
 export type ListRunsQuery = {
+  readonly expectationState?: import("@flowmarkdev/core").ExpectationState
   readonly ratioSelection?: RatioSelection
   readonly resultSelection?: ResultSelection
   readonly outcome?: string
@@ -195,6 +196,7 @@ export type ListRunsQuery = {
 }
 
 export type ListedRunsPage = {
+  readonly attention?: import("@flowmarkdev/core").ExpectationAttention
   readonly runs: ReadonlyArray<ListedRun>
   readonly nextCursor: string | null
   readonly total: number
