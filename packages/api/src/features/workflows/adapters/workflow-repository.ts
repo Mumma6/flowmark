@@ -1,6 +1,6 @@
 import { Effect, Layer } from "effect"
 import { DatabaseError, WorkflowStore } from "@flowmark/db/persistence"
-import { PersistenceError, RunNotFound } from "../../../errors.js"
+import { InvalidInput, PersistenceError, RunNotFound } from "../../../errors.js"
 import { WorkflowRepository } from "../ports/workflow-repository.js"
 
 const toPersistenceError = (error: DatabaseError) =>
@@ -14,6 +14,14 @@ export const WorkflowRepositoryLive = Layer.effect(
   Effect.gen(function* () {
     const store = yield* WorkflowStore
     return WorkflowRepository.of({
+      businessInsights: (projectId, query) =>
+        store.businessInsights(projectId, query).pipe(
+          Effect.catchTags({
+            DatabaseError: toPersistenceError,
+            InvalidResultQuery: (error) =>
+              new InvalidInput({ cause: error.message }),
+          }),
+        ),
       append: Effect.fn("PostgresWorkflowRepository.append")(
         (projectId, eventId, event) =>
           store.append(projectId, eventId, event).pipe(
@@ -29,9 +37,13 @@ export const WorkflowRepositoryLive = Layer.effect(
       ),
       listRuns: Effect.fn("PostgresWorkflowRepository.listRuns")(
         (projectId, query) =>
-          store
-            .listRuns(projectId, query)
-            .pipe(Effect.mapError(toPersistenceError)),
+          store.listRuns(projectId, query).pipe(
+            Effect.catchTags({
+              DatabaseError: toPersistenceError,
+              InvalidResultQuery: (error) =>
+                new InvalidInput({ cause: error.message }),
+            }),
+          ),
       ),
       timeline: Effect.fn("PostgresWorkflowRepository.timeline")(
         (projectId, runId) =>

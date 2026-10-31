@@ -1,4 +1,5 @@
 export enum DatabaseOperation {
+  ReadBusinessInsights = "read-business-insights",
   VerifyMigrations = "verify-migrations",
   ReadResultDeclarations = "read-result-declarations",
   CreateResultDeclaration = "create-result-declaration",

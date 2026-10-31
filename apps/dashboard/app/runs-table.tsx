@@ -1,6 +1,7 @@
 "use client"
 
 import { useSearchParams, usePathname } from "next/navigation"
+import { Result, Schema } from "effect"
 import { useMemo, useState } from "react"
 import Link from "next/link"
 import { useQuery } from "@tanstack/react-query"
@@ -170,6 +171,19 @@ export function RunsTable({
 }
 
 type ExplorerFilters = {
+  ratioNumerator: string
+  ratioDenominator: string
+  definitionRevision: string
+  outcome: string
+  terminalOnly: string
+  startedAfterExact: string
+  startedBeforeExclusive: string
+  resultPath: string
+  resultOperator: string
+  resultValue: string
+  resultKind: string
+  resultReason: string
+
   businessKey: string
   businessValue: string
   search: string
@@ -184,6 +198,19 @@ type ExplorerFilters = {
 }
 
 const defaults: ExplorerFilters = {
+  ratioNumerator: "",
+  ratioDenominator: "",
+  definitionRevision: "",
+  outcome: "",
+  terminalOnly: "",
+  startedAfterExact: "",
+  startedBeforeExclusive: "",
+  resultPath: "",
+  resultOperator: "",
+  resultValue: "",
+  resultKind: "",
+  resultReason: "",
+
   businessKey: "",
   businessValue: "",
   search: "",
@@ -266,6 +293,29 @@ export function RunExplorer({
       { enabled: Boolean(current && selectedWorkflow) },
     ),
   )
+  const declarations = useQuery(
+    trpc.resultDeclarations.list.queryOptions(
+      { projectId: current?.id ?? "", workflow: selectedWorkflow },
+      { enabled: Boolean(current && selectedWorkflow) },
+    ),
+  )
+  const resultFields =
+    declarations.data?.find(
+      (item) => item.revision === filters.definitionRevision,
+    )?.fields ?? []
+  const resultPath = Result.match(
+    Schema.decodeUnknownResult(
+      Schema.fromJsonString(Schema.Array(Schema.String)),
+    )(filters.resultPath),
+    { onFailure: () => undefined, onSuccess: (value) => value },
+  )
+  const parseRatioPath = (value: string) =>
+    Result.match(
+      Schema.decodeUnknownResult(
+        Schema.fromJsonString(Schema.Array(Schema.String)),
+      )(value),
+      { onFailure: () => [], onSuccess: (path) => path },
+    )
   const selectedField = searchFields.data?.find(
     (field) => field.key === filters.businessKey,
   )
@@ -289,22 +339,54 @@ export function RunExplorer({
       failCode: filters.failCode.trim() || undefined,
       environment: filters.environment.trim() || undefined,
       release: filters.release.trim() || undefined,
+      outcome: filters.outcome || undefined,
+      ...(filters.ratioNumerator || filters.ratioDenominator
+        ? {
+            ratioSelection: {
+              revision: filters.definitionRevision,
+              numerator: parseRatioPath(filters.ratioNumerator),
+              denominator: parseRatioPath(filters.ratioDenominator),
+            },
+          }
+        : {}),
+      definitionRevision: filters.definitionRevision || undefined,
+      terminalOnly: filters.terminalOnly === "true" || undefined,
+      startedBeforeExclusive: filters.startedBeforeExclusive || undefined,
+      ...(filters.resultPath
+        ? {
+            resultSelection: {
+              revision: filters.definitionRevision,
+              path: resultPath ?? [],
+              operator: (filters.resultOperator || "eq") as
+                "eq" | "gte" | "lte",
+              value:
+                filters.resultKind === "category"
+                  ? filters.resultValue
+                  : filters.resultValue.trim()
+                    ? Number(filters.resultValue)
+                    : Number.NaN,
+              ...(filters.resultReason ? { reason: filters.resultReason } : {}),
+            },
+          }
+        : {}),
       namespace:
         filters.namespace === "browser"
           ? ("browser" as const)
           : filters.namespace === "server"
             ? ("application" as const)
             : undefined,
-      startedAfter: filters.startedAfter
-        ? `${filters.startedAfter}T00:00:00.000Z`
-        : undefined,
+      startedAfter:
+        filters.startedAfterExact ||
+        (filters.startedAfter
+          ? `${filters.startedAfter}T00:00:00.000Z`
+          : undefined),
       startedBefore: filters.startedBefore
         ? `${filters.startedBefore}T23:59:59.999Z`
         : undefined,
       cursor: cursor ?? undefined,
       limit: 25,
     }),
-    [workflow, filters, cursor, selectedWorkflow],
+    [workflow, filters, cursor, selectedWorkflow, resultPath],
   )
   const list = useQuery({
     ...trpc.run.list.queryOptions(queryInput),
@@ -372,6 +454,133 @@ export function RunExplorer({
           />
         </label>
       </div>
+      <section
+        aria-label="Final result filters"
+        className="grid gap-3 border-b border-border p-5 sm:grid-cols-2 xl:grid-cols-3"
+      >
+        <p className="text-sm text-muted-foreground sm:col-span-2 xl:col-span-3">
+          Final result selection · explicit original-start definition; completed
+          and failed runs. Between-period reports are excluded.
+        </p>
+        {declarations.error && (
+          <p role="alert">
+            Could not load result declarations.{" "}
+            <Button
+              variant="outline"
+              onClick={() => void declarations.refetch()}
+            >
+              Retry
+            </Button>
+          </p>
+        )}
+        <label className="text-xs">
+          Canonical outcome
+          <Input
+            value={filters.outcome}
+            maxLength={64}
+            onChange={(event) => update("outcome", event.target.value)}
+          />
+        </label>
+        <FilterSelect
+          label="Result definition revision"
+          value={filters.definitionRevision || "__all__"}
+          onChange={(value) => {
+            setFilters({
+              ...filters,
+              definitionRevision: value === "__all__" ? "" : value,
+              resultPath: "",
+              resultReason: "",
+            })
+            setCursorStack([null])
+          }}
+          options={[
+            { value: "__all__", label: "All definitions" },
+            ...(declarations.data ?? []).map((item) => ({
+              value: item.revision,
+              label: item.revision,
+            })),
+          ]}
+        />
+        <FilterSelect
+          label="Final result field"
+          value={filters.resultPath || "__none__"}
+          onChange={(value) => {
+            const selected = resultFields.find(
+              (item) => JSON.stringify(item.path) === value,
+            )
+            setFilters({
+              ...filters,
+              resultPath: value === "__none__" ? "" : value,
+              resultKind: selected?.kind === "category" ? "category" : "count",
+              resultOperator: "eq",
+              resultValue: "",
+              resultReason: "",
+            })
+            setCursorStack([null])
+          }}
+          options={[
+            { value: "__none__", label: "No result predicate" },
+            ...resultFields.map((item) => ({
+              value: JSON.stringify(item.path),
+              label: item.label,
+            })),
+          ]}
+        />
+        {filters.resultPath && (
+          <>
+            <FilterSelect
+              label="Result operator"
+              value={filters.resultOperator || "eq"}
+              onChange={(value) => update("resultOperator", value)}
+              options={
+                filters.resultKind === "category"
+                  ? [{ value: "eq", label: "Equals" }]
+                  : [
+                      { value: "eq", label: "Equals" },
+                      { value: "gte", label: "At least" },
+                      { value: "lte", label: "At most" },
+                    ]
+              }
+            />
+            <label className="text-xs">
+              Result value
+              <Input
+                type={filters.resultKind === "category" ? "text" : "number"}
+                min={0}
+                step={1}
+                value={filters.resultValue}
+                onChange={(event) => update("resultValue", event.target.value)}
+              />
+            </label>
+            {resultFields.find(
+              (item) => JSON.stringify(item.path) === filters.resultPath,
+            )?.kind === "reasons" && (
+              <label className="text-xs">
+                Declared reason
+                <Input
+                  value={filters.resultReason}
+                  onChange={(event) =>
+                    update("resultReason", event.target.value)
+                  }
+                />
+              </label>
+            )}
+          </>
+        )}
+        {(filters.startedAfterExact ||
+          filters.startedBeforeExclusive ||
+          filters.terminalOnly) && (
+          <p className="text-xs text-muted-foreground sm:col-span-2 xl:col-span-3">
+            Evidence cohort: {filters.startedAfterExact || "unbounded start"}{" "}
+            inclusive → {filters.startedBeforeExclusive || "unbounded end"}{" "}
+            exclusive;{" "}
+            {filters.terminalOnly === "true"
+              ? "finished runs only"
+              : "all statuses"}
+            . Clear filters to leave this cohort.
+          </p>
+        )}
+      </section>
       <div className="grid gap-3 border-b border-border p-5 sm:grid-cols-2">
         <p className="text-sm text-muted-foreground sm:col-span-2">
           Business reference or category · exact current-context match. Choose a
@@ -551,6 +760,18 @@ export function RunExplorer({
                 {
                   (
                     {
+                      ratioNumerator: "Ratio numerator",
+                      ratioDenominator: "Ratio denominator",
+                      definitionRevision: "Definition",
+                      outcome: "Outcome",
+                      terminalOnly: "Finished only",
+                      startedAfterExact: "After (exact)",
+                      startedBeforeExclusive: "Before (exclusive)",
+                      resultPath: "Result path",
+                      resultOperator: "Result operator",
+                      resultValue: "Result value",
+                      resultKind: "Result type",
+                      resultReason: "Reason",
                       businessKey: "Business field",
                       businessValue: "Business value",
                       search: "Search",

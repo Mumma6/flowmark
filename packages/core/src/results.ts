@@ -21,6 +21,16 @@ const Field = Schema.Struct({
   label: Label,
   kind: Schema.Literals(["count", "category", "reasons"]),
   unit: Schema.optional(Label),
+  aggregate: Schema.optional(Schema.Boolean),
+  values: Schema.optional(
+    Schema.Array(
+      Schema.String.check(Schema.isMinLength(1), Schema.isMaxLength(128)),
+    ).check(
+      Schema.isMinLength(1),
+      Schema.isMaxLength(20),
+      Schema.makeFilter((values) => new Set(values).size === values.length),
+    ),
+  ),
 })
 /** Ordered bounded presentation metadata. Revisions cannot be overwritten. */
 export const ResultDeclarationSchema = Schema.Struct({
@@ -30,6 +40,12 @@ export const ResultDeclarationSchema = Schema.Struct({
   Schema.check(
     Schema.makeFilter(
       (declaration) =>
+        declaration.fields.every(
+          (field) =>
+            !field.aggregate ||
+            field.kind === "count" ||
+            field.values !== undefined,
+        ) &&
         new Set(declaration.fields.map((field) => JSON.stringify(field.path)))
           .size === declaration.fields.length,
     ),

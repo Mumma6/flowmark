@@ -1,9 +1,19 @@
+import type {
+  RatioSelection,
+  ResultDeclaration,
+  ResultSelection,
+} from "@flowmarkdev/core"
+import { resultPredicate } from "./result-filters.js"
 import { sql } from "drizzle-orm"
 
 type BusinessFilter = {
   workflow?: string
   businessKey?: string
   businessValue?: string
+  dimensionOnly?: boolean
+  startedAfter?: string
+  startedBeforeExclusive?: string
+  intervals?: readonly { after: string; before: string }[]
 }
 const businessPredicate = (projectId: string, filter?: BusinessFilter) =>
   filter?.businessKey === undefined
@@ -17,7 +27,7 @@ const businessPredicate = (projectId: string, filter?: BusinessFilter) =>
     jsonb_array_elements(config.fields) field
     WHERE config.project_id = ${projectId} AND config.workflow = w.name
     AND field ->> 'key' = ${filter.businessKey}
-    AND (field ->> 'role' = 'lookup' OR (field ->> 'role' = 'dimension' AND (field -> 'values') ? ${filter.businessValue ?? ""}))
+    AND ((field ->> 'role' = 'lookup' AND ${filter.dimensionOnly !== true}) OR (field ->> 'role' = 'dimension' AND (field -> 'values') ? ${filter.businessValue ?? ""}))
   )
 `
 /**
@@ -56,6 +66,8 @@ export const projectRunSummaries = (
         array_agg(e.result ORDER BY e.occurred_at DESC, e.created_at DESC)
         FILTER (WHERE e.type IN ('completed', 'failed') AND e.result IS NOT NULL)
       )[1] AS result,
+      (array_agg(CASE WHEN jsonb_typeof(e.properties -> 'definitionRevision') = 'string' THEN e.properties ->> 'definitionRevision' END ORDER BY e.created_at, e.id)
+        FILTER (WHERE e.type = 'started'))[1] AS "definitionRevision",
       r.outcome AS outcome,
       max(r.environment) AS environment,
       max(r.release) AS release,
@@ -67,6 +79,20 @@ export const projectRunSummaries = (
     JOIN workflows w ON w.id = r.workflow_id
     LEFT JOIN workflow_events e ON e.run_id = r.id
     WHERE w.project_id = ${projectId} AND ${businessPredicate(projectId, business)}
+      AND (${business?.workflow ?? null}::text IS NULL OR w.name = ${business?.workflow ?? null})
+      AND (${business?.startedAfter ?? null}::timestamptz IS NULL OR r.started_at >= ${business?.startedAfter ?? null}::timestamptz)
+      AND (${business?.startedBeforeExclusive ?? null}::timestamptz IS NULL OR r.started_at < ${business?.startedBeforeExclusive ?? null}::timestamptz)
+      AND (${
+        business?.intervals
+          ? sql.join(
+              business.intervals.map(
+                (interval) =>
+                  sql`(r.started_at >= ${interval.after}::timestamptz AND r.started_at < ${interval.before}::timestamptz)`,
+              ),
+              sql` OR `,
+            )
+          : sql`true`
+      })
     GROUP BY r.id, w.name
   )
 `
@@ -203,6 +229,13 @@ export const peerRunsSql = (projectId: string, runId: string) => sql`
 `
 
 export type ListRunsFilter = {
+  readonly ratioSelection?: RatioSelection
+  readonly resultField?: ResultDeclaration["fields"][number]
+  readonly resultSelection?: ResultSelection
+  readonly outcome?: string
+  readonly definitionRevision?: string
+  readonly terminalOnly?: boolean
+  readonly startedBeforeExclusive?: string
   readonly businessKey?: string
   readonly businessValue?: string
   readonly workflow?: string
@@ -245,7 +278,13 @@ export const listRunsSql = (projectId: string, filter: ListRunsFilter) => {
     "failCode"
   FROM runs
   WHERE
-    (${filter.workflow ?? null}::text IS NULL OR workflow = ${filter.workflow ?? null})
+    ${resultPredicate(filter.resultSelection, filter.resultField)}
+    AND ${filter.ratioSelection ? sql`${resultPredicate({ revision: filter.ratioSelection.revision, path: filter.ratioSelection.numerator, operator: "gte", value: 0 })} AND ${resultPredicate({ revision: filter.ratioSelection.revision, path: filter.ratioSelection.denominator, operator: "gte", value: 0 })}` : sql`true`}
+    AND (${filter.outcome ?? null}::text IS NULL OR outcome = ${filter.outcome ?? null})
+    AND (${filter.definitionRevision ?? null}::text IS NULL OR "definitionRevision" = ${filter.definitionRevision ?? null})
+    AND (${filter.terminalOnly ?? false} = false OR status <> 'Running')
+    AND (${filter.startedBeforeExclusive ?? null}::timestamptz IS NULL OR "startedAt" < ${filter.startedBeforeExclusive ?? null}::timestamptz)
+    AND (${filter.workflow ?? null}::text IS NULL OR workflow = ${filter.workflow ?? null})
     AND (${filter.status ?? null}::text IS NULL OR status = ${filter.status ?? null})
     AND (${filter.externalId ?? null}::text IS NULL OR "externalId" = ${filter.externalId ?? null})
     AND (${filter.failCode ?? null}::text IS NULL OR "failCode" = ${filter.failCode ?? null})
@@ -297,7 +336,13 @@ export const listRunsCountSql = (
   SELECT count(*)::int AS count
   FROM runs
   WHERE
-    (${filter.workflow ?? null}::text IS NULL OR workflow = ${filter.workflow ?? null})
+    ${resultPredicate(filter.resultSelection, filter.resultField)}
+    AND ${filter.ratioSelection ? sql`${resultPredicate({ revision: filter.ratioSelection.revision, path: filter.ratioSelection.numerator, operator: "gte", value: 0 })} AND ${resultPredicate({ revision: filter.ratioSelection.revision, path: filter.ratioSelection.denominator, operator: "gte", value: 0 })}` : sql`true`}
+    AND (${filter.outcome ?? null}::text IS NULL OR outcome = ${filter.outcome ?? null})
+    AND (${filter.definitionRevision ?? null}::text IS NULL OR "definitionRevision" = ${filter.definitionRevision ?? null})
+    AND (${filter.terminalOnly ?? false} = false OR status <> 'Running')
+    AND (${filter.startedBeforeExclusive ?? null}::timestamptz IS NULL OR "startedAt" < ${filter.startedBeforeExclusive ?? null}::timestamptz)
+    AND (${filter.workflow ?? null}::text IS NULL OR workflow = ${filter.workflow ?? null})
     AND (${filter.status ?? null}::text IS NULL OR status = ${filter.status ?? null})
     AND (${filter.externalId ?? null}::text IS NULL OR "externalId" = ${filter.externalId ?? null})
     AND (${filter.failCode ?? null}::text IS NULL OR "failCode" = ${filter.failCode ?? null})

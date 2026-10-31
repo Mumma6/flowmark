@@ -1,5 +1,7 @@
 "use client"
 
+import { BusinessOutcomes } from "./business-outcomes"
+
 import { WorkflowSearchFields } from "./workflow-search-fields"
 
 import { useMemo } from "react"
@@ -309,6 +311,7 @@ export function ProjectRuns({
       </PageHeading>
       {workflow && (
         <>
+          <BusinessOutcomes key={`outcomes:${workflow}`} workflow={workflow} />
           <WorkflowSearchFields
             key={`search:${workflow}`}
             workflow={workflow}

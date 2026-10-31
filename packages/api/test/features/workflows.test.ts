@@ -43,6 +43,7 @@ const input = {
 
 function repository(overrides: Partial<WorkflowRepositoryService> = {}) {
   return WorkflowRepository.of({
+    businessInsights: () => Effect.die("Not used by this fixture"),
     append: () => Effect.succeed("recorded"),
     snapshot: () =>
       Effect.succeed({
@@ -329,6 +330,44 @@ describe("API Effect services", () => {
     )
     expect(result).toBe("owned-project")
     expect(projectForUser).toHaveBeenCalledWith("user-1")
+  })
+
+  it("keeps business insight reads behind user project membership", async () => {
+    const businessInsights = vi.fn(() =>
+      Effect.die("Must not read another project"),
+    )
+    const query = {
+      workflow: "import",
+      revision: "v1",
+      path: ["saved"],
+      currentStartedAfter: "2026-10-20T00:00:00.000Z",
+      currentStartedBefore: "2026-10-27T00:00:00.000Z",
+      previousStartedAfter: "2026-10-13T00:00:00.000Z",
+      previousStartedBefore: "2026-10-20T00:00:00.000Z",
+    }
+    const result = await Effect.runPromise(
+      Effect.flatMap(GetProjectWorkflowData, (service) =>
+        Effect.result(
+          service.businessInsightsForUser("user-1", query, "foreign-project"),
+        ),
+      ).pipe(
+        Effect.provide(
+          GetProjectWorkflowData.layer.pipe(
+            Layer.provide(
+              dependencies(
+                repository({ businessInsights }),
+                true,
+                projectCredentials({
+                  memberProject: () => Effect.succeed(undefined),
+                }),
+              ),
+            ),
+          ),
+        ),
+      ),
+    )
+    expectLeft(result, { _tag: "Unauthorized", permission: "read" })
+    expect(businessInsights).not.toHaveBeenCalled()
   })
 
   it("authorizes a requested project only when the user is a member", async () => {

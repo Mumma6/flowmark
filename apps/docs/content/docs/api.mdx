@@ -150,3 +150,59 @@ per run; these only coordinate telemetry. Final results/outcomes and all origina
 start metadata remain stable. Older stored mixed terminals retain their failed
 projection. No backfill/schema migration is required; deploying the accepting
 backend changes future writes. Older backends still use their existing policy.
+
+## Business outcome reads
+
+`project.businessInsights` accepts a workflow, revision, declared field `path`,
+`currentStartedAfter`/`currentStartedBefore` and
+`previousStartedAfter`/`previousStartedBefore`. Use canonical ISO UTC timestamps
+with milliseconds; each half-open interval is at most 31 days. Optional
+`numerator`/`denominator` paths must both be aggregatable count fields. Optional
+`releaseA`/`releaseB` select distinct releases. Optional `businessKey`/
+`businessValue` must select a configured bounded dimension, not a lookup key.
+Reads use the signed-in project or authenticated read-key project.
+
+Immutable result declaration fields can opt into `aggregate: true`. Categories
+and reason maps also require `values` with 1–20 distinct allowed strings. Older
+presentation declarations are not automatically aggregatable. The accepting
+API/dashboard must be deployed together; this metadata uses existing JSON storage
+and needs no schema migration or SDK runtime publication.
+
+The bounded response includes current/previous and optional release scopes,
+finished/open/technical-failure populations, field coverage, canonical outcome
+counts, selected field/category/reason totals, daily cohorts and a weighted ratio.
+Totals are exact decimal strings or null. Ratio pairs exclude missing/wrong-type
+members; zero overall denominator yields null. Release comparison reports
+availability and its minimum known-run threshold. See [metric definitions](/docs/concepts/insights).
+
+`run.list` adds `outcome`, `definitionRevision`, `terminalOnly`, canonical UTC
+`startedBeforeExclusive` and `resultSelection`:
+
+```ts
+const page = await client.run.list({
+  workflow: "import.products",
+  startedAfter: "2026-10-20T00:00:00.000Z",
+  startedBeforeExclusive: "2026-10-27T00:00:00.000Z",
+  resultSelection: {
+    revision: "import-v2",
+    path: ["imported"],
+    operator: "gte",
+    value: 1,
+  },
+  limit: 25,
+})
+```
+
+Result predicates imply finished runs and the specified original-start revision.
+Count operators are eq/gte/lte; categories require string eq; reason predicates
+also provide a declared `reason` key. Unknown paths/revisions, incompatible
+operators and undeclared reason/category values are rejected. Queries never
+accept arbitrary JSON SQL. Existing inclusive `startedBefore` remains available;
+evidence uses the additive exclusive bound to reproduce the aggregate exactly.
+
+For weighted-ratio evidence, `run.list` also accepts `ratioSelection` with
+`revision`, `numerator` and `denominator` paths. Both paths must be declared
+aggregatable counts; only jointly valid finished observations match. It combines
+with period/dimension/release filters and uses the same count/pagination rules.
+This is the population behind a ratio, rather than two independently filtered
+lists with different missing values.
