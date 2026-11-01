@@ -5,7 +5,9 @@ They show where Flowmark fits into application code that already does the work.
 
 These files are not applications, tests, or scripts. Helper functions such as
 `upsertCustomer()` are declared so the snippet can focus on instrumentation.
-Every Flowmark call matches the current SDK.
+Every Flowmark call matches the current SDK. `tsconfig.json` maps
+`@flowmarkdev/node` to the SDK in this repository so the editor can resolve
+those imports. It does not install or publish a package.
 
 Flowmark observes a run. It does not execute, schedule, or retry the work.
 
