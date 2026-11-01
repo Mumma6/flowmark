@@ -1,0 +1,43 @@
+# SDK usage examples
+
+Illustrative TypeScript excerpts for [`@flowmarkdev/node`](https://www.npmjs.com/package/@flowmarkdev/node).
+They show where Flowmark fits into application code that already does the work.
+
+These files are not applications, tests, or scripts. Helper functions such as
+`upsertCustomer()` are declared so the snippet can focus on instrumentation.
+Every Flowmark call matches the current SDK.
+
+Flowmark observes a run. It does not execute, schedule, or retry the work.
+
+Runnable loopback scripts live separately in `packages/sdk/examples/`.
+
+## Scenarios
+
+| Example                     | Situation                        | SDK concepts                                                              |
+| --------------------------- | -------------------------------- | ------------------------------------------------------------------------- |
+| `flowmark.ts`               | Shared Node.js client            | `defineConfig`, `createFlowmark`, instrumentation errors                  |
+| `basic-workflow.ts`         | Checkout                         | `workflow`, `step`, `operation`, `done`, `fail`                           |
+| `customer-import.ts`        | Typed customer import            | `defineWorkflow`, `start`, outcomes `complete` and `partial`              |
+| `intermediate-reporting.ts` | Page-by-page import              | `report` replaces the non-final snapshot; `done` carries the final result |
+| `batch-progress.ts`         | Price file                       | Absolute `progress`; `delivery.progress: "latest"`                        |
+| `crm-sync.ts`               | Account push with a second try   | Operation `attempt`, `mapError`; the application owns the retry           |
+| `retry-tracking.ts`         | A later import run               | `retryOf` starts a new run and does not continue the previous one         |
+| `booking-process.ts`        | Booking and provider evidence    | `expect`, `resolveExpectation`, `cancelExpectation`                       |
+| `workflow-continuation.ts`  | Draft, then a later review       | Same name and `id`; `setProperties` while the run is open                 |
+| `webhook-processing.ts`     | Payment callback                 | Continue a stored `runId`; terminal `done` or `fail`                      |
+| `background-job.ts`         | Invoice reconciliation           | `flush`, `shutdown`, `deliveryHealth`                                     |
+| `error-handling.ts`         | Campaign delivery fallback       | `operation` rethrows; `error` stays non-terminal; `fail` ends the run     |
+| `concurrent-operations.ts`  | Inventory and payment together   | Overlapping operations; `done` waits for open handles                     |
+| `correlated-workflows.ts`   | Fulfillment and a shipping label | Explicit `correlationId` and `parentRunId`                                |
+| `next-route.ts`             | Next.js server action            | `@flowmarkdev/node/next`, `onDeliveryHealth`; no manual `shutdown`        |
+
+## Usage notes
+
+Create one client for the process. Pass durable ids such as an order or batch
+id in `properties`, and keep one execution's id in `runId`. An `outcome` is the
+business result your code reports. It is independent of whether the run
+completed or failed.
+
+Browser delivery (`@flowmarkdev/node/browser`), the server proxy, and custom
+transports are client setup rather than workflow scenarios, so they are not
+included here.
