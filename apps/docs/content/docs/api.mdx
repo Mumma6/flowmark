@@ -105,8 +105,13 @@ duration, daily trends, slowest operations, failure codes, and run comparison.
 
 The seeded `local@dev` account is a loopback fixture for the operations
 project, not a hosted owner. Registration creates an account only. The
-dashboard can create, rotate, and revoke project keys. Alerting and durable
-offline delivery are not implemented.
+dashboard can create, rotate, and revoke project keys. `project.rotateWriteKey`
+replaces one server write key for the signed-in project member: it keeps the
+label, returns the new secret once, and rejects the previous secret after the
+change is committed. It refuses a missing, revoked, read, browser, or
+other-project key without creating a replacement. A request already authorized
+with the old key may still finish. Planned overlap is a separate create, then
+revoke. Alerting and durable offline delivery are not implemented.
 
 ## Declared business search
 

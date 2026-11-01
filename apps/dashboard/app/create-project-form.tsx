@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, type FormEvent } from "react"
+import { useEffect, useRef, useState, type FormEvent } from "react"
 import { useMutation } from "@tanstack/react-query"
 import {
   Alert,
@@ -9,6 +9,7 @@ import {
   Button,
   Input,
 } from "@flowmark/ui"
+import { authClient } from "../lib/auth-client"
 import { useTRPC } from "../lib/trpc"
 import { CopyButton } from "./dashboard-components"
 import { useProject } from "./project-context"
@@ -23,9 +24,11 @@ export type CreatedSecret = {
 export function SecretAlert({
   secret,
   label,
+  detail,
 }: {
   secret: CreatedSecret
   label: string
+  detail?: string
 }) {
   return (
     <Alert>
@@ -35,6 +38,7 @@ export function SecretAlert({
           {label} <code>{secret.prefix}…</code>. Flowmark will not show the full
           secret again.
         </p>
+        {detail ? <p>{detail}</p> : null}
         <div className="flex flex-wrap items-center gap-2">
           <code className="break-all text-xs">{secret.secret}</code>
           <CopyButton value={secret.secret} />
@@ -50,13 +54,31 @@ export function CreateProjectForm({
   onCreated?: (secret: CreatedSecret) => void
 }) {
   const trpc = useTRPC()
-  const { select, projects } = useProject()
+  const session = authClient.useSession()
+  const email = session.data?.user.email ?? ""
+  const { current, select, projects } = useProject()
   const [newName, setNewName] = useState("")
   const [secret, setSecret] = useState<CreatedSecret | null>(null)
+  const [shownFor, setShownFor] = useState<string | null>(null)
+  const previousEmail = useRef(email)
+  useEffect(() => {
+    if (previousEmail.current && email && previousEmail.current !== email) {
+      setSecret(null)
+      setShownFor(null)
+    }
+    previousEmail.current = email
+  }, [email])
+  useEffect(() => {
+    if (shownFor && current?.id && current.id !== shownFor) {
+      setSecret(null)
+      setShownFor(null)
+    }
+  }, [current?.id, shownFor])
   const create = useMutation(
     trpc.project.create.mutationOptions({
       onSuccess: (result) => {
         setSecret(result.writeKey)
+        setShownFor(result.project.id)
         setNewName("")
         select(result.project.id)
         onCreated?.(result.writeKey)

@@ -129,6 +129,12 @@ export const ProjectCredentialsLive = Layer.effect(
             .revokeApiKey(projectId, keyId)
             .pipe(Effect.mapError(toPersistenceError)),
       ),
+      rotateWriteKey: Effect.fn("PostgresProjectCredentials.rotateWriteKey")(
+        (projectId, keyId) =>
+          store
+            .rotateWriteKey(projectId, keyId)
+            .pipe(Effect.mapError(toPersistenceError)),
+      ),
       createBrowserKey: Effect.fn(
         "PostgresProjectCredentials.createBrowserKey",
       )((projectId, input) =>

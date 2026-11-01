@@ -8,6 +8,7 @@ import {
 import { Database } from "../../database.js"
 import { DatabaseOperation } from "../../database-operation.js"
 import { runQuery } from "../../run-query.js"
+import type { CreatedSecret } from "../types.js"
 import { generateProjectKey } from "./generate-project-key.js"
 
 export const createOwnedProject = Effect.fn("createOwnedProject")(function* (
@@ -16,8 +17,7 @@ export const createOwnedProject = Effect.fn("createOwnedProject")(function* (
 ) {
   const db = yield* Database
   const writeKey = generateProjectKey("write")
-  const readKey = generateProjectKey("read")
-  const projectId = yield* runQuery(DatabaseOperation.CreateOwnedProject, () =>
+  const created = yield* runQuery(DatabaseOperation.CreateOwnedProject, () =>
     db.transaction(async (tx) => {
       const [workspace] = await tx
         .insert(workspaces)
@@ -30,29 +30,34 @@ export const createOwnedProject = Effect.fn("createOwnedProject")(function* (
           name: names.project,
         })
         .returning({ id: projects.id })
-      await tx.insert(projectApiKeys).values([
-        {
+      const [key] = await tx
+        .insert(projectApiKeys)
+        .values({
           projectId: project.id,
           keyHash: writeKey.hash,
           permission: "write",
           name: "Write key",
           keyPrefix: writeKey.prefix,
-        },
-        {
-          projectId: project.id,
-          keyHash: readKey.hash,
-          permission: "read",
-          name: "Read key",
-          keyPrefix: readKey.prefix,
-        },
-      ])
+        })
+        .returning({ id: projectApiKeys.id })
+      if (!key) {
+        throw new Error("Write key was not stored.")
+      }
       await tx.insert(projectMembers).values({
         userId,
         projectId: project.id,
         role: "owner",
       })
-      return project.id
+      return { projectId: project.id, keyId: key.id }
     }),
   )
-  return { projectId, writeKey: writeKey.secret, readKey: readKey.secret }
+  return {
+    projectId: created.projectId,
+    writeKey: {
+      id: created.keyId,
+      name: "Write key",
+      prefix: writeKey.prefix,
+      secret: writeKey.secret,
+    } satisfies CreatedSecret,
+  }
 })

@@ -361,7 +361,9 @@ These tests cover ingestion, idempotency, browser quotas, and project isolation.
 The authenticated ingestion suite now covers registration → sign-in → project
 and key creation → ingestion → persisted-run read with a real Better Auth
 session, with demo mode off. It also checks that project headers and management
-inputs cannot grant another user's access, and that signed-out sessions fail.
+inputs cannot grant another user's access, that a new project stores one write
+key, that write-key rotation commits or rolls back as a whole, and that
+signed-out sessions fail.
 
 | Boundary                  | Test coverage                                                                                                                                                                                                                                     | CI job                                       |
 | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |

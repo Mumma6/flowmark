@@ -28,6 +28,7 @@ export enum DatabaseOperation {
   ListProjectsForUser = "list-projects-for-user",
   RenameProject = "rename-project",
   RevokeApiKey = "revoke-api-key",
+  RotateWriteKey = "rotate-write-key",
   RevokeBrowserKey = "revoke-browser-key",
   Migrate = "migrate",
   ReadDailyVolume = "read-daily-volume",
