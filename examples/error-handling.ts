@@ -1,3 +1,4 @@
+import type { WorkflowError, WorkflowFailure } from "@flowmarkdev/node"
 import { flowmark } from "./flowmark"
 
 declare function deliverBatch(campaignId: string): Promise<number>
@@ -20,12 +21,13 @@ export async function sendCampaign(campaignId: string): Promise<number> {
         deliverBatch(campaignId),
       )
     } catch {
-      flow.error({
+      const observed: WorkflowError = {
         code: "PRIMARY_PROVIDER_REJECTED",
         message: "Primary provider rejected the batch",
         retryable: true,
         handled: true,
-      })
+      }
+      flow.error(observed)
       delivered = await flow.operation("deliver-fallback", () =>
         deliverFallback(campaignId),
       )
@@ -34,7 +36,12 @@ export async function sendCampaign(campaignId: string): Promise<number> {
     flow.done({ outcome: "sent", result: { delivered } })
     return delivered
   } catch (cause) {
-    flow.fail({ code: "CAMPAIGN_FAILED", outcome: "unsent" })
+    const failure: WorkflowFailure = {
+      code: "CAMPAIGN_FAILED",
+      message: "Neither provider accepted the campaign",
+      retryable: false,
+    }
+    flow.fail({ ...failure, outcome: "unsent" })
     throw cause
   }
 }

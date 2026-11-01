@@ -1,3 +1,4 @@
+import type { OperationErrorMapper, WorkflowAttempt } from "@flowmarkdev/node"
 import { flowmark } from "./flowmark"
 
 declare function pushAccount(accountId: string): Promise<void>
@@ -15,13 +16,15 @@ export async function syncAccount(accountId: string): Promise<void> {
 
   for (const number of [1, 2]) {
     try {
+      const attempt: WorkflowAttempt = { groupId, number }
+      const mapError: OperationErrorMapper = () => ({
+        code: "CRM_UNAVAILABLE",
+        message: "CRM temporarily unavailable",
+        retryable: number < 2,
+      })
       await flow.operation("push-account", () => pushAccount(accountId), {
-        attempt: { groupId, number },
-        mapError: () => ({
-          code: "CRM_UNAVAILABLE",
-          message: "CRM temporarily unavailable",
-          retryable: number < 2,
-        }),
+        attempt,
+        mapError,
       })
       flow.done({ outcome: "synced", result: { attempts: number } })
       return

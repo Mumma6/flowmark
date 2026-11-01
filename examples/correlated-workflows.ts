@@ -1,8 +1,9 @@
+import type { WorkflowCorrelationId } from "@flowmarkdev/node"
 import { flowmark } from "./flowmark"
 
 interface OrderWork {
   readonly orderId: string
-  readonly correlationId: string
+  readonly correlationId: WorkflowCorrelationId
 }
 
 interface PackedOrder {

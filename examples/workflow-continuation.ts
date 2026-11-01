@@ -1,3 +1,4 @@
+import type { WorkflowRunReference } from "@flowmarkdev/node"
 import { flowmark } from "./flowmark"
 
 /**
@@ -5,16 +6,19 @@ import { flowmark } from "./flowmark"
  * open until the whole process is finished. A later start ignores a second
  * copy of the original properties, environment, and release.
  */
-export function startApplication(applicationId: string): string {
+export function startApplication(applicationId: string): WorkflowRunReference {
   const flow = flowmark.workflow("onboarding.application", {
     properties: { applicationId },
   })
   flow.step("draft-saved")
-  return flow.runId
+  return { workflow: "onboarding.application", runId: flow.runId }
 }
 
-export function finishApplication(runId: string, approved: boolean): void {
-  const flow = flowmark.workflow("onboarding.application", { id: runId })
+export function finishApplication(
+  reference: WorkflowRunReference,
+  approved: boolean,
+): void {
+  const flow = flowmark.workflow(reference.workflow, { id: reference.runId })
   flow.setProperties({ reviewComplete: true })
 
   if (!approved) {

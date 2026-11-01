@@ -3,7 +3,10 @@
   "compilerOptions": {
     "paths": {
       "@flowmarkdev/node": ["../packages/sdk/src/index.ts"],
-      "@flowmarkdev/node/next": ["../packages/sdk/src/adapters/next.ts"]
+      "@flowmarkdev/node/next": ["../packages/sdk/src/adapters/next.ts"],
+      "@flowmarkdev/node/browser": ["../packages/sdk/src/browser/index.ts"],
+      "@flowmarkdev/node/proxy": ["../packages/sdk/src/adapters/proxy.ts"],
+      "@flowmarkdev/node/next/proxy": ["../packages/sdk/src/adapters/proxy.ts"]
     }
   },
   "include": ["**/*.ts"]

@@ -1,4 +1,8 @@
-import { createFlowmark } from "@flowmarkdev/node"
+import {
+  createFlowmark,
+  FlowmarkDeliveryError,
+  type DeliveryHealth,
+} from "@flowmarkdev/node"
 
 interface Reconciliation {
   readonly invoices: number
@@ -22,6 +26,7 @@ export async function reconcileInvoices(
 ): Promise<Reconciliation> {
   const flow = flowmark.workflow("billing.reconcile", {
     properties: { period },
+    release: `billing-worker+${period}`,
   })
 
   let summary: Reconciliation
@@ -41,12 +46,23 @@ export async function reconcileInvoices(
     throw cause
   }
 
-  await flowmark.flush()
+  try {
+    await flowmark.flush()
+  } catch (cause) {
+    if (cause instanceof FlowmarkDeliveryError) {
+      console.error("[Flowmark] Drain failed", {
+        failureCount: cause.failureCount,
+        omittedFailureCount: cause.omittedFailureCount,
+        retained: cause.failures.length,
+      })
+    }
+    throw cause
+  }
   return summary
 }
 
 export async function stopBillingWorker(): Promise<void> {
-  const health = flowmark.deliveryHealth()
+  const health: DeliveryHealth = flowmark.deliveryHealth()
   if (health.failed > 0 || health.dropped > 0) {
     console.error("[Flowmark] Delivery degraded before shutdown", {
       failed: health.failed,

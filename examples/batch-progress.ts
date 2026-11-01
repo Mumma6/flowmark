@@ -1,4 +1,8 @@
-import { createFlowmark } from "@flowmarkdev/node"
+import {
+  createFlowmark,
+  type DeliveryOptions,
+  type WorkflowProgress,
+} from "@flowmarkdev/node"
 
 interface PriceRow {
   readonly sku: string
@@ -13,9 +17,8 @@ declare function upsertPrice(row: PriceRow): Promise<void>
  * Each snapshot is absolute: `completed` is the count so far, not a delta.
  * Shut the client down from the process entrypoint before exit.
  */
-const flowmark = createFlowmark({
-  delivery: { progress: "latest" },
-})
+const delivery: DeliveryOptions = { progress: "latest" }
+const flowmark = createFlowmark({ delivery })
 
 export async function importPrices(fileId: string): Promise<number> {
   const flow = flowmark.workflow("catalog.price-import", {
@@ -28,7 +31,12 @@ export async function importPrices(fileId: string): Promise<number> {
     for (const row of rows) {
       await upsertPrice(row)
       completed += 1
-      flow.progress({ completed, total: rows.length, unit: "prices" })
+      const snapshot: WorkflowProgress = {
+        completed,
+        total: rows.length,
+        unit: "prices",
+      }
+      flow.progress(snapshot)
     }
     flow.done({ outcome: "complete", result: { updated: completed } })
     return completed

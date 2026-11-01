@@ -1,3 +1,4 @@
+import type { JsonValue, WorkflowProperties } from "@flowmarkdev/node"
 import { flowmark } from "./flowmark"
 
 interface Shipment {
@@ -8,9 +9,9 @@ declare function createShipment(orderId: string): Promise<Shipment>
 
 /** Record an order the application is already completing. */
 export async function completeCheckout(orderId: string): Promise<Shipment> {
-  const flow = flowmark.workflow("checkout.order", {
-    properties: { orderId },
-  })
+  const source: JsonValue = "checkout"
+  const properties: WorkflowProperties = { orderId, source }
+  const flow = flowmark.workflow("checkout.order", { properties })
 
   try {
     flow.step("payment-captured", { properties: { orderId } })

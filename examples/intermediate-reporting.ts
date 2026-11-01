@@ -1,3 +1,4 @@
+import type { WorkflowResult } from "@flowmarkdev/node"
 import { flowmark } from "./flowmark"
 
 interface ImportProgress {
@@ -34,10 +35,12 @@ export async function importCustomersByPage(batchId: string): Promise<void> {
       imported += pageResult.imported
       rejected += pageResult.rejected
       skipped += pageResult.skipped ?? 0
-      flow.report({ imported, rejected, skipped })
+      const snapshot: WorkflowResult = { imported, rejected, skipped }
+      flow.report(snapshot)
     }
 
-    flow.report({ imported, rejected })
+    const latest: WorkflowResult = { imported, rejected }
+    flow.report(latest)
     flow.done({
       outcome: rejected === 0 ? "complete" : "partial",
       result: { imported, rejected, skipped },

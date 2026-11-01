@@ -1,7 +1,8 @@
+import type { WorkflowRunId } from "@flowmarkdev/node"
 import { flowmark } from "./flowmark"
 
 interface PaymentWebhook {
-  readonly runId: string
+  readonly runId: WorkflowRunId
   readonly paymentId: string
   readonly status: "paid" | "failed"
 }

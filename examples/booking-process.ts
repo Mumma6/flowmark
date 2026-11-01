@@ -1,4 +1,9 @@
-import type { ExpectationReference } from "@flowmarkdev/node"
+import type {
+  ExpectationCancellation,
+  ExpectationOptions,
+  ExpectationReference,
+  ExpectationResolution,
+} from "@flowmarkdev/node"
 import { flowmark } from "./flowmark"
 
 interface BookingRequest {
@@ -18,10 +23,11 @@ export async function submitBooking(
   const flow = flowmark.workflow("booking.create", {
     properties: { bookingRef: request.bookingRef },
   })
-  const confirmation = flow.expect("provider-response", {
+  const expectation: ExpectationOptions = {
     id: request.confirmationId,
     within: "15m",
-  })
+  }
+  const confirmation = flow.expect("provider-response", expectation)
 
   try {
     await flow.operation("submit-to-provider", () =>
@@ -40,15 +46,17 @@ export function recordProviderResponse(
   confirmation: ExpectationReference,
   reserved: number,
 ): void {
-  flowmark.resolveExpectation(confirmation, {
+  const resolution: ExpectationResolution = {
     outcome: reserved > 0 ? "confirmed" : "no-availability",
     result: { reserved },
-  })
+  }
+  flowmark.resolveExpectation(confirmation, resolution)
 }
 
 export function withdrawBooking(confirmation: ExpectationReference): void {
-  flowmark.cancelExpectation(confirmation, {
+  const cancellation: ExpectationCancellation = {
     code: "BOOKING_WITHDRAWN",
     message: "Guest withdrew the request before the provider responded",
-  })
+  }
+  flowmark.cancelExpectation(confirmation, cancellation)
 }
