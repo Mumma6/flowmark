@@ -92,8 +92,13 @@ test("nonprod bindings use explicit import IDs and only Preview targets", async 
     assert.ok(expectedBinding)
     assert.equal(
       binding.id,
-      `team_fixture/prj_${expectedBinding.project}/env-${binding.name}`,
+      `${binding.inputs.sensitive ? "write-only:" : ""}team_fixture/prj_${expectedBinding.project}/env-${binding.name}`,
     )
+    if (binding.inputs.sensitive) {
+      assert.equal(binding.inputs.value, undefined)
+      assert.ok(binding.inputs.valueWo)
+      assert.equal(binding.inputs.valueWoVersion, undefined)
+    }
     assert.deepEqual(binding.inputs.targets, ["preview"])
     assert.equal(
       binding.inputs.gitBranch,

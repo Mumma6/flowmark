@@ -92,6 +92,7 @@ export const importNonprodVercelBindings = () => {
     const name = bindingName(binding)
     const projectId = projects[binding.project]
     const envId = config.require(`${name}-id`, { minLength: 1 })
+    const importId = `${teamId}/${projectId}/${envId}`
     return new vercel.ProjectEnvironmentVariable(
       name,
       {
@@ -102,16 +103,17 @@ export const importNonprodVercelBindings = () => {
         gitBranch: binding.stage === "staging" ? "staging" : undefined,
         sensitive: binding.sensitive,
         visibility: binding.sensitive ? "secret" : "config",
-        value: binding.value,
+        ...(binding.sensitive
+          ? { valueWo: binding.value }
+          : { value: binding.value }),
       },
       {
         provider,
-        import: `${teamId}/${projectId}/${envId}`,
+        import: binding.sensitive ? `write-only:${importId}` : importId,
         protect: true,
-        additionalSecretOutputs: ["value"],
-        // Vercel returns null for sensitive values after creation. Preserve the
-        // live value during adoption; writing it later requires separate review.
-        ignoreChanges: binding.sensitive ? ["value"] : [],
+        additionalSecretOutputs: ["value", "valueWo"],
+        // A write-only import preserves sensitive values without reading or
+        // rewriting them. A later value update requires an explicit version bump.
       },
     ).id
   })

@@ -221,29 +221,33 @@ same prefix with `-value` instead of `-id`. For example, the Staging dashboard
 API origin uses `dashboard-staging-flowmark-api-url-value`. Do not infer IDs
 from names or copy a Production value into a Preview record.
 
-Original sensitive values must be supplied through secret config keys
+Active sensitive values must be supplied through secret config keys
 `previewDatabaseUrl`, `stagingDatabaseUrl`, `previewBetterAuthSecret`,
 `stagingBetterAuthSecret` and `previewProtectionBypass`. Enter them through the
-`pulumi config set --secret` prompt. Never use a placeholder or rotate a value
-to make import pass. Moving an existing credential into a new secret store
-requires approval for that destination.
+`pulumi config set --secret` prompt or a secure local transfer. Never use a
+placeholder. If originals are unavailable, any replacement must be approved
+and set in Vercel separately before adoption. Moving an existing credential
+into a new secret store requires approval for that destination.
 
-Vercel does not return sensitive values after they are set. The import preserves
-these live values with `ignoreChanges: ["value"]`; Pulumi owns each imported
-binding's key, target, project/team, visibility and branch scope. Existing
-sensitive values remain owned in Vercel during this adoption. The encrypted
-config keeps their originals available without writing them during import;
-changing that config alone does **not** rotate the live secret. Any later move
-to Pulumi-managed secret updates needs a separate reviewed change that removes
-the ignore rule. Readable values are managed by Pulumi after import. All value
-outputs are marked secret, and every binding has deletion protection.
+Vercel does not return sensitive values after they are set. The documented
+`write-only:` import prefix and `valueWo` input preserve those live values
+without reading or rewriting them. `valueWoVersion` stays absent during import,
+matching the imported state; a later secret update needs an explicitly reviewed
+version bump in the program. Merely changing secret config does **not** rotate
+the live value. Readable values use `value` and are managed normally after
+import. All value outputs are marked secret, and every binding has deletion
+protection. The final live preview confirms exactly 13 binding imports, one
+Pulumi provider create and four unchanged resources, with no value updates,
+replacements or deletions.
 
 Run preview with both provider sessions available. The Vercel provider accepts
 `VERCEL_API_TOKEN` or secret `vercel:apiToken`; a Vercel CLI login alone does
 not automatically export that environment variable. A live import requires
-separate approval of the final plan. Keep this PR in draft while credentials,
-preview or live acceptance remain outstanding. No Vercel import has run yet.
+separate approval of the final plan. Keep this PR in draft while live acceptance
+remains outstanding. Required encrypted config and a successful live preview
+are now verified. No Vercel import has run yet.
 
 The infrastructure tests use Pulumi mocks to verify the explicit opt-in gate
-and all 13 import IDs, with Preview-only targets, exact branch overrides, and
-project/team scoping. They create no live resources.
+and all 13 import IDs, with Preview-only targets, exact branch overrides,
+project/team scoping, and write-only secret imports without a version bump.
+They create no live resources.
