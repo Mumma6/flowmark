@@ -4,13 +4,12 @@ This is the Pulumi TypeScript project for Flowmark's existing Vercel and Neon
 reference deployment. Resources are adopted by import, starting with
 non-production. Do not recreate them with a starter template.
 
-The `nonprod` stack manages the existing Neon `preview` and `staging` branches,
-imported with approval on 1 November 2026. Both have Pulumi deletion protection;
-post-import refresh-preview and preview report no changes. Production still
-declares no provider resources. Import definitions for 13 non-production
-Vercel environment bindings are prepared behind an explicit configuration
-gate; their live adoption is pending. Vercel projects and domains are not
-adopted yet. See the public
+The `nonprod` stack manages the existing Neon `preview` and `staging` branches
+and 13 non-production Vercel environment bindings, imported with approval on
+1 November 2026. All adopted resources have Pulumi deletion protection;
+post-import refresh-preview and preview report 18 unchanged state resources.
+Production still declares no provider resources. Vercel project containers and
+domains are not adopted yet. See the public
 [infrastructure overview](../docs/infrastructure.md) for the deployment shape.
 
 ## Install and validate
@@ -59,8 +58,8 @@ export PULUMI_ORG=your-pulumi-organization
 A project is the resource program. A stack is an isolated instance with its own
 state and configuration. This project uses:
 
-- `nonprod`: the imported Preview and Staging Neon branches. Their Vercel
-  environment-variable bindings remain pending a separately approved adoption.
+- `nonprod`: the imported Preview and Staging Neon branches and 13 Vercel
+  Preview-target environment bindings, including Staging branch overrides.
 - `production`: the existing Neon project/production resources, shared Vercel
   projects, their domains and production bindings, once approved for adoption.
   The four Vercel projects serve all environments; never declare the same
@@ -132,7 +131,9 @@ Each property has one writer:
 
 - Pulumi owns the imported Preview/Staging branch resources and their names.
   It ignores their ancestry and provider-side protection settings. All other
-  resources/settings remain with their existing owner until explicitly adopted.
+  branch resources/settings remain with their existing owner until explicitly
+  adopted. Pulumi also owns the 13 imported nonprod Vercel bindings and readable
+  values; sensitive values use the write-only versioned update protocol below.
 - Vercel app `vercel.json` files keep framework, region, install/build and ignore
   commands. Match them during import instead of introducing competing values.
 - Application deployments stay on the existing Git/controlled Actions path.
@@ -243,9 +244,14 @@ replacements or deletions.
 Run preview with both provider sessions available. The Vercel provider accepts
 `VERCEL_API_TOKEN` or secret `vercel:apiToken`; a Vercel CLI login alone does
 not automatically export that environment variable. A live import requires
-separate approval of the final plan. Keep this PR in draft while live acceptance
-remains outstanding. Required encrypted config and a successful live preview
-are now verified. No Vercel import has run yet.
+separate approval of the final plan. The first Vercel import is complete:
+13 existing bindings were adopted and only one Pulumi provider metadata record
+was created. No Vercel value, scope, visibility or timestamp changed during
+import. Post-import refresh-preview and preview passed with 18 unchanged state
+resources. Both database URLs were matched to the correct Neon branch endpoints
+and distinct from Production, with read-only SQL identity checks. Schema-only
+branch origins and absence of expiry were preserved. No application rows were
+read and no SQL writes were performed. Production adoption is a separate task.
 
 The infrastructure tests use Pulumi mocks to verify the explicit opt-in gate
 and all 13 import IDs, with Preview-only targets, exact branch overrides,
