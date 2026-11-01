@@ -8,9 +8,14 @@ The `nonprod` stack manages the existing Neon `preview` and `staging` branches
 and 13 non-production Vercel environment bindings, imported with approval on
 1 November 2026. All adopted resources have Pulumi deletion protection;
 post-import refresh-preview and preview report 18 unchanged state resources.
-Production still declares no provider resources. Vercel project containers and
-domains are not adopted yet. See the public
+Production project-container imports are prepared behind an explicit opt-in;
+their live adoption and the remaining production classes are pending. See the public
 [infrastructure overview](../docs/infrastructure.md) for the deployment shape.
+
+The [environment contract](./environments.md) records all required app,
+platform/build, CI/migration and provider variables, their scopes and owners.
+Automatic feature previews are intentionally paused; only the controlled
+Staging flow is active for non-production deployments.
 
 ## Install and validate
 
@@ -31,7 +36,7 @@ Root `pnpm check` validates the applications. It does not typecheck this project
 From the repository root, lint and format infrastructure changes with:
 
 ```sh
-pnpm exec eslint infrastructure/index.ts infrastructure/nonprod.ts infrastructure/vercel-nonprod.ts infrastructure/test
+pnpm exec eslint infrastructure/*.ts infrastructure/test
 pnpm exec prettier --check infrastructure
 ```
 
@@ -257,3 +262,31 @@ The infrastructure tests use Pulumi mocks to verify the explicit opt-in gate
 and all 13 import IDs, with Preview-only targets, exact branch overrides,
 project/team scoping, and write-only secret imports without a version bump.
 They create no live resources.
+
+## Production project containers: first resource class
+
+`vercel-production.ts` prepares import of the four existing shared Vercel
+projects into the production stack. It stays disabled until
+`importVercelProjects=true`; required settings are `vercelTeamId` and all four
+`vercel{Api,Dashboard,Web,Docs}ProjectId` values. IDs must be distinct. Imports use
+`team-id/project-id`; they cannot create substitute projects when an ID is absent.
+
+The program owns project identity, app root, Node 22.x, system env exposure,
+affected-project deployment selection and the intentionally paused automatic
+feature previews. It explicitly matches the verified disabled Passport state;
+this avoids a provider default that otherwise requires a missing paid-feature
+connector during preview. Existing Vercel Authentication remains separate and
+unchanged.
+
+Git connections/options, build/install/ignore commands, framework/regions,
+advanced security/billing settings and domain assignment retain their current
+owners and are explicitly ignored during this import. Inline `environments`
+are never declared; individual binding resources remain the only env writer.
+Do not add `vercel.Deployment` resources or change the controlled Staging rollout.
+
+The reviewed production preview proposes four protected project imports and
+only Pulumi stack/provider metadata creates, without settings changes,
+replacements or deletions. This is a prepared plan, not a completed production
+import. Each resource class requires separate approval before `pulumi up`.
+Later classes adopt the Production Neon branch, domains and production/shared
+env bindings. No Production credentials are transferred or rotated for this class.
