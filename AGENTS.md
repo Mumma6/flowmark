@@ -71,9 +71,11 @@
 
 ## Working practices
 
-- Start each normal PR from the latest `origin/staging` on its own
-  `codex/` feature branch, and explicitly target `staging` when opening it.
-  Release PRs retain the documented `staging` to `main` workflow.
+- Before starting implementation on a new task, read and apply
+  [branch](./.agents/skills/branch/SKILL.md) to create or verify a
+  task-specific branch from the latest `origin/staging`. Open normal PRs
+  targeting `staging`; release PRs retain the documented `staging` to `main`
+  workflow.
 - Inspect existing code and prior art before editing. Prefer the simplest
   complete fix, not new abstractions or unrelated cleanup.
 - Preserve existing work; do not overwrite or revert changes you did not make.

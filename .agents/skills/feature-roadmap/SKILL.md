@@ -107,11 +107,13 @@ Task files **do not duplicate overall status**. Keep acceptance checkboxes there
 ## Workflow B — implement one task
 
 1. Read the selected task and the roadmap's shared constraints. Read only direct prerequisite task notes and source files needed for the implementation. Do not load every other task.
-2. Confirm the selected task's outcome, current state, and approval boundaries. If the task is high-risk or architecturally uncertain, make a short scoped design first; otherwise proceed.
-3. Implement the smallest complete change that meets its acceptance criteria. Follow established project conventions; improve poor designs when they fall within scope. Avoid unrelated cleanup, new frameworks without a concrete gain, and broad rewrites.
-4. Add focused tests and run relevant checks. Never claim that a test, deployment, or live validation passed unless it actually ran and passed.
-5. Stop before approval-gated operations. Examples: production deploys or migrations, destructive commands, cloud resource deletion/replacement, DNS or secret changes, publishing packages, customer-data changes, or recurring costs. Prepare the change and describe exact human steps instead.
-6. Update the selected task's acceptance checkboxes and completion notes with **observed** outcomes. Update the main roadmap's overall status: `[x]` only when all required criteria are accepted; `[~]` when code is ready but a live gate remains.
+2. Apply [branch](../branch/SKILL.md) to create or verify a task branch from
+   `origin/staging` before editing application code.
+3. Confirm the selected task's outcome, current state, and approval boundaries. If the task is high-risk or architecturally uncertain, make a short scoped design first; otherwise proceed.
+4. Implement the smallest complete change that meets its acceptance criteria. Follow established project conventions; improve poor designs when they fall within scope. Avoid unrelated cleanup, new frameworks without a concrete gain, and broad rewrites.
+5. Add focused tests and run relevant checks. Never claim that a test, deployment, or live validation passed unless it actually ran and passed.
+6. Stop before approval-gated operations. Examples: production deploys or migrations, destructive commands, cloud resource deletion/replacement, DNS or secret changes, publishing packages, customer-data changes, or recurring costs. Prepare the change and describe exact human steps instead.
+7. Update the selected task's acceptance checkboxes and completion notes with **observed** outcomes. Update the main roadmap's overall status: `[x]` only when all required criteria are accepted; `[~]` when code is ready but a live gate remains.
 
    For repositories with separate deployment environments, distinguish completed
    implementation from feature merge and production release gates. Follow the
@@ -119,7 +121,7 @@ Task files **do not duplicate overall status**. Keep acceptance checkboxes there
    feature implementation. Record pending rollout in completion notes and release
    tracking. Keep [~] only for work required by the task's current acceptance gate.
 
-7. Summarize the changed files, tests and results, decisions, outstanding risks, and next task. Do not start the next task automatically.
+8. Summarize the changed files, tests and results, decisions, outstanding risks, and next task. Do not start the next task automatically.
 
 ## AI effort and context discipline
 
