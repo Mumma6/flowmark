@@ -1,0 +1,10 @@
+packages:
+  - "."
+
+# Pulumi generates this package locally. Its reviewed postinstall only runs
+# TypeScript and copies package metadata into the build output.
+onlyBuiltDependencies:
+  - "@pulumi/neon"
+
+overrides:
+  typescript: 5.9.2

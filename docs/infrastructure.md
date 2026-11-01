@@ -5,8 +5,11 @@ can run the same applications yourself. Neon and Vercel are the maintainers'
 reference deployment, not a requirement for every install.
 
 This page records the public shape of that deployment. It does not include
-credentials, connection strings, or operator runbooks. Pulumi is not part of
-this repository.
+credentials, connection strings, or operator runbooks. The separate
+[Pulumi TypeScript project](../infrastructure/README.md) manages the existing
+Preview/Staging Neon branches, imported with deletion protection on
+1 November 2026. Post-import previews report no changes. Vercel and production
+adoption follow separately.
 
 ## Hostnames
 
@@ -67,7 +70,8 @@ SDK packages publish separately to npm as `@flowmarkdev/node` and
 - A backup restore drill.
 - Alerting.
 - Durable offline delivery.
-- Infrastructure defined with Pulumi.
+- Vercel and production resources imported into Pulumi state. Only the
+  Preview/Staging Neon branches have been adopted so far.
 
 Provider choices and the dated consequences are in
 [ADR 0006](./decisions/0006-mvp-0.1-infrastructure.md). Local variables and

@@ -1,0 +1,22 @@
+{
+  "name": "flowmark-infrastructure",
+  "private": true,
+  "main": "index.ts",
+  "packageManager": "pnpm@10.18.1",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "tsc && node --test dist/test/*.test.js"
+  },
+  "dependencies": {
+    "@pulumi/neon": "file:sdks/neon",
+    "@pulumi/pulumi": "3.273.0",
+    "@pulumiverse/vercel": "5.21.1"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.5",
+    "typescript": "5.9.2"
+  }
+}
