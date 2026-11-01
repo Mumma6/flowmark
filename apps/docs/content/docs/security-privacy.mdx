@@ -37,9 +37,28 @@ the run.
 
 ## Data ownership and operation
 
-Dashboard sign-in is Better Auth email and password. Retention cleanup and
-key rotation in the UI are still upcoming. See
+Dashboard sign-in is Better Auth email and password. Retention cleanup is not
+enforced by the product yet. See
 [local development](./local-development) for the current stack.
+
+## Keys and rotation
+
+Server and browser keys are stored as hashes. A new secret is shown once and
+cannot be read back. Emergency rotation of a server write key replaces that
+key in one step: after it is saved, the previous secret is rejected. A request
+that was already authorized may still finish. Rotation does not leave the old
+key valid while you deploy.
+
+To replace a key without downtime, create a new write key, update the
+application, then revoke the old key.
+
+If the page never shows the replacement secret, the old key is already revoked
+and the new secret cannot be recovered. Revoke the listed replacement and
+create another key. Rotating the old key again does not reveal the secret.
+
+A project name is only a label. The `environment` an SDK reports is telemetry,
+not a permission boundary. Existing programmatic read keys stay valid. A new
+project receives a write key only.
 
 ## Operation callback exceptions
 

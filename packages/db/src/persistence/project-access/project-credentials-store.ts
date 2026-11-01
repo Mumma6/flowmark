@@ -26,6 +26,7 @@ import { createOwnedProject } from "./writes/create-owned-project.js"
 import { createProject } from "./writes/create-project.js"
 import { renameProject } from "./writes/rename-project.js"
 import { revokeApiKey } from "./writes/revoke-api-key.js"
+import { rotateWriteKey } from "./writes/rotate-write-key.js"
 import { revokeBrowserKey } from "./writes/revoke-browser-key.js"
 import { updateOnboardingState } from "./writes/update-onboarding-state.js"
 
@@ -90,8 +91,7 @@ export interface ProjectCredentialsStoreService {
   ) => Effect.Effect<
     {
       readonly projectId: string
-      readonly writeKey: string
-      readonly readKey: string
+      readonly writeKey: CreatedSecret
     },
     DatabaseError
   >
@@ -127,6 +127,10 @@ export interface ProjectCredentialsStoreService {
     projectId: string,
     keyId: string,
   ) => Effect.Effect<boolean, DatabaseError>
+  readonly rotateWriteKey: (
+    projectId: string,
+    keyId: string,
+  ) => Effect.Effect<CreatedSecret | null, DatabaseError>
   readonly createBrowserKey: (
     projectId: string,
     input: {
@@ -172,6 +176,8 @@ export class ProjectCredentialsStore extends Context.Service<ProjectCredentialsS
           provide(createApiKey(projectId, input)),
         revokeApiKey: (projectId, keyId) =>
           provide(revokeApiKey(projectId, keyId)),
+        rotateWriteKey: (projectId, keyId) =>
+          provide(rotateWriteKey(projectId, keyId)),
         createBrowserKey: (projectId, input) =>
           provide(createBrowserKey(projectId, input)),
         revokeBrowserKey: (projectId, keyId) =>

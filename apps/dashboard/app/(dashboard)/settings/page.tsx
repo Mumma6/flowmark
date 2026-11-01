@@ -1,6 +1,6 @@
 "use client"
 
-import { Suspense, useEffect, useState, type FormEvent } from "react"
+import { Suspense, useEffect, useRef, useState, type FormEvent } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import {
@@ -9,6 +9,12 @@ import {
   AlertTitle,
   Button,
   Card,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
   CardContent,
   CardDescription,
   CardHeader,
@@ -94,8 +100,10 @@ function ProjectSettings() {
         <CardHeader>
           <CardTitle>Current project</CardTitle>
           <CardDescription>
-            Runs and keys belong to one project. Switch projects in the sidebar,
-            or create another for staging or a second application.
+            A project name is a label for its runs and keys. It does not limit
+            which environment an application can report. Reported environment is
+            telemetry, not a permission boundary. Switch projects in the
+            sidebar, or create another for a second application.
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-6">
@@ -160,8 +168,9 @@ function ProjectSettings() {
         <CardHeader>
           <CardTitle>Add another project</CardTitle>
           <CardDescription>
-            Use a separate project per application or environment. Each project
-            gets its own write key.
+            Use a separate project per application. Each project gets its own
+            write key. Naming a project after an environment does not enforce
+            that environment.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -219,9 +228,19 @@ function ProjectSettings() {
   )
 }
 
+type KeyAction = {
+  readonly intent: "rotate" | "revoke"
+  readonly kind: "api" | "browser"
+  readonly id: string
+  readonly name: string
+  readonly prefix: string
+}
+
 function KeySettings() {
   const trpc = useTRPC()
   const queryClient = useQueryClient()
+  const session = authClient.useSession()
+  const email = session.data?.user.email ?? ""
   const { current, projects } = useProject()
   const keys = useQuery({
     ...trpc.project.keys.queryOptions(current?.id ?? ""),
@@ -231,21 +250,46 @@ function KeySettings() {
   const [browserName, setBrowserName] = useState("Browser key")
   const [origins, setOrigins] = useState("http://localhost:3000")
   const [secret, setSecret] = useState<CreatedSecret | null>(null)
+  const [secretSource, setSecretSource] = useState<
+    "created" | "rotated" | null
+  >(null)
+  const [notice, setNotice] = useState<string | null>(null)
+  const [action, setAction] = useState<KeyAction | null>(null)
+  const previousEmail = useRef(email)
+  const confirming = useRef(false)
+  const returnFocus = useRef<HTMLButtonElement | null>(null)
   useEffect(() => {
     setSecret(null)
+    setSecretSource(null)
+    setNotice(null)
+    setAction(null)
   }, [current?.id])
+  useEffect(() => {
+    if (previousEmail.current && email && previousEmail.current !== email) {
+      setSecret(null)
+      setSecretSource(null)
+      setNotice(null)
+      setAction(null)
+    }
+    previousEmail.current = email
+  }, [email])
   const createWrite = useMutation(
     trpc.project.createWriteKey.mutationOptions({
       onSuccess: (created) => {
         setSecret(created)
+        setSecretSource("created")
+        setNotice(null)
         void queryClient.invalidateQueries()
       },
     }),
   )
   const rotate = useMutation(
     trpc.project.rotateWriteKey.mutationOptions({
+      retry: false,
       onSuccess: (created) => {
         setSecret(created)
+        setSecretSource("rotated")
+        setNotice(null)
         void queryClient.invalidateQueries()
       },
     }),
@@ -259,6 +303,8 @@ function KeySettings() {
     trpc.project.createBrowserKey.mutationOptions({
       onSuccess: (created) => {
         setSecret(created)
+        setSecretSource("created")
+        setNotice(null)
         void queryClient.invalidateQueries()
       },
     }),
@@ -268,6 +314,65 @@ function KeySettings() {
       onSuccess: () => void queryClient.invalidateQueries(),
     }),
   )
+  const busy =
+    rotate.isPending || revokeApi.isPending || revokeBrowser.isPending
+  useEffect(() => {
+    if (!busy) {
+      confirming.current = false
+    }
+  }, [busy])
+  const ask = (next: KeyAction, trigger: HTMLButtonElement) => {
+    returnFocus.current = trigger
+    setNotice(null)
+    setAction(next)
+  }
+  const closeAction = () => {
+    if (busy) {
+      return
+    }
+    setAction(null)
+    returnFocus.current?.focus()
+  }
+  const confirmAction = () => {
+    if (!current || !action || busy || confirming.current) {
+      return
+    }
+    confirming.current = true
+    setNotice(null)
+    const input = { projectId: current.id, keyId: action.id }
+    if (action.intent === "rotate") {
+      rotate.mutate(input, {
+        onSuccess: () => {
+          setAction(null)
+          returnFocus.current?.focus()
+        },
+        onSettled: () => {
+          confirming.current = false
+        },
+      })
+      return
+    }
+    const revoke = action.kind === "browser" ? revokeBrowser : revokeApi
+    const revoked = action
+    revoke.mutate(input, {
+      onSuccess: () => {
+        setAction(null)
+        returnFocus.current?.focus()
+        setSecret((currentSecret) =>
+          currentSecret?.id === revoked.id ? null : currentSecret,
+        )
+        if (secret?.id === revoked.id) {
+          setSecretSource(null)
+        }
+        setNotice(
+          `Revoked ${revoked.name} (${revoked.prefix}…). Applications using it can no longer authenticate.`,
+        )
+      },
+      onSettled: () => {
+        confirming.current = false
+      },
+    })
+  }
   if (projects.length === 0 || !current) {
     return (
       <Card>
@@ -286,25 +391,51 @@ function KeySettings() {
       </Card>
     )
   }
-  const error =
-    keys.error ??
+  const actionError =
     createWrite.error ??
     rotate.error ??
     revokeApi.error ??
     createBrowser.error ??
     revokeBrowser.error
+  const apiKeys = keys.data?.apiKeys
+  const browserKeys = keys.data?.browserKeys
   return (
     <div className="grid gap-6">
       <Card>
         <CardHeader>
           <CardTitle>Server write keys</CardTitle>
           <CardDescription>
-            For <code>{current.name}</code>. Applications write with a project
-            key. Dashboard sign-in is a different credential.
+            For <code>{current.name}</code>. A write key authenticates the
+            server SDK. It is not your dashboard sign-in. Emergency rotation
+            revokes the selected key immediately and shows the replacement once.
+            A request already accepted may still finish. To keep a key working
+            while you deploy, create a new write key, update the application,
+            then revoke the old one. If this page never shows the new secret,
+            revoke the listed replacement and create another. Rotating the old
+            key again does not recover it.
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-6">
-          {secret ? <SecretAlert secret={secret} label="New key" /> : null}
+          {secret ? (
+            <SecretAlert
+              secret={secret}
+              label={
+                secretSource === "rotated"
+                  ? "The replacement write key is"
+                  : "New key"
+              }
+              detail={
+                secretSource === "rotated"
+                  ? "The previous key is already revoked. If you leave before copying this secret, revoke the new listed key and create another."
+                  : undefined
+              }
+            />
+          ) : null}
+          {notice ? (
+            <p role="status" className="text-sm text-muted-foreground">
+              {notice}
+            </p>
+          ) : null}
           <form
             className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end"
             onSubmit={(event: FormEvent) => {
@@ -334,51 +465,90 @@ function KeySettings() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {(keys.data?.apiKeys ?? []).map((key) => (
-                <TableRow key={key.id}>
-                  <TableCell>{key.name}</TableCell>
-                  <TableCell>
-                    <code>{key.prefix}…</code>
+              {keys.isPending ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={5}
+                    className="text-sm text-muted-foreground"
+                  >
+                    <p role="status">Loading keys…</p>
                   </TableCell>
-                  <TableCell>{key.permission}</TableCell>
-                  <TableCell className="tabular-nums">
-                    {key.createdAt.slice(0, 10)}
-                  </TableCell>
-                  <TableCell className="flex flex-wrap gap-2">
-                    {key.permission === "write" ? (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        disabled={rotate.isPending}
-                        onClick={() =>
-                          rotate.mutate({
-                            projectId: current.id,
-                            keyId: key.id,
-                          })
-                        }
-                      >
-                        Rotate
-                      </Button>
-                    ) : null}
+                </TableRow>
+              ) : keys.isError ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-sm">
+                    <p role="alert">Could not load server keys.</p>
                     <Button
                       type="button"
                       variant="outline"
                       size="sm"
-                      disabled={revokeApi.isPending}
-                      onClick={() =>
-                        revokeApi.mutate({
-                          projectId: current.id,
-                          keyId: key.id,
-                        })
-                      }
+                      className="mt-3"
+                      onClick={() => void keys.refetch()}
                     >
-                      Revoke
+                      Retry
                     </Button>
                   </TableCell>
                 </TableRow>
-              ))}
-              {(keys.data?.apiKeys.length ?? 0) === 0 ? (
+              ) : apiKeys?.length ? (
+                apiKeys.map((key) => (
+                  <TableRow key={key.id}>
+                    <TableCell className="max-w-xs break-words">
+                      {key.name}
+                    </TableCell>
+                    <TableCell>
+                      <code>{key.prefix}…</code>
+                    </TableCell>
+                    <TableCell>{key.permission}</TableCell>
+                    <TableCell className="tabular-nums">
+                      {key.createdAt.slice(0, 10)}
+                    </TableCell>
+                    <TableCell className="flex flex-wrap gap-2">
+                      {key.permission === "write" ? (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          disabled={busy}
+                          onClick={(event) =>
+                            ask(
+                              {
+                                intent: "rotate",
+                                kind: "api",
+                                id: key.id,
+                                name: key.name,
+                                prefix: key.prefix,
+                              },
+                              event.currentTarget,
+                            )
+                          }
+                        >
+                          Rotate
+                        </Button>
+                      ) : null}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={busy}
+                        onClick={(event) =>
+                          ask(
+                            {
+                              intent: "revoke",
+                              kind: "api",
+                              id: key.id,
+                              name: key.name,
+                              prefix: key.prefix,
+                            },
+                            event.currentTarget,
+                          )
+                        }
+                      >
+                        Revoke
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
                 <TableRow>
                   <TableCell
                     colSpan={5}
@@ -387,7 +557,7 @@ function KeySettings() {
                     No server keys yet.
                   </TableCell>
                 </TableRow>
-              ) : null}
+              )}
             </TableBody>
           </Table>
         </CardContent>
@@ -447,34 +617,58 @@ function KeySettings() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {(keys.data?.browserKeys ?? []).map((key) => (
-                <TableRow key={key.id}>
-                  <TableCell>{key.name}</TableCell>
-                  <TableCell>
-                    <code>{key.prefix}…</code>
-                  </TableCell>
-                  <TableCell className="text-xs">
-                    {key.allowedOrigins.join(", ")}
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      disabled={revokeBrowser.isPending}
-                      onClick={() =>
-                        revokeBrowser.mutate({
-                          projectId: current.id,
-                          keyId: key.id,
-                        })
-                      }
-                    >
-                      Revoke
-                    </Button>
+              {keys.isPending ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={4}
+                    className="text-sm text-muted-foreground"
+                  >
+                    <p role="status">Loading keys…</p>
                   </TableCell>
                 </TableRow>
-              ))}
-              {(keys.data?.browserKeys.length ?? 0) === 0 ? (
+              ) : keys.isError ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-sm">
+                    <p role="alert">Could not load browser keys.</p>
+                  </TableCell>
+                </TableRow>
+              ) : browserKeys?.length ? (
+                browserKeys.map((key) => (
+                  <TableRow key={key.id}>
+                    <TableCell className="max-w-xs break-words">
+                      {key.name}
+                    </TableCell>
+                    <TableCell>
+                      <code>{key.prefix}…</code>
+                    </TableCell>
+                    <TableCell className="break-words text-xs">
+                      {key.allowedOrigins.join(", ")}
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={busy}
+                        onClick={(event) =>
+                          ask(
+                            {
+                              intent: "revoke",
+                              kind: "browser",
+                              id: key.id,
+                              name: key.name,
+                              prefix: key.prefix,
+                            },
+                            event.currentTarget,
+                          )
+                        }
+                      >
+                        Revoke
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
                 <TableRow>
                   <TableCell
                     colSpan={4}
@@ -483,16 +677,57 @@ function KeySettings() {
                     No browser keys yet.
                   </TableCell>
                 </TableRow>
-              ) : null}
+              )}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
-      {error ? (
+      {actionError ? (
         <Alert variant="destructive">
-          <AlertDescription>{error.message}</AlertDescription>
+          <AlertDescription>{actionError.message}</AlertDescription>
         </Alert>
       ) : null}
+      <Dialog
+        open={action !== null}
+        disablePointerDismissal={busy}
+        onOpenChange={(open) => {
+          if (!open) {
+            closeAction()
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {action?.intent === "rotate" ? "Rotate write key" : "Revoke key"}
+            </DialogTitle>
+            <DialogDescription>
+              {action?.intent === "rotate"
+                ? `Emergency rotation in ${current.name} replaces ${action.name} (${action.prefix}…) immediately. The current secret stops working. A request already accepted may still finish. The new secret is shown once and cannot be recovered.`
+                : `Revoke ${action?.name ?? "this key"} (${action?.prefix ?? ""}…) in ${current.name}. Applications using it can no longer authenticate. This does not delete stored runs.`}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={busy}
+              onClick={closeAction}
+            >
+              Cancel
+            </Button>
+            <Button type="button" disabled={busy} onClick={confirmAction}>
+              {busy
+                ? action?.intent === "rotate"
+                  ? "Rotating…"
+                  : "Revoking…"
+                : action?.intent === "rotate"
+                  ? "Rotate now"
+                  : "Revoke key"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

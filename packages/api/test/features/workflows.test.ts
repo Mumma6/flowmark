@@ -154,6 +154,13 @@ function projectCredentials(
         secret: "fm_write_test_secret",
       }),
     revokeApiKey: () => Effect.succeed(true),
+    rotateWriteKey: () =>
+      Effect.succeed({
+        id: "key-rotated",
+        name: "Write key",
+        prefix: "fm_write_test123",
+        secret: "fm_write_test_secret",
+      }),
     createBrowserKey: () =>
       Effect.succeed({
         id: "key-2",
@@ -165,8 +172,12 @@ function projectCredentials(
     createOwnedProject: () =>
       Effect.succeed({
         projectId: "project-from-key",
-        writeKey: "fm_write_test",
-        readKey: "fm_read_test",
+        writeKey: {
+          id: "key-owned",
+          name: "Write key",
+          prefix: "fm_write_test123",
+          secret: "fm_write_test_secret",
+        },
       }),
     ...overrides,
   })

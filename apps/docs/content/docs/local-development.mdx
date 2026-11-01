@@ -38,9 +38,10 @@ Programmatic API reads may use a project read key; the dashboard itself uses
 the signed-in session.
 
 Before handling real data, add your own authentication, rate limiting,
-provisioning, backups, retention and deletion policy, monitoring, and key
-rotation. Test these controls in a non-production project. Do not use the
-repository's public local-demo credentials with customer data.
+provisioning, backups, retention and deletion policy, and monitoring. Rotate a
+write key from Settings when a credential may be exposed. Test these controls
+in a non-production project. Do not use the repository's public local-demo
+credentials with customer data.
 
 ## Local development harness
 

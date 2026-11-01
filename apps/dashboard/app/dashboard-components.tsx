@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState, type ReactNode } from "react"
+import { useEffect, useMemo, useState, type ReactNode } from "react"
 import {
   Alert,
   AlertDescription,
@@ -28,19 +28,34 @@ export function CopyButton({
   value: string
   label?: string
 }) {
-  const [copied, setCopied] = useState(false)
+  const [status, setStatus] = useState<"idle" | "copied" | "failed">("idle")
+  useEffect(() => {
+    setStatus("idle")
+  }, [value])
   return (
     <Button
       type="button"
       variant="outline"
       size="sm"
+      aria-live="polite"
       onClick={async () => {
-        await navigator.clipboard.writeText(value)
-        setCopied(true)
-        window.setTimeout(() => setCopied(false), 2000)
+        try {
+          if (!navigator.clipboard?.writeText) {
+            throw new Error("Clipboard unavailable")
+          }
+          await navigator.clipboard.writeText(value)
+          setStatus("copied")
+        } catch {
+          setStatus("failed")
+        }
+        window.setTimeout(() => setStatus("idle"), 2000)
       }}
     >
-      {copied ? "Copied" : label}
+      {status === "copied"
+        ? "Copied"
+        : status === "failed"
+          ? "Could not copy"
+          : label}
     </Button>
   )
 }

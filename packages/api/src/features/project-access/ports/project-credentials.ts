@@ -92,8 +92,7 @@ export interface ProjectCredentialsService {
   ) => Effect.Effect<
     {
       readonly projectId: string
-      readonly writeKey: string
-      readonly readKey: string
+      readonly writeKey: CreatedSecret
     },
     PersistenceError
   >
@@ -129,6 +128,10 @@ export interface ProjectCredentialsService {
     projectId: string,
     keyId: string,
   ) => Effect.Effect<boolean, PersistenceError>
+  readonly rotateWriteKey: (
+    projectId: string,
+    keyId: string,
+  ) => Effect.Effect<CreatedSecret | null, PersistenceError>
   readonly createBrowserKey: (
     projectId: string,
     input: {
