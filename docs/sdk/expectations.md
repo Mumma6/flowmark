@@ -1,10 +1,11 @@
 # Durable expectations contract
 
-TASK-012 design decision, 31 October 2026; implemented in source by TASK-014.
-**Requires the accepting migrations/API/readers and a separately published aligned
-SDK release.** Source implementation does not establish hosted rollout or npm
-availability. This document records the implemented contract. Flowmark observes
-application-owned work; it never executes, schedules, retries or confirms it.
+TASK-012 design decision, 31 October 2026; implemented in source by TASK-014
+and included in `@flowmarkdev/node` and `@flowmarkdev/core` 0.2.0. Enabling the
+methods still requires the accepting migrations, API and readers. This document
+does not establish that those migrations have been applied to a hosted
+database. Flowmark observes application-owned work; it never executes,
+schedules, retries or confirms it.
 
 ## Public API and identity
 
@@ -415,10 +416,10 @@ extra CORS header. Custom transports own compatibility and must document it.
 [Migration rollout](../migrations.md): verify locally, then approved exact-SHA
 Preview migration/behavior, then the activated approved Staging merge pipeline
 (migrate → API/readers → verify). Production belongs to an approved release.
-Only after accepting storage/API/readers are available may users enable the new
-SDK methods; aligned core/node publishing requires separate approval. This
-implementation performs no hosted migration, deployment, retention-policy change
-or publication without separate authorization.
+Only after accepting storage, API and readers are available should users enable
+the methods. They ship in `@flowmarkdev/node` and `@flowmarkdev/core` 0.2.0.
+This document performs no hosted migration, deployment or retention-policy
+change.
 
 ## Implementation verification and storage ownership
 

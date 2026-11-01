@@ -31,3 +31,6 @@ dumps
 
 # Maintainer-local plans and operations records must never be uploaded.
 private
+
+# Infrastructure tooling and stack configuration are not application assets.
+infrastructure

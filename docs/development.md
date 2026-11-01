@@ -74,10 +74,11 @@ Never expose its local server publicly or share connection credentials.
 The browser UI is served by Drizzle, separately from our local API; follow
 your team's data-access policy before connecting sensitive databases.
 
-This works with any PostgreSQL, including local, Neon, or Supabase PostgreSQL:
-update `DATABASE_URL` to the intended connection string (with the provider's
-required TLS settings), then restart Studio. Provider-specific auth, Storage,
-and other services are not configured by Studio.
+Studio works with any PostgreSQL reachable through `DATABASE_URL`, including a
+local server. Update the connection string, including the provider's required
+TLS settings, then restart Studio. Provider-specific auth, storage, and other
+services are not configured by Studio. The reference hosted database is Neon;
+see [ADR 0006](./decisions/0006-mvp-0.1-infrastructure.md).
 
 The reference Neon project is a separate database. Its operating notes are in
 the [infrastructure guide](./infrastructure). Local demo setup keeps
@@ -172,7 +173,11 @@ Dashboard UI primitives follow shadcn conventions and live in `packages/ui`. Add
 
 ## Checks
 
+`pnpm check` is the pull-request gate: format, lint, typecheck, and unit tests.
+It does not run the disposable-Postgres integration job.
+
 ```sh
+pnpm check
 pnpm test
 pnpm typecheck
 pnpm lint

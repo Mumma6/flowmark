@@ -269,12 +269,24 @@ releases its reader on success, invalid input, or interruption.
 
 The HTTP API exposes `GET /api/health`, Better Auth `GET|POST /api/auth/*`,
 `POST /api/register`, `GET|POST|OPTIONS /api/trpc`, private `POST /v1/events`,
-and browser `POST|OPTIONS /v1/browser-events`. tRPC provides `health.check`,
-`project.snapshot`, `workflow.list`, `run.detail`, and `run.related`. Dashboard
-reads use a signed-in session cookie forwarded by the dashboard proxy;
-programmatic reads may still use a project read key when no session is
-present. Browser ingestion uses CORS preflight and the browser-key origin
-allowlist; it does not grant read access or authorize a private-key write.
+and browser `POST|OPTIONS /v1/browser-events`. Registration creates the Better
+Auth user only. The tRPC router in `apps/server/src/adapters/trpc.ts` currently
+exposes:
+
+- `health.check`
+- `project.snapshot`, `project.intelligence`, `project.businessInsights`, and
+  session project/key management (`list`, `create`, `rename`, write and browser
+  keys, rotate, revoke)
+- `onboarding.state`, `onboarding.advance`, `onboarding.complete`
+- `resultDeclarations.list`, `create`, `searchFields`, `setSearchFields`
+- `workflow.list`
+- `run.list`, `run.detail`, `run.expectations`, `run.related`, `run.compare`
+
+Reads accept a signed-in session cookie forwarded by the dashboard proxy, or a
+project read key when no session is present. Project and declaration mutations
+require a session. Browser ingestion uses CORS preflight and the browser-key
+origin allowlist; it does not grant read access or authorize a private-key
+write.
 
 `runtime.ts` composes the live layers and executes effects at the request
 boundary. Database acquisition/release belongs to a scoped database adapter,
@@ -355,10 +367,12 @@ and browser/hosted verification limits.
 ## Limits
 
 Delivery is best-effort with a bounded in-memory pending set, no durable queue or
-batching. The dashboard fetches the latest 100 runs and aggregates metrics across
-all recorded runs; daily volume covers the last 30 UTC days. The local harness
-simulates invoice, inventory and order work per execution, while workflow history
-is persistent. Technical SDK diagnostics use a separate local project.
+batching. The overview snapshot includes the latest 100 runs. Workflow summaries
+and `run.list` cover recorded history; the Runs page asks for 25 rows at a time,
+and `run.list` accepts a limit from 1 to 100. Daily volume covers the last 30
+UTC days. The local harness simulates invoice, inventory and order work per
+execution, while workflow history is persistent. Technical SDK diagnostics use a
+separate local project.
 
 The reference deployment is the four public hostnames in the
 [infrastructure guide](./infrastructure). Alerting, retention cleanup,

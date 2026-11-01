@@ -58,10 +58,10 @@ Legacy `parentRunId` and `correlationId` keep their existing behavior. Unqualifi
 
 ## Compatibility and rollout
 
-Supplying `attempt` or `retryOf` explicitly opts into the **`attempts-v1` accepting-server contract**. Do this only after deploying the TASK-009 schema, accepting API and dashboard readers. Ordinary calls without these options retain their envelopes and work with older servers.
+Supplying `attempt` or `retryOf` explicitly opts into the **`attempts-v1` accepting-server contract**. The options are included in `@flowmarkdev/node` 0.2.0. Enable them only after deploying the accepting schema, API and dashboard readers. Ordinary calls without these options retain their envelopes and work with older servers.
 
 The HTTP SDK requires `capabilities: ["attempts-v1"]` in the accepting response for events carrying this metadata. A missing/malformed acknowledgment reports a delivery failure through instrumentation diagnostics and rejects explicit `flush()`/`shutdown()`. An older server might already have stored a stripped event; the SDK cannot restore discarded metadata or undo that write. Stop using the new options until the accepting server is upgraded. This check is acknowledgment after submission, not a preflight or transaction across events. Existing partial-delivery semantics apply.
 
-Same-origin proxies must preserve the capability receipt; update the Flowmark proxy alongside the SDK. Advanced custom transports are responsible for their own accepting-server compatibility. These options and types are available through Node, Next, browser and typed workflow definitions. SDK publication is a separate release step after accepting backend rollout.
+Same-origin proxies must preserve the capability receipt; update the Flowmark proxy alongside the SDK. Advanced custom transports are responsible for their own accepting-server compatibility. These options and types are available through Node, Next, browser and typed workflow definitions in `@flowmarkdev/node` 0.2.0. An older server can still omit the capability receipt.
 
 A full synthetic loopback example is available in `packages/sdk/examples/explicit-attempts.mjs` in the source repository. It demonstrates manual and callback CRM recovery and partial booking recovery without a retry engine.

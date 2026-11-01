@@ -1,9 +1,9 @@
 # SDK outcome and report contract
 
-This contract was established in TASK-001. TASK-004 implements terminal outcomes and TASK-010 implements reports in source;
-TASK-013 implements optional typed definitions in source. Availability in published packages
-is tracked separately through the SDK release process.
-The executable synthetic references live in
+This contract was established in TASK-001. Terminal outcomes, `report()` and
+optional typed definitions are included in `@flowmarkdev/node` and
+`@flowmarkdev/core` 0.2.0. Using them still requires a server that accepts the
+corresponding events. The executable synthetic references live in
 `packages/sdk/test/result-contract.test.ts`; they are not runtime exports.
 
 ## Independent facts

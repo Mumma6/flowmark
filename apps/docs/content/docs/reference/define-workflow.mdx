@@ -97,5 +97,6 @@ To migrate, define the name on the same client, replace `workflow(name, options)
 with `definition.start(options)` and fix reported shape errors. This adds no wire
 fields, backend model, migration or execution framework. Node, Next and browser
 export `WorkflowDefinition`, `TypedFlow` and `TypedWorkflowOptions`. Backend
-compatibility is inherited from the markers used (outcomes/reports require their
-accepting server). Package publication remains a separate release operation.
+compatibility is inherited from the markers used (outcomes and reports require
+a server that accepts them). `defineWorkflow()` is included in
+`@flowmarkdev/node` 0.2.0.

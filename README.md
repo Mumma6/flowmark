@@ -5,11 +5,7 @@
 <h1 align="center">flowmark.</h1>
 
 <p align="center">
-  <strong>Understand every execution. Discover what matters across them.</strong>
-</p>
-
-<p align="center">
-  Open source · Workflow observability · TypeScript
+  <strong>Know what your workflows actually accomplish.</strong>
 </p>
 
 <p align="center">
@@ -18,22 +14,26 @@
   <a href="https://flowmark.dev"><img alt="flowmark.dev" src="https://img.shields.io/badge/flowmark.dev-0d1311" /></a>
 </p>
 
-Flowmark is workflow observability for processes your application already
-runs. Mark a named process in ordinary TypeScript. Each execution becomes
-evidence you can investigate — milestones, operations, progress, errors, and
-the result your code reported — and many executions become a picture of what
-that process is accomplishing.
+A completed run is only part of the story. Flowmark records what a process in
+your application actually did: milestones, timed operations, progress, errors,
+and the business result your code reported. Many executions then become a
+picture of volume, duration, failures, and reported outcomes.
 
-Flowmark observes. It does not execute, schedule, or retry your work.
+Flowmark observes work your application already owns. It does not execute,
+schedule, or retry that work. A completed run is not proof that every record
+succeeded. Missing terminal telemetry does not prove that a run is still active
+or that it failed.
 
 ## Install
+
+Requires Node.js 20.19 or newer.
 
 ```sh
 npm i @flowmarkdev/node
 ```
 
 ```ts
-// Next.js Route Handler / Server Action
+// Next.js Route Handler or Server Action
 import { createFlowmark } from "@flowmarkdev/node/next"
 export const flowmark = createFlowmark()
 ```
@@ -49,6 +49,9 @@ FLOWMARK_API_KEY=<project write key>
 FLOWMARK_API_URL=https://api.flowmark.dev
 ```
 
+The write key stays on the server. Never put it in `NEXT_PUBLIC_*` or a browser
+bundle. `FLOWMARK_API_URL` is the API origin, not `/v1/events`.
+
 ```ts
 export async function completeCheckout(orderId: string) {
   const flow = flowmark.workflow("checkout.order", {
@@ -59,7 +62,10 @@ export async function completeCheckout(orderId: string) {
     const shipment = await flow.operation("create-shipment", () =>
       createShipment(orderId),
     )
-    flow.done({ result: { shipmentId: shipment.id } })
+    flow.done({
+      outcome: "complete",
+      result: { shipmentId: shipment.id },
+    })
     return shipment
   } catch (error) {
     flow.fail({ code: "CHECKOUT_FAILED" })
@@ -68,7 +74,45 @@ export async function completeCheckout(orderId: string) {
 }
 ```
 
-## Product
+Keep the function's return value and thrown errors. Telemetry failures do not
+change business behavior. In Node, call `await flowmark.shutdown()` before the
+process exits. The Next.js adapter drains with `after()`.
+
+Customer documentation: [docs.flowmark.dev](https://docs.flowmark.dev). Package
+details: [`packages/sdk/README.md`](./packages/sdk/README.md).
+
+## What you can record
+
+`@flowmarkdev/node` 0.2.0, `@flowmarkdev/node/next`, and
+`@flowmarkdev/node/browser` share the same run markers:
+
+- A named workflow run, continued later with the same name and `id`
+- Steps, overlapping operations, absolute progress, and non-terminal errors
+- A bounded JSON result and an optional business outcome on `done()` or `fail()`
+- Non-final `report()` snapshots that do not become the final result
+- Explicit `correlationId` and `parentRunId` links you pass yourself
+- Optional typed `defineWorkflow()` handles, explicit attempt metadata, and
+  durable expectations
+
+Newer markers need an API that accepts them. Delivery is best-effort. Browser
+workflows use a public browser key and are stored with a `browser.` name
+prefix. The SDK does not invent retries, schedules, or verified business
+correctness.
+
+## What you can investigate
+
+Sign in on the dashboard, create a project, and create a write key. Password
+reset is not available. The dashboard then shows project-scoped evidence:
+
+- Execution volume, success rate, duration, and trends
+- Slow operations, failure codes, and run timelines
+- Reported results, business outcomes, and last-reported progress
+- Peer comparison and explicitly related runs
+- Enabled business-reference search on run history
+
+Overview panels use bounded snapshots, including the latest 100 runs for recent
+failures. Run history itself is server-paginated and is not limited to that
+snapshot.
 
 |           |                                                                        |
 | --------- | ---------------------------------------------------------------------- |
@@ -78,20 +122,28 @@ export async function completeCheckout(orderId: string) {
 | API       | [api.flowmark.dev](https://api.flowmark.dev)                           |
 | npm       | [`@flowmarkdev/node`](https://www.npmjs.com/package/@flowmarkdev/node) |
 
-Sign up on the dashboard to create a project and a write key. Password reset
-is not available yet.
+## Repository
 
-## What you get
+| Path                 | Purpose                                      |
+| -------------------- | -------------------------------------------- |
+| `packages/sdk`       | `@flowmarkdev/node`                          |
+| `packages/core`      | Shared event contracts (`@flowmarkdev/core`) |
+| `packages/api`       | Use cases and ports                          |
+| `packages/db`        | Schema, migrations, persistence              |
+| `packages/ui`        | Shared UI                                    |
+| `apps/server`        | HTTP and tRPC shell                          |
+| `apps/dashboard`     | Signed-in product UI                         |
+| `apps/web`           | Landing page                                 |
+| `apps/docs`          | Customer documentation                       |
+| `apps/dev-harness`   | Local-only fixture app                       |
+| `apps/internal-docs` | Local-only contributor docs                  |
 
-- TypeScript SDK for Node.js, Next.js, and the browser
-- Validated, project-scoped ingestion into PostgreSQL
-- Dashboard: volume, success rate, duration, trends, slowest operations,
-  failure codes, run timelines, and peer comparison
-- Explicit links between related runs via ids you pass
+`apps/dev-harness` and `apps/internal-docs` bind to loopback. Do not deploy
+them.
 
 ## Local development
 
-Node.js 20.19+ (24 LTS recommended) and pnpm 10.
+Node.js 20.19+ (24 LTS recommended) and pnpm 10.18.1.
 
 ```sh
 pnpm install
@@ -101,64 +153,20 @@ pnpm db:setup
 pnpm dev
 ```
 
-`pnpm dev` starts the apps and watches the SDK. See
-[development](./docs/development.md) for the full local pipeline. Open the
-dashboard at `http://127.0.0.1:3001`.
-
-`apps/dev-harness` and `apps/internal-docs` are loopback-only. Do not deploy
-them.
-
-## Repository
-
-| Path             | Purpose                         |
-| ---------------- | ------------------------------- |
-| `packages/sdk`   | `@flowmarkdev/node`             |
-| `packages/core`  | Shared event contracts          |
-| `packages/api`   | Use cases and ports             |
-| `packages/db`    | Schema, migrations, persistence |
-| `packages/ui`    | Shared UI                       |
-| `apps/server`    | API                             |
-| `apps/dashboard` | Signed-in UI                    |
-| `apps/web`       | Landing                         |
-| `apps/docs`      | Customer docs                   |
+Open the dashboard at `http://127.0.0.1:3001`. The
+[development guide](./docs/development.md) covers the local pipeline, checks,
+and database safety. Self-hosting needs the same apps, committed migrations,
+and any PostgreSQL you control.
 
 ## Contributing
 
-See [CONTRIBUTING.md](./CONTRIBUTING.md) for local setup, branch workflow, and
-self-hosting expectations. Report security issues through
-[SECURITY.md](./SECURITY.md).
-
-Create feature and infrastructure branches from `staging` and open PRs into
-`staging`. CI checks each PR; merging deploys Staging through Vercel. A reviewed
-release PR from `staging` into `main` deploys Production. Application GitHub
-Releases are published separately after verification; SDK npm releases keep
-their own workflow. See [application releases](./docs/releases.md) for merge
-policy, agent skills, and approval steps.
-
-Each PR runs two CI jobs: format/lint/typecheck/unit checks and database-backed
-server tests against disposable Postgres 18. Both should be green before merge;
-CI never uses Neon credentials or demo seed data. See
-[database integration tests](./docs/development.md#database-integration-tests)
-for the local equivalent. Ordinary releases do not require a sync back into
-staging; bring main changes back only when needed, such as after a hotfix.
-
-The database suite includes real registration and session-based sign-in,
-project/key creation, ingestion, persisted-run reads, and cross-project denials.
-It exercises server routes and API procedures; browser UI and hosted cookie
-behavior still need Staging verification.
+See [CONTRIBUTING.md](./CONTRIBUTING.md) and [SECURITY.md](./SECURITY.md).
+Feature branches start from `staging` and open pull requests into `staging`.
+Release policy is in [application releases](./docs/releases.md).
 
 - [Development](./docs/development.md)
-- [Health and failure diagnostics](./docs/development.md#health-and-failure-diagnostics)
-- [Application releases](./docs/releases.md)
 - [Architecture](./docs/architecture.md)
+- [Documentation index](./docs/README.md)
 - [Decisions](./docs/decisions/)
-
-Server auth, CORS, and dashboard API settings are validated at request time. See
-[Runtime environment validation](./docs/development.md#runtime-environment-validation)
-for required hosted settings, local defaults, and Preview/Staging behavior.
-
-Database CI also checks that repeated auth and ingestion requests retain a bounded
-auth pool and release API connections; see
-[connection lifecycle verification](./docs/development.md#connection-lifecycle-verification).
 
 License: [MIT](./LICENSE).

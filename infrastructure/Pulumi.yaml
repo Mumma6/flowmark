@@ -1,0 +1,15 @@
+name: flowmark-infrastructure
+description: Flowmark reference infrastructure, adopting existing Vercel and Neon resources.
+runtime:
+  name: nodejs
+  options:
+    packagemanager: pnpm
+backend:
+  url: https://api.pulumi.com
+packages:
+  neon:
+    source: terraform-provider
+    version: 1.5.1
+    parameters:
+      - kislerdm/neon
+      - 0.18.0

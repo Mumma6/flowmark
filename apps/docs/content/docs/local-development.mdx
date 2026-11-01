@@ -21,8 +21,9 @@ is the product path; these services are what the repository runs today.
   session cookie stays first-party. Reads are scoped to projects the signed-in
   user belongs to.
 
-Sign-up creates a workspace, project, and the first server write key. The
-repository's seeded `local@dev` account is a loopback fixture for the
+Sign-up creates the account only. Create the first project and server write
+key in onboarding or Settings. The repository's seeded `local@dev` account is a
+loopback fixture for the
 operations project, not a production owner. Password reset is not available
 until you add email delivery. Do not expose a dashboard configured with demo
 mode or a shared demo credential to the public internet.

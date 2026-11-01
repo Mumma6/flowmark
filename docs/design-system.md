@@ -151,9 +151,10 @@ Use server-provided window percentiles; never average daily medians or p95 value
 Completion-rate deltas use percentage points. A missing baseline is not a zero
 baseline. Comparisons describe evidence, not a regression verdict or a cause.
 
-Business-facing workflow names, outcome distribution, indexed business identifier
-search and consistent cross-page period filters are further product capabilities;
-this visual system must support them without inventing data or changing contracts.
+Business outcome panels and enabled business-reference search present
+application-reported evidence. A shared period control must not be added until
+it governs every panel it appears to control. Do not invent aggregates or
+change contracts to fill a layout.
 
 ## Interaction and verification
 

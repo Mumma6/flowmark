@@ -5,7 +5,7 @@ description: Observe explicit confirmations, deadlines and later resolution with
 
 Expectations record evidence your application expects to receive. Flowmark does not execute the request, schedule a callback, retry work or send background deadline notifications.
 
-These methods require an accepting server with the `expectations-v1` capability and the expectation migrations/readers. Deploy storage, API and dashboard before enabling the methods. Source implementation and npm publication are separate release steps.
+`expect()`, `resolveExpectation()` and `cancelExpectation()` are included in `@flowmarkdev/node` 0.2.0. They require an accepting server with the `expectations-v1` capability and the expectation migrations and readers. Deploy that storage, API and dashboard before enabling the methods.
 
 ## Declare expected evidence
 

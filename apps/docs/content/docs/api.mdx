@@ -11,18 +11,18 @@ and workflow queries. The dashboard is
 
 ## HTTP endpoints
 
-| Endpoint                        | Purpose                                       |
-| ------------------------------- | --------------------------------------------- |
-| `GET /api/health`               | Database-independent API liveness check       |
-| `GET /api/auth/*`               | Better Auth session lookup                    |
-| `POST /api/auth/*`              | Better Auth sign-in, sign-out, and callbacks  |
-| `POST /api/register`            | Create an owner, project, and first write key |
-| `GET /api/trpc/{procedure}`     | Typed read/query API used by the dashboard    |
-| `POST /api/trpc/{procedure}`    | tRPC transport; no mutations currently exist  |
-| `OPTIONS /api/trpc/{procedure}` | Dashboard CORS preflight                      |
-| `POST /v1/events`               | Private server-side workflow event ingestion  |
-| `POST /v1/browser-events`       | Public-key browser event ingestion            |
-| `OPTIONS /v1/browser-events`    | Browser CORS preflight                        |
+| Endpoint                        | Purpose                                                  |
+| ------------------------------- | -------------------------------------------------------- |
+| `GET /api/health`               | Database-independent API liveness check                  |
+| `GET /api/auth/*`               | Better Auth session lookup                               |
+| `POST /api/auth/*`              | Better Auth sign-in, sign-out, and callbacks             |
+| `POST /api/register`            | Create an account. The project and write key come later  |
+| `GET /api/trpc/{procedure}`     | Typed read queries used by the dashboard                 |
+| `POST /api/trpc/{procedure}`    | tRPC mutations for project, key, and declaration changes |
+| `OPTIONS /api/trpc/{procedure}` | Dashboard CORS preflight                                 |
+| `POST /v1/events`               | Private server-side workflow event ingestion             |
+| `POST /v1/browser-events`       | Public-key browser event ingestion                       |
+| `OPTIONS /v1/browser-events`    | Browser CORS preflight                                   |
 
 The API application's root page (at your API origin; locally
 `http://localhost:3003`) includes expandable request
@@ -44,24 +44,29 @@ authoritative evidence of a business outcome.
 
 ## tRPC queries
 
-The API router exposes these procedures at `/api/trpc`:
+The API router in `apps/server/src/adapters/trpc.ts` exposes these procedures
+at `/api/trpc`:
 
 - `health.check`
-- `project.snapshot`
+- `project.snapshot`, `project.intelligence`, `project.businessInsights`
+- `project.list`, `project.create`, `project.rename`, and write/browser key
+  management, including `project.rotateWriteKey`
+- `onboarding.state`, `onboarding.advance`, `onboarding.complete`
+- `resultDeclarations.list`, `resultDeclarations.create`,
+  `resultDeclarations.searchFields`, `resultDeclarations.setSearchFields`
 - `workflow.list`
-- `run.detail` (requires a run UUID)
-- `run.related` (requires a run UUID)
-- `run.compare` (requires a run UUID)
+- `run.list`, `run.detail`, `run.expectations`, `run.related`, `run.compare`
 
-Use GET for these queries; the exported POST transport does not enable
-query-over-POST. `run.detail` accepts `{ "id": "<UUID>" }` as the URL-encoded
+Queries use GET. Project, onboarding, and declaration changes are mutations.
+`run.detail` accepts `{ "id": "<UUID>" }` as the URL-encoded
 `input` query parameter. Use the internal run `id` returned by
 `project.snapshot`, not the external `runId` sent during ingestion. A missing
 or differently scoped run returns an empty array, not a 404.
 `run.related` takes the same internal run UUID and returns project-scoped
-parent matches and correlated runs. `run.compare` returns the current run
-and the last 20 peers of the same workflow, with peer success rate, median
-duration, and p95 duration.
+parent matches and correlated runs. `run.compare` returns the current run and
+up to 50 earlier peers of the same workflow. The default window is 30 days in
+the same environment. The response includes peer success rate, median duration,
+and p95 duration. Optional selection is described under peer comparison below.
 
 Dashboard reads use the signed-in Better Auth session. Query results and run
 lookups are scoped to a project the user belongs to. The dashboard's
@@ -93,13 +98,14 @@ application-declared associations, not causal proof or an OpenTelemetry trace.
 
 Events, runs, workflow definitions, and keys are stored in PostgreSQL through
 the database package. Metrics are computed by the backend rather than accepted
-as client-submitted aggregates. The dashboard currently shows the latest 100
-runs, with volume, success rate, median and p95 duration, daily trends,
-slowest operations, failure codes, and run comparison.
+as client-submitted aggregates. The overview snapshot includes the latest 100
+runs. Run history is paginated through `run.list` and is not limited to that
+snapshot. Overview numbers include volume, success rate, median and p95
+duration, daily trends, slowest operations, failure codes, and run comparison.
 
 The seeded `local@dev` account is a loopback fixture for the operations
-project, not a hosted owner. Registration creates a real local account and
-project. Hosted API operations, key-rotation UI, alerting, and durable
+project, not a hosted owner. Registration creates an account only. The
+dashboard can create, rotate, and revoke project keys. Alerting and durable
 offline delivery are not implemented.
 
 ## Declared business search
@@ -128,7 +134,8 @@ matched using JSON string containment before event aggregation. Migration 0011
 creates the scoped configuration table and a GIN index over run properties.
 Apply it before deploying the accepting API. Index creation scans existing runs
 and can block writes; verify its duration in isolated Preview before merge.
-Production rollout and npm publication remain separate operations.
+Production rollout of the migration is a separate approved operation. No new
+SDK field is required.
 
 ## Event acknowledgments and terminal ordering
 
