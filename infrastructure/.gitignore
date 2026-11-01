@@ -1,0 +1,8 @@
+/dist/
+/node_modules/
+/sdks/
+# Stack settings contain operator-specific IDs and encrypted secrets.
+/Pulumi.*.yaml
+/Pulumi.*.json
+/.pulumi/
+/*plan*.json
