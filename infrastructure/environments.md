@@ -124,8 +124,8 @@ config equivalents. Do not put these on the deployed applications. No automatic
 Pulumi CI update workflow is configured, so a GitHub `PULUMI_ACCESS_TOKEN` secret
 is not a missing requirement.
 
-Nonprod owns its imported branches and bindings. The production stack first
-adopts the four shared Vercel project containers, which serve every environment;
+Nonprod owns its imported branches and bindings. The production stack owns
+the four imported shared Vercel project containers, which serve every environment;
 it must never include inline env blocks that compete with the nonprod binding
 resources. Production/shared env adoption, domains and the Production Neon
 branch remain separate reviewed resource classes. CI secrets stay GitHub-owned;

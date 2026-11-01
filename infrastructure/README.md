@@ -8,8 +8,10 @@ The `nonprod` stack manages the existing Neon `preview` and `staging` branches
 and 13 non-production Vercel environment bindings, imported with approval on
 1 November 2026. All adopted resources have Pulumi deletion protection;
 post-import refresh-preview and preview report 18 unchanged state resources.
-Production project-container imports are prepared behind an explicit opt-in;
-their live adoption and the remaining production classes are pending. See the public
+The `production` stack also manages the four shared Vercel project containers,
+imported with approval and deletion protection on 1 November 2026. Its ordinary
+post-import preview reports six unchanged state resources. The remaining
+production resource classes are pending. See the public
 [infrastructure overview](../docs/infrastructure.md) for the deployment shape.
 
 The [environment contract](./environments.md) records all required app,
@@ -265,8 +267,8 @@ They create no live resources.
 
 ## Production project containers: first resource class
 
-`vercel-production.ts` prepares import of the four existing shared Vercel
-projects into the production stack. It stays disabled until
+`vercel-production.ts` manages the four existing shared Vercel projects adopted
+into the production stack. Its import gate stays disabled until
 `importVercelProjects=true`; required settings are `vercelTeamId` and all four
 `vercel{Api,Dashboard,Web,Docs}ProjectId` values. IDs must be distinct. Imports use
 `team-id/project-id`; they cannot create substitute projects when an ID is absent.
@@ -284,9 +286,21 @@ owners and are explicitly ignored during this import. Inline `environments`
 are never declared; individual binding resources remain the only env writer.
 Do not add `vercel.Deployment` resources or change the controlled Staging rollout.
 
-The reviewed production preview proposes four protected project imports and
-only Pulumi stack/provider metadata creates, without settings changes,
-replacements or deletions. This is a prepared plan, not a completed production
-import. Each resource class requires separate approval before `pulumi up`.
+The approved import completed on 1 November 2026: four protected projects and
+only two Pulumi metadata creates, with no settings updates, replacements or
+deletions. Before/after reads matched project settings, all 21 env records,
+domain assignments and Production deployment IDs. Public URLs remained available;
+automatic feature previews stayed paused. No Production credentials were
+transferred or rotated. Keep the import gate enabled after adoption.
+
+With the pinned CLI/provider versions, default refresh currently reports four
+updates without field diffs, even when its serialized before/after inputs and
+outputs are identical. A state-only refresh did not clear that report. A scoped
+diagnostic with `PULUMI_ENABLE_LEGACY_REFRESH_DIFF=1` compares actual outputs and
+reports six unchanged resources; ordinary `pulumi preview --expect-no-changes`
+also passes after refresh. Record this default-refresh limitation separately;
+do not treat future refresh differences as harmless without checking them.
+No global diff setting or resource protection was changed.
+
 Later classes adopt the Production Neon branch, domains and production/shared
-env bindings. No Production credentials are transferred or rotated for this class.
+env bindings. Each class still needs separate approval before `pulumi up`.
