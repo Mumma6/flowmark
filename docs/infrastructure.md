@@ -10,10 +10,9 @@ credentials, connection strings, or operator runbooks. The separate
 Preview/Staging Neon branches and 13 non-production Vercel environment bindings,
 imported with deletion protection on 1 November 2026. Post-import previews report
 18 unchanged state resources. The four shared Vercel project containers are also
-adopted with deletion protection in the production stack; its ordinary preview
-reports six unchanged state resources. See the Pulumi project notes for a
-default-refresh diff limitation. Domains, the Production Neon branch and
-production/shared env bindings await separate adoption.
+adopted with deletion protection in the production stack; standard refresh-preview
+and preview both report six unchanged state resources. Domains, the Production
+Neon branch and production/shared env bindings await separate adoption.
 
 ## Hostnames
 
