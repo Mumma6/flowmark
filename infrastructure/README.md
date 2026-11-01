@@ -9,8 +9,8 @@ and 13 non-production Vercel environment bindings, imported with approval on
 1 November 2026. All adopted resources have Pulumi deletion protection;
 post-import refresh-preview and preview report 18 unchanged state resources.
 The `production` stack also manages the four shared Vercel project containers,
-imported with approval and deletion protection on 1 November 2026. Its ordinary
-post-import preview reports six unchanged state resources. The remaining
+imported with approval and deletion protection on 1 November 2026. Its standard
+refresh-preview and preview report six unchanged state resources. The remaining
 production resource classes are pending. See the public
 [infrastructure overview](../docs/infrastructure.md) for the deployment shape.
 
@@ -293,14 +293,23 @@ domain assignments and Production deployment IDs. Public URLs remained available
 automatic feature previews stayed paused. No Production credentials were
 transferred or rotated. Keep the import gate enabled after adoption.
 
-With the pinned CLI/provider versions, default refresh currently reports four
-updates without field diffs, even when its serialized before/after inputs and
-outputs are identical. A state-only refresh did not clear that report. A scoped
-diagnostic with `PULUMI_ENABLE_LEGACY_REFRESH_DIFF=1` compares actual outputs and
-reports six unchanged resources; ordinary `pulumi preview --expect-no-changes`
-also passes after refresh. Record this default-refresh limitation separately;
-do not treat future refresh differences as harmless without checking them.
-No global diff setting or resource protection was changed.
+The import initially omitted `passport.enabled=false` from stored inputs while
+retaining the disabled value in outputs. The bridge drops optional zero values
+during import; the provider then defaults a configured Passport block with no
+`enabled` input to true during refresh's planning comparison. This produced
+four reported updates despite unchanged live settings. A temporary accurate-diff
+diagnostic identified `passport.enabled` on all four projects.
+
+An approved no-op update of the existing program persisted its explicit
+`passport: { enabled: false }` inputs. The reviewed saved plan allowed only six
+unchanged resources and no provider create/update/delete operations. Standard
+`pulumi refresh --preview-only --expect-no-changes` and
+`pulumi preview --expect-no-changes` now both pass without diagnostic flags.
+Before/after Vercel settings, env records, domains and Production deployment IDs
+remain identical. No provider upgrade, ignored Passport field or global legacy
+diff setting was needed. Keep the explicit false declaration and verify standard
+refresh after future imports; a zero-value omission must not be mistaken for a
+live setting change.
 
 Later classes adopt the Production Neon branch, domains and production/shared
 env bindings. Each class still needs separate approval before `pulumi up`.
