@@ -393,8 +393,10 @@ and browser/hosted verification limits.
 Delivery is best-effort with a bounded in-memory pending set, no durable queue or
 batching. The overview snapshot includes the latest 100 runs. Workflow summaries
 and `run.list` cover recorded history; the Runs page asks for 25 rows at a time,
-and `run.list` accepts a limit from 1 to 100. Daily volume covers the last 30
-UTC days. The local harness simulates invoice, inventory and order work per
+and `run.list` accepts a limit from 1 to 100. Daily volume on the snapshot
+covers the last 30 UTC days. Insights and Issues read `project.periodReport`
+for a half-open start window of at most 31 days, compared with the previous
+window. The local harness simulates invoice, inventory and order work per
 execution, while workflow history is persistent. Technical SDK diagnostics use a
 separate local project.
 

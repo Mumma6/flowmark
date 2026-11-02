@@ -10,16 +10,22 @@ export function windowLabel(window: {
   return `${window.startedAfter.slice(0, 10)} – ${end}`
 }
 
-function delta(current: number | null, previous: number | null, unit: string) {
+function delta(
+  current: number | null,
+  previous: number | null,
+  unit: string,
+  comparison: string,
+) {
   if (current == null || previous == null) {
     return undefined
   }
   const value = Math.round((current - previous) * 10) / 10
-  return `${value > 0 ? "+" : ""}${value}${unit} vs previous 7 days`
+  return `${value > 0 ? "+" : ""}${value}${unit} vs ${comparison}`
 }
 
 export function overviewMetrics(
   data: Pick<Intelligence, "current" | "previous">,
+  comparison = "previous 7 days",
 ) {
   const { current, previous } = data
   const baseline = previous.totalRuns > 0
@@ -27,25 +33,25 @@ export function overviewMetrics(
     {
       label: "Recorded runs",
       value: current.totalRuns.toLocaleString(),
-      note: "Recorded executions",
+      note: "Runs started in the window",
       change: baseline
-        ? delta(current.totalRuns, previous.totalRuns, " runs")
+        ? delta(current.totalRuns, previous.totalRuns, " runs", comparison)
         : undefined,
     },
     {
       label: "Run completion",
       value: current.successRate == null ? "—" : `${current.successRate}%`,
-      note: "Among finished runs",
+      note: "Completed among finished runs",
       change: baseline
-        ? delta(current.successRate, previous.successRate, " pp")
+        ? delta(current.successRate, previous.successRate, " pp", comparison)
         : undefined,
     },
     {
       label: "Failed runs",
       value: current.failedRuns.toLocaleString(),
-      note: "Reported failures",
+      note: "Explicit technical failures",
       change: baseline
-        ? delta(current.failedRuns, previous.failedRuns, " runs")
+        ? delta(current.failedRuns, previous.failedRuns, " runs", comparison)
         : undefined,
     },
     {
@@ -54,9 +60,14 @@ export function overviewMetrics(
         current.p95DurationMs == null
           ? "—"
           : formatDuration(current.p95DurationMs),
-      note: "95% finished within",
+      note: "95% of measured runs finished within",
       change: baseline
-        ? delta(current.p95DurationMs, previous.p95DurationMs, " ms")
+        ? delta(
+            current.p95DurationMs,
+            previous.p95DurationMs,
+            " ms",
+            comparison,
+          )
         : undefined,
     },
   ]

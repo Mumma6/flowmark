@@ -3,8 +3,10 @@
 import { useMemo, useState, type ReactNode } from "react"
 import {
   BookOpen,
+  CircleAlert,
   GitBranch,
   LayoutDashboard,
+  LineChart,
   Menu,
   Settings,
   Workflow,
@@ -42,6 +44,8 @@ const navigation = [
   { href: "/", label: "Overview", icon: LayoutDashboard },
   { href: "/workflows", label: "Workflows", icon: Workflow },
   { href: "/runs", label: "Runs", icon: GitBranch },
+  { href: "/insights", label: "Insights", icon: LineChart },
+  { href: "/issues", label: "Issues", icon: CircleAlert },
   { href: "/settings", label: "Settings", icon: Settings },
 ]
 function SignOutButton() {
@@ -316,7 +320,8 @@ export function DashboardShell({
                     Project navigation
                   </SheetTitle>
                   <SheetDescription className="sr-only">
-                    Browse workflows, runs and project settings.
+                    Browse workflows, runs, insights, issues and project
+                    settings.
                   </SheetDescription>
                   <Navigation email={email} onNavigate={() => setOpen(false)} />
                 </SheetContent>

@@ -16,6 +16,7 @@ import type {
   IntelligenceQuery,
   ListRunsQuery,
   ListedRunsPage,
+  PeriodReport,
   ProjectSnapshot,
   RelatedRuns,
   RunComparison,
@@ -70,6 +71,10 @@ export interface WorkflowRepositoryService {
     projectId: string,
     query: IntelligenceQuery,
   ) => Effect.Effect<WorkflowIntelligence, PersistenceError>
+  readonly periodReport: (
+    projectId: string,
+    query: IntelligenceQuery,
+  ) => Effect.Effect<PeriodReport, PersistenceError>
 }
 export class WorkflowRepository extends Context.Service<
   WorkflowRepository,

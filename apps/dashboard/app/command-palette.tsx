@@ -3,9 +3,11 @@
 import { useEffect, useState, useSyncExternalStore } from "react"
 import {
   BookOpen,
+  CircleAlert,
   Folder,
   GitBranch,
   LayoutDashboard,
+  LineChart,
   Search,
   Settings,
   Tag,
@@ -43,6 +45,8 @@ const pageIcons = {
   overview: LayoutDashboard,
   workflows: Workflow,
   runs: GitBranch,
+  insights: LineChart,
+  issues: CircleAlert,
   settings: Settings,
   documentation: BookOpen,
 } satisfies Record<CommandPage["id"], typeof Workflow>

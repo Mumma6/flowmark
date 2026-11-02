@@ -30,7 +30,13 @@ import type { AppRouter } from "@flowmark/server/trpc"
 type Data = inferRouterOutputs<AppRouter>["project"]["businessInsights"]
 type Window = Data["windows"][number]
 
-export function BusinessOutcomes({ workflow }: { workflow: string }) {
+export function BusinessOutcomes({
+  workflow,
+  lockedWindow,
+}: {
+  workflow: string
+  lockedWindow?: { after: string; before: string; days: 7 | 30 }
+}) {
   const { current } = useProject()
   const trpc = useTRPC()
   const params = useSearchParams()
@@ -77,15 +83,23 @@ export function BusinessOutcomes({ workflow }: { workflow: string }) {
   const declaration = declarations.data?.find(
     (item) => item.revision === selectedRevision,
   )
+  const hasAggregatableField =
+    declarations.data?.some((item) =>
+      item.fields.some((entry) => entry.aggregate),
+    ) ?? false
   const fields = declaration?.fields.filter((field) => field.aggregate) ?? []
   const field = params.has("biPath")
     ? fields.find((item) => JSON.stringify(item.path) === params.get("biPath"))
     : fields[0]
   const defaults = defaultIntelligenceQuery(workflow)
   const after =
-    params.get("biAfter") ?? defaults.currentStartedAfter.slice(0, 10)
+    lockedWindow?.after ??
+    params.get("biAfter") ??
+    defaults.currentStartedAfter.slice(0, 10)
   const before =
-    params.get("biBefore") ?? defaults.currentStartedBefore.slice(0, 10)
+    lockedWindow?.before ??
+    params.get("biBefore") ??
+    defaults.currentStartedBefore.slice(0, 10)
   const currentStartedAfter = `${after}T00:00:00.000Z`
   const currentStartedBefore = `${before}T00:00:00.000Z`
   const duration =
@@ -196,9 +210,9 @@ export function BusinessOutcomes({ workflow }: { workflow: string }) {
       <CardHeader>
         <CardTitle>Reported business outcomes</CardTitle>
         <CardDescription>
-          Runs started in the selected UTC interval [after, before). Final
-          evidence includes completed and failed runs; reports are excluded.
-          Each attempt counts once. Browser reports remain untrusted.
+          {lockedWindow
+            ? `Runs started in the Insights window ${after} → ${before} UTC. Final evidence includes completed and failed runs; reports are excluded.`
+            : "Runs started in the selected UTC interval [after, before). Final evidence includes completed and failed runs; reports are excluded. Each attempt counts once. Browser reports remain untrusted."}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-5">
@@ -210,161 +224,196 @@ export function BusinessOutcomes({ workflow }: { workflow: string }) {
             void dimensions.refetch()
           }}
         />
-        {declarations.data &&
-          !declarations.data.some((item) =>
-            item.fields.some((entry) => entry.aggregate),
-          ) && (
-            <p className="text-sm text-muted-foreground">
-              No aggregatable result fields declared. Create an immutable
-              revision below with explicit aggregation and use it on the
-              original run start.
-            </p>
-          )}
-        <form
-          action={pathname}
-          className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"
-        >
-          <label className="text-sm">
-            Definition revision
-            <NativeSelect
-              name="biRevision"
-              value={formRevision}
-              onChange={(event) => {
-                setRevision(event.target.value)
-                setFormPath("")
-                setFormNumerator("")
-                setFormDenominator("")
-              }}
-            >
-              <option value="">Select revision</option>
-              {declarations.data?.map((item) => (
-                <option key={item.revision}>{item.revision}</option>
-              ))}
-            </NativeSelect>
-          </label>
-          <label className="text-sm">
-            Reported field
-            <NativeSelect
-              name="biPath"
-              value={selectedFormPath}
-              onChange={(event) => setFormPath(event.target.value)}
-            >
-              <option value="">Select field</option>
-              {formFields.map((item) => (
-                <option
-                  key={JSON.stringify(item.path)}
-                  value={JSON.stringify(item.path)}
+        {declarations.data && !hasAggregatableField && (
+          <p className="text-sm text-muted-foreground">
+            {lockedWindow ? (
+              <>
+                No aggregatable result fields are declared for this workflow.{" "}
+                <Link
+                  className="font-medium text-primary underline"
+                  href={`/workflows/${encodeURIComponent(workflow)}`}
                 >
-                  {item.label}
-                </option>
-              ))}
-            </NativeSelect>
-          </label>
-          <label className="text-sm">
-            Started after (UTC, inclusive)
-            <Input name="biAfter" type="date" defaultValue={after} required />
-          </label>
-          <label className="text-sm">
-            Started before (UTC, exclusive)
-            <Input name="biBefore" type="date" defaultValue={before} required />
-          </label>
-          <label className="text-sm">
-            Ratio numerator
-            <NativeSelect
-              name="biNumerator"
-              value={formNumerator}
-              onChange={(event) => setFormNumerator(event.target.value)}
-            >
-              <option value="">No ratio</option>
-              {formCountFields.map((item) => (
-                <option
-                  key={JSON.stringify(item.path)}
-                  value={JSON.stringify(item.path)}
-                >
-                  {item.label}
-                </option>
-              ))}
-            </NativeSelect>
-          </label>
-          <label className="text-sm">
-            Ratio denominator
-            <NativeSelect
-              name="biDenominator"
-              value={formDenominator}
-              onChange={(event) => setFormDenominator(event.target.value)}
-            >
-              <option value="">No ratio</option>
-              {formCountFields.map((item) => (
-                <option
-                  key={JSON.stringify(item.path)}
-                  value={JSON.stringify(item.path)}
-                >
-                  {item.label}
-                </option>
-              ))}
-            </NativeSelect>
-          </label>
-          <label className="text-sm">
-            Release A
-            <Input
-              name="biReleaseA"
-              maxLength={128}
-              defaultValue={params.get("biReleaseA") ?? ""}
-            />
-          </label>
-          <label className="text-sm">
-            Release B
-            <Input
-              name="biReleaseB"
-              maxLength={128}
-              defaultValue={params.get("biReleaseB") ?? ""}
-            />
-          </label>
-          <label className="text-sm">
-            Declared dimension
-            <NativeSelect
-              name="biDimension"
-              value={dimension}
-              onChange={(event) => {
-                setDimension(event.target.value)
-                setFormDimensionValue("")
-              }}
-            >
-              <option value="">All dimensions</option>
-              {dimensions.data
-                ?.filter((item) => item.role === "dimension")
-                .map((item) => (
-                  <option key={item.key} value={item.key}>
-                    {item.key}
+                  Declare them on the workflow
+                </Link>
+                .
+              </>
+            ) : (
+              "No aggregatable result fields declared. Create an immutable revision below with explicit aggregation and use it on the original run start."
+            )}
+          </p>
+        )}
+        {(!lockedWindow || hasAggregatableField) && (
+          <form
+            action={pathname}
+            className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"
+          >
+            {lockedWindow?.days === 30 && (
+              <input type="hidden" name="days" value="30" />
+            )}
+            {lockedWindow && (
+              <input type="hidden" name="workflow" value={workflow} />
+            )}
+            <label className="text-sm">
+              Definition revision
+              <NativeSelect
+                name="biRevision"
+                value={formRevision}
+                onChange={(event) => {
+                  setRevision(event.target.value)
+                  setFormPath("")
+                  setFormNumerator("")
+                  setFormDenominator("")
+                }}
+              >
+                <option value="">Select revision</option>
+                {declarations.data?.map((item) => (
+                  <option key={item.revision}>{item.revision}</option>
+                ))}
+              </NativeSelect>
+            </label>
+            <label className="text-sm">
+              Reported field
+              <NativeSelect
+                name="biPath"
+                value={selectedFormPath}
+                onChange={(event) => setFormPath(event.target.value)}
+              >
+                <option value="">Select field</option>
+                {formFields.map((item) => (
+                  <option
+                    key={JSON.stringify(item.path)}
+                    value={JSON.stringify(item.path)}
+                  >
+                    {item.label}
                   </option>
                 ))}
-            </NativeSelect>
-          </label>
-          <label className="text-sm">
-            Dimension value
-            <NativeSelect
-              name="biDimensionValue"
-              value={formDimensionValue}
-              onChange={(event) => setFormDimensionValue(event.target.value)}
-            >
-              <option value="">Select value</option>
-              {dimensionField?.role === "dimension" &&
-                dimensionField.values.map((value) => (
-                  <option key={value}>{value}</option>
+              </NativeSelect>
+            </label>
+            {lockedWindow ? (
+              <>
+                <input type="hidden" name="biAfter" value={after} />
+                <input type="hidden" name="biBefore" value={before} />
+              </>
+            ) : (
+              <>
+                <label className="text-sm">
+                  Started after (UTC, inclusive)
+                  <Input
+                    name="biAfter"
+                    type="date"
+                    defaultValue={after}
+                    required
+                  />
+                </label>
+                <label className="text-sm">
+                  Started before (UTC, exclusive)
+                  <Input
+                    name="biBefore"
+                    type="date"
+                    defaultValue={before}
+                    required
+                  />
+                </label>
+              </>
+            )}
+            <label className="text-sm">
+              Ratio numerator
+              <NativeSelect
+                name="biNumerator"
+                value={formNumerator}
+                onChange={(event) => setFormNumerator(event.target.value)}
+              >
+                <option value="">No ratio</option>
+                {formCountFields.map((item) => (
+                  <option
+                    key={JSON.stringify(item.path)}
+                    value={JSON.stringify(item.path)}
+                  >
+                    {item.label}
+                  </option>
                 ))}
-            </NativeSelect>
-          </label>
-          <Button
-            type="submit"
-            disabled={
-              !formFields.some(
-                (item) => JSON.stringify(item.path) === selectedFormPath,
-              )
-            }
-          >
-            Apply outcome selection
-          </Button>
-        </form>
+              </NativeSelect>
+            </label>
+            <label className="text-sm">
+              Ratio denominator
+              <NativeSelect
+                name="biDenominator"
+                value={formDenominator}
+                onChange={(event) => setFormDenominator(event.target.value)}
+              >
+                <option value="">No ratio</option>
+                {formCountFields.map((item) => (
+                  <option
+                    key={JSON.stringify(item.path)}
+                    value={JSON.stringify(item.path)}
+                  >
+                    {item.label}
+                  </option>
+                ))}
+              </NativeSelect>
+            </label>
+            <label className="text-sm">
+              Release A
+              <Input
+                name="biReleaseA"
+                maxLength={128}
+                defaultValue={params.get("biReleaseA") ?? ""}
+              />
+            </label>
+            <label className="text-sm">
+              Release B
+              <Input
+                name="biReleaseB"
+                maxLength={128}
+                defaultValue={params.get("biReleaseB") ?? ""}
+              />
+            </label>
+            <label className="text-sm">
+              Declared dimension
+              <NativeSelect
+                name="biDimension"
+                value={dimension}
+                onChange={(event) => {
+                  setDimension(event.target.value)
+                  setFormDimensionValue("")
+                }}
+              >
+                <option value="">All dimensions</option>
+                {dimensions.data
+                  ?.filter((item) => item.role === "dimension")
+                  .map((item) => (
+                    <option key={item.key} value={item.key}>
+                      {item.key}
+                    </option>
+                  ))}
+              </NativeSelect>
+            </label>
+            <label className="text-sm">
+              Dimension value
+              <NativeSelect
+                name="biDimensionValue"
+                value={formDimensionValue}
+                onChange={(event) => setFormDimensionValue(event.target.value)}
+              >
+                <option value="">Select value</option>
+                {dimensionField?.role === "dimension" &&
+                  dimensionField.values.map((value) => (
+                    <option key={value}>{value}</option>
+                  ))}
+              </NativeSelect>
+            </label>
+            <Button
+              type="submit"
+              disabled={
+                !formFields.some(
+                  (item) => JSON.stringify(item.path) === selectedFormPath,
+                )
+              }
+            >
+              Apply outcome selection
+            </Button>
+          </form>
+        )}
         {params.has("biPath") && !field && declarations.data && (
           <p role="alert">
             The selected result path is not aggregatable in this revision.

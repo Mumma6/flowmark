@@ -37,7 +37,6 @@ import { ResultDeclarationEditor } from "./result-declaration-editor"
 import { RunInvestigation } from "./run-investigation"
 import { DataState, PageHeading, ViewLink } from "./dashboard-components"
 import {
-  dailyFromRuns,
   defaultIntelligenceQuery,
   formatDuration,
   formatTimestamp,
@@ -45,19 +44,14 @@ import {
   type Run,
 } from "./dashboard-data"
 import { useProject } from "./project-context"
-import {
-  DailyDurationPanel,
-  DailyVolumePanel,
-  FailureCodeTable,
-  IntelligencePanel,
-  OperationInsightsTable,
-} from "./insights-panels"
+import { FailureCodeTable, OperationInsightsTable } from "./insights-panels"
 import { RunExplorer, RunsTable } from "./runs-table"
 import {
+  AttentionSummary,
   OverviewMetrics,
   WorkflowOverview,
-  RecentFailures,
 } from "./overview-panels"
+import { insightsPath, issuesPath } from "./period-presentation"
 import { StatusBadge } from "./dashboard-components"
 
 function useSnapshot() {
@@ -129,7 +123,7 @@ export function DashboardOverview() {
     <div className="grid min-w-0 gap-7">
       <PageHeading
         title="Overview"
-        description="Understand reported workflow outcomes and find the runs behind them."
+        description="Operational health for reported workflow runs. Trends live in Insights. Problems to investigate live in Issues."
       >
         <div className="flex flex-wrap items-center gap-3 sm:flex-col sm:items-end sm:gap-2">
           <Refresh
@@ -160,7 +154,13 @@ export function DashboardOverview() {
           )}
           <div className="grid min-w-0 items-start gap-5 xl:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)]">
             <WorkflowOverview workflows={data.workflows} />
-            <RecentFailures runs={data.runs} />
+            <AttentionSummary
+              failedRuns={
+                intelligence.data && !intelligence.error
+                  ? intelligence.data.current.failedRuns
+                  : null
+              }
+            />
           </div>
           <Card className="overflow-hidden shadow-none">
             <CardHeader className="flex-row flex-wrap items-start justify-between gap-4 space-y-0">
@@ -176,40 +176,6 @@ export function DashboardOverview() {
               <RunsTable runs={data.runs.slice(0, 5)} />
             </CardContent>
           </Card>
-          <section
-            aria-label="Thirty-day trends"
-            className="grid min-w-0 gap-5 xl:grid-cols-2"
-          >
-            <DailyVolumePanel daily={data.daily} />
-            <DailyDurationPanel daily={data.daily} />
-          </section>
-          <IntelligencePanel
-            data={intelligence.data}
-            loading={intelligence.isPending}
-            error={intelligence.error?.message}
-          />
-          <Accordion className="rounded-xl border border-border bg-card px-5">
-            <AccordionItem value="diagnostics">
-              <AccordionTrigger>
-                All recorded diagnostics{" "}
-                <span className="ml-auto text-xs font-normal text-muted-foreground">
-                  Operations & failure codes
-                </span>
-              </AccordionTrigger>
-              <AccordionContent className="max-w-none">
-                <div className="grid min-w-0 gap-5 xl:grid-cols-2">
-                  <OperationInsightsTable
-                    operations={data.operations}
-                    empty="No measured operations yet. Wrap work in operation()."
-                  />
-                  <FailureCodeTable
-                    codes={data.failureCodes}
-                    empty="No terminal failure codes reported."
-                  />
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
         </>
       )}
     </div>
@@ -285,12 +251,9 @@ export function ProjectRuns({
   initialSearch?: string
 }) {
   const { data, isPending, error, isFetching, refetch } = useSnapshot()
-  const intelligence = useIntelligence(workflow)
   const summary = data?.workflows.find((item) => item.name === workflow)
   const workflowRuns =
     workflow && data ? data.runs.filter((run) => run.workflow === workflow) : []
-  const workflowDaily =
-    workflow && workflowRuns.length > 0 ? dailyFromRuns(workflowRuns) : null
   const outliers =
     workflow && workflowRuns.length > 0 ? workflowOutliers(workflowRuns) : null
   return (
@@ -303,15 +266,7 @@ export function ProjectRuns({
             : "Find an execution by run ID, workflow, failure code or recorded correlation."
         }
       >
-        <Refresh
-          fetching={isFetching}
-          onClick={() => {
-            void refetch()
-            if (workflow) {
-              void intelligence.refetch()
-            }
-          }}
-        />
+        <Refresh fetching={isFetching} onClick={() => void refetch()} />
       </PageHeading>
       {workflow && (
         <>
@@ -358,6 +313,14 @@ export function ProjectRuns({
             Run completion is among finished runs, not a measure of business
             success. Reported results appear with each execution below.
           </p>
+          <div className="flex flex-wrap gap-2">
+            <ViewLink href={insightsPath(7, workflow)}>
+              Trends for this workflow
+            </ViewLink>
+            <ViewLink href={issuesPath(7, workflow)}>
+              Problems for this workflow
+            </ViewLink>
+          </div>
         </section>
       )}
       <Card className="overflow-hidden shadow-none">
@@ -378,28 +341,6 @@ export function ProjectRuns({
           />
         </CardContent>
       </Card>
-      {workflow && workflowDaily && (
-        <section
-          aria-label="Workflow snapshot trends"
-          className="grid min-w-0 gap-5 xl:grid-cols-2"
-        >
-          <DailyVolumePanel
-            daily={workflowDaily}
-            scope="Last 30 days within latest-100 project snapshot · UTC"
-          />
-          <DailyDurationPanel
-            daily={workflowDaily}
-            scope="Last 30 days within latest-100 project snapshot · UTC"
-          />
-        </section>
-      )}
-      {workflow && (
-        <IntelligencePanel
-          data={intelligence.data}
-          loading={intelligence.isPending}
-          error={intelligence.error?.message}
-        />
-      )}
       {workflow && data && (
         <Accordion className="rounded-xl border border-border bg-card px-5">
           <AccordionItem value="workflow-evidence">

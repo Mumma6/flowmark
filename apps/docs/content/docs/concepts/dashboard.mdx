@@ -5,10 +5,10 @@ description: Move from workflow outcomes to the evidence behind a specific execu
 
 ## Start with the workflow overview
 
-The overview shows volume, success rate, median and p95 duration, failed-run
-count, week-over-week change, 30-day volume and duration charts, slowest
-operations, failure codes, five workflows ordered by success rate, and five
-recent runs. Use it to find a process that needs investigation.
+The overview shows volume, run completion, failed-run count and p95 duration
+for runs started in the last seven UTC days, compared with the previous seven.
+It also lists workflows and the latest runs. Open **Insights** for trends and
+reported outcomes, and **Issues** for failure groups that need investigation.
 
 ## Browse workflows and runs
 
@@ -22,8 +22,23 @@ filters; sort by start time or duration; optionally group rows by workflow.
 Each page requests 25 runs. Enabled business-reference keys and declared
 result fields can add an exact filter. Arbitrary JSON is not searchable.
 
-Run history is the project's recorded runs, not only the overview's latest 100. Metrics on the overview use their labelled populations. Daily volume
-covers 30 days. Naming namespace is inferred from workflow name prefixes.
+Run history is the project's recorded runs, not only the overview's latest 100.
+Metrics on the overview use their labelled populations. Insights and Issues
+compare a 7- or 30-day UTC start window with the previous window of the same
+length. Naming namespace is inferred from workflow name prefixes.
+
+## Read trends and problems
+
+**Insights** shows started-run volume, technical completion, duration, a
+workflow breakdown and recorded changes. Choosing a workflow compares that
+workflow's declared business outcomes inside the same window. Completion is not
+a business success score, and a difference is not a cause.
+
+**Issues** groups failed runs by workflow and terminal failure code. Each group
+shows how often it happened, the previous window's count, when a run last
+started, and links to the workflow and matching runs. Groups are calculated
+when you open the page. Flowmark does not assign, acknowledge or resolve them.
+Longer operation medians are recorded differences, not confirmed anomalies.
 
 ## Open an execution
 

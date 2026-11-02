@@ -1,7 +1,6 @@
 import Link from "next/link"
-import { ArrowUpRight, CheckCheck, CircleAlert } from "lucide-react"
+import { CircleAlert } from "lucide-react"
 import {
-  Badge,
   Card,
   CardContent,
   CardDescription,
@@ -16,21 +15,27 @@ import {
 } from "@flowmark/ui"
 import {
   formatDuration,
-  formatTimestamp,
   type Intelligence,
-  type Run,
   type WorkflowSummary,
 } from "./dashboard-data"
 import { ViewLink } from "./dashboard-components"
 import { overviewMetrics, windowLabel } from "./overview-presentation"
 
-export function OverviewMetrics({ data }: { data: Intelligence }) {
-  const metrics = overviewMetrics(data)
+export function OverviewMetrics({
+  data,
+  comparison = "previous 7 days",
+  title = "Execution summary · last 7 days",
+}: {
+  data: Pick<Intelligence, "current" | "previous">
+  comparison?: string
+  title?: string
+}) {
+  const metrics = overviewMetrics(data, comparison)
   return (
-    <section aria-label="Last seven days" className="grid gap-3">
+    <section aria-label={title} className="grid gap-3">
       <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
         <span className="font-medium text-foreground">
-          Execution summary · last 7 days{" "}
+          {title}{" "}
           <span className="block whitespace-nowrap font-normal text-muted-foreground sm:ml-2 sm:inline">
             {windowLabel(data.current)} · UTC
           </span>
@@ -70,7 +75,8 @@ export function OverviewMetrics({ data }: { data: Intelligence }) {
       </dl>
       {data.previous.totalRuns === 0 && (
         <p className="text-xs text-muted-foreground">
-          No previous-period comparison available.
+          The previous window has no started runs, so these totals are not
+          compared.
         </p>
       )}
     </section>
@@ -156,8 +162,11 @@ export function WorkflowOverview({
   )
 }
 
-export function RecentFailures({ runs }: { runs: readonly Run[] }) {
-  const failed = runs.filter((run) => run.status === "Failed").slice(0, 3)
+export function AttentionSummary({
+  failedRuns,
+}: {
+  failedRuns: number | null
+}) {
   return (
     <Card className="min-w-0 shadow-none">
       <CardHeader className="p-5">
@@ -167,67 +176,25 @@ export function RecentFailures({ runs }: { runs: readonly Run[] }) {
             className="text-muted-foreground"
             aria-hidden="true"
           />
-          <CardTitle className="text-base leading-6">Recent failures</CardTitle>
-          {failed.length > 0 && (
-            <Badge variant="destructive">
-              {runs.filter((run) => run.status === "Failed").length}
-            </Badge>
-          )}
+          <CardTitle className="text-base leading-6">
+            What needs attention
+          </CardTitle>
         </div>
         <CardDescription className="text-xs">
-          Failures in latest 100 recorded runs
+          Explicit technical failures · runs started in the last 7 days
         </CardDescription>
       </CardHeader>
-      <CardContent className="p-0">
-        {failed.length > 0 ? (
-          <ul className="divide-y divide-border">
-            {failed.map((run) => (
-              <li key={run.id}>
-                <Link
-                  href={`/runs/${run.id}`}
-                  className="group flex items-start justify-between gap-3 px-5 py-4 transition-colors hover:bg-muted/50"
-                >
-                  <div className="min-w-0">
-                    <p className="break-words text-sm font-medium group-hover:text-primary">
-                      {run.workflow}
-                    </p>
-                    <p className="mt-1 break-all font-mono text-xs text-muted-foreground">
-                      {run.externalId.slice(0, 12)}
-                    </p>
-                    <time
-                      dateTime={run.startedAt}
-                      className="mt-2 block text-xs text-muted-foreground"
-                    >
-                      {formatTimestamp(run.startedAt)} UTC
-                    </time>
-                  </div>
-                  <ArrowUpRight
-                    size={16}
-                    className="mt-1 shrink-0 text-muted-foreground"
-                    aria-hidden="true"
-                  />
-                  <span className="sr-only">
-                    Open failed run {run.externalId}
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <div className="px-5 pb-6 pt-2">
-            <CheckCheck
-              size={20}
-              aria-hidden="true"
-              className="mb-3 text-muted-foreground"
-            />
-            <p className="text-sm">No failures in this snapshot</p>
-            <p className="mt-1 text-xs leading-5 text-muted-foreground">
-              Explore run history for earlier outcomes.
-            </p>
-          </div>
-        )}
-        <div className="border-t border-border px-5 py-3">
-          <ViewLink href="/runs">Explore run history</ViewLink>
+      <CardContent className="grid gap-4 p-5 pt-0">
+        <p className="text-3xl font-medium tabular-nums">
+          {failedRuns == null ? "—" : failedRuns.toLocaleString()}
+        </p>
+        <p className="text-sm leading-6 text-muted-foreground">
+          Failure groups, longer operations and the runs behind them are on
+          Issues. Trends and reported outcomes are on Insights.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <ViewLink href="/issues">Investigate issues</ViewLink>
+          <ViewLink href="/insights">View trends</ViewLink>
         </div>
       </CardContent>
     </Card>
