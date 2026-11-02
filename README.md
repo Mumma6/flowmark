@@ -163,10 +163,10 @@ write key. A later session can use `pnpm dev:stack`: it prepares env files,
 starts that same database, then every application and Drizzle Studio. It does
 not migrate or seed.
 
-`pnpm dev` starts the API on port 3003, the dashboard on 3001, the harness on
-3004, and the library watchers. `pnpm dev:all` also starts web (3000), docs
-(3002), and internal-docs (3005). Both require the database to already be
-healthy. Append `--ui=stream` for ordinary logs. Applications and watchers run
+`pnpm dev` starts the API on port 3003, the dashboard on 3001, customer docs on
+3002, the harness on 3004, contributor docs on 3005, and the library watchers.
+`pnpm dev:all` also starts the marketing site on 3000. Both require the
+database to already be healthy. Append `--ui=stream` for ordinary logs. Applications and watchers run
 natively on OrbStack, Docker Desktop, or Docker Engine.
 
 `pnpm dev:stack` starts Drizzle Studio with the applications. `pnpm dev` and

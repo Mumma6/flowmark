@@ -22,6 +22,7 @@ import type {
   RunTimelineEvent,
   WorkflowIntelligence,
   WorkflowSummary,
+  ProjectSearch,
 } from "../types.js"
 
 export interface WorkflowRepositoryService {
@@ -48,6 +49,10 @@ export interface WorkflowRepositoryService {
     projectId: string,
     query: ListRunsQuery,
   ) => Effect.Effect<ListedRunsPage, PersistenceError | InvalidInput>
+  readonly search: (
+    projectId: string,
+    query: string,
+  ) => Effect.Effect<ProjectSearch, PersistenceError | InvalidInput>
   readonly timeline: (
     projectId: string,
     runId: string,

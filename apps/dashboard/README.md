@@ -34,6 +34,11 @@ signing secret. User and session policy live in `@flowmark/auth`.
   links remain explicit; raw data/exports are available without dominating.
 - **Settings:** project creation/rename, write/browser key management, setup help
   and account controls. Project switching stays in the navigation.
+- **Search:** the navbar command palette opens with ⌘K / Ctrl+K. Pages and
+  project names resolve locally. Workflow names, the existing run text
+  contract, and exact enabled business references come from `search.project`
+  for the selected project. References match configured keys exactly; other
+  property values stay unsearchable.
 
 Technical completion is not business success. Missing terminal telemetry is
 labelled **No final outcome**, and progress is **Last reported**. Result scalar

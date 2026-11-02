@@ -75,6 +75,7 @@ function repository(overrides: Partial<WorkflowRepositoryService> = {}) {
         total: 0,
         limit: 50,
       }),
+    search: () => Effect.succeed({ workflows: [], runs: [], references: [] }),
     timeline: () => Effect.succeed([]),
     related: () => Effect.succeed({ parentMatches: [], related: [] }),
     compare: () =>
@@ -646,5 +647,90 @@ describe("API Effect services", () => {
     )
     expectLeft(result, { _tag: "Unauthorized" })
     expect(timeline).not.toHaveBeenCalled()
+  })
+
+  it("searches only the authorized member project", async () => {
+    const search = vi.fn(() =>
+      Effect.succeed({
+        workflows: [{ name: "customer.import" }],
+        runs: [],
+        references: [],
+      }),
+    )
+    const result = await Effect.runPromise(
+      Effect.flatMap(GetProjectWorkflowData, (queries) =>
+        queries.search(
+          {
+            _tag: "User",
+            userId: "user-1",
+            projectId: "requested-project",
+          },
+          "  customer  ",
+        ),
+      ).pipe(
+        Effect.provide(
+          GetProjectWorkflowData.layer.pipe(
+            Layer.provide(
+              dependencies(
+                repository({ search }),
+                true,
+                projectCredentials({
+                  memberProject: () => Effect.succeed("requested-project"),
+                }),
+              ),
+            ),
+          ),
+        ),
+      ),
+    )
+    expect(result.workflows).toEqual([{ name: "customer.import" }])
+    expect(search).toHaveBeenCalledExactlyOnceWith(
+      "requested-project",
+      "customer",
+    )
+  })
+
+  it("does not query when the search is blank", async () => {
+    const search = vi.fn(repository().search)
+    const result = await Effect.runPromise(
+      Effect.flatMap(GetProjectWorkflowData, (queries) =>
+        queries.search({ _tag: "Key", header: "Bearer key" }, "   "),
+      ).pipe(
+        Effect.provide(
+          GetProjectWorkflowData.layer.pipe(
+            Layer.provide(dependencies(repository({ search }))),
+          ),
+        ),
+      ),
+    )
+    expect(result).toEqual({ workflows: [], runs: [], references: [] })
+    expect(search).not.toHaveBeenCalled()
+  })
+
+  it("does not search after authorization fails", async () => {
+    const search = vi.fn(repository().search)
+    const result = await Effect.runPromise(
+      Effect.flatMap(GetProjectWorkflowData, (queries) =>
+        Effect.result(
+          queries.search({ _tag: "Key", header: "Bearer bad-key" }, "customer"),
+        ),
+      ).pipe(
+        Effect.provide(
+          GetProjectWorkflowData.layer.pipe(
+            Layer.provide(
+              dependencies(
+                repository({ search }),
+                true,
+                projectCredentials({
+                  authenticate: () => Effect.succeed(undefined),
+                }),
+              ),
+            ),
+          ),
+        ),
+      ),
+    )
+    expectLeft(result, { _tag: "Unauthorized" })
+    expect(search).not.toHaveBeenCalled()
   })
 })

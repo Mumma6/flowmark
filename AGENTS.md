@@ -106,9 +106,9 @@
   changed to the Compose template. Never fall back to unmanaged PostgreSQL or a
   hosted database. See [local infrastructure](./docs/development.md#local-postgresql-with-compose)
   and the [command inventory](./docs/development-commands.md).
-- Use `pnpm dev` for API/dashboard/harness and native library watchers; append
-  `--ui=stream` for non-interactive logs. `pnpm dev:all` includes web and both
-  documentation apps when PostgreSQL is already healthy. `pnpm dev:stack`
+- Use `pnpm dev` for API, dashboard, harness, both documentation apps and
+  native library watchers; append `--ui=stream` for non-interactive logs.
+  `pnpm dev:all` also includes web when PostgreSQL is already healthy. `pnpm dev:stack`
   runs `infra up`, then every application and Drizzle Studio; record its
   `container` and `startedByThisCall`. `pnpm db:studio` starts Studio alone.
   None of these commands migrate or seed on startup.

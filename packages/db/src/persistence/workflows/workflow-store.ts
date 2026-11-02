@@ -22,6 +22,7 @@ import {
   type RunTimelineEvent,
 } from "./queries/get-run-timeline.js"
 import { listRuns } from "./queries/list-runs.js"
+import { searchProject } from "./queries/search-project.js"
 import { appendEvent } from "./writes/append-event.js"
 import type {
   ListedRunsPage,
@@ -32,6 +33,7 @@ import type {
   WorkflowIntelligence,
   WorkflowSummary,
   IntelligenceQuery,
+  ProjectSearch,
 } from "./types.js"
 
 export interface WorkflowStoreService {
@@ -58,6 +60,10 @@ export interface WorkflowStoreService {
     projectId: string,
     query: ListRunsQuery,
   ) => Effect.Effect<ListedRunsPage, DatabaseError | InvalidResultQuery>
+  readonly search: (
+    projectId: string,
+    query: string,
+  ) => Effect.Effect<ProjectSearch, DatabaseError | InvalidResultQuery>
   readonly timeline: (
     projectId: string,
     runId: string,
@@ -91,6 +97,7 @@ export class WorkflowStore extends Context.Service<WorkflowStore>()(
         snapshot: (projectId) => provide(getProjectSnapshot(projectId)),
         workflows: (projectId) => provide(getWorkflowSummaries(projectId)),
         listRuns: (projectId, query) => provide(listRuns(projectId, query)),
+        search: (projectId, query) => provide(searchProject(projectId, query)),
         timeline: (projectId, runId) =>
           provide(getRunTimeline(projectId, runId)),
         related: (projectId, runId) =>

@@ -77,7 +77,7 @@ semantic list rather than hiding essential values in a wide table.
 
 [Shared exports](../packages/ui/src/index.tsx) are authoritative. Import reusable
 controls from `@flowmark/ui`: Button, Card, Table, Badge, Select, Input,
-Breadcrumb, Tabs, Sheet, Accordion, Alert, Skeleton, Pagination and chart
+Breadcrumb, Tabs, Sheet, Dialog, Command, Accordion, Alert, Skeleton, Pagination and chart
 primitives. Keep `FlowmarkMark` and the wordmark accent dot.
 
 Use a Card for one coherent data panel. Open sections and metric strips can use

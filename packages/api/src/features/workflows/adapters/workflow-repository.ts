@@ -53,6 +53,15 @@ export const WorkflowRepositoryLive = Layer.effect(
             }),
           ),
       ),
+      search: Effect.fn("WorkflowRepositoryLive.search")((projectId, query) =>
+        store.search(projectId, query).pipe(
+          Effect.catchTags({
+            DatabaseError: toPersistenceError,
+            InvalidResultQuery: (error) =>
+              new InvalidInput({ cause: error.message }),
+          }),
+        ),
+      ),
       timeline: Effect.fn("WorkflowRepositoryLive.timeline")(
         (projectId, runId) => persist(store.timeline(projectId, runId)),
       ),

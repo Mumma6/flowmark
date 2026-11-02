@@ -12,8 +12,8 @@ review of every workspace manifest, root script, database CLI and Actions workfl
 | ------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `pnpm dev:setup`                                                               | Copies missing public app env templates without overwriting configuration or printing credentials. No database writes.                                                                    |
 | `pnpm infra <operation>`                                                       | One guarded Compose dispatcher: `doctor`, `up`, `status`, bounded `logs`, `restart postgres`, non-destructive `down`. Verifies local engine, target and checkout ownership.               |
-| `pnpm dev`                                                                     | Prepares env files, requires healthy owned Compose PostgreSQL, builds libraries once, then watches API/dashboard/harness and dependencies. No migration or seed.                          |
-| `pnpm dev:all`                                                                 | Same prerequisites and library watchers, plus web, docs and internal-docs. This selects applications, not another infrastructure provider.                                                |
+| `pnpm dev`                                                                     | Prepares env files, requires healthy owned Compose PostgreSQL, builds libraries once, then watches API, dashboard, harness, docs, internal-docs and dependencies. No migration or seed.   |
+| `pnpm dev:all`                                                                 | Same prerequisites and library watchers, plus the marketing site. This selects applications, not another infrastructure provider.                                                         |
 | `pnpm dev:stack`                                                               | Prepares env files, starts this checkout's PostgreSQL with `infra up`, then watches every application, library, and Drizzle Studio. No migration or seed; run `db:setup` once beforehand. |
 | `pnpm db:setup`                                                                | Builds db prerequisites, applies committed migrations, provisions local projects and the fixture account through auth. Idempotent; never resets telemetry.                                |
 | `pnpm db:seed`                                                                 | Builds db prerequisites and provisions fixtures/account only. Useful after local fixture changes; does not migrate.                                                                       |
@@ -57,7 +57,8 @@ work. They are not competing local setup procedures.
 | `infrastructure`                                                | Separate Pulumi pnpm project with `typecheck` and compiled `test`. Resource mutation requires reviewed Pulumi preview/apply approval; local Compose is unrelated.                                                                                                                                                         |
 
 `turbo.json` retains the `dev:ready` build barrier, native watchers and standard
-build/check graph. `db:studio` is a persistent Turbo task used by `dev:stack`
+build/check graph. Its concurrency stays above the persistent dev tasks so
+`dev`, `dev:all` and `dev:stack` can run every watcher. `db:studio` is a persistent Turbo task used by `dev:stack`
 and by the standalone command. `pnpm dev` and `pnpm dev:all` do not run it.
 The root pnpm workspace continues to include `apps/*` and `packages/*`;
 infrastructure keeps
