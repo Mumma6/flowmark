@@ -1,8 +1,51 @@
 import { Context, Effect, Layer, Schema } from "effect"
-import { SearchFieldsSchema, ResultDeclarationSchema } from "@flowmarkdev/core"
-import { InvalidInput } from "../../../errors.js"
+import {
+  ResultDeclarationSchema,
+  SearchFieldsSchema,
+  type ResultDeclaration,
+  type SearchFields,
+} from "@flowmarkdev/core"
+import {
+  InvalidInput,
+  PersistenceError,
+  Unauthorized,
+} from "../../../errors.js"
 import { AuthorizeProject } from "../../project-access/use-cases/authorize-project.js"
 import { ResultDeclarations } from "../ports/result-declarations.js"
+
+export interface ManageResultDeclarationsService {
+  readonly searchFields: (
+    userId: string,
+    projectId: string,
+    workflow: string,
+  ) => Effect.Effect<SearchFields, Unauthorized | PersistenceError>
+  readonly setSearchFields: (
+    userId: string,
+    projectId: string,
+    workflow: string,
+    input: unknown,
+  ) => Effect.Effect<
+    SearchFields,
+    InvalidInput | Unauthorized | PersistenceError
+  >
+  readonly list: (
+    userId: string,
+    projectId: string,
+    workflow: string,
+  ) => Effect.Effect<
+    ReadonlyArray<ResultDeclaration>,
+    Unauthorized | PersistenceError
+  >
+  readonly create: (
+    userId: string,
+    projectId: string,
+    workflow: string,
+    input: unknown,
+  ) => Effect.Effect<
+    ResultDeclaration,
+    InvalidInput | Unauthorized | PersistenceError
+  >
+}
 
 const make = Effect.gen(function* () {
   const authorization = yield* AuthorizeProject
@@ -65,7 +108,7 @@ const make = Effect.gen(function* () {
 })
 export class ManageResultDeclarations extends Context.Service<
   ManageResultDeclarations,
-  Effect.Success<typeof make>
+  ManageResultDeclarationsService
 >()("@flowmark/api/ManageResultDeclarations") {
   static readonly layer = Layer.effect(ManageResultDeclarations, make)
 }
