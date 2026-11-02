@@ -185,7 +185,7 @@ The ordered Staging rollout of `cf0b563` applied migration history through
 `0017_auth_rate_limits` before deploying the API and remaining apps. The matching
 API/dashboard proxy secret is now managed by Pulumi's nonprod stack; see the
 [environment contract](../infrastructure/environments.md#staging-auth-proxy-binding).
-Production and paused feature Preview remain separate rollout steps.
+Production acceptance is recorded below; automatic feature Preview remains paused.
 
 Automated hosted acceptance passed 42 checks using two explicitly authorized,
 labelled synthetic accounts and projects. It covered registration through the
@@ -201,3 +201,26 @@ This is live request-path and authorization evidence, not a hosted exhaustion or
 load test. Exact quota/concurrency bounds and Retry-After behavior remain covered
 by the disposable PostgreSQL and adapter tests above. Email verification and
 recovery delivery remain disabled and outside this acceptance.
+
+### Production acceptance — 2 November 2026
+
+The separately approved [Production rollout](https://github.com/Mumma6/flowmark/actions/runs/41442674430)
+passed at exact main merge `335d3f6` after release PR #73. It verified/applied
+migration history through `0017_auth_rate_limits` before deploying the API, then
+the remaining apps. All four canonical domains resolve to READY Production
+deployments at that SHA. Pulumi created exactly two Production-only sensitive
+proxy bindings while leaving the existing 27 resources unchanged; existing
+Better Auth/database credentials and nonprod bindings were preserved.
+
+All 42 automated hosted checks passed with two explicitly authorized, labelled
+synthetic accounts/projects: registration, proxy/direct sign-in, Secure/HttpOnly
+cookies, source agreement despite a forged IP-header claim, own-project
+persistence/read, reciprocal project/key-list denial, and key/session revocation.
+All created test keys and sessions were revoked. Bounded cleanup also expired
+the provider-generated signup sessions; a scoped database check confirmed zero
+active sessions for those two synthetic users. The two labelled accounts,
+projects and synthetic runs remain until a safe approved deletion path exists;
+no secrets or raw source IPs were logged. No hosted quota exhaustion, external
+mail, SDK publication or auth package extraction was part of this rollout.
+The separately approved [v0.6.3 release](https://github.com/Mumma6/flowmark/releases/tag/v0.6.3)
+was published at the same verified SHA.
