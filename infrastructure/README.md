@@ -7,9 +7,9 @@ non-production. Do not recreate them with a starter template.
 Persistent reference-infrastructure adoption completed on 2 November 2026.
 `nonprod` has 26 state resources: its two Neon branches, computes, databases and
 owner roles, 15 Vercel env bindings, and three Pulumi metadata resources.
-`production` has 27: the Neon project/production branch/compute/database/owner,
-four shared Vercel projects, seven custom-domain assignments, eight remaining
-env bindings, and three metadata resources. All **47 adopted cloud resources**
+`production` has 29: the Neon project/production branch/compute/database/owner,
+four shared Vercel projects, seven custom-domain assignments, ten Production/shared
+env bindings, and three metadata resources. All **49 managed cloud resources**
 have deletion protection. Standard refresh-preview and preview are clean in both
 stacks. See the public
 [infrastructure overview](../docs/infrastructure.md) for the deployment shape.
@@ -68,7 +68,7 @@ state and configuration. This project uses:
 - `nonprod`: Preview/Staging Neon branches and their computes, database
   containers and owners; 15 Preview-target env bindings with Staging overrides.
 - `production`: the Neon project and production branch/compute/database/owner,
-  shared Vercel projects, seven custom domains and eight production/shared envs.
+  shared Vercel projects, seven custom domains and ten production/shared envs.
   The four Vercel projects serve all environments; never declare the same
   project resource in both stacks.
 
@@ -141,7 +141,7 @@ Each property has one writer:
   Branch ancestry, provider-side protection and project security/maintenance/
   quota policies retain their existing owners. Role passwords and project
   connection outputs are computed secrets, encrypted in state.
-- Pulumi owns all 23 app env bindings, four Vercel project containers and seven
+- Pulumi owns all 25 app env bindings, four Vercel project containers and seven
   custom-domain assignments. Sensitive values use the write-only protocol below.
   Registrar/DNS-zone services and automatic `*.vercel.app` aliases retain their
   existing platform ownership; this program does not create a second DNS writer.
@@ -295,7 +295,7 @@ other resource changed. Standard preview and refresh-preview then reported
 26 unchanged nonprod state resources. The active secret is marked secret in
 Pulumi Cloud's update configuration as well as the local encrypted config.
 
-### Prepared Production auth proxy bindings
+### Production auth proxy bindings
 
 `vercel-production-auth-proxy.ts` declares two new bindings only when
 `manageProductionAuthProxyBindings=true` on the Production stack. It is called
@@ -311,12 +311,17 @@ reviewed version increment on both bindings. Keep the opt-in enabled after
 creation. Do not reuse the Staging secret, add Preview/Development targets, or
 rotate the existing Better Auth/database secrets as part of this operation.
 
-The code is prepared, not activated. Review the live Production preview before
-approval; the initial plan must contain exactly two env-record creates and all
-existing resources unchanged. A separate ignored config file can hold the
+The reference deployment has provisioned these two records through an approved
+Pulumi update: exactly two creates and 27 unchanged existing resources. The
+ordinary encrypted stack config retains the opt-in, value and version. For a
+new installation, review the live Production preview before approval; its
+initial plan must contain exactly two env-record creates and all existing
+resources unchanged. A separate ignored config file can hold the
 prepared encrypted value and opt-in for preview without enabling the active
-operator config. Stop on unrelated updates, replacements or deletes. After an
-approved apply, release through the existing `staging` to `main` pipeline so
+operator config. Stop on unrelated updates, replacements or deletes. A saved-plan
+apply can target only the two reviewed env URNs; still verify the full stack
+before and after the update. After an approved apply, release through the existing
+`staging` to `main` pipeline so
 migration/history checks precede API and dashboard deployment. Pulumi does not
 perform migrations or application deployment.
 

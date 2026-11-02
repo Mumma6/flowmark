@@ -12,8 +12,8 @@ Preview deployments are intentionally paused on all four projects. Their
 existing general Preview configuration and isolated database remain parked for
 future use. Do not enable automatic previews as a side effect of import.
 
-The live inventory contains **23 adopted application env records**: 15 nonprod
-and 8 production/shared records, including two Production-only sensitive records.
+The live inventory contains **25 managed application env records**: 15 nonprod
+and 10 production/shared records, including four Production-only sensitive records.
 All required records have the expected scopes; no forbidden hosted override
 was found. Secret presence/type is verified, but unreadable secret payloads
 are not exposed by the audit.
@@ -24,6 +24,7 @@ Production requires separate Production-only records for:
 
 - `DATABASE_URL`: sensitive, pooled URL of the Production Neon branch.
 - `BETTER_AUTH_SECRET`: sensitive, active Production auth-signing secret.
+- `FLOWMARK_AUTH_PROXY_SECRET`: sensitive, matching only the Production dashboard.
 - `BETTER_AUTH_URL` and `FLOWMARK_DASHBOARD_ORIGIN`: dashboard origins, both
   `https://app.flowmark.dev`.
 
@@ -48,7 +49,8 @@ adoption. No connection string belongs in a browser bundle.
 
 ## Dashboard: `apps/dashboard`
 
-- Production requires `FLOWMARK_API_URL=https://api.flowmark.dev`.
+- Production requires `FLOWMARK_API_URL=https://api.flowmark.dev` and its own
+  sensitive `FLOWMARK_AUTH_PROXY_SECRET`, matching only the Production API.
 - Staging requires its own Preview record scoped to `staging`, with
   `FLOWMARK_API_URL=https://api.staging.flowmark.dev`.
 - General Preview deliberately has no static API-origin record: the dashboard
@@ -86,17 +88,18 @@ requests prove the shared-secret hop; end-user source isolation also depends on
 the real platform-provided IP header and must be distinguished from account and
 project authorization evidence.
 
-### Prepared Production proxy configuration
+### Production proxy configuration
 
-Production has no active proxy-secret record in the inventory above. The
-Production Pulumi program can provision separate API/dashboard sensitive
-`FLOWMARK_AUTH_PROXY_SECRET` records behind
-`manageProductionAuthProxyBindings=true`, using encrypted
+Production's API and dashboard each have a sensitive
+`FLOWMARK_AUTH_PROXY_SECRET` record, scoped only to Production with no branch
+override. The Production Pulumi stack manages them behind
+`manageProductionAuthProxyBindings=true`, using shared encrypted
 `productionAuthProxySecret` and explicit `productionAuthProxySecretVersion`.
-The first approved plan creates exactly two Production-only records without
-imports. It must leave existing Production auth/database secrets and every
-nonprod resource unchanged. Code preparation and preview do not authorize apply
-or a release merge; see the [operator contract](./README.md#prepared-production-auth-proxy-bindings).
+The first approved apply created exactly these two records, with 27 existing
+resources unchanged. Production uses a separate generated value from Staging;
+existing auth/database secrets were preserved. Keep the opt-in enabled after
+provisioning; future changes require a reviewed version update and matching
+ordered deployment. See the [operator contract](./README.md#production-auth-proxy-bindings).
 
 ## Landing and docs
 
@@ -163,7 +166,7 @@ is not a missing requirement.
 
 Nonprod owns its branches, computes, database containers, roles and 15 bindings.
 Production owns the Neon project and production resources, four shared Vercel
-project containers, seven custom domains and the other eight app env records.
+project containers, seven custom domains and ten Production/shared app env records.
 It never declares inline env blocks that compete with individual binding resources.
 CI secrets stay GitHub-owned;
 schema/history stays Drizzle-owned; build commands/regions stay in `vercel.json`.
