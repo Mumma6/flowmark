@@ -7,7 +7,7 @@ import {
   AUTH_CLIENT_IP_HEADER,
   AUTH_PROXY_IDENTITY_HEADER,
   normalizeAuthClientIdentity,
-} from "@flowmark/db/auth/client-identity"
+} from "@flowmark/auth/client-identity"
 
 beforeEach(() => {
   vi.stubEnv("NODE_ENV", "production")

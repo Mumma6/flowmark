@@ -3,7 +3,7 @@ import { dashboardApiUrl } from "./server-env"
 import {
   AUTH_PROXY_IDENTITY_HEADER,
   signAuthProxyIdentity,
-} from "@flowmark/db/auth/client-identity"
+} from "@flowmark/auth/client-identity"
 
 class DashboardProxyError extends Data.TaggedError("DashboardProxyError")<{
   readonly cause: unknown

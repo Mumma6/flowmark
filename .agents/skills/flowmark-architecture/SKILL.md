@@ -40,6 +40,14 @@ apps/server (Next.js / tRPC / HTTP) ──> @flowmark/api use cases ──> port
 
 - `core/` owns domain types, pure rules, and Effect Schema definitions. It must
   not depend on SDK, API, framework, or persistence implementations.
+- `@flowmark/auth` owns Better Auth configuration, local session provisioning,
+  signed proxy identity, and auth-specific limit policy. It may depend on
+  `@flowmark/db`. The database package must not depend on `@flowmark/auth`.
+  Keep SQL and auth tables in `@flowmark/db`. Keep project authorization and
+  ingestion-key lifecycle in `@flowmark/api`. Import the factory only from
+  server code. `@flowmark/auth/client-identity` is the server proxy boundary:
+  it must not import the database or auth provider, and browser components
+  must not import it.
 - Use cases compose application behavior with `Effect.gen` and named
   `Effect.fn` functions. They depend on port tags and domain contracts.
 - `ports/` defines narrow service interfaces and their Effect `Context.Service`s.

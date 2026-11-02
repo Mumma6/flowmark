@@ -3,12 +3,13 @@ import { eq } from "drizzle-orm"
 import { Effect } from "effect"
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest"
 import { createDatabase, session, user } from "@flowmark/db"
-import { createFlowmarkAuth } from "@flowmark/db/auth"
-import { seedLocalAuthUser } from "../../../../packages/db/src/cli/seed-local-auth"
+import { createFlowmarkAuth } from "@flowmark/auth"
+import { seedLocalAuthUser } from "@flowmark/auth/seed"
 import { LOCAL_DEV_EMAIL, LOCAL_DEV_PASSWORD } from "@flowmark/db/demo"
 import { getAuth } from "../../src/auth"
 import { appRouter } from "../../src/adapters/trpc"
 import { POST as register } from "../../app/api/register/route"
+import { revokeSessionsForEmails } from "./signup-sessions"
 
 const origin = "http://localhost:3001"
 const request = (path: string, body: unknown, extra?: HeadersInit) => {
@@ -23,11 +24,16 @@ const request = (path: string, body: unknown, extra?: HeadersInit) => {
     body: JSON.stringify(body),
   })
 }
-const signup = () => ({
-  name: "Auth perimeter test",
-  email: `${randomUUID()}@example.test`,
-  password: randomUUID(),
-})
+const createdEmails: string[] = []
+const signup = () => {
+  const body = {
+    name: "Auth perimeter test",
+    email: `${randomUUID()}@example.test`,
+    password: randomUUID(),
+  }
+  createdEmails.push(body.email)
+  return body
+}
 const cookieOf = (response: Response) =>
   response.headers
     .getSetCookie()
@@ -60,6 +66,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
     })
 
     afterAll(async () => {
+      await revokeSessionsForEmails([...createdEmails, LOCAL_DEV_EMAIL])
       await connection?.close()
       vi.unstubAllEnvs()
     })
@@ -97,16 +104,6 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
             code: "EMAIL_NOT_VERIFIED",
           })
           expect(response.headers.has("set-cookie")).toBe(false)
-          expect(
-            (
-              await candidate.handler(
-                request("/api/auth/sign-in/email", {
-                  email: "local@dev",
-                  password: LOCAL_DEV_PASSWORD,
-                }),
-              )
-            ).status,
-          ).toBe(400)
         }
       } finally {
         vi.stubEnv("FLOWMARK_DEMO_MODE", previousMode)
@@ -219,51 +216,27 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
       }
     })
 
-    it("upgrades the legacy fixture only during an explicit guarded local seed, retaining its identity", async () => {
+    it("provisions the local fixture only for an explicit demo-mode seed", async () => {
       const previousMode = process.env.FLOWMARK_DEMO_MODE
-      const context = await auth.$context
-      // These are synthetic rows in the disposable loopback test database.
-      const legacy = await context.internalAdapter.createUser(
-        {
-          email: "local@dev",
-          name: "Legacy test fixture",
-          emailVerified: true,
-        },
-        { method: "email-password" },
-      )
-      const hash = await context.password.hash(LOCAL_DEV_PASSWORD)
-      await context.internalAdapter.linkAccount({
-        userId: legacy.id,
-        providerId: "credential",
-        accountId: legacy.id,
-        password: hash,
-      })
-      await expect(
-        auth.api.signInEmail({
-          body: { email: "local@dev", password: LOCAL_DEV_PASSWORD },
-        }),
-      ).rejects.toMatchObject({ status: "BAD_REQUEST" })
       try {
         vi.stubEnv("FLOWMARK_DEMO_MODE", "false")
         await expect(
           Effect.runPromise(seedLocalAuthUser(process.env.TEST_DATABASE_URL!)),
         ).rejects.toThrow()
         vi.stubEnv("FLOWMARK_DEMO_MODE", "true")
+        const userId = await Effect.runPromise(
+          seedLocalAuthUser(process.env.TEST_DATABASE_URL!),
+        )
         expect(
           await Effect.runPromise(
             seedLocalAuthUser(process.env.TEST_DATABASE_URL!),
           ),
-        ).toBe(legacy.id)
-        expect(
-          await Effect.runPromise(
-            seedLocalAuthUser(process.env.TEST_DATABASE_URL!),
-          ),
-        ).toBe(legacy.id)
-        const renamed = await connection.db
-          .select()
+        ).toBe(userId)
+        const [row] = await connection.db
+          .select({ email: user.email })
           .from(user)
-          .where(eq(user.id, legacy.id))
-        expect(renamed[0].email).toBe(LOCAL_DEV_EMAIL)
+          .where(eq(user.id, userId))
+        expect(row?.email).toBe(LOCAL_DEV_EMAIL)
         const signedIn = await auth.handler(
           request("/api/auth/sign-in/email", {
             email: LOCAL_DEV_EMAIL,
@@ -271,23 +244,10 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
           }),
         )
         expect(signedIn.status).toBe(200)
-        expect((await signedIn.json()).user.id).toBe(legacy.id)
-        // An ambiguous pair is rejected without merging identities.
-        const conflict = await context.internalAdapter.createUser(
-          {
-            email: "local@dev",
-            name: "Conflicting test fixture",
-            emailVerified: true,
-          },
-          { method: "email-password" },
-        )
-        await expect(
-          Effect.runPromise(seedLocalAuthUser(process.env.TEST_DATABASE_URL!)),
-        ).rejects.toThrow()
-        await connection.db.delete(user).where(eq(user.id, conflict.id))
+        expect((await signedIn.json()).user.id).toBe(userId)
       } finally {
         vi.stubEnv("FLOWMARK_DEMO_MODE", previousMode)
-        await connection.db.delete(user).where(eq(user.id, legacy.id))
+        await connection.db.delete(user).where(eq(user.email, LOCAL_DEV_EMAIL))
       }
     })
   },

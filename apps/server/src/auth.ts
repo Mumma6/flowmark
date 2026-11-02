@@ -1,6 +1,6 @@
 import { Effect } from "effect"
 import { createDatabase } from "@flowmark/db"
-import { createFlowmarkAuth, readAuthSecret } from "@flowmark/db/auth"
+import { createFlowmarkAuth, readAuthSecret } from "@flowmark/auth"
 import { assertPreviewDatabase } from "@flowmark/db/environment"
 import { ConfigurationError } from "@flowmark/api"
 

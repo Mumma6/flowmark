@@ -11,6 +11,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@flowmark/auth": "workspace:*",
     "@flowmark/db": "workspace:*",
     "@flowmark/server": "workspace:*",
     "@flowmark/ui": "workspace:*",

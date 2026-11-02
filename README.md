@@ -129,6 +129,7 @@ snapshot.
 | `packages/sdk`       | `@flowmarkdev/node`                          |
 | `packages/core`      | Shared event contracts (`@flowmarkdev/core`) |
 | `packages/api`       | Use cases and ports                          |
+| `packages/auth`      | Internal authentication (`@flowmark/auth`)   |
 | `packages/db`        | Schema, migrations, persistence              |
 | `packages/ui`        | Shared UI                                    |
 | `apps/server`        | HTTP and tRPC shell                          |

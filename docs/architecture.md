@@ -319,10 +319,20 @@ The `@flowmark/db/persistence` entry point is a barrel over Effect
 persistence services: `WorkflowStore` for append/snapshot/timeline/related
 reads, and `ProjectCredentialsStore` for key authentication, browser quota,
 and project membership. Feature folders split `queries/`, `writes/`, and raw
-`sql/` beside those services. Auth tables and the Better Auth factory live
-under `packages/db/src/{schema,auth}`. Drizzle and PostgreSQL types stay
-inside this persistence package; the API consumes its own repository ports
-and read models.
+`sql/` beside those services. Better Auth tables and the atomic limiter write
+stay in this package, exposed to authentication code through
+`@flowmark/db/auth-limits`. Drizzle and PostgreSQL types stay inside this
+persistence package; the API consumes its own repository ports and read models.
+
+`@flowmark/auth` is a private workspace package and is not published. It owns
+Better Auth configuration, the auth factory, local fixture user provisioning,
+signed proxy identity, and the authentication-specific limit policy. It depends
+on `@flowmark/db` and the database package does not depend on it. `apps/server`
+and the dashboard proxy stay thin adapters: they call the package and do not
+reimplement provider, cookie, origin, or limit policy. `@flowmark/auth/client-identity`
+signs and checks the proxy assertion without importing the database, the
+provider, or the factory. Project membership, ingestion keys, and project or
+key creation quotas stay in `@flowmark/api` and `@flowmark/db`.
 
 Versioned Drizzle migrations create Better Auth users/sessions, workspaces,
 projects, project members, hashed project API keys, workflow definitions,

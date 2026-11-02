@@ -80,7 +80,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build test dependencies
-        run: pnpm --filter @flowmark/api... build
+        run: pnpm --filter @flowmark/api... --filter @flowmark/auth... build
 
       - name: Apply committed migrations to disposable Postgres
         run: pnpm db:migrate

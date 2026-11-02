@@ -7,6 +7,10 @@ import { createDatabase, projectApiKeys, workflowRuns } from "@flowmark/db"
 import { hashApiKey } from "@flowmark/db/persistence"
 import { POST as register } from "../../app/api/register/route"
 import { GET as authGet, POST as auth } from "../../app/api/auth/[...all]/route"
+import {
+  revokeAutomaticSignupSessions,
+  revokeSessionsForEmails,
+} from "./signup-sessions"
 import { POST as ingest } from "../../app/v1/events/route"
 import { appRouter } from "../../src/adapters/trpc"
 
@@ -22,6 +26,8 @@ const jsonRequest = (path: string, body: unknown, cookie?: string) =>
     },
     body: JSON.stringify(body),
   })
+
+const registeredEmails: string[] = []
 
 const caller = (cookie: string, projectId?: string) =>
   appRouter.createCaller({
@@ -45,6 +51,8 @@ async function registerAndSignIn() {
   )
   expect(registered.status).toBe(200)
   expect(await registered.json()).toEqual({ ok: true })
+  registeredEmails.push(email)
+  await revokeAutomaticSignupSessions(email)
 
   const signedIn = await auth(
     jsonRequest("/api/auth/sign-in/email", { email, password }),
@@ -105,6 +113,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
     })
 
     afterAll(async () => {
+      await revokeSessionsForEmails(registeredEmails)
       await connection?.close()
       vi.unstubAllEnvs()
     })

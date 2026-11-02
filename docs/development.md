@@ -55,12 +55,9 @@ separately. Seed refuses production and non-loopback databases. Shell environmen
 values take precedence. The relevant exported environment variables are forwarded
 into Turbo's dev tasks; Next.js loads each app's own `.env.local`.
 Seed also creates `local@flowmark.test` so you can sign in to the operations project.
-The fixture uses Better Auth's standard email/password login. If your existing
-local fixture uses `local@dev`, the next explicitly invoked `pnpm db:seed`
-renames it while retaining its user ID, password and project memberships.
-Seeding remains restricted to explicit demo mode and loopback databases. It does
-not run on application startup. If both addresses exist, seed stops for review
-instead of merging accounts. Never reset telemetry to upgrade this fixture.
+The fixture uses Better Auth's standard email/password login. Seeding remains
+restricted to explicit demo mode and loopback databases. It does not run on
+application startup.
 
 ### Database browser: Drizzle Studio
 
@@ -357,7 +354,7 @@ database when finished. For example, with an existing local PostgreSQL server:
 
 ```sh
 createdb flowmark_test
-pnpm --filter @flowmark/api... build
+pnpm --filter @flowmark/api... --filter @flowmark/auth... build
 DATABASE_URL=postgresql://127.0.0.1:5432/flowmark_test \
 DATABASE_MIGRATION_URL=postgresql://127.0.0.1:5432/flowmark_test \
   pnpm db:migrate
