@@ -88,6 +88,7 @@ export interface ProjectCredentialsService {
   ) => Effect.Effect<
     {
       readonly projectId: string
+      readonly createdAt: string
       readonly writeKey: CreatedSecret
     },
     PersistenceError
@@ -99,6 +100,7 @@ export interface ProjectCredentialsService {
   ) => Effect.Effect<
     {
       readonly projectId: string
+      readonly createdAt: string
       readonly writeKey: CreatedSecret
     },
     PersistenceError
