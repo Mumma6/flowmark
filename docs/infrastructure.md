@@ -9,9 +9,9 @@ credentials, connection strings, or operator runbooks. The separate
 [Pulumi TypeScript project](../infrastructure/README.md) manages the existing
 Neon project, three persistent branches and their computes/database containers/
 owners, four shared Vercel projects, seven custom-domain assignments and all
-21 app env records. Adoption completed on 2 November 2026 with deletion
-protection on all 45 cloud resources. Standard refresh-preview and preview report
-24 unchanged state resources in nonprod and 27 in production. SQL/schema history,
+23 app env records. Adoption completed on 2 November 2026 with deletion
+protection on all 47 cloud resources. Standard refresh-preview and preview report
+26 unchanged state resources in nonprod and 27 in production. SQL/schema history,
 CI secrets, app deployments and registrar/DNS-zone services keep their existing
 owners.
 
