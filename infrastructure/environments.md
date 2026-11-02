@@ -86,6 +86,18 @@ requests prove the shared-secret hop; end-user source isolation also depends on
 the real platform-provided IP header and must be distinguished from account and
 project authorization evidence.
 
+### Prepared Production proxy configuration
+
+Production has no active proxy-secret record in the inventory above. The
+Production Pulumi program can provision separate API/dashboard sensitive
+`FLOWMARK_AUTH_PROXY_SECRET` records behind
+`manageProductionAuthProxyBindings=true`, using encrypted
+`productionAuthProxySecret` and explicit `productionAuthProxySecretVersion`.
+The first approved plan creates exactly two Production-only records without
+imports. It must leave existing Production auth/database secrets and every
+nonprod resource unchanged. Code preparation and preview do not authorize apply
+or a release merge; see the [operator contract](./README.md#prepared-production-auth-proxy-bindings).
+
 ## Landing and docs
 
 The landing app uses public links `NEXT_PUBLIC_FLOWMARK_APP_URL` and

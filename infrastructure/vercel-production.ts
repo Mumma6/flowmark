@@ -2,6 +2,7 @@ import * as pulumi from "@pulumi/pulumi"
 import * as vercel from "@pulumiverse/vercel"
 import { importVercelDomains } from "./vercel-domains"
 import { importProductionVercelBindings } from "./vercel-production-bindings"
+import { manageProductionAuthProxyBindings } from "./vercel-production-auth-proxy"
 
 // These settings keep their existing owner during project-container adoption.
 // In particular, inline environments must never compete with binding resources,
@@ -110,5 +111,6 @@ export const importProductionVercelProjects = () => {
   )
   importVercelDomains(provider)
   importProductionVercelBindings(provider)
+  manageProductionAuthProxyBindings(provider)
   return ids
 }
