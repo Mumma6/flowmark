@@ -166,6 +166,11 @@ creates a separate disposable PostgreSQL instance and cleans up its own
 containers/network. No running development database, seed or host PostgreSQL
 tools are required. `pnpm check` remains usable without Docker.
 
+For a focused API/dashboard/harness session, use `pnpm dev:product` (or append
+`--ui=stream` for non-interactive logs). Both full and focused workflows rebuild
+core, SDK, db, API and auth edits automatically. Use one dev session per checkout;
+run checks after stopping its watchers or in a separate worktree.
+
 Database setup builds its workspace prerequisites, including core. If
 `DATABASE_MIGRATION_URL` is set, it must name the same local host, port,
 database, and role as `DATABASE_URL`; otherwise setup stops before SQL.

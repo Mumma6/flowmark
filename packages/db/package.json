@@ -43,7 +43,7 @@
     }
   },
   "scripts": {
-    "dev": "pnpm db:studio",
+    "dev": "tsc -p tsconfig.json --watch --preserveWatchOutput",
     "infra": "node --import tsx src/cli/infra.ts",
     "build": "tsc -p tsconfig.json",
     "lint": "eslint src drizzle.studio.config.ts",
@@ -59,7 +59,8 @@
     "test:integration": "node --import tsx src/cli/test.ts integration",
     "typecheck": "tsc -p tsconfig.json",
     "db:migrations:verify": "tsx src/cli/verify-migrations.ts",
-    "db:facts:backfill": "tsx src/cli/backfill-run-facts.ts"
+    "db:facts:backfill": "tsx src/cli/backfill-run-facts.ts",
+    "studio": "pnpm db:studio"
   },
   "dependencies": {
     "@flowmarkdev/core": "workspace:*",
