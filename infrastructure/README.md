@@ -5,11 +5,11 @@ reference deployment. Resources are adopted by import, starting with
 non-production. Do not recreate them with a starter template.
 
 Persistent reference-infrastructure adoption completed on 2 November 2026.
-`nonprod` has 24 state resources: its two Neon branches, computes, databases and
-owner roles, 13 Vercel env bindings, and three Pulumi metadata resources.
+`nonprod` has 26 state resources: its two Neon branches, computes, databases and
+owner roles, 15 Vercel env bindings, and three Pulumi metadata resources.
 `production` has 27: the Neon project/production branch/compute/database/owner,
 four shared Vercel projects, seven custom-domain assignments, eight remaining
-env bindings, and three metadata resources. All **45 adopted cloud resources**
+env bindings, and three metadata resources. All **47 adopted cloud resources**
 have deletion protection. Standard refresh-preview and preview are clean in both
 stacks. See the public
 [infrastructure overview](../docs/infrastructure.md) for the deployment shape.
@@ -66,7 +66,7 @@ A project is the resource program. A stack is an isolated instance with its own
 state and configuration. This project uses:
 
 - `nonprod`: Preview/Staging Neon branches and their computes, database
-  containers and owners; 13 Preview-target env bindings with Staging overrides.
+  containers and owners; 15 Preview-target env bindings with Staging overrides.
 - `production`: the Neon project and production branch/compute/database/owner,
   shared Vercel projects, seven custom domains and eight production/shared envs.
   The four Vercel projects serve all environments; never declare the same
@@ -141,7 +141,7 @@ Each property has one writer:
   Branch ancestry, provider-side protection and project security/maintenance/
   quota policies retain their existing owners. Role passwords and project
   connection outputs are computed secrets, encrypted in state.
-- Pulumi owns all 21 app env bindings, four Vercel project containers and seven
+- Pulumi owns all 23 app env bindings, four Vercel project containers and seven
   custom-domain assignments. Sensitive values use the write-only protocol below.
   Registrar/DNS-zone services and automatic `*.vercel.app` aliases retain their
   existing platform ownership; this program does not create a second DNS writer.
@@ -214,7 +214,7 @@ them as permanent provider configuration or extract connector credentials.
 
 ## Vercel non-production binding adoption
 
-`vercel-nonprod.ts` declares only the 13 existing Preview-target bindings:
+`vercel-nonprod.ts` declares the original 13 Preview-target bindings:
 five API bindings for general Preview, five API overrides for `staging`, the
 dashboard's Preview protection-bypass binding and Staging API URL, and the
 web app's Staging application URL. Every import names the team, project and
@@ -269,6 +269,31 @@ The infrastructure tests use Pulumi mocks to verify the explicit opt-in gate
 and all 13 import IDs, with Preview-only targets, exact branch overrides,
 project/team scoping, and write-only secret imports without a version bump.
 They create no live resources.
+
+### Staging auth proxy secret
+
+Two additional Preview-target bindings scoped to `staging` share
+`FLOWMARK_AUTH_PROXY_SECRET` between API and dashboard. They are independently
+gated by `importStagingAuthProxyBindings=true` and use the verified IDs
+`api-staging-flowmark-auth-proxy-secret-id` and
+`dashboard-staging-flowmark-auth-proxy-secret-id`. The value comes from encrypted
+`stagingAuthProxySecret`; neither the IDs nor stack configuration belong in Git.
+
+For an existing sensitive record, first import with
+`stagingAuthProxySecretVersion` absent. Then preview and explicitly approve a
+positive integer version increment to activate the encrypted value on both
+records. A missing version preserves the existing live value during import;
+editing the encrypted input alone does not activate it. Do not add a version to
+unrelated sensitive bindings. Keep the gate enabled after adoption, retain
+deletion protection, and redeploy API/dashboard through the ordered Staging
+pipeline after a value change. Production and parked Preview have no proxy
+binding in this change.
+
+On 2 November 2026, adoption imported exactly those two records with 24 resources
+unchanged. A second reviewed update activated only their value versions; no
+other resource changed. Standard preview and refresh-preview then reported
+26 unchanged nonprod state resources. The active secret is marked secret in
+Pulumi Cloud's update configuration as well as the local encrypted config.
 
 ## Production project containers: first resource class
 

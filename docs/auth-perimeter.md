@@ -147,7 +147,7 @@ matching API/dashboard proxy secret through the existing guarded environment
 workflow, migrate/deploy in order, then verify real platform headers, two-user
 isolation, cookies, direct API limits, alias limits and retry feedback. Preview
 is currently paused; do not enable it as part of this change. Production remains
-a separate release gate. No hosted credentials, DNS or data changed locally.
+a separate release gate.
 
 Verification and reset delivery remain disabled until the email and recovery
 work is ready. Recovery is explicitly configured to revoke previous sessions;
@@ -178,3 +178,26 @@ Provider references: [rate limiting](https://better-auth.com/docs/concepts/rate-
 [email/password](https://better-auth.com/docs/authentication/email-password).
 Installed source is authoritative for the pinned behavior; newer documentation
 must not be assumed to match a different provider version.
+
+### Staging acceptance — 2 November 2026
+
+The ordered Staging rollout of `cf0b563` applied migration history through
+`0017_auth_rate_limits` before deploying the API and remaining apps. The matching
+API/dashboard proxy secret is now managed by Pulumi's nonprod stack; see the
+[environment contract](../infrastructure/environments.md#staging-auth-proxy-binding).
+Production and paused feature Preview remain separate rollout steps.
+
+Automated hosted acceptance passed 42 checks using two explicitly authorized,
+labelled synthetic accounts and projects. It covered registration through the
+dashboard alias, proxy and direct sign-in, Secure/HttpOnly cookies, own-project
+reads after ingestion, cross-owner read/key-list denial, malformed proxy-assertion
+denial, and revoked-key/session read and mutation denial. Direct and proxied
+sessions recorded the same nonempty platform source while a forged IP-header
+claim was ignored. No IP, password, cookie or key payload was logged. Test keys
+and sessions were revoked; the labelled accounts, projects and two synthetic
+runs remain until a separately approved deletion path exists.
+
+This is live request-path and authorization evidence, not a hosted exhaustion or
+load test. Exact quota/concurrency bounds and Retry-After behavior remain covered
+by the disposable PostgreSQL and adapter tests above. Email verification and
+recovery delivery remain disabled and outside this acceptance.
