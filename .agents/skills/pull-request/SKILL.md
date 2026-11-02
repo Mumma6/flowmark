@@ -51,6 +51,15 @@ creating a PR is not permission to merge or deploy.
 
 Use [`gh`](https://cli.github.com/) for GitHub operations when appropriate.
 
+## Infrastructure PRs
+
+Apply [flowmark-infrastructure](../flowmark-infrastructure/SKILL.md). Include the
+Pulumi resource/property change and sanitized exact-stack preview, preserving
+existing owners and secrets. Do not describe provider CLI/dashboard mutations as
+setup steps or provision before the code exists. If support/adoption is missing,
+prepare that work first. Distinguish code/PR approval, live apply approval and
+application rollout evidence; reuse authorization for the same approved operation.
+
 ## PR description
 
 Use the template sections in order:

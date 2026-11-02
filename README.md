@@ -161,6 +161,8 @@ and any PostgreSQL you control.
 ## Contributing
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md) and [SECURITY.md](./SECURITY.md).
+Maintained hosted infrastructure follows the
+[Pulumi writer policy](./docs/infrastructure.md#pulumi-is-the-infrastructure-writer).
 Feature branches start from `staging` and open pull requests into `staging`.
 Release policy is in [application releases](./docs/releases.md).
 

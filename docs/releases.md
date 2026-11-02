@@ -55,6 +55,15 @@ hotfix. Review and verify that hotfix independently, obtain approval to merge
 to main, verify Production, then merge main into staging through a separate
 approved synchronization PR. Never merge staging into main to backport a fix.
 
+## Infrastructure prerequisites
+
+Persistent env/secrets, projects, domains/DNS, protection and CI configuration
+follow the [Pulumi writer policy](./infrastructure.md#pulumi-is-the-infrastructure-writer).
+Prepare their resource ownership and reviewed apply before the app release needs
+them; provider gaps must not turn into manual CLI/dashboard setup during a release.
+Keep app artifact rollout and Drizzle migrations on the existing pipeline. An
+approved merge authorizes that pipeline, not unrelated infrastructure changes.
+
 ## Prepare a release
 
 Ask the agent to **prepare a Flowmark release**, using the repository

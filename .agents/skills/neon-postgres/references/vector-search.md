@@ -1,5 +1,11 @@
 # Semantic Vector Search
 
+Flowmark uses the [Pulumi infrastructure policy](../../flowmark-infrastructure/SKILL.md).
+Provisioning examples here are upstream reference, not commands to run against
+Flowmark. Add/adopt provider resources through Pulumi before mutation; SQL schema
+changes remain Drizzle migrations. Do not enable a new auth provider or pull
+hosted env into local app files as part of these examples.
+
 Use `lakebase_vector` for approximate nearest-neighbor retrieval over embeddings. It retains pgvector's vector types, distance operators, and query syntax; the index access method is `lakebase_ann`.
 
 ## Contents

@@ -29,6 +29,26 @@
 - Discuss fundamental SDK/model redesign, new major dependencies, telemetry
   migrations, and significant product-scope changes before implementing.
 
+## Infrastructure ownership
+
+- Before any infrastructure or persistent hosted configuration change, read and
+  apply [flowmark-infrastructure](./.agents/skills/flowmark-infrastructure/SKILL.md).
+  Use the existing `infrastructure/` Pulumi project for all providers, resources,
+  hosted secrets, domains/DNS and CI configuration. Declare/import first, review
+  the exact preview, then apply only the approved plan.
+- Centralize hosted app/CI env definitions in Pulumi: one logical input per
+  environment, reused/derived into Vercel and GitHub bindings. Keep secrets in
+  encrypted Pulumi config or references to an approved central store. Provider
+  settings and app env files are not parallel sources. New required hosted vars
+  need a Pulumi binding and environment-catalog entry before rollout.
+- Do not mutate infrastructure through a provider CLI, connector, dashboard,
+  `pulumi do` or `neon.ts` and reconcile it afterward. Those tools may inspect
+  resources and run the separately documented operational workflows. A missing
+  provider feature or currently external property needs reviewed Pulumi support/
+  adoption before mutation, not an imperative fallback. The
+  [writer policy](./docs/infrastructure.md#pulumi-is-the-infrastructure-writer)
+  defines the boundary with app deployments, Drizzle, data and publication.
+
 ## Architecture and UI
 
 - Before TypeScript, Effect, SDK, API, core, or persistence changes, read and

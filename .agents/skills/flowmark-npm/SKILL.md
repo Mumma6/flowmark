@@ -110,8 +110,16 @@ semver, never `workspace:*`. If npm stages the release, approve both packages
 
 ## Trusted publisher setup (once per package)
 
-After the first version exists on the registry, on each package page on
-npmjs.com configure Trusted Publisher → GitHub Actions:
+Existing trusted publishing is used by the release workflow. Changing persistent
+npm/GitHub publisher configuration follows
+[flowmark-infrastructure](../flowmark-infrastructure/SKILL.md): add/adopt reviewed
+Pulumi support first. The values below describe the required binding, not
+instructions to bypass that policy through a settings page. Missing provider
+support needs review; it does not authorize manual setup or token revocation.
+Package/tag publication itself remains the separately approved operation here.
+
+After the first version exists, the intended Trusted Publisher → GitHub Actions
+binding for each package has:
 
 - Organization or user: `Mumma6`
 - Repository: `flowmark`
@@ -119,7 +127,8 @@ npmjs.com configure Trusted Publisher → GitHub Actions:
 - Environment name: `npm-publish`
 - Allow `npm publish`
 
-Then revoke long-lived publish tokens.
+Retiring any long-lived publish tokens is a separately approved credential
+operation after that binding is verified.
 
 ## Smoke after a release
 

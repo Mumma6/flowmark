@@ -219,6 +219,12 @@ maintainers, not as a second product tier you must purchase to run the code.
 
 Local demo and the reference deployment are different environments. Do not
 copy Vercel values into `.env.local`, and do not point local demo at Neon.
+Hosted resource and persistent configuration changes use the
+[Pulumi writer policy](./infrastructure.md#pulumi-is-the-infrastructure-writer).
+Provider CLI/connector reads may inspect settings; provisioning or changing them
+requires the existing Pulumi program and an approved exact-stack plan. Drizzle
+migrations and local loopback setup remain separate workflows.
+
 The [infrastructure guide](./infrastructure) lists every variable, which
 process reads it, and the value used in each environment.
 

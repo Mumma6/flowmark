@@ -1,5 +1,10 @@
 # Type-safe env vars with parseEnv
 
+Flowmark's [Pulumi infra policy](../../flowmark-infrastructure/SKILL.md) takes
+precedence over generic provisioning examples. Use provider SDKs here as API
+reference for reviewed resource support, not a second resource-management script.
+Pulumi supplies hosted env bindings; local app env files stay on loopback.
+
 `@neon/env`'s `parseEnv` takes your `neon.ts` config object and returns a parsed, typed env object, validated against the services you declared. The shape of `env` follows your config, and missing variables are flagged with clear errors.
 
 ```bash

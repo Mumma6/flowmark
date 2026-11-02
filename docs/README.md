@@ -12,7 +12,7 @@ Contributor guides that ship with the public repository:
 - [Health and failure diagnostics](./development#health-and-failure-diagnostics):
   liveness limits, safe log fields, and API storage versus dashboard proxy errors.
 - [Reference infrastructure](./infrastructure): public hostnames, Preview,
-  Staging, Production, and what this repository does not deploy.
+  Staging, Production, the Pulumi writer policy and current adoption boundaries.
 - [Database rollout](./migrations): migration order, environment guards, and
   the activated merge pipeline.
 - [Application releases](./releases): feature PRs into staging, release PRs into
