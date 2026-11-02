@@ -525,7 +525,7 @@ lock. Never delete a running owner's lock.
 The printed report directory contains `run.json` (runner PID, project, context,
 container and port), redacted `commands.log`, `db.tap` and `server.json` once their steps
 run. Failures also save the last 100 PostgreSQL log lines to `postgres.log`;
-database assertion failures print a bounded report tail. Ordinary failure and
+database assertion failures print a bounded failure excerpt and summary. Ordinary failure and
 SIGINT/SIGTERM stop owned native subprocesses, then remove only this run's
 containers/network without volume-deletion flags. The original failing status
 is preserved; the runner exits 130/143 for SIGINT/SIGTERM. Agents can cancel the

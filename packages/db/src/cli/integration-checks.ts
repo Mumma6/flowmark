@@ -103,13 +103,21 @@ export const runIntegrationChecks = Effect.fn("runIntegrationChecks")(
       Effect.tapError(() =>
         Effect.sync(() => {
           try {
-            const tail = readFileSync(join(directory, "db.tap"), "utf8")
-              .split("\n")
-              .slice(-120)
+            const lines = readFileSync(join(directory, "db.tap"), "utf8").split(
+              "\n",
+            )
+            const failed = lines.findIndex((line) =>
+              /^\s*not ok \d+ /.test(line),
+            )
+            const context =
+              failed < 0
+                ? []
+                : lines.slice(Math.max(0, failed - 2), failed + 70)
+            const excerpt = [...context, ...lines.slice(-30)]
               .join("\n")
-              .slice(-12000)
+              .slice(0, 12000)
             console.error(
-              `Database test failure (report tail):\n${redactTestOutput(tail)}`,
+              `Database test failure (first failure and summary):\n${redactTestOutput(excerpt)}`,
             )
           } catch {
             console.error("Database failure report could not be read.")

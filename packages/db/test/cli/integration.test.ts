@@ -108,8 +108,7 @@ test("test targets refuse hosted/development URLs and forged or missing provenan
   )
   for (const override of [
     {
-      TEST_DATABASE_URL:
-        "postgresql://flowmark:secret-marker@ep-fake.neon.tech/flowmark_test",
+      TEST_DATABASE_URL: "postgresql://database.example.invalid/flowmark_test",
     },
     { DATABASE_URL: "postgresql://localhost/flowmark" },
     { GITHUB_ACTIONS: "false" },
@@ -184,7 +183,7 @@ test("interruption also stops descendants after their process-group leader has e
   const pidFile = join(directory, "pid")
   const controller = new AbortController()
   const script =
-    'require("node:fs").writeFileSync(process.argv[1], String(process.pid)); setInterval(() => {}, 1000)'
+    'const fs = require("node:fs"); process.on("SIGTERM", () => { fs.writeFileSync(process.argv[1] + ".stopped", String(process.pid)); process.exit(0) }); fs.writeFileSync(process.argv[1], String(process.pid)); setInterval(() => {}, 1000)'
   const running = Effect.runPromise(
     integrationCommand(
       process.execPath,
@@ -210,7 +209,10 @@ test("interruption also stops descendants after their process-group leader has e
   await new Promise((resolve) => setTimeout(resolve, 100))
   controller.abort()
   await rejected
-  assert.throws(() => process.kill(pid, 0), { code: "ESRCH" })
+  // Linux may retain an exited orphan's zombie PID until init reaps it.
+  // Acknowledged termination plus closed inherited pipes proves the owned
+  // descendant stopped without depending on the host's reaping schedule.
+  assert.equal(readFileSync(pidFile + ".stopped", "utf8"), String(pid))
 })
 
 test("cleanup uses full IDs and the test profile, and accepts Docker's missing-network response", async (t) => {
