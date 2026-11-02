@@ -141,7 +141,7 @@ export class ManageProject extends Context.Service<
             project: {
               id: created.projectId,
               name,
-              createdAt: new Date().toISOString(),
+              createdAt: created.createdAt,
             },
             writeKey: created.writeKey,
           } satisfies CreatedProject
@@ -155,7 +155,7 @@ export class ManageProject extends Context.Service<
           project: {
             id: created.projectId,
             name,
-            createdAt: new Date().toISOString(),
+            createdAt: created.createdAt,
           },
           writeKey: created.writeKey,
         } satisfies CreatedProject

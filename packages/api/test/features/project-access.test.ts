@@ -39,6 +39,7 @@ function projectCredentials(
     createOwnedProject: () =>
       Effect.succeed({
         projectId: "project-1",
+        createdAt: "2026-10-25T00:00:00.000Z",
         writeKey: {
           id: "key-owned",
           name: "Write key",
@@ -49,6 +50,7 @@ function projectCredentials(
     createProject: () =>
       Effect.succeed({
         projectId: "project-2",
+        createdAt: "2026-10-26T15:04:05.000Z",
         writeKey: {
           id: "key-new",
           name: "Write key",
@@ -114,6 +116,7 @@ describe("ManageProject", () => {
       ).pipe(Effect.provide(provide(projectCredentials({ createProject })))),
     )
     expect(result.project.name).toBe("Staging")
+    expect(result.project.createdAt).toBe("2026-10-26T15:04:05.000Z")
     expect(result.writeKey.secret).toBe("fm_write_secret")
     expect(createProject).toHaveBeenCalledWith(
       "user-1",
@@ -167,6 +170,7 @@ describe("ManageProject", () => {
         ),
       ),
     )
+    expect(result.project.createdAt).toBe("2026-10-25T00:00:00.000Z")
     expect(result.writeKey).toEqual({
       id: "key-owned",
       name: "Write key",

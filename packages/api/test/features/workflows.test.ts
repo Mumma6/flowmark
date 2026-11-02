@@ -135,6 +135,7 @@ function projectCredentials(
     createProject: () =>
       Effect.succeed({
         projectId: "project-from-key",
+        createdAt: "2026-10-25T00:00:00.000Z",
         writeKey: {
           id: "key-1",
           name: "Write key",
@@ -171,6 +172,7 @@ function projectCredentials(
     createOwnedProject: () =>
       Effect.succeed({
         projectId: "project-from-key",
+        createdAt: "2026-10-25T00:00:00.000Z",
         writeKey: {
           id: "key-owned",
           name: "Write key",

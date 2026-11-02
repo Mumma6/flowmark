@@ -29,7 +29,7 @@ export const createOwnedProject = Effect.fn("createOwnedProject")(function* (
           workspaceId: workspace.id,
           name: names.project,
         })
-        .returning({ id: projects.id })
+        .returning({ id: projects.id, createdAt: projects.createdAt })
       const [key] = await tx
         .insert(projectApiKeys)
         .values({
@@ -48,11 +48,16 @@ export const createOwnedProject = Effect.fn("createOwnedProject")(function* (
         projectId: project.id,
         role: "owner",
       })
-      return { projectId: project.id, keyId: key.id }
+      return {
+        projectId: project.id,
+        createdAt: project.createdAt,
+        keyId: key.id,
+      }
     }),
   )
   return {
     projectId: created.projectId,
+    createdAt: created.createdAt.toISOString(),
     writeKey: {
       id: created.keyId,
       name: "Write key",

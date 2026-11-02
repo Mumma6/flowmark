@@ -91,6 +91,7 @@ export interface ProjectCredentialsStoreService {
   ) => Effect.Effect<
     {
       readonly projectId: string
+      readonly createdAt: string
       readonly writeKey: CreatedSecret
     },
     DatabaseError
@@ -102,6 +103,7 @@ export interface ProjectCredentialsStoreService {
   ) => Effect.Effect<
     {
       readonly projectId: string
+      readonly createdAt: string
       readonly writeKey: CreatedSecret
     },
     DatabaseError
