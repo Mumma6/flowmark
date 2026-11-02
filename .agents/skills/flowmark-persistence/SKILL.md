@@ -23,7 +23,7 @@ packages/db/src/
   schema/                  # tables only
   fixtures/                # local demo keys and IDs
   environment/             # env load, runtime guards, command config errors
-  cli/                     # migrate, seed, setup, reset, process runner
+  cli/                     # migrate, local project seed, reset, process runner
   persistence/
     database.ts            # Database tag, DatabaseError, provideDatabase
     database-operation.ts  # enum of every DatabaseError operation
@@ -43,10 +43,14 @@ packages/db/src/
 - Keep SQL, schema, transactions, and driver lifecycle inside `@flowmark/db`.
 - Keep CLI process entrypoints out of `persistence/`. Seed and reset may use
   `DatabaseError` / `DatabaseOperation`, but they are not store methods.
+  Local account provisioning lives in `@flowmark/auth`. This package exposes
+  project seed helpers through `@flowmark/db/seed` and must not import
+  `@flowmark/auth`. Root `db:seed` and `db:setup` delegate to the auth package.
 - Do not import `createDatabase` through the package root from persistence
   internals; use `client.ts` to avoid cycles.
 - Preserve `@flowmark/db`, `@flowmark/db/schema`, `@flowmark/db/persistence`,
-  and `@flowmark/db/demo` when moving files.
+  `@flowmark/db/demo`, `@flowmark/db/auth-limits`, and `@flowmark/db/seed`
+  when moving files.
 
 ## Feature folders
 

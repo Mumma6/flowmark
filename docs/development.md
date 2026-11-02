@@ -49,15 +49,16 @@ not an SDK fallback or production credential provisioning.
 Starting development apps does not start PostgreSQL or apply migrations.
 Set `DATABASE_URL` in `apps/server/.env.local` to an existing development database,
 then run `pnpm db:setup`. That command reads the server app's environment
-files, applies committed migrations, and seeds local fixture projects so the API
-uses the same database. `pnpm db:migrate` and `pnpm db:seed` are available
-separately. Seed refuses production and non-loopback databases. Shell environment
-values take precedence. The relevant exported environment variables are forwarded
-into Turbo's dev tasks; Next.js loads each app's own `.env.local`.
-Seed also creates `local@flowmark.test` so you can sign in to the operations project.
-The fixture uses Better Auth's standard email/password login. Seeding remains
-restricted to explicit demo mode and loopback databases. It does not run on
-application startup.
+files, builds `@flowmark/db`, applies committed migrations, and seeds local
+fixture projects so the API uses the same database. `@flowmark/auth` then
+provisions `local@flowmark.test`. `pnpm db:migrate` and `pnpm db:seed` are
+available separately. Project fixtures stay in `@flowmark/db`; the local
+account stays in `@flowmark/auth`. Seed refuses production and non-loopback
+databases. Shell environment values take precedence. The relevant exported
+environment variables are forwarded into Turbo's dev tasks; Next.js loads each
+app's own `.env.local`. The fixture uses Better Auth's standard email/password
+login. Seeding remains restricted to explicit demo mode and loopback databases.
+It does not run on application startup.
 
 ### Database browser: Drizzle Studio
 
@@ -342,8 +343,9 @@ reload, but workflow history does not.
 ### Database integration tests
 
 The PR workflow has a separate **PostgreSQL integration tests** job with an
-empty Postgres 18 service container. It builds API/database dependencies,
-applies committed migrations, and runs the server tests with `TEST_DATABASE_URL`.
+empty Postgres 18 service container. It builds `@flowmark/api`, `@flowmark/auth`,
+and their database dependencies, applies committed migrations, and runs the
+server tests with `TEST_DATABASE_URL`.
 It rejects a report containing skipped tests. The fast `pnpm check` job remains
 independent and has no database credentials. No Neon credentials or demo seed
 are used; HTTP tests create their own isolated projects and keys.

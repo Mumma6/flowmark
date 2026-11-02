@@ -165,7 +165,10 @@ its token/mail success journey will be verified when that flow is enabled.
 disposable loopback PostgreSQL database. It covers verification-policy denial,
 production-shaped demo misconfiguration, malicious origins/callbacks, the shared
 in-process signup bucket, expired/revoked-session denial and local fixture
-provisioning. The original shared-bucket regression remains; the new durable tests additionally use independent database clients and auth instances.
+provisioning. Durable limit tests use independent database clients and auth
+instances. `packages/auth/test/server-boundary.test.ts` checks that
+`@flowmark/auth/client-identity` stays free of the database and provider, and
+that package exports stay server-only.
 
 `register-http.test.ts` checks protocol/error mapping and secret exclusion;
 `apps/dashboard/test/proxy-api.test.ts` covers Fetch Metadata, retry headers and

@@ -227,7 +227,16 @@ The dependency direction is:
 apps/server (Next.js + tRPC + HTTP adapters) -> @flowmark/api -> ports
                                                         ^         |
                                                         └─ DB adapters
+apps/server auth routes -> @flowmark/auth -> @flowmark/db
+dashboard server proxy  -> @flowmark/auth/client-identity
 ```
+
+`@flowmark/auth` is private and unpublished. Server auth routes call its
+factory. The dashboard proxy signs client identity through
+`@flowmark/auth/client-identity` and does not import the factory, database, or
+provider. The browser session client stays in the dashboard and talks to
+`/api/auth`. Project membership and ingestion keys stay in `@flowmark/api`.
+Request rules are in [Authentication request boundaries](./auth-perimeter.md).
 
 The API follows feature-first ports-and-adapters:
 
@@ -352,7 +361,9 @@ only after the database transaction commits.
 `pnpm db:setup` applies committed migrations and provisions the operations and
 diagnostics projects plus development-only read, server-write, and
 browser-write credentials. `pnpm db:migrate` applies schema only;
-`pnpm db:seed` provisions fixtures only. Seed requires
+`pnpm db:seed` provisions fixtures only. Both commands run from
+`@flowmark/auth` after building `@flowmark/db`. The auth package creates the
+local account. Project rows and credentials stay in `@flowmark/db`. Seed requires
 `FLOWMARK_DEMO_MODE=true` and a loopback database, and it refuses production.
 The API rejects demo credentials unless demo mode is explicitly enabled, and
 it rejects demo mode when `NODE_ENV` or `VERCEL_ENV` is production. The

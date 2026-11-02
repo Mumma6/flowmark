@@ -19,7 +19,9 @@ pnpm dev
 
 Open the dashboard at `http://127.0.0.1:3001`. The
 [architecture overview](./docs/architecture.md) explains how the SDK, API,
-persistence, and dashboard fit together.
+authentication, persistence, and dashboard fit together. Sign-in configuration
+lives in the private `@flowmark/auth` package. Request boundaries are in
+[Authentication request boundaries](./docs/auth-perimeter.md).
 
 Customer-facing SDK documentation is built from `apps/docs` and published at
 [docs.flowmark.dev](https://docs.flowmark.dev). Change that site when the
