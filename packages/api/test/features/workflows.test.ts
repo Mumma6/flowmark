@@ -132,7 +132,6 @@ function projectCredentials(
     onboardingState: () =>
       Effect.succeed({ step: "project" as const, completedAt: null }),
     updateOnboardingState: () => Effect.void,
-    addOwner: () => Effect.void,
     createProject: () =>
       Effect.succeed({
         projectId: "project-from-key",

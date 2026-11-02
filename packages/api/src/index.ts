@@ -14,10 +14,6 @@ export {
   type AuthorizeProjectService,
 } from "./features/project-access/use-cases/authorize-project.js"
 export {
-  RegisterOwner,
-  type RegisterOwnerService,
-} from "./features/project-access/use-cases/register-owner.js"
-export {
   ManageProject,
   type ManageProjectService,
 } from "./features/project-access/use-cases/manage-project.js"
