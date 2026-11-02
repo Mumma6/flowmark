@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm"
 import { Effect, Option } from "effect"
 import { createFlowmarkAuth, readAuthSecret } from "../auth/create-auth.js"
 import { createDatabase } from "../client.js"
+import { assertLocalDevelopmentDatabase } from "../environment/runtime.js"
 import {
   LOCAL_DEV_EMAIL,
   LOCAL_DEV_NAME,
@@ -17,6 +18,7 @@ const seedFailure = (cause: unknown) =>
 export const seedLocalAuthUser = Effect.fn("seedLocalAuthUser")(function* (
   url: string,
 ) {
+  yield* assertLocalDevelopmentDatabase(url).pipe(Effect.mapError(seedFailure))
   return yield* Effect.scoped(
     Effect.gen(function* () {
       const connection = yield* Effect.acquireRelease(
@@ -47,38 +49,63 @@ export const seedLocalAuthUser = Effect.fn("seedLocalAuthUser")(function* (
         try: () => context.internalAdapter.findUserByEmail(LOCAL_DEV_EMAIL),
         catch: seedFailure,
       })
-      yield* Option.match(Option.fromNullishOr(existing?.user.id), {
-        onSome: () => Effect.void,
-        onNone: () =>
-          Effect.gen(function* () {
-            const created = yield* Effect.tryPromise({
-              try: () =>
-                context.internalAdapter.createUser(
-                  {
-                    email: LOCAL_DEV_EMAIL,
-                    name: LOCAL_DEV_NAME,
-                    emailVerified: true,
-                  },
-                  { method: "email-password" },
-                ),
-              catch: seedFailure,
-            })
-            const hash = yield* Effect.tryPromise({
-              try: () => context.password.hash(LOCAL_DEV_PASSWORD),
-              catch: seedFailure,
-            })
-            yield* Effect.tryPromise({
-              try: () =>
-                context.internalAdapter.linkAccount({
-                  userId: created.id,
-                  providerId: "credential",
-                  accountId: created.id,
-                  password: hash,
-                }),
-              catch: seedFailure,
-            })
-          }),
+      const legacy = yield* Effect.tryPromise({
+        try: () => context.internalAdapter.findUserByEmail("local@dev"),
+        catch: seedFailure,
       })
+      if (legacy && existing) {
+        return yield* seedFailure(
+          new Error(
+            "Both local fixture addresses exist; review them before seeding.",
+          ),
+        )
+      }
+      if (legacy) {
+        // Only an explicitly invoked, guarded local seed upgrades the fixture.
+        // Keep its identity, password, sessions, memberships and telemetry.
+        yield* Effect.tryPromise({
+          try: () =>
+            context.internalAdapter.updateUser(legacy.user.id, {
+              email: LOCAL_DEV_EMAIL,
+            }),
+          catch: seedFailure,
+        })
+      }
+      yield* Option.match(
+        Option.fromNullishOr(existing?.user.id ?? legacy?.user.id),
+        {
+          onSome: () => Effect.void,
+          onNone: () =>
+            Effect.gen(function* () {
+              const created = yield* Effect.tryPromise({
+                try: () =>
+                  context.internalAdapter.createUser(
+                    {
+                      email: LOCAL_DEV_EMAIL,
+                      name: LOCAL_DEV_NAME,
+                      emailVerified: true,
+                    },
+                    { method: "email-password" },
+                  ),
+                catch: seedFailure,
+              })
+              const hash = yield* Effect.tryPromise({
+                try: () => context.password.hash(LOCAL_DEV_PASSWORD),
+                catch: seedFailure,
+              })
+              yield* Effect.tryPromise({
+                try: () =>
+                  context.internalAdapter.linkAccount({
+                    userId: created.id,
+                    providerId: "credential",
+                    accountId: created.id,
+                    password: hash,
+                  }),
+                catch: seedFailure,
+              })
+            }),
+        },
+      )
       const rows = yield* Effect.tryPromise({
         try: () =>
           connection.db

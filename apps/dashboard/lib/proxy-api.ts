@@ -1,5 +1,9 @@
 import { Data, Effect, Exit, Match } from "effect"
 import { dashboardApiUrl } from "./server-env"
+import {
+  AUTH_PROXY_IDENTITY_HEADER,
+  signAuthProxyIdentity,
+} from "@flowmark/db/auth/client-identity"
 
 class DashboardProxyError extends Data.TaggedError("DashboardProxyError")<{
   readonly cause: unknown
@@ -22,6 +26,7 @@ const proxyToApi = Effect.fn("proxyToApi")(function* (
     "origin",
     "referer",
     "user-agent",
+    "sec-fetch-site",
     "authorization",
     "x-flowmark-project-id",
   ]) {
@@ -33,6 +38,12 @@ const proxyToApi = Effect.fn("proxyToApi")(function* (
   const protectionBypass = process.env.FLOWMARK_VERCEL_PROTECTION_BYPASS
   if (protectionBypass) {
     headers.set("x-vercel-protection-bypass", protectionBypass)
+  }
+  if (pathname === "/api/register" || pathname.startsWith("/api/auth/")) {
+    const identity = yield* signAuthProxyIdentity(request, pathname)
+    if (identity) {
+      headers.set(AUTH_PROXY_IDENTITY_HEADER, identity)
+    }
   }
   const response = yield* Effect.tryPromise({
     try: async () =>
@@ -56,6 +67,12 @@ const proxyToApi = Effect.fn("proxyToApi")(function* (
   const responseType = response.headers.get("content-type")
   if (responseType) {
     forwarded.set("content-type", responseType)
+  }
+  for (const name of ["retry-after", "x-retry-after"]) {
+    const value = response.headers.get(name)
+    if (value) {
+      forwarded.set(name, value)
+    }
   }
   forwarded.set("cache-control", "no-store")
   return new Response(response.body, {

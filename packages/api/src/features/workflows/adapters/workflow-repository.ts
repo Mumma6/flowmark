@@ -1,32 +1,33 @@
 import { Effect, Layer } from "effect"
-import { DatabaseError, WorkflowStore } from "@flowmark/db/persistence"
-import { InvalidInput, PersistenceError, RunNotFound } from "../../../errors.js"
+import { WorkflowStore } from "@flowmark/db/persistence"
+import {
+  persist,
+  toPersistenceError,
+} from "../../../adapters/persistence-error.js"
+import { InvalidInput, RunNotFound } from "../../../errors.js"
 import { WorkflowRepository } from "../ports/workflow-repository.js"
 
-const toPersistenceError = (error: DatabaseError) =>
-  new PersistenceError({
-    operation: error.operation,
-    cause: error.cause,
-  })
+export type { WorkflowReadModelContract } from "./read-model-contract.js"
 
 export const WorkflowRepositoryLive = Layer.effect(
   WorkflowRepository,
   Effect.gen(function* () {
     const store = yield* WorkflowStore
     return WorkflowRepository.of({
-      expectations: (projectId, runId) =>
-        store
-          .expectations(projectId, runId)
-          .pipe(Effect.mapError(toPersistenceError)),
-      businessInsights: (projectId, query) =>
-        store.businessInsights(projectId, query).pipe(
-          Effect.catchTags({
-            DatabaseError: toPersistenceError,
-            InvalidResultQuery: (error) =>
-              new InvalidInput({ cause: error.message }),
-          }),
-        ),
-      append: Effect.fn("PostgresWorkflowRepository.append")(
+      expectations: Effect.fn("WorkflowRepositoryLive.expectations")(
+        (projectId, runId) => persist(store.expectations(projectId, runId)),
+      ),
+      businessInsights: Effect.fn("WorkflowRepositoryLive.businessInsights")(
+        (projectId, query) =>
+          store.businessInsights(projectId, query).pipe(
+            Effect.catchTags({
+              DatabaseError: toPersistenceError,
+              InvalidResultQuery: (error) =>
+                new InvalidInput({ cause: error.message }),
+            }),
+          ),
+      ),
+      append: Effect.fn("WorkflowRepositoryLive.append")(
         (projectId, eventId, event) =>
           store.append(projectId, eventId, event).pipe(
             Effect.catchTags({
@@ -36,10 +37,13 @@ export const WorkflowRepositoryLive = Layer.effect(
             }),
           ),
       ),
-      snapshot: Effect.fn("PostgresWorkflowRepository.snapshot")((projectId) =>
-        store.snapshot(projectId).pipe(Effect.mapError(toPersistenceError)),
+      snapshot: Effect.fn("WorkflowRepositoryLive.snapshot")((projectId) =>
+        persist(store.snapshot(projectId)),
       ),
-      listRuns: Effect.fn("PostgresWorkflowRepository.listRuns")(
+      workflows: Effect.fn("WorkflowRepositoryLive.workflows")((projectId) =>
+        store.workflows(projectId).pipe(Effect.mapError(toPersistenceError)),
+      ),
+      listRuns: Effect.fn("WorkflowRepositoryLive.listRuns")(
         (projectId, query) =>
           store.listRuns(projectId, query).pipe(
             Effect.catchTags({
@@ -49,19 +53,13 @@ export const WorkflowRepositoryLive = Layer.effect(
             }),
           ),
       ),
-      timeline: Effect.fn("PostgresWorkflowRepository.timeline")(
-        (projectId, runId) =>
-          store
-            .timeline(projectId, runId)
-            .pipe(Effect.mapError(toPersistenceError)),
+      timeline: Effect.fn("WorkflowRepositoryLive.timeline")(
+        (projectId, runId) => persist(store.timeline(projectId, runId)),
       ),
-      related: Effect.fn("PostgresWorkflowRepository.related")(
-        (projectId, runId) =>
-          store
-            .related(projectId, runId)
-            .pipe(Effect.mapError(toPersistenceError)),
+      related: Effect.fn("WorkflowRepositoryLive.related")((projectId, runId) =>
+        persist(store.related(projectId, runId)),
       ),
-      compare: Effect.fn("PostgresWorkflowRepository.compare")(
+      compare: Effect.fn("WorkflowRepositoryLive.compare")(
         (projectId, runId, selection) =>
           store.compare(projectId, runId, selection).pipe(
             Effect.catchTags({
@@ -71,11 +69,8 @@ export const WorkflowRepositoryLive = Layer.effect(
             }),
           ),
       ),
-      intelligence: Effect.fn("PostgresWorkflowRepository.intelligence")(
-        (projectId, query) =>
-          store
-            .intelligence(projectId, query)
-            .pipe(Effect.mapError(toPersistenceError)),
+      intelligence: Effect.fn("WorkflowRepositoryLive.intelligence")(
+        (projectId, query) => persist(store.intelligence(projectId, query)),
       ),
     })
   }),

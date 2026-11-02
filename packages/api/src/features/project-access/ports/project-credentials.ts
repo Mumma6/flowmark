@@ -45,6 +45,13 @@ export interface CreatedSecret {
 }
 
 export interface ProjectCredentialsService {
+  readonly consumeCreationQuota: (
+    userId: string,
+    kind: "project" | "key",
+  ) => Effect.Effect<
+    { readonly allowed: boolean; readonly retryAfter: number | null },
+    PersistenceError
+  >
   readonly authenticateBrowser: (
     key: Redacted.Redacted<string>,
   ) => Effect.Effect<BrowserCredential | undefined, PersistenceError>
@@ -79,10 +86,6 @@ export interface ProjectCredentialsService {
     step: OnboardingStep,
     completedAt: Date | null,
   ) => Effect.Effect<void, PersistenceError>
-  readonly addOwner: (
-    userId: string,
-    projectId: string,
-  ) => Effect.Effect<void, PersistenceError>
   readonly createOwnedProject: (
     userId: string,
     names: {
@@ -92,6 +95,7 @@ export interface ProjectCredentialsService {
   ) => Effect.Effect<
     {
       readonly projectId: string
+      readonly createdAt: string
       readonly writeKey: CreatedSecret
     },
     PersistenceError
@@ -103,6 +107,7 @@ export interface ProjectCredentialsService {
   ) => Effect.Effect<
     {
       readonly projectId: string
+      readonly createdAt: string
       readonly writeKey: CreatedSecret
     },
     PersistenceError

@@ -5,6 +5,7 @@ export {
   BrowserUnauthorized,
   ConfigurationError,
   InvalidInput,
+  ManagementRateLimited,
   PersistenceError,
   RunNotFound,
   Unauthorized,
@@ -13,10 +14,6 @@ export {
   AuthorizeProject,
   type AuthorizeProjectService,
 } from "./features/project-access/use-cases/authorize-project.js"
-export {
-  RegisterOwner,
-  type RegisterOwnerService,
-} from "./features/project-access/use-cases/register-owner.js"
 export {
   ManageProject,
   type ManageProjectService,
@@ -39,6 +36,7 @@ export { ProjectCredentialsLive } from "./features/project-access/adapters/proje
 export {
   GetProjectWorkflowData,
   type GetProjectWorkflowDataService,
+  type ProjectReader,
 } from "./features/workflows/use-cases/get-project-workflow-data.js"
 export {
   IngestBrowserWorkflowEvents,
@@ -50,19 +48,24 @@ export {
 } from "./features/workflows/use-cases/ingest-events.js"
 export {
   WorkflowRepository,
-  type ProjectSnapshot,
-  type RelatedRuns,
-  type RunTimelineEvent,
-  type RunComparison,
-  type IntelligenceQuery,
-  type WorkflowIntelligence,
   type WorkflowRepositoryService,
 } from "./features/workflows/ports/workflow-repository.js"
+export type {
+  IntelligenceQuery,
+  ProjectSnapshot,
+  RelatedRuns,
+  RunComparison,
+  RunTimelineEvent,
+  WorkflowIntelligence,
+} from "./features/workflows/types.js"
 export { WorkflowRepositoryLive } from "./features/workflows/adapters/workflow-repository.js"
 export { DatabaseLive } from "./adapters/database.js"
 export { ApiLive, logFailure, runApi } from "./runtime.js"
 
-export { ManageResultDeclarations } from "./features/result-declarations/use-cases/manage-result-declarations.js"
+export {
+  ManageResultDeclarations,
+  type ManageResultDeclarationsService,
+} from "./features/result-declarations/use-cases/manage-result-declarations.js"
 
 export { ResultDeclarationSchema } from "@flowmarkdev/core"
 

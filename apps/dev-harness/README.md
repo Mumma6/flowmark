@@ -17,7 +17,7 @@ carrier calls. Nothing is charged, imported into a real system, or shipped.
    **Run all six scenarios**. Each click calls the harness's application
    endpoint, which executes ordinary SDK-instrumented work. There are no
    database-inserted fake telemetry fixtures.
-5. Open [the dashboard](http://localhost:3001) and sign in as `local@dev` /
+5. Open [the dashboard](http://localhost:3001) and sign in as `local@flowmark.test` /
    `local-dev-only` after `pnpm db:setup`. Telemetry delivery may finish
    shortly after the application response, using the Next.js `after()` adapter.
 

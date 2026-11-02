@@ -255,8 +255,10 @@ The API follows feature-first ports-and-adapters:
   and write key are created later via `ManageProject.create` (Settings /
   onboarding).
 - `GetProjectWorkflowData` performs read authorization and project-scoped
-  snapshot, workflow-list, and timeline queries. Dashboard calls use the
-  `*ForUser` variants; programmatic callers may still use a project read key.
+  snapshot, workflow-list, and timeline queries. The workflow list reads
+  workflow summaries only. Snapshot still returns runs, metrics, daily volume,
+  operations, and failure codes. Each read takes one reader: a bearer key, or
+  a signed-in user with an optional project id.
 - `WorkflowRepository` exposes typed storage operations backed by the existing
   database package. Tests inject implementations without PostgreSQL or HTTP.
 
@@ -350,7 +352,7 @@ server-side.
 Dashboard sign-in is Better Auth email and password. The dashboard's
 same-origin proxy forwards `/api/auth/*`, `/api/register`, and `/api/trpc/*`
 to the API so the session cookie stays first-party. Anonymous dashboard reads
-are rejected. Seed creates `local@dev` on the operations project. New
+are rejected. Seed creates `local@flowmark.test` on the operations project. New
 registrations create an account only; the first project and write key are
 created explicitly in Settings / onboarding. Password reset is off until
 email delivery exists. Do not enable demo mode for real customer data.

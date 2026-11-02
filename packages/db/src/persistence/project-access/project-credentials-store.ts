@@ -20,6 +20,7 @@ import type {
 } from "./types.js"
 import { addProjectMember } from "./writes/add-project-member.js"
 import { consumeBrowserQuota } from "./writes/consume-browser-quota.js"
+import { consumeCreationQuota } from "./writes/consume-creation-quota.js"
 import { createApiKey } from "./writes/create-api-key.js"
 import { createBrowserKey } from "./writes/create-browser-key.js"
 import { createOwnedProject } from "./writes/create-owned-project.js"
@@ -44,6 +45,13 @@ export type {
 } from "./types.js"
 
 export interface ProjectCredentialsStoreService {
+  readonly consumeCreationQuota: (
+    userId: string,
+    kind: "project" | "key",
+  ) => Effect.Effect<
+    { readonly allowed: boolean; readonly retryAfter: number | null },
+    DatabaseError
+  >
   readonly authenticate: (
     key: string,
     permission: "read" | "write",
@@ -91,6 +99,7 @@ export interface ProjectCredentialsStoreService {
   ) => Effect.Effect<
     {
       readonly projectId: string
+      readonly createdAt: string
       readonly writeKey: CreatedSecret
     },
     DatabaseError
@@ -102,6 +111,7 @@ export interface ProjectCredentialsStoreService {
   ) => Effect.Effect<
     {
       readonly projectId: string
+      readonly createdAt: string
       readonly writeKey: CreatedSecret
     },
     DatabaseError
@@ -149,6 +159,8 @@ export class ProjectCredentialsStore extends Context.Service<ProjectCredentialsS
     make: Effect.gen(function* () {
       const provide = provideDatabase(yield* Database)
       return {
+        consumeCreationQuota: (userId, kind) =>
+          provide(consumeCreationQuota(userId, kind)),
         authenticate: (key, permission) =>
           provide(authenticateKey(key, permission)),
         authenticateBrowser: (key) => provide(authenticateBrowserKey(key)),

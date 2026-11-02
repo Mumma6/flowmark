@@ -18,6 +18,8 @@ function projectCredentials(
   overrides: Partial<ProjectCredentialsService> = {},
 ) {
   return ProjectCredentials.of({
+    consumeCreationQuota: () =>
+      Effect.succeed({ allowed: true, retryAfter: null }),
     authenticateBrowser: () => Effect.succeed(undefined),
     browserOriginAllowed: () => Effect.succeed(false),
     consumeBrowserQuota: () => Effect.succeed(false),
@@ -36,10 +38,10 @@ function projectCredentials(
     onboardingState: () =>
       Effect.succeed({ step: "project" as const, completedAt: null }),
     updateOnboardingState: () => Effect.void,
-    addOwner: () => Effect.void,
     createOwnedProject: () =>
       Effect.succeed({
         projectId: "project-1",
+        createdAt: "2026-10-25T00:00:00.000Z",
         writeKey: {
           id: "key-owned",
           name: "Write key",
@@ -50,6 +52,7 @@ function projectCredentials(
     createProject: () =>
       Effect.succeed({
         projectId: "project-2",
+        createdAt: "2026-10-26T15:04:05.000Z",
         writeKey: {
           id: "key-new",
           name: "Write key",
@@ -107,6 +110,56 @@ function provideOnboarding(credentials = projectCredentials()) {
 }
 
 describe("ManageProject", () => {
+  it("denies creation and rotation before writes when the actor budget is exhausted, while allowing revocation", async () => {
+    const createProject = vi.fn(projectCredentials().createProject)
+    const createApiKey = vi.fn(projectCredentials().createApiKey)
+    const createBrowserKey = vi.fn(projectCredentials().createBrowserKey)
+    const rotateWriteKey = vi.fn(projectCredentials().rotateWriteKey)
+    const credentials = projectCredentials({
+      consumeCreationQuota: () =>
+        Effect.succeed({ allowed: false, retryAfter: 42 }),
+      createProject,
+      createApiKey,
+      createBrowserKey,
+      rotateWriteKey,
+    })
+    await Effect.runPromise(
+      Effect.gen(function* () {
+        const manage = yield* ManageProject
+        for (const operation of [
+          manage.create("user-1", "Project").pipe(Effect.asVoid),
+          manage
+            .createWriteKey("user-1", "project-1", "Key")
+            .pipe(Effect.asVoid),
+          manage
+            .createBrowserKey("user-1", "project-1", {
+              name: "Browser",
+              origins: ["http://localhost"],
+            })
+            .pipe(Effect.asVoid),
+          manage
+            .rotateWriteKey("user-1", "project-1", "key-1")
+            .pipe(Effect.asVoid),
+        ]) {
+          expectLeft(yield* Effect.result(operation), {
+            _tag: "ManagementRateLimited",
+            retryAfter: 42,
+          })
+        }
+        yield* manage.revokeApiKey("user-1", "project-1", "key-1")
+        yield* manage.revokeBrowserKey("user-1", "project-1", "browser-1")
+      }).pipe(Effect.provide(provide(credentials))),
+    )
+    for (const write of [
+      createProject,
+      createApiKey,
+      createBrowserKey,
+      rotateWriteKey,
+    ]) {
+      expect(write).not.toHaveBeenCalled()
+    }
+  })
+
   it("creates a project in the existing workspace", async () => {
     const createProject = vi.fn(projectCredentials().createProject)
     const result = await Effect.runPromise(
@@ -115,6 +168,7 @@ describe("ManageProject", () => {
       ).pipe(Effect.provide(provide(projectCredentials({ createProject })))),
     )
     expect(result.project.name).toBe("Staging")
+    expect(result.project.createdAt).toBe("2026-10-26T15:04:05.000Z")
     expect(result.writeKey.secret).toBe("fm_write_secret")
     expect(createProject).toHaveBeenCalledWith(
       "user-1",
@@ -168,6 +222,7 @@ describe("ManageProject", () => {
         ),
       ),
     )
+    expect(result.project.createdAt).toBe("2026-10-25T00:00:00.000Z")
     expect(result.writeKey).toEqual({
       id: "key-owned",
       name: "Write key",

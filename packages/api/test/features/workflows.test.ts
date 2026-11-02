@@ -67,6 +67,7 @@ function repository(overrides: Partial<WorkflowRepositoryService> = {}) {
         operations: [],
         failureCodes: [],
       }),
+    workflows: () => Effect.succeed([]),
     listRuns: () =>
       Effect.succeed({
         runs: [],
@@ -121,6 +122,8 @@ function projectCredentials(
   overrides: Partial<ProjectCredentialsService> = {},
 ) {
   return ProjectCredentials.of({
+    consumeCreationQuota: () =>
+      Effect.succeed({ allowed: true, retryAfter: null }),
     authenticateBrowser: () => Effect.succeed(undefined),
     browserOriginAllowed: () => Effect.succeed(false),
     consumeBrowserQuota: () => Effect.succeed(false),
@@ -132,10 +135,10 @@ function projectCredentials(
     onboardingState: () =>
       Effect.succeed({ step: "project" as const, completedAt: null }),
     updateOnboardingState: () => Effect.void,
-    addOwner: () => Effect.void,
     createProject: () =>
       Effect.succeed({
         projectId: "project-from-key",
+        createdAt: "2026-10-25T00:00:00.000Z",
         writeKey: {
           id: "key-1",
           name: "Write key",
@@ -172,6 +175,7 @@ function projectCredentials(
     createOwnedProject: () =>
       Effect.succeed({
         projectId: "project-from-key",
+        createdAt: "2026-10-25T00:00:00.000Z",
         writeKey: {
           id: "key-owned",
           name: "Write key",
@@ -366,7 +370,10 @@ describe("API Effect services", () => {
     const result = await Effect.runPromise(
       Effect.flatMap(GetProjectWorkflowData, (service) =>
         Effect.result(
-          service.businessInsightsForUser("user-1", query, "foreign-project"),
+          service.businessInsights(
+            { _tag: "User", userId: "user-1", projectId: "foreign-project" },
+            query,
+          ),
         ),
       ).pipe(
         Effect.provide(
@@ -533,32 +540,94 @@ describe("API Effect services", () => {
   it("uses read authorization and project-scoped query methods", async () => {
     const timeline = vi.fn(repository().timeline)
     const snapshot = vi.fn(repository().snapshot)
+    const workflows = vi.fn(repository().workflows)
     const operation = Effect.gen(function* () {
       const queries = yield* GetProjectWorkflowData
-      yield* queries.snapshot("Bearer key")
-      yield* queries.workflows("Bearer key")
-      yield* queries.timeline("Bearer key", "run-id")
+      const reader = { _tag: "Key" as const, header: "Bearer key" }
+      yield* queries.snapshot(reader)
+      yield* queries.workflows(reader)
+      yield* queries.timeline(reader, "run-id")
     }).pipe(
       Effect.provide(
         GetProjectWorkflowData.layer.pipe(
-          Layer.provide(dependencies(repository({ timeline, snapshot }))),
+          Layer.provide(
+            dependencies(repository({ timeline, snapshot, workflows })),
+          ),
         ),
       ),
     )
     await Effect.runPromise(operation)
-    expect(snapshot).toHaveBeenCalledTimes(2)
-    expect(snapshot).toHaveBeenCalledWith("project-from-key")
+    expect(snapshot).toHaveBeenCalledExactlyOnceWith("project-from-key")
+    expect(workflows).toHaveBeenCalledExactlyOnceWith("project-from-key")
     expect(timeline).toHaveBeenCalledExactlyOnceWith(
       "project-from-key",
       "run-id",
     )
   })
 
+  it("lists workflow summaries without loading the snapshot", async () => {
+    const summaries = [
+      {
+        name: "import",
+        runs: 2,
+        successRate: 50,
+        medianDurationMs: 10,
+        p95DurationMs: 20,
+      },
+    ]
+    const snapshot = vi.fn(() => Effect.die("snapshot must not run"))
+    const workflows = vi.fn(() => Effect.succeed(summaries))
+    const result = await Effect.runPromise(
+      Effect.flatMap(GetProjectWorkflowData, (queries) =>
+        queries.workflows({ _tag: "Key", header: "Bearer key" }),
+      ).pipe(
+        Effect.provide(
+          GetProjectWorkflowData.layer.pipe(
+            Layer.provide(dependencies(repository({ snapshot, workflows }))),
+          ),
+        ),
+      ),
+    )
+    expect(result).toEqual(summaries)
+    expect(workflows).toHaveBeenCalledExactlyOnceWith("project-from-key")
+    expect(snapshot).not.toHaveBeenCalled()
+  })
+
+  it("scopes a session reader to the requested member project", async () => {
+    const snapshot = vi.fn(repository().snapshot)
+    await Effect.runPromise(
+      Effect.flatMap(GetProjectWorkflowData, (queries) =>
+        queries.snapshot({
+          _tag: "User",
+          userId: "user-1",
+          projectId: "requested-project",
+        }),
+      ).pipe(
+        Effect.provide(
+          GetProjectWorkflowData.layer.pipe(
+            Layer.provide(
+              dependencies(
+                repository({ snapshot }),
+                true,
+                projectCredentials({
+                  memberProject: () => Effect.succeed("requested-project"),
+                }),
+              ),
+            ),
+          ),
+        ),
+      ),
+    )
+    expect(snapshot).toHaveBeenCalledExactlyOnceWith("requested-project")
+  })
+
   it("does not query another project after authorization fails", async () => {
     const timeline = vi.fn(repository().timeline)
     const result = await Effect.runPromise(
       Effect.flatMap(GetProjectWorkflowData, (queries) =>
-        Effect.result(queries.timeline("Bearer bad-key", "run-id")),
+        Effect.result(
+          queries.timeline({ _tag: "Key", header: "Bearer bad-key" }, "run-id"),
+        ),
       ).pipe(
         Effect.provide(
           GetProjectWorkflowData.layer.pipe(

@@ -7,6 +7,8 @@ interface Binding {
   readonly key: string
   readonly sensitive: boolean
   readonly value: pulumi.Input<string>
+  readonly valueWoVersion?: number
+  readonly comment?: string
 }
 
 export const importNonprodVercelBindings = () => {
@@ -64,6 +66,29 @@ export const importNonprodVercelBindings = () => {
 
   const bindings: readonly Binding[] = [
     ...apiBindings,
+    ...(config.getBoolean("importStagingAuthProxyBindings")
+      ? (["api", "dashboard"] as const).map((project): Binding => {
+          const version = config.getNumber("stagingAuthProxySecretVersion")
+          if (
+            version !== undefined &&
+            (!Number.isInteger(version) || version < 1)
+          ) {
+            throw new pulumi.RunError(
+              "stagingAuthProxySecretVersion must be a positive integer",
+            )
+          }
+          return {
+            project,
+            stage: "staging",
+            key: "FLOWMARK_AUTH_PROXY_SECRET",
+            sensitive: true,
+            value: config.requireSecret("stagingAuthProxySecret"),
+            valueWoVersion: version,
+            comment:
+              "TASK-003: Staging-only rate-limit source assertions for reviewed merge cf0b563; matching API/dashboard value, separate from user auth signing.",
+          }
+        })
+      : []),
     {
       project: "dashboard",
       stage: "preview",
@@ -102,9 +127,15 @@ export const importNonprodVercelBindings = () => {
         targets: ["preview"],
         gitBranch: binding.stage === "staging" ? "staging" : undefined,
         sensitive: binding.sensitive,
+        ...(binding.comment ? { comment: binding.comment } : {}),
         visibility: binding.sensitive ? "secret" : "config",
         ...(binding.sensitive
-          ? { valueWo: binding.value }
+          ? {
+              valueWo: binding.value,
+              ...(binding.valueWoVersion !== undefined
+                ? { valueWoVersion: binding.valueWoVersion }
+                : {}),
+            }
           : { value: binding.value }),
       },
       {

@@ -12,7 +12,7 @@ Preview deployments are intentionally paused on all four projects. Their
 existing general Preview configuration and isolated database remain parked for
 future use. Do not enable automatic previews as a side effect of import.
 
-The live inventory contains **21 adopted application env records**: 13 nonprod
+The live inventory contains **23 adopted application env records**: 15 nonprod
 and 8 production/shared records, including two Production-only sensitive records.
 All required records have the expected scopes; no forbidden hosted override
 was found. Secret presence/type is verified, but unreadable secret payloads
@@ -27,12 +27,13 @@ Production requires separate Production-only records for:
 - `BETTER_AUTH_URL` and `FLOWMARK_DASHBOARD_ORIGIN`: dashboard origins, both
   `https://app.flowmark.dev`.
 
-Staging requires five Preview records scoped specifically to `staging`:
+Staging requires six Preview records scoped specifically to `staging`:
 
 - `DATABASE_URL` and `BETTER_AUTH_SECRET`: separate sensitive Staging values.
 - `BETTER_AUTH_URL` and `FLOWMARK_DASHBOARD_ORIGIN`: both
   `https://app.staging.flowmark.dev`.
 - `FLOWMARK_DATABASE_BRANCH=staging`.
+- `FLOWMARK_AUTH_PROXY_SECRET`: sensitive, matching only the Staging dashboard.
 
 The parked general Preview scope has the same five names, with its own
 sensitive database/auth values and `FLOWMARK_DATABASE_BRANCH=preview`.
@@ -60,6 +61,42 @@ adoption. No connection string belongs in a browser bundle.
   the published introduction page. The code also has a public-link fallback.
 
 The dashboard receives no database URL or Better Auth signing secret.
+
+## Staging auth proxy binding
+
+The durable-auth implementation supports `FLOWMARK_AUTH_PROXY_SECRET` on API
+and dashboard. It is a separate server-only secret, at least 32 characters, with
+matching values only within one environment. Keep Production, Staging and the
+parked Preview isolated. It grants rate-limit source attribution, never user
+sign-in or database access; the dashboard still receives no Better Auth signing
+secret or database URL.
+
+The two Staging-only records are managed by the nonprod Pulumi stack, using
+`importStagingAuthProxyBindings`, encrypted `stagingAuthProxySecret` and the
+explicit `stagingAuthProxySecretVersion` activation counter. They remain
+Preview-target records scoped to `gitBranch=staging`. Production and parked
+Preview have no new proxy binding. Changing the value requires a reviewed
+version update on both records and an ordered Staging redeploy. See
+[Pulumi ownership](./README.md#staging-auth-proxy-secret) and
+[auth rollout](../docs/auth-perimeter.md#rollout).
+
+The application remains compatible without the optional secret, using
+account/service limits and the immediate network source. Successful signed
+requests prove the shared-secret hop; end-user source isolation also depends on
+the real platform-provided IP header and must be distinguished from account and
+project authorization evidence.
+
+### Prepared Production proxy configuration
+
+Production has no active proxy-secret record in the inventory above. The
+Production Pulumi program can provision separate API/dashboard sensitive
+`FLOWMARK_AUTH_PROXY_SECRET` records behind
+`manageProductionAuthProxyBindings=true`, using encrypted
+`productionAuthProxySecret` and explicit `productionAuthProxySecretVersion`.
+The first approved plan creates exactly two Production-only records without
+imports. It must leave existing Production auth/database secrets and every
+nonprod resource unchanged. Code preparation and preview do not authorize apply
+or a release merge; see the [operator contract](./README.md#prepared-production-auth-proxy-bindings).
 
 ## Landing and docs
 
@@ -124,7 +161,7 @@ config equivalents. Do not put these on the deployed applications. No automatic
 Pulumi CI update workflow is configured, so a GitHub `PULUMI_ACCESS_TOKEN` secret
 is not a missing requirement.
 
-Nonprod owns its branches, computes, database containers, roles and 13 bindings.
+Nonprod owns its branches, computes, database containers, roles and 15 bindings.
 Production owns the Neon project and production resources, four shared Vercel
 project containers, seven custom domains and the other eight app env records.
 It never declares inline env blocks that compete with individual binding resources.

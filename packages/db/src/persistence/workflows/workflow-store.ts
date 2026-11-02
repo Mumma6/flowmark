@@ -13,6 +13,7 @@ import {
   provideDatabase,
 } from "../database.js"
 import { getProjectSnapshot } from "./queries/get-project-snapshot.js"
+import { getWorkflowSummaries } from "./queries/get-workflow-summaries.js"
 import { getRelatedRuns } from "./queries/get-related-runs.js"
 import { getRunComparison } from "./queries/get-run-comparison.js"
 import { getWorkflowIntelligence } from "./queries/get-workflow-intelligence.js"
@@ -29,6 +30,7 @@ import type {
   RelatedRuns,
   RunComparison,
   WorkflowIntelligence,
+  WorkflowSummary,
   IntelligenceQuery,
 } from "./types.js"
 
@@ -49,6 +51,9 @@ export interface WorkflowStoreService {
   readonly snapshot: (
     projectId: string,
   ) => Effect.Effect<ProjectSnapshot, DatabaseError>
+  readonly workflows: (
+    projectId: string,
+  ) => Effect.Effect<ReadonlyArray<WorkflowSummary>, DatabaseError>
   readonly listRuns: (
     projectId: string,
     query: ListRunsQuery,
@@ -84,6 +89,7 @@ export class WorkflowStore extends Context.Service<WorkflowStore>()(
         append: (projectId, eventId, event) =>
           provide(appendEvent(projectId, eventId, event)),
         snapshot: (projectId) => provide(getProjectSnapshot(projectId)),
+        workflows: (projectId) => provide(getWorkflowSummaries(projectId)),
         listRuns: (projectId, query) => provide(listRuns(projectId, query)),
         timeline: (projectId, runId) =>
           provide(getRunTimeline(projectId, runId)),

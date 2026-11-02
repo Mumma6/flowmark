@@ -26,7 +26,7 @@ import type {
   SearchFields,
 } from "@flowmarkdev/core"
 
-export { account, session, user, verification } from "./auth.js"
+export { account, authRateLimits, session, user, verification } from "./auth.js"
 
 export type StoredWorkflowError = WorkflowError | WorkflowFailure
 

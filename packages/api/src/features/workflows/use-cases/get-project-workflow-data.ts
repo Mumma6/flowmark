@@ -1,79 +1,74 @@
 import type { RunExpectations } from "@flowmarkdev/core"
 import type { PeerSelection } from "@flowmarkdev/core"
 import type { BusinessInsightsQuery, BusinessInsights } from "@flowmarkdev/core"
-import { Context, Effect, Layer } from "effect"
+import { Context, Effect, Layer, Match } from "effect"
 import type {
   InvalidInput,
   PersistenceError,
   Unauthorized,
 } from "../../../errors.js"
 import { AuthorizeProject } from "../../project-access/use-cases/authorize-project.js"
-import {
-  WorkflowRepository,
-  type ListedRunsPage,
-  type IntelligenceQuery,
-  type WorkflowIntelligence,
-  type ListRunsQuery,
-  type ProjectSnapshot,
-  type RelatedRuns,
-  type RunComparison,
-  type RunTimelineEvent,
-} from "../ports/workflow-repository.js"
+import { WorkflowRepository } from "../ports/workflow-repository.js"
+import type {
+  IntelligenceQuery,
+  ListRunsQuery,
+  ListedRunsPage,
+  ProjectSnapshot,
+  RelatedRuns,
+  RunComparison,
+  RunTimelineEvent,
+  WorkflowIntelligence,
+} from "../types.js"
+
+export type ProjectReader =
+  | { readonly _tag: "Key"; readonly header: string | null }
+  | {
+      readonly _tag: "User"
+      readonly userId: string
+      readonly projectId?: string
+    }
 
 export interface GetProjectWorkflowDataService {
   readonly expectations: (
-    header: string | null,
+    reader: ProjectReader,
     runId: string,
-  ) => Effect.Effect<RunExpectations, Unauthorized | PersistenceError>
-  readonly expectationsForUser: (
-    userId: string,
-    runId: string,
-    projectId?: string,
   ) => Effect.Effect<RunExpectations, Unauthorized | PersistenceError>
   readonly businessInsights: (
-    header: string | null,
+    reader: ProjectReader,
     query: BusinessInsightsQuery,
-  ) => Effect.Effect<
-    BusinessInsights,
-    Unauthorized | PersistenceError | InvalidInput
-  >
-  readonly businessInsightsForUser: (
-    userId: string,
-    query: BusinessInsightsQuery,
-    projectId?: string,
   ) => Effect.Effect<
     BusinessInsights,
     Unauthorized | PersistenceError | InvalidInput
   >
   readonly snapshot: (
-    header: string | null,
+    reader: ProjectReader,
   ) => Effect.Effect<ProjectSnapshot, Unauthorized | PersistenceError>
   readonly workflows: (
-    header: string | null,
+    reader: ProjectReader,
   ) => Effect.Effect<
     ProjectSnapshot["workflows"],
     Unauthorized | PersistenceError
   >
   readonly listRuns: (
-    header: string | null,
+    reader: ProjectReader,
     query: ListRunsQuery,
   ) => Effect.Effect<
     ListedRunsPage,
     Unauthorized | PersistenceError | InvalidInput
   >
   readonly timeline: (
-    header: string | null,
+    reader: ProjectReader,
     runId: string,
   ) => Effect.Effect<
     ReadonlyArray<RunTimelineEvent>,
     Unauthorized | PersistenceError
   >
   readonly related: (
-    header: string | null,
+    reader: ProjectReader,
     runId: string,
   ) => Effect.Effect<RelatedRuns, Unauthorized | PersistenceError>
   readonly compare: (
-    header: string | null,
+    reader: ProjectReader,
     runId: string,
     selection?: PeerSelection,
   ) => Effect.Effect<
@@ -81,54 +76,8 @@ export interface GetProjectWorkflowDataService {
     Unauthorized | PersistenceError | InvalidInput
   >
   readonly intelligence: (
-    header: string | null,
+    reader: ProjectReader,
     query: IntelligenceQuery,
-  ) => Effect.Effect<WorkflowIntelligence, Unauthorized | PersistenceError>
-  readonly snapshotForUser: (
-    userId: string,
-    projectId?: string,
-  ) => Effect.Effect<ProjectSnapshot, Unauthorized | PersistenceError>
-  readonly workflowsForUser: (
-    userId: string,
-    projectId?: string,
-  ) => Effect.Effect<
-    ProjectSnapshot["workflows"],
-    Unauthorized | PersistenceError
-  >
-  readonly listRunsForUser: (
-    userId: string,
-    query: ListRunsQuery,
-    projectId?: string,
-  ) => Effect.Effect<
-    ListedRunsPage,
-    Unauthorized | PersistenceError | InvalidInput
-  >
-  readonly timelineForUser: (
-    userId: string,
-    runId: string,
-    projectId?: string,
-  ) => Effect.Effect<
-    ReadonlyArray<RunTimelineEvent>,
-    Unauthorized | PersistenceError
-  >
-  readonly relatedForUser: (
-    userId: string,
-    runId: string,
-    projectId?: string,
-  ) => Effect.Effect<RelatedRuns, Unauthorized | PersistenceError>
-  readonly compareForUser: (
-    userId: string,
-    runId: string,
-    projectId?: string,
-    selection?: PeerSelection,
-  ) => Effect.Effect<
-    RunComparison,
-    Unauthorized | PersistenceError | InvalidInput
-  >
-  readonly intelligenceForUser: (
-    userId: string,
-    query: IntelligenceQuery,
-    projectId?: string,
   ) => Effect.Effect<WorkflowIntelligence, Unauthorized | PersistenceError>
 }
 export class GetProjectWorkflowData extends Context.Service<
@@ -141,166 +90,86 @@ export class GetProjectWorkflowData extends Context.Service<
       const authorization = yield* AuthorizeProject
       const repository = yield* WorkflowRepository
 
+      const authorizeReader = Effect.fn(
+        "GetProjectWorkflowData.authorizeReader",
+      )(function* (reader: ProjectReader) {
+        return yield* Match.value(reader).pipe(
+          Match.tag("Key", ({ header }) =>
+            authorization.authorize(header, "read"),
+          ),
+          Match.tag("User", ({ userId, projectId }) =>
+            authorization.authorizeUser(userId, projectId),
+          ),
+          Match.exhaustive,
+        )
+      })
+
       const snapshot = Effect.fn("GetProjectWorkflowData.snapshot")(function* (
-        header: string | null,
+        reader: ProjectReader,
       ) {
-        const projectId = yield* authorization.authorize(header, "read")
+        const projectId = yield* authorizeReader(reader)
         return yield* repository.snapshot(projectId)
       })
       const workflows = Effect.fn("GetProjectWorkflowData.workflows")(
-        (header: string | null) =>
-          snapshot(header).pipe(Effect.map((data) => data.workflows)),
+        function* (reader: ProjectReader) {
+          const projectId = yield* authorizeReader(reader)
+          return yield* repository.workflows(projectId)
+        },
       )
       const listRuns = Effect.fn("GetProjectWorkflowData.listRuns")(function* (
-        header: string | null,
+        reader: ProjectReader,
         query: ListRunsQuery,
       ) {
-        const projectId = yield* authorization.authorize(header, "read")
+        const projectId = yield* authorizeReader(reader)
         return yield* repository.listRuns(projectId, query)
       })
       const timeline = Effect.fn("GetProjectWorkflowData.timeline")(function* (
-        header: string | null,
+        reader: ProjectReader,
         runId: string,
       ) {
-        const projectId = yield* authorization.authorize(header, "read")
+        const projectId = yield* authorizeReader(reader)
         return yield* repository.timeline(projectId, runId)
       })
       const related = Effect.fn("GetProjectWorkflowData.related")(function* (
-        header: string | null,
+        reader: ProjectReader,
         runId: string,
       ) {
-        const projectId = yield* authorization.authorize(header, "read")
+        const projectId = yield* authorizeReader(reader)
         return yield* repository.related(projectId, runId)
       })
       const compare = Effect.fn("GetProjectWorkflowData.compare")(function* (
-        header: string | null,
+        reader: ProjectReader,
         runId: string,
         selection: PeerSelection = {},
       ) {
-        const projectId = yield* authorization.authorize(header, "read")
+        const projectId = yield* authorizeReader(reader)
         return yield* repository.compare(projectId, runId, selection)
       })
       const intelligence = Effect.fn("GetProjectWorkflowData.intelligence")(
-        function* (header: string | null, query: IntelligenceQuery) {
-          const projectId = yield* authorization.authorize(header, "read")
+        function* (reader: ProjectReader, query: IntelligenceQuery) {
+          const projectId = yield* authorizeReader(reader)
           return yield* repository.intelligence(projectId, query)
         },
       )
-
-      const snapshotForUser = Effect.fn(
-        "GetProjectWorkflowData.snapshotForUser",
-      )(function* (userId: string, requestedProjectId?: string) {
-        const projectId = yield* authorization.authorizeUser(
-          userId,
-          requestedProjectId,
-        )
-        return yield* repository.snapshot(projectId)
-      })
-      const workflowsForUser = Effect.fn(
-        "GetProjectWorkflowData.workflowsForUser",
-      )((userId: string, requestedProjectId?: string) =>
-        snapshotForUser(userId, requestedProjectId).pipe(
-          Effect.map((data) => data.workflows),
-        ),
-      )
-      const listRunsForUser = Effect.fn(
-        "GetProjectWorkflowData.listRunsForUser",
-      )(function* (
-        userId: string,
-        query: ListRunsQuery,
-        requestedProjectId?: string,
-      ) {
-        const projectId = yield* authorization.authorizeUser(
-          userId,
-          requestedProjectId,
-        )
-        return yield* repository.listRuns(projectId, query)
-      })
-      const timelineForUser = Effect.fn(
-        "GetProjectWorkflowData.timelineForUser",
-      )(function* (userId: string, runId: string, requestedProjectId?: string) {
-        const projectId = yield* authorization.authorizeUser(
-          userId,
-          requestedProjectId,
-        )
-        return yield* repository.timeline(projectId, runId)
-      })
-      const relatedForUser = Effect.fn("GetProjectWorkflowData.relatedForUser")(
-        function* (userId: string, runId: string, requestedProjectId?: string) {
-          const projectId = yield* authorization.authorizeUser(
-            userId,
-            requestedProjectId,
-          )
-          return yield* repository.related(projectId, runId)
-        },
-      )
-      const compareForUser = Effect.fn("GetProjectWorkflowData.compareForUser")(
-        function* (
-          userId: string,
-          runId: string,
-          requestedProjectId?: string,
-          selection: PeerSelection = {},
-        ) {
-          const projectId = yield* authorization.authorizeUser(
-            userId,
-            requestedProjectId,
-          )
-          return yield* repository.compare(projectId, runId, selection)
-        },
-      )
-      const intelligenceForUser = Effect.fn(
-        "GetProjectWorkflowData.intelligenceForUser",
-      )(function* (
-        userId: string,
-        query: IntelligenceQuery,
-        requestedProjectId?: string,
-      ) {
-        const projectId = yield* authorization.authorizeUser(
-          userId,
-          requestedProjectId,
-        )
-        return yield* repository.intelligence(projectId, query)
-      })
-
       const businessInsights = Effect.fn(
         "GetProjectWorkflowData.businessInsights",
-      )(function* (header: string | null, query: BusinessInsightsQuery) {
+      )(function* (reader: ProjectReader, query: BusinessInsightsQuery) {
         return yield* repository.businessInsights(
-          yield* authorization.authorize(header, "read"),
+          yield* authorizeReader(reader),
           query,
         )
       })
-      const businessInsightsForUser = Effect.fn(
-        "GetProjectWorkflowData.businessInsightsForUser",
-      )(function* (
-        userId: string,
-        query: BusinessInsightsQuery,
-        requestedProjectId?: string,
-      ) {
-        return yield* repository.businessInsights(
-          yield* authorization.authorizeUser(userId, requestedProjectId),
-          query,
-        )
-      })
+
       return GetProjectWorkflowData.of({
         expectations: Effect.fn("GetProjectWorkflowData.expectations")(
-          function* (header, runId) {
+          function* (reader, runId) {
             return yield* repository.expectations(
-              yield* authorization.authorize(header, "read"),
+              yield* authorizeReader(reader),
               runId,
             )
           },
         ),
-        expectationsForUser: Effect.fn(
-          "GetProjectWorkflowData.expectationsForUser",
-        )(function* (userId, runId, requestedProjectId) {
-          return yield* repository.expectations(
-            yield* authorization.authorizeUser(userId, requestedProjectId),
-            runId,
-          )
-        }),
         businessInsights,
-        businessInsightsForUser,
         snapshot,
         workflows,
         listRuns,
@@ -308,13 +177,6 @@ export class GetProjectWorkflowData extends Context.Service<
         related,
         compare,
         intelligence,
-        snapshotForUser,
-        workflowsForUser,
-        listRunsForUser,
-        timelineForUser,
-        relatedForUser,
-        compareForUser,
-        intelligenceForUser,
       })
     }),
   )
