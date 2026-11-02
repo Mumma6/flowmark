@@ -1,5 +1,9 @@
 import { Data, Effect, Exit, Match } from "effect"
 import { dashboardApiUrl } from "./server-env"
+import {
+  AUTH_PROXY_IDENTITY_HEADER,
+  signAuthProxyIdentity,
+} from "@flowmark/db/auth/client-identity"
 
 class DashboardProxyError extends Data.TaggedError("DashboardProxyError")<{
   readonly cause: unknown
@@ -34,6 +38,12 @@ const proxyToApi = Effect.fn("proxyToApi")(function* (
   const protectionBypass = process.env.FLOWMARK_VERCEL_PROTECTION_BYPASS
   if (protectionBypass) {
     headers.set("x-vercel-protection-bypass", protectionBypass)
+  }
+  if (pathname === "/api/register" || pathname.startsWith("/api/auth/")) {
+    const identity = yield* signAuthProxyIdentity(request, pathname)
+    if (identity) {
+      headers.set(AUTH_PROXY_IDENTITY_HEADER, identity)
+    }
   }
   const response = yield* Effect.tryPromise({
     try: async () =>

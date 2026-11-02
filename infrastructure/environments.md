@@ -61,6 +61,23 @@ adoption. No connection string belongs in a browser bundle.
 
 The dashboard receives no database URL or Better Auth signing secret.
 
+## Prepared auth proxy binding (not activated)
+
+The durable-auth implementation supports `FLOWMARK_AUTH_PROXY_SECRET` on API
+and dashboard. It is a separate server-only secret, at least 32 characters, with
+matching values only within one environment. Keep Production, Staging and the
+parked Preview isolated. It grants rate-limit source attribution, never user
+sign-in or database access; the dashboard still receives no Better Auth signing
+secret or database URL.
+
+These proposed records are not part of the 21-record adopted live inventory
+above. Provisioning/activation and adoption of their exact IDs require separate
+review for the target environment/revision; do not invent IDs, overwrite current
+bindings or activate Preview. The application remains compatible without the
+optional secret, using account/service limits and the immediate network source;
+end-user proxy IP isolation requires the configured signed hop and live evidence.
+See [auth rollout](../docs/auth-perimeter.md#rollout).
+
 ## Landing and docs
 
 The landing app uses public links `NEXT_PUBLIC_FLOWMARK_APP_URL` and

@@ -19,6 +19,7 @@ import {
   type ProjectReader,
   InvalidInput,
   ManageProject,
+  ManagementRateLimited,
   Onboarding,
   PersistenceError,
   logFailure,
@@ -118,7 +119,11 @@ async function executeQuery<A>(
   request: Request,
   operation: Effect.Effect<
     A,
-    Unauthorized | PersistenceError | ConfigurationError | InvalidInput,
+    | Unauthorized
+    | PersistenceError
+    | ConfigurationError
+    | InvalidInput
+    | ManagementRateLimited,
     | GetProjectWorkflowData
     | ManageProject
     | Onboarding
@@ -143,6 +148,14 @@ async function executeQuery<A>(
               typeof error.cause === "string"
                 ? error.cause
                 : "Invalid request.",
+          }),
+        ),
+      ),
+      Effect.catchTag("ManagementRateLimited", (error) =>
+        Effect.fail(
+          new TRPCError({
+            code: "TOO_MANY_REQUESTS",
+            message: `Creation limit reached. Try again in ${error.retryAfter} seconds.`,
           }),
         ),
       ),
@@ -182,7 +195,7 @@ function readQuery<A>(
     reader: ProjectReader,
   ) => Effect.Effect<
     A,
-    Unauthorized | PersistenceError | InvalidInput,
+    Unauthorized | PersistenceError | InvalidInput | ManagementRateLimited,
     GetProjectWorkflowData
   >,
 ) {
@@ -210,7 +223,7 @@ function sessionQuery<A>(
     userId: string,
   ) => Effect.Effect<
     A,
-    Unauthorized | PersistenceError | InvalidInput,
+    Unauthorized | PersistenceError | InvalidInput | ManagementRateLimited,
     ManageProject | ManageResultDeclarations
   >,
 ) {
@@ -233,7 +246,7 @@ function onboardingQuery<A>(
     userId: string,
   ) => Effect.Effect<
     A,
-    Unauthorized | PersistenceError | InvalidInput,
+    Unauthorized | PersistenceError | InvalidInput | ManagementRateLimited,
     Onboarding
   >,
 ) {

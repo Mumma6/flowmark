@@ -1,6 +1,7 @@
 import { Context, Effect, Layer } from "effect"
 import {
   InvalidInput,
+  ManagementRateLimited,
   PersistenceError,
   Unauthorized,
 } from "../../../errors.js"
@@ -61,7 +62,10 @@ export interface ManageProjectService {
   readonly create: (
     userId: string,
     name: string,
-  ) => Effect.Effect<CreatedProject, InvalidInput | PersistenceError>
+  ) => Effect.Effect<
+    CreatedProject,
+    InvalidInput | ManagementRateLimited | PersistenceError
+  >
   readonly rename: (
     userId: string,
     projectId: string,
@@ -77,7 +81,7 @@ export interface ManageProjectService {
     name: string,
   ) => Effect.Effect<
     CreatedSecret,
-    InvalidInput | Unauthorized | PersistenceError
+    InvalidInput | ManagementRateLimited | Unauthorized | PersistenceError
   >
   readonly revokeApiKey: (
     userId: string,
@@ -93,7 +97,7 @@ export interface ManageProjectService {
     },
   ) => Effect.Effect<
     CreatedSecret,
-    InvalidInput | Unauthorized | PersistenceError
+    InvalidInput | ManagementRateLimited | Unauthorized | PersistenceError
   >
   readonly revokeBrowserKey: (
     userId: string,
@@ -106,7 +110,7 @@ export interface ManageProjectService {
     keyId: string,
   ) => Effect.Effect<
     CreatedSecret,
-    InvalidInput | Unauthorized | PersistenceError
+    InvalidInput | ManagementRateLimited | Unauthorized | PersistenceError
   >
 }
 export class ManageProject extends Context.Service<
@@ -122,6 +126,17 @@ export class ManageProject extends Context.Service<
       const requireMember = (userId: string, projectId: string) =>
         authorization.authorizeUser(userId, projectId)
 
+      const requireCreationQuota = Effect.fn(
+        "ManageProject.requireCreationQuota",
+      )(function* (userId: string, kind: "project" | "key") {
+        const result = yield* credentials.consumeCreationQuota(userId, kind)
+        if (!result.allowed) {
+          return yield* new ManagementRateLimited({
+            retryAfter: result.retryAfter ?? 900,
+          })
+        }
+      })
+
       const list = Effect.fn("ManageProject.list")((userId: string) =>
         credentials.listProjects(userId),
       )
@@ -131,6 +146,7 @@ export class ManageProject extends Context.Service<
         rawName: string,
       ) {
         const name = yield* requireName(rawName, "Project name")
+        yield* requireCreationQuota(userId, "project")
         const workspaceId = yield* credentials.workspaceForUser(userId)
         if (!workspaceId) {
           const created = yield* credentials.createOwnedProject(userId, {
@@ -187,6 +203,7 @@ export class ManageProject extends Context.Service<
         function* (userId: string, projectId: string, rawName: string) {
           const name = yield* requireName(rawName, "Key name")
           yield* requireMember(userId, projectId)
+          yield* requireCreationQuota(userId, "key")
           return yield* credentials.createApiKey(projectId, {
             name,
             permission: "write",
@@ -218,6 +235,7 @@ export class ManageProject extends Context.Service<
           const name = yield* requireName(input.name, "Key name")
           const origins = yield* requireOrigins(input.origins)
           yield* requireMember(userId, projectId)
+          yield* requireCreationQuota(userId, "key")
           return yield* credentials.createBrowserKey(projectId, {
             name,
             origins,
@@ -238,6 +256,7 @@ export class ManageProject extends Context.Service<
       const rotateWriteKey = Effect.fn("ManageProject.rotateWriteKey")(
         function* (userId: string, projectId: string, keyId: string) {
           yield* requireMember(userId, projectId)
+          yield* requireCreationQuota(userId, "key")
           const created = yield* credentials.rotateWriteKey(projectId, keyId)
           if (!created) {
             return yield* new InvalidInput({

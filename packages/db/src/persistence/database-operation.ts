@@ -1,4 +1,5 @@
 export enum DatabaseOperation {
+  AuthRateLimit = "auth-rate-limit",
   ReadOperationFacts = "read-operation-facts",
   BackfillRunFacts = "backfill-run-facts",
   AppendExpectation = "append-expectation",

@@ -1,5 +1,11 @@
 import { Data } from "effect"
 
+export class ManagementRateLimited extends Data.TaggedError(
+  "ManagementRateLimited",
+)<{
+  readonly retryAfter: number
+}> {}
+
 export class Unauthorized extends Data.TaggedError("Unauthorized")<{
   readonly permission: "read" | "write"
 }> {}

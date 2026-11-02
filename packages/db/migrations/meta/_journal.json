@@ -120,6 +120,13 @@
       "when": 1793457656724,
       "tag": "0016_bulk_projection_receipts",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1793614774098,
+      "tag": "0017_auth_rate_limits",
+      "breakpoints": true
     }
   ]
 }

@@ -122,6 +122,8 @@ function projectCredentials(
   overrides: Partial<ProjectCredentialsService> = {},
 ) {
   return ProjectCredentials.of({
+    consumeCreationQuota: () =>
+      Effect.succeed({ allowed: true, retryAfter: null }),
     authenticateBrowser: () => Effect.succeed(undefined),
     browserOriginAllowed: () => Effect.succeed(false),
     consumeBrowserQuota: () => Effect.succeed(false),

@@ -5,6 +5,7 @@ export {
   BrowserUnauthorized,
   ConfigurationError,
   InvalidInput,
+  ManagementRateLimited,
   PersistenceError,
   RunNotFound,
   Unauthorized,

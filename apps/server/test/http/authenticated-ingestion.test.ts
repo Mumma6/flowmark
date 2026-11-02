@@ -501,6 +501,62 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         }),
       ))
 
+    it("atomically bounds project/key creation per authenticated actor while retaining emergency revocation", async () => {
+      const cookie = await registerAndSignIn()
+      const account = caller(cookie)
+      const creations = await Promise.allSettled(
+        Array.from({ length: 13 }, (_, i) =>
+          account.project.create({ name: `Quota project ${i}` }),
+        ),
+      )
+      const completed = creations.filter(
+        (result) => result.status === "fulfilled",
+      )
+      expect(completed).toHaveLength(10)
+      for (const result of creations) {
+        if (result.status === "rejected") {
+          expect(result.reason).toMatchObject({ code: "TOO_MANY_REQUESTS" })
+        }
+      }
+      const selected = completed[0]
+      if (selected.status !== "fulfilled") {
+        throw new Error("No project created")
+      }
+      const projectId = selected.value.project.id
+      const owner = caller(cookie, projectId)
+      const keys = await Promise.allSettled(
+        Array.from({ length: 35 }, (_, i) =>
+          i % 2
+            ? owner.project.createWriteKey({
+                projectId,
+                name: `Quota key ${i}`,
+              })
+            : owner.project.createBrowserKey({
+                projectId,
+                name: `Quota browser ${i}`,
+                origins: ["http://localhost:3004"],
+              }),
+        ),
+      )
+      expect(
+        keys.filter((result) => result.status === "fulfilled"),
+      ).toHaveLength(30)
+      for (const result of keys) {
+        if (result.status === "rejected") {
+          expect(result.reason).toMatchObject({ code: "TOO_MANY_REQUESTS" })
+        }
+      }
+      await owner.project.revokeApiKey({
+        projectId,
+        keyId: selected.value.writeKey.id,
+      })
+      expect(
+        (await owner.project.keys(projectId)).apiKeys.some(
+          (key) => key.id === selected.value.writeKey.id,
+        ),
+      ).toBe(false)
+    })
+
     it("registers, signs in, creates a project/key, ingests, persists, and reads with its session", async () => {
       const cookie = await registerAndSignIn()
       // Registration creates the identity only, not a project or API key.
