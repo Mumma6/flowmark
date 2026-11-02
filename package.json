@@ -8,8 +8,8 @@
   },
   "scripts": {
     "build": "turbo build",
-    "dev": "pnpm dev:setup && turbo dev --ui=tui",
-    "dev:stream": "pnpm dev:setup && turbo dev --ui=stream",
+    "dev": "pnpm dev:setup && turbo dev studio --ui=tui",
+    "dev:stream": "pnpm dev:setup && turbo dev studio --ui=stream",
     "dev:setup": "node scripts/prepare-dev.mjs",
     "infra": "pnpm --filter @flowmark/db infra",
     "lint": "turbo lint",
@@ -32,7 +32,8 @@
     "db:reset-local-telemetry": "pnpm --filter @flowmark/db db:reset-local-telemetry",
     "test": "node --test scripts/prepare-dev.test.mjs scripts/db-env-neon.test.mjs scripts/db-migrate.test.mjs scripts/github-workflows.test.mjs scripts/vercel-should-deploy.test.mjs scripts/release-deployment.test.mjs && turbo test",
     "test:integration": "pnpm --filter @flowmark/db test:integration",
-    "typecheck": "turbo typecheck"
+    "typecheck": "turbo typecheck",
+    "dev:product": "pnpm dev:setup && turbo dev --filter=@flowmark/server... --filter=@flowmark/dashboard... --filter=@flowmark/dev-harness..."
   },
   "devDependencies": {
     "@eslint/js": "^9.35.0",

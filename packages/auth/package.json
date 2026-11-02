@@ -37,7 +37,8 @@
     "test": "node --import tsx --test test/*.ts",
     "typecheck": "tsc -p tsconfig.json",
     "db:seed": "pnpm --filter @flowmark/db... build && tsx src/cli/seed.ts",
-    "db:setup": "pnpm --filter @flowmark/db... build && tsx src/cli/setup.ts"
+    "db:setup": "pnpm --filter @flowmark/db... build && tsx src/cli/setup.ts",
+    "dev": "tsc -p tsconfig.json --watch --preserveWatchOutput"
   },
   "dependencies": {
     "@better-auth/drizzle-adapter": "^1.7.13",

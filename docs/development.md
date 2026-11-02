@@ -33,15 +33,34 @@ binding or expose the harness to a network.
 has no authentication, binds to loopback, and must not be deployed or exposed
 publicly. Customer SDK documentation is served separately by `apps/docs`.
 
-`pnpm dev` starts the six apps, Drizzle Studio, and the SDK/core build watchers through
-Turborepo's interactive terminal UI (TUI). The SDK build depends on the core
-build, and both watch for source changes. Use arrow keys or `j`/`k` to select a
-task, `m` for help, and `Ctrl+C` to stop; `pnpm dev:stream` runs without the
-TUI. To run only the local dev harness while preserving Turbo's SDK/core build
-prerequisites, use `pnpm dev --filter=@flowmark/dev-harness`. If you invoke
-`pnpm --filter @flowmark/dev-harness dev` directly, first build its workspace
-dependency with `pnpm --filter @flowmarkdev/node... build`. Do not launch a direct
-build concurrently with the root dev watchers.
+`pnpm dev` starts all six apps, Drizzle Studio, and native compiler watchers for
+core, SDK, db, API and auth. All five libraries finish their initial builds in
+dependency order before any watcher or app starts. A shared `dev:ready` task
+provides that barrier, avoiding compilers racing initial builds into the same
+`dist` directory. Subsequent edits rebuild automatically and Next.js observes
+the emitted workspace files. Exports continue to point at built files.
+
+For daily product development:
+
+```sh
+pnpm dev:product                    # API, dashboard, harness and library watchers
+pnpm dev:product --ui=stream        # same workflow without interactive UI
+pnpm dev:stream                    # full workspace, including Studio, without TUI
+```
+
+The focused command excludes web, docs, internal-docs and Studio. `pnpm db:studio`
+remains available separately. Docs-only work can use
+`pnpm --filter @flowmark/docs dev` without Docker or backend builds.
+The full TUI supports arrow keys or `j`/`k`, `m` for help, and `Ctrl+C` to stop.
+Exported `BETTER_AUTH_SECRET` and `BETTER_AUTH_URL` reach native dev tasks;
+they remain private server settings, not `NEXT_PUBLIC_*` configuration.
+
+Keep one dev-session owner per checkout. Inspect processes and ports before
+starting; use an existing session when appropriate. Stop only your own session.
+Do not run another compiler, direct build, integration command or workspace
+check beside active dev watchers: they share build outputs. Stop your own dev
+session first, or use another worktree. Direct app commands bypass orchestration
+and require their workspace dependencies to have been built first.
 
 Before starting Turbo, `pnpm dev` runs `pnpm dev:setup`: it copies the three
 public local-demo `.env.example` templates to missing `.env.local` files.

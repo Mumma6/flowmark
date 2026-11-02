@@ -104,6 +104,12 @@
   (`doctor`, `up`, `status`, `logs`, `restart`, `down`). Start with `pnpm dev:setup`; new templates
   select Compose, while existing env files remain untouched and default to
   user-managed native PostgreSQL. See [local infrastructure](./docs/development.md#local-postgresql-with-compose).
+- Use `pnpm dev:product` for API/dashboard/harness plus native library watchers;
+  append `--ui=stream` for non-interactive logs. `pnpm dev` / `dev:stream` keep
+  all apps and Studio. One session owns each checkout's build outputs: inspect
+  existing processes/ports first, reuse existing services, and never run direct
+  builds/checks/integration commands alongside watchers. Use another worktree
+  when somebody else owns that session. Stop only processes you started.
 - Inspect `pnpm infra status` before starting/stopping anything. `infra up`
   reports the checkout-scoped container ID and `startedByThisCall`. Agents may
   stop only a service they started, using `pnpm infra down --container <id>`;
