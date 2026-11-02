@@ -79,10 +79,6 @@ export interface ProjectCredentialsService {
     step: OnboardingStep,
     completedAt: Date | null,
   ) => Effect.Effect<void, PersistenceError>
-  readonly addOwner: (
-    userId: string,
-    projectId: string,
-  ) => Effect.Effect<void, PersistenceError>
   readonly createOwnedProject: (
     userId: string,
     names: {

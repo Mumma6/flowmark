@@ -80,12 +80,6 @@ export const ProjectCredentialsLive = Layer.effect(
           .updateOnboardingState(userId, step, completedAt)
           .pipe(Effect.mapError(toPersistenceError)),
       ),
-      addOwner: Effect.fn("PostgresProjectCredentials.addOwner")(
-        (userId, projectId) =>
-          store
-            .addOwner(userId, projectId)
-            .pipe(Effect.mapError(toPersistenceError)),
-      ),
       createOwnedProject: Effect.fn(
         "PostgresProjectCredentials.createOwnedProject",
       )((userId, names) =>
