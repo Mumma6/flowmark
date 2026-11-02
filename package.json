@@ -8,7 +8,7 @@
   },
   "scripts": {
     "build": "turbo build",
-    "dev": "pnpm dev:setup && pnpm infra doctor --require-ready && turbo dev --filter=@flowmark/server... --filter=@flowmark/dashboard... --filter=@flowmark/dev-harness...",
+    "dev": "pnpm dev:setup && pnpm infra doctor --require-ready && turbo dev --filter=@flowmark/server... --filter=@flowmark/dashboard... --filter=@flowmark/dev-harness... --filter=@flowmark/docs... --filter=@flowmark/internal-docs...",
     "dev:setup": "node scripts/prepare-dev.mjs",
     "infra": "pnpm --filter @flowmark/db infra",
     "lint": "turbo lint",

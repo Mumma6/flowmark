@@ -39,16 +39,17 @@ without broadening `allowedDevOrigins`. Open the dashboard on `localhost:3001`,
 matching the exact Better Auth origin in the server template; browser cookies
 and sign-in origins are hostname-specific.
 
-`pnpm dev` starts the API, dashboard, local harness and native compiler watchers
-for core, SDK, db, API and auth. All five libraries finish their initial builds
+`pnpm dev` starts the API, dashboard, local harness, customer docs,
+contributor docs and native compiler watchers for core, SDK, db, API and auth.
+All five libraries finish their initial builds
 in dependency order before any watcher or app starts. The shared `dev:ready`
 task prevents initial builds and watchers from racing into the same `dist`
 directory. Subsequent edits rebuild automatically; exports point at built files.
 
 ```sh
-pnpm dev                         # daily product development
+pnpm dev                         # API, dashboard, harness, docs and internal-docs
 pnpm dev --ui=stream             # ordinary logs for agents/non-interactive terminals
-pnpm dev:all                     # also web, docs and internal-docs
+pnpm dev:all                     # also the marketing site
 pnpm dev:stack                   # PostgreSQL, all apps, and Drizzle Studio
 pnpm db:studio                   # Studio alone, when the apps are already running
 ```

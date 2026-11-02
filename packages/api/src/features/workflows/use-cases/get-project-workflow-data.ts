@@ -18,6 +18,7 @@ import type {
   RunComparison,
   RunTimelineEvent,
   WorkflowIntelligence,
+  ProjectSearch,
 } from "../types.js"
 
 export type ProjectReader =
@@ -54,6 +55,13 @@ export interface GetProjectWorkflowDataService {
     query: ListRunsQuery,
   ) => Effect.Effect<
     ListedRunsPage,
+    Unauthorized | PersistenceError | InvalidInput
+  >
+  readonly search: (
+    reader: ProjectReader,
+    query: string,
+  ) => Effect.Effect<
+    ProjectSearch,
     Unauthorized | PersistenceError | InvalidInput
   >
   readonly timeline: (
@@ -123,6 +131,21 @@ export class GetProjectWorkflowData extends Context.Service<
         const projectId = yield* authorizeReader(reader)
         return yield* repository.listRuns(projectId, query)
       })
+      const search = Effect.fn("GetProjectWorkflowData.search")(function* (
+        reader: ProjectReader,
+        query: string,
+      ) {
+        const projectId = yield* authorizeReader(reader)
+        const text = query.trim().slice(0, 200)
+        if (text.length === 0) {
+          return {
+            workflows: [],
+            runs: [],
+            references: [],
+          } satisfies ProjectSearch
+        }
+        return yield* repository.search(projectId, text)
+      })
       const timeline = Effect.fn("GetProjectWorkflowData.timeline")(function* (
         reader: ProjectReader,
         runId: string,
@@ -173,6 +196,7 @@ export class GetProjectWorkflowData extends Context.Service<
         snapshot,
         workflows,
         listRuns,
+        search,
         timeline,
         related,
         compare,

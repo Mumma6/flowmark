@@ -33,6 +33,8 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@flowmark/ui"
+import { CommandPalette } from "./command-palette"
+import { documentationUrl } from "./command-search"
 import { ProjectProvider, useProject } from "./project-context"
 import { ThemeSelect } from "./theme-select"
 
@@ -42,12 +44,6 @@ const navigation = [
   { href: "/runs", label: "Runs", icon: GitBranch },
   { href: "/settings", label: "Settings", icon: Settings },
 ]
-const docsUrl =
-  process.env.NEXT_PUBLIC_FLOWMARK_DOCS_URL ??
-  (process.env.NODE_ENV === "development"
-    ? "http://localhost:3002/docs/introduction"
-    : "https://docs.flowmark.dev/docs/introduction")
-
 function SignOutButton() {
   const router = useRouter()
   return (
@@ -138,7 +134,7 @@ function Navigation({
           variant="ghost"
           className="w-full justify-start text-muted-foreground"
         >
-          <a href={docsUrl}>
+          <a href={documentationUrl}>
             <BookOpen aria-hidden="true" />
             Documentation
           </a>
@@ -332,7 +328,10 @@ export function DashboardShell({
                 <MobileProjectContext />
               </div>
             </div>
-            <ThemeSelect />
+            <div className="flex shrink-0 items-center gap-2">
+              <CommandPalette />
+              <ThemeSelect />
+            </div>
           </header>
           <main
             id="dashboard-main"

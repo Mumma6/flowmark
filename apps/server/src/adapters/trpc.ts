@@ -496,6 +496,26 @@ export const appRouter = t.router({
       ),
     ),
   }),
+  search: t.router({
+    project: t.procedure
+      .input(
+        Schema.toStandardSchemaV1(
+          Schema.Struct({
+            query: Schema.String.check(
+              Schema.isMinLength(1),
+              Schema.isMaxLength(200),
+            ),
+          }),
+        ),
+      )
+      .query(({ ctx, input }) =>
+        readQuery(ctx.request, (reader) =>
+          Effect.flatMap(GetProjectWorkflowData, (queries) =>
+            queries.search(reader, input.query),
+          ),
+        ),
+      ),
+  }),
   run: t.router({
     list: t.procedure
       .input(
