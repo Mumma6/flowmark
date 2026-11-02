@@ -3,6 +3,8 @@ import { DatabaseError, WorkflowStore } from "@flowmark/db/persistence"
 import { InvalidInput, PersistenceError, RunNotFound } from "../../../errors.js"
 import { WorkflowRepository } from "../ports/workflow-repository.js"
 
+export type { WorkflowReadModelContract } from "./read-model-contract.js"
+
 const toPersistenceError = (error: DatabaseError) =>
   new PersistenceError({
     operation: error.operation,

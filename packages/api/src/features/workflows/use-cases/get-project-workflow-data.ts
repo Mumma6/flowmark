@@ -8,17 +8,17 @@ import type {
   Unauthorized,
 } from "../../../errors.js"
 import { AuthorizeProject } from "../../project-access/use-cases/authorize-project.js"
-import {
-  WorkflowRepository,
-  type ListedRunsPage,
-  type IntelligenceQuery,
-  type WorkflowIntelligence,
-  type ListRunsQuery,
-  type ProjectSnapshot,
-  type RelatedRuns,
-  type RunComparison,
-  type RunTimelineEvent,
-} from "../ports/workflow-repository.js"
+import { WorkflowRepository } from "../ports/workflow-repository.js"
+import type {
+  IntelligenceQuery,
+  ListRunsQuery,
+  ListedRunsPage,
+  ProjectSnapshot,
+  RelatedRuns,
+  RunComparison,
+  RunTimelineEvent,
+  WorkflowIntelligence,
+} from "../types.js"
 
 export interface GetProjectWorkflowDataService {
   readonly expectations: (
