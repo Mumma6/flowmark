@@ -172,6 +172,12 @@ Compose overrides are refused. Turbo dev forwards these overrides to Studio so
 they cannot disappear silently. Root `.env` files are not a second Compose
 configuration source; the dispatcher supplies only the checked local values.
 
+OrbStack and Docker Desktop run separate engines. Containers and volumes appear
+in the UI for the engine selected by `docker context show`, even if both runtimes
+are running. `docker context ls` lists their endpoints. Choose the intended
+local engine explicitly before starting work; repository commands never switch
+it automatically or move data between engines.
+
 If Docker is unavailable, start your chosen engine manually and retry. If socket
 access is denied by permissions or an agent sandbox, report the limitation.
 For an authorized local task, a normal, narrowly scoped tool approval may permit
@@ -482,33 +488,71 @@ reload, but workflow history does not.
 
 ### Database integration tests
 
-The PR workflow has a separate **PostgreSQL integration tests** job with an
-empty Postgres 18 service container. It builds `@flowmark/api`, `@flowmark/auth`,
-and their database dependencies, applies committed migrations, and runs the
-server tests with `TEST_DATABASE_URL`.
-It rejects a report containing skipped tests. The fast `pnpm check` job remains
-independent and has no database credentials. No Neon credentials or demo seed
-are used; HTTP tests create their own isolated projects and keys.
-
-To run the same tests locally, choose a disposable loopback database. Do not use
-the local demo database or any hosted database. Tests write rows; discard this
-database when finished. For example, with an existing local PostgreSQL server:
+Run the complete database/server sequence locally with:
 
 ```sh
-createdb flowmark_test
-pnpm --filter @flowmark/api... --filter @flowmark/auth... build
-DATABASE_URL=postgresql://127.0.0.1:5432/flowmark_test \
-DATABASE_MIGRATION_URL=postgresql://127.0.0.1:5432/flowmark_test \
-FLOWMARK_LOCAL_DATABASE=native \
-  pnpm db:migrate
-TEST_DATABASE_URL=postgresql://127.0.0.1:5432/flowmark_test \
-  pnpm --filter @flowmark/server test
+pnpm test:integration
 ```
 
-Adjust role, port, and database name for your own local server. Export both
-migration URLs explicitly so server env files cannot redirect the migration.
-No `db:setup` or `db:seed` is needed. Without `TEST_DATABASE_URL`, normal server
-unit runs skip the database suites; the integration CI job must run them.
+Installed workspace dependencies and a running permitted local Docker engine
+with Compose are required. No development database, env-file setup, seed or
+host PostgreSQL client is needed. The runner uses the same inspected Docker
+context/endpoint protections as `pnpm infra`; sandbox-denial guidance above
+applies. It refuses exported `DATABASE_URL`, `DATABASE_MIGRATION_URL`,
+`TEST_DATABASE_URL` and hosted migration authorization rather than silently
+replacing them. Unset conflicting exports explicitly; existing app env files
+remain untouched and cannot redirect the runner's child targets.
+
+Each invocation starts only `postgres-test` under a unique `flowmark-test-*`
+Compose project. PostgreSQL 18 stores its data in a 512 MiB tmpfs mount at
+`/var/lib/postgresql`, publishes an allocated port on `127.0.0.1`, and creates no
+data volume. The runner waits for TCP health, correlates labels/container/port
+and SQL database/role identity, then supplies the same disposable URL in all
+three database variables. It builds API/auth dependencies, applies committed
+Drizzle migrations, runs db and server tests directly, and verifies their TAP
+and JSON reports. Empty/missing required integration coverage, skips, cancelled
+tests and command failures fail the run; integration results never use Turbo's
+test cache. HTTP suites create their own synthetic projects and keys with demo
+mode off. Development/demo data and migration history are not reused or reset.
+
+Concurrent runs get different databases, ports and storage. Native builds/tests
+within the same checkout wait for an owned workspace lock to prevent competing
+compiler output; separate worktrees run independently. The wait is bounded at
+two minutes and prints the lock path. A busy/stale lock is an explicit error;
+inspect its `owner.json` PID and reports before removing a confirmed abandoned
+lock. Never delete a running owner's lock.
+
+The printed report directory contains `run.json` (runner PID, project, context,
+container and port), redacted `commands.log`, `db.tap` and `server.json` once their steps
+run. Failures also save the last 100 PostgreSQL log lines to `postgres.log`;
+database assertion failures print a bounded report tail. Ordinary failure and
+SIGINT/SIGTERM stop owned native subprocesses, then remove only this run's
+containers/network without volume-deletion flags. The original failing status
+is preserved; the runner exits 130/143 for SIGINT/SIGTERM. Agents can cancel the
+registered runner PID after verifying it still belongs to that active run;
+signalling a package-manager wrapper directly can produce its own exit status.
+Cleanup failure is explicit and keeps
+the run identity for diagnosis. SIGKILL, a stopped engine or a host crash may
+leave resources: inspect `run.json`, the recorded context and resource labels
+before manually removing exactly those containers/network. Never use global
+cleanup, `down -v`, delete volumes, or stop unrelated services.
+
+Direct `pnpm --filter @flowmark/db test` and server test entrypoints validate any
+configured `TEST_DATABASE_URL` before fixture writes. They require the runner's
+owned tmpfs/container proof or CI's exact service identity; an arbitrary
+loopback database is not sufficient. Without `TEST_DATABASE_URL`, normal unit
+checks intentionally skip database cases and remain Docker-independent. Use
+`pnpm test:integration` to require full database coverage.
+
+The PR workflow retains its separate **PostgreSQL integration tests** job and
+empty PostgreSQL 18 Actions service. `pnpm test:integration --ci-service` shares
+the build/migrate/db/server/report sequence without launching Compose. That
+path requires Actions/CI markers and the declared local `flowmark_ci` role,
+`flowmark_test` database and port 5432; it refuses hosted targets and migration
+authorization. Both db and server reports must show complete execution. The fast
+`pnpm check` job remains independent and receives no database credentials. No
+Neon credentials, hosted settings or demo seed are used.
+
 These tests cover ingestion, idempotency, browser quotas, and project isolation.
 The authenticated ingestion suite now covers registration → sign-in → project
 and key creation → ingestion → persisted-run read with a real Better Auth
@@ -543,8 +587,7 @@ and authenticated project reads. The retained count must stay within the cached
 auth pool's default maximum of ten. A final ingestion-only wave must return to
 the same retained count, verifying that API pools are closed.
 
-Run the existing server integration command above with a dedicated disposable
-local database; the result prints a baseline and four post-wave counts. A local
+Run `pnpm test:integration`; the result prints a baseline and four post-wave counts. A local
 PostgreSQL 16 run observed `1 → 6 → 6 → 6 → 6`. No driver, auth adapter, pool
 setting, or lifecycle redesign was needed. This measures one test process, not
 the total connections across Vercel instances or Neon capacity. Do not generate

@@ -31,6 +31,7 @@
     "db:setup": "pnpm --filter @flowmark/auth db:setup",
     "db:reset-local-telemetry": "pnpm --filter @flowmark/db db:reset-local-telemetry",
     "test": "node --test scripts/prepare-dev.test.mjs scripts/db-env-neon.test.mjs scripts/db-migrate.test.mjs scripts/github-workflows.test.mjs scripts/vercel-should-deploy.test.mjs scripts/release-deployment.test.mjs && turbo test",
+    "test:integration": "pnpm --filter @flowmark/db test:integration",
     "typecheck": "turbo typecheck"
   },
   "devDependencies": {

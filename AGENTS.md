@@ -118,6 +118,17 @@
   controls. If access is unavailable/rejected, use simulated command tests and
   leave live checks pending. Never substitute a hosted database. Local infra
   commands do not migrate, seed, or reset data.
+- Run `pnpm test:integration` for database/server integration coverage. It owns
+  a unique temporary PostgreSQL Compose project, allocated loopback port and
+  tmpfs storage, then removes only that run's containers/network on success,
+  failure or normal interruption. It never deletes volumes or uses demo data.
+  Leave exported database URLs/hosted approval variables unset; the runner
+  supplies all child targets. Direct package tests reject configured targets
+  without managed disposable-test provenance; unset `TEST_DATABASE_URL` keeps
+  unit-only checks usable without Docker. Reports and run ownership are printed
+  before startup. Inspect these after forced termination; never clean another
+  run or delete an active native build/test lock. See
+  [integration tests](./docs/development.md#database-integration-tests).
 
 - Before starting implementation on a new task, read and apply
   [branch](./.agents/skills/branch/SKILL.md) to create or verify a
