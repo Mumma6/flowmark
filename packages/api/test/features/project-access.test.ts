@@ -40,8 +40,12 @@ function projectCredentials(
     createOwnedProject: () =>
       Effect.succeed({
         projectId: "project-1",
-        writeKey: "fm_write_test",
-        readKey: "fm_read_test",
+        writeKey: {
+          id: "key-owned",
+          name: "Write key",
+          prefix: "fm_write_abcdef",
+          secret: "fm_write_secret",
+        },
       }),
     createProject: () =>
       Effect.succeed({
@@ -64,6 +68,13 @@ function projectCredentials(
         secret: "fm_write_secret",
       }),
     revokeApiKey: () => Effect.succeed(true),
+    rotateWriteKey: () =>
+      Effect.succeed({
+        id: "key-rotated",
+        name: "Worker",
+        prefix: "fm_write_abcdef",
+        secret: "fm_write_secret",
+      }),
     createBrowserKey: () =>
       Effect.succeed({
         id: "key-2",
@@ -141,21 +152,95 @@ describe("ManageProject", () => {
     })
   })
 
-  it("rotates a write key by creating the replacement first", async () => {
+  it("returns the stored write key for the first project", async () => {
+    const createOwnedProject = vi.fn(projectCredentials().createOwnedProject)
+    const result = await Effect.runPromise(
+      Effect.flatMap(ManageProject, (manage) =>
+        manage.create("user-1", "Operations"),
+      ).pipe(
+        Effect.provide(
+          provide(
+            projectCredentials({
+              workspaceForUser: () => Effect.succeed(undefined),
+              createOwnedProject,
+            }),
+          ),
+        ),
+      ),
+    )
+    expect(result.writeKey).toEqual({
+      id: "key-owned",
+      name: "Write key",
+      prefix: "fm_write_abcdef",
+      secret: "fm_write_secret",
+    })
+    expect(result.writeKey.id).not.toBe(result.project.id)
+    expect(createOwnedProject).toHaveBeenCalledWith("user-1", {
+      workspace: "Operations",
+      project: "Operations",
+    })
+  })
+
+  it("rotates a write key through one credential operation", async () => {
     const createApiKey = vi.fn(projectCredentials().createApiKey)
     const revokeApiKey = vi.fn(() => Effect.succeed(true))
+    const rotateWriteKey = vi.fn(projectCredentials().rotateWriteKey)
     const result = await Effect.runPromise(
       Effect.flatMap(ManageProject, (manage) =>
         manage.rotateWriteKey("user-1", "project-1", "key-old"),
       ).pipe(
         Effect.provide(
-          provide(projectCredentials({ createApiKey, revokeApiKey })),
+          provide(
+            projectCredentials({ createApiKey, revokeApiKey, rotateWriteKey }),
+          ),
         ),
       ),
     )
-    expect(result.secret).toBe("fm_write_secret")
-    expect(createApiKey).toHaveBeenCalled()
-    expect(revokeApiKey).toHaveBeenCalledWith("project-1", "key-old")
+    expect(result).toMatchObject({
+      id: "key-rotated",
+      name: "Worker",
+      secret: "fm_write_secret",
+    })
+    expect(rotateWriteKey).toHaveBeenCalledWith("project-1", "key-old")
+    expect(createApiKey).not.toHaveBeenCalled()
+    expect(revokeApiKey).not.toHaveBeenCalled()
+  })
+
+  it("does not create a replacement when rotation is refused", async () => {
+    const createApiKey = vi.fn(projectCredentials().createApiKey)
+    const rotateWriteKey = vi.fn(() => Effect.succeed(null))
+    const result = await Effect.runPromise(
+      Effect.flatMap(ManageProject, (manage) =>
+        Effect.result(manage.rotateWriteKey("user-1", "project-1", "key-old")),
+      ).pipe(
+        Effect.provide(
+          provide(projectCredentials({ createApiKey, rotateWriteKey })),
+        ),
+      ),
+    )
+    expectLeft(result, { _tag: "InvalidInput" })
+    expect(createApiKey).not.toHaveBeenCalled()
+    expect(rotateWriteKey).toHaveBeenCalledOnce()
+  })
+
+  it("does not rotate a key for a project the user cannot access", async () => {
+    const rotateWriteKey = vi.fn(projectCredentials().rotateWriteKey)
+    const result = await Effect.runPromise(
+      Effect.flatMap(ManageProject, (manage) =>
+        Effect.result(manage.rotateWriteKey("user-1", "project-1", "key-old")),
+      ).pipe(
+        Effect.provide(
+          provide(
+            projectCredentials({
+              memberProject: () => Effect.succeed(undefined),
+              rotateWriteKey,
+            }),
+          ),
+        ),
+      ),
+    )
+    expectLeft(result, { _tag: "Unauthorized" })
+    expect(rotateWriteKey).not.toHaveBeenCalled()
   })
 
   it("rejects browser keys without an http origin", async () => {

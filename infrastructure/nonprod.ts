@@ -1,5 +1,6 @@
 import * as neon from "@pulumi/neon"
 import * as pulumi from "@pulumi/pulumi"
+import { importNeonBranchResources } from "./neon-additional"
 
 export const importNonprodBranches = () => {
   const config = new pulumi.Config()
@@ -48,5 +49,13 @@ export const importNonprodBranches = () => {
       ),
   )
 
+  importNeonBranchResources(
+    provider,
+    branches.map((resource, index) => ({
+      stage: index === 0 ? "preview" : "staging",
+      id: index === 0 ? previewId : stagingId,
+      resource,
+    })),
+  )
   return branches.map((branch) => branch.id)
 }

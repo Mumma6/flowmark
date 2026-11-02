@@ -589,9 +589,10 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
       ).rejects.toMatchObject({ code: "UNAUTHORIZED" })
       // Denied writes must not mutate the owner's project or create a key.
       expect((await aliceReader.project.list())[0].name).toBe("Alice import")
-      expect(
-        (await aliceReader.project.keys(alice.project.id)).apiKeys,
-      ).toHaveLength(2)
+      const aliceKeys = (await aliceReader.project.keys(alice.project.id))
+        .apiKeys
+      expect(aliceKeys).toHaveLength(1)
+      expect(aliceKeys[0]).toMatchObject({ permission: "write" })
       expect(await aliceReader.run.detail({ id: run.id })).toHaveLength(2)
     })
 
@@ -702,6 +703,194 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         "Connection lifecycle: baseline and four completed waves",
         observations,
       )
+    })
+
+    it("rotates only the selected write key and leaves failed attempts without a replacement", async () => {
+      const owner = await createOwner("Rotation")
+      const api = caller(owner.cookie, owner.project.id)
+      expect(owner.writeKey.id).not.toBe(owner.project.id)
+      const initial = await api.project.keys(owner.project.id)
+      expect(initial.apiKeys).toEqual([
+        expect.objectContaining({
+          id: owner.writeKey.id,
+          name: "Write key",
+          permission: "write",
+        }),
+      ])
+      expect(initial.apiKeys[0]).not.toHaveProperty("secret")
+
+      const second = await caller(owner.cookie).project.create({
+        name: "Rotation second",
+      })
+      expect(second.writeKey.id).not.toBe(second.project.id)
+      expect(
+        (
+          await caller(owner.cookie, second.project.id).project.keys(
+            second.project.id,
+          )
+        ).apiKeys,
+      ).toEqual([
+        expect.objectContaining({
+          id: second.writeKey.id,
+          permission: "write",
+        }),
+      ])
+
+      const rejectEvent = async (key: string) => {
+        const response = await ingest(
+          new Request("http://localhost/v1/events", {
+            method: "POST",
+            headers: { authorization: `Bearer ${key}` },
+            body: JSON.stringify({
+              eventId: randomUUID(),
+              event: {
+                type: "started",
+                workflow: "integration.import",
+                runId: randomUUID(),
+                timestamp: new Date().toISOString(),
+              },
+            }),
+          }),
+        )
+        expect(response.status).toBe(401)
+      }
+
+      const rotated = await api.project.rotateWriteKey({
+        projectId: owner.project.id,
+        keyId: owner.writeKey.id,
+      })
+      expect(rotated).toMatchObject({ name: "Write key" })
+      expect(rotated.id).not.toBe(owner.writeKey.id)
+      expect(rotated.secret).not.toBe(owner.writeKey.secret)
+      const listed = await api.project.keys(owner.project.id)
+      expect(listed.apiKeys.map((key) => key.id)).toEqual([rotated.id])
+      expect(listed.apiKeys[0]).not.toHaveProperty("secret")
+      expect(JSON.stringify(listed)).not.toContain(rotated.secret)
+      await rejectEvent(owner.writeKey.secret)
+      await sendRun(rotated.secret)
+
+      await expect(
+        api.project.rotateWriteKey({
+          projectId: owner.project.id,
+          keyId: owner.writeKey.id,
+        }),
+      ).rejects.toMatchObject({ code: "BAD_REQUEST" })
+      expect((await api.project.keys(owner.project.id)).apiKeys).toHaveLength(1)
+
+      const [first, secondAttempt] = await Promise.allSettled([
+        api.project.rotateWriteKey({
+          projectId: owner.project.id,
+          keyId: rotated.id,
+        }),
+        api.project.rotateWriteKey({
+          projectId: owner.project.id,
+          keyId: rotated.id,
+        }),
+      ])
+      const succeeded = [first, secondAttempt].filter(
+        (result) => result.status === "fulfilled",
+      )
+      expect(succeeded).toHaveLength(1)
+      expect(
+        [first, secondAttempt].filter((result) => result.status === "rejected"),
+      ).toHaveLength(1)
+      const replacement =
+        first.status === "fulfilled"
+          ? first.value
+          : secondAttempt.status === "fulfilled"
+            ? secondAttempt.value
+            : null
+      if (!replacement) {
+        throw new Error("Expected one rotation to commit.")
+      }
+      expect(replacement.name).toBe("Write key")
+      const afterRace = await api.project.keys(owner.project.id)
+      expect(afterRace.apiKeys).toEqual([
+        expect.objectContaining({ id: replacement.id, name: "Write key" }),
+      ])
+      await rejectEvent(rotated.secret)
+      await sendRun(replacement.secret)
+
+      const beforeMissing = (await api.project.keys(owner.project.id)).apiKeys
+        .length
+      await expect(
+        api.project.rotateWriteKey({
+          projectId: owner.project.id,
+          keyId: randomUUID(),
+        }),
+      ).rejects.toMatchObject({ code: "BAD_REQUEST" })
+      expect((await api.project.keys(owner.project.id)).apiKeys).toHaveLength(
+        beforeMissing,
+      )
+
+      const readSecret = `fm_read_${randomUUID().replaceAll("-", "")}`
+      const [readKey] = await connection.db
+        .insert(projectApiKeys)
+        .values({
+          projectId: owner.project.id,
+          keyHash: hashApiKey(readSecret),
+          permission: "read",
+          name: "Read key",
+          keyPrefix: readSecret.slice(0, 16),
+        })
+        .returning({ id: projectApiKeys.id })
+      if (!readKey) {
+        throw new Error("Read key was not stored.")
+      }
+      const beforeRead = (await api.project.keys(owner.project.id)).apiKeys
+        .length
+      await expect(
+        api.project.rotateWriteKey({
+          projectId: owner.project.id,
+          keyId: readKey.id,
+        }),
+      ).rejects.toMatchObject({ code: "BAD_REQUEST" })
+      expect((await api.project.keys(owner.project.id)).apiKeys).toHaveLength(
+        beforeRead,
+      )
+
+      const browser = await api.project.createBrowserKey({
+        projectId: owner.project.id,
+        name: "Browser",
+        origins: ["http://localhost:3000"],
+      })
+      await expect(
+        api.project.rotateWriteKey({
+          projectId: owner.project.id,
+          keyId: browser.id,
+        }),
+      ).rejects.toMatchObject({ code: "BAD_REQUEST" })
+      expect((await api.project.keys(owner.project.id)).apiKeys).toHaveLength(
+        beforeRead,
+      )
+
+      const neighbor = await createOwner("Rotation neighbor")
+      const neighborApi = caller(neighbor.cookie, neighbor.project.id)
+      const beforeNeighbor = (
+        await neighborApi.project.keys(neighbor.project.id)
+      ).apiKeys.length
+      const beforeOwner = (await api.project.keys(owner.project.id)).apiKeys
+        .length
+      await expect(
+        api.project.rotateWriteKey({
+          projectId: owner.project.id,
+          keyId: neighbor.writeKey.id,
+        }),
+      ).rejects.toMatchObject({ code: "BAD_REQUEST" })
+      await expect(
+        neighborApi.project.rotateWriteKey({
+          projectId: owner.project.id,
+          keyId: replacement.id,
+        }),
+      ).rejects.toMatchObject({ code: "UNAUTHORIZED" })
+      expect((await api.project.keys(owner.project.id)).apiKeys).toHaveLength(
+        beforeOwner,
+      )
+      expect(
+        (await neighborApi.project.keys(neighbor.project.id)).apiKeys,
+      ).toHaveLength(beforeNeighbor)
+      await sendRun(neighbor.writeKey.secret)
+      await sendRun(second.writeKey.secret)
     })
 
     it("rejects anonymous and forged sessions and invalidates a signed-out session", async () => {

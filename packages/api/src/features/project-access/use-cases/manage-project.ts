@@ -143,12 +143,7 @@ export class ManageProject extends Context.Service<
               name,
               createdAt: new Date().toISOString(),
             },
-            writeKey: {
-              id: created.projectId,
-              name: "Write key",
-              prefix: created.writeKey.slice(0, 16),
-              secret: created.writeKey,
-            },
+            writeKey: created.writeKey,
           } satisfies CreatedProject
         }
         const created = yield* credentials.createProject(
@@ -242,11 +237,12 @@ export class ManageProject extends Context.Service<
 
       const rotateWriteKey = Effect.fn("ManageProject.rotateWriteKey")(
         function* (userId: string, projectId: string, keyId: string) {
-          const created = yield* createWriteKey(userId, projectId, "Write key")
-          const deleted = yield* credentials.revokeApiKey(projectId, keyId)
-          if (!deleted) {
+          yield* requireMember(userId, projectId)
+          const created = yield* credentials.rotateWriteKey(projectId, keyId)
+          if (!created) {
             return yield* new InvalidInput({
-              cause: "Could not revoke the previous write key.",
+              cause:
+                "That key cannot be rotated. It may already be revoked, or it is not a server write key.",
             })
           }
           return created
