@@ -7,7 +7,14 @@ export const documentationUrl =
     : "https://docs.flowmark.dev/docs/introduction")
 
 export type CommandPage = {
-  readonly id: "overview" | "workflows" | "runs" | "settings" | "documentation"
+  readonly id:
+    | "overview"
+    | "workflows"
+    | "runs"
+    | "insights"
+    | "issues"
+    | "settings"
+    | "documentation"
   readonly label: string
   readonly href: string
   readonly keywords: string
@@ -35,6 +42,20 @@ export function commandPages(docsUrl: string): readonly CommandPage[] {
       label: "Runs",
       href: "/runs",
       keywords: "history executions",
+      external: false,
+    },
+    {
+      id: "insights",
+      label: "Insights",
+      href: "/insights",
+      keywords: "trends outcomes analytics performance",
+      external: false,
+    },
+    {
+      id: "issues",
+      label: "Issues",
+      href: "/issues",
+      keywords: "failures problems errors investigate",
       external: false,
     },
     {

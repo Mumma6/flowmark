@@ -115,6 +115,38 @@ function repository(overrides: Partial<WorkflowRepositoryService> = {}) {
         operations: [],
         failureCodes: [],
       }),
+    periodReport: () =>
+      Effect.succeed({
+        workflow: null,
+        current: {
+          startedAfter: "2026-10-21T00:00:00.000Z",
+          startedBefore: "2026-10-28T00:00:00.000Z",
+          totalRuns: 0,
+          finishedRuns: 0,
+          completedRuns: 0,
+          failedRuns: 0,
+          successRate: null,
+          medianDurationMs: null,
+          p95DurationMs: null,
+        },
+        previous: {
+          startedAfter: "2026-10-14T00:00:00.000Z",
+          startedBefore: "2026-10-21T00:00:00.000Z",
+          totalRuns: 0,
+          finishedRuns: 0,
+          completedRuns: 0,
+          failedRuns: 0,
+          successRate: null,
+          medianDurationMs: null,
+          p95DurationMs: null,
+        },
+        daily: [],
+        workflowNames: [],
+        workflows: [],
+        failureGroups: [],
+        failureGroupsTruncated: false,
+        operations: [],
+      }),
     ...overrides,
   })
 }
@@ -394,6 +426,130 @@ describe("API Effect services", () => {
     )
     expectLeft(result, { _tag: "Unauthorized", permission: "read" })
     expect(businessInsights).not.toHaveBeenCalled()
+  })
+
+  it("keeps period reports behind user project membership", async () => {
+    const periodReport = vi.fn(() =>
+      Effect.die("Must not read another project"),
+    )
+    const query = {
+      workflow: "import",
+      currentStartedAfter: "2026-10-21T00:00:00.000Z",
+      currentStartedBefore: "2026-10-28T00:00:00.000Z",
+      previousStartedAfter: "2026-10-14T00:00:00.000Z",
+      previousStartedBefore: "2026-10-21T00:00:00.000Z",
+    }
+    const result = await Effect.runPromise(
+      Effect.flatMap(GetProjectWorkflowData, (service) =>
+        Effect.result(
+          service.periodReport(
+            { _tag: "User", userId: "user-1", projectId: "foreign-project" },
+            query,
+          ),
+        ),
+      ).pipe(
+        Effect.provide(
+          GetProjectWorkflowData.layer.pipe(
+            Layer.provide(
+              dependencies(
+                repository({ periodReport }),
+                true,
+                projectCredentials({
+                  memberProject: () => Effect.succeed(undefined),
+                }),
+              ),
+            ),
+          ),
+        ),
+      ),
+    )
+    expectLeft(result, { _tag: "Unauthorized", permission: "read" })
+    expect(periodReport).not.toHaveBeenCalled()
+  })
+
+  it("rejects a period report window before reading", async () => {
+    const periodReport = vi.fn(() =>
+      Effect.die("Must not query an invalid window"),
+    )
+    const result = await Effect.runPromise(
+      Effect.flatMap(GetProjectWorkflowData, (service) =>
+        Effect.result(
+          service.periodReport(
+            { _tag: "User", userId: "user-1" },
+            {
+              currentStartedAfter: "2026-10-01T00:00:00.000Z",
+              currentStartedBefore: "2026-12-01T00:00:00.000Z",
+              previousStartedAfter: "2026-09-01T00:00:00.000Z",
+              previousStartedBefore: "2026-10-01T00:00:00.000Z",
+            },
+          ),
+        ),
+      ).pipe(
+        Effect.provide(
+          GetProjectWorkflowData.layer.pipe(
+            Layer.provide(dependencies(repository({ periodReport }), true)),
+          ),
+        ),
+      ),
+    )
+    expectLeft(result, { _tag: "InvalidInput" })
+    expect(periodReport).not.toHaveBeenCalled()
+  })
+
+  it("reads a period report only after the caller is a project member", async () => {
+    const query = {
+      currentStartedAfter: "2026-10-21T00:00:00.000Z",
+      currentStartedBefore: "2026-10-28T00:00:00.000Z",
+      previousStartedAfter: "2026-10-14T00:00:00.000Z",
+      previousStartedBefore: "2026-10-21T00:00:00.000Z",
+    }
+    const periodReport = vi.fn(() =>
+      Effect.succeed({
+        workflow: null,
+        current: {
+          ...query,
+          startedAfter: query.currentStartedAfter,
+          startedBefore: query.currentStartedBefore,
+          totalRuns: 1,
+          finishedRuns: 1,
+          completedRuns: 1,
+          failedRuns: 0,
+          successRate: 100,
+          medianDurationMs: 1,
+          p95DurationMs: 1,
+        },
+        previous: {
+          startedAfter: query.previousStartedAfter,
+          startedBefore: query.previousStartedBefore,
+          totalRuns: 0,
+          finishedRuns: 0,
+          completedRuns: 0,
+          failedRuns: 0,
+          successRate: null,
+          medianDurationMs: null,
+          p95DurationMs: null,
+        },
+        daily: [],
+        workflowNames: [],
+        workflows: [],
+        failureGroups: [],
+        failureGroupsTruncated: false,
+        operations: [],
+      }),
+    )
+    const result = await Effect.runPromise(
+      Effect.flatMap(GetProjectWorkflowData, (service) =>
+        service.periodReport({ _tag: "User", userId: "user-1" }, query),
+      ).pipe(
+        Effect.provide(
+          GetProjectWorkflowData.layer.pipe(
+            Layer.provide(dependencies(repository({ periodReport }), true)),
+          ),
+        ),
+      ),
+    )
+    expect(result.current.totalRuns).toBe(1)
+    expect(periodReport).toHaveBeenCalledWith("project-from-key", query)
   })
 
   it("authorizes a requested project only when the user is a member", async () => {

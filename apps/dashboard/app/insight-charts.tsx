@@ -81,7 +81,13 @@ function shortLabel(value: string, max = 20) {
   return value.length > max ? `${value.slice(0, max - 1)}…` : value
 }
 
-export function DailyVolumeChart({ daily }: { daily: Snapshot["daily"] }) {
+export function DailyVolumeChart({
+  daily,
+  empty = "No runs in the last 30 days.",
+}: {
+  daily: Snapshot["daily"]
+  empty?: string
+}) {
   const total = daily.reduce((sum, day) => sum + day.count, 0)
   const data = daily.map((day) => ({
     date: day.date,
@@ -92,7 +98,7 @@ export function DailyVolumeChart({ daily }: { daily: Snapshot["daily"] }) {
   if (total === 0) {
     return (
       <p className="px-1 py-10 text-center text-sm text-muted-foreground">
-        No runs in the last 30 days.
+        {empty}
       </p>
     )
   }

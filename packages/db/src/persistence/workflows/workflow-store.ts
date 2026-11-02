@@ -16,6 +16,7 @@ import { getProjectSnapshot } from "./queries/get-project-snapshot.js"
 import { getWorkflowSummaries } from "./queries/get-workflow-summaries.js"
 import { getRelatedRuns } from "./queries/get-related-runs.js"
 import { getRunComparison } from "./queries/get-run-comparison.js"
+import { getPeriodReport } from "./queries/get-period-report.js"
 import { getWorkflowIntelligence } from "./queries/get-workflow-intelligence.js"
 import {
   getRunTimeline,
@@ -30,6 +31,7 @@ import type {
   ProjectSnapshot,
   RelatedRuns,
   RunComparison,
+  PeriodReport,
   WorkflowIntelligence,
   WorkflowSummary,
   IntelligenceQuery,
@@ -81,6 +83,10 @@ export interface WorkflowStoreService {
     projectId: string,
     query: IntelligenceQuery,
   ) => Effect.Effect<WorkflowIntelligence, DatabaseError>
+  readonly periodReport: (
+    projectId: string,
+    query: IntelligenceQuery,
+  ) => Effect.Effect<PeriodReport, DatabaseError>
 }
 export class WorkflowStore extends Context.Service<WorkflowStore>()(
   "@flowmark/db/WorkflowStore",
@@ -106,6 +112,8 @@ export class WorkflowStore extends Context.Service<WorkflowStore>()(
           provide(getRunComparison(projectId, runId, selection)),
         intelligence: (projectId, query) =>
           provide(getWorkflowIntelligence(projectId, query)),
+        periodReport: (projectId, query) =>
+          provide(getPeriodReport(projectId, query)),
       } satisfies WorkflowStoreService
     }),
   },

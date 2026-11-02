@@ -109,6 +109,36 @@ export type IntelligenceQuery = {
   readonly previousStartedBefore: string
 }
 
+export type PeriodCounts = Omit<InsightWindow, "startedAfter" | "startedBefore">
+
+export type WorkflowPeriodComparison = {
+  readonly name: string
+  readonly current: PeriodCounts
+  readonly previous: PeriodCounts
+}
+
+export type FailureGroup = {
+  readonly workflow: string
+  readonly code: string
+  readonly currentCount: number
+  readonly previousCount: number
+  readonly countDelta: number
+  readonly lastStartedAt: string | null
+  readonly runIds: readonly string[]
+}
+
+export type PeriodReport = {
+  readonly workflow: string | null
+  readonly current: InsightWindow
+  readonly previous: InsightWindow
+  readonly daily: readonly DailyInsight[]
+  readonly workflowNames: readonly string[]
+  readonly workflows: readonly WorkflowPeriodComparison[]
+  readonly failureGroups: readonly FailureGroup[]
+  readonly failureGroupsTruncated: boolean
+  readonly operations: readonly OperationAttribution[]
+}
+
 export type OperationCompareRow = {
   readonly currentOccurrenceCount?: number
   readonly currentOpenCount?: number

@@ -1,0 +1,320 @@
+"use client"
+
+import Link from "next/link"
+import { RefreshCw } from "lucide-react"
+import {
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@flowmark/ui"
+import { BusinessOutcomes } from "./business-outcomes"
+import { DataState, PageHeading, ViewLink } from "./dashboard-components"
+import { formatDuration } from "./dashboard-data"
+import { DailyDurationPanel, DailyVolumePanel } from "./insights-panels"
+import { OverviewMetrics } from "./overview-panels"
+import { windowLabel } from "./overview-presentation"
+import { PeriodControls, usePeriodSelection } from "./period-controls"
+import { recordedChanges } from "./period-presentation"
+
+export function InsightsPage() {
+  const { days, workflow, period, report, replace, workflowNames } =
+    usePeriodSelection()
+  const comparison = `previous ${days} days`
+  const currentWindow = {
+    startedAfter: period.currentStartedAfter,
+    startedBefore: period.currentStartedBefore,
+  }
+  const scope = `${windowLabel(currentWindow)} · runs started · UTC`
+  const changes = report.data
+    ? recordedChanges({
+        days,
+        workflow,
+        startedAfter: period.currentStartedAfter,
+        startedBefore: period.currentStartedBefore,
+        failureGroups: report.data.failureGroups,
+        workflows: report.data.workflows,
+        operations: report.data.operations,
+      })
+    : []
+  return (
+    <div className="grid min-w-0 gap-7">
+      <PageHeading
+        title="Insights"
+        description="How recorded work is performing, what it is accomplishing, and what changed compared with the previous window."
+      >
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={report.isFetching}
+          onClick={() => void report.refetch()}
+        >
+          <RefreshCw aria-hidden="true" />
+          Refresh
+        </Button>
+      </PageHeading>
+      <PeriodControls
+        days={days}
+        workflow={workflow}
+        workflowNames={workflowNames}
+        onChange={replace}
+      />
+      <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
+        Counts use runs started in {windowLabel(currentWindow)} UTC, compared
+        with the previous {days} days. Run completion is completed runs among
+        finished runs. It is not a business success score. Days with no starts
+        are shown as zero. A difference describes the recorded evidence, not its
+        cause.
+      </p>
+      <DataState
+        pending={report.isPending}
+        error={report.error}
+        retry={() => void report.refetch()}
+      />
+      {report.data && !report.error && (
+        <>
+          <OverviewMetrics
+            data={report.data}
+            comparison={comparison}
+            title={`Execution summary · last ${days} days`}
+          />
+          {report.data.current.totalRuns === 0 &&
+            report.data.previous.totalRuns === 0 && (
+              <Card className="border-dashed shadow-none">
+                <CardHeader>
+                  <CardTitle>No runs started in this window</CardTitle>
+                  <CardDescription>
+                    {workflow
+                      ? `${workflow} has no started runs in either comparison window.`
+                      : "This project has no started runs in either comparison window."}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {workflow ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => replace(days)}
+                    >
+                      Show all workflows
+                    </Button>
+                  ) : (
+                    <ViewLink href="/settings?section=projects">
+                      Open setup
+                    </ViewLink>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+          <section
+            aria-label="Volume and duration"
+            className="grid min-w-0 gap-5 xl:grid-cols-2"
+          >
+            <DailyVolumePanel
+              daily={report.data.daily}
+              scope={scope}
+              empty="No runs started in this window."
+            />
+            <DailyDurationPanel daily={report.data.daily} scope={scope} />
+          </section>
+          <WorkflowBreakdown
+            workflows={report.data.workflows}
+            filtered={Boolean(workflow)}
+          />
+          <RecordedChanges changes={changes} />
+          {workflow ? (
+            <BusinessOutcomes
+              key={`${workflow}:${period.after}:${period.before}`}
+              workflow={workflow}
+              lockedWindow={{
+                after: period.after,
+                before: period.before,
+                days,
+              }}
+            />
+          ) : (
+            <Card className="shadow-none">
+              <CardHeader>
+                <CardTitle className="text-base">
+                  Reported business outcomes
+                </CardTitle>
+                <CardDescription>
+                  Outcome totals, categories, reasons and dimensions are
+                  declared per workflow. Choose a workflow to compare them
+                  inside this same window.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          )}
+        </>
+      )}
+    </div>
+  )
+}
+
+function WorkflowBreakdown({
+  workflows,
+  filtered,
+}: {
+  workflows: readonly {
+    name: string
+    current: {
+      totalRuns: number
+      finishedRuns: number
+      failedRuns: number
+      successRate: number | null
+      medianDurationMs: number | null
+      p95DurationMs: number | null
+    }
+    previous: {
+      totalRuns: number
+      failedRuns: number
+      successRate: number | null
+    }
+  }[]
+  filtered: boolean
+}) {
+  return (
+    <Card className="min-w-0 overflow-hidden shadow-none">
+      <CardHeader>
+        <CardTitle className="text-base">
+          {filtered ? "This workflow" : "By workflow"}
+        </CardTitle>
+        <CardDescription>
+          Up to 100 workflows with the most started runs across both windows.
+          Medians are calculated inside each window and are not averaged into
+          the summary above.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="overflow-x-auto p-0">
+        {workflows.length === 0 ? (
+          <p className="px-6 py-8 text-sm text-muted-foreground">
+            No workflows started a run in these windows.
+          </p>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Workflow</TableHead>
+                <TableHead className="text-right">Started</TableHead>
+                <TableHead className="text-right">Failed</TableHead>
+                <TableHead className="text-right">Completion</TableHead>
+                <TableHead className="hidden text-right md:table-cell">
+                  Median
+                </TableHead>
+                <TableHead className="hidden text-right lg:table-cell">
+                  p95
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {workflows.map((item) => {
+                const startedDelta =
+                  item.current.totalRuns - item.previous.totalRuns
+                const failedDelta =
+                  item.current.failedRuns - item.previous.failedRuns
+                return (
+                  <TableRow key={item.name} className="hover:bg-muted/40">
+                    <TableCell className="max-w-[220px]">
+                      <Link
+                        className="font-medium hover:text-primary hover:underline"
+                        href={`/workflows/${encodeURIComponent(item.name)}`}
+                      >
+                        {item.name}
+                      </Link>
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {item.current.totalRuns.toLocaleString()}
+                      <span className="mt-1 block text-xs text-muted-foreground">
+                        {signed(startedDelta)}
+                      </span>
+                    </TableCell>
+                    <TableCell
+                      className={`text-right tabular-nums ${failedDelta > 0 ? "text-destructive" : ""}`}
+                    >
+                      {item.current.failedRuns.toLocaleString()}
+                      <span className="mt-1 block text-xs text-muted-foreground">
+                        {signed(failedDelta)}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {item.current.finishedRuns === 0 ||
+                      item.current.successRate == null
+                        ? "—"
+                        : `${item.current.successRate}%`}
+                    </TableCell>
+                    <TableCell className="hidden text-right tabular-nums text-muted-foreground md:table-cell">
+                      {formatDuration(item.current.medianDurationMs)}
+                    </TableCell>
+                    <TableCell className="hidden text-right tabular-nums text-muted-foreground lg:table-cell">
+                      {formatDuration(item.current.p95DurationMs)}
+                    </TableCell>
+                  </TableRow>
+                )
+              })}
+            </TableBody>
+          </Table>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
+function RecordedChanges({
+  changes,
+}: {
+  changes: readonly {
+    id: string
+    title: string
+    detail: string
+    href: string
+  }[]
+}) {
+  return (
+    <section aria-label="Recorded changes" className="grid gap-3">
+      <div>
+        <h2 className="text-base font-semibold">Worth a closer look</h2>
+        <p className="mt-1 max-w-3xl text-sm leading-6 text-muted-foreground">
+          Failure codes that increased, workflows whose failed-run count rose
+          after at least five finished runs in both windows, and operations
+          whose median duration rose across at least three runs in each window.
+          These are highlights, not verified incidents.
+        </p>
+      </div>
+      {changes.length === 0 ? (
+        <p className="text-sm text-muted-foreground">
+          No change met that display threshold.
+        </p>
+      ) : (
+        <ul className="grid gap-3 lg:grid-cols-2">
+          {changes.map((change) => (
+            <li key={change.id}>
+              <Link
+                href={change.href}
+                className="block h-full rounded-xl border border-border bg-card px-5 py-4 transition-colors hover:bg-muted/40"
+              >
+                <p className="font-medium">{change.title}</p>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                  {change.detail}
+                </p>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  )
+}
+
+function signed(value: number) {
+  return `${value > 0 ? "+" : ""}${value.toLocaleString()} vs previous`
+}

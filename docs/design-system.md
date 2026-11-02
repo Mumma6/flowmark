@@ -108,7 +108,7 @@ import { Badge, Button, TabsList } from "@flowmark/ui"
 Most icons are neutral Lucide icons at 16 px. Decorative icons are hidden from
 assistive technology. Navigation and evidence use real links with visible focus.
 Keep appearance, project settings and documentation accessible without competing
-with the primary Overview → Workflows → Runs navigation.
+with the primary Overview → Workflows → Runs → Insights → Issues navigation.
 
 ### shadcn workflow
 
@@ -126,11 +126,13 @@ shared primitive; do not upgrade styling frameworks for a dashboard redesign.
 
 ## Information hierarchy and data scope
 
-Overview shows one four-metric execution strip, workflows and recent recorded
-failures, latest runs with reported results, then trends and technical evidence.
-Workflow detail leads with run history and reported results before diagnostics.
-Run detail starts with reported outcome/result and progressively reveals timeline,
-context, comparison and explicitly related runs. All audiences use the same facts.
+Overview shows one four-metric execution strip, a short link to Issues, the
+workflow list and the latest runs. Insights owns period trends, workflow
+comparisons and declared business outcomes. Issues owns derived failure groups
+and the runs behind them. Workflow detail leads with run history and reported
+results before diagnostics. Run detail starts with reported outcome/result and
+progressively reveals timeline, context, comparison and explicitly related runs.
+All audiences use the same facts.
 
 Every metric needs its period, cohort and denominator:
 
@@ -138,11 +140,15 @@ Every metric needs its period, cohort and denominator:
   intelligence window. Completion is completed / finished, not business success.
   The count without a final outcome remains visible. Duration percentiles use
   measured finished runs from that same window.
+- Insights and Issues use the same half-open UTC start cohort, for 7 or 30 days,
+  compared with the immediately previous window of the same length. Daily bars
+  zero-fill days with no starts. Workflow medians are not averaged into the
+  headline percentiles.
+- Failure groups are derived at read time: one workflow plus one terminal
+  failure code, one count per failed run. They are not tracked issues.
 - Workflow summary rows use all recorded runs and explicitly say so.
-- Recent failures come from the latest 100 recorded project runs; absence means
-  no failures in that snapshot, not no historical failures.
-- Project trend charts use the 30-day daily aggregate. Workflow charts use the
-  explicitly labelled latest-100 project snapshot slice.
+- Workflow diagnostics that mention the latest 100 runs are a snapshot slice,
+  not the Issues population.
 - Run explorer filters apply to its full server-paginated history, not other
   sections. Do not add a global period/environment selector until it can govern
   every panel it appears to control.

@@ -52,18 +52,43 @@ function startOfUtcDay(date: Date) {
   return day
 }
 
-export function defaultIntelligenceQuery(workflow?: string) {
-  const today = startOfUtcDay(new Date())
-  const currentStartedAfter = new Date(today)
-  currentStartedAfter.setUTCDate(today.getUTCDate() - 6)
-  const previousStartedAfter = new Date(today)
-  previousStartedAfter.setUTCDate(today.getUTCDate() - 13)
+function addUtcDays(date: Date, days: number) {
+  const next = new Date(date)
+  next.setUTCDate(next.getUTCDate() + days)
+  return next
+}
+
+export type PeriodDays = 7 | 30
+
+export function periodDays(value: string | null): PeriodDays {
+  return value === "30" ? 30 : 7
+}
+
+/** Inclusive UTC start days, compared with the immediately previous window. */
+export function periodWindow(days: PeriodDays, now = new Date()) {
+  const today = startOfUtcDay(now)
+  const currentStartedAfter = addUtcDays(today, -(days - 1))
+  const currentStartedBefore = addUtcDays(today, 1)
+  const previousStartedAfter = addUtcDays(currentStartedAfter, -days)
   return {
-    workflow: workflow || undefined,
+    days,
     currentStartedAfter: currentStartedAfter.toISOString(),
-    currentStartedBefore: new Date(today.getTime() + 86400000).toISOString(),
+    currentStartedBefore: currentStartedBefore.toISOString(),
     previousStartedAfter: previousStartedAfter.toISOString(),
     previousStartedBefore: currentStartedAfter.toISOString(),
+    after: currentStartedAfter.toISOString().slice(0, 10),
+    before: currentStartedBefore.toISOString().slice(0, 10),
+  }
+}
+
+export function defaultIntelligenceQuery(workflow?: string) {
+  const period = periodWindow(7)
+  return {
+    workflow: workflow || undefined,
+    currentStartedAfter: period.currentStartedAfter,
+    currentStartedBefore: period.currentStartedBefore,
+    previousStartedAfter: period.previousStartedAfter,
+    previousStartedBefore: period.previousStartedBefore,
   }
 }
 

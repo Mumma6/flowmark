@@ -18,6 +18,8 @@ describe("command palette search", () => {
       "overview",
       "workflows",
       "runs",
+      "insights",
+      "issues",
       "settings",
       "documentation",
     ])

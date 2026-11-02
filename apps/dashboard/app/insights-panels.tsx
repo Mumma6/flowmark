@@ -239,9 +239,11 @@ export function IntelligencePanel({
 export function DailyVolumePanel({
   daily,
   scope = "Last 30 days · UTC",
+  empty = "No runs in the last 30 days.",
 }: {
   daily: Snapshot["daily"]
   scope?: string
+  empty?: string
 }) {
   return (
     <Card>
@@ -250,7 +252,7 @@ export function DailyVolumePanel({
         <CardDescription>Completed and failed runs · {scope}</CardDescription>
       </CardHeader>
       <CardContent>
-        <DailyVolumeChart daily={daily} />
+        <DailyVolumeChart daily={daily} empty={empty} />
         <DailyData daily={daily} />
       </CardContent>
     </Card>

@@ -81,6 +81,9 @@ export const WorkflowRepositoryLive = Layer.effect(
       intelligence: Effect.fn("WorkflowRepositoryLive.intelligence")(
         (projectId, query) => persist(store.intelligence(projectId, query)),
       ),
+      periodReport: Effect.fn("WorkflowRepositoryLive.periodReport")(
+        (projectId, query) => persist(store.periodReport(projectId, query)),
+      ),
     })
   }),
 )
