@@ -83,6 +83,11 @@
   [flowmark-ui-components](./.agents/skills/flowmark-ui-components/SKILL.md).
   Use shadcn components through `@flowmark/ui`; add missing reusable primitives
   there, not as app-local copies.
+- Before reviewing one package, app, or directory for architecture, standards,
+  Effect usage, file organization, or simplification, read and apply
+  [architecture-review](./.agents/skills/architecture-review/SKILL.md).
+  A review is read-only. Refactor only when the user explicitly asks to
+  implement an approved finding or a named scope.
 - Use Tailwind utilities and shared semantic theme tokens. No app-specific CSS
   classes, CSS modules, or inline styling for normal layouts. Theme variables
   and Tailwind directives belong in global CSS.
