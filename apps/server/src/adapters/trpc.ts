@@ -16,6 +16,7 @@ import {
   ResultDeclarationSchema,
   ConfigurationError,
   GetProjectWorkflowData,
+  type ProjectReader,
   InvalidInput,
   ManageProject,
   Onboarding,
@@ -177,16 +178,8 @@ async function executeQuery<A>(
 
 function readQuery<A>(
   request: Request,
-  forUser: (
-    userId: string,
-    projectId?: string,
-  ) => Effect.Effect<
-    A,
-    Unauthorized | PersistenceError | InvalidInput,
-    GetProjectWorkflowData
-  >,
-  forKey: (
-    header: string | null,
+  read: (
+    reader: ProjectReader,
   ) => Effect.Effect<
     A,
     Unauthorized | PersistenceError | InvalidInput,
@@ -199,8 +192,12 @@ function readQuery<A>(
     sessionUserId(request).pipe(
       Effect.flatMap(
         Option.match({
-          onNone: () => forKey(request.headers.get("authorization")),
-          onSome: (userId) => forUser(userId, projectId),
+          onNone: () =>
+            read({
+              _tag: "Key",
+              header: request.headers.get("authorization"),
+            }),
+          onSome: (userId) => read({ _tag: "User", userId, projectId }),
         }),
       ),
     ),
@@ -264,44 +261,28 @@ export const appRouter = t.router({
     businessInsights: t.procedure
       .input(Schema.toStandardSchemaV1(BusinessInsightsQuerySchema))
       .query(({ ctx, input }) =>
-        readQuery(
-          ctx.request,
-          (userId, projectId) =>
-            Effect.flatMap(GetProjectWorkflowData, (queries) =>
-              queries.businessInsightsForUser(userId, input, projectId),
-            ),
-          (header) =>
-            Effect.flatMap(GetProjectWorkflowData, (queries) =>
-              queries.businessInsights(header, input),
-            ),
+        readQuery(ctx.request, (reader) =>
+          Effect.flatMap(GetProjectWorkflowData, (queries) =>
+            queries.businessInsights(reader, input),
+          ),
         ),
       ),
     snapshot: t.procedure.query(({ ctx }) =>
-      readQuery(
-        ctx.request,
-        (userId, projectId) =>
-          Effect.flatMap(GetProjectWorkflowData, (queries) =>
-            queries.snapshotForUser(userId, projectId),
-          ),
-        (header) =>
-          Effect.flatMap(GetProjectWorkflowData, (queries) =>
-            queries.snapshot(header),
-          ),
+      readQuery(ctx.request, (reader) =>
+        Effect.flatMap(GetProjectWorkflowData, (queries) =>
+          queries.snapshot(reader),
+        ),
       ),
     ),
-    intelligence: t.procedure.input(IntelligenceInput).query(({ ctx, input }) =>
-      readQuery(
-        ctx.request,
-        (userId, projectId) =>
+    intelligence: t.procedure
+      .input(IntelligenceInput)
+      .query(({ ctx, input }) =>
+        readQuery(ctx.request, (reader) =>
           Effect.flatMap(GetProjectWorkflowData, (queries) =>
-            queries.intelligenceForUser(userId, input, projectId),
+            queries.intelligence(reader, input),
           ),
-        (header) =>
-          Effect.flatMap(GetProjectWorkflowData, (queries) =>
-            queries.intelligence(header, input),
-          ),
+        ),
       ),
-    ),
     list: t.procedure.query(({ ctx }) =>
       sessionQuery(ctx.request, (userId) =>
         Effect.flatMap(ManageProject, (manage) => manage.list(userId)),
@@ -495,16 +476,10 @@ export const appRouter = t.router({
   }),
   workflow: t.router({
     list: t.procedure.query(({ ctx }) =>
-      readQuery(
-        ctx.request,
-        (userId, projectId) =>
-          Effect.flatMap(GetProjectWorkflowData, (queries) =>
-            queries.workflowsForUser(userId, projectId),
-          ),
-        (header) =>
-          Effect.flatMap(GetProjectWorkflowData, (queries) =>
-            queries.workflows(header),
-          ),
+      readQuery(ctx.request, (reader) =>
+        Effect.flatMap(GetProjectWorkflowData, (queries) =>
+          queries.workflows(reader),
+        ),
       ),
     ),
   }),
@@ -564,61 +539,37 @@ export const appRouter = t.router({
         ),
       )
       .query(({ ctx, input }) =>
-        readQuery(
-          ctx.request,
-          (userId, projectId) =>
-            Effect.flatMap(GetProjectWorkflowData, (queries) =>
-              queries.listRunsForUser(userId, input, projectId),
-            ),
-          (header) =>
-            Effect.flatMap(GetProjectWorkflowData, (queries) =>
-              queries.listRuns(header, input),
-            ),
+        readQuery(ctx.request, (reader) =>
+          Effect.flatMap(GetProjectWorkflowData, (queries) =>
+            queries.listRuns(reader, input),
+          ),
         ),
       ),
     detail: t.procedure
       .input(Schema.toStandardSchemaV1(Schema.Struct({ id: UuidSchema })))
       .query(({ ctx, input }) =>
-        readQuery(
-          ctx.request,
-          (userId, projectId) =>
-            Effect.flatMap(GetProjectWorkflowData, (queries) =>
-              queries.timelineForUser(userId, input.id, projectId),
-            ),
-          (header) =>
-            Effect.flatMap(GetProjectWorkflowData, (queries) =>
-              queries.timeline(header, input.id),
-            ),
+        readQuery(ctx.request, (reader) =>
+          Effect.flatMap(GetProjectWorkflowData, (queries) =>
+            queries.timeline(reader, input.id),
+          ),
         ),
       ),
     expectations: t.procedure
       .input(Schema.toStandardSchemaV1(Schema.Struct({ id: UuidSchema })))
       .query(({ ctx, input }) =>
-        readQuery(
-          ctx.request,
-          (userId, projectId) =>
-            Effect.flatMap(GetProjectWorkflowData, (queries) =>
-              queries.expectationsForUser(userId, input.id, projectId),
-            ),
-          (header) =>
-            Effect.flatMap(GetProjectWorkflowData, (queries) =>
-              queries.expectations(header, input.id),
-            ),
+        readQuery(ctx.request, (reader) =>
+          Effect.flatMap(GetProjectWorkflowData, (queries) =>
+            queries.expectations(reader, input.id),
+          ),
         ),
       ),
     related: t.procedure
       .input(Schema.toStandardSchemaV1(Schema.Struct({ id: UuidSchema })))
       .query(({ ctx, input }) =>
-        readQuery(
-          ctx.request,
-          (userId, projectId) =>
-            Effect.flatMap(GetProjectWorkflowData, (queries) =>
-              queries.relatedForUser(userId, input.id, projectId),
-            ),
-          (header) =>
-            Effect.flatMap(GetProjectWorkflowData, (queries) =>
-              queries.related(header, input.id),
-            ),
+        readQuery(ctx.request, (reader) =>
+          Effect.flatMap(GetProjectWorkflowData, (queries) =>
+            queries.related(reader, input.id),
+          ),
         ),
       ),
     compare: t.procedure
@@ -631,21 +582,10 @@ export const appRouter = t.router({
         ),
       )
       .query(({ ctx, input }) =>
-        readQuery(
-          ctx.request,
-          (userId, projectId) =>
-            Effect.flatMap(GetProjectWorkflowData, (queries) =>
-              queries.compareForUser(
-                userId,
-                input.id,
-                projectId,
-                input.selection,
-              ),
-            ),
-          (header) =>
-            Effect.flatMap(GetProjectWorkflowData, (queries) =>
-              queries.compare(header, input.id, input.selection),
-            ),
+        readQuery(ctx.request, (reader) =>
+          Effect.flatMap(GetProjectWorkflowData, (queries) =>
+            queries.compare(reader, input.id, input.selection),
+          ),
         ),
       ),
   }),

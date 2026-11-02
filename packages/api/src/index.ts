@@ -35,6 +35,7 @@ export { ProjectCredentialsLive } from "./features/project-access/adapters/proje
 export {
   GetProjectWorkflowData,
   type GetProjectWorkflowDataService,
+  type ProjectReader,
 } from "./features/workflows/use-cases/get-project-workflow-data.js"
 export {
   IngestBrowserWorkflowEvents,
