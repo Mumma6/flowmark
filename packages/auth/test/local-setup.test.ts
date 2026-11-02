@@ -30,6 +30,7 @@ test("actual setup CLI rejects conflicting targets before migration or seed", ()
           DATABASE_URL: runtime,
           DATABASE_MIGRATION_URL: migration,
           FLOWMARK_DEMO_MODE: "true",
+          FLOWMARK_LOCAL_DATABASE: "native",
           NODE_ENV: "development",
           VERCEL_ENV: "",
         },

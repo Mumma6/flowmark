@@ -1,6 +1,7 @@
 import process from "node:process"
 import { Effect } from "effect"
 import { CommandConfigurationError } from "./error.js"
+import { assertManagedLocalDatabase } from "./managed-local-database.js"
 import {
   assertLocalDevelopmentDatabase,
   readDatabaseUrl,
@@ -44,5 +45,6 @@ export const readLocalDevelopmentDatabaseUrl = Effect.fn(
         "Refusing local database command: DATABASE_MIGRATION_URL must match DATABASE_URL's host, port, database, and role. Unset the migration override or point it at the same local target.",
     })
   }
+  yield* assertManagedLocalDatabase(runtimeUrl, env)
   return runtimeUrl
 })

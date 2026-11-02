@@ -149,10 +149,17 @@ Node.js 20.19+ (24 LTS recommended) and pnpm 10.18.1.
 ```sh
 pnpm install
 pnpm dev:setup
-# Set DATABASE_URL in apps/server/.env.local to a loopback Postgres database.
+pnpm infra up
 pnpm db:setup
 pnpm dev
 ```
+
+New local templates use PostgreSQL 18 through standard Docker Compose on
+OrbStack, Docker Desktop, or Docker Engine on Linux. Apps and tooling remain
+native pnpm processes. Use `pnpm infra <operation>` for `doctor`, `status`,
+`logs`, `restart`, or `down`, scoped to the same checkout; `down` preserves data. Existing env files
+and native databases are kept; see the [local infrastructure guide](./docs/development.md#local-postgresql-with-compose)
+before selecting Compose for an existing checkout.
 
 Database setup builds its workspace prerequisites, including core. If
 `DATABASE_MIGRATION_URL` is set, it must name the same local host, port,

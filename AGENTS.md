@@ -100,6 +100,25 @@
 
 ## Working practices
 
+- Local PostgreSQL uses standard Docker Compose through `pnpm infra <operation>`
+  (`doctor`, `up`, `status`, `logs`, `restart`, `down`). Start with `pnpm dev:setup`; new templates
+  select Compose, while existing env files remain untouched and default to
+  user-managed native PostgreSQL. See [local infrastructure](./docs/development.md#local-postgresql-with-compose).
+- Inspect `pnpm infra status` before starting/stopping anything. `infra up`
+  reports the checkout-scoped container ID and `startedByThisCall`. Agents may
+  stop only a service they started, using `pnpm infra down --container <id>`;
+  leave previously running services alone. A restart needs ownership or an
+  explicit user request for that service. `infra down` is a scoped stop and
+  retains the container/volume. Never run `down -v`, delete volumes, or prune
+  without explicit approval. A reset confirmation flag is not user approval.
+- Keep the selected Docker context and security controls unchanged. If socket
+  access is sandbox-blocked, record it. For an authorized local task, a narrowly
+  scoped request through the normal tool approval mechanism may permit Docker
+  verification; this is separate from changing socket permissions or bypassing
+  controls. If access is unavailable/rejected, use simulated command tests and
+  leave live checks pending. Never substitute a hosted database. Local infra
+  commands do not migrate, seed, or reset data.
+
 - Before starting implementation on a new task, read and apply
   [branch](./.agents/skills/branch/SKILL.md) to create or verify a
   task-specific branch from the latest `origin/staging`. Open normal PRs

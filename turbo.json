@@ -16,7 +16,15 @@
     },
     "dev": {
       "dependsOn": ["^build", "@flowmarkdev/node#build"],
-      "passThroughEnv": ["PORT", "DATABASE_URL", "FLOWMARK_*", "NEXT_PUBLIC_*"],
+      "passThroughEnv": [
+        "PORT",
+        "DATABASE_URL",
+        "DATABASE_MIGRATION_URL",
+        "FLOWMARK_*",
+        "DOCKER_*",
+        "COMPOSE_*",
+        "NEXT_PUBLIC_*"
+      ],
       "cache": false,
       "persistent": true
     },
