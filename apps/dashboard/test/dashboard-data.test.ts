@@ -1,22 +1,19 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { getRunDurationMs } from "../app/run-presentation"
+import { shareWidthClass } from "../components/reporting/share-width"
+import { defaultIntelligenceQuery } from "../features/period/period"
+import { filterRuns, type RunFilters } from "../features/runs/run-filters"
+import { workflowFamily } from "../features/workflows/workflow-family"
+import { type DayInsight, type Run } from "../lib/api/types"
+import { groupBy, paginate } from "../lib/collections"
+import { formatDuration } from "../lib/format"
 import {
-  filterRuns,
-  formatDuration,
-  groupBy,
-  paginate,
   durationInRange,
-  defaultIntelligenceQuery,
   percentChange,
   percentile,
-  shareWidthClass,
   summarizeDays,
   weekOverWeek,
-  workflowFamily,
-  type DayInsight,
-  type Run,
-  type RunFilters,
-} from "../app/dashboard-data"
+} from "../lib/reporting/statistics"
+import { getRunDurationMs } from "../lib/telemetry/run-presentation"
 
 afterEach(() => {
   vi.useRealTimers()

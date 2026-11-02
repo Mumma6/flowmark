@@ -11,6 +11,13 @@ API. Server proxy code signs client identity with
 and calls `/api/auth`; it does not import the auth factory, database, or
 signing secret. User and session policy live in `@flowmark/auth`.
 
+## Architecture
+
+See [dashboard architecture](./ARCHITECTURE.md) for feature ownership, Effect
+execution boundaries, data access, configuration and verification. Next routes
+compose views from `features/`; shared dashboard presentation lives in
+`components/`, and runtime adapters/configuration live in `lib/`.
+
 ## Pages and populations
 
 - **Overview:** four seven-day execution metrics from `project.intelligence`,

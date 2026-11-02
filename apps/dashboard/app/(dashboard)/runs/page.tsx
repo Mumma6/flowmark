@@ -1,4 +1,4 @@
-import { ProjectRuns } from "../../project-data"
+import { ProjectRuns } from "../../../features/runs/runs-page"
 
 export default async function RunsPage({
   searchParams,

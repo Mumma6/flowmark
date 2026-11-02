@@ -1,4 +1,4 @@
-import { RunDetail } from "../../../project-data"
+import { RunDetail } from "../../../../features/runs/run-detail"
 
 export default async function RunPage({
   params,

@@ -1,1 +1,1 @@
-export { InsightsPage as default } from "../../insights-page"
+export { InsightsPage as default } from "../../../features/insights/insights-page"

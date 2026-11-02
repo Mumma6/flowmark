@@ -4,7 +4,7 @@ import {
   buildTimelineExport,
   stringifyExport,
   type ExportableRunEvent,
-} from "../app/run-export"
+} from "../lib/telemetry/run-export"
 
 const base = {
   step: null,

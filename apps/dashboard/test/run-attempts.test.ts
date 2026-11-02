@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { buildAttemptSequence } from "../app/run-attempts-presentation"
+import { buildAttemptSequence } from "../lib/telemetry/run-attempts-presentation"
 
 describe("explicit attempt presentation", () => {
   it("keeps actual ordinals, failed evidence and terminal-only occurrences regardless of arrival order", () => {
