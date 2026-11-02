@@ -61,7 +61,10 @@ export { WorkflowRepositoryLive } from "./features/workflows/adapters/workflow-r
 export { DatabaseLive } from "./adapters/database.js"
 export { ApiLive, logFailure, runApi } from "./runtime.js"
 
-export { ManageResultDeclarations } from "./features/result-declarations/use-cases/manage-result-declarations.js"
+export {
+  ManageResultDeclarations,
+  type ManageResultDeclarationsService,
+} from "./features/result-declarations/use-cases/manage-result-declarations.js"
 
 export { ResultDeclarationSchema } from "@flowmarkdev/core"
 
