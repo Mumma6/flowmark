@@ -20,6 +20,10 @@ import {
 import { Database, rebuildExpectations } from "@flowmark/db/persistence"
 import { POST as register } from "../../app/api/register/route"
 import { POST as auth } from "../../app/api/auth/[...all]/route"
+import {
+  revokeAutomaticSignupSessions,
+  revokeSessionsForEmails,
+} from "./signup-sessions"
 import { POST } from "../../app/v1/events/route"
 import { POST as browserPOST } from "../../app/v1/browser-events/route"
 import { appRouter } from "../../src/adapters/trpc"
@@ -60,6 +64,8 @@ const caller = (cookie: string, projectId?: string) =>
       },
     }),
   })
+const registeredEmails: string[] = []
+
 async function owner(name: string) {
   const email = `expectations-${randomUUID()}@example.test`,
     password = randomUUID()
@@ -67,6 +73,8 @@ async function owner(name: string) {
     (await register(request("/api/register", { name, email, password })))
       .status,
   ).toBe(200)
+  registeredEmails.push(email)
+  await revokeAutomaticSignupSessions(email)
   const signed = await auth(
     request("/api/auth/sign-in/email", { email, password }),
   )
@@ -154,6 +162,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
       clock.value = "2026-10-31T12:00:00.000Z"
     })
     afterAll(async () => {
+      await revokeSessionsForEmails(registeredEmails)
       await connection?.close()
       vi.unstubAllEnvs()
       vi.unstubAllGlobals()

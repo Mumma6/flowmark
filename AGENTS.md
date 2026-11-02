@@ -51,7 +51,7 @@
 
 ## Architecture and UI
 
-- Before TypeScript, Effect, SDK, API, core, or persistence changes, read and
+- Before TypeScript, Effect, SDK, API, auth, core, or persistence changes, read and
   apply
   [flowmark-effect](./.agents/skills/flowmark-effect/SKILL.md) and
   [flowmark-architecture](./.agents/skills/flowmark-architecture/SKILL.md).
@@ -73,6 +73,10 @@
   authorizes that branch rollout; do not ask again for the same operation.
 - Keep API use cases in `packages/api`; `apps/server` is the framework/protocol
   shell. Keep database-specific work behind persistence boundaries.
+  User sessions, the auth factory, signed proxy identity, and local account
+  provisioning live in private `@flowmark/auth`. That package may depend on
+  `@flowmark/db`; the database package must not depend on it. Project
+  authorization and ingestion keys stay in `@flowmark/api`.
 - Before Vercel, domain, or hosted environment changes, read and apply
   [flowmark-vercel](./.agents/skills/flowmark-vercel/SKILL.md). The detailed
   operating record is maintainer-local (`private/docs/infrastructure.md`).

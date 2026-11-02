@@ -2,6 +2,11 @@
 
 PostgreSQL schema, Drizzle migrations, and Effect persistence services for
 Flowmark. API code talks to repository ports. SQL stays in this package.
+Better Auth configuration lives in `@flowmark/auth`. This package keeps the
+auth tables and the atomic limiter write, exposed as `@flowmark/db/auth-limits`.
+`@flowmark/db/seed` exposes local project provisioning for the auth commands.
+It does not depend on `@flowmark/auth`. `pnpm db:seed` and `pnpm db:setup` in
+this package delegate to those auth commands.
 
 Committed migrations live in `migrations/`. Generate a new migration with
 `pnpm db:generate` from the repository root, and ship the schema, SQL, and

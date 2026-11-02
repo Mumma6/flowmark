@@ -1,10 +1,11 @@
 # Authentication request boundaries
 
 Better Auth owns email/password validation, verification policy and session
-creation. Flowmark does not replace its sign-in endpoint. The local fixture is
-`local@flowmark.test`; [development setup](./development.md) describes the explicit
-upgrade from the old `local@dev` address. Hosted users and the local fixture use
-the same provider login implementation.
+creation. Flowmark does not replace its sign-in endpoint. The provider factory,
+signed proxy identity, and authentication-specific limit policy live in the
+private `@flowmark/auth` package. Schema and the atomic limiter SQL remain in
+`@flowmark/db`. The local fixture is `local@flowmark.test`. Hosted users and
+the local fixture use the same provider login implementation.
 
 ## Request paths
 
@@ -163,8 +164,11 @@ its token/mail success journey will be verified when that flow is enabled.
 `apps/server/test/http/auth-perimeter.test.ts` uses real Better Auth and a
 disposable loopback PostgreSQL database. It covers verification-policy denial,
 production-shaped demo misconfiguration, malicious origins/callbacks, the shared
-in-process signup bucket, expired/revoked-session denial and the guarded fixture
-upgrade. The original shared-bucket regression remains; the new durable tests additionally use independent database clients and auth instances.
+in-process signup bucket, expired/revoked-session denial and local fixture
+provisioning. Durable limit tests use independent database clients and auth
+instances. `packages/auth/test/server-boundary.test.ts` checks that
+`@flowmark/auth/client-identity` stays free of the database and provider, and
+that package exports stay server-only.
 
 `register-http.test.ts` checks protocol/error mapping and secret exclusion;
 `apps/dashboard/test/proxy-api.test.ts` covers Fetch Metadata, retry headers and

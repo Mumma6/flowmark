@@ -18,7 +18,6 @@ import {
   DIAGNOSTICS_BROWSER_KEY,
 } from "../fixtures/demo.js"
 import { addProjectMember } from "../persistence/project-access/writes/add-project-member.js"
-import { seedLocalAuthUser } from "./seed-local-auth.js"
 import {
   Database,
   DatabaseError,
@@ -27,7 +26,10 @@ import {
 } from "../persistence/index.js"
 
 export const seedLocalDevelopment = Effect.fn("seedLocalDevelopment")(
-  function* (url: string) {
+  function* (
+    url: string,
+    provisionLocalUser: (url: string) => Effect.Effect<string, DatabaseError>,
+  ) {
     yield* withCommandDatabase(url, (db) =>
       Effect.tryPromise({
         try: () =>
@@ -115,7 +117,7 @@ export const seedLocalDevelopment = Effect.fn("seedLocalDevelopment")(
           new DatabaseError({ operation: DatabaseOperation.Seed, cause }),
       }),
     )
-    const userId = yield* seedLocalAuthUser(url)
+    const userId = yield* provisionLocalUser(url)
     yield* withCommandDatabase(url, (db) =>
       addProjectMember(userId, DEMO_PROJECT_ID).pipe(
         Effect.provideService(Database, db),

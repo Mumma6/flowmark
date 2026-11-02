@@ -1,7 +1,10 @@
 # Flowmark API
 
-Next.js shell for ingestion, Better Auth, registration, and the tRPC router.
+Next.js shell for ingestion, registration, auth routes, and the tRPC router.
 Workflow rules live in `@flowmark/api`. Persistence lives in `@flowmark/db`.
+Better Auth configuration and the auth factory live in `@flowmark/auth`. This
+app calls that factory and does not reimplement provider, cookie, origin, or
+limit policy.
 
 Local default: `http://localhost:3003`.
 

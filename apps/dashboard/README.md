@@ -5,6 +5,12 @@ onboarding/Settings creates the first project and write key. Existing local demo
 setup supplies `local@flowmark.test` / `local-dev-only`. Do not seed or reset telemetry just
 to verify presentation changes.
 
+The dashboard proxies `/api/auth/*`, `/api/register`, and `/api/trpc/*` to the
+API. Server proxy code signs client identity with
+`@flowmark/auth/client-identity`. The browser session client stays in this app
+and calls `/api/auth`; it does not import the auth factory, database, or
+signing secret. User and session policy live in `@flowmark/auth`.
+
 ## Pages and populations
 
 - **Overview:** four seven-day execution metrics from `project.intelligence`,

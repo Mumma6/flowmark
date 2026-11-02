@@ -3,18 +3,18 @@ import { Effect } from "effect"
 import {
   AUTH_PROXY_IDENTITY_HEADER,
   signAuthProxyIdentity,
-} from "@flowmark/db/auth/client-identity"
+} from "@flowmark/auth/client-identity"
 import { eq, sql } from "drizzle-orm"
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest"
 import { createDatabase, authRateLimits } from "@flowmark/db"
-import { createFlowmarkAuth } from "@flowmark/db/auth"
-import {
-  createAuthRateLimitStorage,
-  authLimitKey,
-} from "../../../../packages/db/src/auth/rate-limit-storage"
+import { revokeSessionsForEmails } from "./signup-sessions"
+import { createFlowmarkAuth } from "@flowmark/auth"
+import { authLimitKey, createAuthRateLimitStorage } from "@flowmark/auth/limits"
 
 const origin = "http://localhost:3001"
+const createdEmails: string[] = []
 const request = (path: string, email: string, extra?: HeadersInit) => {
+  createdEmails.push(email)
   const headers = new Headers(extra)
   headers.set("content-type", "application/json")
   headers.set("origin", origin)
@@ -51,6 +51,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("durable auth budgets", () => {
     vi.stubEnv("FLOWMARK_AUTH_PROXY_SECRET", undefined)
   })
   afterAll(async () => {
+    await revokeSessionsForEmails(createdEmails)
     await first?.close()
     await second?.close()
     vi.unstubAllEnvs()

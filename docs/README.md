@@ -40,4 +40,4 @@ Customer-facing SDK and product docs live in `apps/docs` and at
 
 The repository root `README.md` is the shared entry point. Package details are
 in `packages/sdk/README.md`, `packages/core/README.md`, `packages/api/README.md`,
-and `packages/db/README.md`.
+`packages/auth/README.md`, and `packages/db/README.md`.
