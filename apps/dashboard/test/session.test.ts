@@ -1,6 +1,10 @@
-import { Effect, Result, Option } from "effect"
+import { Effect, Option, Result } from "effect"
 import { afterEach, beforeEach, expect, it, vi } from "vitest"
-import { readDashboardOnboarding, readDashboardSession } from "../lib/session"
+import {
+  readDashboardOnboarding,
+  readDashboardSession,
+} from "../lib/auth/session"
+import { provideDashboardServer } from "../lib/server-runtime"
 
 vi.mock("next/headers", () => ({
   cookies: async () => ({
@@ -49,10 +53,16 @@ it("authenticates server-rendered session and onboarding requests to the protect
   })
   vi.stubGlobal("fetch", fetch)
   expect(
-    Option.getOrThrow(await Effect.runPromise(readDashboardSession())),
+    Option.getOrThrow(
+      await Effect.runPromise(provideDashboardServer(readDashboardSession())),
+    ),
   ).toEqual({ user })
   expect(
-    Option.getOrThrow(await Effect.runPromise(readDashboardOnboarding())),
+    Option.getOrThrow(
+      await Effect.runPromise(
+        provideDashboardServer(readDashboardOnboarding()),
+      ),
+    ),
   ).toEqual(state)
   expect(fetch).toHaveBeenCalledTimes(2)
 })
@@ -66,9 +76,11 @@ it("omits the protection header when it is not configured", async () => {
     return Promise.resolve(Response.json(null))
   })
   vi.stubGlobal("fetch", fetch)
-  expect(Option.isNone(await Effect.runPromise(readDashboardSession()))).toBe(
-    true,
-  )
+  expect(
+    Option.isNone(
+      await Effect.runPromise(provideDashboardServer(readDashboardSession())),
+    ),
+  ).toBe(true)
 })
 
 it("fails explicitly on an upstream redirect instead of following it with credentials", async () => {
@@ -77,7 +89,9 @@ it("fails explicitly on an upstream redirect instead of following it with creden
     "fetch",
     vi.fn().mockResolvedValue(new Response(null, { status: 302 })),
   )
-  const result = await Effect.runPromise(Effect.result(readDashboardSession()))
+  const result = await Effect.runPromise(
+    Effect.result(provideDashboardServer(readDashboardSession())),
+  )
   Result.match(result, {
     onFailure: (error) =>
       expect(error).toMatchObject({ _tag: "DashboardSessionError" }),

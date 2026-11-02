@@ -1,13 +1,13 @@
-import { randomUUID } from "node:crypto"
-import { inspect } from "node:util"
-import { afterEach, beforeEach, expect, it, vi } from "vitest"
-import { proxyToApiHandler } from "../lib/proxy-api"
-import { Effect } from "effect"
 import {
   AUTH_CLIENT_IP_HEADER,
   AUTH_PROXY_IDENTITY_HEADER,
   normalizeAuthClientIdentity,
 } from "@flowmark/auth/client-identity"
+import { Effect } from "effect"
+import { randomUUID } from "node:crypto"
+import { inspect } from "node:util"
+import { afterEach, beforeEach, expect, it, vi } from "vitest"
+import { proxyToApiHandler } from "../lib/api/proxy"
 
 beforeEach(() => {
   vi.stubEnv("NODE_ENV", "production")

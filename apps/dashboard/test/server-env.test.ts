@@ -1,6 +1,6 @@
-import { afterEach, describe, expect, it, vi } from "vitest"
 import { Effect, Result } from "effect"
-import { dashboardApiUrl, dashboardDemoModeEnabled } from "../lib/server-env"
+import { afterEach, describe, expect, it, vi } from "vitest"
+import { dashboardApiUrl, dashboardDemoModeEnabled } from "../lib/config/server"
 
 afterEach(() => {
   vi.unstubAllEnvs()
@@ -94,4 +94,16 @@ describe("dashboard server environment", () => {
     vi.stubEnv("NODE_ENV", "development")
     expect(Effect.runSync(dashboardDemoModeEnabled())).toBe(false)
   })
+})
+
+it("exposes the local fixture only in an unhosted development runtime", async () => {
+  const { localDevelopmentAccount } = await import("../lib/config/server")
+  vi.stubEnv("NODE_ENV", "development")
+  vi.stubEnv("VERCEL_ENV", "")
+  expect(localDevelopmentAccount()?.email).toBe("local@flowmark.test")
+  vi.stubEnv("VERCEL_ENV", "preview")
+  expect(localDevelopmentAccount()).toBeUndefined()
+  vi.stubEnv("VERCEL_ENV", "")
+  vi.stubEnv("NODE_ENV", "production")
+  expect(localDevelopmentAccount()).toBeUndefined()
 })

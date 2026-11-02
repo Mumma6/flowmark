@@ -1,1 +1,1 @@
-export { IssuesPage as default } from "../../issues-page"
+export { IssuesPage as default } from "../../../features/issues/issues-page"

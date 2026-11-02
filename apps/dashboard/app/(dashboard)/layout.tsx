@@ -1,12 +1,9 @@
-import type { ReactNode } from "react"
+import { Option } from "effect"
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
-import { Effect, Option } from "effect"
-import { DashboardShell } from "../dashboard-shell"
-import {
-  readDashboardOnboarding,
-  readDashboardSession,
-} from "../../lib/session"
+import type { ReactNode } from "react"
+import { DashboardShell } from "../../components/layout/dashboard-shell"
+import { getDashboardAccess } from "../../lib/server-runtime"
 
 export const dynamic = "force-dynamic"
 
@@ -16,21 +13,20 @@ export default async function DashboardLayout({
   children: ReactNode
 }) {
   await cookies()
-  const session = await Effect.runPromise(readDashboardSession())
-  const value = Option.match(session, {
-    onNone: () => null,
-    onSome: (current) => current,
-  })
-  if (!value) {
+  const access = Option.getOrNull(await getDashboardAccess())
+  if (!access) {
     redirect("/sign-in")
   }
-  const onboarding = await Effect.runPromise(readDashboardOnboarding())
-  const state = Option.match(onboarding, {
-    onNone: () => null,
-    onSome: (current) => current,
-  })
+  const state = Option.getOrNull(access.onboarding)
   if (state && !state.completedAt) {
     redirect(`/onboarding?step=${state.step}`)
   }
-  return <DashboardShell email={value.user.email}>{children}</DashboardShell>
+  return (
+    <DashboardShell
+      email={access.session.user.email}
+      apiOrigin={access.apiOrigin}
+    >
+      {children}
+    </DashboardShell>
+  )
 }

@@ -8,7 +8,7 @@ import {
   runHref,
   shouldRequestProjectSearch,
   workflowHref,
-} from "../app/command-search"
+} from "../features/search/command-search"
 
 const pages = commandPages("https://docs.example/docs/introduction")
 

@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest"
-import { periodWindow } from "../app/dashboard-data"
+import { periodWindow } from "../features/period/period"
 import {
   failedRunsPath,
   insightsPath,
   issuesPath,
   recordedChanges,
-} from "../app/period-presentation"
+} from "../features/period/period-presentation"
 
 describe("period windows", () => {
   it("uses the same seven-day UTC cohort as the overview comparison", () => {

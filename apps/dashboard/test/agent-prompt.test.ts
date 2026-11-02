@@ -1,5 +1,5 @@
 import { expect, it } from "vitest"
-import { flowmarkAgentPrompt } from "../app/agent-prompt"
+import { flowmarkAgentPrompt } from "../features/onboarding/agent-prompt"
 
 const prompt = flowmarkAgentPrompt("https://api.flowmark.dev")
 

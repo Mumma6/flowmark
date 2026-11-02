@@ -1,1 +1,1 @@
-export { ProjectWorkflows as default } from "../../project-data"
+export { ProjectWorkflows as default } from "../../../features/workflows/workflows-page"

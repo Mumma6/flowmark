@@ -1,1 +1,1 @@
-export { DashboardOverview as default } from "../project-data"
+export { DashboardOverview as default } from "../../features/overview/overview-page"

@@ -1,13 +1,6 @@
-import { AuthScreen } from "../auth-screen"
-
-const localAccount =
-  process.env.NODE_ENV !== "production" && !process.env.VERCEL_ENV
-    ? {
-        email: "local@flowmark.test",
-        password: "local-dev-only",
-      }
-    : undefined
+import { AuthScreen } from "../../../features/auth/auth-screen"
+import { localDevelopmentAccount } from "../../../lib/config/server"
 
 export default function SignInPage() {
-  return <AuthScreen mode="sign-in" localAccount={localAccount} />
+  return <AuthScreen mode="sign-in" localAccount={localDevelopmentAccount()} />
 }
