@@ -1,3 +1,5 @@
+import type { DatabaseError } from "@flowmark/db/persistence"
+import { Effect } from "effect"
 import { PersistenceError } from "../errors.js"
 
 export const toPersistenceError = (error: {
@@ -8,3 +10,6 @@ export const toPersistenceError = (error: {
     operation: error.operation,
     cause: error.cause,
   })
+
+export const persist = <A, R>(effect: Effect.Effect<A, DatabaseError, R>) =>
+  effect.pipe(Effect.mapError(toPersistenceError))
