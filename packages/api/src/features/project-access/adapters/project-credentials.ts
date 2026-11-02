@@ -8,6 +8,9 @@ export const ProjectCredentialsLive = Layer.effect(
   Effect.gen(function* () {
     const store = yield* ProjectCredentialsStore
     return ProjectCredentials.of({
+      consumeCreationQuota: Effect.fn(
+        "ProjectCredentialsLive.consumeCreationQuota",
+      )((userId, kind) => persist(store.consumeCreationQuota(userId, kind))),
       authenticateBrowser: Effect.fn(
         "ProjectCredentialsLive.authenticateBrowser",
       )((key) => persist(store.authenticateBrowser(Redacted.value(key)))),

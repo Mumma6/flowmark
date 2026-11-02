@@ -45,6 +45,13 @@ export interface CreatedSecret {
 }
 
 export interface ProjectCredentialsService {
+  readonly consumeCreationQuota: (
+    userId: string,
+    kind: "project" | "key",
+  ) => Effect.Effect<
+    { readonly allowed: boolean; readonly retryAfter: number | null },
+    PersistenceError
+  >
   readonly authenticateBrowser: (
     key: Redacted.Redacted<string>,
   ) => Effect.Effect<BrowserCredential | undefined, PersistenceError>

@@ -29,6 +29,10 @@
       "types": "./dist/auth/create-auth.d.ts",
       "import": "./dist/auth/create-auth.js"
     },
+    "./auth/client-identity": {
+      "types": "./dist/auth/client-identity.d.ts",
+      "import": "./dist/auth/client-identity.js"
+    },
     "./environment": {
       "types": "./dist/environment/preview-isolation.d.ts",
       "import": "./dist/environment/preview-isolation.js"

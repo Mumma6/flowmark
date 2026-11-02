@@ -1,4 +1,22 @@
-import { boolean, pgTable, text, timestamp } from "drizzle-orm/pg-core"
+import {
+  boolean,
+  index,
+  integer,
+  pgTable,
+  text,
+  timestamp,
+} from "drizzle-orm/pg-core"
+
+// Short-lived HMAC identifiers only; never raw addresses, IPs or credentials.
+export const authRateLimits = pgTable(
+  "auth_rate_limits",
+  {
+    key: text("key").primaryKey(),
+    count: integer("count").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  },
+  (table) => [index("auth_rate_limits_expiry_idx").on(table.expiresAt)],
+)
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
