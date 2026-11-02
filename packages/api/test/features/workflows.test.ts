@@ -67,6 +67,7 @@ function repository(overrides: Partial<WorkflowRepositoryService> = {}) {
         operations: [],
         failureCodes: [],
       }),
+    workflows: () => Effect.succeed([]),
     listRuns: () =>
       Effect.succeed({
         runs: [],
@@ -537,6 +538,7 @@ describe("API Effect services", () => {
   it("uses read authorization and project-scoped query methods", async () => {
     const timeline = vi.fn(repository().timeline)
     const snapshot = vi.fn(repository().snapshot)
+    const workflows = vi.fn(repository().workflows)
     const operation = Effect.gen(function* () {
       const queries = yield* GetProjectWorkflowData
       const reader = { _tag: "Key" as const, header: "Bearer key" }
@@ -546,17 +548,47 @@ describe("API Effect services", () => {
     }).pipe(
       Effect.provide(
         GetProjectWorkflowData.layer.pipe(
-          Layer.provide(dependencies(repository({ timeline, snapshot }))),
+          Layer.provide(
+            dependencies(repository({ timeline, snapshot, workflows })),
+          ),
         ),
       ),
     )
     await Effect.runPromise(operation)
-    expect(snapshot).toHaveBeenCalledTimes(2)
-    expect(snapshot).toHaveBeenCalledWith("project-from-key")
+    expect(snapshot).toHaveBeenCalledExactlyOnceWith("project-from-key")
+    expect(workflows).toHaveBeenCalledExactlyOnceWith("project-from-key")
     expect(timeline).toHaveBeenCalledExactlyOnceWith(
       "project-from-key",
       "run-id",
     )
+  })
+
+  it("lists workflow summaries without loading the snapshot", async () => {
+    const summaries = [
+      {
+        name: "import",
+        runs: 2,
+        successRate: 50,
+        medianDurationMs: 10,
+        p95DurationMs: 20,
+      },
+    ]
+    const snapshot = vi.fn(() => Effect.die("snapshot must not run"))
+    const workflows = vi.fn(() => Effect.succeed(summaries))
+    const result = await Effect.runPromise(
+      Effect.flatMap(GetProjectWorkflowData, (queries) =>
+        queries.workflows({ _tag: "Key", header: "Bearer key" }),
+      ).pipe(
+        Effect.provide(
+          GetProjectWorkflowData.layer.pipe(
+            Layer.provide(dependencies(repository({ snapshot, workflows }))),
+          ),
+        ),
+      ),
+    )
+    expect(result).toEqual(summaries)
+    expect(workflows).toHaveBeenCalledExactlyOnceWith("project-from-key")
+    expect(snapshot).not.toHaveBeenCalled()
   })
 
   it("scopes a session reader to the requested member project", async () => {

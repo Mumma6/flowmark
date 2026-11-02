@@ -40,6 +40,9 @@ export const WorkflowRepositoryLive = Layer.effect(
       snapshot: Effect.fn("WorkflowRepositoryLive.snapshot")((projectId) =>
         store.snapshot(projectId).pipe(Effect.mapError(toPersistenceError)),
       ),
+      workflows: Effect.fn("WorkflowRepositoryLive.workflows")((projectId) =>
+        store.workflows(projectId).pipe(Effect.mapError(toPersistenceError)),
+      ),
       listRuns: Effect.fn("WorkflowRepositoryLive.listRuns")(
         (projectId, query) =>
           store.listRuns(projectId, query).pipe(

@@ -111,8 +111,10 @@ export class GetProjectWorkflowData extends Context.Service<
         return yield* repository.snapshot(projectId)
       })
       const workflows = Effect.fn("GetProjectWorkflowData.workflows")(
-        (reader: ProjectReader) =>
-          snapshot(reader).pipe(Effect.map((data) => data.workflows)),
+        function* (reader: ProjectReader) {
+          const projectId = yield* authorizeReader(reader)
+          return yield* repository.workflows(projectId)
+        },
       )
       const listRuns = Effect.fn("GetProjectWorkflowData.listRuns")(function* (
         reader: ProjectReader,
