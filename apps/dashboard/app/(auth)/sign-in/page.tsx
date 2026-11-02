@@ -3,7 +3,7 @@ import { AuthScreen } from "../auth-screen"
 const localAccount =
   process.env.NODE_ENV !== "production" && !process.env.VERCEL_ENV
     ? {
-        email: "local@dev",
+        email: "local@flowmark.test",
         password: "local-dev-only",
       }
     : undefined

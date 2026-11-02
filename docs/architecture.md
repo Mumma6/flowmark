@@ -352,7 +352,7 @@ server-side.
 Dashboard sign-in is Better Auth email and password. The dashboard's
 same-origin proxy forwards `/api/auth/*`, `/api/register`, and `/api/trpc/*`
 to the API so the session cookie stays first-party. Anonymous dashboard reads
-are rejected. Seed creates `local@dev` on the operations project. New
+are rejected. Seed creates `local@flowmark.test` on the operations project. New
 registrations create an account only; the first project and write key are
 created explicitly in Settings / onboarding. Password reset is off until
 email delivery exists. Do not enable demo mode for real customer data.
