@@ -3,10 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --port 3003",
+    "dev": "next dev --hostname 127.0.0.1 --port 3003",
     "build": "next build",
     "start": "next start --port 3003",
-    "lint": "eslint app src test next.config.ts",
+    "lint": "eslint app src test next.config.ts vitest.config.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@flowmark/api": "workspace:*",
+    "@flowmark/auth": "workspace:*",
     "@flowmark/db": "workspace:*",
     "@trpc/server": "^11.19.0",
     "better-auth": "^1.7.13",

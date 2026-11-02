@@ -7,12 +7,13 @@ Contributor guides that ship with the public repository:
 - [Security policy](../SECURITY.md): private vulnerability reporting.
 - [Development setup](./development): workspace commands, local demo, database,
   and checks.
+- [Developer commands](./development-commands): command inventory and cleanup decisions.
 - [Database integration tests](./development#database-integration-tests): local
   test setup and the separate disposable-Postgres PR job.
 - [Health and failure diagnostics](./development#health-and-failure-diagnostics):
   liveness limits, safe log fields, and API storage versus dashboard proxy errors.
 - [Reference infrastructure](./infrastructure): public hostnames, Preview,
-  Staging, Production, and what this repository does not deploy.
+  Staging, Production, the Pulumi writer policy and current adoption boundaries.
 - [Database rollout](./migrations): migration order, environment guards, and
   the activated merge pipeline.
 - [Application releases](./releases): feature PRs into staging, release PRs into
@@ -40,4 +41,4 @@ Customer-facing SDK and product docs live in `apps/docs` and at
 
 The repository root `README.md` is the shared entry point. Package details are
 in `packages/sdk/README.md`, `packages/core/README.md`, `packages/api/README.md`,
-and `packages/db/README.md`.
+`packages/auth/README.md`, and `packages/db/README.md`.

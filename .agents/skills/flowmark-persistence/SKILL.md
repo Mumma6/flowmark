@@ -23,7 +23,7 @@ packages/db/src/
   schema/                  # tables only
   fixtures/                # local demo keys and IDs
   environment/             # env load, runtime guards, command config errors
-  cli/                     # migrate, seed, setup, reset, process runner
+  cli/                     # migrate, local project seed, reset, process runner
   persistence/
     database.ts            # Database tag, DatabaseError, provideDatabase
     database-operation.ts  # enum of every DatabaseError operation
@@ -43,10 +43,15 @@ packages/db/src/
 - Keep SQL, schema, transactions, and driver lifecycle inside `@flowmark/db`.
 - Keep CLI process entrypoints out of `persistence/`. Seed and reset may use
   `DatabaseError` / `DatabaseOperation`, but they are not store methods.
+  Local account provisioning lives in `@flowmark/auth`. This package exposes
+  project seed helpers through `@flowmark/db/seed` and must not import or
+  delegate package scripts back to `@flowmark/auth`. Root `db:seed` and
+  `db:setup` call the auth package directly.
 - Do not import `createDatabase` through the package root from persistence
   internals; use `client.ts` to avoid cycles.
 - Preserve `@flowmark/db`, `@flowmark/db/schema`, `@flowmark/db/persistence`,
-  and `@flowmark/db/demo` when moving files.
+  `@flowmark/db/demo`, `@flowmark/db/auth-limits`, and `@flowmark/db/seed`
+  when moving files.
 
 ## Feature folders
 
@@ -106,7 +111,33 @@ export class WorkflowStore extends Context.Service<WorkflowStore>()(
   terminal events stay Running. Do not change SQL meaning to tidy files.
 - Every read and write stays project-scoped.
 
+## Local infrastructure and data commands
+
+Docker Compose is the only local infrastructure provider. Follow
+[local development](../../../docs/development.md#local-postgresql-with-compose)
+and the [command inventory](../../../docs/development-commands.md).
+Do not add unmanaged database paths, provider switches or compatibility aliases.
+
+- `pnpm dev:setup` preserves existing env files; `pnpm infra doctor` inspects,
+  `pnpm infra up` starts/waits, and `pnpm db:setup` explicitly migrates/seeds.
+- Use `readLocalDevelopmentDatabaseUrl` for setup, seed, Studio, reset and
+  local maintenance; it proves checkout-owned Compose identity and rejects
+  conflicting migration overrides before accessing data.
+- Migration/history commands share `readCheckedMigrationDatabaseUrl` for
+  Compose development, proven disposable tests and approved hosted wrappers.
+- Use `pnpm test:integration` for database tests, never a manually configured
+  local/demo target. CI's declared disposable service remains a separate adapter.
+- Inspect `pnpm infra status`; record `startedByThisCall` and container ID.
+  Stop only a service you started with `pnpm infra down --container <id>`.
+  No volume deletion, populated-data reset, context/security changes or hosted
+  fallback. Existing legacy data requires separate assessment/transfer approval.
+
 ## Migration and rollout gates
+
+Database project/branch/compute/role and persistent secret configuration use
+[flowmark-infrastructure](../flowmark-infrastructure/SKILL.md) and Pulumi, including
+temporary test branches. SQL schema/history stays Drizzle-owned; do not move
+migrations into Pulumi or provision a branch with a CLI as a migration shortcut.
 
 Follow [database rollout](../../../docs/migrations.md), the single maintained
 procedure. Keep schema, SQL/Drizzle metadata and the complete stack change in

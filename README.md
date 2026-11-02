@@ -129,6 +129,7 @@ snapshot.
 | `packages/sdk`       | `@flowmarkdev/node`                          |
 | `packages/core`      | Shared event contracts (`@flowmarkdev/core`) |
 | `packages/api`       | Use cases and ports                          |
+| `packages/auth`      | Internal authentication (`@flowmark/auth`)   |
 | `packages/db`        | Schema, migrations, persistence              |
 | `packages/ui`        | Shared UI                                    |
 | `apps/server`        | HTTP and tRPC shell                          |
@@ -148,12 +149,33 @@ Node.js 20.19+ (24 LTS recommended) and pnpm 10.18.1.
 ```sh
 pnpm install
 pnpm dev:setup
-# Set DATABASE_URL in apps/server/.env.local to a loopback Postgres database.
+pnpm infra up
 pnpm db:setup
 pnpm dev
 ```
 
-Open the dashboard at `http://127.0.0.1:3001`. The
+Local infrastructure uses PostgreSQL 18 through standard Docker Compose on
+OrbStack, Docker Desktop, or Docker Engine. Applications and compiler watchers
+run natively. `pnpm dev` starts API/dashboard/harness; `pnpm dev:all` includes
+web and both documentation apps. Append `--ui=stream` for ordinary logs.
+Studio runs separately with `pnpm db:studio`.
+
+Use `pnpm infra <operation>` for `doctor`, `status`, `logs`, `restart`, or
+`down`; commands verify checkout ownership and `down` preserves data. Existing
+env files and databases are preserved. Older configuration must be explicitly
+changed to Compose; see [existing local data](./docs/development.md#existing-local-data).
+
+`pnpm test:integration` creates a separate disposable PostgreSQL instance and
+removes only its own containers/network. It never touches development/demo data.
+`pnpm check` works without Docker. Use one dev session per checkout and stop its
+watchers before builds/checks/integration tests, or use another worktree.
+The [command inventory](./docs/development-commands.md) covers all tooling.
+
+Database setup builds its workspace prerequisites, including core. If
+`DATABASE_MIGRATION_URL` is set, it must name the same local host, port,
+database, and role as `DATABASE_URL`; otherwise setup stops before SQL.
+
+Open the dashboard at `http://localhost:3001`. The
 [development guide](./docs/development.md) covers the local pipeline, checks,
 and database safety. Self-hosting needs the same apps, committed migrations,
 and any PostgreSQL you control.
@@ -161,6 +183,8 @@ and any PostgreSQL you control.
 ## Contributing
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md) and [SECURITY.md](./SECURITY.md).
+Maintained hosted infrastructure follows the
+[Pulumi writer policy](./docs/infrastructure.md#pulumi-is-the-infrastructure-writer).
 Feature branches start from `staging` and open pull requests into `staging`.
 Release policy is in [application releases](./docs/releases.md).
 

@@ -3,7 +3,10 @@
 ## Requirements
 
 - Node.js 20.19 or newer (Node 24 LTS recommended)
-- pnpm 10
+- pnpm 10.18.1 (pinned in `package.json`)
+- Docker CLI and Compose supporting `up --wait`,
+  `--wait-timeout`, and `--no-recreate`; OrbStack, Docker Desktop (Linux
+  containers), and Docker Engine on Linux use the same commands.
 
 Install dependencies from the repository root:
 
@@ -30,15 +33,37 @@ binding or expose the harness to a network.
 has no authentication, binds to loopback, and must not be deployed or exposed
 publicly. Customer SDK documentation is served separately by `apps/docs`.
 
-`pnpm dev` starts the six apps, Drizzle Studio, and the SDK/core build watchers through
-Turborepo's interactive terminal UI (TUI). The SDK build depends on the core
-build, and both watch for source changes. Use arrow keys or `j`/`k` to select a
-task, `m` for help, and `Ctrl+C` to stop; `pnpm dev:stream` runs without the
-TUI. To run only the local dev harness while preserving Turbo's SDK/core build
-prerequisites, use `pnpm dev --filter=@flowmark/dev-harness`. If you invoke
-`pnpm --filter @flowmark/dev-harness dev` directly, first build its workspace
-dependency with `pnpm --filter @flowmarkdev/node... build`. Do not launch a direct
-build concurrently with the root dev watchers.
+All application dev servers bind to `127.0.0.1`. Next.js also permits `localhost`
+for dev resources; explicit binding makes the documented IPv4 loopback URL work
+without broadening `allowedDevOrigins`. Open the dashboard on `localhost:3001`,
+matching the exact Better Auth origin in the server template; browser cookies
+and sign-in origins are hostname-specific.
+
+`pnpm dev` starts the API, dashboard, local harness and native compiler watchers
+for core, SDK, db, API and auth. All five libraries finish their initial builds
+in dependency order before any watcher or app starts. The shared `dev:ready`
+task prevents initial builds and watchers from racing into the same `dist`
+directory. Subsequent edits rebuild automatically; exports point at built files.
+
+```sh
+pnpm dev                         # daily product development
+pnpm dev --ui=stream             # ordinary logs for agents/non-interactive terminals
+pnpm dev:all                     # also web, docs and internal-docs
+pnpm db:studio                   # optional local database browser
+```
+
+Studio is explicit and is not started with the applications. Docs-only work can
+use `pnpm --filter @flowmark/docs dev` without Docker or backend builds.
+Turbo's TUI supports arrow keys or `j`/`k`, `m` for help, and `Ctrl+C` to stop.
+Exported `BETTER_AUTH_SECRET` and `BETTER_AUTH_URL` reach native dev tasks;
+they remain private server settings, not `NEXT_PUBLIC_*` configuration.
+
+Keep one dev-session owner per checkout. Inspect processes and ports before
+starting; use an existing session when appropriate. Stop only your own session.
+Do not run another compiler, direct build, integration command or workspace
+check beside active dev watchers: they share build outputs. Stop your own dev
+session first, or use another worktree. Direct app commands bypass orchestration
+and require their workspace dependencies to have been built first.
 
 Before starting Turbo, `pnpm dev` runs `pnpm dev:setup`: it copies the three
 public local-demo `.env.example` templates to missing `.env.local` files.
@@ -46,21 +71,148 @@ Existing `.env` or `.env.local` configuration is never overwritten and
 configuration values are never printed. This is repository development setup,
 not an SDK fallback or production credential provisioning.
 
-Starting development apps does not start PostgreSQL or apply migrations.
-Set `DATABASE_URL` in `apps/server/.env.local` to an existing development database,
-then run `pnpm db:setup`. That command reads the server app's environment
-files, applies committed migrations, and seeds local fixture projects so the API
-uses the same database. `pnpm db:migrate` and `pnpm db:seed` are available
-separately. Seed refuses production and non-loopback databases. Shell environment
-values take precedence. The relevant exported environment variables are forwarded
-into Turbo's dev tasks; Next.js loads each app's own `.env.local`.
-Seed also creates `local@flowmark.test` so you can sign in to the operations project.
-The fixture uses Better Auth's standard email/password login. If your existing
-local fixture uses `local@dev`, the next explicitly invoked `pnpm db:seed`
-renames it while retaining its user ID, password and project memberships.
-Seeding remains restricted to explicit demo mode and loopback databases. It does
-not run on application startup. If both addresses exist, seed stops for review
-instead of merging accounts. Never reset telemetry to upgrade this fixture.
+Root dev commands check Compose readiness before starting applications. They
+do not start PostgreSQL, apply migrations or seed data.
+Run `pnpm infra up` after env setup. Then run
+`pnpm db:setup`. That command reads the server app's environment
+files, builds `@flowmark/db` and its workspace dependencies (including core), applies committed migrations, and seeds local
+fixture projects so the API uses the same database. `@flowmark/auth` then
+provisions `local@flowmark.test`. `pnpm db:migrate:local` and `pnpm db:seed` are
+available separately. Project fixtures stay in `@flowmark/db`; the local
+account stays in `@flowmark/auth`. Seed refuses production and non-loopback
+databases. Shell environment values take precedence. The relevant exported
+environment variables are forwarded into Turbo's dev tasks; Next.js loads each
+app's own `.env.local`. The fixture uses Better Auth's standard email/password
+login. Seeding remains restricted to explicit demo mode and loopback databases.
+It does not run on application startup.
+
+Setup, seed, Studio and local migrations require the same checked Compose target.
+The optional migration URL must name the same host, port, database and role;
+commands use the runtime URL's credentials. Shell values retain precedence.
+A conflicting override fails before SQL; no command silently redirects it.
+
+### Local PostgreSQL with Compose
+
+Use the same standard Docker CLI/Compose workflow with OrbStack, Docker
+Desktop, or Docker Engine on Linux. No runtime-specific socket path, domain,
+CPU architecture, or host networking is configured. Applications, watchers,
+Drizzle, and tests remain native pnpm processes.
+
+For a new checkout:
+
+```sh
+pnpm dev:setup
+pnpm infra doctor
+pnpm infra up
+pnpm db:setup
+pnpm dev --ui=stream
+```
+
+`doctor` checks the selected local engine and configuration; an absent/stopped
+service is reported with `databaseReady: false` and startup instructions.
+`up` starts only this checkout's `postgres`, waits at most 30 seconds for
+health, and checks the database/role inside the container. It never migrates,
+seeds, or resets. A healthy container does not prove schema readiness; apply
+reviewed migrations explicitly with `pnpm db:migrate:local` when needed.
+
+The default is PostgreSQL 18 (`postgres:18-alpine`, matching CI), published at
+`127.0.0.1:55432`, with public local-only role/database `flowmark` and password
+`local_dev_only`. PostgreSQL data is stored in a project-scoped named volume
+mounted at `/var/lib/postgresql`, the PostgreSQL 18 image location. Normal
+stop/start and container recreation retain this volume. Initialization settings
+only create roles/databases in an empty data directory; changing container env
+does not change an existing database password. Do not change the major version
+or remove the volume to fix a startup problem.
+
+The root `compose.yaml` defines development PostgreSQL and the isolated
+`postgres-test` service used only by the integration runner. Project and volume
+identities are derived from the checkout's real path, so worktrees/clones do
+not share ownership. Moving a checkout changes its project identity; it does
+not move/delete the previous volume or its data. Two active checkouts need
+different host ports: choose `FLOWMARK_POSTGRES_PORT` and the matching runtime
+URL explicitly. A port conflict never authorizes stopping the port owner.
+
+### Existing local data
+
+Docker Compose is the only supported local infrastructure provider. There is no
+provider selector or unmanaged PostgreSQL path. Local database commands validate
+the checkout's container/project/volume labels, image, loopback port, credentials,
+mount, health and SQL database/role identity before accessing data.
+
+`dev:setup` preserves existing `.env`/`.env.local` files. If a previous setup used
+another database, compare `apps/server/.env.local` with `.env.example` and
+explicitly set the documented Compose URL and port. Remove the old
+`FLOWMARK_LOCAL_DATABASE` setting; it no longer selects a provider. Setup does
+not transfer data or retire an old service. Preserve any old database, container
+or volume until its data has been assessed and a separate transfer is approved.
+A fresh Compose instance is a different database, not a copy of the old one.
+Only `application_name` is accepted as an additional local URL option.
+
+### Infrastructure commands and ownership
+
+There is one command dispatcher, `pnpm infra <operation>`, rather than separate
+script files for each operation:
+
+- `doctor`: check the effective Docker target, engine, config, port/service and
+  readiness; migration state is explicitly not checked. `--require-ready` fails
+  for an absent/stopped/unhealthy service and is used by the root dev commands.
+- `up`: start/wait without recreating an existing container. Output includes
+  `container` and `startedByThisCall`; a previously running service is left as-is.
+- `status`: show this checkout's container/health state, including absent/stopped.
+- `logs`: return the last 100 container log lines, including stderr, and redact
+  PostgreSQL connection URLs. Review logs before sharing; SQL may contain local data.
+- `restart postgres`: restart only the verified service and wait for health.
+- `down`: stop only the verified service; retain its container and named volume.
+
+Agents must record whether they started a service and its returned container ID.
+Coordinate infrastructure operations within one checkout; the reported startup
+snapshot is not a cross-process lease. Separate worktrees have separate ownership.
+For cleanup, use `pnpm infra down --container <id>` only when `startedByThisCall`
+was true; a stale/mismatched ID is refused. Leave previously running services
+alone. Explicitly requested manual stop/restart is scoped to this checkout.
+There is no automatic cleanup on dev exit or failed startup; inspect status/logs
+before deciding what your session owns. Never use `down -v`, volume deletion,
+or prune as a repair step without approval. `infra up` deliberately does not
+recreate containers. Use `pnpm infra up --recreate` only deliberately after
+reviewing the change and confirming service ownership (or an explicit user
+request); it recreates only the verified service and retains its named volume.
+It never changes the PostgreSQL major version or repairs configuration drift
+by taking over an unrecognized container/volume.
+
+Docker target selection respects `DOCKER_CONTEXT` and checks `DOCKER_HOST` for
+conflicts; commands pin the inspected context for that invocation without
+switching the global context. Remote/ambiguous endpoints and target-changing
+Compose overrides are refused. Turbo forwards these overrides to native dev tasks.
+Root `.env` files are not a second Compose
+configuration source; the dispatcher supplies only the checked local values.
+
+OrbStack and Docker Desktop run separate engines. Containers and volumes appear
+in the UI for the engine selected by `docker context show`, even if both runtimes
+are running. `docker context ls` lists their endpoints. Choose the intended
+local engine explicitly before starting work; repository commands never switch
+it automatically or move data between engines.
+
+If Docker is unavailable, start your chosen engine manually and retry. If socket
+access is denied by permissions or an agent sandbox, report the limitation.
+For an authorized local task, a normal, narrowly scoped tool approval may permit
+verification outside the sandbox; it does not authorize socket permission
+changes or bypassing security controls. If permitted access is unavailable or
+rejected, use command-boundary tests and leave container/data verification
+pending. Do not switch engines/contexts silently or fall back to a hosted database.
+
+### Command reference
+
+The daily path is env setup → `infra up` → `db:setup` once → `dev`.
+Subsequent schema updates use `db:migrate:local`; `db:seed` provisions fixtures
+without migrating. PostgreSQL provisioning/health belongs to Compose; database
+safety checks stay in the repository. Hosted migration, release and publication
+commands keep their separate approval gates.
+
+See [developer commands](./development-commands.md) for the complete command and
+script inventory, including which aliases were removed and why.
+
+Runtime references: [Compose startup options](https://docs.docker.com/reference/cli/docker/compose/up/)
+and [PostgreSQL image storage/initialization](https://hub.docker.com/_/postgres).
 
 ### Database browser: Drizzle Studio
 
@@ -69,22 +221,25 @@ pnpm db:studio
 ```
 
 Open https://local.drizzle.studio after the local server starts. Studio binds
-only to `127.0.0.1:4983` and starts automatically with `pnpm dev`.
-Use `pnpm db:studio` to run it separately.
+only to `127.0.0.1:4983` and runs only when explicitly started.
 Drizzle Kit is already installed in the database package.
 
-Studio reads the same server `.env.local` / `.env` files as demo setup.
-An exported `DATABASE_URL` takes precedence. Use a dedicated development
+Studio uses a separate guarded local config, `packages/db/drizzle.studio.config.ts`.
+It reads the same server `.env.local` / `.env` files as demo setup and requires
+demo mode, the verified checkout-owned Compose database, and a non-production environment.
+An exported `DATABASE_URL` takes precedence. A configured migration URL must
+match the runtime target; Studio uses only the runtime URL's connection settings.
+Use a dedicated development
 database: Studio can edit and delete records, not just inspect them.
 Never expose its local server publicly or share connection credentials.
 The browser UI is served by Drizzle, separately from our local API; follow
 your team's data-access policy before connecting sensitive databases.
 
-Studio works with any PostgreSQL reachable through `DATABASE_URL`, including a
-local server. Update the connection string, including the provider's required
-TLS settings, then restart Studio. Provider-specific auth, storage, and other
-services are not configured by Studio. The reference hosted database is Neon;
-see [ADR 0006](./decisions/0006-mvp-0.1-infrastructure.md).
+This repository's Studio command is local-only. It refuses hosted targets and
+conflicting migration overrides before Studio starts. The shared
+`drizzle.config.ts` still selects `DATABASE_MIGRATION_URL` for migration tooling;
+the hosted migration wrappers and approval rules are unchanged. The reference
+hosted database is Neon; see [ADR 0006](./decisions/0006-mvp-0.1-infrastructure.md).
 
 The reference Neon project is a separate database. Its operating notes are in
 the [infrastructure guide](./infrastructure). Local demo setup keeps
@@ -105,8 +260,10 @@ and workstation fallback. Include schema, SQL/Drizzle metadata and the complete
 stack change in the same PR. Local/CI verification completes implementation;
 Production migration belongs to release, not ordinary feature PR completion.
 
-Bare `pnpm db:migrate` accepts loopback only. Existing environment wrappers and
-the controlled merge pipeline or approved standalone **Migrate database** job delegate to that guarded command.
+`pnpm db:migrate:local` requires the checkout-owned Compose database. The shared
+`pnpm db:migrate` entrypoint additionally accepts proven disposable-test targets
+or an exact hosted target authorized by its environment wrapper. The controlled
+merge pipeline and approved standalone **Migrate database** job use those wrappers.
 Ordinary PR checks receive no hosted credentials. Never seed Neon or migrate
 inside Vercel builds/requests. See the guide for exact commands and approvals.
 
@@ -219,11 +376,17 @@ maintainers, not as a second product tier you must purchase to run the code.
 
 Local demo and the reference deployment are different environments. Do not
 copy Vercel values into `.env.local`, and do not point local demo at Neon.
+Hosted resource and persistent configuration changes use the
+[Pulumi writer policy](./infrastructure.md#pulumi-is-the-infrastructure-writer).
+Provider CLI/connector reads may inspect settings; provisioning or changing them
+requires the existing Pulumi program and an approved exact-stack plan. Drizzle
+migrations and local loopback setup remain separate workflows.
+
 The [infrastructure guide](./infrastructure) lists every variable, which
 process reads it, and the value used in each environment.
 
-Run `pnpm dev:setup` (or copy the relevant `.env.example`) to configure local
-demo mode. The API needs a loopback `DATABASE_URL` and
+Run `pnpm dev:setup` to configure local demo mode. The API uses the
+checkout-owned Compose `DATABASE_URL` and
 `FLOWMARK_DEMO_MODE=true`. The dashboard uses the same demo-mode flag and
 `FLOWMARK_API_URL=http://localhost:3003`. The dev harness's
 `FLOWMARK_API_KEY` is used by its server route only. Landing and customer
@@ -268,15 +431,20 @@ Versioned migrations are in `packages/db/migrations`. The API requires
 
 ## Local demo with PostgreSQL
 
-Use a dedicated PostgreSQL database. Dashboard sign-in is email and password.
+Use the checkout-scoped Compose instance above. Development and demo fixtures
+share that persistent local database; operations and SDK diagnostics use
+separate project IDs and credentials. Integration tests use another PostgreSQL
+instance and never reset either project.
+Dashboard sign-in is email and password.
 The seed creates `local@flowmark.test` / `local-dev-only` and attaches it to the local
 operations project. Applications still use a project write key, not that
-password.
+password. On first sign-in, continue onboarding with the existing project/key.
+Run the six harness scenarios to supply the first runs, then finish onboarding;
+no additional project or write key is needed for the local harness.
 
 ```sh
-createdb flowmark
 pnpm dev:setup
-# Set DATABASE_URL in apps/server/.env.local to the database you just created.
+pnpm infra up
 pnpm db:setup
 pnpm dev
 ```
@@ -288,8 +456,9 @@ credentials and do not appear in the operations dashboard. Do not run seed or
 setup against production or a non-loopback database. Do not run it against a
 database that already has these tables from an unmanaged schema push;
 reconcile/migrate that schema first. Set the same `DATABASE_URL` in the API
-environment. Optional `DATABASE_MIGRATION_URL` is used only by migrate
-commands. The three local development app configurations are:
+environment. Local commands require any `DATABASE_MIGRATION_URL` override to name the same
+Compose target, then use `DATABASE_URL`. The three local development app
+configurations are:
 
 - API: `DATABASE_URL`, `FLOWMARK_DEMO_MODE=true`.
 - Dashboard: `FLOWMARK_DEMO_MODE=true`, optional server-only `FLOWMARK_API_URL`.
@@ -338,31 +507,71 @@ reload, but workflow history does not.
 
 ### Database integration tests
 
-The PR workflow has a separate **PostgreSQL integration tests** job with an
-empty Postgres 18 service container. It builds API/database dependencies,
-applies committed migrations, and runs the server tests with `TEST_DATABASE_URL`.
-It rejects a report containing skipped tests. The fast `pnpm check` job remains
-independent and has no database credentials. No Neon credentials or demo seed
-are used; HTTP tests create their own isolated projects and keys.
-
-To run the same tests locally, choose a disposable loopback database. Do not use
-the local demo database or any hosted database. Tests write rows; discard this
-database when finished. For example, with an existing local PostgreSQL server:
+Run the complete database/server sequence locally with:
 
 ```sh
-createdb flowmark_test
-pnpm --filter @flowmark/api... build
-DATABASE_URL=postgresql://127.0.0.1:5432/flowmark_test \
-DATABASE_MIGRATION_URL=postgresql://127.0.0.1:5432/flowmark_test \
-  pnpm db:migrate
-TEST_DATABASE_URL=postgresql://127.0.0.1:5432/flowmark_test \
-  pnpm --filter @flowmark/server test
+pnpm test:integration
 ```
 
-Adjust role, port, and database name for your own local server. Export both
-migration URLs explicitly so server env files cannot redirect the migration.
-No `db:setup` or `db:seed` is needed. Without `TEST_DATABASE_URL`, normal server
-unit runs skip the database suites; the integration CI job must run them.
+Installed workspace dependencies and a running permitted local Docker engine
+with Compose are required. No development database, env-file setup, seed or
+host PostgreSQL client is needed. The runner uses the same inspected Docker
+context/endpoint protections as `pnpm infra`; sandbox-denial guidance above
+applies. It refuses exported `DATABASE_URL`, `DATABASE_MIGRATION_URL`,
+`TEST_DATABASE_URL` and hosted migration authorization rather than silently
+replacing them. Unset conflicting exports explicitly; existing app env files
+remain untouched and cannot redirect the runner's child targets.
+
+Each invocation starts only `postgres-test` under a unique `flowmark-test-*`
+Compose project. PostgreSQL 18 stores its data in a 512 MiB tmpfs mount at
+`/var/lib/postgresql`, publishes an allocated port on `127.0.0.1`, and creates no
+data volume. The runner waits for TCP health, correlates labels/container/port
+and SQL database/role identity, then supplies the same disposable URL in all
+three database variables. It builds API/auth dependencies, applies committed
+Drizzle migrations, runs db and server tests directly, and verifies their TAP
+and JSON reports. Empty/missing required integration coverage, skips, cancelled
+tests and command failures fail the run; integration results never use Turbo's
+test cache. HTTP suites create their own synthetic projects and keys with demo
+mode off. Development/demo data and migration history are not reused or reset.
+
+Concurrent runs get different databases, ports and storage. Native builds/tests
+within the same checkout wait for an owned workspace lock to prevent competing
+compiler output; separate worktrees run independently. The wait is bounded at
+two minutes and prints the lock path. A busy/stale lock is an explicit error;
+inspect its `owner.json` PID and reports before removing a confirmed abandoned
+lock. Never delete a running owner's lock.
+
+The printed report directory contains `run.json` (runner PID, project, context,
+container and port), redacted `commands.log`, `db.tap` and `server.json` once their steps
+run. Failures also save the last 100 PostgreSQL log lines to `postgres.log`;
+database assertion failures print a bounded failure excerpt and summary. Ordinary failure and
+SIGINT/SIGTERM stop owned native subprocesses, then remove only this run's
+containers/network without volume-deletion flags. The original failing status
+is preserved; the runner exits 130/143 for SIGINT/SIGTERM. Agents can cancel the
+registered runner PID after verifying it still belongs to that active run;
+signalling a package-manager wrapper directly can produce its own exit status.
+Cleanup failure is explicit and keeps
+the run identity for diagnosis. SIGKILL, a stopped engine or a host crash may
+leave resources: inspect `run.json`, the recorded context and resource labels
+before manually removing exactly those containers/network. Never use global
+cleanup, `down -v`, delete volumes, or stop unrelated services.
+
+Direct `pnpm --filter @flowmark/db test` and server test entrypoints validate any
+configured `TEST_DATABASE_URL` before fixture writes. They require the runner's
+owned tmpfs/container proof or CI's exact service identity; an arbitrary
+loopback database is not sufficient. Without `TEST_DATABASE_URL`, normal unit
+checks intentionally skip database cases and remain Docker-independent. Use
+`pnpm test:integration` to require full database coverage.
+
+The PR workflow retains its separate **PostgreSQL integration tests** job and
+empty PostgreSQL 18 Actions service. `pnpm test:integration --ci-service` shares
+the build/migrate/db/server/report sequence without launching Compose. That
+path requires Actions/CI markers and the declared local `flowmark_ci` role,
+`flowmark_test` database and port 5432; it refuses hosted targets and migration
+authorization. Both db and server reports must show complete execution. The fast
+`pnpm check` job remains independent and receives no database credentials. No
+Neon credentials, hosted settings or demo seed are used.
+
 These tests cover ingestion, idempotency, browser quotas, and project isolation.
 The authenticated ingestion suite now covers registration → sign-in → project
 and key creation → ingestion → persisted-run read with a real Better Auth
@@ -397,8 +606,7 @@ and authenticated project reads. The retained count must stay within the cached
 auth pool's default maximum of ten. A final ingestion-only wave must return to
 the same retained count, verifying that API pools are closed.
 
-Run the existing server integration command above with a dedicated disposable
-local database; the result prints a baseline and four post-wave counts. A local
+Run `pnpm test:integration`; the result prints a baseline and four post-wave counts. A local
 PostgreSQL 16 run observed `1 → 6 → 6 → 6 → 6`. No driver, auth adapter, pool
 setting, or lifecycle redesign was needed. This measures one test process, not
 the total connections across Vercel instances or Neon capacity. Do not generate
@@ -458,7 +666,7 @@ development database needs to be stopped to run those tests.
 - A browser key works only from its configured origin. The local harness allows
   loopback ports 3004 and 5173; a different port requires an explicit allowlist
   change, not a wildcard CORS bypass.
-- If port 3000 belongs to another project, use `PORT=3100 pnpm dev`. The web app
+- If port 3000 belongs to another project, use `PORT=3100 pnpm dev:all`. The web app
   moves to 3100; dashboard/docs/API/dev harness keep ports 3001 through 3004.
 
 The dashboard's Appearance selector supports system, light, and dark themes,

@@ -12,14 +12,16 @@ Requirements and the full local pipeline are in the
 ```sh
 pnpm install
 pnpm dev:setup
-# Set DATABASE_URL in apps/server/.env.local to a loopback Postgres database.
+pnpm infra up
 pnpm db:setup
 pnpm dev
 ```
 
-Open the dashboard at `http://127.0.0.1:3001`. The
+Open the dashboard at `http://localhost:3001`. The
 [architecture overview](./docs/architecture.md) explains how the SDK, API,
-persistence, and dashboard fit together.
+authentication, persistence, and dashboard fit together. Sign-in configuration
+lives in the private `@flowmark/auth` package. Request boundaries are in
+[Authentication request boundaries](./docs/auth-perimeter.md).
 
 Customer-facing SDK documentation is built from `apps/docs` and published at
 [docs.flowmark.dev](https://docs.flowmark.dev). Change that site when the
@@ -44,6 +46,13 @@ not be deployed. The harness generates fixture telemetry for local integration
 checks; it is not a hosted demo.
 
 ## Databases and self-hosting
+
+Maintained Flowmark infrastructure uses the
+[Pulumi writer policy](./docs/infrastructure.md#pulumi-is-the-infrastructure-writer)
+and existing `infrastructure/` project for all hosted resource/settings changes.
+Provider tools inspect and verify; they are not an imperative provisioning path.
+App deployments and Drizzle migrations keep their existing workflows. This
+maintainer policy does not prescribe tooling for an independent self-host.
 
 Flowmark stores workflow telemetry in PostgreSQL through an ordinary
 `DATABASE_URL`. Local development should use a dedicated loopback database.

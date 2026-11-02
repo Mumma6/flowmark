@@ -1,7 +1,8 @@
 ---
 name: flowmark-vercel
 description: >-
-  Operate Flowmark's Vercel projects with connected Vercel tools and the CLI. Use when deploying,
+  Inspect Flowmark's Vercel projects and operate approved app rollouts. Persistent
+  resources and hosted settings use flowmark-infrastructure and Pulumi. Use when deploying,
   checking a build, changing hosted environment variables, connecting GitHub,
   or touching flowmark.dev, app.flowmark.dev, api.flowmark.dev, or
   docs.flowmark.dev.
@@ -15,10 +16,17 @@ state and the environment catalog are in
 to operate them. Read that guide before changing a project, a domain, or a
 variable.
 
-Discover the connected Vercel plugin's current capabilities and prefer its tools
-when they cover the operation. Use the CLI for unsupported operations and the
-GitHub deployment runner. Do not assume a plugin is absent from a previous
-session's tool inventory.
+Read [flowmark-infrastructure](../flowmark-infrastructure/SKILL.md) before any
+project, domain, hosted env/secret, protection or Git-integration change. These
+are Pulumi changes in `infrastructure/`, including resources not yet adopted.
+Do not create/update them with Vercel tools, CLI or dashboard and import later.
+If provider support is missing, prepare its adoption before mutation.
+
+Discover the connected plugin for read-only inventory, logs and deployment
+verification, preferring its relevant read tools. The CLI and controlled GitHub
+runner remain available for approved app deployment operations; deployment does
+not authorize persistent project/env changes. Do not assume a plugin is absent
+from a previous session's inventory.
 
 If the plugin returns a team-scope authorization error, call
 `authorize_team_access` with the failed request's team ID and show the returned
@@ -28,8 +36,10 @@ retry on the same connection afterward. Do not ask them to reconnect.
 Plugin access and CLI login are separate from GitHub Actions credentials. Neither
 an OAuth CLI login nor the plugin can mint a personal CI deployment token with
 the currently available tools. Verify the actual capabilities before claiming
-otherwise. Configure the CI token directly as an environment-scoped GitHub secret;
-never paste it into chat, commit it, or reuse the plugin's private credentials.
+otherwise. The required CI token is an environment-scoped GitHub secret;
+prepare its binding through the infrastructure policy, adopting GitHub ownership
+into Pulumi before changing it. Operator sign-in/consent is separate. Never paste
+the token in chat, commit it, or reuse the plugin's private credentials.
 Keep rollout disabled until the runner credential passes a read-only preflight.
 
 ## CLI
@@ -143,19 +153,21 @@ List names, not values:
 npx vercel@latest env list --project <project> --scope mumma6s-projects
 ```
 
-Add a variable by piping the value on stdin. Do not use `--value`. That
-puts the secret in the process list. Add Production and Preview as separate
-commands so they do not share one value. Mark secrets `--sensitive`.
+Vercel is a delivery target for the
+[single-source env contract](../../../docs/infrastructure.md#one-source-for-environment-configuration).
+Reuse the same logical Pulumi input/output across its consumers instead of
+maintaining separate provider values. Add new required bindings and catalog
+entries together; keep local app env files on loopback.
 
-```sh
-npx vercel@latest env add <NAME> --sensitive --yes \
-  --environment production \
-  --project <project> --scope mumma6s-projects
-```
-
-The command reads stdin when `--value` is omitted. Never echo the value
-back. After a change, redeploy the project. The catalog of which variable belongs on which
-project is in the infrastructure guide. In particular:
+Create/update bindings in the Pulumi program, not through `vercel env add`,
+connector writes or the dashboard. Generate a new value into encrypted Pulumi
+config/approved storage before first use; Vercel sensitive values cannot be read
+back later. Use the secret prompt or secure stdin, never command arguments.
+Review exact targets/branch scopes and value-version behavior before apply; keep
+Production and Preview separate. After the approved apply, redeploy through the
+ordered workflow. See the [environment contract](../../../infrastructure/environments.md)
+and [binding lifecycle](../../../infrastructure/README.md#vercel-non-production-binding-adoption).
+In particular:
 
 - Production `BETTER_AUTH_URL` and `FLOWMARK_DASHBOARD_ORIGIN` are
   `https://app.flowmark.dev`, not the API origin. Preview must not use that
@@ -184,12 +196,10 @@ project is in the infrastructure guide. In particular:
 ## GitHub
 
 The projects are connected to `https://github.com/Mumma6/flowmark`. Branch
-`main` is production. Connect a project only if it is disconnected:
-
-```sh
-npx vercel@latest git connect https://github.com/Mumma6/flowmark.git --yes \
-  --scope mumma6s-projects --project <project>
-```
+`main` is production. If disconnected, inspect the live Git integration and
+prepare a Pulumi ownership/configuration change. The current project import
+ignores Git properties; adopt the affected property before changing it. Do not
+use `vercel git connect` as a second writer.
 
 If the CLI says the repository cannot be accessed, stop. The user grants
 the Vercel GitHub App on that repo at

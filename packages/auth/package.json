@@ -1,0 +1,55 @@
+{
+  "name": "@flowmark/auth",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Internal Flowmark authentication. Not published.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "node": "./dist/index.js",
+      "default": "./dist/server-only.js"
+    },
+    "./client-identity": {
+      "types": "./dist/client-identity.d.ts",
+      "node": "./dist/client-identity.js",
+      "default": "./dist/server-only.js"
+    },
+    "./limits": {
+      "types": "./dist/rate-limit-storage.d.ts",
+      "node": "./dist/rate-limit-storage.js",
+      "default": "./dist/server-only.js"
+    },
+    "./seed": {
+      "types": "./dist/seed-local-user.d.ts",
+      "node": "./dist/seed-local-user.js",
+      "default": "./dist/server-only.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "lint": "eslint src test",
+    "test": "node --import tsx --test test/*.ts",
+    "typecheck": "tsc -p tsconfig.json",
+    "db:seed": "pnpm --filter @flowmark/db... build && tsx src/cli/seed.ts",
+    "db:setup": "pnpm --filter @flowmark/db... build && tsx src/cli/setup.ts",
+    "dev": "tsc -p tsconfig.json --watch --preserveWatchOutput"
+  },
+  "dependencies": {
+    "@better-auth/drizzle-adapter": "^1.7.13",
+    "@flowmark/db": "workspace:*",
+    "better-auth": "^1.7.13",
+    "drizzle-orm": "^0.44.5",
+    "effect": "4.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.18.6",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.2"
+  }
+}

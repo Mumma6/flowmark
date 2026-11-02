@@ -27,5 +27,5 @@ for (const app of ["server", "dashboard", "dev-harness"]) {
 }
 
 console.log(
-  "[Flowmark dev] PostgreSQL must be running. Check DATABASE_URL in apps/server/.env.local and run pnpm db:setup once before recording data.",
+  "[Flowmark dev] Run pnpm infra doctor, pnpm infra up, then pnpm db:setup once before recording data. Docker Compose is the local infrastructure provider. Existing configuration is preserved; see docs/development.md#existing-local-data if it differs from the templates.",
 )

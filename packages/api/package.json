@@ -18,7 +18,8 @@
     "build": "tsc -p tsconfig.build.json",
     "lint": "eslint src test",
     "test": "vitest run",
-    "typecheck": "tsc -p tsconfig.json"
+    "typecheck": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.build.json --watch --preserveWatchOutput"
   },
   "dependencies": {
     "@flowmarkdev/core": "workspace:*",

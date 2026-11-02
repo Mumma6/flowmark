@@ -35,7 +35,7 @@ try {
   stagingEnv = readNeonEnvFileAt(stagingNeonEnvPath)
 } catch (error) {
   console.error(error instanceof Error ? error.message : String(error))
-  console.error("Pull it with: pnpm neon:env-pull:staging")
+  console.error("Pull it with: pnpm neon:env-pull -- --staging")
   console.error(
     "Do not copy packages/db/.env.neon, packages/db/.env.neon.preview, or apps/server/.env.local.",
   )
@@ -73,7 +73,7 @@ const productionMigrationUrl = readComparedUrl(
 )
 const previewMigrationUrl = readComparedUrl(
   previewNeonEnvPath,
-  "pnpm neon:env-pull:preview",
+  "pnpm neon:env-pull -- --preview",
 )
 
 const refusal = assertStagingMigrationTarget({

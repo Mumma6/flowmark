@@ -1,10 +1,11 @@
 # Authentication request boundaries
 
 Better Auth owns email/password validation, verification policy and session
-creation. Flowmark does not replace its sign-in endpoint. The local fixture is
-`local@flowmark.test`; [development setup](./development.md) describes the explicit
-upgrade from the old `local@dev` address. Hosted users and the local fixture use
-the same provider login implementation.
+creation. Flowmark does not replace its sign-in endpoint. The provider factory,
+signed proxy identity, and authentication-specific limit policy live in the
+private `@flowmark/auth` package. Schema and the atomic limiter SQL remain in
+`@flowmark/db`. The local fixture is `local@flowmark.test`. Hosted users and
+the local fixture use the same provider login implementation.
 
 ## Request paths
 
@@ -134,6 +135,11 @@ changes counter namespaces and is a separately reviewed security operation.
 
 ## Rollout
 
+Provision or change hosted auth/proxy bindings through the
+[Pulumi writer policy](./infrastructure.md#pulumi-is-the-infrastructure-writer),
+with encrypted inputs and reviewed scopes before apply. Do not create a secret
+through the provider UI/CLI/connector and reconcile it into Pulumi afterward.
+
 Migration `0017_auth_rate_limits` adds one indexed table and changes no existing
 rows. Apply it before dependent API code through [database rollout](./migrations.md).
 New proxy metadata uses the existing server-only `FLOWMARK_*` environment path;
@@ -158,8 +164,11 @@ its token/mail success journey will be verified when that flow is enabled.
 `apps/server/test/http/auth-perimeter.test.ts` uses real Better Auth and a
 disposable loopback PostgreSQL database. It covers verification-policy denial,
 production-shaped demo misconfiguration, malicious origins/callbacks, the shared
-in-process signup bucket, expired/revoked-session denial and the guarded fixture
-upgrade. The original shared-bucket regression remains; the new durable tests additionally use independent database clients and auth instances.
+in-process signup bucket, expired/revoked-session denial and local fixture
+provisioning. Durable limit tests use independent database clients and auth
+instances. `packages/auth/test/server-boundary.test.ts` checks that
+`@flowmark/auth/client-identity` stays free of the database and provider, and
+that package exports stay server-only.
 
 `register-http.test.ts` checks protocol/error mapping and secret exclusion;
 `apps/dashboard/test/proxy-api.test.ts` covers Fetch Metadata, retry headers and
@@ -185,7 +194,7 @@ The ordered Staging rollout of `cf0b563` applied migration history through
 `0017_auth_rate_limits` before deploying the API and remaining apps. The matching
 API/dashboard proxy secret is now managed by Pulumi's nonprod stack; see the
 [environment contract](../infrastructure/environments.md#staging-auth-proxy-binding).
-Production and paused feature Preview remain separate rollout steps.
+Production acceptance is recorded below; automatic feature Preview remains paused.
 
 Automated hosted acceptance passed 42 checks using two explicitly authorized,
 labelled synthetic accounts and projects. It covered registration through the
@@ -201,3 +210,26 @@ This is live request-path and authorization evidence, not a hosted exhaustion or
 load test. Exact quota/concurrency bounds and Retry-After behavior remain covered
 by the disposable PostgreSQL and adapter tests above. Email verification and
 recovery delivery remain disabled and outside this acceptance.
+
+### Production acceptance — 2 November 2026
+
+The separately approved [Production rollout](https://github.com/Mumma6/flowmark/actions/runs/41442674430)
+passed at exact main merge `335d3f6` after release PR #73. It verified/applied
+migration history through `0017_auth_rate_limits` before deploying the API, then
+the remaining apps. All four canonical domains resolve to READY Production
+deployments at that SHA. Pulumi created exactly two Production-only sensitive
+proxy bindings while leaving the existing 27 resources unchanged; existing
+Better Auth/database credentials and nonprod bindings were preserved.
+
+All 42 automated hosted checks passed with two explicitly authorized, labelled
+synthetic accounts/projects: registration, proxy/direct sign-in, Secure/HttpOnly
+cookies, source agreement despite a forged IP-header claim, own-project
+persistence/read, reciprocal project/key-list denial, and key/session revocation.
+All created test keys and sessions were revoked. Bounded cleanup also expired
+the provider-generated signup sessions; a scoped database check confirmed zero
+active sessions for those two synthetic users. The two labelled accounts,
+projects and synthetic runs remain until a safe approved deletion path exists;
+no secrets or raw source IPs were logged. No hosted quota exhaustion, external
+mail, SDK publication or auth package extraction was part of this rollout.
+The separately approved [v0.6.3 release](https://github.com/Mumma6/flowmark/releases/tag/v0.6.3)
+was published at the same verified SHA.

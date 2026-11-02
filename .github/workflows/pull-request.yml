@@ -61,6 +61,7 @@ jobs:
       TEST_DATABASE_URL: postgresql://flowmark_ci:local_ci_only@127.0.0.1:5432/flowmark_test
       DATABASE_URL: postgresql://flowmark_ci:local_ci_only@127.0.0.1:5432/flowmark_test
       DATABASE_MIGRATION_URL: postgresql://flowmark_ci:local_ci_only@127.0.0.1:5432/flowmark_test
+      FLOWMARK_TEST_DATABASE_SOURCE: ci-service
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -79,27 +80,5 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build test dependencies
-        run: pnpm --filter @flowmark/api... build
-
-      - name: Apply committed migrations to disposable Postgres
-        run: pnpm db:migrate
-
-      - name: Run persistence projection and command tests
-        run: pnpm --filter @flowmark/db test
-
-      - name: Run server HTTP and database integration tests
-        run: >-
-          pnpm --filter @flowmark/server test
-          --reporter=default --reporter=json
-          --outputFile="$RUNNER_TEMP/server-tests.json"
-
-      - name: Refuse silently skipped tests
-        run: |
-          node --input-type=module -e '
-          import assert from "node:assert/strict";
-          import { readFileSync } from "node:fs";
-          const report = JSON.parse(readFileSync(`${process.env.RUNNER_TEMP}/server-tests.json`, "utf8"));
-          assert.ok(report.numTotalTests > 0, "No server tests ran");
-          assert.equal(report.numPendingTests, 0, "Integration tests must not skip");
-          '
+      - name: Build, migrate, run both suites, and verify complete reports
+        run: pnpm test:integration --ci-service

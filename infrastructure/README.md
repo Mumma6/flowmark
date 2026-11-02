@@ -7,9 +7,9 @@ non-production. Do not recreate them with a starter template.
 Persistent reference-infrastructure adoption completed on 2 November 2026.
 `nonprod` has 26 state resources: its two Neon branches, computes, databases and
 owner roles, 15 Vercel env bindings, and three Pulumi metadata resources.
-`production` has 27: the Neon project/production branch/compute/database/owner,
-four shared Vercel projects, seven custom-domain assignments, eight remaining
-env bindings, and three metadata resources. All **47 adopted cloud resources**
+`production` has 29: the Neon project/production branch/compute/database/owner,
+four shared Vercel projects, seven custom-domain assignments, ten Production/shared
+env bindings, and three metadata resources. All **49 managed cloud resources**
 have deletion protection. Standard refresh-preview and preview are clean in both
 stacks. See the public
 [infrastructure overview](../docs/infrastructure.md) for the deployment shape.
@@ -18,6 +18,38 @@ The [environment contract](./environments.md) records all required app,
 platform/build, CI/migration and provider variables, their scopes and owners.
 Automatic feature previews are intentionally paused; only the controlled
 Staging flow is active for non-production deployments.
+
+## Required writer for infrastructure changes
+
+Follow the [Pulumi writer policy](../docs/infrastructure.md#pulumi-is-the-infrastructure-writer).
+All Flowmark infrastructure and persistent hosted configuration changes use this
+project, including future providers, CI settings, hosted secrets and ephemeral
+cloud resources. Connectors/CLIs/dashboards inspect and verify; they do not create
+or update resources before later import. `pulumi do` is not a substitute for the
+resource program. Review source and exact-stack preview before the approved apply.
+
+The inventory below describes current adoption, not blanket exemptions. Existing
+external or ignored properties must be adopted into a reviewed Pulumi owner before
+mutation. Missing provider support is work to design/review first. Keep app
+artifact deployment, Drizzle migrations and approved data/publication operations
+on their documented paths; do not add competing infrastructure writers.
+
+## Environment configuration belongs here
+
+Follow the [single-source env contract](../docs/infrastructure.md#one-source-for-environment-configuration).
+The Pulumi program owns hosted app/CI definitions and distributes bindings to
+Vercel/GitHub. Use one logical stack input or resource output per environment,
+shared by its consumers; do not maintain parallel values in provider UIs or app
+`.env` files. Secret inputs default to encrypted Pulumi config, with references
+to an approved central store when needed. The environment catalog records the
+contract, not another copy of secret/runtime values.
+
+Remaining consolidation includes GitHub environments/variables/secret bindings,
+shared logical inputs replacing import-era per-binding value keys, and adoption
+of external DNS/ignored provider properties when changed. Review provider support
+and preserve existing live values before those migrations. This documentation
+change establishes the required path; it does not provision/adopt those resources
+or introduce another config/secret system.
 
 ## Install and validate
 
@@ -68,7 +100,7 @@ state and configuration. This project uses:
 - `nonprod`: Preview/Staging Neon branches and their computes, database
   containers and owners; 15 Preview-target env bindings with Staging overrides.
 - `production`: the Neon project and production branch/compute/database/owner,
-  shared Vercel projects, seven custom domains and eight production/shared envs.
+  shared Vercel projects, seven custom domains and ten production/shared envs.
   The four Vercel projects serve all environments; never declare the same
   project resource in both stacks.
 
@@ -141,7 +173,7 @@ Each property has one writer:
   Branch ancestry, provider-side protection and project security/maintenance/
   quota policies retain their existing owners. Role passwords and project
   connection outputs are computed secrets, encrypted in state.
-- Pulumi owns all 23 app env bindings, four Vercel project containers and seven
+- Pulumi owns all 25 app env bindings, four Vercel project containers and seven
   custom-domain assignments. Sensitive values use the write-only protocol below.
   Registrar/DNS-zone services and automatic `*.vercel.app` aliases retain their
   existing platform ownership; this program does not create a second DNS writer.
@@ -150,9 +182,11 @@ Each property has one writer:
 - Application deployments stay on the existing Git/controlled Actions path.
   Never add `vercel.Deployment` resources or replace the rollout workflow.
 - Drizzle alone owns database schema/history. Pulumi does not migrate or seed.
-- `packages/db/neon.ts` keeps its current TTL policy for new ephemeral branches.
-  Existing persistent Preview/Staging branches must not gain that TTL. Decide
-  property ownership before adopting branch settings; do not add a second writer.
+- `packages/db/neon.ts` records a CLI TTL policy; it is not a second provisioner
+  for this repository. New temporary cloud branches need reviewed Pulumi lifecycle
+  support before creation. The pinned provider's missing schema-only/TTL support
+  is not permission to use the CLI instead. Persistent Preview/Staging branches
+  must retain their existing ancestry and absence of expiry.
 - npm publication stays separate and human-approved.
 - `apps/dev-harness` and `apps/internal-docs` remain local-only.
 
@@ -295,7 +329,7 @@ other resource changed. Standard preview and refresh-preview then reported
 26 unchanged nonprod state resources. The active secret is marked secret in
 Pulumi Cloud's update configuration as well as the local encrypted config.
 
-### Prepared Production auth proxy bindings
+### Production auth proxy bindings
 
 `vercel-production-auth-proxy.ts` declares two new bindings only when
 `manageProductionAuthProxyBindings=true` on the Production stack. It is called
@@ -311,12 +345,17 @@ reviewed version increment on both bindings. Keep the opt-in enabled after
 creation. Do not reuse the Staging secret, add Preview/Development targets, or
 rotate the existing Better Auth/database secrets as part of this operation.
 
-The code is prepared, not activated. Review the live Production preview before
-approval; the initial plan must contain exactly two env-record creates and all
-existing resources unchanged. A separate ignored config file can hold the
+The reference deployment has provisioned these two records through an approved
+Pulumi update: exactly two creates and 27 unchanged existing resources. The
+ordinary encrypted stack config retains the opt-in, value and version. For a
+new installation, review the live Production preview before approval; its
+initial plan must contain exactly two env-record creates and all existing
+resources unchanged. A separate ignored config file can hold the
 prepared encrypted value and opt-in for preview without enabling the active
-operator config. Stop on unrelated updates, replacements or deletes. After an
-approved apply, release through the existing `staging` to `main` pipeline so
+operator config. Stop on unrelated updates, replacements or deletes. A saved-plan
+apply can target only the two reviewed env URNs; still verify the full stack
+before and after the update. After an approved apply, release through the existing
+`staging` to `main` pipeline so
 migration/history checks precede API and dashboard deployment. Pulumi does not
 perform migrations or application deployment.
 

@@ -1,15 +1,15 @@
-import { betterAuth, type BetterAuthOptions } from "better-auth"
 import { drizzleAdapter } from "@better-auth/drizzle-adapter"
+import { betterAuth, type BetterAuthOptions } from "better-auth"
 import { Cause, Data, Effect, Exit } from "effect"
-import type { FlowmarkDatabase } from "../client.js"
-import { LOCAL_DEV_AUTH_SECRET } from "../fixtures/demo.js"
-import { account, session, user, verification } from "../schema/auth.js"
+import { LOCAL_DEV_AUTH_SECRET } from "@flowmark/db/demo"
+import { account, session, user, verification } from "@flowmark/db/schema"
+import type { FlowmarkDatabase } from "@flowmark/db"
+import { accountRateLimits } from "./account-rate-limits.js"
 import {
   AUTH_CLIENT_IP_HEADER,
   normalizeAuthClientIdentity,
 } from "./client-identity.js"
 import { createAuthRateLimitStorage } from "./rate-limit-storage.js"
-import { accountRateLimits } from "./account-rate-limits.js"
 
 class AuthRequestError extends Data.TaggedError("AuthRequestError")<{
   readonly cause: unknown

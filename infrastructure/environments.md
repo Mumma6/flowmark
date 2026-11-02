@@ -4,6 +4,22 @@ Checked against application source, the four live Vercel projects, Neon endpoint
 metadata and GitHub Actions configuration on 2 November 2026. This catalog lists
 names and ownership, not secret values or operator resource IDs.
 
+## Authoritative values and delivery targets
+
+The [single-source env policy](../docs/infrastructure.md#one-source-for-environment-configuration)
+puts hosted app and CI definitions in Pulumi. This file catalogs names, scopes
+and ownership; it does not author runtime values. Define each logical value once
+per environment using shared stack inputs/resource outputs, then let Pulumi
+materialize the required Vercel/GitHub bindings. Secrets use encrypted config or
+references to an approved central store. Keep Production/Staging/Preview isolated.
+
+Avoid independently maintained copies in provider UIs, workflow YAML, app env
+files or extra secret catalogs. A new required hosted variable needs a Pulumi
+binding plus a catalog entry before rollout. Platform/system variables and
+per-deployment revision inputs retain the owners documented below. Current CI
+bindings and repeated import-era value inputs remain explicit consolidation work;
+this policy PR does not claim those migrations have happened.
+
 ## Active environments
 
 Production uses `main`; Staging uses the controlled `staging` rollout on the
@@ -12,8 +28,8 @@ Preview deployments are intentionally paused on all four projects. Their
 existing general Preview configuration and isolated database remain parked for
 future use. Do not enable automatic previews as a side effect of import.
 
-The live inventory contains **23 adopted application env records**: 15 nonprod
-and 8 production/shared records, including two Production-only sensitive records.
+The live inventory contains **25 managed application env records**: 15 nonprod
+and 10 production/shared records, including four Production-only sensitive records.
 All required records have the expected scopes; no forbidden hosted override
 was found. Secret presence/type is verified, but unreadable secret payloads
 are not exposed by the audit.
@@ -24,6 +40,7 @@ Production requires separate Production-only records for:
 
 - `DATABASE_URL`: sensitive, pooled URL of the Production Neon branch.
 - `BETTER_AUTH_SECRET`: sensitive, active Production auth-signing secret.
+- `FLOWMARK_AUTH_PROXY_SECRET`: sensitive, matching only the Production dashboard.
 - `BETTER_AUTH_URL` and `FLOWMARK_DASHBOARD_ORIGIN`: dashboard origins, both
   `https://app.flowmark.dev`.
 
@@ -48,7 +65,8 @@ adoption. No connection string belongs in a browser bundle.
 
 ## Dashboard: `apps/dashboard`
 
-- Production requires `FLOWMARK_API_URL=https://api.flowmark.dev`.
+- Production requires `FLOWMARK_API_URL=https://api.flowmark.dev` and its own
+  sensitive `FLOWMARK_AUTH_PROXY_SECRET`, matching only the Production API.
 - Staging requires its own Preview record scoped to `staging`, with
   `FLOWMARK_API_URL=https://api.staging.flowmark.dev`.
 - General Preview deliberately has no static API-origin record: the dashboard
@@ -86,17 +104,18 @@ requests prove the shared-secret hop; end-user source isolation also depends on
 the real platform-provided IP header and must be distinguished from account and
 project authorization evidence.
 
-### Prepared Production proxy configuration
+### Production proxy configuration
 
-Production has no active proxy-secret record in the inventory above. The
-Production Pulumi program can provision separate API/dashboard sensitive
-`FLOWMARK_AUTH_PROXY_SECRET` records behind
-`manageProductionAuthProxyBindings=true`, using encrypted
+Production's API and dashboard each have a sensitive
+`FLOWMARK_AUTH_PROXY_SECRET` record, scoped only to Production with no branch
+override. The Production Pulumi stack manages them behind
+`manageProductionAuthProxyBindings=true`, using shared encrypted
 `productionAuthProxySecret` and explicit `productionAuthProxySecretVersion`.
-The first approved plan creates exactly two Production-only records without
-imports. It must leave existing Production auth/database secrets and every
-nonprod resource unchanged. Code preparation and preview do not authorize apply
-or a release merge; see the [operator contract](./README.md#prepared-production-auth-proxy-bindings).
+The first approved apply created exactly these two records, with 27 existing
+resources unchanged. Production uses a separate generated value from Staging;
+existing auth/database secrets were preserved. Keep the opt-in enabled after
+provisioning; future changes require a reviewed version update and matching
+ordered deployment. See the [operator contract](./README.md#production-auth-proxy-bindings).
 
 ## Landing and docs
 
@@ -155,6 +174,13 @@ is not required. Publication remains a separately approved operation.
 
 ## Pulumi credentials and ownership
 
+The [Pulumi writer policy](../docs/infrastructure.md#pulumi-is-the-infrastructure-writer)
+applies to every persistent hosted setting, including new CI/provider settings.
+The inventory describes current adoption only. Add/adopt missing resource or
+property support before a future change; never create a binding through a
+connector/CLI/dashboard and import it afterward. Keep every secret encrypted
+before first use and review its exact environment/branch scope.
+
 Pulumi Cloud login and provider authentication are separate. Local provider
 processes use `NEON_API_KEY` and `VERCEL_API_TOKEN`, or their encrypted provider
 config equivalents. Do not put these on the deployed applications. No automatic
@@ -163,10 +189,12 @@ is not a missing requirement.
 
 Nonprod owns its branches, computes, database containers, roles and 15 bindings.
 Production owns the Neon project and production resources, four shared Vercel
-project containers, seven custom domains and the other eight app env records.
+project containers, seven custom domains and ten Production/shared app env records.
 It never declares inline env blocks that compete with individual binding resources.
-CI secrets stay GitHub-owned;
-schema/history stays Drizzle-owned; build commands/regions stay in `vercel.json`.
+CI settings/secrets currently remain outside Pulumi adoption; future changes
+require reviewed Pulumi ownership first. Schema/history stays Drizzle-owned;
+versioned app build contracts stay in `vercel.json`. These are distinct from
+editing persistent hosted project settings through a provider UI/CLI.
 
 Active Production database/auth values are encrypted in Pulumi configuration.
 Sensitive imports preserve them through the write-only protocol. Changes require

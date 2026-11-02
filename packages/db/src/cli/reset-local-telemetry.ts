@@ -3,10 +3,7 @@ import { sql } from "drizzle-orm"
 import { Effect } from "effect"
 import { CommandConfigurationError } from "../environment/error.js"
 import { loadApiEnvironment } from "../environment/load.js"
-import {
-  assertLocalDevelopmentDatabase,
-  readDatabaseUrl,
-} from "../environment/runtime.js"
+import { readLocalDevelopmentDatabaseUrl } from "../environment/local-database.js"
 import { DEMO_PROJECT_ID } from "../fixtures/demo.js"
 import { DatabaseError } from "../persistence/database.js"
 import { DatabaseOperation } from "../persistence/database-operation.js"
@@ -51,14 +48,13 @@ const resetLocalTelemetry = Effect.fn("resetLocalTelemetry")(function* (
 await runDatabaseCommand(
   Effect.gen(function* () {
     yield* loadApiEnvironment
-    const url = yield* readDatabaseUrl()
-    yield* assertLocalDevelopmentDatabase(url)
     if (!process.argv.includes("--confirm-local-telemetry")) {
       return yield* new CommandConfigurationError({
         reason:
           "Pass --confirm-local-telemetry to delete only the local development project's telemetry. Accounts and credentials are retained.",
       })
     }
+    const url = yield* readLocalDevelopmentDatabaseUrl()
     yield* resetLocalTelemetry(url)
   }),
 )

@@ -227,7 +227,16 @@ The dependency direction is:
 apps/server (Next.js + tRPC + HTTP adapters) -> @flowmark/api -> ports
                                                         ^         |
                                                         └─ DB adapters
+apps/server auth routes -> @flowmark/auth -> @flowmark/db
+dashboard server proxy  -> @flowmark/auth/client-identity
 ```
+
+`@flowmark/auth` is private and unpublished. Server auth routes call its
+factory. The dashboard proxy signs client identity through
+`@flowmark/auth/client-identity` and does not import the factory, database, or
+provider. The browser session client stays in the dashboard and talks to
+`/api/auth`. Project membership and ingestion keys stay in `@flowmark/api`.
+Request rules are in [Authentication request boundaries](./auth-perimeter.md).
 
 The API follows feature-first ports-and-adapters:
 
@@ -319,10 +328,20 @@ The `@flowmark/db/persistence` entry point is a barrel over Effect
 persistence services: `WorkflowStore` for append/snapshot/timeline/related
 reads, and `ProjectCredentialsStore` for key authentication, browser quota,
 and project membership. Feature folders split `queries/`, `writes/`, and raw
-`sql/` beside those services. Auth tables and the Better Auth factory live
-under `packages/db/src/{schema,auth}`. Drizzle and PostgreSQL types stay
-inside this persistence package; the API consumes its own repository ports
-and read models.
+`sql/` beside those services. Better Auth tables and the atomic limiter write
+stay in this package, exposed to authentication code through
+`@flowmark/db/auth-limits`. Drizzle and PostgreSQL types stay inside this
+persistence package; the API consumes its own repository ports and read models.
+
+`@flowmark/auth` is a private workspace package and is not published. It owns
+Better Auth configuration, the auth factory, local fixture user provisioning,
+signed proxy identity, and the authentication-specific limit policy. It depends
+on `@flowmark/db` and the database package does not depend on it. `apps/server`
+and the dashboard proxy stay thin adapters: they call the package and do not
+reimplement provider, cookie, origin, or limit policy. `@flowmark/auth/client-identity`
+signs and checks the proxy assertion without importing the database, the
+provider, or the factory. Project membership, ingestion keys, and project or
+key creation quotas stay in `@flowmark/api` and `@flowmark/db`.
 
 Versioned Drizzle migrations create Better Auth users/sessions, workspaces,
 projects, project members, hashed project API keys, workflow definitions,
@@ -341,9 +360,12 @@ only after the database transaction commits.
 
 `pnpm db:setup` applies committed migrations and provisions the operations and
 diagnostics projects plus development-only read, server-write, and
-browser-write credentials. `pnpm db:migrate` applies schema only;
-`pnpm db:seed` provisions fixtures only. Seed requires
-`FLOWMARK_DEMO_MODE=true` and a loopback database, and it refuses production.
+browser-write credentials. `pnpm db:migrate:local` applies local schema only;
+`pnpm db:seed` provisions fixtures only. Both commands run from
+`@flowmark/auth` after building `@flowmark/db`. The auth package creates the
+local account. Project rows and credentials stay in `@flowmark/db`. Setup and seed require
+`FLOWMARK_DEMO_MODE=true` and the verified checkout-owned Compose database; they
+refuse unmanaged, hosted and production targets.
 The API rejects demo credentials unless demo mode is explicitly enabled, and
 it rejects demo mode when `NODE_ENV` or `VERCEL_ENV` is production. The
 browser key is public by design; the read and server write keys must remain

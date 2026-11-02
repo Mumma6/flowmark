@@ -5,6 +5,17 @@ in one coherent feature PR. Generate once; apply the same committed migrations
 in each database. Never edit an applied migration or use ad hoc SQL to bypass
 Drizzle history. A Git merge does not migrate a database.
 
+## Infrastructure prerequisites
+
+Cloud projects/branches/computes, hosted bindings and GitHub environments,
+variables, protections and secret bindings follow the
+[Pulumi writer policy](./infrastructure.md#pulumi-is-the-infrastructure-writer).
+Provision/adopt those settings through the existing infrastructure project before
+activation; unsupported or currently external properties need reviewed Pulumi
+support first. Do not configure them directly through provider UI/CLI as setup.
+The steps below specify the required state, not an alternative infrastructure
+writer. Drizzle and this pipeline continue to own SQL/history and app rollout.
+
 ## Who does what after activation
 
 - The agent prepares one full-stack feature PR with schema, generated migrations,
@@ -108,7 +119,8 @@ before merging the cutover, and record the observed activation state in the PR:
   when maintainer merge approval is the intended authorization.
 - Each environment's secrets: `MIGRATION_DATABASE_URL` (only its own database's
   direct TLS URL, `sslmode=require`) and `VERCEL_TOKEN` (scoped to the existing
-  team/projects). Configure tokens directly in GitHub, never paste them in chat.
+  team/projects). Supply encrypted inputs to the reviewed Pulumi secret-binding
+  resource; never paste tokens in chat or use direct GitHub settings as a shortcut.
 - Repository variables: `VERCEL_ORG_ID`, `VERCEL_API_PROJECT_ID`,
   `VERCEL_DASHBOARD_PROJECT_ID`, `VERCEL_DOCS_PROJECT_ID`, `VERCEL_WEB_PROJECT_ID`;
   and distinct direct `MIGRATION_PREVIEW_HOST`, `MIGRATION_STAGING_HOST`,
@@ -174,7 +186,7 @@ workflow must first exist on `main`; candidates must contain its runner/verifier
 Until then, use the workstation wrappers below. No workflow, secret or environment
 is created remotely just by adding these files to a PR.
 
-With explicit maintainer approval, configure:
+With explicit maintainer approval, use reviewed Pulumi resources to provide:
 
 - GitHub Environments `database-preview`, `database-staging`, `database-production`,
   each with at least one required reviewer and administrator bypass disabled.
@@ -198,7 +210,8 @@ it does not authorize merge, deploy, backfill or publication.
 
 Shared `preview` is the current setup. Coordinate schema-changing PRs there;
 another PR's schema can invalidate its results. A database branch per PR is a
-future improvement requiring separate provisioning, lifecycle and cost work.
+future improvement requiring reviewed Pulumi provisioning/lifecycle support
+and separate cost approval.
 
 ## Workstation fallback
 
@@ -221,8 +234,10 @@ for Production, all ignored. Do not copy hosted env into local app files. First
 provisioning of a schema-only branch may need the documented baseline procedure;
 that is a separate operation, never part of this routine rollout job.
 
-For a disposable loopback test database, explicitly set **both** `DATABASE_URL`
-and `DATABASE_MIGRATION_URL` to that test database before `pnpm db:migrate`.
+Local schema changes use `pnpm db:migrate:local` after `pnpm infra up`.
+Disposable tests use `pnpm test:integration`; its runner supplies and proves the
+isolated target before calling the shared migration CLI. Manually selected
+loopback test databases are not supported.
 Read-only verification uses the same target guards as migration:
 
 ```sh

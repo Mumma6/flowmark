@@ -69,8 +69,8 @@ the operations app; diagnostic cases retain the SDK coverage.
 pnpm db:reset-local-telemetry -- --confirm-local-telemetry
 ```
 
-This destructive command requires `FLOWMARK_DEMO_MODE=true`, a loopback
-database URL and explicit confirmation. It transactionally deletes only
+This destructive command requires separate user approval, `FLOWMARK_DEMO_MODE=true`,
+the verified checkout-owned Compose database and explicit confirmation. It transactionally deletes only
 events, runs and workflows belonging to the fixed operations project.
 Workspaces, projects, keys, diagnostics and other projects are retained.
 Then use **Run all six scenarios** in the app to record fresh history.

@@ -1,8 +1,8 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 import { Effect, Result } from "effect"
-import { LOCAL_DEV_AUTH_SECRET } from "../../src/fixtures/demo.js"
-import { readAuthSecret } from "../../src/auth/create-auth.js"
+import { LOCAL_DEV_AUTH_SECRET } from "@flowmark/db/demo"
+import { readAuthSecret } from "../src/create-auth.js"
 
 test("uses the configured Better Auth secret", () => {
   assert.equal(

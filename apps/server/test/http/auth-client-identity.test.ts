@@ -5,7 +5,7 @@ import {
   AUTH_PROXY_IDENTITY_HEADER,
   normalizeAuthClientIdentity,
   signAuthProxyIdentity,
-} from "@flowmark/db/auth/client-identity"
+} from "@flowmark/auth/client-identity"
 
 const secret = "synthetic-proxy-secret-at-least-thirty-two-characters"
 const timestamp = 1793616000000

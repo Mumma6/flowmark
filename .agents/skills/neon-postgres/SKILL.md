@@ -16,6 +16,23 @@ metadata:
   source: https://github.com/neondatabase/agent-skills/tree/main/skills/neon-postgres
 ---
 
+## Flowmark operating policy
+
+Use [flowmark-infrastructure](../flowmark-infrastructure/SKILL.md) first for
+cloud resources or persistent settings. Flowmark already has Neon, separate
+Preview/Staging/Production branches and working Better Auth. All infrastructure
+changes, including temporary branches and new services, must go through the
+existing Pulumi project. Do not run the upstream provisioning, Claimable,
+`neon.ts` apply/deploy or branch-create examples as a Flowmark workflow.
+Missing provider support requires a reviewed Pulumi change before provision;
+a Git branch or failed login never authorizes a new cloud resource.
+
+Read-only provider/SQL diagnostics remain useful. Schema/index/extension changes
+use Drizzle and the guarded migration workflow; app data operations keep their
+own exact-environment approvals. Do not pull hosted env into local app files.
+The generic material below and linked references describe provider capabilities;
+they do not override these Flowmark rules or replace its auth/driver choices.
+
 **FIRST**: Use the parent `neon` skill for a Neon overview, getting started with Neon, Neon development best practices, and more.
 
 If the `neon` skill is not installed, fetch it from https://neon.com/docs/ai/skills/neon/SKILL.md or install it with:
@@ -85,7 +102,9 @@ Key points:
 
 - Branches are instant, copy-on-write clones (no full data copy).
 - Each branch has its own compute endpoint.
-- Use the neon CLI or MCP server to create, inspect, and compare branches.
+- In Flowmark, create/change branch infrastructure through Pulumi. CLI/MCP reads
+  may inspect and compare existing branches; generic branch skills do not authorize
+  direct creation, resets or changes outside the repository policy.
 
 Link: https://neon.com/docs/introduction/branching.md
 

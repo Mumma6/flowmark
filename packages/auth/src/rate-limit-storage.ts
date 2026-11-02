@@ -1,11 +1,11 @@
 import { createHmac } from "node:crypto"
 import { Effect } from "effect"
-import type { FlowmarkDatabase } from "../client.js"
-import { Database } from "../persistence/database.js"
 import {
   consumeAuthRateLimit,
+  Database,
   type AuthLimitRule,
-} from "../persistence/auth/writes/consume-auth-rate-limit.js"
+} from "@flowmark/db/auth-limits"
+import type { FlowmarkDatabase } from "@flowmark/db"
 
 export const authLimitKey = (secret: string, key: string) =>
   createHmac("sha256", secret)

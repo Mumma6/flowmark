@@ -1,5 +1,11 @@
 # Claimable Neon
 
+Flowmark uses the [Pulumi infrastructure policy](../../flowmark-infrastructure/SKILL.md).
+Provisioning examples here are upstream reference, not commands to run against
+Flowmark. Add/adopt provider resources through Pulumi before mutation; SQL schema
+changes remain Drizzle migrations. Do not enable a new auth provider or pull
+hosted env into local app files as part of these examples.
+
 Claimable Neon provisions a temporary Neon project — Lakebase Postgres, and optionally the Data API and Managed Better Auth — before a human creates an account. The agent holds an identity assertion, not a Neon API key. A human can later claim the project into their organization.
 
 This flow follows the [auth.md](https://claimable.neon.tech/auth.md) protocol. Fetch `https://claimable.neon.tech/auth.md` for request and response fields. REST is on `https://claimable.neon.tech`. Use the table below; do not invent other identity paths.

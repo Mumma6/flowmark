@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --port 3001",
+    "dev": "next dev --hostname 127.0.0.1 --port 3001",
     "build": "next build",
     "start": "next start --port 3001",
     "lint": "eslint app lib next.config.ts",
@@ -11,6 +11,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@flowmark/auth": "workspace:*",
     "@flowmark/db": "workspace:*",
     "@flowmark/server": "workspace:*",
     "@flowmark/ui": "workspace:*",

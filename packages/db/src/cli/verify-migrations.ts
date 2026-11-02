@@ -2,8 +2,7 @@ import { readMigrationFiles } from "drizzle-orm/migrator"
 import { sql } from "drizzle-orm"
 import { Effect } from "effect"
 import { loadApiEnvironment } from "../environment/load.js"
-import { readMigrationDatabaseUrl } from "../environment/runtime.js"
-import { assertMigrationTarget } from "../environment/migration-target.js"
+import { readCheckedMigrationDatabaseUrl } from "../environment/migration-database.js"
 import { CommandConfigurationError } from "../environment/error.js"
 import { DatabaseOperation } from "../persistence/database-operation.js"
 import { runQuery } from "../persistence/run-query.js"
@@ -14,8 +13,7 @@ import { verifyMigrationHistory } from "./migration-history.js"
 await runDatabaseCommand(
   Effect.gen(function* () {
     yield* loadApiEnvironment
-    const url = yield* readMigrationDatabaseUrl()
-    yield* assertMigrationTarget(url)
+    const url = yield* readCheckedMigrationDatabaseUrl(false)
     const expected = yield* Effect.try({
       try: () =>
         readMigrationFiles({
