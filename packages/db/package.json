@@ -41,9 +41,9 @@
   "scripts": {
     "dev": "pnpm db:studio",
     "build": "tsc -p tsconfig.json",
-    "lint": "eslint src",
+    "lint": "eslint src drizzle.studio.config.ts",
     "db:generate": "drizzle-kit generate",
-    "db:studio": "drizzle-kit studio --host=127.0.0.1 --port=4983",
+    "db:studio": "drizzle-kit studio --config=drizzle.studio.config.ts --host=127.0.0.1 --port=4983",
     "db:migrate": "tsx src/cli/migrate.ts",
     "db:preview-baseline": "tsx src/cli/stamp-preview-baseline.ts",
     "db:schema-baseline": "tsx src/cli/stamp-preview-baseline.ts",

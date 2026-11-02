@@ -49,7 +49,7 @@ not an SDK fallback or production credential provisioning.
 Starting development apps does not start PostgreSQL or apply migrations.
 Set `DATABASE_URL` in `apps/server/.env.local` to an existing development database,
 then run `pnpm db:setup`. That command reads the server app's environment
-files, builds `@flowmark/db`, applies committed migrations, and seeds local
+files, builds `@flowmark/db` and its workspace dependencies (including core), applies committed migrations, and seeds local
 fixture projects so the API uses the same database. `@flowmark/auth` then
 provisions `local@flowmark.test`. `pnpm db:migrate` and `pnpm db:seed` are
 available separately. Project fixtures stay in `@flowmark/db`; the local
@@ -59,6 +59,15 @@ environment variables are forwarded into Turbo's dev tasks; Next.js loads each
 app's own `.env.local`. The fixture uses Better Auth's standard email/password
 login. Seeding remains restricted to explicit demo mode and loopback databases.
 It does not run on application startup.
+
+`db:setup` requires the runtime and optional migration URL to name the same
+host, port, database, and role. It uses `DATABASE_URL` for both migration and
+seed, including that URL's password and connection options. Different local
+databases or roles are refused before SQL. PostgreSQL URL scheme aliases,
+omitted/default port 5432, and equivalent username encoding are accepted;
+different hostnames remain distinct because loopback listeners can differ.
+Unset a conflicting migration override or select the same target explicitly.
+Shell values retain precedence and existing env files are not rewritten.
 
 ### Database browser: Drizzle Studio
 
@@ -71,18 +80,22 @@ only to `127.0.0.1:4983` and starts automatically with `pnpm dev`.
 Use `pnpm db:studio` to run it separately.
 Drizzle Kit is already installed in the database package.
 
-Studio reads the same server `.env.local` / `.env` files as demo setup.
-An exported `DATABASE_URL` takes precedence. Use a dedicated development
+Studio uses a separate guarded local config, `packages/db/drizzle.studio.config.ts`.
+It reads the same server `.env.local` / `.env` files as demo setup and requires
+demo mode, a loopback PostgreSQL URL, and a non-production environment.
+An exported `DATABASE_URL` takes precedence. A configured migration URL must
+match the runtime target; Studio uses only the runtime URL's connection settings.
+Use a dedicated development
 database: Studio can edit and delete records, not just inspect them.
 Never expose its local server publicly or share connection credentials.
 The browser UI is served by Drizzle, separately from our local API; follow
 your team's data-access policy before connecting sensitive databases.
 
-Studio works with any PostgreSQL reachable through `DATABASE_URL`, including a
-local server. Update the connection string, including the provider's required
-TLS settings, then restart Studio. Provider-specific auth, storage, and other
-services are not configured by Studio. The reference hosted database is Neon;
-see [ADR 0006](./decisions/0006-mvp-0.1-infrastructure.md).
+This repository's Studio command is local-only. It refuses hosted targets and
+conflicting migration overrides before Studio starts. The shared
+`drizzle.config.ts` still selects `DATABASE_MIGRATION_URL` for migration tooling;
+the hosted migration wrappers and approval rules are unchanged. The reference
+hosted database is Neon; see [ADR 0006](./decisions/0006-mvp-0.1-infrastructure.md).
 
 The reference Neon project is a separate database. Its operating notes are in
 the [infrastructure guide](./infrastructure). Local demo setup keeps
@@ -292,8 +305,10 @@ credentials and do not appear in the operations dashboard. Do not run seed or
 setup against production or a non-loopback database. Do not run it against a
 database that already has these tables from an unmanaged schema push;
 reconcile/migrate that schema first. Set the same `DATABASE_URL` in the API
-environment. Optional `DATABASE_MIGRATION_URL` is used only by migrate
-commands. The three local development app configurations are:
+environment. Optional `DATABASE_MIGRATION_URL` selects the connection for
+standalone migration commands. Local setup and Studio validate that it names
+the same target, then use `DATABASE_URL`. The three local development app
+configurations are:
 
 - API: `DATABASE_URL`, `FLOWMARK_DEMO_MODE=true`.
 - Dashboard: `FLOWMARK_DEMO_MODE=true`, optional server-only `FLOWMARK_API_URL`.
