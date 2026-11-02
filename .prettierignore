@@ -3,4 +3,5 @@ apps/docs/.next-preview/
 apps/docs/.next-production/
 apps/api/.next-preview/
 infrastructure/pnpm-lock.yaml
+infrastructure/Pulumi.*.yaml
 infrastructure/sdks/

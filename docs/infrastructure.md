@@ -7,12 +7,13 @@ reference deployment, not a requirement for every install.
 This page records the public shape of that deployment. It does not include
 credentials, connection strings, or operator runbooks. The separate
 [Pulumi TypeScript project](../infrastructure/README.md) manages the existing
-Preview/Staging Neon branches and 13 non-production Vercel environment bindings,
-imported with deletion protection on 1 November 2026. Post-import previews report
-18 unchanged state resources. The four shared Vercel project containers are also
-adopted with deletion protection in the production stack; standard refresh-preview
-and preview both report six unchanged state resources. Domains, the Production
-Neon branch and production/shared env bindings await separate adoption.
+Neon project, three persistent branches and their computes/database containers/
+owners, four shared Vercel projects, seven custom-domain assignments and all
+21 app env records. Adoption completed on 2 November 2026 with deletion
+protection on all 45 cloud resources. Standard refresh-preview and preview report
+24 unchanged state resources in nonprod and 27 in production. SQL/schema history,
+CI secrets, app deployments and registrar/DNS-zone services keep their existing
+owners.
 
 ## Hostnames
 
@@ -74,9 +75,6 @@ SDK packages publish separately to npm as `@flowmarkdev/node` and
 - A backup restore drill.
 - Alerting.
 - Durable offline delivery.
-- Production Neon branch, domain and production/shared env adoption into Pulumi
-  state. Shared Vercel projects, non-production branches and non-production env
-  bindings are adopted.
 
 Provider choices and the dated consequences are in
 [ADR 0006](./decisions/0006-mvp-0.1-infrastructure.md). Local variables and

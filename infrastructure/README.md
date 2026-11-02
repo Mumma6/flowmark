@@ -4,14 +4,14 @@ This is the Pulumi TypeScript project for Flowmark's existing Vercel and Neon
 reference deployment. Resources are adopted by import, starting with
 non-production. Do not recreate them with a starter template.
 
-The `nonprod` stack manages the existing Neon `preview` and `staging` branches
-and 13 non-production Vercel environment bindings, imported with approval on
-1 November 2026. All adopted resources have Pulumi deletion protection;
-post-import refresh-preview and preview report 18 unchanged state resources.
-The `production` stack also manages the four shared Vercel project containers,
-imported with approval and deletion protection on 1 November 2026. Its standard
-refresh-preview and preview report six unchanged state resources. The remaining
-production resource classes are pending. See the public
+Persistent reference-infrastructure adoption completed on 2 November 2026.
+`nonprod` has 24 state resources: its two Neon branches, computes, databases and
+owner roles, 13 Vercel env bindings, and three Pulumi metadata resources.
+`production` has 27: the Neon project/production branch/compute/database/owner,
+four shared Vercel projects, seven custom-domain assignments, eight remaining
+env bindings, and three metadata resources. All **45 adopted cloud resources**
+have deletion protection. Standard refresh-preview and preview are clean in both
+stacks. See the public
 [infrastructure overview](../docs/infrastructure.md) for the deployment shape.
 
 The [environment contract](./environments.md) records all required app,
@@ -65,10 +65,10 @@ export PULUMI_ORG=your-pulumi-organization
 A project is the resource program. A stack is an isolated instance with its own
 state and configuration. This project uses:
 
-- `nonprod`: the imported Preview and Staging Neon branches and 13 Vercel
-  Preview-target environment bindings, including Staging branch overrides.
-- `production`: the existing Neon project/production resources, shared Vercel
-  projects, their domains and production bindings, once approved for adoption.
+- `nonprod`: Preview/Staging Neon branches and their computes, database
+  containers and owners; 13 Preview-target env bindings with Staging overrides.
+- `production`: the Neon project and production branch/compute/database/owner,
+  shared Vercel projects, seven custom domains and eight production/shared envs.
   The four Vercel projects serve all environments; never declare the same
   project resource in both stacks.
 
@@ -136,11 +136,15 @@ are needed for this foundation.
 
 Each property has one writer:
 
-- Pulumi owns the imported Preview/Staging branch resources and their names.
-  It ignores their ancestry and provider-side protection settings. All other
-  branch resources/settings remain with their existing owner until explicitly
-  adopted. Pulumi also owns the 13 imported nonprod Vercel bindings and readable
-  values; sensitive values use the write-only versioned update protocol below.
+- Pulumi owns persistent Neon project/branch identity, project defaults,
+  compute sizing/suspension, database containers and owner-role resources.
+  Branch ancestry, provider-side protection and project security/maintenance/
+  quota policies retain their existing owners. Role passwords and project
+  connection outputs are computed secrets, encrypted in state.
+- Pulumi owns all 21 app env bindings, four Vercel project containers and seven
+  custom-domain assignments. Sensitive values use the write-only protocol below.
+  Registrar/DNS-zone services and automatic `*.vercel.app` aliases retain their
+  existing platform ownership; this program does not create a second DNS writer.
 - Vercel app `vercel.json` files keep framework, region, install/build and ignore
   commands. Match them during import instead of introducing competing values.
 - Application deployments stay on the existing Git/controlled Actions path.
@@ -176,10 +180,10 @@ upgrades and re-run previews before applying them.
 
 The installed branch schema has `projectId`, `name`, `parentId`, `parentLsn`,
 `parentTimestamp`, and `protected`; only `projectId` is required. It has no
-schema-only initialization, TTL, or endpoint settings. `nonprod.ts` only
-declares branch name and project, with a mandatory import ID. Ancestry and
-provider-side protection remain explicitly ignored. No creation path, compute,
-database schema, or expiry changes are included. Pulumi deletion protection is
+schema-only initialization, TTL, or endpoint settings. Branch declarations
+only specify name/project and a mandatory import ID; ancestry and provider-side
+protection remain ignored. Separate `Endpoint` resources own existing computes.
+No creation path, database schema or expiry changes are included. Deletion protection is
 separate from Neon's paid provider-side branch-protection feature.
 
 Set the inventory-verified IDs locally before the first preview (replace the
@@ -258,7 +262,8 @@ import. Post-import refresh-preview and preview passed with 18 unchanged state
 resources. Both database URLs were matched to the correct Neon branch endpoints
 and distinct from Production, with read-only SQL identity checks. Schema-only
 branch origins and absence of expiry were preserved. No application rows were
-read and no SQL writes were performed. Production adoption is a separate task.
+read and no SQL writes were performed. The completed additional adoption is
+recorded below.
 
 The infrastructure tests use Pulumi mocks to verify the explicit opt-in gate
 and all 13 import IDs, with Preview-only targets, exact branch overrides,
@@ -311,5 +316,42 @@ diff setting was needed. Keep the explicit false declaration and verify standard
 refresh after future imports; a zero-value omission must not be mistaken for a
 live setting change.
 
-Later classes adopt the Production Neon branch, domains and production/shared
-env bindings. Each class still needs separate approval before `pulumi up`.
+## Remaining persistent resources: adoption complete
+
+`neon-additional.ts` adopts the existing project and Production branch, plus the
+three existing computes, database containers and owner roles. Database containers
+do not include SQL tables/history: Drizzle keeps that ownership. The project
+ignores inline branch/primary-compute settings so they cannot compete with the
+separate resources. Existing Postgres 18, six-hour history, 0.25–2 CU bounds and
+the observed suspend setting are preserved. No branch or database was created.
+
+`vercel-domains.ts` adopts seven custom-domain assignments. Staging domains keep
+their `staging` branch, and `www.flowmark.dev` keeps its 308 apex redirect. The
+four platform aliases remain platform-owned. No DNS records or protection
+exceptions are changed by this import.
+
+`vercel-production-bindings.ts` adopts six readable production/shared records
+and two Production-only sensitive records. General Preview, Staging and Production
+database/auth records remain separate. The sensitive records use write-only
+imports without a version bump, preserving their active values.
+
+Additional opt-ins are `importProductionNeon`, `importNeonBranchResources`,
+`importVercelDomains`, `importProductionVercelBindings`,
+`importProductionDatabaseBinding` and `importProductionAuthBinding`. Keep enabled
+gates enabled after adoption. All IDs and active sensitive values come from
+ignored stack config; no operator IDs or credentials belong in Git.
+Per-branch config includes `{stage}EndpointId`, `{stage}DatabaseName` and
+`{stage}DatabaseOwnerRole`; Production also requires `neonOrgId` and
+`productionBranchId`.
+
+Production sensitive config is `productionDatabaseUrl` and
+`productionBetterAuthSecret`. An unavailable sensitive original must never be
+replaced with a placeholder. Any replacement/activation needs explicit approval
+and an app redeploy before adoption. `productionAuthSecretPending=true` allows
+planning that step but blocks actual binding adoption until activation completes.
+No `vercel.Deployment` resource is introduced; deployment ownership is unchanged.
+
+The remaining imports added 26 protected cloud resources and one provider
+metadata record. They made no existing-resource updates, replacements or
+deletions. Post-import standard refresh/preview report 24 unchanged resources
+in nonprod and 27 in production, without diagnostic flags.

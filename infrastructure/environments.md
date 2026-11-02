@@ -1,7 +1,7 @@
 # Reference deployment environment contract
 
 Checked against application source, the four live Vercel projects, Neon endpoint
-metadata and GitHub Actions configuration on 1 November 2026. This catalog lists
+metadata and GitHub Actions configuration on 2 November 2026. This catalog lists
 names and ownership, not secret values or operator resource IDs.
 
 ## Active environments
@@ -12,8 +12,8 @@ Preview deployments are intentionally paused on all four projects. Their
 existing general Preview configuration and isolated database remain parked for
 future use. Do not enable automatic previews as a side effect of import.
 
-The live inventory contains **21 application env records**: 13 adopted nonprod
-records and 8 production/shared public records awaiting their own adoption.
+The live inventory contains **21 adopted application env records**: 13 nonprod
+and 8 production/shared records, including two Production-only sensitive records.
 All required records have the expected scopes; no forbidden hosted override
 was found. Secret presence/type is verified, but unreadable secret payloads
 are not exposed by the audit.
@@ -124,18 +124,19 @@ config equivalents. Do not put these on the deployed applications. No automatic
 Pulumi CI update workflow is configured, so a GitHub `PULUMI_ACCESS_TOKEN` secret
 is not a missing requirement.
 
-Nonprod owns its imported branches and bindings. The production stack owns
-the four imported shared Vercel project containers, which serve every environment;
-it must never include inline env blocks that compete with the nonprod binding
-resources. Production/shared env adoption, domains and the Production Neon
-branch remain separate reviewed resource classes. CI secrets stay GitHub-owned;
+Nonprod owns its branches, computes, database containers, roles and 13 bindings.
+Production owns the Neon project and production resources, four shared Vercel
+project containers, seven custom domains and the other eight app env records.
+It never declares inline env blocks that compete with individual binding resources.
+CI secrets stay GitHub-owned;
 schema/history stays Drizzle-owned; build commands/regions stay in `vercel.json`.
 
-Production auth/database records exist at runtime but their originals have not
-been moved into production Pulumi config. A later env-resource adoption needs
-active values through an approved secure path. It must not rotate Production
-credentials or invent placeholders. The project-container import needs no
-production secret transfer.
+Active Production database/auth values are encrypted in Pulumi configuration.
+Sensitive imports preserve them through the write-only protocol. Changes require
+reviewed value-version updates; merely editing secret config does not rotate a
+live value. Inactive replacement auth values are guarded against actual import.
+Use an explicitly approved secure path for any future transfer/rotation, with
+the matching app redeploy. Never invent placeholders or send values in chat.
 
 ## Verification limits
 

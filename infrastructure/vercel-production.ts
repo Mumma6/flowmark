@@ -1,5 +1,7 @@
 import * as pulumi from "@pulumi/pulumi"
 import * as vercel from "@pulumiverse/vercel"
+import { importVercelDomains } from "./vercel-domains"
+import { importProductionVercelBindings } from "./vercel-production-bindings"
 
 // These settings keep their existing owner during project-container adoption.
 // In particular, inline environments must never compete with binding resources,
@@ -80,7 +82,7 @@ export const importProductionVercelProjects = () => {
     providerOptions,
   )
 
-  return projects.map(
+  const ids = projects.map(
     ({ app, root, id }) =>
       new vercel.Project(
         `vercel-${app}`,
@@ -106,4 +108,7 @@ export const importProductionVercelProjects = () => {
         },
       ).id,
   )
+  importVercelDomains(provider)
+  importProductionVercelBindings(provider)
+  return ids
 }

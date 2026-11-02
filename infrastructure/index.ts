@@ -2,6 +2,7 @@ import * as pulumi from "@pulumi/pulumi"
 import { importNonprodBranches } from "./nonprod"
 import { importNonprodVercelBindings } from "./vercel-nonprod"
 import { importProductionVercelProjects } from "./vercel-production"
+import { importProductionNeon } from "./neon-additional"
 
 // Register before declaring or importing resources. Protection also prevents
 // replacements that would delete an adopted resource.
@@ -24,3 +25,6 @@ export const nonprodVercelBindingIds =
 
 export const productionProjectIds =
   stackName === "production" ? importProductionVercelProjects() : []
+
+export const productionNeonIds =
+  stackName === "production" ? importProductionNeon() : []
