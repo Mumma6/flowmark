@@ -144,7 +144,7 @@ them.
 
 ## Local development
 
-Node.js 20.19+ (24 LTS recommended) and pnpm 10.18.1.
+Node.js 20.19+ (24 LTS recommended), pnpm 10.18.1, and Docker Compose.
 
 ```sh
 pnpm install
@@ -154,33 +154,53 @@ pnpm db:setup
 pnpm dev
 ```
 
-Local infrastructure uses PostgreSQL 18 through standard Docker Compose on
-OrbStack, Docker Desktop, or Docker Engine. Applications and compiler watchers
-run natively. `pnpm dev` starts API/dashboard/harness; `pnpm dev:all` includes
-web and both documentation apps. `pnpm dev:stack` starts this checkout's
-PostgreSQL and then every application. It does not migrate or seed, so run
-`pnpm db:setup` once before the first session. Append `--ui=stream` for ordinary logs.
-Studio runs separately with `pnpm db:studio`.
+`pnpm db:setup` runs once. It applies the committed migrations and provisions
+the local demo in this checkout's PostgreSQL 18 Compose database
+(`127.0.0.1:55432`, database and role `flowmark`). Sign in to the dashboard at
+`http://localhost:3001` as `local@flowmark.test` with password `local-dev-only`.
+The harness at `http://127.0.0.1:3004` records sample runs with its server
+write key. A later session can use `pnpm dev:stack`: it prepares env files,
+starts that same database, then every application and Drizzle Studio. It does
+not migrate or seed.
 
-Use `pnpm infra <operation>` for `doctor`, `status`, `logs`, `restart`, or
-`down`; commands verify checkout ownership and `down` preserves data. Existing
-env files and databases are preserved. Older configuration must be explicitly
-changed to Compose; see [existing local data](./docs/development.md#existing-local-data).
+`pnpm dev` starts the API on port 3003, the dashboard on 3001, the harness on
+3004, and the library watchers. `pnpm dev:all` also starts web (3000), docs
+(3002), and internal-docs (3005). Both require the database to already be
+healthy. Append `--ui=stream` for ordinary logs. Applications and watchers run
+natively on OrbStack, Docker Desktop, or Docker Engine.
+
+`pnpm dev:stack` starts Drizzle Studio with the applications. `pnpm dev` and
+`pnpm dev:all` do not. To open Studio while those sessions are already running:
+
+```sh
+pnpm db:studio
+```
+
+Open [https://local.drizzle.studio](https://local.drizzle.studio) after the
+local server starts. Studio binds only to `127.0.0.1:4983`, reads the same
+checkout-owned Compose database, and can edit or delete rows. It refuses a
+hosted database. Stopping `dev:stack` stops Studio with the other tasks.
+
+Use `pnpm infra <operation>` for `doctor`, `up`, `status`, `logs`,
+`restart postgres`, or `down`. Commands verify checkout ownership, and `down`
+keeps the named volume. Existing env files and databases are preserved. Older
+configuration must be changed to Compose explicitly; see
+[existing local data](./docs/development.md#existing-local-data).
 
 `pnpm test:integration` creates a separate disposable PostgreSQL instance and
-removes only its own containers/network. It never touches development/demo data.
-`pnpm check` works without Docker. Use one dev session per checkout and stop its
-watchers before builds/checks/integration tests, or use another worktree.
-The [command inventory](./docs/development-commands.md) covers all tooling.
+removes only its own containers and network. It never touches development or
+demo data. `pnpm check` works without Docker. Use one dev session per checkout
+and stop its watchers before builds, checks, or integration tests, or use
+another worktree. The [command inventory](./docs/development-commands.md)
+covers all tooling.
 
 Database setup builds its workspace prerequisites, including core. If
 `DATABASE_MIGRATION_URL` is set, it must name the same local host, port,
 database, and role as `DATABASE_URL`; otherwise setup stops before SQL.
 
-Open the dashboard at `http://localhost:3001`. The
-[development guide](./docs/development.md) covers the local pipeline, checks,
-and database safety. Self-hosting needs the same apps, committed migrations,
-and any PostgreSQL you control.
+The [development guide](./docs/development.md) covers the local pipeline,
+checks, and database safety. Self-hosting needs the same apps, committed
+migrations, and any PostgreSQL you control.
 
 ## Contributing
 

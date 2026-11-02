@@ -109,9 +109,9 @@
 - Use `pnpm dev` for API/dashboard/harness and native library watchers; append
   `--ui=stream` for non-interactive logs. `pnpm dev:all` includes web and both
   documentation apps when PostgreSQL is already healthy. `pnpm dev:stack`
-  runs `infra up` and then every application; record its `container` and
-  `startedByThisCall`. Studio is explicit with `pnpm db:studio`. None of these
-  commands migrate or seed on startup.
+  runs `infra up`, then every application and Drizzle Studio; record its
+  `container` and `startedByThisCall`. `pnpm db:studio` starts Studio alone.
+  None of these commands migrate or seed on startup.
   One session owns each checkout's build outputs: inspect existing processes/
   ports first, reuse existing services, and never run direct builds/checks/
   integration commands alongside watchers. Use another worktree when somebody

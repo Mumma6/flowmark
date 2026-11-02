@@ -16,7 +16,7 @@ This provides a familiar monorepo layout, dependency-aware build tasks, and shar
 core/SDK/db/API/auth TypeScript watchers. All libraries build before development
 tasks start. `pnpm dev --ui=stream` provides ordinary logs for agents;
 `pnpm dev:all` includes all six applications. `pnpm dev:stack` is the named
-command that starts this checkout's Compose PostgreSQL and then those
-applications. Studio runs separately. `pnpm dev` and `pnpm dev:all` still
-require a healthy database. Migrations remain an explicit prerequisite, not a
-hidden side effect of starting a web server.
+command that starts this checkout's Compose PostgreSQL, those applications,
+and Drizzle Studio. `pnpm dev` and `pnpm dev:all` still require a healthy
+database and do not start Studio. Migrations remain an explicit prerequisite,
+not a hidden side effect of starting a web server.

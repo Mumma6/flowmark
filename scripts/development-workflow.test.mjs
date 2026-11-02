@@ -59,12 +59,9 @@ test("dev commands check ownership/readiness and keep database mutation explicit
   assert.match(scripts["dev"], /--filter=@flowmark\/server\.\.\./)
   assert.equal(
     scripts["dev:stack"],
-    "pnpm dev:setup && pnpm infra up && turbo dev",
+    "pnpm dev:setup && pnpm infra up && turbo dev db:studio",
   )
-  assert.doesNotMatch(
-    scripts["dev:stack"],
-    /db:setup|db:seed|db:migrate|studio/,
-  )
+  assert.doesNotMatch(scripts["dev:stack"], /db:setup|db:seed|db:migrate/)
   assert.equal(
     scripts["db:migrate:local"],
     "pnpm --filter @flowmark/db db:migrate --local",

@@ -49,11 +49,12 @@ directory. Subsequent edits rebuild automatically; exports point at built files.
 pnpm dev                         # daily product development
 pnpm dev --ui=stream             # ordinary logs for agents/non-interactive terminals
 pnpm dev:all                     # also web, docs and internal-docs
-pnpm dev:stack                   # start this checkout's PostgreSQL, then all apps
-pnpm db:studio                   # optional local database browser
+pnpm dev:stack                   # PostgreSQL, all apps, and Drizzle Studio
+pnpm db:studio                   # Studio alone, when the apps are already running
 ```
 
-Studio is explicit and is not started with the applications. Docs-only work can
+`pnpm dev` and `pnpm dev:all` do not start Studio. `pnpm dev:stack` does.
+Docs-only work can
 use `pnpm --filter @flowmark/docs dev` without Docker or backend builds.
 Turbo's TUI supports arrow keys or `j`/`k`, `m` for help, and `Ctrl+C` to stop.
 Exported `BETTER_AUTH_SECRET` and `BETTER_AUTH_URL` reach native dev tasks;
@@ -75,8 +76,9 @@ not an SDK fallback or production credential provisioning.
 `pnpm dev` and `pnpm dev:all` check Compose readiness before starting
 applications. They do not start PostgreSQL, apply migrations or seed data.
 `pnpm dev:stack` is the explicit full start: it prepares env files, runs
-`pnpm infra up`, then starts every application and library watcher. It still
-does not migrate or seed. Run `pnpm db:setup` once before recording data.
+`pnpm infra up`, then starts every application, the library watchers, and
+Drizzle Studio. It still does not migrate or seed. Run `pnpm db:setup` once
+before recording data.
 Run `pnpm infra up` after env setup. Then run
 `pnpm db:setup`. That command reads the server app's environment
 files, builds `@flowmark/db` and its workspace dependencies (including core), applies committed migrations, and seeds local
@@ -207,11 +209,12 @@ pending. Do not switch engines/contexts silently or fall back to a hosted databa
 ### Command reference
 
 The daily path is env setup → `infra up` → `db:setup` once → `dev`.
-`pnpm dev:stack` combines env setup, `infra up` and all applications for a
-later session. Subsequent schema updates use `db:migrate:local`; `db:seed`
-provisions fixtures without migrating. PostgreSQL provisioning/health belongs to Compose; database
-safety checks stay in the repository. Hosted migration, release and publication
-commands keep their separate approval gates.
+`pnpm dev:stack` combines env setup, `infra up`, all applications, and
+Drizzle Studio for a later session. Subsequent schema updates use
+`db:migrate:local`; `db:seed` provisions fixtures without migrating.
+PostgreSQL provisioning/health belongs to Compose; database safety checks stay
+in the repository. Hosted migration, release and publication commands keep
+their separate approval gates.
 
 See [developer commands](./development-commands.md) for the complete command and
 script inventory, including which aliases were removed and why.
