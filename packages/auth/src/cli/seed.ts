@@ -1,9 +1,7 @@
 import { Effect } from "effect"
 import {
-  assertLocalDevelopmentDatabase,
-  assertManagedLocalDatabase,
   loadApiEnvironment,
-  readDatabaseUrl,
+  readLocalDevelopmentDatabaseUrl,
   runDatabaseCommand,
   seedLocalDevelopment,
 } from "@flowmark/db/seed"
@@ -12,9 +10,7 @@ import { seedLocalAuthUser } from "../seed-local-user.js"
 await runDatabaseCommand(
   Effect.gen(function* () {
     yield* loadApiEnvironment
-    const url = yield* readDatabaseUrl()
-    yield* assertLocalDevelopmentDatabase(url)
-    yield* assertManagedLocalDatabase(url)
+    const url = yield* readLocalDevelopmentDatabaseUrl()
     yield* seedLocalDevelopment(url, seedLocalAuthUser)
     yield* Effect.sync(() => {
       console.log(

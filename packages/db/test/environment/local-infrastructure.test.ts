@@ -1,4 +1,5 @@
 import assert from "node:assert/strict"
+import { spawnSync } from "node:child_process"
 import {
   existsSync,
   mkdtempSync,
@@ -9,21 +10,22 @@ import {
 } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
+import { fileURLToPath } from "node:url"
 import { test, type TestContext } from "node:test"
 import { Effect, Result } from "effect"
 import { runLocalInfrastructure } from "../../src/cli/infra.js"
 import { CommandConfigurationError } from "../../src/environment/error.js"
 import {
-  localDatabaseMode,
   localProject,
   readLocalInfrastructure,
 } from "../../src/environment/local-infrastructure.js"
 import { assertManagedLocalDatabase } from "../../src/environment/managed-local-database.js"
+import { readLocalDevelopmentDatabaseUrl } from "../../src/environment/local-database.js"
+import { readCheckedMigrationDatabaseUrl } from "../../src/environment/migration-database.js"
 import { assertTestDatabaseTarget } from "../../src/environment/test-database.js"
 
 const id = "a".repeat(64)
 const defaults = {
-  FLOWMARK_LOCAL_DATABASE: "compose",
   FLOWMARK_DEMO_MODE: "true",
   DATABASE_URL: "postgresql://flowmark:local_dev_only@127.0.0.1:55432/flowmark",
   FLOWMARK_POSTGRES_PORT: "55432",
@@ -47,6 +49,11 @@ function fixture(t: TestContext, options: Record<string, unknown> = {}) {
   }
   for (const key of [
     "DATABASE_MIGRATION_URL",
+    "TEST_DATABASE_URL",
+    "FLOWMARK_TEST_DATABASE_SOURCE",
+    "FLOWMARK_TEST_CONTAINER_ID",
+    "FLOWMARK_TEST_RUN_ID",
+    "FLOWMARK_TEST_PROJECT",
     "NODE_ENV",
     "VERCEL_ENV",
     "DOCKER_HOST",
@@ -269,25 +276,6 @@ test("integration target proof checks container ownership, transient storage, po
   assert.ok(!f.calls().some((call) => mutates(call.args)))
 })
 
-test("native configuration stays explicit and does not require Docker", async () => {
-  assert.equal(Effect.runSync(localDatabaseMode({})), "native")
-  await Effect.runPromise(
-    assertManagedLocalDatabase("postgresql://localhost/legacy", {
-      FLOWMARK_LOCAL_DATABASE: "native",
-      PATH: "/missing",
-    }),
-  )
-  assert.match(
-    await reason(
-      readLocalInfrastructure({
-        ...defaults,
-        FLOWMARK_LOCAL_DATABASE: "native",
-      }),
-    ),
-    /user-managed/,
-  )
-})
-
 test("checkout projects are stable and independent", (t) => {
   const root = mkdtempSync(join(tmpdir(), "flowmark-projects-"))
   t.after(() => rmSync(root, { recursive: true, force: true }))
@@ -303,7 +291,126 @@ test("checkout projects are stable and independent", (t) => {
   )
 })
 
-test("config refuses wrong targets, ambient Compose overrides, and invalid modes before Docker", async (t) => {
+test("local commands require Compose proof without a provider selector", async (t) => {
+  const f = fixture(t)
+  for (const migration of [
+    undefined,
+    defaults.DATABASE_URL,
+    "postgres://%66lowmark:different@127.0.0.1:55432/flowmark?application_name=migration",
+  ]) {
+    const env = { ...f.env, DATABASE_MIGRATION_URL: migration }
+    assert.equal(
+      await execute(readLocalDevelopmentDatabaseUrl(env)),
+      defaults.DATABASE_URL,
+    )
+    assert.equal(
+      await execute(readCheckedMigrationDatabaseUrl(true, env)),
+      defaults.DATABASE_URL,
+    )
+  }
+  f.state.present = false
+  f.set(f.state)
+  await assert.rejects(
+    execute(readLocalDevelopmentDatabaseUrl(f.env)),
+    /absent, stopped, or unhealthy/,
+  )
+  await assert.rejects(
+    execute(readCheckedMigrationDatabaseUrl(false, f.env)),
+    /absent, stopped, or unhealthy/,
+  )
+  assert.ok(!f.calls().some((call) => mutates(call.args)))
+})
+
+test("Studio selects the runtime URL after proving Compose ownership", (t) => {
+  const f = fixture(t)
+  const result = spawnSync(
+    process.execPath,
+    [
+      "--import",
+      "tsx",
+      "--input-type=module",
+      "-e",
+      'import config from "./drizzle.studio.config.ts"; if (config.dbCredentials.url !== process.env.DATABASE_URL) process.exit(2)',
+    ],
+    {
+      cwd: fileURLToPath(new URL("../..", import.meta.url)),
+      encoding: "utf8",
+      env: f.env,
+    },
+  )
+  assert.equal(result.status, 0, result.stderr)
+  assert.ok(f.calls().some((call) => call.args[0] === "exec"))
+  assert.ok(!f.calls().some((call) => mutates(call.args)))
+})
+
+test("migration selection preserves disposable CI provenance without allowing local seed or migration", async () => {
+  const url =
+    "postgresql://flowmark_ci:local_ci_only@127.0.0.1:5432/flowmark_test"
+  const env = {
+    CI: "true",
+    GITHUB_ACTIONS: "true",
+    NODE_ENV: "test",
+    FLOWMARK_TEST_DATABASE_SOURCE: "ci-service",
+    TEST_DATABASE_URL: url,
+    DATABASE_URL: url,
+    DATABASE_MIGRATION_URL: url,
+    PATH: "/missing",
+  }
+  assert.equal(await execute(readCheckedMigrationDatabaseUrl(false, env)), url)
+  await assert.rejects(
+    execute(readCheckedMigrationDatabaseUrl(true, env)),
+    /FLOWMARK_DEMO_MODE/,
+  )
+  await assert.rejects(
+    execute(readLocalDevelopmentDatabaseUrl(env)),
+    /FLOWMARK_DEMO_MODE/,
+  )
+  await assert.rejects(
+    execute(readCheckedMigrationDatabaseUrl(false, { ...env, CI: "false" })),
+    /Refusing integration/,
+  )
+  await assert.rejects(
+    execute(
+      readCheckedMigrationDatabaseUrl(false, {
+        ...env,
+        TEST_DATABASE_URL: defaults.DATABASE_URL,
+      }),
+    ),
+    /Refusing integration/,
+  )
+})
+
+test("local migration cannot be redirected by hosted approval or a conflicting local override", async (t) => {
+  const f = fixture(t)
+  const url = "postgresql://secret@ep-fake.neon.tech/flowmark"
+  await assert.rejects(
+    execute(
+      readCheckedMigrationDatabaseUrl(true, {
+        ...f.env,
+        DATABASE_MIGRATION_URL: url,
+        FLOWMARK_MIGRATION_WRAPPER: "preview",
+        NEON_BRANCH: "preview",
+        FLOWMARK_MIGRATION_TARGET_HOST: "ep-fake.neon.tech",
+      }),
+    ),
+    /Refusing local migrate/,
+  )
+  await assert.rejects(
+    execute(
+      readCheckedMigrationDatabaseUrl(true, {
+        ...f.env,
+        DATABASE_MIGRATION_URL: defaults.DATABASE_URL.replace(
+          "/flowmark",
+          "/other",
+        ),
+      }),
+    ),
+    /must match DATABASE_URL/,
+  )
+  assert.equal(f.calls().length, 0)
+})
+
+test("config refuses wrong targets and ambient Compose overrides before Docker", async (t) => {
   const f = fixture(t)
   for (const override of [
     {
@@ -321,7 +428,6 @@ test("config refuses wrong targets, ambient Compose overrides, and invalid modes
     },
     { FLOWMARK_POSTGRES_PORT: "-1" },
     { FLOWMARK_POSTGRES_PORT: "55433" },
-    { FLOWMARK_LOCAL_DATABASE: "unknown" },
     { COMPOSE_PROJECT_NAME: "unrelated" },
     { COMPOSE_FILE: "other.yaml" },
     { COMPOSE_PROFILES: "test" },
@@ -392,6 +498,7 @@ test("already running infrastructure is identified without restart or ownership 
       .every((call) => call.context === "test-local"),
   )
   assert.equal((await f.run("doctor")).healthy, "healthy")
+  assert.equal((await f.run("doctor", ["--require-ready"])).databaseReady, true)
 })
 
 test("explicit recreation keeps the owned volume and does not claim a previously running service", async (t) => {
@@ -410,6 +517,11 @@ test("explicit recreation keeps the owned volume and does not claim a previously
 
 test("new startup scopes one service, waits, and preserves volume on stop/start", async (t) => {
   const f = fixture(t, { present: false, volume: false })
+  await assert.rejects(
+    f.run("doctor", ["--require-ready"]),
+    /absent, stopped, or unhealthy/,
+  )
+  assert.ok(!f.calls().some((call) => mutates(call.args)))
   const started = await f.run("up")
   assert.equal(started.startedByThisCall, true)
   const up = f.calls().find((call) => mutates(call.args))!
@@ -515,7 +627,7 @@ test("logs are bounded, include stderr, and redact connection URLs", async (t) =
   assert.deepEqual(logs.args, ["logs", "--tail", "100", id])
 })
 
-test("managed database guards check ownership before use; native mode has no Docker dependency", async (t) => {
+test("managed database guards always check Compose ownership before use", async (t) => {
   const f = fixture(t)
   await Effect.runPromise(
     assertManagedLocalDatabase(defaults.DATABASE_URL, f.env),

@@ -68,6 +68,11 @@ export const runLocalInfrastructure = Effect.fn("runLocalInfrastructure")(
     if (
       supplied.length &&
       !(
+        command === "doctor" &&
+        supplied.length === 1 &&
+        supplied[0] === "--require-ready"
+      ) &&
+      !(
         command === "restart" &&
         supplied.length === 1 &&
         supplied[0] === "postgres"
@@ -86,7 +91,7 @@ export const runLocalInfrastructure = Effect.fn("runLocalInfrastructure")(
     ) {
       return yield* new CommandConfigurationError({
         reason:
-          "Unexpected infra arguments. Only postgres is managed; up optionally accepts --recreate and down accepts --container <started-container-id>.",
+          "Unexpected infra arguments. doctor accepts --require-ready; up accepts --recreate; restart accepts postgres; down accepts --container <started-container-id>.",
       })
     }
     const config = yield* readLocalInfrastructure(env)
@@ -212,6 +217,10 @@ export const runLocalInfrastructure = Effect.fn("runLocalInfrastructure")(
       ),
       Match.when("doctor", () =>
         Effect.gen(function* () {
+          if (supplied[0] === "--require-ready") {
+            yield* assertLocalContainerReady(config, childEnv)
+            return { ...base, databaseReady: true }
+          }
           if (!before?.State.Running) {
             yield* checkPort(config.port)
             return {

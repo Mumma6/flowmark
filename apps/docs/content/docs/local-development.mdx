@@ -6,6 +6,27 @@ description: Run the Flowmark API, database, and dashboard on your machine.
 Use this stack while you instrument an application locally. Hosted Flowmark
 is the product path; these services are what the repository runs today.
 
+## Repository setup
+
+Requires Node.js 20.19+, pnpm 10.18.1 and Docker Compose. Local PostgreSQL
+runs through Compose; applications run natively.
+
+```sh
+pnpm install
+pnpm dev:setup
+pnpm infra up
+pnpm db:setup
+pnpm dev
+```
+
+Open the dashboard at `http://localhost:3001` and the harness at
+`http://127.0.0.1:3004`. Use `pnpm infra status` / `pnpm infra logs` for
+diagnostics and `pnpm infra down` to stop this checkout's database while
+retaining its volume. Subsequent schema updates use `pnpm db:migrate:local`.
+`pnpm test:integration` uses separate disposable PostgreSQL and never resets
+development/demo data. Existing env files and databases are never rewritten
+or removed by setup.
+
 ## Services to operate
 
 - **Flowmark API:** accepts private server events and public browser events,

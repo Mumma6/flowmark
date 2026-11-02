@@ -12,12 +12,12 @@ Requirements and the full local pipeline are in the
 ```sh
 pnpm install
 pnpm dev:setup
-pnpm infra up # New Compose configuration; existing native setup remains supported.
+pnpm infra up
 pnpm db:setup
 pnpm dev
 ```
 
-Open the dashboard at `http://127.0.0.1:3001`. The
+Open the dashboard at `http://localhost:3001`. The
 [architecture overview](./docs/architecture.md) explains how the SDK, API,
 authentication, persistence, and dashboard fit together. Sign-in configuration
 lives in the private `@flowmark/auth` package. Request boundaries are in

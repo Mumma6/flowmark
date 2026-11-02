@@ -9,7 +9,6 @@ import {
   localDocker,
 } from "./local-docker.js"
 import {
-  localDatabaseMode,
   readLocalInfrastructure,
   type LocalInfrastructure,
 } from "./local-infrastructure.js"
@@ -160,9 +159,6 @@ export const assertLocalContainerReady = Effect.fn("assertLocalContainerReady")(
 export const assertManagedLocalDatabase = Effect.fn(
   "assertManagedLocalDatabase",
 )(function* (url: string, env: NodeJS.ProcessEnv = process.env) {
-  if ((yield* localDatabaseMode(env)) === "native") {
-    return
-  }
   const config = yield* readLocalInfrastructure({ ...env, DATABASE_URL: url })
   const docker = yield* localDocker(env)
   yield* assertLocalContainerReady(config, docker.env)

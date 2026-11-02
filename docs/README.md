@@ -7,6 +7,7 @@ Contributor guides that ship with the public repository:
 - [Security policy](../SECURITY.md): private vulnerability reporting.
 - [Development setup](./development): workspace commands, local demo, database,
   and checks.
+- [Developer commands](./development-commands): command inventory and cleanup decisions.
 - [Database integration tests](./development#database-integration-tests): local
   test setup and the separate disposable-Postgres PR job.
 - [Health and failure diagnostics](./development#health-and-failure-diagnostics):

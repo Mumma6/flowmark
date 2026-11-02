@@ -56,17 +56,20 @@ out-of-band SQL edits. Disabling the trigger is not a supported write path.
 
 ## Local bounded backfill
 
-Use a dedicated disposable loopback database. Supply `DATABASE_URL` explicitly;
-the command never loads an env file and refuses hosted URLs and production mode.
-Run committed migrations first, with both database URL variables pinned to the
-same test database as described in [migrations](migrations.md).
+Use the checkout-owned Compose development database. Supply `DATABASE_URL` and
+`FLOWMARK_DEMO_MODE=true` explicitly; the command never loads an env file and
+proves Compose ownership before accessing data. Run `pnpm db:migrate:local`
+first as described in [migrations](migrations.md). Applying a backfill remains
+an explicit data operation; obtain approval before changing existing rows.
 
 ```sh
-DATABASE_URL=postgresql://127.0.0.1:5432/flowmark_test \
+FLOWMARK_DEMO_MODE=true \
+DATABASE_URL=postgresql://flowmark:local_dev_only@127.0.0.1:55432/flowmark \
   pnpm --filter @flowmark/db db:facts:backfill \
   --project <project-uuid> --batch-size 25 --max-runs 100
 
-DATABASE_URL=postgresql://127.0.0.1:5432/flowmark_test \
+FLOWMARK_DEMO_MODE=true \
+DATABASE_URL=postgresql://flowmark:local_dev_only@127.0.0.1:55432/flowmark \
   pnpm --filter @flowmark/db db:facts:backfill \
   --project <project-uuid> --batch-size 25 --max-runs 100 \
   --checkpoint /tmp/flowmark-facts-checkpoint.json --apply

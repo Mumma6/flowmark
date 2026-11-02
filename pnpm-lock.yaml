@@ -19,9 +19,6 @@ importers:
       turbo:
         specifier: ^2.5.6
         version: 2.11.10
-      turbo-ignore:
-        specifier: 2.11.10
-        version: 2.11.10
       typescript:
         specifier: ^5.9.2
         version: 5.9.3
@@ -5323,14 +5320,6 @@ packages:
         integrity: sha512-Bdboy+l7tA3OGW6FjyFHWkP5LuByj1Tk33Ljyq0axyzdk9//JSi2u3fP1QSmd1KNwq6VOKYGlAu87CisVir6Pw==,
       }
 
-  json5@2.2.3:
-    resolution:
-      {
-        integrity: sha512-XmOWe7eyHYH14cLdVPoyg+GOH3rYX++KpzrylJwSW98t3Nk+U8XOl8FWKOgwtzdb8lXGf6zYwDUzeHMWfxasyg==,
-      }
-    engines: { node: ">=6" }
-    hasBin: true
-
   katex@0.18.10:
     resolution:
       {
@@ -6940,13 +6929,6 @@ packages:
         integrity: sha512-Yiex1Ovn8z2xPpOWckIiysV1SSyRMY9BkLF++q0yKiDxCqRhosKfMg3janKkiLBwZ5c/YryloKwGZcrEmtwxKw==,
       }
     engines: { node: ">=18.0.0" }
-    hasBin: true
-
-  turbo-ignore@2.11.10:
-    resolution:
-      {
-        integrity: sha512-f55172A775RQC2uw0JYuDfUYu5qOEMdZ/isz7aHZI7TwvXvz/+CxctLKs3lJRDeE+p5/sAedt58ePNu2nYYFow==,
-      }
     hasBin: true
 
   turbo@2.11.10:
@@ -10040,8 +10022,6 @@ snapshots:
 
   json-stable-stringify-without-jsonify@1.0.1: {}
 
-  json5@2.2.3: {}
-
   katex@0.18.10:
     dependencies:
       commander: 15.0.0
@@ -11286,10 +11266,6 @@ snapshots:
       esbuild: 0.28.2
     optionalDependencies:
       fsevents: 2.3.3
-
-  turbo-ignore@2.11.10:
-    dependencies:
-      json5: 2.2.3
 
   turbo@2.11.10:
     optionalDependencies:

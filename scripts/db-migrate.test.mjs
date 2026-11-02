@@ -1,4 +1,5 @@
 import assert from "node:assert/strict"
+import process from "node:process"
 import { spawnSync } from "node:child_process"
 import {
   copyFileSync,
@@ -31,7 +32,6 @@ function fixture(t) {
     "db-migration-steps.mjs",
     "db-migrate-ci.mjs",
     "db-env-neon.mjs",
-    "db-migrate-local.mjs",
     "db-migrate-production.mjs",
     "db-migrate-preview.mjs",
     "db-migrate-staging.mjs",
@@ -75,13 +75,16 @@ process.exit(Number(process.env.FLOWMARK_TEST_CHILD_STATUS || 0));
       `NEON_BRANCH=${marker}\nDATABASE_URL_UNPOOLED="${url}"\n`,
     )
   }
-  for (const name of ["production", "preview", "staging"]) writeBranch(name)
+  for (const name of ["production", "preview", "staging"]) {
+    writeBranch(name)
+  }
   return {
     root,
     writeBranch,
     clearBranches: () => {
-      for (const suffix of ["", ".preview", ".staging"])
+      for (const suffix of ["", ".preview", ".staging"]) {
         rmSync(join(root, `packages/db/.env.neon${suffix}`))
+      }
     },
     run: (name, args = [], overrides = {}) =>
       spawnSync(
@@ -128,40 +131,6 @@ test("actual migrate CLI refuses exported remote URLs before attempting a connec
   }
 })
 
-test("local wrapper pins quoted loopback URL despite a remote URL in the env file", (t) => {
-  const f = fixture(t)
-  writeFileSync(
-    join(f.root, "apps/server/.env.local"),
-    `DATABASE_URL="${localUrl}"\nDATABASE_MIGRATION_URL="${hostedUrl("production")}"\nFLOWMARK_DEMO_MODE=true\n`,
-  )
-  const result = f.run("local")
-  assert.equal(result.status, 0, result.stderr)
-  assert.equal(f.calls()[0].url, localUrl)
-  assert.equal(f.calls()[0].runtimeUrl, localUrl)
-  assert.deepEqual(f.calls()[0].args, [
-    "--filter",
-    "@flowmark/db",
-    "db:migrate",
-  ])
-})
-
-test("local wrapper still refuses exported remote migration URL and propagates child failure", (t) => {
-  const f = fixture(t)
-  const env = { DATABASE_URL: localUrl, FLOWMARK_DEMO_MODE: "true" }
-  assert.equal(
-    f.run("local", [], {
-      ...env,
-      DATABASE_MIGRATION_URL: hostedUrl("production"),
-    }).status,
-    1,
-  )
-  assert.equal(f.calls().length, 0)
-  assert.equal(
-    f.run("local", [], { ...env, FLOWMARK_TEST_CHILD_STATUS: "7" }).status,
-    7,
-  )
-})
-
 for (const [name, flag] of [
   ["production", "production"],
   ["preview", "preview"],
@@ -199,6 +168,31 @@ test("staging wrapper refuses production, preview, loopback, and a wrong branch 
     assert.doesNotMatch(result.stderr + result.stdout, /secret|postgresql:\/\//)
   }
 })
+
+for (const name of ["preview", "staging"]) {
+  test(`${name} uses the single schema-baseline command only with explicit confirmation`, (t) => {
+    const f = fixture(t)
+    const result = f.run(name, [
+      `--confirm-${name}-migrate`,
+      `--confirm-${name}-baseline`,
+    ])
+    assert.equal(result.status, 0, result.stderr)
+    assert.deepEqual(
+      f.calls().map((call) => call.args),
+      [
+        ["--filter", "@flowmark/db", "db:schema-baseline"],
+        ["--filter", "@flowmark/db", "db:migrations:verify", "--allow-pending"],
+        ["--filter", "@flowmark/db", "db:migrate"],
+        ["--filter", "@flowmark/db", "db:migrations:verify"],
+      ],
+    )
+    assert.ok(
+      f
+        .calls()
+        .every((call) => call.url === hostedUrl(name) && call.wrapper === name),
+    )
+  })
+}
 
 test("CI wrapper refuses missing approval without reading env files or launching pnpm", (t) => {
   const f = fixture(t)

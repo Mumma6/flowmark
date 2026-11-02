@@ -4,15 +4,19 @@ import { test } from "node:test"
 import { fileURLToPath } from "node:url"
 
 test("actual setup CLI rejects conflicting targets before migration or seed", () => {
-  const runtime = "postgresql://local:secret@127.0.0.1:1/flowmark"
+  const runtime =
+    "postgresql://flowmark:local_dev_only@127.0.0.1:55432/flowmark"
   for (const [migration, reason] of [
-    ["postgresql://local:secret@127.0.0.1:1/other", /must match DATABASE_URL/],
     [
-      "postgresql://local:secret@127.0.0.1:2/flowmark",
+      "postgresql://flowmark:local_dev_only@127.0.0.1:55432/other",
       /must match DATABASE_URL/,
     ],
     [
-      "postgresql://other:secret@127.0.0.1:1/flowmark",
+      "postgresql://flowmark:local_dev_only@127.0.0.1:55433/flowmark",
+      /must match DATABASE_URL/,
+    ],
+    [
+      "postgresql://other:secret@127.0.0.1:55432/flowmark",
       /must match DATABASE_URL/,
     ],
     ["postgresql://local:secret@db.example.invalid/flowmark", /loopback/],
@@ -31,7 +35,6 @@ test("actual setup CLI rejects conflicting targets before migration or seed", ()
           DATABASE_URL: runtime,
           DATABASE_MIGRATION_URL: migration,
           FLOWMARK_DEMO_MODE: "true",
-          FLOWMARK_LOCAL_DATABASE: "native",
           NODE_ENV: "development",
           VERCEL_ENV: "",
         },

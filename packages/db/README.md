@@ -5,8 +5,7 @@ Flowmark. API code talks to repository ports. SQL stays in this package.
 Better Auth configuration lives in `@flowmark/auth`. This package keeps the
 auth tables and the atomic limiter write, exposed as `@flowmark/db/auth-limits`.
 `@flowmark/db/seed` exposes local project provisioning for the auth commands.
-It does not depend on `@flowmark/auth`. `pnpm db:seed` and `pnpm db:setup` in
-this package delegate to those auth commands.
+It does not depend on `@flowmark/auth`. Root `pnpm db:seed` and `pnpm db:setup` call the auth package directly.
 
 Committed migrations live in `migrations/`. Generate a new migration with
 `pnpm db:generate` from the repository root, and ship the schema, SQL, and
@@ -26,13 +25,12 @@ Setup/seed build db and its transitive workspace dependencies. Setup requires
 any migration override to match the runtime host, port, database, and role,
 then migrates and seeds using `DATABASE_URL`.
 
-New templates choose checkout-scoped PostgreSQL 18 through `pnpm infra up`.
-All infra operations share `pnpm infra <operation>`; `down` stops the verified
-service and keeps its named volume. Compose mode checks Docker/container/volume
-identity before local database commands. Existing files without the mode setting
-remain native; choose `FLOWMARK_LOCAL_DATABASE=native` explicitly for user-managed
-loopback PostgreSQL. See [local infrastructure](../../docs/development.md#local-postgresql-with-compose).
-Use `db:setup` instead of the removed duplicate `db:setup-demo` alias.
+Local infrastructure is checkout-scoped PostgreSQL 18 through Docker Compose.
+Use `pnpm infra <operation>` for startup, diagnostics and non-destructive stop.
+Every local database command verifies Compose ownership and rejects unmanaged
+or hosted targets. Existing env files/data are preserved; see
+[local infrastructure](../../docs/development.md#local-postgresql-with-compose)
+and [existing local data](../../docs/development.md#existing-local-data).
 
 From the repository root, `pnpm test:integration` builds API/auth dependencies,
 migrates a fresh run-scoped PostgreSQL 18 instance, runs db/server tests and
