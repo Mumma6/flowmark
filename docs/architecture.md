@@ -255,8 +255,10 @@ The API follows feature-first ports-and-adapters:
   and write key are created later via `ManageProject.create` (Settings /
   onboarding).
 - `GetProjectWorkflowData` performs read authorization and project-scoped
-  snapshot, workflow-list, and timeline queries. Each read takes one reader:
-  a bearer key, or a signed-in user with an optional project id.
+  snapshot, workflow-list, and timeline queries. The workflow list reads
+  workflow summaries only. Snapshot still returns runs, metrics, daily volume,
+  operations, and failure codes. Each read takes one reader: a bearer key, or
+  a signed-in user with an optional project id.
 - `WorkflowRepository` exposes typed storage operations backed by the existing
   database package. Tests inject implementations without PostgreSQL or HTTP.
 

@@ -21,6 +21,7 @@ import type {
   RunComparison,
   RunTimelineEvent,
   WorkflowIntelligence,
+  WorkflowSummary,
 } from "../types.js"
 
 export interface WorkflowRepositoryService {
@@ -40,6 +41,9 @@ export interface WorkflowRepositoryService {
   readonly snapshot: (
     projectId: string,
   ) => Effect.Effect<ProjectSnapshot, PersistenceError>
+  readonly workflows: (
+    projectId: string,
+  ) => Effect.Effect<ReadonlyArray<WorkflowSummary>, PersistenceError>
   readonly listRuns: (
     projectId: string,
     query: ListRunsQuery,
