@@ -20,6 +20,8 @@ Contributor guides that ship with the public repository:
   independent main changes such as hotfixes, not after ordinary releases.
 - [Architecture](./architecture): service boundaries, persistence, local auth,
   and current system constraints.
+- [Authentication boundaries](./auth-perimeter): provider login, registration,
+  proxy protections, and remaining durable-limit work.
 - [Historical facts](./historical-facts): compact run projections and backfill
   limits.
 - [Design system](./design-system): dashboard and landing presentation rules.

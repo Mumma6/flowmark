@@ -2,7 +2,7 @@
 
 Anonymous visitors are redirected to sign in. Registration creates the account;
 onboarding/Settings creates the first project and write key. Existing local demo
-setup supplies `local@dev` / `local-dev-only`. Do not seed or reset telemetry just
+setup supplies `local@flowmark.test` / `local-dev-only`. Do not seed or reset telemetry just
 to verify presentation changes.
 
 ## Pages and populations

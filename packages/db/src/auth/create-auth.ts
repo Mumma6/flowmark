@@ -4,7 +4,6 @@ import { Data, Effect } from "effect"
 import type { FlowmarkDatabase } from "../client.js"
 import { LOCAL_DEV_AUTH_SECRET } from "../fixtures/demo.js"
 import { account, session, user, verification } from "../schema/auth.js"
-import { acceptLocalDevEmail } from "./accept-local-dev-email.js"
 
 export type FlowmarkAuth = ReturnType<typeof createFlowmarkAuth>
 
@@ -40,6 +39,12 @@ export function createFlowmarkAuth(options: {
   return betterAuth({
     appName: "Flowmark",
     secret: options.secret,
+    // Provider diagnostics can contain callback URLs, headers and DB errors.
+    // Keep their severity, never their raw message or arguments.
+    logger: {
+      log: (level) =>
+        console[level]("[Flowmark auth] Provider diagnostic", { level }),
+    },
     baseURL:
       options.baseURL ??
       process.env.BETTER_AUTH_URL ??
@@ -63,6 +68,10 @@ export function createFlowmarkAuth(options: {
       minPasswordLength: 8,
       autoSignIn: true,
     },
-    plugins: [acceptLocalDevEmail()],
+    // Keep the same provider CSRF/origin checks in tests and deployed requests.
+    advanced: {
+      disableOriginCheck: false,
+      disableCSRFCheck: false,
+    },
   })
 }

@@ -54,7 +54,13 @@ uses the same database. `pnpm db:migrate` and `pnpm db:seed` are available
 separately. Seed refuses production and non-loopback databases. Shell environment
 values take precedence. The relevant exported environment variables are forwarded
 into Turbo's dev tasks; Next.js loads each app's own `.env.local`.
-Seed also creates `local@dev` so you can sign in to the operations project.
+Seed also creates `local@flowmark.test` so you can sign in to the operations project.
+The fixture uses Better Auth's standard email/password login. If your existing
+local fixture uses `local@dev`, the next explicitly invoked `pnpm db:seed`
+renames it while retaining its user ID, password and project memberships.
+Seeding remains restricted to explicit demo mode and loopback databases. It does
+not run on application startup. If both addresses exist, seed stops for review
+instead of merging accounts. Never reset telemetry to upgrade this fixture.
 
 ### Database browser: Drizzle Studio
 
@@ -263,7 +269,7 @@ Versioned migrations are in `packages/db/migrations`. The API requires
 ## Local demo with PostgreSQL
 
 Use a dedicated PostgreSQL database. Dashboard sign-in is email and password.
-The seed creates `local@dev` / `local-dev-only` and attaches it to the local
+The seed creates `local@flowmark.test` / `local-dev-only` and attaches it to the local
 operations project. Applications still use a project write key, not that
 password.
 
@@ -295,7 +301,7 @@ commands. The three local development app configurations are:
   config sets its own public API origin.
 
 Then start API (3003), dashboard (3001) and the local dev harness (3004), using the commands
-above. Sign in to the dashboard as `local@dev` with password `local-dev-only`.
+above. Sign in to the dashboard as `local@flowmark.test` with password `local-dev-only`.
 Click **Run all six scenarios** in the harness and open the dashboard's
 Workflows page. You should see `invoices.import`, `inventory.sync` and
 `orders.fulfill`, with two runs each. The dashboard refreshes every three seconds.
@@ -445,7 +451,7 @@ development database needs to be stopped to run those tests.
   `FLOWMARK_API_KEY`. Run `pnpm dev:setup` and restart the dev command if the
   process predates the local environment files. Never fix this with a public
   browser key or a production default credential.
-- Dashboard asks you to sign in: use `local@dev` / `local-dev-only` after
+- Dashboard asks you to sign in: use `local@flowmark.test` / `local-dev-only` after
   `pnpm db:setup`, or register a new account. Anonymous reads are rejected.
 - API returns storage/configuration errors: check `DATABASE_URL`, PostgreSQL
   reachability, and run `pnpm db:setup` against that same database.
