@@ -46,14 +46,16 @@ export {
 } from "./features/workflows/use-cases/ingest-events.js"
 export {
   WorkflowRepository,
-  type ProjectSnapshot,
-  type RelatedRuns,
-  type RunTimelineEvent,
-  type RunComparison,
-  type IntelligenceQuery,
-  type WorkflowIntelligence,
   type WorkflowRepositoryService,
 } from "./features/workflows/ports/workflow-repository.js"
+export type {
+  IntelligenceQuery,
+  ProjectSnapshot,
+  RelatedRuns,
+  RunComparison,
+  RunTimelineEvent,
+  WorkflowIntelligence,
+} from "./features/workflows/types.js"
 export { WorkflowRepositoryLive } from "./features/workflows/adapters/workflow-repository.js"
 export { DatabaseLive } from "./adapters/database.js"
 export { ApiLive, logFailure, runApi } from "./runtime.js"
