@@ -154,28 +154,28 @@ pnpm db:setup
 pnpm dev
 ```
 
-New local templates use PostgreSQL 18 through standard Docker Compose on
-OrbStack, Docker Desktop, or Docker Engine on Linux. Apps and tooling remain
-native pnpm processes. Use `pnpm infra <operation>` for `doctor`, `status`,
-`logs`, `restart`, or `down`, scoped to the same checkout; `down` preserves data. Existing env files
-and native databases are kept; see the [local infrastructure guide](./docs/development.md#local-postgresql-with-compose)
-before selecting Compose for an existing checkout.
+Local infrastructure uses PostgreSQL 18 through standard Docker Compose on
+OrbStack, Docker Desktop, or Docker Engine. Applications and compiler watchers
+run natively. `pnpm dev` starts API/dashboard/harness; `pnpm dev:all` includes
+web and both documentation apps. Append `--ui=stream` for ordinary logs.
+Studio runs separately with `pnpm db:studio`.
 
-Run `pnpm test:integration` for complete database/server integration tests. It
-creates a separate disposable PostgreSQL instance and cleans up its own
-containers/network. No running development database, seed or host PostgreSQL
-tools are required. `pnpm check` remains usable without Docker.
+Use `pnpm infra <operation>` for `doctor`, `status`, `logs`, `restart`, or
+`down`; commands verify checkout ownership and `down` preserves data. Existing
+env files and databases are preserved. Older configuration must be explicitly
+changed to Compose; see [existing local data](./docs/development.md#existing-local-data).
 
-For a focused API/dashboard/harness session, use `pnpm dev:product` (or append
-`--ui=stream` for non-interactive logs). Both full and focused workflows rebuild
-core, SDK, db, API and auth edits automatically. Use one dev session per checkout;
-run checks after stopping its watchers or in a separate worktree.
+`pnpm test:integration` creates a separate disposable PostgreSQL instance and
+removes only its own containers/network. It never touches development/demo data.
+`pnpm check` works without Docker. Use one dev session per checkout and stop its
+watchers before builds/checks/integration tests, or use another worktree.
+The [command inventory](./docs/development-commands.md) covers all tooling.
 
 Database setup builds its workspace prerequisites, including core. If
 `DATABASE_MIGRATION_URL` is set, it must name the same local host, port,
 database, and role as `DATABASE_URL`; otherwise setup stops before SQL.
 
-Open the dashboard at `http://127.0.0.1:3001`. The
+Open the dashboard at `http://localhost:3001`. The
 [development guide](./docs/development.md) covers the local pipeline, checks,
 and database safety. Self-hosting needs the same apps, committed migrations,
 and any PostgreSQL you control.

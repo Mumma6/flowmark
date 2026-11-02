@@ -2,6 +2,7 @@ import { createHash } from "node:crypto"
 import { readFile, rename, writeFile } from "node:fs/promises"
 import { Data, Effect, Schema } from "effect"
 import { CommandConfigurationError } from "../environment/error.js"
+import { readLocalDevelopmentDatabaseUrl } from "../environment/local-database.js"
 import {
   readDatabaseUrl,
   isProductionEnvironment,
@@ -77,6 +78,7 @@ await runDatabaseCommand(
         after = checkpoint.after
       }
     }
+    yield* readLocalDevelopmentDatabaseUrl()
     yield* withCommandDatabase(url, (db) =>
       Effect.gen(function* () {
         let inspected = 0

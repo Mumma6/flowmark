@@ -20,8 +20,8 @@ Project membership, ingestion keys, and project/key creation quotas stay in
 
 `pnpm db:seed` and `pnpm db:setup` build `@flowmark/db` and its workspace
 dependencies, including core, and then run this
-package's local commands. They still refuse production and non-loopback
-databases. Setup also refuses a migration URL naming a different local host,
+package's local commands. They require the checkout-owned Compose database and refuse production,
+unmanaged and non-loopback databases. Setup also refuses a migration URL naming a different local host,
 port, database, or role before SQL. It migrates and seeds through the runtime
 URL, retaining that URL's connection settings. Hosted environment names and
 migration wrappers are unchanged.

@@ -44,8 +44,9 @@ packages/db/src/
 - Keep CLI process entrypoints out of `persistence/`. Seed and reset may use
   `DatabaseError` / `DatabaseOperation`, but they are not store methods.
   Local account provisioning lives in `@flowmark/auth`. This package exposes
-  project seed helpers through `@flowmark/db/seed` and must not import
-  `@flowmark/auth`. Root `db:seed` and `db:setup` delegate to the auth package.
+  project seed helpers through `@flowmark/db/seed` and must not import or
+  delegate package scripts back to `@flowmark/auth`. Root `db:seed` and
+  `db:setup` call the auth package directly.
 - Do not import `createDatabase` through the package root from persistence
   internals; use `client.ts` to avoid cycles.
 - Preserve `@flowmark/db`, `@flowmark/db/schema`, `@flowmark/db/persistence`,
@@ -109,6 +110,27 @@ export class WorkflowStore extends Context.Service<WorkflowStore>()(
 - Keep last-reported status semantics: failed wins over completed; missing
   terminal events stay Running. Do not change SQL meaning to tidy files.
 - Every read and write stays project-scoped.
+
+## Local infrastructure and data commands
+
+Docker Compose is the only local infrastructure provider. Follow
+[local development](../../../docs/development.md#local-postgresql-with-compose)
+and the [command inventory](../../../docs/development-commands.md).
+Do not add unmanaged database paths, provider switches or compatibility aliases.
+
+- `pnpm dev:setup` preserves existing env files; `pnpm infra doctor` inspects,
+  `pnpm infra up` starts/waits, and `pnpm db:setup` explicitly migrates/seeds.
+- Use `readLocalDevelopmentDatabaseUrl` for setup, seed, Studio, reset and
+  local maintenance; it proves checkout-owned Compose identity and rejects
+  conflicting migration overrides before accessing data.
+- Migration/history commands share `readCheckedMigrationDatabaseUrl` for
+  Compose development, proven disposable tests and approved hosted wrappers.
+- Use `pnpm test:integration` for database tests, never a manually configured
+  local/demo target. CI's declared disposable service remains a separate adapter.
+- Inspect `pnpm infra status`; record `startedByThisCall` and container ID.
+  Stop only a service you started with `pnpm infra down --container <id>`.
+  No volume deletion, populated-data reset, context/security changes or hosted
+  fallback. Existing legacy data requires separate assessment/transfer approval.
 
 ## Migration and rollout gates
 

@@ -360,11 +360,12 @@ only after the database transaction commits.
 
 `pnpm db:setup` applies committed migrations and provisions the operations and
 diagnostics projects plus development-only read, server-write, and
-browser-write credentials. `pnpm db:migrate` applies schema only;
+browser-write credentials. `pnpm db:migrate:local` applies local schema only;
 `pnpm db:seed` provisions fixtures only. Both commands run from
 `@flowmark/auth` after building `@flowmark/db`. The auth package creates the
-local account. Project rows and credentials stay in `@flowmark/db`. Seed requires
-`FLOWMARK_DEMO_MODE=true` and a loopback database, and it refuses production.
+local account. Project rows and credentials stay in `@flowmark/db`. Setup and seed require
+`FLOWMARK_DEMO_MODE=true` and the verified checkout-owned Compose database; they
+refuse unmanaged, hosted and production targets.
 The API rejects demo credentials unless demo mode is explicitly enabled, and
 it rejects demo mode when `NODE_ENV` or `VERCEL_ENV` is production. The
 browser key is public by design; the read and server write keys must remain

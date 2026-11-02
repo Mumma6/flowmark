@@ -15,6 +15,10 @@ Standard refresh-preview and preview report 26 unchanged state resources in
 nonprod and 29 in production. The policy below distinguishes current adoption
 coverage from the required writer for future changes.
 
+Local repository development uses Docker Compose only; applications run natively.
+See [local infrastructure](./development.md#local-postgresql-with-compose).
+Compose does not manage or replace the hosted environments below.
+
 ## Pulumi is the infrastructure writer
 
 All infrastructure and persistent hosted configuration for Flowmark's maintained

@@ -63,7 +63,6 @@ function childEnvironment(source: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
     ...env,
     NODE_ENV: "test",
     VERCEL_ENV: "",
-    FLOWMARK_LOCAL_DATABASE: "native",
     FLOWMARK_DEMO_MODE: "false",
     FLOWMARK_MIGRATION_WRAPPER: "",
     FLOWMARK_MIGRATION_APPROVED: "",

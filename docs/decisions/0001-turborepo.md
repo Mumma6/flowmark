@@ -12,8 +12,9 @@ This provides a familiar monorepo layout, dependency-aware build tasks, and shar
 
 ## Current implementation
 
-`pnpm dev` uses Turbo's interactive terminal UI for all five apps and the
-core/SDK TypeScript watchers. Core and SDK builds run before development tasks
-start. `pnpm dev:stream` provides ordinary log output for non-interactive
-terminals. Database startup and migrations remain explicit prerequisites, not
-hidden side effects of starting a web server.
+`pnpm dev` uses Turbo's interactive UI for API/dashboard/harness and the
+core/SDK/db/API/auth TypeScript watchers. All libraries build before development
+tasks start. `pnpm dev --ui=stream` provides ordinary logs for agents;
+`pnpm dev:all` includes all six applications. Studio runs separately.
+Database startup through Docker Compose and migrations remain explicit
+prerequisites, not hidden side effects of starting a web server.

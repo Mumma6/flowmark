@@ -48,22 +48,6 @@
         "@flowmarkdev/core#build",
         "@flowmarkdev/node#build"
       ]
-    },
-    "studio": {
-      "dependsOn": ["dev:ready"],
-      "passThroughEnv": [
-        "PORT",
-        "DATABASE_URL",
-        "DATABASE_MIGRATION_URL",
-        "FLOWMARK_*",
-        "DOCKER_*",
-        "COMPOSE_*",
-        "NEXT_PUBLIC_*",
-        "BETTER_AUTH_SECRET",
-        "BETTER_AUTH_URL"
-      ],
-      "cache": false,
-      "persistent": true
     }
   }
 }

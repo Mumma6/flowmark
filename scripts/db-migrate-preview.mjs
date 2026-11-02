@@ -36,7 +36,7 @@ try {
   previewEnv = readNeonEnvFileAt(previewNeonEnvPath)
 } catch (error) {
   console.error(error instanceof Error ? error.message : String(error))
-  console.error("Pull it with: pnpm neon:env-pull:preview")
+  console.error("Pull it with: pnpm neon:env-pull -- --preview")
   console.error("Do not copy packages/db/.env.neon or apps/server/.env.local.")
   process.exit(1)
 }
@@ -137,7 +137,7 @@ function runPackageScript(script) {
 }
 
 if (confirmBaseline) {
-  const baseline = runPackageScript("db:preview-baseline")
+  const baseline = runPackageScript("db:schema-baseline")
   if ((baseline.status ?? 1) !== 0) {
     process.exit(baseline.status ?? 1)
   }

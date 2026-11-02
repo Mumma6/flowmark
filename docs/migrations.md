@@ -234,8 +234,10 @@ for Production, all ignored. Do not copy hosted env into local app files. First
 provisioning of a schema-only branch may need the documented baseline procedure;
 that is a separate operation, never part of this routine rollout job.
 
-For a disposable loopback test database, explicitly set **both** `DATABASE_URL`
-and `DATABASE_MIGRATION_URL` to that test database before `pnpm db:migrate`.
+Local schema changes use `pnpm db:migrate:local` after `pnpm infra up`.
+Disposable tests use `pnpm test:integration`; its runner supplies and proves the
+isolated target before calling the shared migration CLI. Manually selected
+loopback test databases are not supported.
 Read-only verification uses the same target guards as migration:
 
 ```sh
