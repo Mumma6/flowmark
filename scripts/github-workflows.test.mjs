@@ -41,6 +41,28 @@ test("pnpm check script includes unit tests", () => {
   assert.match(pkg.scripts.check, /pnpm test/)
 })
 
+test("integration uses the disposable Actions service and shared complete-report checks", () => {
+  const yaml = readWorkflow("pull-request.yml")
+  const integration = yaml.slice(yaml.indexOf("  integration:"))
+  assert.match(integration, /image: postgres:18-alpine/)
+  assert.match(integration, /POSTGRES_USER: flowmark_ci/)
+  assert.match(integration, /POSTGRES_DB: flowmark_test/)
+  for (const key of [
+    "TEST_DATABASE_URL",
+    "DATABASE_URL",
+    "DATABASE_MIGRATION_URL",
+  ]) {
+    assert.ok(
+      integration.includes(
+        `${key}: postgresql://flowmark_ci:local_ci_only@127.0.0.1:5432/flowmark_test`,
+      ),
+    )
+  }
+  assert.match(integration, /FLOWMARK_TEST_DATABASE_SOURCE: ci-service/)
+  assert.match(integration, /run: pnpm test:integration --ci-service/)
+  assert.doesNotMatch(integration, /secrets\.|db:setup|db:seed|docker compose/)
+})
+
 test("publish-sdk workflow still publishes only on dispatch or sdk-v* tags", () => {
   const yaml = readWorkflow("publish-sdk.yml")
 

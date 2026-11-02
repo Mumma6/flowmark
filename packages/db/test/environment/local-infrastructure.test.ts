@@ -19,6 +19,7 @@ import {
   readLocalInfrastructure,
 } from "../../src/environment/local-infrastructure.js"
 import { assertManagedLocalDatabase } from "../../src/environment/managed-local-database.js"
+import { assertTestDatabaseTarget } from "../../src/environment/test-database.js"
 
 const id = "a".repeat(64)
 const defaults = {
@@ -184,6 +185,89 @@ const reason = async <A>(
     onFailure: (error) => error.reason,
     onSuccess: () => assert.fail("expected refusal"),
   })
+
+test("integration target proof checks container ownership, transient storage, port and SQL identity", async (t) => {
+  const f = fixture(t)
+  const run = "b".repeat(32)
+  const project = `flowmark-test-${run}`
+  const url =
+    "postgresql://flowmark_test:local_test_only@127.0.0.1:55555/flowmark_test"
+  const container = {
+    ...f.state.container,
+    Config: {
+      Image: "postgres:18-alpine",
+      Labels: {
+        "com.docker.compose.project": project,
+        "com.docker.compose.service": "postgres-test",
+        "io.flowmark.purpose": "integration-postgres",
+        "io.flowmark.test-run": run,
+      },
+      Env: [
+        "POSTGRES_USER=flowmark_test",
+        "POSTGRES_DB=flowmark_test",
+        "POSTGRES_PASSWORD=local_test_only",
+      ],
+    },
+    HostConfig: { Tmpfs: { "/var/lib/postgresql": "size=512m" } },
+    Mounts: [],
+    NetworkSettings: {
+      Ports: { "5432/tcp": [{ HostIp: "127.0.0.1", HostPort: "55555" }] },
+    },
+  }
+  const state = {
+    ...f.state,
+    container,
+    sqlIdentity: "flowmark_test:flowmark_test",
+  }
+  const env = {
+    ...f.env,
+    DATABASE_URL: url,
+    TEST_DATABASE_URL: url,
+    DATABASE_MIGRATION_URL: url,
+    FLOWMARK_TEST_RUN_ID: run,
+    FLOWMARK_TEST_PROJECT: project,
+    FLOWMARK_TEST_CONTAINER_ID: id,
+    FLOWMARK_TEST_DATABASE_SOURCE: "compose",
+  }
+  f.set(state)
+  await execute(assertTestDatabaseTarget(env))
+  for (const override of [
+    {
+      Config: {
+        ...container.Config,
+        Labels: {
+          ...container.Config.Labels,
+          "io.flowmark.test-run": "unrelated",
+        },
+      },
+    },
+    { Mounts: [{ Type: "volume" }] },
+    { HostConfig: { Tmpfs: {} } },
+    {
+      NetworkSettings: {
+        Ports: { "5432/tcp": [{ HostIp: "0.0.0.0", HostPort: "55555" }] },
+      },
+    },
+    {
+      NetworkSettings: {
+        Ports: { "5432/tcp": [{ HostIp: "127.0.0.1", HostPort: "55556" }] },
+      },
+    },
+    { State: { ...container.State, Running: false } },
+  ]) {
+    f.set({ ...state, container: { ...container, ...override } })
+    await assert.rejects(
+      execute(assertTestDatabaseTarget(env)),
+      /Refusing integration/,
+    )
+  }
+  f.set({ ...state, sqlIdentity: "flowmark:flowmark" })
+  await assert.rejects(
+    execute(assertTestDatabaseTarget(env)),
+    /Refusing integration/,
+  )
+  assert.ok(!f.calls().some((call) => mutates(call.args)))
+})
 
 test("native configuration stays explicit and does not require Docker", async () => {
   assert.equal(Effect.runSync(localDatabaseMode({})), "native")

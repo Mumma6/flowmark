@@ -161,6 +161,11 @@ native pnpm processes. Use `pnpm infra <operation>` for `doctor`, `status`,
 and native databases are kept; see the [local infrastructure guide](./docs/development.md#local-postgresql-with-compose)
 before selecting Compose for an existing checkout.
 
+Run `pnpm test:integration` for complete database/server integration tests. It
+creates a separate disposable PostgreSQL instance and cleans up its own
+containers/network. No running development database, seed or host PostgreSQL
+tools are required. `pnpm check` remains usable without Docker.
+
 Database setup builds its workspace prerequisites, including core. If
 `DATABASE_MIGRATION_URL` is set, it must name the same local host, port,
 database, and role as `DATABASE_URL`; otherwise setup stops before SQL.

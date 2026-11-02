@@ -30,9 +30,46 @@ services:
       start_period: 5s
     stop_grace_period: 10s
 
+  postgres-test:
+    image: postgres:18-alpine
+    profiles: [test]
+    environment:
+      POSTGRES_USER: flowmark_test
+      POSTGRES_PASSWORD: local_test_only
+      POSTGRES_DB: flowmark_test
+    ports:
+      - "127.0.0.1::5432"
+    tmpfs:
+      - /var/lib/postgresql:size=512m
+    labels:
+      io.flowmark.purpose: integration-postgres
+      io.flowmark.test-run: "${FLOWMARK_TEST_RUN_ID:-not-a-test-run}"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "pg_isready",
+          "-h",
+          "127.0.0.1",
+          "-U",
+          "flowmark_test",
+          "-d",
+          "flowmark_test",
+        ]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+      start_period: 5s
+    stop_grace_period: 10s
+
 volumes:
   postgres-data:
     labels:
       io.flowmark.checkout: "${FLOWMARK_INFRA_CHECKOUT:?Use pnpm infra up}"
       io.flowmark.purpose: development-postgres
       io.flowmark.postgres-major: "18"
+
+networks:
+  default:
+    labels:
+      io.flowmark.test-run: "${FLOWMARK_TEST_RUN_ID:-development}"

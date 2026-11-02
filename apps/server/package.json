@@ -6,7 +6,7 @@
     "dev": "next dev --port 3003",
     "build": "next build",
     "start": "next start --port 3003",
-    "lint": "eslint app src test next.config.ts",
+    "lint": "eslint app src test next.config.ts vitest.config.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },

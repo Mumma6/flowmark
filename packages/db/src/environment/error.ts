@@ -1,5 +1,12 @@
 import { Data } from "effect"
 
+export class CommandExecutionError extends Data.TaggedError(
+  "CommandExecutionError",
+)<{
+  readonly reason: string
+  readonly exitCode: number
+}> {}
+
 export class CommandConfigurationError extends Data.TaggedError(
   "CommandConfigurationError",
 )<{

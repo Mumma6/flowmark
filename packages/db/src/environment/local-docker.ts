@@ -29,7 +29,9 @@ export const dockerCommand = Effect.fn("dockerCommand")(function* (
       !/permission denied|EACCES|EPERM|operation not permitted/i.test(
         details,
       ) &&
-      /no such (volume|object|container)/i.test(details)
+      /(no such (volume|object|container|network)|network \S+ not found)/i.test(
+        details,
+      )
     ) {
       return null
     }
@@ -140,7 +142,7 @@ export const localDocker = Effect.fn("localDocker")(function* (
 })
 
 export function composeArgs(
-  config: LocalInfrastructure,
+  config: Pick<LocalInfrastructure, "root" | "project">,
   args: readonly string[],
 ) {
   return [
@@ -156,7 +158,7 @@ export function composeArgs(
 }
 
 export function composeEnvironment(
-  config: LocalInfrastructure,
+  config: Pick<LocalInfrastructure, "checkout" | "port">,
   env: NodeJS.ProcessEnv,
 ) {
   return {

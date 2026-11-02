@@ -30,6 +30,24 @@ export function localProject(root: string) {
   return { checkout, project: `flowmark-${checkout}` }
 }
 
+export const assertComposeOverrides = Effect.fn("assertComposeOverrides")(
+  function* (env: NodeJS.ProcessEnv) {
+    for (const setting of [
+      "COMPOSE_FILE",
+      "COMPOSE_PROJECT_NAME",
+      "COMPOSE_PROFILES",
+      "COMPOSE_ENV_FILES",
+      "COMPOSE_REMOVE_ORPHANS",
+    ]) {
+      if (env[setting]) {
+        return yield* new CommandConfigurationError({
+          reason: `Refusing conflicting ${setting}. Unset it explicitly before using repository infra commands.`,
+        })
+      }
+    }
+  },
+)
+
 export const readLocalInfrastructure = Effect.fn("readLocalInfrastructure")(
   function* (env: NodeJS.ProcessEnv = process.env) {
     if ((yield* localDatabaseMode(env)) !== "compose") {
@@ -97,19 +115,7 @@ export const readLocalInfrastructure = Effect.fn("readLocalInfrastructure")(
         })
       }
     }
-    for (const setting of [
-      "COMPOSE_FILE",
-      "COMPOSE_PROJECT_NAME",
-      "COMPOSE_PROFILES",
-      "COMPOSE_ENV_FILES",
-      "COMPOSE_REMOVE_ORPHANS",
-    ]) {
-      if (env[setting]) {
-        return yield* new CommandConfigurationError({
-          reason: `Refusing conflicting ${setting}. Unset it explicitly before using repository infra commands.`,
-        })
-      }
-    }
+    yield* assertComposeOverrides(env)
     const root = fileURLToPath(new URL("../../../../", import.meta.url))
     const identity = yield* Effect.try({
       try: () => localProject(root),

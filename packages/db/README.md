@@ -34,6 +34,24 @@ remain native; choose `FLOWMARK_LOCAL_DATABASE=native` explicitly for user-manag
 loopback PostgreSQL. See [local infrastructure](../../docs/development.md#local-postgresql-with-compose).
 Use `db:setup` instead of the removed duplicate `db:setup-demo` alias.
 
+From the repository root, `pnpm test:integration` builds API/auth dependencies,
+migrates a fresh run-scoped PostgreSQL 18 instance, runs db/server tests and
+checks both reports for missing or skipped integration coverage. Test data lives
+in tmpfs, with an allocated IPv4 loopback port and no persistent volumes.
+The runner removes only its own containers/network, including after normal
+interruptions, and prints a directory containing reports and ownership metadata.
+It refuses ambient database URLs and hosted migration authorization.
+
+`pnpm --filter @flowmark/db test` discovers `test/**/*.test.ts` without a manually
+maintained file list. Its preload validates any configured test target before
+fixtures can write; server tests use the same guard. Without
+`TEST_DATABASE_URL`, normal unit checks skip the three database cases and need
+no Docker. For database coverage, use the managed root integration command;
+arbitrary manually selected test databases are refused. CI keeps its declared
+Actions service and uses the same check sequence through `--ci-service`.
+See [integration tests](../../docs/development.md#database-integration-tests)
+for reports, concurrency and recovery guidance.
+
 `pnpm db:studio` uses `drizzle.studio.config.ts`: a guarded local-demo config
 that selects the runtime database and refuses conflicting migration overrides,
 hosted targets, and production mode before startup. The shared

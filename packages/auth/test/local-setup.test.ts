@@ -24,7 +24,8 @@ test("actual setup CLI rejects conflicting targets before migration or seed", ()
       {
         cwd: fileURLToPath(new URL("..", import.meta.url)),
         encoding: "utf8",
-        timeout: 10000,
+        // Cold tsx/auth startup competes with other workspace checks on CI.
+        timeout: 30000,
         env: {
           ...process.env,
           DATABASE_URL: runtime,
@@ -36,6 +37,7 @@ test("actual setup CLI rejects conflicting targets before migration or seed", ()
         },
       },
     )
+    assert.ifError(result.error)
     assert.equal(result.status, 1)
     assert.match(result.stderr, reason)
     assert.doesNotMatch(
