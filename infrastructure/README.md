@@ -295,6 +295,31 @@ other resource changed. Standard preview and refresh-preview then reported
 26 unchanged nonprod state resources. The active secret is marked secret in
 Pulumi Cloud's update configuration as well as the local encrypted config.
 
+### Prepared Production auth proxy bindings
+
+`vercel-production-auth-proxy.ts` declares two new bindings only when
+`manageProductionAuthProxyBindings=true` on the Production stack. It is called
+through the existing Production project provider; the nonprod program is
+unchanged. Both records have `targets=["production"]`, no branch override,
+sensitive visibility and deletion protection. They share encrypted
+`productionAuthProxySecret` (at least 32 characters) and a required positive
+integer `productionAuthProxySecretVersion`.
+
+Unlike adoption of existing records, initial provisioning has no import ID.
+Version 1 writes the new value during creation; later value changes require a
+reviewed version increment on both bindings. Keep the opt-in enabled after
+creation. Do not reuse the Staging secret, add Preview/Development targets, or
+rotate the existing Better Auth/database secrets as part of this operation.
+
+The code is prepared, not activated. Review the live Production preview before
+approval; the initial plan must contain exactly two env-record creates and all
+existing resources unchanged. A separate ignored config file can hold the
+prepared encrypted value and opt-in for preview without enabling the active
+operator config. Stop on unrelated updates, replacements or deletes. After an
+approved apply, release through the existing `staging` to `main` pipeline so
+migration/history checks precede API and dashboard deployment. Pulumi does not
+perform migrations or application deployment.
+
 ## Production project containers: first resource class
 
 `vercel-production.ts` manages the four existing shared Vercel projects adopted
