@@ -157,7 +157,9 @@ pnpm dev
 Local infrastructure uses PostgreSQL 18 through standard Docker Compose on
 OrbStack, Docker Desktop, or Docker Engine. Applications and compiler watchers
 run natively. `pnpm dev` starts API/dashboard/harness; `pnpm dev:all` includes
-web and both documentation apps. Append `--ui=stream` for ordinary logs.
+web and both documentation apps. `pnpm dev:stack` starts this checkout's
+PostgreSQL and then every application. It does not migrate or seed, so run
+`pnpm db:setup` once before the first session. Append `--ui=stream` for ordinary logs.
 Studio runs separately with `pnpm db:studio`.
 
 Use `pnpm infra <operation>` for `doctor`, `status`, `logs`, `restart`, or

@@ -49,6 +49,7 @@ directory. Subsequent edits rebuild automatically; exports point at built files.
 pnpm dev                         # daily product development
 pnpm dev --ui=stream             # ordinary logs for agents/non-interactive terminals
 pnpm dev:all                     # also web, docs and internal-docs
+pnpm dev:stack                   # start this checkout's PostgreSQL, then all apps
 pnpm db:studio                   # optional local database browser
 ```
 
@@ -71,8 +72,11 @@ Existing `.env` or `.env.local` configuration is never overwritten and
 configuration values are never printed. This is repository development setup,
 not an SDK fallback or production credential provisioning.
 
-Root dev commands check Compose readiness before starting applications. They
-do not start PostgreSQL, apply migrations or seed data.
+`pnpm dev` and `pnpm dev:all` check Compose readiness before starting
+applications. They do not start PostgreSQL, apply migrations or seed data.
+`pnpm dev:stack` is the explicit full start: it prepares env files, runs
+`pnpm infra up`, then starts every application and library watcher. It still
+does not migrate or seed. Run `pnpm db:setup` once before recording data.
 Run `pnpm infra up` after env setup. Then run
 `pnpm db:setup`. That command reads the server app's environment
 files, builds `@flowmark/db` and its workspace dependencies (including core), applies committed migrations, and seeds local
@@ -203,8 +207,9 @@ pending. Do not switch engines/contexts silently or fall back to a hosted databa
 ### Command reference
 
 The daily path is env setup → `infra up` → `db:setup` once → `dev`.
-Subsequent schema updates use `db:migrate:local`; `db:seed` provisions fixtures
-without migrating. PostgreSQL provisioning/health belongs to Compose; database
+`pnpm dev:stack` combines env setup, `infra up` and all applications for a
+later session. Subsequent schema updates use `db:migrate:local`; `db:seed`
+provisions fixtures without migrating. PostgreSQL provisioning/health belongs to Compose; database
 safety checks stay in the repository. Hosted migration, release and publication
 commands keep their separate approval gates.
 

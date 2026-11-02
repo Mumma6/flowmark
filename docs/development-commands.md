@@ -14,6 +14,7 @@ review of every workspace manifest, root script, database CLI and Actions workfl
 | `pnpm infra <operation>`                                                       | One guarded Compose dispatcher: `doctor`, `up`, `status`, bounded `logs`, `restart postgres`, non-destructive `down`. Verifies local engine, target and checkout ownership.    |
 | `pnpm dev`                                                                     | Prepares env files, requires healthy owned Compose PostgreSQL, builds libraries once, then watches API/dashboard/harness and dependencies. No migration or seed.               |
 | `pnpm dev:all`                                                                 | Same prerequisites and library watchers, plus web, docs and internal-docs. This selects applications, not another infrastructure provider.                                     |
+| `pnpm dev:stack`                                                               | Prepares env files, starts this checkout's PostgreSQL with `infra up`, then watches every application and library. No migration or seed; run `db:setup` once beforehand.       |
 | `pnpm db:setup`                                                                | Builds db prerequisites, applies committed migrations, provisions local projects and the fixture account through auth. Idempotent; never resets telemetry.                     |
 | `pnpm db:seed`                                                                 | Builds db prerequisites and provisions fixtures/account only. Useful after local fixture changes; does not migrate.                                                            |
 | `pnpm db:migrate:local`                                                        | Explicit local migration using the same TypeScript CLI and Compose target proof as setup/Studio.                                                                               |
@@ -32,7 +33,7 @@ review of every workspace manifest, root script, database CLI and Actions workfl
 | `pnpm neon:env-pull`                                                           | Pulls ignored operator connection files. Use `-- --preview` or `-- --staging` for those branches; default is Production. Does not provision resources or rewrite app env.      |
 | `pnpm release:verify`                                                          | SDK tests/builds, local tarball checks and version agreement; does not publish.                                                                                                |
 
-`--ui=stream` is forwarded to Turbo by either dev command. Agents record
+`--ui=stream` is forwarded to Turbo by `dev`, `dev:all` and `dev:stack`. Agents record
 `infra up`'s `container` and `startedByThisCall`; stop with
 `pnpm infra down --container <id>` only when they started it. Neither normal
 stop nor test cleanup may delete volumes. Unit tests can run without Docker.
