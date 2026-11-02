@@ -106,6 +106,11 @@ Task files **do not duplicate overall status**. Keep acceptance checkboxes there
 
 ## Workflow B — implement one task
 
+For infrastructure tasks, apply [flowmark-infrastructure](../flowmark-infrastructure/SKILL.md):
+plan existing/new Pulumi resource ownership, encrypted inputs, preview, apply
+approval and post-apply verification. A task must not use manual provider setup
+followed by import; provider gaps/adoption are explicit work before mutation.
+
 1. Read the selected task and the roadmap's shared constraints. Read only direct prerequisite task notes and source files needed for the implementation. Do not load every other task.
 2. Apply [branch](../branch/SKILL.md) to create or verify a task branch from
    `origin/staging` before editing application code.

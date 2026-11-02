@@ -14,13 +14,13 @@ or destructive cloud/database work.
 
 ## Required approval before acting
 
-| Operation | Rule |
-| --------- | ---- |
-| Push to `main` | Never without explicit approval. Prefer feature branches and PRs. Direct push to `main` is allowed when the user explicitly asks for it. |
-| Merge a PR | Never without explicit approval. |
-| Deploy to Production | Never without explicit approval. Merging to `main` deploys Production — treat merge as deploy only when the user explicitly approves merge (or deploy). |
-| Force-push, reset shared branches, rewrite history | Never without explicit approval. |
-| Production DB migrations, destructive Neon/Vercel/cloud changes | Never without explicit approval. |
+| Operation                                                       | Rule                                                                                                                                                    |
+| --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Push to `main`                                                  | Never without explicit approval. Prefer feature branches and PRs. Direct push to `main` is allowed when the user explicitly asks for it.                |
+| Merge a PR                                                      | Never without explicit approval.                                                                                                                        |
+| Deploy to Production                                            | Never without explicit approval. Merging to `main` deploys Production — treat merge as deploy only when the user explicitly approves merge (or deploy). |
+| Force-push, reset shared branches, rewrite history              | Never without explicit approval.                                                                                                                        |
+| Production DB migrations, destructive Neon/Vercel/cloud changes | Never without explicit approval.                                                                                                                        |
 
 ## Allowed without extra gates
 
@@ -33,6 +33,13 @@ When in doubt, stop and ask before push-to-`main`, merge, deploy, force-push,
 or destructive production operations.
 
 ## Activated merge pipeline
+
+Persistent infrastructure/settings mutations use the existing Pulumi project;
+follow [flowmark-infrastructure](../../.agents/skills/flowmark-infrastructure/SKILL.md).
+Review the exact stack/environment/source plan and obtain missing apply approval.
+Provider UI/CLI/connector writes are not a substitute. Missing support requires
+reviewed Pulumi adoption, not creating the resource first and importing later.
+Application deployments and Drizzle migrations retain the workflow below.
 
 After explicit one-time activation of the controlled migration/deployment
 pipeline, maintainer approval to merge the reviewed schema change into staging,

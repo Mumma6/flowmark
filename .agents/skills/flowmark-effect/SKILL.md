@@ -23,6 +23,10 @@ an explicit process, request, CLI, or public SDK boundary.
 
 ## Default shape
 
+Pulumi resource declarations in `infrastructure/` use the Pulumi runtime and
+[infra workflow](../flowmark-infrastructure/SKILL.md), not application Effect
+execution. This exception does not permit direct provider mutation from scripts.
+
 - Type workflows as `Effect.Effect<A, E, R>`. Keep them lazy. Compose first,
   run last.
 - Name effectful functions with `Effect.fn("Feature.operation")`.

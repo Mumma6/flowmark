@@ -12,6 +12,11 @@ Result.match, catchTags, Layers, Scope, services), also apply
 
 ## Architectural goals
 
+Infrastructure resource programs follow
+[flowmark-infrastructure](../flowmark-infrastructure/SKILL.md) in `infrastructure/`.
+Pulumi's declarative dependency graph owns those resources; do not wrap it in
+application Effect layers or replace it with imperative provider calls.
+
 - Use Effect as the default internal model for asynchronous and dependencyful
   workflows. Keep effects lazy and compose them before executing them at
   process, request, or public SDK boundaries.

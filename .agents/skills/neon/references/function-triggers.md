@@ -1,8 +1,14 @@
 # Function Triggers (CLI, MCP, REST)
 
+Flowmark uses the [Pulumi infrastructure policy](../../flowmark-infrastructure/SKILL.md).
+Provisioning examples here are upstream reference, not commands to run against
+Flowmark. Add/adopt provider resources through Pulumi before mutation; SQL schema
+changes remain Drizzle migrations. Do not enable a new auth provider or pull
+hosted env into local app files as part of these examples.
+
 A Function Trigger is a branch-scoped rule that POSTs to a Neon Function on a cron (`type: "schedule"`) or when an object is created in a bucket (`type: "storage_object_created"`). Same regions as Functions (`aws-us-east-2`, `aws-us-east-1`, `aws-eu-central-1`, and `aws-ap-southeast-1`).
 
-**Prefer `neon.ts`.** Declare a `triggers` map. The record key is the trigger name. `neon deploy` applies triggers after the functions they target. Names must be unique among every trigger visible on the branch. Triggers that exist remotely but are omitted from `neon.ts` are left alone; delete with `neon triggers delete`.
+**Upstream declarative option (not Flowmark's writer):** a `neon.ts` `triggers` map. The record key is the trigger name. `neon deploy` applies triggers after the functions they target. Names must be unique among every trigger visible on the branch. Triggers that exist remotely but are omitted from `neon.ts` are left alone; delete with `neon triggers delete`.
 
 ```typescript
 import { defineConfig } from "@neon/config/v1"

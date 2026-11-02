@@ -108,6 +108,11 @@ export class WorkflowStore extends Context.Service<WorkflowStore>()(
 
 ## Migration and rollout gates
 
+Database project/branch/compute/role and persistent secret configuration use
+[flowmark-infrastructure](../flowmark-infrastructure/SKILL.md) and Pulumi, including
+temporary test branches. SQL schema/history stays Drizzle-owned; do not move
+migrations into Pulumi or provision a branch with a CLI as a migration shortcut.
+
 Follow [database rollout](../../../docs/migrations.md), the single maintained
 procedure. Keep schema, SQL/Drizzle metadata and the complete stack change in
 one feature PR. Do not edit applied migrations or bypass Drizzle history.

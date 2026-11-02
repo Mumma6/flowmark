@@ -18,6 +18,13 @@ deployments. Keep private operating records out of PRs and release notes.
 
 ## Prepare release
 
+Infrastructure prerequisites use [flowmark-infrastructure](../flowmark-infrastructure/SKILL.md).
+Prepare and verify their Pulumi plan/apply separately from app deployment. Do not
+repair missing env, DNS, project or CI settings with direct provider writes while
+releasing. An approved app merge authorizes its activated migration/deploy chain,
+not unrelated persistent configuration changes. Missing Pulumi support is a
+release blocker to resolve in code, not an imperative setup fallback.
+
 1. Inspect status, fetch origin and tags, and resolve the remote `main` and
    `staging` SHAs. Inspect repository merge settings and required checks.
    Compare both `origin/main...origin/staging` and `origin/main origin/staging`

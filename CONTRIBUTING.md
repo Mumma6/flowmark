@@ -45,6 +45,13 @@ checks; it is not a hosted demo.
 
 ## Databases and self-hosting
 
+Maintained Flowmark infrastructure uses the
+[Pulumi writer policy](./docs/infrastructure.md#pulumi-is-the-infrastructure-writer)
+and existing `infrastructure/` project for all hosted resource/settings changes.
+Provider tools inspect and verify; they are not an imperative provisioning path.
+App deployments and Drizzle migrations keep their existing workflows. This
+maintainer policy does not prescribe tooling for an independent self-host.
+
 Flowmark stores workflow telemetry in PostgreSQL through an ordinary
 `DATABASE_URL`. Local development should use a dedicated loopback database.
 `pnpm db:setup` and `pnpm db:seed` apply migrations and fixture data only in

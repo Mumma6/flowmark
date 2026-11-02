@@ -134,6 +134,11 @@ changes counter namespaces and is a separately reviewed security operation.
 
 ## Rollout
 
+Provision or change hosted auth/proxy bindings through the
+[Pulumi writer policy](./infrastructure.md#pulumi-is-the-infrastructure-writer),
+with encrypted inputs and reviewed scopes before apply. Do not create a secret
+through the provider UI/CLI/connector and reconcile it into Pulumi afterward.
+
 Migration `0017_auth_rate_limits` adds one indexed table and changes no existing
 rows. Apply it before dependent API code through [database rollout](./migrations.md).
 New proxy metadata uses the existing server-only `FLOWMARK_*` environment path;

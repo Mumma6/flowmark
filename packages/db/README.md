@@ -17,3 +17,6 @@ pnpm --filter @flowmark/db test
 `pnpm db:setup` and `pnpm db:seed` are for a loopback demo database. They refuse
 hosted targets. Rollout order, Preview, Staging, and Production commands are in
 [database rollout](../../docs/migrations.md).
+Cloud branches/computes/roles and hosted connection bindings follow the
+[Pulumi writer policy](../../docs/infrastructure.md#pulumi-is-the-infrastructure-writer),
+including temporary cloud branches. Drizzle retains schema/history ownership.

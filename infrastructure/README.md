@@ -19,6 +19,38 @@ platform/build, CI/migration and provider variables, their scopes and owners.
 Automatic feature previews are intentionally paused; only the controlled
 Staging flow is active for non-production deployments.
 
+## Required writer for infrastructure changes
+
+Follow the [Pulumi writer policy](../docs/infrastructure.md#pulumi-is-the-infrastructure-writer).
+All Flowmark infrastructure and persistent hosted configuration changes use this
+project, including future providers, CI settings, hosted secrets and ephemeral
+cloud resources. Connectors/CLIs/dashboards inspect and verify; they do not create
+or update resources before later import. `pulumi do` is not a substitute for the
+resource program. Review source and exact-stack preview before the approved apply.
+
+The inventory below describes current adoption, not blanket exemptions. Existing
+external or ignored properties must be adopted into a reviewed Pulumi owner before
+mutation. Missing provider support is work to design/review first. Keep app
+artifact deployment, Drizzle migrations and approved data/publication operations
+on their documented paths; do not add competing infrastructure writers.
+
+## Environment configuration belongs here
+
+Follow the [single-source env contract](../docs/infrastructure.md#one-source-for-environment-configuration).
+The Pulumi program owns hosted app/CI definitions and distributes bindings to
+Vercel/GitHub. Use one logical stack input or resource output per environment,
+shared by its consumers; do not maintain parallel values in provider UIs or app
+`.env` files. Secret inputs default to encrypted Pulumi config, with references
+to an approved central store when needed. The environment catalog records the
+contract, not another copy of secret/runtime values.
+
+Remaining consolidation includes GitHub environments/variables/secret bindings,
+shared logical inputs replacing import-era per-binding value keys, and adoption
+of external DNS/ignored provider properties when changed. Review provider support
+and preserve existing live values before those migrations. This documentation
+change establishes the required path; it does not provision/adopt those resources
+or introduce another config/secret system.
+
 ## Install and validate
 
 Requirements: Node.js 22 or newer, pnpm 10.18.1, and Pulumi CLI 3.273.0.
@@ -150,9 +182,11 @@ Each property has one writer:
 - Application deployments stay on the existing Git/controlled Actions path.
   Never add `vercel.Deployment` resources or replace the rollout workflow.
 - Drizzle alone owns database schema/history. Pulumi does not migrate or seed.
-- `packages/db/neon.ts` keeps its current TTL policy for new ephemeral branches.
-  Existing persistent Preview/Staging branches must not gain that TTL. Decide
-  property ownership before adopting branch settings; do not add a second writer.
+- `packages/db/neon.ts` records a CLI TTL policy; it is not a second provisioner
+  for this repository. New temporary cloud branches need reviewed Pulumi lifecycle
+  support before creation. The pinned provider's missing schema-only/TTL support
+  is not permission to use the CLI instead. Persistent Preview/Staging branches
+  must retain their existing ancestry and absence of expiry.
 - npm publication stays separate and human-approved.
 - `apps/dev-harness` and `apps/internal-docs` remain local-only.
 
