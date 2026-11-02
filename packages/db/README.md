@@ -22,6 +22,15 @@ pnpm --filter @flowmark/db test
 `pnpm db:setup` and `pnpm db:seed` are for a loopback demo database. They refuse
 hosted targets. Rollout order, Preview, Staging, and Production commands are in
 [database rollout](../../docs/migrations.md).
+Setup/seed build db and its transitive workspace dependencies. Setup requires
+any migration override to match the runtime host, port, database, and role,
+then migrates and seeds using `DATABASE_URL`.
+
+`pnpm db:studio` uses `drizzle.studio.config.ts`: a guarded local-demo config
+that selects the runtime database and refuses conflicting migration overrides,
+hosted targets, and production mode before startup. The shared
+`drizzle.config.ts` retains migration-URL precedence for migration tooling.
+
 Cloud branches/computes/roles and hosted connection bindings follow the
 [Pulumi writer policy](../../docs/infrastructure.md#pulumi-is-the-infrastructure-writer),
 including temporary cloud branches. Drizzle retains schema/history ownership.

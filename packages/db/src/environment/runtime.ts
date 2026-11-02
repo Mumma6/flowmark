@@ -1,6 +1,7 @@
 import process from "node:process"
 import { Effect } from "effect"
 import {
+  CommandConfigurationError,
   DemoModeRequiredError,
   LoopbackDatabaseError,
   MissingDatabaseUrlError,
@@ -63,6 +64,18 @@ export const assertLocalDevelopmentDatabase = Effect.fn(
     return yield* new DemoModeRequiredError({
       reason:
         "Set FLOWMARK_DEMO_MODE=true explicitly for local development database commands.",
+    })
+  }
+  const target = yield* Effect.try({
+    try: () => new URL(url),
+    catch: () =>
+      new CommandConfigurationError({
+        reason: "Refusing local database command: the database URL is invalid.",
+      }),
+  })
+  if (!["postgres:", "postgresql:"].includes(target.protocol)) {
+    return yield* new CommandConfigurationError({
+      reason: "Refusing local database command: a PostgreSQL URL is required.",
     })
   }
   if (!isLoopbackDatabaseUrl(url)) {

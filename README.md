@@ -154,6 +154,10 @@ pnpm db:setup
 pnpm dev
 ```
 
+Database setup builds its workspace prerequisites, including core. If
+`DATABASE_MIGRATION_URL` is set, it must name the same local host, port,
+database, and role as `DATABASE_URL`; otherwise setup stops before SQL.
+
 Open the dashboard at `http://127.0.0.1:3001`. The
 [development guide](./docs/development.md) covers the local pipeline, checks,
 and database safety. Self-hosting needs the same apps, committed migrations,

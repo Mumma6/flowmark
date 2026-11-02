@@ -18,6 +18,10 @@ Project membership, ingestion keys, and project/key creation quotas stay in
 | `@flowmark/auth/limits`          | Durable auth-limit storage adapter.                                 |
 | `@flowmark/auth/seed`            | Local fixture account provisioning.                                 |
 
-`pnpm db:seed` and `pnpm db:setup` build `@flowmark/db` and then run this
+`pnpm db:seed` and `pnpm db:setup` build `@flowmark/db` and its workspace
+dependencies, including core, and then run this
 package's local commands. They still refuse production and non-loopback
-databases. Hosted environment names are unchanged.
+databases. Setup also refuses a migration URL naming a different local host,
+port, database, or role before SQL. It migrates and seeds through the runtime
+URL, retaining that URL's connection settings. Hosted environment names and
+migration wrappers are unchanged.

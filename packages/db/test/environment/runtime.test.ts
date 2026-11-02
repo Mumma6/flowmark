@@ -1,6 +1,9 @@
 import assert from "node:assert/strict"
+import { spawnSync } from "node:child_process"
 import { test } from "node:test"
+import { fileURLToPath } from "node:url"
 import { Effect, Result } from "effect"
+import { readLocalDevelopmentDatabaseUrl } from "../../src/environment/local-database.js"
 import { assertMigrationTarget } from "../../src/environment/migration-target.js"
 import {
   assertLocalDevelopmentDatabase,
@@ -195,4 +198,140 @@ test("db:setup sequence refuses a non-loopback migration URL when runtime URL is
     ),
     /loopback/,
   )
+})
+
+test("local setup and Studio reject different hosts, ports, databases, and roles", () => {
+  const runtime = "postgresql://local:secret@127.0.0.1:5432/flowmark"
+  for (const migration of [
+    "postgresql://local:secret@localhost:5432/flowmark",
+    "postgresql://local:secret@127.0.0.1:5433/flowmark",
+    "postgresql://local:secret@127.0.0.1:5432/other",
+    "postgresql://other:secret@127.0.0.1:5432/flowmark",
+  ]) {
+    const reason = leftReason(
+      readLocalDevelopmentDatabaseUrl({
+        FLOWMARK_DEMO_MODE: "true",
+        DATABASE_URL: runtime,
+        DATABASE_MIGRATION_URL: migration,
+      }),
+    )
+    assert.match(reason, /must match DATABASE_URL/)
+    assert.doesNotMatch(reason, /secret|postgresql:\/\//)
+  }
+})
+
+test("matching local targets always use the runtime connection settings", () => {
+  const runtime =
+    "postgresql://local:runtime-secret@127.0.0.1:5432/flowmark?application_name=runtime"
+  for (const migration of [
+    undefined,
+    runtime,
+    "postgres://%6Cocal:different-secret@127.0.0.1/flowmark?application_name=migration",
+  ]) {
+    assert.equal(
+      Effect.runSync(
+        readLocalDevelopmentDatabaseUrl({
+          FLOWMARK_DEMO_MODE: "true",
+          DATABASE_URL: runtime,
+          DATABASE_MIGRATION_URL: migration,
+        }),
+      ),
+      runtime,
+    )
+  }
+})
+
+test("local target selection keeps guards and redacts malformed URL errors", () => {
+  const env = {
+    FLOWMARK_DEMO_MODE: "true",
+    DATABASE_URL: "postgresql://local:secret@127.0.0.1/flowmark",
+  }
+  for (const [override, message] of [
+    [{ NODE_ENV: "production" }, /production environment/],
+    [{ VERCEL_ENV: "production" }, /production environment/],
+    [{ FLOWMARK_DEMO_MODE: "false" }, /FLOWMARK_DEMO_MODE/],
+    [
+      {
+        DATABASE_MIGRATION_URL:
+          "postgresql://local:secret@db.example.invalid/flowmark",
+      },
+      /loopback/,
+    ],
+    [{ DATABASE_URL: "secret-invalid-url" }, /invalid/],
+    [{ DATABASE_MIGRATION_URL: "secret-invalid-url" }, /invalid/],
+    [{ DATABASE_URL: "https://local:secret@localhost/flowmark" }, /PostgreSQL/],
+    [{ DATABASE_URL: "postgresql://%:secret@localhost/flowmark" }, /invalid/],
+  ] as const) {
+    const reason = leftReason(
+      readLocalDevelopmentDatabaseUrl({ ...env, ...override }),
+    )
+    assert.match(reason, message)
+    assert.doesNotMatch(reason, /secret|postgresql:\/\//)
+  }
+})
+
+test("Studio config uses the runtime URL and refuses unsafe configuration before startup", () => {
+  const runtime = "postgresql://local:secret@127.0.0.1:1/flowmark"
+  const run = (overrides: NodeJS.ProcessEnv = {}) =>
+    spawnSync(
+      process.execPath,
+      [
+        "--import",
+        "tsx",
+        "--input-type=module",
+        "-e",
+        'import config from "./drizzle.studio.config.ts"; if (config.dbCredentials.url !== process.env.DATABASE_URL) process.exit(2); console.log("runtime target selected")',
+      ],
+      {
+        cwd: fileURLToPath(new URL("../..", import.meta.url)),
+        encoding: "utf8",
+        timeout: 10000,
+        env: {
+          ...process.env,
+          DATABASE_URL: runtime,
+          DATABASE_MIGRATION_URL: runtime,
+          FLOWMARK_DEMO_MODE: "true",
+          NODE_ENV: "development",
+          VERCEL_ENV: "",
+          ...overrides,
+        },
+      },
+    )
+  assert.equal(run().status, 0)
+  for (const overrides of [
+    {
+      DATABASE_MIGRATION_URL:
+        "postgresql://local:secret@db.example.invalid/flowmark",
+    },
+    { DATABASE_URL: "postgresql://local:secret@db.example.invalid/flowmark" },
+    { DATABASE_MIGRATION_URL: "postgresql://local:secret@127.0.0.1:1/other" },
+    { DATABASE_URL: "secret-invalid-url" },
+    { NODE_ENV: "production" },
+    { FLOWMARK_DEMO_MODE: "false" },
+  ]) {
+    const result = run(overrides)
+    assert.equal(result.status, 1)
+    assert.match(result.stderr, /Refusing|FLOWMARK_DEMO_MODE/)
+    assert.doesNotMatch(result.stdout + result.stderr, /secret|postgresql:\/\//)
+  }
+})
+
+test("Studio CLI prints an actionable, redacted refusal before starting", () => {
+  const result = spawnSync("pnpm", ["db:studio"], {
+    cwd: fileURLToPath(new URL("../..", import.meta.url)),
+    encoding: "utf8",
+    timeout: 10000,
+    env: {
+      ...process.env,
+      DATABASE_URL: "postgresql://local:secret@127.0.0.1:1/flowmark",
+      DATABASE_MIGRATION_URL:
+        "postgresql://local:secret@db.example.invalid/flowmark",
+      FLOWMARK_DEMO_MODE: "true",
+      NODE_ENV: "development",
+      VERCEL_ENV: "",
+    },
+  })
+  assert.equal(result.status, 1)
+  assert.match(result.stdout + result.stderr, /database must be on loopback/)
+  assert.doesNotMatch(result.stdout + result.stderr, /secret|postgresql:\/\//)
 })
