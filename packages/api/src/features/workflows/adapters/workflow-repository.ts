@@ -1,6 +1,9 @@
 import { Effect, Layer } from "effect"
 import { WorkflowStore } from "@flowmark/db/persistence"
-import { toPersistenceError } from "../../../adapters/persistence-error.js"
+import {
+  persist,
+  toPersistenceError,
+} from "../../../adapters/persistence-error.js"
 import { InvalidInput, RunNotFound } from "../../../errors.js"
 import { WorkflowRepository } from "../ports/workflow-repository.js"
 
@@ -12,10 +15,7 @@ export const WorkflowRepositoryLive = Layer.effect(
     const store = yield* WorkflowStore
     return WorkflowRepository.of({
       expectations: Effect.fn("WorkflowRepositoryLive.expectations")(
-        (projectId, runId) =>
-          store
-            .expectations(projectId, runId)
-            .pipe(Effect.mapError(toPersistenceError)),
+        (projectId, runId) => persist(store.expectations(projectId, runId)),
       ),
       businessInsights: Effect.fn("WorkflowRepositoryLive.businessInsights")(
         (projectId, query) =>
@@ -38,7 +38,7 @@ export const WorkflowRepositoryLive = Layer.effect(
           ),
       ),
       snapshot: Effect.fn("WorkflowRepositoryLive.snapshot")((projectId) =>
-        store.snapshot(projectId).pipe(Effect.mapError(toPersistenceError)),
+        persist(store.snapshot(projectId)),
       ),
       listRuns: Effect.fn("WorkflowRepositoryLive.listRuns")(
         (projectId, query) =>
@@ -51,15 +51,10 @@ export const WorkflowRepositoryLive = Layer.effect(
           ),
       ),
       timeline: Effect.fn("WorkflowRepositoryLive.timeline")(
-        (projectId, runId) =>
-          store
-            .timeline(projectId, runId)
-            .pipe(Effect.mapError(toPersistenceError)),
+        (projectId, runId) => persist(store.timeline(projectId, runId)),
       ),
       related: Effect.fn("WorkflowRepositoryLive.related")((projectId, runId) =>
-        store
-          .related(projectId, runId)
-          .pipe(Effect.mapError(toPersistenceError)),
+        persist(store.related(projectId, runId)),
       ),
       compare: Effect.fn("WorkflowRepositoryLive.compare")(
         (projectId, runId, selection) =>
@@ -72,10 +67,7 @@ export const WorkflowRepositoryLive = Layer.effect(
           ),
       ),
       intelligence: Effect.fn("WorkflowRepositoryLive.intelligence")(
-        (projectId, query) =>
-          store
-            .intelligence(projectId, query)
-            .pipe(Effect.mapError(toPersistenceError)),
+        (projectId, query) => persist(store.intelligence(projectId, query)),
       ),
     })
   }),
