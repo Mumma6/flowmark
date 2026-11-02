@@ -47,14 +47,14 @@ Do not review those callers unless the user adds them.
 
 The user may narrow the lens:
 
-| Request                         | Review only                                      |
-| ------------------------------- | ------------------------------------------------ |
-| General architecture review     | All lenses that apply to the target              |
-| Standards compliance            | Documented rules and confirmed violations        |
-| Duplication and simplification  | Real repeated logic and simpler existing shapes  |
-| File organization               | Naming, cohesion, placement, and discoverability |
-| Effect usage                    | Effect v4 style where Effect already belongs     |
-| One named concern               | That concern, plus violations it exposes         |
+| Request                        | Review only                                      |
+| ------------------------------ | ------------------------------------------------ |
+| General architecture review    | All lenses that apply to the target              |
+| Standards compliance           | Documented rules and confirmed violations        |
+| Duplication and simplification | Real repeated logic and simpler existing shapes  |
+| File organization              | Naming, cohesion, placement, and discoverability |
+| Effect usage                   | Effect v4 style where Effect already belongs     |
+| One named concern              | That concern, plus violations it exposes         |
 
 A clean report with a few evidenced findings is the goal. No findings is a
 valid result. Say so.
@@ -65,16 +65,16 @@ Read the matching rows before judging. Skip rules that do not apply to the
 target. Do not apply backend structure to React components, or UI rules to
 Effect services.
 
-| Target | Load | Leave out |
-| --- | --- | --- |
-| `packages/api` | [architecture](../flowmark-architecture/SKILL.md), [effect](../flowmark-effect/SKILL.md), [architecture doc](../../../docs/architecture.md) API section | UI kit rules; db folder layout inside use cases |
-| `packages/db` | [persistence](../flowmark-persistence/SKILL.md), architecture persistence rules, effect, [migrations](../../../docs/migrations.md) when schema or SQL history is in scope | Ports inside `packages/db`; UI rules |
-| `packages/sdk` | Architecture SDK rules, effect, architecture doc SDK section, [ADR 0005](../../../docs/decisions/0005-sdk-does-not-control-application-flow.md) | `features/` layout; SQL layout; UI rules |
-| `packages/core` | Architecture core rules, architecture doc core section. Effect only where the package already uses it | Required ports, layers, or services for pure functions |
-| `apps/server` | Architecture server-shell rules, effect at the protocol boundary, [apps/server/AGENTS.md](../../../apps/server/AGENTS.md) | Feature use cases living in route files; db SQL in the app |
-| `apps/dashboard`, `apps/web`, `apps/docs`, `apps/dev-harness`, `packages/ui` | [UI components](../flowmark-ui-components/SKILL.md), [design system](../../../docs/design-system.md), the app's `AGENTS.md` when present | Ports, layers, and persistence layout |
-| `infrastructure/` | [infrastructure](../flowmark-infrastructure/SKILL.md) | Application Effect layers around Pulumi |
-| Any other path | Root [AGENTS.md](../../../AGENTS.md), the nearest nested `AGENTS.md`, and the skill for the code you actually find | Rules for a layer that is not present |
+| Target                                                                       | Load                                                                                                                                                                      | Leave out                                                  |
+| ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| `packages/api`                                                               | [architecture](../flowmark-architecture/SKILL.md), [effect](../flowmark-effect/SKILL.md), [architecture doc](../../../docs/architecture.md) API section                   | UI kit rules; db folder layout inside use cases            |
+| `packages/db`                                                                | [persistence](../flowmark-persistence/SKILL.md), architecture persistence rules, effect, [migrations](../../../docs/migrations.md) when schema or SQL history is in scope | Ports inside `packages/db`; UI rules                       |
+| `packages/sdk`                                                               | Architecture SDK rules, effect, architecture doc SDK section, [ADR 0005](../../../docs/decisions/0005-sdk-does-not-control-application-flow.md)                           | `features/` layout; SQL layout; UI rules                   |
+| `packages/core`                                                              | Architecture core rules, architecture doc core section. Effect only where the package already uses it                                                                     | Required ports, layers, or services for pure functions     |
+| `apps/server`                                                                | Architecture server-shell rules, effect at the protocol boundary, [apps/server/AGENTS.md](../../../apps/server/AGENTS.md)                                                 | Feature use cases living in route files; db SQL in the app |
+| `apps/dashboard`, `apps/web`, `apps/docs`, `apps/dev-harness`, `packages/ui` | [UI components](../flowmark-ui-components/SKILL.md), [design system](../../../docs/design-system.md), the app's `AGENTS.md` when present                                  | Ports, layers, and persistence layout                      |
+| `infrastructure/`                                                            | [infrastructure](../flowmark-infrastructure/SKILL.md)                                                                                                                     | Application Effect layers around Pulumi                    |
+| Any other path                                                               | Root [AGENTS.md](../../../AGENTS.md), the nearest nested `AGENTS.md`, and the skill for the code you actually find                                                        | Rules for a layer that is not present                      |
 
 Also load [effect v4 migration](../../../docs/effect-v4-migration.md) when the
 target still uses v3 Effect APIs (`Effect.Service`, `Context.Tag`, `.Default`).
@@ -184,12 +184,12 @@ matters, the suggested change, the benefit, and risk plus effort.
 
 Use one class:
 
-| Class | Meaning |
-| --- | --- |
-| Standards violation | Conflicts with an explicit skill, ADR, or architecture rule |
-| Inconsistency | Differs from an established convention without a stated reason |
-| Improvement opportunity | A justified simplification or maintainability change |
-| Optional preference | Style only. Omit unless the user asked for preferences |
+| Class                   | Meaning                                                        |
+| ----------------------- | -------------------------------------------------------------- |
+| Standards violation     | Conflicts with an explicit skill, ADR, or architecture rule    |
+| Inconsistency           | Differs from an established convention without a stated reason |
+| Improvement opportunity | A justified simplification or maintainability change           |
+| Optional preference     | Style only. Omit unless the user asked for preferences         |
 
 Do not label a preference as a violation. Do not propose a public contract
 change, persisted format change, database migration, or error-semantics change
