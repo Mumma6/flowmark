@@ -40,6 +40,17 @@
     "typecheck": {
       "dependsOn": ["^build"]
     },
+    "db:studio": {
+      "cache": false,
+      "persistent": true,
+      "passThroughEnv": [
+        "DATABASE_URL",
+        "DATABASE_MIGRATION_URL",
+        "FLOWMARK_*",
+        "DOCKER_*",
+        "COMPOSE_*"
+      ]
+    },
     "dev:ready": {
       "dependsOn": [
         "@flowmark/api#build",

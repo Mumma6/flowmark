@@ -108,8 +108,10 @@
   and the [command inventory](./docs/development-commands.md).
 - Use `pnpm dev` for API/dashboard/harness and native library watchers; append
   `--ui=stream` for non-interactive logs. `pnpm dev:all` includes web and both
-  documentation apps. Studio is explicit with `pnpm db:studio`. Dev commands
-  require a healthy owned Compose service; they never migrate or seed on startup.
+  documentation apps when PostgreSQL is already healthy. `pnpm dev:stack`
+  runs `infra up`, then every application and Drizzle Studio; record its
+  `container` and `startedByThisCall`. `pnpm db:studio` starts Studio alone.
+  None of these commands migrate or seed on startup.
   One session owns each checkout's build outputs: inspect existing processes/
   ports first, reuse existing services, and never run direct builds/checks/
   integration commands alongside watchers. Use another worktree when somebody
