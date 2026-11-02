@@ -26,6 +26,14 @@ Setup/seed build db and its transitive workspace dependencies. Setup requires
 any migration override to match the runtime host, port, database, and role,
 then migrates and seeds using `DATABASE_URL`.
 
+New templates choose checkout-scoped PostgreSQL 18 through `pnpm infra up`.
+All infra operations share `pnpm infra <operation>`; `down` stops the verified
+service and keeps its named volume. Compose mode checks Docker/container/volume
+identity before local database commands. Existing files without the mode setting
+remain native; choose `FLOWMARK_LOCAL_DATABASE=native` explicitly for user-managed
+loopback PostgreSQL. See [local infrastructure](../../docs/development.md#local-postgresql-with-compose).
+Use `db:setup` instead of the removed duplicate `db:setup-demo` alias.
+
 `pnpm db:studio` uses `drizzle.studio.config.ts`: a guarded local-demo config
 that selects the runtime database and refuses conflicting migration overrides,
 hosted targets, and production mode before startup. The shared

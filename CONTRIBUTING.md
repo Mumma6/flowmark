@@ -12,7 +12,7 @@ Requirements and the full local pipeline are in the
 ```sh
 pnpm install
 pnpm dev:setup
-# Set DATABASE_URL in apps/server/.env.local to a loopback Postgres database.
+pnpm infra up # New Compose configuration; existing native setup remains supported.
 pnpm db:setup
 pnpm dev
 ```

@@ -1,6 +1,7 @@
 import { Effect } from "effect"
 import {
   assertLocalDevelopmentDatabase,
+  assertManagedLocalDatabase,
   loadApiEnvironment,
   readDatabaseUrl,
   runDatabaseCommand,
@@ -13,6 +14,7 @@ await runDatabaseCommand(
     yield* loadApiEnvironment
     const url = yield* readDatabaseUrl()
     yield* assertLocalDevelopmentDatabase(url)
+    yield* assertManagedLocalDatabase(url)
     yield* seedLocalDevelopment(url, seedLocalAuthUser)
     yield* Effect.sync(() => {
       console.log(

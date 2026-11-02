@@ -4,6 +4,9 @@
 
 - Node.js 20.19 or newer (Node 24 LTS recommended)
 - pnpm 10
+- For Compose development: Docker CLI and Compose supporting `up --wait`,
+  `--wait-timeout`, and `--no-recreate`; OrbStack, Docker Desktop (Linux
+  containers), and Docker Engine on Linux use the same commands.
 
 Install dependencies from the repository root:
 
@@ -47,8 +50,9 @@ configuration values are never printed. This is repository development setup,
 not an SDK fallback or production credential provisioning.
 
 Starting development apps does not start PostgreSQL or apply migrations.
-Set `DATABASE_URL` in `apps/server/.env.local` to an existing development database,
-then run `pnpm db:setup`. That command reads the server app's environment
+For new checkouts, run `pnpm infra up` after env setup; for existing checkouts,
+choose Compose or retain native PostgreSQL as described below. Then run
+`pnpm db:setup`. That command reads the server app's environment
 files, builds `@flowmark/db` and its workspace dependencies (including core), applies committed migrations, and seeds local
 fixture projects so the API uses the same database. `@flowmark/auth` then
 provisions `local@flowmark.test`. `pnpm db:migrate` and `pnpm db:seed` are
@@ -68,6 +72,127 @@ omitted/default port 5432, and equivalent username encoding are accepted;
 different hostnames remain distinct because loopback listeners can differ.
 Unset a conflicting migration override or select the same target explicitly.
 Shell values retain precedence and existing env files are not rewritten.
+
+### Local PostgreSQL with Compose
+
+Use the same standard Docker CLI/Compose workflow with OrbStack, Docker
+Desktop, or Docker Engine on Linux. No runtime-specific socket path, domain,
+CPU architecture, or host networking is configured. Applications, watchers,
+Drizzle, and tests remain native pnpm processes.
+
+For a new checkout:
+
+```sh
+pnpm dev:setup
+pnpm infra doctor
+pnpm infra up
+pnpm db:setup
+pnpm dev:stream
+```
+
+`doctor` checks the selected local engine and configuration; an absent/stopped
+service is reported with `databaseReady: false` and startup instructions.
+`up` starts only this checkout's `postgres`, waits at most 30 seconds for
+health, and checks the database/role inside the container. It never migrates,
+seeds, or resets. A healthy container does not prove schema readiness; apply
+reviewed migrations explicitly with `pnpm db:migrate:local` when needed.
+
+The default is PostgreSQL 18 (`postgres:18-alpine`, matching CI), published at
+`127.0.0.1:55432`, with public local-only role/database `flowmark` and password
+`local_dev_only`. PostgreSQL data is stored in a project-scoped named volume
+mounted at `/var/lib/postgresql`, the PostgreSQL 18 image location. Normal
+stop/start and container recreation retain this volume. Initialization settings
+only create roles/databases in an empty data directory; changing container env
+does not change an existing database password. Do not change the major version
+or remove the volume to fix a startup problem.
+
+The root `compose.yaml` contains only local PostgreSQL. Project and volume
+identities are derived from the checkout's real path, so worktrees/clones do
+not share ownership. Moving a checkout changes its project identity; it does
+not move/delete the previous volume or its data. Two active checkouts need
+different host ports: choose `FLOWMARK_POSTGRES_PORT` and the matching runtime
+URL explicitly. A port conflict never authorizes stopping the port owner.
+
+### Existing configuration and native PostgreSQL
+
+`dev:setup` never overwrites an existing `.env`/`.env.local`. Existing files
+without `FLOWMARK_LOCAL_DATABASE` remain user-managed native configuration and
+do not require Docker for database commands. Set `FLOWMARK_LOCAL_DATABASE=native`
+explicitly when maintaining your own dedicated loopback PostgreSQL.
+
+To select Compose for an existing checkout, deliberately set
+`FLOWMARK_LOCAL_DATABASE=compose`, `FLOWMARK_POSTGRES_PORT=55432`, and the matching
+public local `DATABASE_URL` from `apps/server/.env.example`. Correct/unset a
+conflicting migration override. This creates a separate empty instance; no
+existing data is transferred, reset, or overwritten. Only `application_name`
+is accepted as an additional Compose connection option; custom connection
+settings belong to the explicitly user-managed native path.
+
+Compose mode validates container/project/volume labels, image, loopback port,
+credentials, mount, health, and database/role before setup, seed, local migrate,
+Studio, or the approved telemetry reset can use the database. Native mode keeps
+the existing local/demo/non-production guards, without claiming Docker ownership.
+Loopback alone is not proof against an SSH tunnel; do not point native commands
+at forwarded hosted databases. Approved hosted migration wrappers stay separate.
+
+### Infrastructure commands and ownership
+
+There is one command dispatcher, `pnpm infra <operation>`, rather than separate
+script files for each operation:
+
+- `doctor`: check the effective Docker target, engine, config, port/service and
+  readiness; migration state is explicitly not checked.
+- `up`: start/wait without recreating an existing container. Output includes
+  `container` and `startedByThisCall`; a previously running service is left as-is.
+- `status`: show this checkout's container/health state, including absent/stopped.
+- `logs`: return the last 100 container log lines, including stderr, and redact
+  PostgreSQL connection URLs. Review logs before sharing; SQL may contain local data.
+- `restart postgres`: restart only the verified service and wait for health.
+- `down`: stop only the verified service; retain its container and named volume.
+
+Agents must record whether they started a service and its returned container ID.
+Coordinate infrastructure operations within one checkout; the reported startup
+snapshot is not a cross-process lease. Separate worktrees have separate ownership.
+For cleanup, use `pnpm infra down --container <id>` only when `startedByThisCall`
+was true; a stale/mismatched ID is refused. Leave previously running services
+alone. Explicitly requested manual stop/restart is scoped to this checkout.
+There is no automatic cleanup on dev exit or failed startup; inspect status/logs
+before deciding what your session owns. Never use `down -v`, volume deletion,
+or prune as a repair step without approval. `infra up` deliberately does not
+recreate containers. Use `pnpm infra up --recreate` only deliberately after
+reviewing the change and confirming service ownership (or an explicit user
+request); it recreates only the verified service and retains its named volume.
+It never changes the PostgreSQL major version or repairs configuration drift
+by taking over an unrecognized container/volume.
+
+Docker target selection respects `DOCKER_CONTEXT` and checks `DOCKER_HOST` for
+conflicts; commands pin the inspected context for that invocation without
+switching the global context. Remote/ambiguous endpoints and target-changing
+Compose overrides are refused. Turbo dev forwards these overrides to Studio so
+they cannot disappear silently. Root `.env` files are not a second Compose
+configuration source; the dispatcher supplies only the checked local values.
+
+If Docker is unavailable, start your chosen engine manually and retry. If socket
+access is denied by permissions or an agent sandbox, report the limitation.
+For an authorized local task, a normal, narrowly scoped tool approval may permit
+verification outside the sandbox; it does not authorize socket permission
+changes or bypassing security controls. If permitted access is unavailable or
+rejected, use command-boundary tests and leave container/data verification
+pending. Do not switch engines/contexts silently or fall back to a hosted database.
+
+### Which scripts are needed?
+
+The daily path is env setup → `infra up` → `db:setup` once → native `dev` /
+`dev:stream`. Subsequent schema updates use `db:migrate:local`; `db:seed` only
+provisions local fixtures and does not migrate. Use `db:setup` in place of the
+removed duplicate `db:setup-demo` alias. All infra operations share one entrypoint.
+PostgreSQL provisioning/health belongs to Compose; explicit database safety
+checks stay in the repository. Hosted migration/release/publication commands
+are maintainer workflows with distinct approvals, not onboarding steps, and
+are intentionally not folded into a generic Docker command.
+
+Runtime references: [Compose startup options](https://docs.docker.com/reference/cli/docker/compose/up/)
+and [PostgreSQL image storage/initialization](https://hub.docker.com/_/postgres).
 
 ### Database browser: Drizzle Studio
 
@@ -285,15 +410,15 @@ Versioned migrations are in `packages/db/migrations`. The API requires
 
 ## Local demo with PostgreSQL
 
-Use a dedicated PostgreSQL database. Dashboard sign-in is email and password.
+Use the Compose instance above or a dedicated native PostgreSQL database.
+Dashboard sign-in is email and password.
 The seed creates `local@flowmark.test` / `local-dev-only` and attaches it to the local
 operations project. Applications still use a project write key, not that
 password.
 
 ```sh
-createdb flowmark
 pnpm dev:setup
-# Set DATABASE_URL in apps/server/.env.local to the database you just created.
+pnpm infra up # Or start your explicitly selected native loopback PostgreSQL.
 pnpm db:setup
 pnpm dev
 ```
@@ -374,6 +499,7 @@ createdb flowmark_test
 pnpm --filter @flowmark/api... --filter @flowmark/auth... build
 DATABASE_URL=postgresql://127.0.0.1:5432/flowmark_test \
 DATABASE_MIGRATION_URL=postgresql://127.0.0.1:5432/flowmark_test \
+FLOWMARK_LOCAL_DATABASE=native \
   pnpm db:migrate
 TEST_DATABASE_URL=postgresql://127.0.0.1:5432/flowmark_test \
   pnpm --filter @flowmark/server test

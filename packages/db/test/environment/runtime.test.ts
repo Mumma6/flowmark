@@ -291,6 +291,7 @@ test("Studio config uses the runtime URL and refuses unsafe configuration before
           DATABASE_URL: runtime,
           DATABASE_MIGRATION_URL: runtime,
           FLOWMARK_DEMO_MODE: "true",
+          FLOWMARK_LOCAL_DATABASE: "native",
           NODE_ENV: "development",
           VERCEL_ENV: "",
           ...overrides,
@@ -327,6 +328,7 @@ test("Studio CLI prints an actionable, redacted refusal before starting", () => 
       DATABASE_MIGRATION_URL:
         "postgresql://local:secret@db.example.invalid/flowmark",
       FLOWMARK_DEMO_MODE: "true",
+      FLOWMARK_LOCAL_DATABASE: "native",
       NODE_ENV: "development",
       VERCEL_ENV: "",
     },

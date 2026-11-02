@@ -3,6 +3,7 @@ import { sql } from "drizzle-orm"
 import { Effect } from "effect"
 import { CommandConfigurationError } from "../environment/error.js"
 import { loadApiEnvironment } from "../environment/load.js"
+import { assertManagedLocalDatabase } from "../environment/managed-local-database.js"
 import {
   assertLocalDevelopmentDatabase,
   readDatabaseUrl,
@@ -59,6 +60,7 @@ await runDatabaseCommand(
           "Pass --confirm-local-telemetry to delete only the local development project's telemetry. Accounts and credentials are retained.",
       })
     }
+    yield* assertManagedLocalDatabase(url)
     yield* resetLocalTelemetry(url)
   }),
 )
