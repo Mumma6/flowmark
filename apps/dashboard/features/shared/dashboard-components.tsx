@@ -19,10 +19,7 @@ import {
 import { ArrowRight, RefreshCw } from "lucide-react"
 import Link from "next/link"
 import { useEffect, useMemo, useState, type ReactNode } from "react"
-import {
-  runStatusLabel,
-  type RunStatus,
-} from "../lib/telemetry/run-presentation"
+import { runStatusLabel, type RunStatus } from "../runs/run-presentation"
 
 export function CopyButton({
   value,

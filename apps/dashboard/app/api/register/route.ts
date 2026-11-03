@@ -1,4 +1,4 @@
-import { proxyToApiHandler } from "../../../lib/api/proxy"
+import { proxyToApiHandler } from "../../../features/platform/api-proxy"
 
 export const runtime = "nodejs"
 

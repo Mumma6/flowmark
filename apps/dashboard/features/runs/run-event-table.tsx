@@ -12,14 +12,11 @@ import {
 } from "@flowmark/ui"
 import { ChevronDown, ChevronRight } from "lucide-react"
 import { Fragment, useState } from "react"
-import {
-  FilterSelect,
-  TablePagination,
-} from "../../components/dashboard-components"
-import { JsonData } from "../../components/json-data"
-import type { RunEvent } from "../../lib/api/types"
-import { paginate } from "../../lib/collections"
-import { formatDuration, formatTimestamp } from "../../lib/format"
+import { FilterSelect, TablePagination } from "../shared/dashboard-components"
+import { JsonData } from "../shared/json-data"
+import type { RunEvent } from "../platform/api-types"
+import { paginate } from "../shared/collections"
+import { formatDuration, formatTimestamp } from "../shared/format"
 import { eventLabel } from "./event-label"
 
 export function EventTable({

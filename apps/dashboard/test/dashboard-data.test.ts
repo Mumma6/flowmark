@@ -1,19 +1,19 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { shareWidthClass } from "../components/reporting/share-width"
+import { shareWidthClass } from "../features/reporting/share-width"
 import { defaultIntelligenceQuery } from "../features/period/period"
 import { filterRuns, type RunFilters } from "../features/runs/run-filters"
 import { workflowFamily } from "../features/workflows/workflow-family"
-import { type DayInsight, type Run } from "../lib/api/types"
-import { groupBy, paginate } from "../lib/collections"
-import { formatDuration } from "../lib/format"
+import { type DayInsight, type Run } from "../features/platform/api-types"
+import { groupBy, paginate } from "../features/shared/collections"
+import { formatDuration } from "../features/shared/format"
 import {
   durationInRange,
   percentChange,
   percentile,
   summarizeDays,
   weekOverWeek,
-} from "../lib/reporting/statistics"
-import { getRunDurationMs } from "../lib/telemetry/run-presentation"
+} from "../features/reporting/statistics"
+import { getRunDurationMs } from "../features/runs/run-presentation"
 
 afterEach(() => {
   vi.useRealTimers()

@@ -53,3 +53,17 @@ brand icon, including the established accent dot in wordmarks.
 
 Check each app's Tailwind version and shared components' actual state attributes.
 The dashboard/harness use Tailwind 3 while landing/docs use Tailwind 4.
+
+## Feature colocation and TypeScript logic
+
+Keep related UI, query/controller hooks, schemas, types and pure data models
+beside each other under the owning `features/<feature>/` directory. Shared
+feature code stays with its domain owner even when several views consume it;
+do not move run projections away from run views into global `lib/telemetry`.
+Use a shared feature only for actual cross-feature concerns. Next route entries
+stay in `app/`, and reusable shadcn primitives stay in `@flowmark/ui`.
+
+Apply [flowmark-effect](../flowmark-effect/SKILL.md) to ordinary TS logic and
+controllers too: no imperative loops, explicit Option/Result and Schema
+boundaries, and pattern matching for variants. Rendering, hooks and UI state
+remain React; extracting logic does not require putting rendering in Effect.

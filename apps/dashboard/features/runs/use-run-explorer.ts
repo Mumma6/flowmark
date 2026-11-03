@@ -1,9 +1,10 @@
 "use client"
+import { Array as Arr } from "effect"
 
 import { useQuery } from "@tanstack/react-query"
 import { usePathname, useSearchParams } from "next/navigation"
 import { useMemo, useState } from "react"
-import { useTRPC } from "../../lib/api/trpc"
+import { useTRPC } from "../platform/api-trpc"
 import { useProject } from "../projects/project-context"
 import {
   useResultDeclarations,
@@ -25,13 +26,13 @@ export function useRunExplorer(workflow?: string) {
   const filters = useMemo(() => readExplorerFilters(params), [params])
   const setFilters = (next: ExplorerFilters) => {
     const url = new URLSearchParams(params.toString())
-    for (const [key, value] of Object.entries(next)) {
+    Arr.forEach(Arr.fromIterable(Object.entries(next)), ([key, value]) => {
       if (value === explorerDefaults[key as keyof ExplorerFilters]) {
         url.delete(key)
       } else {
         url.set(key, value)
       }
-    }
+    })
     window.history.replaceState(
       null,
       "",

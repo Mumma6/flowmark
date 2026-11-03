@@ -3,8 +3,8 @@
 import type { AppRouter } from "@flowmark/server/trpc"
 import { QueryClient } from "@tanstack/react-query"
 import { createTRPCClient, httpBatchLink } from "@trpc/client"
-import { readStoredProjectId } from "../../features/projects/project-selection"
-import { publicConfig } from "../config/public"
+import { readStoredProjectId } from "../projects/project-selection"
+import { publicConfig } from "./config-public"
 
 export const createDashboardQueryClient = () =>
   new QueryClient({

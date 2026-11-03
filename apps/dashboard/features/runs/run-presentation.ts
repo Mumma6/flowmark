@@ -1,3 +1,5 @@
+import { Array, Option, pipe } from "effect"
+
 export type RunStatus = "Completed" | "Failed" | "Running"
 
 export interface RunResultHighlight {
@@ -34,28 +36,35 @@ export function getRunDurationMs(
   }
   const start = Date.parse(started.timestamp)
   let duration: number | null = null
-  for (const event of events) {
+  Array.forEach(Array.fromIterable(events), (event) => {
     if (event.type === "completed" || event.type === "failed") {
       const elapsed = Date.parse(event.timestamp) - start
       duration = duration === null ? elapsed : Math.max(duration, elapsed)
     }
-  }
+  })
   return duration
 }
 
 export function latestReportedProgress(
   events: ReadonlyArray<RunProgressEvent>,
 ): ReportedProgress | undefined {
-  const event = [...events]
-    .reverse()
-    .find((item) => item.type === "progress" && item.completed != null)
-  return event?.completed == null
-    ? undefined
-    : {
-        completed: event.completed,
-        total: event.total,
-        unit: event.unit,
-      }
+  return pipe(
+    events,
+    Array.findLast(
+      (item) => item.type === "progress" && item.completed != null,
+    ),
+    Option.flatMap((event) =>
+      pipe(
+        Option.fromNullishOr(event.completed),
+        Option.map((completed) => ({
+          completed,
+          total: event.total,
+          unit: event.unit,
+        })),
+      ),
+    ),
+    Option.getOrUndefined,
+  )
 }
 
 export function formatReportedProgress(progress: ReportedProgress) {
@@ -137,10 +146,10 @@ export function buildOperationSpans(
       error: unknown
     }
   >()
-  for (const event of events) {
+  Array.forEach(Array.fromIterable(events), (event) => {
     const id = event.operationId
     if (!id) {
-      continue
+      return
     }
     if (event.type === "operation_started") {
       byId.set(id, {
@@ -151,11 +160,11 @@ export function buildOperationSpans(
         status: "open",
         error: null,
       })
-      continue
+      return
     }
     const existing = byId.get(id)
     if (!existing) {
-      continue
+      return
     }
     if (event.type === "operation_completed") {
       byId.set(id, {
@@ -177,7 +186,7 @@ export function buildOperationSpans(
         error: event.error ?? null,
       })
     }
-  }
+  })
   return [...byId.entries()]
     .map(([operationId, span]) => ({
       operationId,
@@ -234,14 +243,18 @@ export function operationIdleGaps(
         Date.parse(a.endedAt!) - Date.parse(b.endedAt!) ||
         a.operationId.localeCompare(b.operationId),
     )
-  const gaps: { afterOperationId: string; idleMs: number }[] = []
-  for (let index = 0; index < finished.length - 1; index += 1) {
-    const current = finished[index]!
-    const next = finished[index + 1]!
-    const idleMs = Date.parse(next.startedAt) - Date.parse(current.endedAt!)
-    if (idleMs > 0) {
-      gaps.push({ afterOperationId: current.operationId, idleMs })
-    }
-  }
-  return gaps
+  return pipe(
+    Array.zip(finished.slice(0, -1), finished.slice(1)),
+    Array.map(([current, next]) =>
+      pipe(
+        Option.some(Date.parse(next.startedAt) - Date.parse(current.endedAt!)),
+        Option.filter((idleMs) => idleMs > 0),
+        Option.map((idleMs) => ({
+          afterOperationId: current.operationId,
+          idleMs,
+        })),
+      ),
+    ),
+    Array.getSomes,
+  )
 }

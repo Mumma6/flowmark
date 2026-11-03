@@ -1,4 +1,4 @@
-import type { RouterOutputs } from "../../lib/api/types"
+import type { RouterOutputs } from "../platform/api-types"
 
 export function issueEvidence(
   report?: RouterOutputs["project"]["periodReport"],

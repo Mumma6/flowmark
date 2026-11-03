@@ -2,7 +2,7 @@
 
 import { Alert, AlertDescription } from "@flowmark/ui"
 import Link from "next/link"
-import { formatTimestamp } from "../../lib/format"
+import { formatTimestamp } from "../shared/format"
 import { windowLabel } from "../period/period"
 import { useExpectationAttention } from "./queries"
 

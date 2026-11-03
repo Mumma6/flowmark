@@ -3,8 +3,8 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest"
 import {
   readDashboardOnboarding,
   readDashboardSession,
-} from "../lib/auth/session"
-import { provideDashboardServer } from "../lib/server-runtime"
+} from "../features/auth/auth-session"
+import { provideDashboardServer } from "../features/platform/server-runtime"
 
 vi.mock("next/headers", () => ({
   cookies: async () => ({

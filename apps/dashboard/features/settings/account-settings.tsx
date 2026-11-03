@@ -15,8 +15,8 @@ import {
 } from "@flowmark/ui"
 import { Result } from "effect"
 import { useEffect, useState, type FormEvent } from "react"
-import { runBrowserAuth } from "../../lib/auth/browser-runtime"
-import { authClient } from "../../lib/auth/client"
+import { runBrowserAuth } from "../auth/auth-browser-runtime"
+import { authClient } from "../auth/auth-client"
 import { changeAccountPassword, updateAccountName } from "../auth/operations"
 
 export function AccountSettings() {

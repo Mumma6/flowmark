@@ -18,8 +18,8 @@ import {
   XAxis,
   YAxis,
 } from "recharts"
-import { type Snapshot } from "../../lib/api/types"
-import { formatDuration } from "../../lib/format"
+import { type Snapshot } from "../platform/api-types"
+import { formatDuration } from "../shared/format"
 
 const volumeConfig = {
   completed: {

@@ -2,7 +2,7 @@ import {
   assertPreviewDashboardApi,
   previewApiOrigin,
 } from "@flowmark/db/environment"
-import { Context, Data, Effect, Layer, Schema } from "effect"
+import { Context, Data, Effect, Layer, Schema, Option, pipe } from "effect"
 import "server-only"
 
 export class DashboardConfigurationError extends Data.TaggedError(
@@ -32,18 +32,20 @@ export const dashboardApiUrl = Effect.fn("dashboardApiUrl")(function* () {
       Schema.String.pipe(
         Schema.check(
           Schema.makeFilter((value) => {
-            try {
-              const url = new URL(value)
-              return (
-                (url.protocol === "http:" || url.protocol === "https:") &&
-                !url.username &&
-                !url.password &&
-                !url.search &&
-                !url.hash
-              )
-            } catch {
-              return false
-            }
+            return pipe(
+              Option.liftThrowable((candidate: string) => new URL(candidate))(
+                value,
+              ),
+              Option.filter(
+                (url) =>
+                  ["http:", "https:"].includes(url.protocol) &&
+                  !url.username &&
+                  !url.password &&
+                  !url.search &&
+                  !url.hash,
+              ),
+              Option.isSome,
+            )
           }),
         ),
       ),

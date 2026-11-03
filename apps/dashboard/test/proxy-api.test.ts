@@ -1,3 +1,4 @@
+import { Array as Arr } from "effect"
 import {
   AUTH_CLIENT_IP_HEADER,
   AUTH_PROXY_IDENTITY_HEADER,
@@ -7,7 +8,7 @@ import { Effect } from "effect"
 import { randomUUID } from "node:crypto"
 import { inspect } from "node:util"
 import { afterEach, beforeEach, expect, it, vi } from "vitest"
-import { proxyToApiHandler } from "../lib/api/proxy"
+import { proxyToApiHandler } from "../features/platform/api-proxy"
 
 beforeEach(() => {
   vi.stubEnv("NODE_ENV", "production")
@@ -93,9 +94,12 @@ it("returns 502 and logs only a safe label for an upstream transport failure", a
     type: "DashboardProxyError",
   })
   const output = inspect(log.mock.calls)
-  for (const value of [target.href, target.password, privateValue]) {
-    expect(output.includes(value)).toBe(false)
-  }
+  Arr.forEach(
+    Arr.fromIterable([target.href, target.password, privateValue]),
+    (value) => {
+      expect(output.includes(value)).toBe(false)
+    },
+  )
 })
 
 it("preserves an upstream storage 503 instead of converting it into a proxy 502", async () => {
@@ -149,17 +153,20 @@ it("preserves provider retry guidance and browser CSRF metadata without forwardi
   )
   expect(response.status).toBe(429)
   expect(response.headers.get("cache-control")).toBe("no-store")
-  for (const name of ["retry-after", "x-retry-after"]) {
+  Arr.forEach(Arr.fromIterable(["retry-after", "x-retry-after"]), (name) => {
     expect(response.headers.get(name)).toBe("30")
-  }
+  })
   const forwarded = fetch.mock.calls[0][1].headers as Headers
   expect(forwarded.get("origin")).toBe("https://untrusted.example")
   expect(forwarded.get("sec-fetch-site")).toBe("cross-site")
-  for (const name of [
-    "x-forwarded-for",
-    "x-real-ip",
-    "x-vercel-forwarded-for",
-  ]) {
-    expect(forwarded.has(name)).toBe(false)
-  }
+  Arr.forEach(
+    Arr.fromIterable([
+      "x-forwarded-for",
+      "x-real-ip",
+      "x-vercel-forwarded-for",
+    ]),
+    (name) => {
+      expect(forwarded.has(name)).toBe(false)
+    },
+  )
 })

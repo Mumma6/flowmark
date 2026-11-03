@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useMemo } from "react"
-import { useTRPC } from "../../lib/api/trpc"
+import { useTRPC } from "../platform/api-trpc"
 import { useProject } from "../projects/project-context"
 import { periodDays, periodWindow, type PeriodDays } from "./period"
 

@@ -23,8 +23,8 @@ import {
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useEffect, useState, useSyncExternalStore } from "react"
-import { publicConfig } from "../../lib/config/public"
-import { runStatusLabel } from "../../lib/telemetry/run-presentation"
+import { publicConfig } from "../platform/config-public"
+import { runStatusLabel } from "../runs/run-presentation"
 import { useProject } from "../projects/project-context"
 import {
   commandPages,

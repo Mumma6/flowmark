@@ -1,3 +1,4 @@
+import { Array as Arr } from "effect"
 export function paginate<T>(
   items: readonly T[],
   requestedPage: number,
@@ -14,15 +15,10 @@ export function paginate<T>(
 }
 
 export function groupBy<T>(items: readonly T[], key: (item: T) => string) {
-  const groups = new Map<string, T[]>()
-  for (const item of items) {
-    const name = key(item)
-    const group = groups.get(name)
-    if (group) {
-      group.push(item)
-    } else {
-      groups.set(name, [item])
-    }
-  }
-  return [...groups]
+  const tagged = Arr.map(items, (item) => [key(item), item] as const)
+  const groups = Arr.groupBy(tagged, ([name]) => name)
+  return Arr.map(
+    Arr.dedupe(Arr.map(tagged, ([name]) => name)),
+    (name): [string, T[]] => [name, Arr.map(groups[name]!, ([, item]) => item)],
+  )
 }

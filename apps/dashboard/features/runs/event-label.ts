@@ -1,38 +1,42 @@
-import type { RunEvent } from "../../lib/api/types"
+import { Match } from "effect"
+import type { RunEvent } from "../platform/api-types"
 
 export function eventLabel(event: RunEvent) {
-  switch (event.type) {
-    case "expectation_declared":
-      return `Expected · ${event.expectation?.type === "expectation_declared" ? event.expectation.name : "Confirmation"}`
-    case "expectation_resolved":
-      return "Expectation resolution reported"
-    case "expectation_cancelled":
-      return "Expectation cancellation reported"
-    case "started":
-      return "Run started"
-    case "step":
-      return event.step ?? "Checkpoint"
-    case "properties":
-      return "Context updated"
-    case "error":
-      return event.error && "handled" in event.error && event.error.handled
+  return Match.value(event.type).pipe(
+    Match.when(
+      "expectation_declared",
+      () =>
+        `Expected · ${event.expectation?.type === "expectation_declared" ? event.expectation.name : "Confirmation"}`,
+    ),
+    Match.when("expectation_resolved", () => "Expectation resolution reported"),
+    Match.when(
+      "expectation_cancelled",
+      () => "Expectation cancellation reported",
+    ),
+    Match.when("started", () => "Run started"),
+    Match.when("step", () => event.step ?? "Checkpoint"),
+    Match.when("properties", () => "Context updated"),
+    Match.when("error", () =>
+      event.error && "handled" in event.error && event.error.handled
         ? "Handled error"
-        : "Error observed"
-    case "report":
-      return "Business snapshot reported (non-final)"
-    case "progress":
-      return "Progress reported"
-    case "completed":
-      return "Run completed"
-    case "failed":
-      return "Run failed"
-    case "operation_started":
-      return `Started · ${event.operationName ?? "Operation"}`
-    case "operation_completed":
-      return `Completed · ${event.operationName ?? "Operation"}`
-    case "operation_failed":
-      return `Failed · ${event.operationName ?? "Operation"}`
-    default:
-      return event.type
-  }
+        : "Error observed",
+    ),
+    Match.when("report", () => "Business snapshot reported (non-final)"),
+    Match.when("progress", () => "Progress reported"),
+    Match.when("completed", () => "Run completed"),
+    Match.when("failed", () => "Run failed"),
+    Match.when(
+      "operation_started",
+      () => `Started · ${event.operationName ?? "Operation"}`,
+    ),
+    Match.when(
+      "operation_completed",
+      () => `Completed · ${event.operationName ?? "Operation"}`,
+    ),
+    Match.when(
+      "operation_failed",
+      () => `Failed · ${event.operationName ?? "Operation"}`,
+    ),
+    Match.orElse(() => event.type),
+  )
 }

@@ -1,3 +1,5 @@
+import { mergedRunContext } from "./run-context"
+import { terminalEvidence } from "./run-state"
 import {
   getRunDurationMs,
   getRunResultHighlights,
@@ -44,27 +46,13 @@ export interface ExportableRunEvent {
 function runStatus(
   events: ReadonlyArray<ExportableRunEvent>,
 ): "Completed" | "Failed" | "Running" {
-  if (events.some((event) => event.type === "failed")) {
-    return "Failed"
-  }
-  if (events.some((event) => event.type === "completed")) {
-    return "Completed"
-  }
-  return "Running"
+  return terminalEvidence(events).state
 }
 
 function mergedContext(
   events: ReadonlyArray<ExportableRunEvent>,
 ): Record<string, unknown> {
-  const context = new Map<string, unknown>()
-  for (const event of events) {
-    if (event.type === "started" || event.type === "properties") {
-      for (const [key, value] of Object.entries(event.properties ?? {})) {
-        context.set(key, value)
-      }
-    }
-  }
-  return Object.fromEntries(context)
+  return Object.fromEntries(mergedRunContext(events))
 }
 
 function reportedResult(

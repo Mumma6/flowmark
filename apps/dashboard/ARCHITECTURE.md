@@ -13,15 +13,16 @@ results and missing terminal evidence remain separate concepts.
   query/controller hooks and domain-specific projections. `features/auth` owns
   the browser authentication operations and screen. `features/period` owns
   the shared UTC period selection and evidence-navigation rules.
-- `components/` owns dashboard presentation primitives and application
-  providers. `components/layout` composes navigation, search, projects and
-  theme. `components/reporting` contains charts/panels shared by several
+- `features/shared/` owns dashboard presentation primitives and small shared
+  utilities. Application providers live beside transport/configuration in
+  `features/platform`. `features/shell` composes navigation, search, projects and
+  theme. `features/reporting` contains charts/panels shared by several
   features. Reusable controls still come from `@flowmark/ui`.
-- `lib/api` owns tRPC context, client construction, inferred API input/output
-  types, the upstream server client and proxy adapter. `lib/auth` contains
+- `features/platform` owns tRPC context, client construction, inferred API input/output
+  types, the upstream server client and proxy adapter. `features/auth` contains
   Better Auth adapters and server session/access reads.
-- `lib/config` separates server-only and browser-safe configuration.
-  `lib/telemetry` contains shared pure run/event projections; `lib/reporting`
+- `features/platform` separates server-only and browser-safe configuration.
+  `features/runs` contains shared pure run/event projections; `features/reporting`
   contains snapshot statistics. Formatting and collection pagination/grouping
   have small, explicit modules.
 - `test/` contains unit, characterization and architecture-boundary tests.
@@ -41,7 +42,7 @@ upstream request boundary with tagged transport errors, timeout/cancellation,
 `no-store`, manual redirects and server-only protection headers. A layer is a
 description, not a global client carrying request identity.
 
-`lib/server-runtime.ts` composes these layers and executes server effects.
+`features/platform/server-runtime.ts` composes these layers and executes server effects.
 React's `cache` deduplicates session/access work within a server render, never
 across users. Session and onboarding reads decode unknown JSON with Effect
 Schema. Anonymous, 401/403 and null-session results remain explicit `Option`s;
@@ -50,7 +51,7 @@ errors. Cookies are read inside the request, not stored in shared services.
 
 `BrowserAuth` is the dependency contract for registration, sign-in, sign-out,
 name updates and password changes. The Better Auth/fetch adapter is provided
-at `lib/auth/browser-runtime.ts`. Application operations remain lazy Effects
+at `features/auth/auth-browser-runtime.ts`. Application operations remain lazy Effects
 until a React event calls `runBrowserAuth`, receiving a typed `Result` for UI
 feedback. Registration must succeed before sign-in. Failed sign-out does not
 navigate as though it succeeded. React rendering and component state do not run
@@ -87,13 +88,13 @@ router contract rather than duplicating the backend schemas in the dashboard.
 
 ## Configuration ownership
 
-`lib/config/server.ts` is marked `server-only`. It owns API origin resolution,
+`features/platform/config-server.ts` is marked `server-only`. It owns API origin resolution,
 Preview sibling selection, production requirements, demo-mode guards, protection
 bypass configuration and the existing local-account display gate. Existing
 `@flowmark/db/environment` safety checks remain authoritative for hosted
 isolation. `NODE_ENV=production` alone never selects the SDK installation target.
 
-`lib/config/public.ts` owns same-origin auth/register/tRPC paths, public
+`features/platform/config-public.ts` owns same-origin auth/register/tRPC paths, public
 polling defaults and the existing `NEXT_PUBLIC_FLOWMARK_DOCS_URL` override.
 The documentation URL is validated as credential-free HTTP(S), with the same
 development/hosted defaults. Invalid configured values fail explicitly.
@@ -171,3 +172,27 @@ Observed existing follow-up: when the proxy returns a non-tRPC 502 response,
 React Query displays the explicit failure state but its detail reads
 `Unable to transform response from server`. Improving that transport-specific
 message is separate from this behavior-preserving refactor.
+
+## Feature colocation
+
+All dashboard UI, query controllers, pure models and runtime adapters now live
+under `features/`. Run projections sit beside run views; reporting charts and
+statistics sit together. Auth UI, sessions and adapters share `features/auth`.
+`features/shell` owns navigation; `features/shared` contains cross-feature UI
+and small utilities. `features/platform` owns cross-feature transport and
+configuration, with separate server-only and public modules. Next entry points
+remain in `app/`. Pure event classification uses Effect Match pipelines.
+
+The follow-up replaces imperative loops with Effect collection iteration and
+uses zip/map/getSomes for adjacent operation gaps. Query-filter shape is an Effect
+Schema with inferred types; malformed result paths retain tagged failures in
+Result before the UI-specific Option projection. Independent server-client
+executions are verified concurrently with bounded Effect.forEach. React state
+and request-local pure accumulators remain local; no global Ref or duplicate
+scheduler is introduced around React Query's existing concurrency.
+
+Feature-colocation follow-up verified on November 3, 2026: root `pnpm check`
+passed, including 105 dashboard tests; Webpack production build passed with the
+same routes. All three edited project skills passed skill validation. The new
+architecture test rejects imperative loops in application code. No additional
+browser or database integration run was performed for this follow-up.

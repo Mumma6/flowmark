@@ -1,7 +1,7 @@
 "use client"
 
 import { useQuery } from "@tanstack/react-query"
-import { useTRPC } from "../../lib/api/trpc"
+import { useTRPC } from "../platform/api-trpc"
 import { useProject } from "../projects/project-context"
 
 export function useFailedRuns(

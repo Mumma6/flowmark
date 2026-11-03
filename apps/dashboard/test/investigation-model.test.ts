@@ -1,8 +1,8 @@
 import { Option } from "effect"
 import { expect, it } from "vitest"
 import { buildInvestigation } from "../features/runs/investigation-model"
-import type { RunEvent } from "../lib/api/types"
-import { durationDelta, terminalEvidence } from "../lib/telemetry/run-state"
+import type { RunEvent } from "../features/platform/api-types"
+import { durationDelta, terminalEvidence } from "../features/runs/run-state"
 
 const event = (
   type: RunEvent["type"],

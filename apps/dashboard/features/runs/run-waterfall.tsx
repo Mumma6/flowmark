@@ -1,15 +1,16 @@
 "use client"
 
+import { Match } from "effect"
 import { Badge } from "@flowmark/ui"
-import type { RunEvent } from "../../lib/api/types"
-import { formatDuration } from "../../lib/format"
+import type { RunEvent } from "../platform/api-types"
+import { formatDuration } from "../shared/format"
 import {
   buildOperationSpans,
   buildProgressSeries,
   formatReportedProgress,
   operationIdleGaps,
   type OperationSpan,
-} from "../../lib/telemetry/run-presentation"
+} from "./run-presentation"
 
 function spanWidthPercent(span: OperationSpan, totalMs: number) {
   if (totalMs <= 0) {
@@ -31,14 +32,11 @@ function spanOffsetPercent(span: OperationSpan, totalMs: number) {
 }
 
 function barClass(status: OperationSpan["status"]) {
-  switch (status) {
-    case "failed":
-      return "bg-destructive"
-    case "open":
-      return "bg-muted-foreground/50"
-    default:
-      return "bg-success"
-  }
+  return Match.value(status).pipe(
+    Match.when("failed", () => "bg-destructive"),
+    Match.when("open", () => "bg-muted-foreground/50"),
+    Match.orElse(() => "bg-success"),
+  )
 }
 
 export function ProgressStrip({ events }: { events: readonly RunEvent[] }) {

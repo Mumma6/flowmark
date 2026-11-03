@@ -1,7 +1,7 @@
 import { Effect, Option } from "effect"
 import "server-only"
-import { dashboardApiUrl } from "../config/server"
-import { readDashboardOnboarding, readDashboardSession } from "./session"
+import { dashboardApiUrl } from "../platform/config-server"
+import { readDashboardOnboarding, readDashboardSession } from "./auth-session"
 
 /** Anonymous requests never attempt onboarding. Failures remain failures. */
 export const readDashboardAccess = Effect.fn("Dashboard.readAccess")(

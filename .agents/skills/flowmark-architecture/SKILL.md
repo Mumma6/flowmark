@@ -99,7 +99,9 @@ dashboard server proxy  ──> @flowmark/auth/client-identity
 - Do not suppress errors or return success-shaped fallbacks. Map failures to
   HTTP/tRPC responses only at the protocol boundary and retain diagnostic
   causes.
-- Do not introduce Effect wrappers for pure transformations or plain data.
+- Keep pure transformations synchronous, using Effect collection, Option, Result,
+  Match and Schema operators under [flowmark-effect](../flowmark-effect/SKILL.md).
+  Do not wrap pure calculations in an Effect runtime or service.
 
 ## File and folder organization
 

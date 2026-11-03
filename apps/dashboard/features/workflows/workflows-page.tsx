@@ -1,7 +1,7 @@
 "use client"
 
-import { DataState, PageHeading } from "../../components/dashboard-components"
-import { Refresh } from "../../components/refresh"
+import { DataState, PageHeading } from "../shared/dashboard-components"
+import { Refresh } from "../shared/refresh"
 import { useSnapshot } from "../projects/queries"
 import { WorkflowDirectory } from "./workflow-directory"
 

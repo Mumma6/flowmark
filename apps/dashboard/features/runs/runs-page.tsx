@@ -23,14 +23,14 @@ import {
   PageHeading,
   StatusBadge,
   ViewLink,
-} from "../../components/dashboard-components"
-import { Refresh } from "../../components/refresh"
+} from "../shared/dashboard-components"
+import { Refresh } from "../shared/refresh"
 import {
   FailureCodeTable,
   OperationInsightsTable,
-} from "../../components/reporting/insights-panels"
-import { type Run } from "../../lib/api/types"
-import { formatDuration, formatTimestamp } from "../../lib/format"
+} from "../reporting/insights-panels"
+import { type Run } from "../platform/api-types"
+import { formatDuration, formatTimestamp } from "../shared/format"
 import { ExpectationAttention } from "../expectations/expectation-attention"
 import { insightsPath, issuesPath } from "../period/period-presentation"
 import { useSnapshot } from "../projects/queries"

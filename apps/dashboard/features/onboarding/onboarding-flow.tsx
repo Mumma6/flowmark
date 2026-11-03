@@ -11,8 +11,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@flowmark/ui"
-import { CopyButton } from "../../components/dashboard-components"
-import { RuntimeConfigProvider } from "../../components/runtime-config"
+import { CopyButton } from "../shared/dashboard-components"
+import { RuntimeConfigProvider } from "../platform/runtime-config"
 import { CreateProjectForm, SecretAlert } from "../projects/create-project-form"
 import { ProjectProvider } from "../projects/project-context"
 import { steps } from "./steps"

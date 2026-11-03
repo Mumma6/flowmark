@@ -1,7 +1,7 @@
 "use client"
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { useTRPC } from "../../lib/api/trpc"
+import { useTRPC } from "../platform/api-trpc"
 
 export function useResultDeclarations(
   projectId: string,

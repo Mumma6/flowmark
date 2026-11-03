@@ -11,10 +11,10 @@ import {
 } from "@flowmark/ui"
 import { ArrowUpRight } from "lucide-react"
 import Link from "next/link"
-import { StatusBadge } from "../../components/dashboard-components"
-import { type Run } from "../../lib/api/types"
-import { formatDuration, formatTimestamp } from "../../lib/format"
-import { getRunResultHighlights } from "../../lib/telemetry/run-presentation"
+import { StatusBadge } from "../shared/dashboard-components"
+import { type Run } from "../platform/api-types"
+import { formatDuration, formatTimestamp } from "../shared/format"
+import { getRunResultHighlights } from "./run-presentation"
 
 function ReportedResult({ run }: { run: Run }) {
   const highlights = getRunResultHighlights(run.result ?? {})

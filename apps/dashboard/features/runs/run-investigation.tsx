@@ -27,16 +27,16 @@ import { Option } from "effect"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { useState } from "react"
-import { CopyButton, ViewLink } from "../../components/dashboard-components"
-import { JsonData } from "../../components/json-data"
-import type { RunEvent } from "../../lib/api/types"
-import { formatTimestamp } from "../../lib/format"
+import { CopyButton, ViewLink } from "../shared/dashboard-components"
+import { JsonData } from "../shared/json-data"
+import type { RunEvent } from "../platform/api-types"
+import { formatTimestamp } from "../shared/format"
 import {
   buildRunExport,
   buildTimelineExport,
   stringifyExport,
-} from "../../lib/telemetry/run-export"
-import { formatReportedProgress } from "../../lib/telemetry/run-presentation"
+} from "./run-export"
+import { formatReportedProgress } from "./run-presentation"
 import { BusinessResult } from "../results/business-result"
 import { buildInvestigation } from "./investigation-model"
 import { RelatedRunsTable } from "./related-runs-table"

@@ -11,7 +11,7 @@ import {
 } from "@flowmark/ui"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { Suspense } from "react"
-import { PageHeading } from "../../components/dashboard-components"
+import { PageHeading } from "../shared/dashboard-components"
 import { AgentPromptCard } from "../onboarding/getting-started"
 import { useProject } from "../projects/project-context"
 import { AccountSettings } from "./account-settings"

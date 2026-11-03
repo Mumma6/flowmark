@@ -8,9 +8,9 @@ import {
   TableHeader,
   TableRow,
 } from "@flowmark/ui"
-import type { RunEvent } from "../../lib/api/types"
-import { formatDuration, formatTimestamp } from "../../lib/format"
-import { buildAttemptSequence } from "../../lib/telemetry/run-attempts-presentation"
+import type { RunEvent } from "../platform/api-types"
+import { formatDuration, formatTimestamp } from "../shared/format"
+import { buildAttemptSequence } from "./run-attempts-presentation"
 
 export function RunAttempts({
   events,

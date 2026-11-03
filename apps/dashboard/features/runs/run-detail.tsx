@@ -6,7 +6,7 @@ import {
   DataState,
   PageHeading,
   ViewLink,
-} from "../../components/dashboard-components"
+} from "../shared/dashboard-components"
 import { RunExpectations } from "../expectations/run-expectations"
 import { useRunDetail } from "./queries"
 import { RunInvestigation } from "./run-investigation"

@@ -11,8 +11,8 @@ import {
   DataState,
   PageHeading,
   ViewLink,
-} from "../../components/dashboard-components"
-import { Refresh } from "../../components/refresh"
+} from "../shared/dashboard-components"
+import { Refresh } from "../shared/refresh"
 import { ExpectationAttention } from "../expectations/expectation-attention"
 import { useSnapshot } from "../projects/queries"
 import { RunsTable } from "../runs/runs-table"

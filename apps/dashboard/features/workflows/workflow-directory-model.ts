@@ -1,5 +1,5 @@
 import { Array, Match, Order, pipe } from "effect"
-import type { WorkflowSummary } from "../../lib/api/types"
+import type { WorkflowSummary } from "../platform/api-types"
 import { workflowFamily } from "./workflow-family"
 
 const ordering = (value: number) => (value < 0 ? -1 : value > 0 ? 1 : 0)

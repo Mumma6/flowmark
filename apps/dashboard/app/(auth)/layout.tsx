@@ -2,7 +2,7 @@ import { Option } from "effect"
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import type { ReactNode } from "react"
-import { getDashboardSession } from "../../lib/server-runtime"
+import { getDashboardSession } from "../../features/platform/server-runtime"
 
 export const dynamic = "force-dynamic"
 

@@ -17,7 +17,7 @@ import {
   TableRow,
 } from "@flowmark/ui"
 import Link from "next/link"
-import { DataState } from "../../components/dashboard-components"
+import { DataState } from "../shared/dashboard-components"
 import { useBusinessOutcomes } from "./use-business-outcomes"
 
 export function BusinessOutcomes({

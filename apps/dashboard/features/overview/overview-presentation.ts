@@ -1,5 +1,5 @@
-import { type Intelligence } from "../../lib/api/types"
-import { formatDuration } from "../../lib/format"
+import { type Intelligence } from "../platform/api-types"
+import { formatDuration } from "../shared/format"
 
 function delta(
   current: number | null,

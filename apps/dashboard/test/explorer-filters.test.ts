@@ -1,7 +1,8 @@
-import { Option } from "effect"
+import { Option, Result } from "effect"
 import { describe, expect, it } from "vitest"
 import {
   buildRunListInput,
+  decodeResultPath,
   parseResultPath,
   readExplorerFilters,
 } from "../features/runs/explorer-filters"
@@ -104,5 +105,19 @@ describe("run history request contract", () => {
       dimensionKey: "region",
       dimensionValue: "eu",
     })
+  })
+})
+
+it("retains a typed schema failure instead of hiding malformed result paths", () => {
+  Result.match(decodeResultPath('{"wrong":"shape"}'), {
+    onFailure: (error) =>
+      expect(error).toMatchObject({
+        _tag: "InvalidResultPath",
+        operation: "decodeResultPath",
+        cause: expect.anything(),
+      }),
+    onSuccess: () => {
+      throw new Error("Invalid path unexpectedly accepted")
+    },
   })
 })

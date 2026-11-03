@@ -1,6 +1,6 @@
 import type { RunSnapshotMilestone, RunSnapshotProps } from "@flowmark/ui"
-import type { RunEvent } from "../api/types"
-import { formatDuration, formatTimestamp } from "../format"
+import type { RunEvent } from "../platform/api-types"
+import { formatDuration, formatTimestamp } from "../shared/format"
 import { getRunDurationMs, getRunResultHighlights } from "./run-presentation"
 import { terminalEvidence } from "./run-state"
 

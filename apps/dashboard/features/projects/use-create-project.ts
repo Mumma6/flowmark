@@ -2,8 +2,8 @@
 
 import { useMutation } from "@tanstack/react-query"
 import { useEffect, useRef, useState } from "react"
-import { useTRPC } from "../../lib/api/trpc"
-import { authClient } from "../../lib/auth/client"
+import { useTRPC } from "../platform/api-trpc"
+import { authClient } from "../auth/auth-client"
 import { useProject } from "./project-context"
 import type { CreatedSecret } from "./types"
 

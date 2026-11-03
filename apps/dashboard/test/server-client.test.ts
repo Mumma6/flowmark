@@ -1,7 +1,7 @@
-import { Effect, Layer, Result } from "effect"
+import { Array as Arr, Effect, Layer, Result } from "effect"
 import { afterEach, expect, it, vi } from "vitest"
-import { DashboardApi } from "../lib/api/server-client"
-import { DashboardServerConfig } from "../lib/config/server"
+import { DashboardApi } from "../features/platform/api-server-client"
+import { DashboardServerConfig } from "../features/platform/config-server"
 
 const api = (apiUrl: string, protectionBypass?: string) =>
   DashboardApi.layer.pipe(
@@ -21,22 +21,25 @@ it("isolates API origins and protection credentials across executions and preser
       )
     })
   vi.stubGlobal("fetch", fetch)
-  for (const [origin, secret] of [
-    ["https://preview.example", "synthetic-preview"],
-    ["https://staging.example", "synthetic-staging"],
-  ]) {
-    const response = await Effect.runPromise(
-      Effect.gen(function* () {
-        const client = yield* DashboardApi
-        return yield* client.request(
-          "/api/trpc/run.list",
-          { headers: { cookie: "synthetic-session" } },
-          8000,
-        )
-      }).pipe(Effect.provide(api(origin, secret))),
-    )
-    expect(response.status).toBe(503)
-  }
+  const responses = await Effect.runPromise(
+    Effect.forEach(
+      [
+        ["https://preview.example", "synthetic-preview"],
+        ["https://staging.example", "synthetic-staging"],
+      ],
+      ([origin, secret]) =>
+        Effect.gen(function* () {
+          const client = yield* DashboardApi
+          return yield* client.request(
+            "/api/trpc/run.list",
+            { headers: { cookie: "synthetic-session" } },
+            8000,
+          )
+        }).pipe(Effect.provide(api(origin, secret))),
+      { concurrency: 2 },
+    ),
+  )
+  Arr.forEach(responses, (response) => expect(response.status).toBe(503))
   expect(
     fetch.mock.calls.map(([url, options]) => [
       url.origin,

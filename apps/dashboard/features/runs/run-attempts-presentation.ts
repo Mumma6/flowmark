@@ -1,3 +1,4 @@
+import { Array as Arr } from "effect"
 type WorkflowAttempt = { readonly groupId: string; readonly number: number }
 
 type AttemptEvent = {
@@ -13,13 +14,13 @@ type AttemptEvent = {
 /** Preserve occurrences, including terminal-only evidence. Never infer an attempt from a name. */
 export function buildAttemptSequence(events: readonly AttemptEvent[]) {
   const operations = new Map<string, AttemptEvent[]>()
-  for (const event of events) {
+  Arr.forEach(Arr.fromIterable(events), (event) => {
     if (!event.operationId || !event.attempt) {
-      continue
+      return
     }
     const evidence = operations.get(event.operationId) ?? []
     operations.set(event.operationId, [...evidence, event])
-  }
+  })
   return [...operations.entries()]
     .map(([operationId, evidence]) => {
       const first = [...evidence].sort(

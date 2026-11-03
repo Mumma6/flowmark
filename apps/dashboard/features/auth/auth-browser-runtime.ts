@@ -1,9 +1,9 @@
 "use client"
 
 import { Effect, Layer, Schema } from "effect"
-import { BrowserAuth, DashboardAuthError } from "../../features/auth/operations"
-import { publicConfig } from "../config/public"
-import { authClient } from "./client"
+import { BrowserAuth, DashboardAuthError } from "./operations"
+import { publicConfig } from "../platform/config-public"
+import { authClient } from "./auth-client"
 
 const RegistrationResponse = Schema.Struct({
   ok: Schema.optionalKey(Schema.Boolean),

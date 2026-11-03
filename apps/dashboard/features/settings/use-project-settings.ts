@@ -2,7 +2,7 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useEffect, useState } from "react"
-import { useTRPC } from "../../lib/api/trpc"
+import { useTRPC } from "../platform/api-trpc"
 import { useProject } from "../projects/project-context"
 
 export function useProjectSettings() {

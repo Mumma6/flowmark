@@ -16,8 +16,8 @@ import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
-import { CopyButton } from "../../components/dashboard-components"
-import { runBrowserAuth } from "../../lib/auth/browser-runtime"
+import { CopyButton } from "../shared/dashboard-components"
+import { runBrowserAuth } from "./auth-browser-runtime"
 import { authenticate } from "./operations"
 
 export function AuthScreen({
