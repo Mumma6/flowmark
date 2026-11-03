@@ -6,7 +6,7 @@
     "dev": "next dev --hostname 127.0.0.1 --port 3001",
     "build": "next build",
     "start": "next start --port 3001",
-    "lint": "eslint app lib next.config.ts",
+    "lint": "eslint app features next.config.ts tailwind.config.ts vitest.config.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },

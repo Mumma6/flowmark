@@ -89,9 +89,22 @@ export {
   DialogTitle,
   DialogTrigger,
 } from "./dialog"
+export {
+  Command,
+  CommandDialog,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+  CommandSeparator,
+  CommandShortcut,
+} from "./command"
 export { RunSnapshot } from "./run-snapshot"
 export type {
   RunSnapshotProps,
   RunSnapshotMetric,
   RunSnapshotMilestone,
 } from "./run-snapshot"
+
+export { Toaster, toast } from "./toast"

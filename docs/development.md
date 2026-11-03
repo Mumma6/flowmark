@@ -39,20 +39,23 @@ without broadening `allowedDevOrigins`. Open the dashboard on `localhost:3001`,
 matching the exact Better Auth origin in the server template; browser cookies
 and sign-in origins are hostname-specific.
 
-`pnpm dev` starts the API, dashboard, local harness and native compiler watchers
-for core, SDK, db, API and auth. All five libraries finish their initial builds
+`pnpm dev` starts the API, dashboard, local harness, customer docs,
+contributor docs and native compiler watchers for core, SDK, db, API and auth.
+All five libraries finish their initial builds
 in dependency order before any watcher or app starts. The shared `dev:ready`
 task prevents initial builds and watchers from racing into the same `dist`
 directory. Subsequent edits rebuild automatically; exports point at built files.
 
 ```sh
-pnpm dev                         # daily product development
+pnpm dev                         # API, dashboard, harness, docs and internal-docs
 pnpm dev --ui=stream             # ordinary logs for agents/non-interactive terminals
-pnpm dev:all                     # also web, docs and internal-docs
-pnpm db:studio                   # optional local database browser
+pnpm dev:all                     # also the marketing site
+pnpm dev:stack                   # PostgreSQL, all apps, and Drizzle Studio
+pnpm db:studio                   # Studio alone, when the apps are already running
 ```
 
-Studio is explicit and is not started with the applications. Docs-only work can
+`pnpm dev` and `pnpm dev:all` do not start Studio. `pnpm dev:stack` does.
+Docs-only work can
 use `pnpm --filter @flowmark/docs dev` without Docker or backend builds.
 Turbo's TUI supports arrow keys or `j`/`k`, `m` for help, and `Ctrl+C` to stop.
 Exported `BETTER_AUTH_SECRET` and `BETTER_AUTH_URL` reach native dev tasks;
@@ -71,8 +74,12 @@ Existing `.env` or `.env.local` configuration is never overwritten and
 configuration values are never printed. This is repository development setup,
 not an SDK fallback or production credential provisioning.
 
-Root dev commands check Compose readiness before starting applications. They
-do not start PostgreSQL, apply migrations or seed data.
+`pnpm dev` and `pnpm dev:all` check Compose readiness before starting
+applications. They do not start PostgreSQL, apply migrations or seed data.
+`pnpm dev:stack` is the explicit full start: it prepares env files, runs
+`pnpm infra up`, then starts every application, the library watchers, and
+Drizzle Studio. It still does not migrate or seed. Run `pnpm db:setup` once
+before recording data.
 Run `pnpm infra up` after env setup. Then run
 `pnpm db:setup`. That command reads the server app's environment
 files, builds `@flowmark/db` and its workspace dependencies (including core), applies committed migrations, and seeds local
@@ -203,10 +210,12 @@ pending. Do not switch engines/contexts silently or fall back to a hosted databa
 ### Command reference
 
 The daily path is env setup → `infra up` → `db:setup` once → `dev`.
-Subsequent schema updates use `db:migrate:local`; `db:seed` provisions fixtures
-without migrating. PostgreSQL provisioning/health belongs to Compose; database
-safety checks stay in the repository. Hosted migration, release and publication
-commands keep their separate approval gates.
+`pnpm dev:stack` combines env setup, `infra up`, all applications, and
+Drizzle Studio for a later session. Subsequent schema updates use
+`db:migrate:local`; `db:seed` provisions fixtures without migrating.
+PostgreSQL provisioning/health belongs to Compose; database safety checks stay
+in the repository. Hosted migration, release and publication commands keep
+their separate approval gates.
 
 See [developer commands](./development-commands.md) for the complete command and
 script inventory, including which aliases were removed and why.
@@ -266,6 +275,12 @@ or an exact hosted target authorized by its environment wrapper. The controlled
 merge pipeline and approved standalone **Migrate database** job use those wrappers.
 Ordinary PR checks receive no hosted credentials. Never seed Neon or migrate
 inside Vercel builds/requests. See the guide for exact commands and approvals.
+
+Dashboard action feedback uses the shared shadcn Base UI `Toaster` and `toast`
+exports from `@flowmark/ui`. Mount one toaster in the dashboard providers. Use
+success toasts after confirmed saves, project/key changes, and clipboard actions;
+keep actionable form errors and one-time key material in the owning view. Never
+include secret values in a toast or notify for routine background refreshes.
 
 The dashboard uses a same-origin server proxy for tRPC and Better Auth. Its
 server-side `FLOWMARK_API_URL` defaults to `http://localhost:3003`. Dashboard

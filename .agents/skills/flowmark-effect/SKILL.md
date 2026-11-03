@@ -4,7 +4,7 @@ description: >-
   Flowmark TypeScript code conventions: use modern Effect as much as possible
   (Effect.fn, pipe, Match, Result.match, catchTag/catchTags, Layers, Scope,
   Context.Service). Use when writing or refactoring TypeScript, Effect, API,
-  db, CLI, server, SDK, or other internal Flowmark code.
+  db, CLI, server, SDK, ordinary pure TypeScript, or other internal Flowmark code.
 ---
 
 # Flowmark Effect conventions
@@ -20,6 +20,54 @@ skill is how to write the Effect itself.
 
 Keep the public SDK as ordinary TypeScript/Promises. Execute Effects only at
 an explicit process, request, CLI, or public SDK boundary.
+
+## Pure TypeScript is Effect-first too
+
+Apply these conventions to models, projections, formatting, filtering, URL
+selection, validation and tests, not only I/O. Before implementing a familiar
+TypeScript idiom, look for the installed Effect module that owns that operation.
+Use the library's data types and operators directly; do not create a local
+replacement or a compatibility wrapper for an API that already exists.
+
+- Do not write ordinary `for`, `for...of`, `for...in`, `while` or `do...while`
+  loops. Use Effect `Array`, `Record`, `Iterable`, `HashMap` and related collection
+  operators for pure iteration. Prefer `map`, `filter`, `reduce`, `mapAccum`,
+  `zip`/`zipWith`, `unfold` and grouping over mutable accumulation. Use
+  `Array.forEach` for synchronous side effects that actually need iteration.
+- Use `Effect.forEach`, `Effect.reduce` or `Effect.whileLoop`
+  for effectful iteration. Preserve order explicitly; bound concurrency for
+  independent work and keep dependent writes sequential. Do not conceal an
+  asynchronous loop in an unawaited collection callback.
+- Use `Option` for absent values and `Result` for synchronous fallible work.
+  Effect 4 uses `Result`, not the old `Either` API. Keep operation/cause in tagged
+  failures. Do not throw away an error as `None` or an empty collection unless
+  the caller explicitly owns that presentation/recovery policy.
+- Match variants and conditions with `Match`, `Option.match`, `Result.match`
+  and typed catch operators instead of switch statements, nested ternaries or
+  chains of `if`/`else`. Prefer exhaustive matching for a closed vocabulary.
+  A short boundary guard may remain when it is clearer and preserves narrowing.
+- Define reusable trust-boundary shapes with `Schema` and infer their types.
+  Decode unknown HTTP, environment, URL, storage and form data at its owning
+  boundary. Preserve accepted inputs, coercions and explicit invalid selections;
+  failed decoding must not silently widen a query or become a success fallback.
+- Use `Ref` for mutable state owned by an Effect workflow and `SynchronizedRef`
+  when updates require effectful serialization. Allocate it in the owning
+  request/run/client scope; never share request identity through a global Ref.
+  Keep React UI state in React. Pure transformations need no mutable service.
+- Compose independent effects with `Effect.all`, `zip`/`zipWith` or bounded
+  `forEach`; use Scope/finalizers for resources and fibers. Do not add a second
+  scheduler around an existing React Query cache or parallelize authorization
+  dependencies, ordered telemetry or irreversible writes.
+- Check installed source/declarations and ai-docs for the actual version before
+  selecting an API. In Effect 4 `Array.filterMap` consumes Result-returning
+  filters; use `Array.map` plus `Array.getSomes` for Option-returning projections.
+  Survey the relevant collection, schema, state, concurrency and resource APIs
+  rather than stopping at Effect.fn and tryPromise. Do not copy a full API
+  catalog into project instructions.
+
+Keep pure operations synchronous and compose with `pipe`/`flow`. These rules
+require Effect's pure modules, not an Effect runtime for every calculation.
+Normal JSX composition and React state remain React concerns.
 
 ## Default shape
 
@@ -229,3 +277,7 @@ until that edge.
 4. Are resources scoped with `acquireRelease`?
 5. Is the pipeline written with `Effect.fn` and `.pipe` rather than nested
    Promises?
+6. Does pure TS use Effect collections, matching, Option/Result and Schema, with
+   no imperative loops or success-shaped decoding fallbacks?
+7. Have state ownership, concurrency bounds, ordering and resource scope been
+   considered without adding unnecessary mutable dependencies?

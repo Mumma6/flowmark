@@ -1,3 +1,4 @@
+import { Array as Arr } from "effect"
 import { readFileSync, readdirSync } from "node:fs"
 import { expect, it } from "vitest"
 
@@ -10,9 +11,12 @@ it("keeps dashboard CSS limited to Tailwind directives and shadcn theme tokens",
   ).toEqual(["globals.css"])
 
   const css = readFileSync(new URL("globals.css", app), "utf8")
-  for (const layer of ["base", "components", "utilities"]) {
-    expect(css).toContain(`@tailwind ${layer};`)
-  }
+  Arr.forEach(
+    Arr.fromIterable(["base", "components", "utilities"]),
+    (layer) => {
+      expect(css).toContain(`@tailwind ${layer};`)
+    },
+  )
   expect(css).toContain(":root")
   expect(css).toContain(".dark")
   const nonThemeRules = css

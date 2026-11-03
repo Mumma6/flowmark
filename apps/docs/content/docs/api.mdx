@@ -100,8 +100,11 @@ Events, runs, workflow definitions, and keys are stored in PostgreSQL through
 the database package. Metrics are computed by the backend rather than accepted
 as client-submitted aggregates. The overview snapshot includes the latest 100
 runs. Run history is paginated through `run.list` and is not limited to that
-snapshot. Overview numbers include volume, success rate, median and p95
-duration, daily trends, slowest operations, failure codes, and run comparison.
+snapshot. Overview numbers include volume, run completion, failed runs and p95
+duration for a seven-day start window. `project.periodReport` supplies the
+Insights and Issues comparison: daily starts, per-workflow counts, derived
+failure groups and operation duration changes. Run comparison remains on the
+run page.
 
 The seeded `local@flowmark.test` account is a loopback fixture for the operations
 project, not a hosted owner. Registration creates an account only. The

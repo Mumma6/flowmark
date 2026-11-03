@@ -1,23 +1,29 @@
 import type { RunExpectations } from "@flowmarkdev/core"
 import type { PeerSelection } from "@flowmarkdev/core"
 import type { BusinessInsightsQuery, BusinessInsights } from "@flowmarkdev/core"
-import { Context, Effect, Layer, Match } from "effect"
-import type {
+import { Context, Effect, Layer, Match, Schema } from "effect"
+import {
   InvalidInput,
-  PersistenceError,
-  Unauthorized,
+  type PersistenceError,
+  type Unauthorized,
 } from "../../../errors.js"
 import { AuthorizeProject } from "../../project-access/use-cases/authorize-project.js"
+import {
+  PeriodReportQuerySchema,
+  periodReportWindowMessage,
+} from "../period-report-query.js"
 import { WorkflowRepository } from "../ports/workflow-repository.js"
 import type {
   IntelligenceQuery,
   ListRunsQuery,
   ListedRunsPage,
+  PeriodReport,
   ProjectSnapshot,
   RelatedRuns,
   RunComparison,
   RunTimelineEvent,
   WorkflowIntelligence,
+  ProjectSearch,
 } from "../types.js"
 
 export type ProjectReader =
@@ -56,6 +62,13 @@ export interface GetProjectWorkflowDataService {
     ListedRunsPage,
     Unauthorized | PersistenceError | InvalidInput
   >
+  readonly search: (
+    reader: ProjectReader,
+    query: string,
+  ) => Effect.Effect<
+    ProjectSearch,
+    Unauthorized | PersistenceError | InvalidInput
+  >
   readonly timeline: (
     reader: ProjectReader,
     runId: string,
@@ -79,6 +92,13 @@ export interface GetProjectWorkflowDataService {
     reader: ProjectReader,
     query: IntelligenceQuery,
   ) => Effect.Effect<WorkflowIntelligence, Unauthorized | PersistenceError>
+  readonly periodReport: (
+    reader: ProjectReader,
+    query: IntelligenceQuery,
+  ) => Effect.Effect<
+    PeriodReport,
+    Unauthorized | PersistenceError | InvalidInput
+  >
 }
 export class GetProjectWorkflowData extends Context.Service<
   GetProjectWorkflowData,
@@ -123,6 +143,21 @@ export class GetProjectWorkflowData extends Context.Service<
         const projectId = yield* authorizeReader(reader)
         return yield* repository.listRuns(projectId, query)
       })
+      const search = Effect.fn("GetProjectWorkflowData.search")(function* (
+        reader: ProjectReader,
+        query: string,
+      ) {
+        const projectId = yield* authorizeReader(reader)
+        const text = query.trim().slice(0, 200)
+        if (text.length === 0) {
+          return {
+            workflows: [],
+            runs: [],
+            references: [],
+          } satisfies ProjectSearch
+        }
+        return yield* repository.search(projectId, text)
+      })
       const timeline = Effect.fn("GetProjectWorkflowData.timeline")(function* (
         reader: ProjectReader,
         runId: string,
@@ -151,6 +186,15 @@ export class GetProjectWorkflowData extends Context.Service<
           return yield* repository.intelligence(projectId, query)
         },
       )
+      const periodReport = Effect.fn("GetProjectWorkflowData.periodReport")(
+        function* (reader: ProjectReader, query: IntelligenceQuery) {
+          if (!Schema.is(PeriodReportQuerySchema)(query)) {
+            return yield* new InvalidInput({ cause: periodReportWindowMessage })
+          }
+          const projectId = yield* authorizeReader(reader)
+          return yield* repository.periodReport(projectId, query)
+        },
+      )
       const businessInsights = Effect.fn(
         "GetProjectWorkflowData.businessInsights",
       )(function* (reader: ProjectReader, query: BusinessInsightsQuery) {
@@ -173,10 +217,12 @@ export class GetProjectWorkflowData extends Context.Service<
         snapshot,
         workflows,
         listRuns,
+        search,
         timeline,
         related,
         compare,
         intelligence,
+        periodReport,
       })
     }),
   )

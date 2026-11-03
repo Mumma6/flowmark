@@ -1,0 +1,7 @@
+export { Email, type EmailSubmission } from "./service.js"
+export { EmailError } from "./errors.js"
+export { EmailMessage, type RenderedEmail } from "./message.js"
+export { emailSettings, EmailEnvironment } from "./config.js"
+export { renderEmail } from "./templates.js"
+export { resendLayer } from "./adapters/resend.js"
+export { makeEmailCapture } from "./adapters/capture.js"

@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest"
 import {
   getRunTimelineKind,
   runTimelineDetail,
-} from "../app/run-event-timeline"
-import type { RunEvent } from "../app/run-event-table"
+} from "../features/runs/timeline-presentation"
+import type { RunEvent } from "../features/platform/api-types"
 
 function event(
   partial: Partial<RunEvent> & Pick<RunEvent, "id" | "type" | "timestamp">,

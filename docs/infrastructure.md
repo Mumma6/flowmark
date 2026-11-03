@@ -8,11 +8,11 @@ This page records the public shape of that deployment. It does not include
 credentials, connection strings, or operator runbooks. The separate
 [Pulumi TypeScript project](../infrastructure/README.md) manages the existing
 Neon project, three persistent branches and their computes/database containers/
-owners, four shared Vercel projects, seven custom-domain assignments and all
-25 app env records. Deletion protection covers all 49 managed cloud resources,
-including the two separately provisioned Production auth proxy bindings.
-Standard refresh-preview and preview report 26 unchanged state resources in
-nonprod and 29 in production. The policy below distinguishes current adoption
+owners, four shared Vercel projects, seven custom-domain assignments, a Resend
+sending domain with four verification DNS records, a separate Production sending key, and all 33 app env records.
+Deletion protection covers all 63 managed cloud resources.
+Standard refresh-preview and preview report 31 unchanged state resources in
+nonprod and 42 in production. The policy below distinguishes current adoption
 coverage from the required writer for future changes.
 
 Local repository development uses Docker Compose only; applications run natively.
@@ -113,7 +113,8 @@ does not authorize infrastructure changes. See [database rollout](./migrations.m
 
 People sign in to the dashboard with email and password. Applications send
 telemetry with a project write key. Those are different credentials. Password
-reset stays off until email delivery exists. Sign-up creates an account. The
+reset remains disabled until the separately implemented and verified account
+flows consume the transactional email package. Sign-up creates an account. The
 first project and write key are created in onboarding or Settings.
 
 ## Environments

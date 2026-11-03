@@ -7,7 +7,7 @@ import {
   latestReportedProgress,
   operationIdleGaps,
   runStatusLabel,
-} from "../app/run-presentation"
+} from "../features/runs/run-presentation"
 
 describe("run presentation", () => {
   it("describes a run without terminal evidence without claiming it is active", () => {

@@ -4,7 +4,7 @@ import {
   declaredResults,
   resultPath,
   type ResultDeclaration,
-} from "../app/result-presentation"
+} from "../features/results/result-presentation"
 
 const declaration: ResultDeclaration = {
   revision: "v1",
@@ -64,4 +64,14 @@ describe("business result presentation", () => {
     expect(field.reasons).toHaveLength(24)
     expect(field.omittedReasons).toBe(6)
   })
+})
+
+it("distinguishes explicit null from missing paths and preserves false and zero", () => {
+  expect(resultPath({ value: null }, ["value"])).toBeNull()
+  expect(resultPath({ value: null }, ["value", "nested"])).toBeUndefined()
+  expect(resultPath({ value: false }, ["value"])).toBe(false)
+  expect(resultPath({ value: 0 }, ["value"])).toBe(0)
+  expect(declaredResults({ imported: null }, declaration)[0].state).toBe(
+    "Unexpected type",
+  )
 })

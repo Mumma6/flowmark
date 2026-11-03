@@ -16,12 +16,14 @@ import { getProjectSnapshot } from "./queries/get-project-snapshot.js"
 import { getWorkflowSummaries } from "./queries/get-workflow-summaries.js"
 import { getRelatedRuns } from "./queries/get-related-runs.js"
 import { getRunComparison } from "./queries/get-run-comparison.js"
+import { getPeriodReport } from "./queries/get-period-report.js"
 import { getWorkflowIntelligence } from "./queries/get-workflow-intelligence.js"
 import {
   getRunTimeline,
   type RunTimelineEvent,
 } from "./queries/get-run-timeline.js"
 import { listRuns } from "./queries/list-runs.js"
+import { searchProject } from "./queries/search-project.js"
 import { appendEvent } from "./writes/append-event.js"
 import type {
   ListedRunsPage,
@@ -29,9 +31,11 @@ import type {
   ProjectSnapshot,
   RelatedRuns,
   RunComparison,
+  PeriodReport,
   WorkflowIntelligence,
   WorkflowSummary,
   IntelligenceQuery,
+  ProjectSearch,
 } from "./types.js"
 
 export interface WorkflowStoreService {
@@ -58,6 +62,10 @@ export interface WorkflowStoreService {
     projectId: string,
     query: ListRunsQuery,
   ) => Effect.Effect<ListedRunsPage, DatabaseError | InvalidResultQuery>
+  readonly search: (
+    projectId: string,
+    query: string,
+  ) => Effect.Effect<ProjectSearch, DatabaseError | InvalidResultQuery>
   readonly timeline: (
     projectId: string,
     runId: string,
@@ -75,6 +83,10 @@ export interface WorkflowStoreService {
     projectId: string,
     query: IntelligenceQuery,
   ) => Effect.Effect<WorkflowIntelligence, DatabaseError>
+  readonly periodReport: (
+    projectId: string,
+    query: IntelligenceQuery,
+  ) => Effect.Effect<PeriodReport, DatabaseError>
 }
 export class WorkflowStore extends Context.Service<WorkflowStore>()(
   "@flowmark/db/WorkflowStore",
@@ -91,6 +103,7 @@ export class WorkflowStore extends Context.Service<WorkflowStore>()(
         snapshot: (projectId) => provide(getProjectSnapshot(projectId)),
         workflows: (projectId) => provide(getWorkflowSummaries(projectId)),
         listRuns: (projectId, query) => provide(listRuns(projectId, query)),
+        search: (projectId, query) => provide(searchProject(projectId, query)),
         timeline: (projectId, runId) =>
           provide(getRunTimeline(projectId, runId)),
         related: (projectId, runId) =>
@@ -99,6 +112,8 @@ export class WorkflowStore extends Context.Service<WorkflowStore>()(
           provide(getRunComparison(projectId, runId, selection)),
         intelligence: (projectId, query) =>
           provide(getWorkflowIntelligence(projectId, query)),
+        periodReport: (projectId, query) =>
+          provide(getPeriodReport(projectId, query)),
       } satisfies WorkflowStoreService
     }),
   },

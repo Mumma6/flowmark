@@ -3,6 +3,7 @@ import { PeerSelectionSchema } from "@flowmark/api"
 import {
   BusinessTimestampSchema,
   BusinessInsightsQuerySchema,
+  PeriodReportQuerySchema,
   ResultSelectionSchema,
   RatioSelectionSchema,
   SearchFieldsSchema,
@@ -296,6 +297,15 @@ export const appRouter = t.router({
           ),
         ),
       ),
+    periodReport: t.procedure
+      .input(Schema.toStandardSchemaV1(PeriodReportQuerySchema))
+      .query(({ ctx, input }) =>
+        readQuery(ctx.request, (reader) =>
+          Effect.flatMap(GetProjectWorkflowData, (queries) =>
+            queries.periodReport(reader, input),
+          ),
+        ),
+      ),
     list: t.procedure.query(({ ctx }) =>
       sessionQuery(ctx.request, (userId) =>
         Effect.flatMap(ManageProject, (manage) => manage.list(userId)),
@@ -495,6 +505,26 @@ export const appRouter = t.router({
         ),
       ),
     ),
+  }),
+  search: t.router({
+    project: t.procedure
+      .input(
+        Schema.toStandardSchemaV1(
+          Schema.Struct({
+            query: Schema.String.check(
+              Schema.isMinLength(1),
+              Schema.isMaxLength(200),
+            ),
+          }),
+        ),
+      )
+      .query(({ ctx, input }) =>
+        readQuery(ctx.request, (reader) =>
+          Effect.flatMap(GetProjectWorkflowData, (queries) =>
+            queries.search(reader, input.query),
+          ),
+        ),
+      ),
   }),
   run: t.router({
     list: t.procedure

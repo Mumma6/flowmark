@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
-import { overviewMetrics, windowLabel } from "../app/overview-presentation"
+import { overviewMetrics } from "../features/overview/overview-presentation"
+import { windowLabel } from "../features/period/period"
 
 const current = {
   startedAfter: "2026-10-23T00:00:00.000Z",

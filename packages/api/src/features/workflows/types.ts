@@ -154,6 +154,36 @@ export interface IntelligenceQuery {
   readonly previousStartedBefore: string
 }
 
+export type PeriodCounts = Omit<InsightWindow, "startedAfter" | "startedBefore">
+
+export interface WorkflowPeriodComparison {
+  readonly name: string
+  readonly current: PeriodCounts
+  readonly previous: PeriodCounts
+}
+
+export interface FailureGroup {
+  readonly workflow: string
+  readonly code: string
+  readonly currentCount: number
+  readonly previousCount: number
+  readonly countDelta: number
+  readonly lastStartedAt: string | null
+  readonly runIds: readonly string[]
+}
+
+export interface PeriodReport {
+  readonly workflow: string | null
+  readonly current: InsightWindow
+  readonly previous: InsightWindow
+  readonly daily: readonly DailyInsight[]
+  readonly workflowNames: readonly string[]
+  readonly workflows: readonly WorkflowPeriodComparison[]
+  readonly failureGroups: readonly FailureGroup[]
+  readonly failureGroupsTruncated: boolean
+  readonly operations: readonly OperationAttribution[]
+}
+
 export interface RunTimelineEvent {
   readonly expectation?: ExpectationEvent | null
   readonly expectationObservedAt?: string | null
@@ -235,4 +265,31 @@ export interface ListedRunsPage {
   readonly nextCursor: string | null
   readonly total: number
   readonly limit: number
+}
+
+export interface ProjectSearchWorkflow {
+  readonly name: string
+}
+
+export interface ProjectSearchRun {
+  readonly id: string
+  readonly externalId: string
+  readonly workflow: string
+  readonly status: RunStatus
+  readonly startedAt: string
+  readonly failCode: string | null
+}
+
+export interface ProjectSearchReference {
+  readonly runId: string
+  readonly externalId: string
+  readonly workflow: string
+  readonly key: string
+  readonly value: string
+}
+
+export interface ProjectSearch {
+  readonly workflows: ReadonlyArray<ProjectSearchWorkflow>
+  readonly runs: ReadonlyArray<ProjectSearchRun>
+  readonly references: ReadonlyArray<ProjectSearchReference>
 }

@@ -52,12 +52,17 @@ export {
 } from "./features/workflows/ports/workflow-repository.js"
 export type {
   IntelligenceQuery,
+  PeriodReport,
   ProjectSnapshot,
   RelatedRuns,
   RunComparison,
   RunTimelineEvent,
   WorkflowIntelligence,
 } from "./features/workflows/types.js"
+export {
+  PeriodReportQuerySchema,
+  periodReportWindowMessage,
+} from "./features/workflows/period-report-query.js"
 export { WorkflowRepositoryLive } from "./features/workflows/adapters/workflow-repository.js"
 export { DatabaseLive } from "./adapters/database.js"
 export { ApiLive, logFailure, runApi } from "./runtime.js"

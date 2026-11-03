@@ -16,12 +16,14 @@ import type {
   IntelligenceQuery,
   ListRunsQuery,
   ListedRunsPage,
+  PeriodReport,
   ProjectSnapshot,
   RelatedRuns,
   RunComparison,
   RunTimelineEvent,
   WorkflowIntelligence,
   WorkflowSummary,
+  ProjectSearch,
 } from "../types.js"
 
 export interface WorkflowRepositoryService {
@@ -48,6 +50,10 @@ export interface WorkflowRepositoryService {
     projectId: string,
     query: ListRunsQuery,
   ) => Effect.Effect<ListedRunsPage, PersistenceError | InvalidInput>
+  readonly search: (
+    projectId: string,
+    query: string,
+  ) => Effect.Effect<ProjectSearch, PersistenceError | InvalidInput>
   readonly timeline: (
     projectId: string,
     runId: string,
@@ -65,6 +71,10 @@ export interface WorkflowRepositoryService {
     projectId: string,
     query: IntelligenceQuery,
   ) => Effect.Effect<WorkflowIntelligence, PersistenceError>
+  readonly periodReport: (
+    projectId: string,
+    query: IntelligenceQuery,
+  ) => Effect.Effect<PeriodReport, PersistenceError>
 }
 export class WorkflowRepository extends Context.Service<
   WorkflowRepository,

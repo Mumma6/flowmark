@@ -12,9 +12,12 @@ This provides a familiar monorepo layout, dependency-aware build tasks, and shar
 
 ## Current implementation
 
-`pnpm dev` uses Turbo's interactive UI for API/dashboard/harness and the
-core/SDK/db/API/auth TypeScript watchers. All libraries build before development
-tasks start. `pnpm dev --ui=stream` provides ordinary logs for agents;
-`pnpm dev:all` includes all six applications. Studio runs separately.
-Database startup through Docker Compose and migrations remain explicit
-prerequisites, not hidden side effects of starting a web server.
+`pnpm dev` uses Turbo's interactive UI for API, dashboard, harness, both
+documentation apps and the core/SDK/db/API/auth TypeScript watchers. All
+libraries build before development tasks start. `pnpm dev --ui=stream`
+provides ordinary logs for agents; `pnpm dev:all` includes all six
+applications. `pnpm dev:stack` is the named
+command that starts this checkout's Compose PostgreSQL, those applications,
+and Drizzle Studio. `pnpm dev` and `pnpm dev:all` still require a healthy
+database and do not start Studio. Migrations remain an explicit prerequisite,
+not a hidden side effect of starting a web server.
