@@ -27,6 +27,7 @@ coverage
 .envrc
 .cursor/mcp.json
 .neon
+/.meridian-health/
 
 # Maintainer-only product / ops docs (not published to GitHub)
 /private/

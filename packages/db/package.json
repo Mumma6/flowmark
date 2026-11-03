@@ -9,6 +9,14 @@
     "dist"
   ],
   "exports": {
+    "./fixtures": {
+      "types": "./dist/fixtures/dataset.d.ts",
+      "import": "./dist/fixtures/dataset.js"
+    },
+    "./commands": {
+      "types": "./dist/cli/demo-support.d.ts",
+      "import": "./dist/cli/demo-support.js"
+    },
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
