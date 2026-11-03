@@ -40,6 +40,23 @@ export function ExpectationAttention({
   if (!attention) {
     return null
   }
+  if (attention.totalRuns === 0) {
+    return (
+      <Alert>
+        <AlertDescription>
+          No expected confirmations recorded for runs started{" "}
+          {bounded && startedBeforeExclusive
+            ? `${windowLabel({ startedAfter: window.startedAfter, startedBefore: startedBeforeExclusive })} UTC`
+            : "in the last 30 days"}
+          .
+          <span className="block text-sm text-muted-foreground">
+            This view contains only expectations declared by your application;
+            it does not infer what should have happened.
+          </span>
+        </AlertDescription>
+      </Alert>
+    )
+  }
   const params = new URLSearchParams({
     expectationState: "overdue",
     startedAfterExact: window.startedAfter,
@@ -62,7 +79,7 @@ export function ExpectationAttention({
           {attention.overdueRuns} of {attention.totalRuns} runs have overdue
           expectations
         </Link>
-        <span className="block text-xs text-muted-foreground">
+        <span className="block text-sm text-muted-foreground">
           {attention.overdueExpectations} overdue expectations ·{" "}
           {bounded && startedBeforeExclusive
             ? `runs started ${windowLabel({

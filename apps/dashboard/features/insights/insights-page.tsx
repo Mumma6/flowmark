@@ -25,6 +25,7 @@ import {
   DailyDurationPanel,
   DailyVolumePanel,
 } from "../reporting/insights-panels"
+import { PageSections } from "../shared/page-sections"
 import { formatDuration } from "../shared/format"
 import { OverviewMetrics } from "../overview/overview-panels"
 import { windowLabel } from "../period/period"
@@ -75,12 +76,9 @@ export function InsightsPage() {
         workflowNames={workflowNames}
         onChange={replace}
       />
-      <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
-        Counts use runs started in {windowLabel(currentWindow)} UTC, compared
-        with the previous {days} days. Run completion is completed runs among
-        finished runs. It is not a business success score. Days with no starts
-        are shown as zero. A difference describes the recorded evidence, not its
-        cause.
+      <p className="text-sm leading-6 text-muted-foreground">
+        Runs started {windowLabel(currentWindow)} UTC · compared with the
+        previous {days} days.
       </p>
       <DataState
         pending={report.isPending}
@@ -89,80 +87,121 @@ export function InsightsPage() {
       />
       {report.data && !report.error && (
         <>
-          <OverviewMetrics
-            data={report.data}
-            comparison={comparison}
-            title={`Execution summary · last ${days} days`}
-          />
-          {report.data.current.totalRuns === 0 &&
-            report.data.previous.totalRuns === 0 && (
-              <Card className="border-dashed shadow-none">
-                <CardHeader>
-                  <CardTitle>No runs started in this window</CardTitle>
-                  <CardDescription>
-                    {workflow
-                      ? `${workflow} has no started runs in either comparison window.`
-                      : "This project has no started runs in either comparison window."}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {workflow ? (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => replace(days)}
+          <PageSections
+            label="Insights sections"
+            defaultValue="summary"
+            sections={[
+              {
+                value: "summary",
+                label: "Summary & changes",
+                description:
+                  "Compare this period with the previous one. Follow a recorded change to the matching runs, or open Volume & duration to see when it happened. Completion measures technical execution, not business success.",
+                content: (
+                  <>
+                    <OverviewMetrics
+                      data={report.data}
+                      comparison={comparison}
+                      title={`Execution summary · last ${days} days`}
+                    />
+                    {report.data.current.totalRuns === 0 &&
+                      report.data.previous.totalRuns === 0 && (
+                        <Card className="border-dashed shadow-none">
+                          <CardHeader>
+                            <CardTitle>
+                              No runs started in this window
+                            </CardTitle>
+                            <CardDescription>
+                              {workflow
+                                ? `${workflow} has no started runs in either comparison window.`
+                                : "This project has no started runs in either comparison window."}
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent>
+                            {workflow ? (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => replace(days)}
+                              >
+                                Show all workflows
+                              </Button>
+                            ) : (
+                              <ViewLink href="/settings?section=projects">
+                                Open setup
+                              </ViewLink>
+                            )}
+                          </CardContent>
+                        </Card>
+                      )}
+                    <RecordedChanges changes={changes} />
+                  </>
+                ),
+              },
+              {
+                value: "trends",
+                label: "Volume & duration",
+                description:
+                  "Look for changes in started runs and execution time, then open a workflow to investigate. Days without starts show zero; differences describe recorded evidence and do not establish a cause.",
+                content: (
+                  <>
+                    <section
+                      aria-label="Volume and duration"
+                      className="grid min-w-0 gap-5 xl:grid-cols-2"
                     >
-                      Show all workflows
-                    </Button>
-                  ) : (
-                    <ViewLink href="/settings?section=projects">
-                      Open setup
-                    </ViewLink>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-          <section
-            aria-label="Volume and duration"
-            className="grid min-w-0 gap-5 xl:grid-cols-2"
-          >
-            <DailyVolumePanel
-              daily={report.data.daily}
-              scope={scope}
-              empty="No runs started in this window."
-            />
-            <DailyDurationPanel daily={report.data.daily} scope={scope} />
-          </section>
-          <WorkflowBreakdown
-            workflows={report.data.workflows}
-            filtered={Boolean(workflow)}
+                      <DailyVolumePanel
+                        daily={report.data.daily}
+                        scope={scope}
+                        empty="No runs started in this window."
+                      />
+                      <DailyDurationPanel
+                        daily={report.data.daily}
+                        scope={scope}
+                      />
+                    </section>
+                    <WorkflowBreakdown
+                      workflows={report.data.workflows}
+                      filtered={Boolean(workflow)}
+                    />
+                  </>
+                ),
+              },
+              {
+                value: "results",
+                label: "Reported results",
+                description:
+                  "Choose a workflow in the filter above to inspect its application-reported outcomes in this same period. Select a result to find the executions behind it.",
+                content: (
+                  <>
+                    {workflow ? (
+                      <BusinessOutcomes
+                        key={`${workflow}:${period.after}:${period.before}`}
+                        workflow={workflow}
+                        lockedWindow={{
+                          after: period.after,
+                          before: period.before,
+                          days,
+                        }}
+                      />
+                    ) : (
+                      <Card className="shadow-none">
+                        <CardHeader>
+                          <CardTitle className="text-base">
+                            Reported business outcomes
+                          </CardTitle>
+                          <CardDescription>
+                            Outcome totals, categories, reasons and dimensions
+                            are declared per workflow. Choose a workflow to
+                            compare them inside this same window.
+                          </CardDescription>
+                        </CardHeader>
+                      </Card>
+                    )}
+                  </>
+                ),
+              },
+            ]}
           />
-          <RecordedChanges changes={changes} />
-          {workflow ? (
-            <BusinessOutcomes
-              key={`${workflow}:${period.after}:${period.before}`}
-              workflow={workflow}
-              lockedWindow={{
-                after: period.after,
-                before: period.before,
-                days,
-              }}
-            />
-          ) : (
-            <Card className="shadow-none">
-              <CardHeader>
-                <CardTitle className="text-base">
-                  Reported business outcomes
-                </CardTitle>
-                <CardDescription>
-                  Outcome totals, categories, reasons and dimensions are
-                  declared per workflow. Choose a workflow to compare them
-                  inside this same window.
-                </CardDescription>
-              </CardHeader>
-            </Card>
-          )}
         </>
       )}
     </div>
@@ -242,7 +281,7 @@ function WorkflowBreakdown({
                     </TableCell>
                     <TableCell className="text-right tabular-nums">
                       {item.current.totalRuns.toLocaleString()}
-                      <span className="mt-1 block text-xs text-muted-foreground">
+                      <span className="mt-1 block text-sm text-muted-foreground">
                         {signed(startedDelta)}
                       </span>
                     </TableCell>
@@ -250,7 +289,7 @@ function WorkflowBreakdown({
                       className={`text-right tabular-nums ${failedDelta > 0 ? "text-destructive" : ""}`}
                     >
                       {item.current.failedRuns.toLocaleString()}
-                      <span className="mt-1 block text-xs text-muted-foreground">
+                      <span className="mt-1 block text-sm text-muted-foreground">
                         {signed(failedDelta)}
                       </span>
                     </TableCell>

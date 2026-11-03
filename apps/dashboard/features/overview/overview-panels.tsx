@@ -32,7 +32,7 @@ export function OverviewMetrics({
   const metrics = overviewMetrics(data, comparison)
   return (
     <section aria-label={title} className="grid gap-3">
-      <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+      <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-muted-foreground">
         <span className="font-medium text-foreground">
           {title}{" "}
           <span className="block whitespace-nowrap font-normal text-muted-foreground sm:ml-2 sm:inline">
@@ -53,7 +53,7 @@ export function OverviewMetrics({
             key={metric.label}
             className="min-w-0 border-border p-4 odd:border-r [&:nth-child(n+3)]:border-t sm:p-6 lg:border-r lg:last:border-r-0 lg:[&:nth-child(n+3)]:border-t-0"
           >
-            <dt className="text-xs font-medium text-muted-foreground">
+            <dt className="text-sm font-medium text-muted-foreground">
               {metric.label}
             </dt>
             <dd
@@ -61,11 +61,11 @@ export function OverviewMetrics({
             >
               {metric.value}
             </dd>
-            <dd className="mt-2 text-xs leading-5 text-muted-foreground">
+            <dd className="mt-2 text-sm leading-5 text-muted-foreground">
               {metric.note}
             </dd>
             {metric.change && (
-              <dd className="mt-2 text-xs tabular-nums text-muted-foreground">
+              <dd className="mt-2 text-sm tabular-nums text-muted-foreground">
                 {metric.change}
               </dd>
             )}
@@ -73,7 +73,7 @@ export function OverviewMetrics({
         ))}
       </dl>
       {data.previous.totalRuns === 0 && (
-        <p className="text-xs text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           The previous window has no started runs, so these totals are not
           compared.
         </p>
@@ -93,7 +93,7 @@ export function WorkflowOverview({
       <CardHeader className="flex-row flex-wrap items-start justify-between gap-3 space-y-0 p-5">
         <div>
           <CardTitle className="text-base leading-6">Workflows</CardTitle>
-          <CardDescription className="mt-1 text-xs">
+          <CardDescription className="mt-1 text-sm">
             All recorded runs · lowest run completion first
           </CardDescription>
         </div>
@@ -147,7 +147,7 @@ export function WorkflowOverview({
             No workflows recorded yet.
           </p>
         )}
-        <p className="border-t border-border px-5 py-3 text-xs leading-5 text-muted-foreground">
+        <p className="border-t border-border px-5 py-3 text-sm leading-5 text-muted-foreground">
           Run completion includes finished runs only. Business results may still
           need attention.
         </p>
@@ -174,7 +174,7 @@ export function AttentionSummary({
             What needs attention
           </CardTitle>
         </div>
-        <CardDescription className="text-xs">
+        <CardDescription className="text-sm">
           Explicit technical failures · runs started in the last 7 days
         </CardDescription>
       </CardHeader>
@@ -183,8 +183,9 @@ export function AttentionSummary({
           {failedRuns == null ? "—" : failedRuns.toLocaleString()}
         </p>
         <p className="text-sm leading-6 text-muted-foreground">
-          Failure groups, longer operations and the runs behind them are on
-          Issues. Trends and reported outcomes are on Insights.
+          {failedRuns === 0
+            ? "No technical failures were recorded in this window. Check confirmations and reported results separately to assess the work your application reported."
+            : "Open Issues to identify affected runs and inspect their evidence. Use Insights to check whether volume or duration changed in the same period."}
         </p>
         <div className="flex flex-wrap gap-2">
           <ViewLink href="/issues">Investigate issues</ViewLink>

@@ -33,12 +33,16 @@ export function usePeriodSelection() {
     enabled: Boolean(current),
   })
   const replace = (nextDays: PeriodDays, nextWorkflow?: string) => {
-    const query = new URLSearchParams()
+    const query = new URLSearchParams(params.toString())
     if (nextDays === 30) {
       query.set("days", "30")
+    } else {
+      query.delete("days")
     }
     if (nextWorkflow) {
       query.set("workflow", nextWorkflow)
+    } else {
+      query.delete("workflow")
     }
     const text = query.toString()
     router.replace(text ? `${pathname}?${text}` : pathname, { scroll: false })

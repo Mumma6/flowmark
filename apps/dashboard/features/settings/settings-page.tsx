@@ -30,6 +30,16 @@ const sections: ReadonlyArray<{
   { id: "account", label: "Account" },
 ]
 
+const sectionHelp: Record<SettingsSection, string> = {
+  projects:
+    "Create or select the project that owns the work you want to observe. Switch projects in the sidebar to inspect their runs.",
+  keys: "Give your application an ingestion key for the selected project. After connecting it, open Runs to verify that an execution was recorded.",
+  setup:
+    "Follow the setup instructions to connect your application, report one execution, then verify its outcome and timeline in Runs.",
+  account:
+    "Update the identity and credentials you use to sign in to the dashboard.",
+}
+
 function parseSection(value: string | null): SettingsSection {
   if (
     value === "projects" ||
@@ -72,7 +82,7 @@ function SettingsPageInner() {
         <TabsList
           variant="line"
           aria-label="Settings sections"
-          className="h-auto w-full flex-wrap justify-start gap-1 border-b border-border pb-2 [&_[data-slot=tabs-trigger]]:min-h-11 [&_[data-slot=tabs-trigger]]:flex-none"
+          className="h-auto w-full flex-wrap justify-start gap-1 border-b border-border pb-2 [&_[data-slot=tabs-trigger]]:min-h-11 [&_[data-slot=tabs-trigger]]:flex-none [&_[data-slot=tabs-trigger]]:text-base"
         >
           {sections.map((item) => (
             <TabsTrigger key={item.id} value={item.id}>
@@ -80,6 +90,9 @@ function SettingsPageInner() {
             </TabsTrigger>
           ))}
         </TabsList>
+        <p className="mt-4 max-w-3xl text-base leading-7 text-muted-foreground">
+          {sectionHelp[section]}
+        </p>
         <TabsContent value="projects" className="mt-6">
           <ProjectSettings />
         </TabsContent>

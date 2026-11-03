@@ -22,6 +22,7 @@ import {
   StatusBadge,
   ViewLink,
 } from "../shared/dashboard-components"
+import { PageSections } from "../shared/page-sections"
 import { formatDuration, formatTimestamp } from "../shared/format"
 import { ExpectationAttention } from "../expectations/expectation-attention"
 import { windowLabel } from "../period/period"
@@ -62,57 +63,97 @@ export function IssuesPage() {
         workflowNames={workflowNames}
         onChange={replace}
       />
-      <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
-        A failure group is derived when this page is read. It is one workflow
-        plus one terminal failure code, and each failed run counts once. Groups
-        are not assigned, acknowledged or resolved. An empty code means the run
-        failed without a recorded code. Counts use runs started in{" "}
+      <p className="text-sm leading-6 text-muted-foreground">
+        Runs started{" "}
         {windowLabel({
           startedAfter: period.currentStartedAfter,
           startedBefore: period.currentStartedBefore,
         })}{" "}
         UTC.
       </p>
-      <ExpectationAttention
-        workflow={workflow}
-        startedAfter={period.currentStartedAfter}
-        startedBeforeExclusive={period.currentStartedBefore}
-      />
       <DataState
         pending={report.isPending}
         error={report.error}
         retry={() => void report.refetch()}
       />
-      {report.data && !report.error && (
-        <>
-          <FailureGroups
-            groups={report.data.failureGroups}
-            truncated={report.data.failureGroupsTruncated}
-            startedAfter={period.currentStartedAfter}
-            startedBefore={period.currentStartedBefore}
-            scopedWorkflow={Boolean(workflow)}
-          />
-          <IncreasedFailures
-            items={increased.slice(0, 20)}
-            hidden={increased.length > 20}
-          />
-          <DurationChanges
-            operations={slower}
-            workflowScoped={Boolean(workflow)}
-          />
-        </>
-      )}
-      <FailedRuns
-        pending={failed.isPending}
-        error={failed.error}
-        retry={() => void failed.refetch()}
-        runs={failed.data?.runs ?? []}
-        total={failed.data?.total ?? 0}
-        href={failedRunsPath({
-          workflow,
-          startedAfter: period.currentStartedAfter,
-          startedBefore: period.currentStartedBefore,
-        })}
+      <PageSections
+        label="Issue sections"
+        defaultValue="failures"
+        hashSections={{ "#failure-groups": "failures", "#failed-runs": "runs" }}
+        sections={[
+          {
+            value: "failures",
+            label: "Failures",
+            description:
+              "Start with a failure group: the same workflow and terminal failure code. Open Matching runs, then select an execution to inspect its timeline and context. Groups summarize evidence; they are not assigned or resolved here.",
+            content: (
+              <>
+                {report.data && !report.error && (
+                  <div className="grid gap-6">
+                    <FailureGroups
+                      groups={report.data.failureGroups}
+                      truncated={report.data.failureGroupsTruncated}
+                      startedAfter={period.currentStartedAfter}
+                      startedBefore={period.currentStartedBefore}
+                      scopedWorkflow={Boolean(workflow)}
+                    />
+                    <IncreasedFailures
+                      items={increased.slice(0, 20)}
+                      hidden={increased.length > 20}
+                    />
+                  </div>
+                )}
+              </>
+            ),
+          },
+          {
+            value: "confirmations",
+            label: "Confirmations",
+            description:
+              "Find runs with an application-declared confirmation that has not been observed by its deadline. Follow the count to matching runs; check each run for the expected evidence and any later resolution.",
+            content: (
+              <ExpectationAttention
+                workflow={workflow}
+                startedAfter={period.currentStartedAfter}
+                startedBeforeExclusive={period.currentStartedBefore}
+              />
+            ),
+          },
+          {
+            value: "performance",
+            label: "Slower operations",
+            description:
+              "Compare recorded operation durations with the previous period. Open an example run to inspect timing and context; a larger median alone does not establish an incident.",
+            content: report.data && !report.error && (
+              <>
+                <DurationChanges
+                  operations={slower}
+                  workflowScoped={Boolean(workflow)}
+                />
+              </>
+            ),
+          },
+          {
+            value: "runs",
+            label: "Failed runs",
+            description:
+              "Open an individual failure for its reported error and event timeline. Use the full run explorer to filter further or search by a known reference.",
+            content: (
+              <FailedRuns
+                pending={failed.isPending}
+                error={failed.error}
+                retry={() => void failed.refetch()}
+                runs={failed.data?.runs ?? []}
+                total={failed.data?.total ?? 0}
+                href={failedRunsPath({
+                  workflow,
+                  startedAfter: period.currentStartedAfter,
+                  startedBefore: period.currentStartedBefore,
+                })}
+              />
+            ),
+          },
+        ]}
       />
     </div>
   )
@@ -180,7 +221,7 @@ function FailureGroups({
                         {group.code || "No failure code recorded"}
                       </p>
                       <Link
-                        className="mt-1 block text-xs text-muted-foreground hover:text-primary hover:underline"
+                        className="mt-1 block text-sm text-muted-foreground hover:text-primary hover:underline"
                         href={`/workflows/${encodeURIComponent(group.workflow)}`}
                       >
                         {group.workflow}
@@ -188,7 +229,7 @@ function FailureGroups({
                     </TableCell>
                     <TableCell className="text-right tabular-nums">
                       {group.currentCount.toLocaleString()}
-                      <span className="mt-1 block text-xs text-muted-foreground">
+                      <span className="mt-1 block text-sm text-muted-foreground">
                         {group.countDelta > 0 ? "+" : ""}
                         {group.countDelta.toLocaleString()}
                       </span>
@@ -214,13 +255,16 @@ function FailureGroups({
                         >
                           {group.code ? "Matching runs" : "Failed runs"}
                         </Link>
-                        {group.runIds.slice(0, 3).map((id) => (
+                        {group.runIds.slice(0, 3).map((id, index) => (
                           <Link
                             key={id}
-                            className="font-mono text-xs text-muted-foreground hover:text-primary hover:underline"
+                            className="text-sm text-muted-foreground hover:text-primary hover:underline"
+                            title={id}
                             href={`/runs/${id}`}
                           >
-                            {id.slice(0, 8)}
+                            {index === 0
+                              ? "Open example run"
+                              : `Example ${index + 1}`}
                           </Link>
                         ))}
                       </div>
@@ -295,7 +339,7 @@ function IncreasedFailures({
         </ul>
       )}
       {hidden && (
-        <p className="text-xs text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           Showing 20 workflows with the largest increase.
         </p>
       )}
@@ -370,13 +414,13 @@ function DurationChanges({
                     <TableCell>
                       {operation.currentRunIds[0] ? (
                         <Link
-                          className="font-mono text-xs hover:text-primary hover:underline"
+                          className="font-mono text-sm hover:text-primary hover:underline"
                           href={`/runs/${operation.currentRunIds[0]}`}
                         >
                           {operation.currentRunIds[0].slice(0, 8)}
                         </Link>
                       ) : (
-                        <span className="text-xs text-muted-foreground">—</span>
+                        <span className="text-sm text-muted-foreground">—</span>
                       )}
                     </TableCell>
                   </TableRow>
@@ -455,7 +499,7 @@ function FailedRuns({
                       </TableCell>
                       <TableCell>
                         <Link
-                          className="font-mono text-xs hover:text-primary hover:underline"
+                          className="font-mono text-sm hover:text-primary hover:underline"
                           href={`/runs/${run.id}`}
                         >
                           {run.externalId.slice(0, 12)}
@@ -480,7 +524,7 @@ function FailedRuns({
               </Table>
             )}
             {total > runs.length && (
-              <p className="border-t border-border px-5 py-3 text-xs text-muted-foreground">
+              <p className="border-t border-border px-5 py-3 text-sm text-muted-foreground">
                 Showing {runs.length} of {total.toLocaleString()} failed runs.
               </p>
             )}
