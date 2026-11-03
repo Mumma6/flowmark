@@ -12,6 +12,7 @@ import {
   CardTitle,
   Input,
   Separator,
+  toast,
 } from "@flowmark/ui"
 import { Result } from "effect"
 import { useEffect, useState, type FormEvent } from "react"
@@ -30,7 +31,6 @@ export function AccountSettings() {
   }, [session.data?.user.name])
   const [currentPassword, setCurrentPassword] = useState("")
   const [newPassword, setNewPassword] = useState("")
-  const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   return (
     <Card>
@@ -56,7 +56,8 @@ export function AccountSettings() {
             const result = await runBrowserAuth(updateAccountName(name))
             Result.match(result, {
               onFailure: (error) => setError(error.reason),
-              onSuccess: () => setMessage("Name saved."),
+              onSuccess: () =>
+                toast.add({ title: "Name saved", type: "success" }),
             })
           }}
         >
@@ -83,7 +84,7 @@ export function AccountSettings() {
               onSuccess: () => {
                 setCurrentPassword("")
                 setNewPassword("")
-                setMessage("Password updated.")
+                toast.add({ title: "Password updated", type: "success" })
               },
             })
           }}
@@ -112,9 +113,6 @@ export function AccountSettings() {
             Change password
           </Button>
         </form>
-        {message ? (
-          <p className="text-sm text-muted-foreground">{message}</p>
-        ) : null}
         {error ? (
           <Alert variant="destructive">
             <AlertDescription>{error}</AlertDescription>

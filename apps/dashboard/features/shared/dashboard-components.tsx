@@ -15,11 +15,17 @@ import {
   SelectTrigger,
   SelectValue,
   Skeleton,
+  toast,
 } from "@flowmark/ui"
+import { Data, Effect, Result } from "effect"
 import { ArrowRight, RefreshCw } from "lucide-react"
 import Link from "next/link"
-import { useEffect, useMemo, useState, type ReactNode } from "react"
+import { useMemo, type ReactNode } from "react"
 import { runStatusLabel, type RunStatus } from "../runs/run-presentation"
+
+class ClipboardError extends Data.TaggedError("ClipboardError")<{
+  readonly cause: unknown
+}> {}
 
 export function CopyButton({
   value,
@@ -28,34 +34,37 @@ export function CopyButton({
   value: string
   label?: string
 }) {
-  const [status, setStatus] = useState<"idle" | "copied" | "failed">("idle")
-  useEffect(() => {
-    setStatus("idle")
-  }, [value])
   return (
     <Button
       type="button"
       variant="outline"
       size="sm"
-      aria-live="polite"
       onClick={async () => {
-        try {
-          if (!navigator.clipboard?.writeText) {
-            throw new Error("Clipboard unavailable")
-          }
-          await navigator.clipboard.writeText(value)
-          setStatus("copied")
-        } catch {
-          setStatus("failed")
-        }
-        window.setTimeout(() => setStatus("idle"), 2000)
+        const result = await Effect.runPromise(
+          Effect.tryPromise({
+            try: () => navigator.clipboard.writeText(value),
+            catch: (cause) => new ClipboardError({ cause }),
+          }).pipe(Effect.result),
+        )
+        Result.match(result, {
+          onSuccess: () =>
+            toast.add({
+              id: "clipboard",
+              title: "Copied to clipboard",
+              type: "success",
+            }),
+          onFailure: () =>
+            toast.add({
+              id: "clipboard",
+              title: "Could not copy",
+              description:
+                "Select the text and copy it manually, or check clipboard permissions.",
+              type: "error",
+            }),
+        })
       }}
     >
-      {status === "copied"
-        ? "Copied"
-        : status === "failed"
-          ? "Could not copy"
-          : label}
+      {label}
     </Button>
   )
 }

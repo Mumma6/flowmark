@@ -1,5 +1,6 @@
 "use client"
 
+import { toast } from "@flowmark/ui"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useEffect, useRef, useState } from "react"
 import { useTRPC } from "../platform/api-trpc"
@@ -54,6 +55,11 @@ export function useKeySettings() {
     trpc.project.createWriteKey.mutationOptions({
       onSuccess: (created) => {
         setSecret(created)
+        toast.add({
+          title: "Ingestion key created",
+          type: "success",
+          description: "Copy the key from the form and store it securely.",
+        })
         setSecretSource("created")
         setNotice(null)
         void queryClient.invalidateQueries()
@@ -65,6 +71,12 @@ export function useKeySettings() {
       retry: false,
       onSuccess: (created) => {
         setSecret(created)
+        toast.add({
+          title: "Write key rotated",
+          type: "success",
+          description:
+            "Replace the old key in your application with the new key shown below.",
+        })
         setSecretSource("rotated")
         setNotice(null)
         void queryClient.invalidateQueries()
@@ -80,6 +92,11 @@ export function useKeySettings() {
     trpc.project.createBrowserKey.mutationOptions({
       onSuccess: (created) => {
         setSecret(created)
+        toast.add({
+          title: "Ingestion key created",
+          type: "success",
+          description: "Copy the key from the form and store it securely.",
+        })
         setSecretSource("created")
         setNotice(null)
         void queryClient.invalidateQueries()
@@ -141,6 +158,7 @@ export function useKeySettings() {
         if (secret?.id === revoked.id) {
           setSecretSource(null)
         }
+        toast.add({ title: "Ingestion key revoked", type: "success" })
         setNotice(
           `Revoked ${revoked.name} (${revoked.prefix}…). Applications using it can no longer authenticate.`,
         )
