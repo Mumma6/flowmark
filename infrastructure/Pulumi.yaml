@@ -13,3 +13,9 @@ packages:
     parameters:
       - kislerdm/neon
       - 0.18.0
+  resend:
+    source: terraform-provider
+    version: 1.5.1
+    parameters:
+      - registry.terraform.io/armaaar/resend
+      - 1.0.1

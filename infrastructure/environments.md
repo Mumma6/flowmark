@@ -1,7 +1,8 @@
 # Reference deployment environment contract
 
-Checked against application source, the four live Vercel projects, Neon endpoint
-metadata and GitHub Actions configuration on 2 November 2026. This catalog lists
+Baseline checked against application source, the four live Vercel projects, Neon
+endpoint metadata and GitHub Actions configuration on 2 November 2026.
+Transactional email additions were checked live on 3 November 2026. This catalog lists
 names and ownership, not secret values or operator resource IDs.
 
 ## Authoritative values and delivery targets
@@ -28,8 +29,8 @@ Preview deployments are intentionally paused on all four projects. Their
 existing general Preview configuration and isolated database remain parked for
 future use. Do not enable automatic previews as a side effect of import.
 
-The live inventory contains **25 managed application env records**: 15 nonprod
-and 10 production/shared records, including four Production-only sensitive records.
+The live inventory contains **33 managed application env records**: 19 nonprod
+and 14 production/shared records, including five Production-only sensitive records.
 All required records have the expected scopes; no forbidden hosted override
 was found. Secret presence/type is verified, but unreadable secret payloads
 are not exposed by the audit.
@@ -62,6 +63,37 @@ These values are read at server/request boundaries. Database identity is not
 proved by the branch label alone; URL hosts must map to the expected Neon
 endpoints. Nonprod URL/endpoint and read-only SQL identity checks passed during
 adoption. No connection string belongs in a browser bundle.
+
+## Transactional email (Staging and Production)
+
+`vercel-email.ts` declares four opt-in API-only bindings per environment:
+`RESEND_API_KEY` (sensitive/write-only), `FLOWMARK_EMAIL_ENVIRONMENT` (derived
+from stage), `FLOWMARK_EMAIL_FROM` and `FLOWMARK_EMAIL_REPLY_TO`.
+Production uses only the Production target; Staging uses Preview target plus
+`gitBranch=staging`. General Preview remains disabled. These bindings do not
+deploy code or enable verification/recovery callbacks.
+
+Production uses `accounts@flowmark.dev`; Staging uses `staging@flowmark.dev`.
+Both share the verified `flowmark.dev` domain with Ireland region and tracking
+disabled. Reply-to is the maintainer-selected monitored Gmail mailbox. Sender
+addresses do not provision inbound mailboxes. Staging subjects, display names
+and message bodies are visibly labeled; Resend submissions also carry an
+environment tag. The existing `BETTER_AUTH_URL` remains each environment's
+canonical link origin (`app.flowmark.dev` or `app.staging.flowmark.dev`).
+
+Nonprod's sending key uses encrypted `{stage}ResendApiKey` config. Production's
+separate sending-only, domain-restricted key is owned by `resend-email-key.ts`;
+its sensitive output is stored encrypted in Pulumi state and passed directly to
+the Production write-only binding. It is not duplicated into config. Each stage
+retains `{stage}ResendApiKeyVersion`, `{stage}EmailFrom`, `{stage}EmailReplyTo`
+and the explicit `{stage}EmailBindingsEnabled` gate. Keys never go to the
+browser, dashboard, CI or landing/docs apps. Shared domain reputation is not
+isolated by separate keys or sender addresses.
+
+One controlled Staging test was delivered and confirmed in the inbox before
+the branded/environment variants were added. No separate Production send or
+deployed auth-flow test is claimed. See
+[operator steps](./README.md#transactional-email-bindings).
 
 ## Dashboard: `apps/dashboard`
 
@@ -183,13 +215,22 @@ before first use and review its exact environment/branch scope.
 
 Pulumi Cloud login and provider authentication are separate. Local provider
 processes use `NEON_API_KEY` and `VERCEL_API_TOKEN`, or their encrypted provider
-config equivalents. Do not put these on the deployed applications. No automatic
+config equivalents. Resend domain management uses encrypted `resend:apiKey` in
+the shared owning production stack; this Full-access operator credential never
+goes to apps. A separately approved team-scoped Vercel operator token is encrypted
+as production `vercel:apiToken`; the 3 November setup token expires after one day.
+Nonprod can receive that same approved operator credential in process memory;
+do not create a second authoritative copy. Existing Neon CLI authentication may
+be refreshed and reused through the documented operator flow, without minting
+a new Neon key or persisting its browser session as provider config. Do not put these on the deployed applications. No automatic
 Pulumi CI update workflow is configured, so a GitHub `PULUMI_ACCESS_TOKEN` secret
 is not a missing requirement.
 
-Nonprod owns its branches, computes, database containers, roles and 15 bindings.
+Nonprod owns its branches, computes, database containers, roles and 19 bindings.
 Production owns the Neon project and production resources, four shared Vercel
-project containers, seven custom domains and ten Production/shared app env records.
+project containers, seven custom domains, the Resend sending domain and four sending DNS records,
+a separate domain-scoped Production sending key,
+and fourteen Production/shared app env records.
 It never declares inline env blocks that compete with individual binding resources.
 CI settings/secrets currently remain outside Pulumi adoption; future changes
 require reviewed Pulumi ownership first. Schema/history stays Drizzle-owned;

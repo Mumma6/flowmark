@@ -3,6 +3,9 @@ import { importNonprodBranches } from "./nonprod"
 import { importNonprodVercelBindings } from "./vercel-nonprod"
 import { importProductionVercelProjects } from "./vercel-production"
 import { importProductionNeon } from "./neon-additional"
+import { manageEmailBindings } from "./vercel-email"
+import { manageResendDomain } from "./resend-domain"
+import { manageProductionEmailKey } from "./resend-email-key"
 
 // Register before declaring or importing resources. Protection also prevents
 // replacements that would delete an adopted resource.
@@ -28,3 +31,19 @@ export const productionProjectIds =
 
 export const productionNeonIds =
   stackName === "production" ? importProductionNeon() : []
+
+const transactionalEmail = manageResendDomain(stackName)
+const productionEmailKey = manageProductionEmailKey(
+  stackName,
+  transactionalEmail,
+)
+export const emailBindingIds = manageEmailBindings(
+  stackName,
+  productionEmailKey?.token,
+)
+export const productionEmailKeyId = productionEmailKey?.id
+export const resendDomainId = transactionalEmail?.domain.id
+export const resendDomainStatus = transactionalEmail?.domain.status
+export const resendDnsRecordIds = transactionalEmail?.dns.map(
+  (record) => record.id,
+)

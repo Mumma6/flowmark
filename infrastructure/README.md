@@ -1,15 +1,17 @@
 # Flowmark infrastructure
 
-This is the Pulumi TypeScript project for Flowmark's existing Vercel and Neon
+This is the Pulumi TypeScript project for Flowmark's existing Vercel, Neon and Resend
 reference deployment. Resources are adopted by import, starting with
 non-production. Do not recreate them with a starter template.
 
-Persistent reference-infrastructure adoption completed on 2 November 2026.
-`nonprod` has 26 state resources: its two Neon branches, computes, databases and
-owner roles, 15 Vercel env bindings, and three Pulumi metadata resources.
-`production` has 29: the Neon project/production branch/compute/database/owner,
-four shared Vercel projects, seven custom-domain assignments, ten Production/shared
-env bindings, and three metadata resources. All **49 managed cloud resources**
+Persistent reference-infrastructure adoption completed on 2 November 2026;
+transactional-email resources were added on 3 November.
+`nonprod` has 31 state resources: its two Neon branches, computes, databases and
+owner roles, 19 Vercel env bindings, and four Pulumi metadata resources.
+`production` has 42: the Neon project/production branch/compute/database/owner,
+four shared Vercel projects, seven custom-domain assignments, fourteen Production/shared
+env bindings, one Resend sending domain, four sending DNS records, a separate
+Production sending key, and six metadata resources. All **63 managed cloud resources**
 have deletion protection. Standard refresh-preview and preview are clean in both
 stacks. See the public
 [infrastructure overview](../docs/infrastructure.md) for the deployment shape.
@@ -77,6 +79,97 @@ pnpm exec prettier --check infrastructure
 The Pulumi program is a declarative SDK entry point. Resource declarations and
 their dependency graph belong to Pulumi's runtime; they do not run through the
 application's Effect runtime or import application packages.
+
+## Transactional email bindings
+
+`vercel-email.ts` prepares four new API-only Vercel env records per explicitly
+enabled environment. Gates default to false; existing resources are unchanged.
+The package [delivery contract](../packages/email/README.md) documents behavior
+and the pending domain/delivery/operational checks. Resend was selected by the
+maintainer. Binding creation does not create a Resend account or sending domain.
+
+Use `nonprod` for `staging`/parked `preview`, and `production` for `production`.
+Each stage has these logical config inputs. `FLOWMARK_EMAIL_ENVIRONMENT` is derived
+from the stage, rather than maintained as another config value:
+
+| Input                         | Purpose                                                                 |
+| ----------------------------- | ----------------------------------------------------------------------- |
+| `{stage}ResendApiKey`         | Encrypted nonprod sending key; Production uses its managed key resource |
+| `{stage}ResendApiKeyVersion`  | Positive integer; bump when rotating the live write-only key            |
+| `{stage}EmailFrom`            | Verified bare sender mailbox, delivered as `FLOWMARK_EMAIL_FROM`        |
+| `{stage}EmailReplyTo`         | Monitored bare reply mailbox, delivered as `FLOWMARK_EMAIL_REPLY_TO`    |
+| `{stage}EmailBindingsEnabled` | Explicit opt-in for binding creation; leave unset during preparation    |
+
+Enter the key using the secure prompt, never a command argument:
+
+```sh
+cd infrastructure
+pulumi config set --stack "$PULUMI_ORG/nonprod" --secret stagingResendApiKey
+```
+
+`Pulumi.nonprod.yaml` is ignored local stack configuration; the secret is
+encrypted by the existing Pulumi Cloud secrets provider. Merely setting config
+does not create a live Vercel binding or a remote resource. Preserve this ignored
+configuration securely; do not publish it or introduce a second plaintext store.
+
+Prepare the sender/reply-to and key version only for the selected environment.
+Once sender/domain, tracking/region policy and the exact live operation are
+approved, enable that environment's gate and save/review a full-stack preview.
+The initial binding diff is four creates (and a provider metadata resource if
+new). Production also creates its own protected, domain-scoped sending-only
+`resend.ApiKey` in `resend-email-key.ts`; its sensitive token is retained encrypted
+in Pulumi state and passed directly to the write-only binding. No duplicate
+Production key config is maintained. Review the exact full-stack diff. Apply only the
+reviewed approved plan, then check exact scopes and full refresh/preview.
+Vercel delivery uses a sensitive write-only key and explicit version counter;
+changing encrypted config alone does not rotate the live key. Keep the gate
+enabled after provisioning to retain ownership. Deployments and enabling auth
+callbacks remain separate reviewed operations.
+
+### Resend sending domain and verification DNS
+
+The pinned `armaaar/resend` Terraform provider `1.0.1` is bridged through the
+existing `terraform-provider` `1.5.1`, just like Neon. `pulumi install` regenerates
+its ignored local SDK; its reviewed postinstall only compiles TypeScript and
+copies package metadata. The provider is community maintained, not an official
+Resend SDK. Version pins and the separate infrastructure lockfile belong here.
+
+`resend-domain.ts` declares the shared `flowmark.dev` sending domain in the
+**production stack**, which already owns shared Vercel projects/domain resources.
+This does not enable Production email or deploy Production applications. The
+opt-in is `manageResendDomain=true` with `resendDomainName=flowmark.dev`.
+An existing `resendDomainId` selects adoption instead of creation; inventory
+the actual account first. Region is explicitly `eu-west-1`; open/click tracking
+are explicitly disabled. TLS retains the provider/API default: do not claim an
+enforced policy until a separate reviewed update verifies it. The pinned
+provider's create path does not submit its optional TLS setting.
+
+Provider administration uses encrypted `resend:apiKey` and `vercel:apiToken` in
+the shared owning stack. These are operator credentials, never application envs.
+Nonprod uses its encrypted `{stage}ResendApiKey`; Production uses the managed
+sending-only key resource. Neither app receives administration credentials.
+Credential creation/sign-in is an explicitly approved operator-authentication
+step, separate from declaring cloud resources. Do not copy CLI/plugin session
+credentials into provider config. Renew expiring operator credentials through
+their normal approved authentication path.
+
+Four fixed protected Vercel DNS resources consume computed Resend outputs:
+DKIM TXT/CNAME on `resend._domainkey`, SPF TXT and return-path MX on `send`,
+and the secondary return-path CNAME on `rsend`. The live API reports that fourth
+SPF-class record even while Forge is disabled; leaving it pending kept the
+overall domain only partially verified after the other three passed. Host validation refuses unrelated names, root MX and duplicates. No
+resource is created inside `apply`; previews show all four before the new
+domain exists. Website aliases, existing TXT/CAA records, nameservers, inbound
+mail routing and account billing stay with their current owners. A DMARC policy
+or inbound-email capability would require its own reviewed declaration.
+
+After the approved domain/DNS apply, the documented operational verification
+step may call `POST /domains/{id}/verify` on the **Pulumi-owned** domain, then
+poll `GET /domains/{id}` and DNS. This only triggers a verification check; it
+must not create/update/delete domain configuration outside Pulumi. Once verified,
+prepare and review the environment-specific API bindings before enabling them.
+Production and Staging use separate sending keys. Parked Preview stays disabled. A direct library test with
+Staging config proves the adapter, not a deployed Better Auth callback.
 
 ## State and stacks
 
@@ -173,10 +266,11 @@ Each property has one writer:
   Branch ancestry, provider-side protection and project security/maintenance/
   quota policies retain their existing owners. Role passwords and project
   connection outputs are computed secrets, encrypted in state.
-- Pulumi owns all 25 app env bindings, four Vercel project containers and seven
-  custom-domain assignments. Sensitive values use the write-only protocol below.
-  Registrar/DNS-zone services and automatic `*.vercel.app` aliases retain their
-  existing platform ownership; this program does not create a second DNS writer.
+- Pulumi owns all 33 app env bindings, four Vercel project containers, seven
+  custom-domain assignments, the Resend sending domain and its four DNS records. Sensitive values use the write-only protocol below.
+  Registrar/DNS-zone services, existing platform DNS records and automatic
+  `*.vercel.app` aliases retain their platform ownership. The four explicit
+  Resend verification records have Pulumi as their only writer.
 - Vercel app `vercel.json` files keep framework, region, install/build and ignore
   commands. Match them during import instead of introducing competing values.
 - Application deployments stay on the existing Git/controlled Actions path.

@@ -17,6 +17,9 @@ importers:
       '@pulumi/pulumi':
         specifier: 3.273.0
         version: 3.273.0(typescript@5.9.2)
+      '@pulumi/resend':
+        specifier: file:sdks/resend
+        version: file:sdks/resend
       '@pulumiverse/vercel':
         specifier: 5.21.1
         version: 5.21.1(typescript@5.9.2)
@@ -278,6 +281,9 @@ packages:
         optional: true
       typescript:
         optional: true
+
+  '@pulumi/resend@file:sdks/resend':
+    resolution: {directory: sdks/resend, type: directory}
 
   '@pulumiverse/vercel@5.21.1':
     resolution: {integrity: sha512-71U6crBOSJhadkneN7KLgsRhcUyR4+M2drkqJFQOA6PRFG78D68qYnKpMg8YXmDl94pB1hBM/SCA1SGVxFsjng==}
@@ -1232,6 +1238,15 @@ snapshots:
       typescript: 5.9.2
     transitivePeerDependencies:
       - supports-color
+
+  '@pulumi/resend@file:sdks/resend':
+    dependencies:
+      '@pulumi/pulumi': 3.273.0(typescript@5.9.2)
+      '@types/node': 20.19.43
+      typescript: 5.9.2
+    transitivePeerDependencies:
+      - supports-color
+      - ts-node
 
   '@pulumiverse/vercel@5.21.1(typescript@5.9.2)':
     dependencies:
