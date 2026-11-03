@@ -11,6 +11,7 @@
         "DATABASE_MIGRATION_URL",
         "BETTER_AUTH_SECRET",
         "BETTER_AUTH_URL",
+        "RESEND_API_KEY",
         "FLOWMARK_*",
         "NEXT_PUBLIC_*"
       ]
@@ -26,7 +27,8 @@
         "COMPOSE_*",
         "NEXT_PUBLIC_*",
         "BETTER_AUTH_SECRET",
-        "BETTER_AUTH_URL"
+        "BETTER_AUTH_URL",
+        "RESEND_API_KEY"
       ],
       "cache": false,
       "persistent": true

@@ -5,6 +5,7 @@ packages:
 # TypeScript and copies package metadata into the build output.
 onlyBuiltDependencies:
   - "@pulumi/neon"
+  - "@pulumi/resend"
 
 overrides:
   typescript: 5.9.2

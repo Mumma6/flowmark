@@ -13,6 +13,7 @@
   "dependencies": {
     "@pulumi/neon": "file:sdks/neon",
     "@pulumi/pulumi": "3.273.0",
+    "@pulumi/resend": "file:sdks/resend",
     "@pulumiverse/vercel": "5.21.1"
   },
   "devDependencies": {
