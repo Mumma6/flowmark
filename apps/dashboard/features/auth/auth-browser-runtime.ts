@@ -71,7 +71,7 @@ const BrowserAuthLive = Layer.succeed(
       ),
     changePassword: (input) =>
       authOperation("changePassword", "Could not change the password.", () =>
-        authClient.changePassword({ ...input, revokeOtherSessions: false }),
+        authClient.changePassword({ ...input, revokeOtherSessions: true }),
       ),
     signOut: () =>
       authOperation("signOut", "Could not sign out.", () =>

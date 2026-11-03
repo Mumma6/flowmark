@@ -139,6 +139,7 @@ export function AuthScreen({
             aria-label="Account"
           >
             <Link href="/sign-in">Sign in</Link>
+            <Link href="/forgot-password">Forgot password?</Link>
             <Link href="/sign-up">Create account</Link>
           </nav>
           <Button asChild variant="ghost" className="mt-6">

@@ -109,6 +109,9 @@ export function AccountSettings() {
               required
             />
           </label>
+          <p className="text-sm text-muted-foreground">
+            Changing your password signs out your other sessions.
+          </p>
           <Button type="submit" className="justify-self-start">
             Change password
           </Button>

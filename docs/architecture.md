@@ -376,8 +376,9 @@ same-origin proxy forwards `/api/auth/*`, `/api/register`, and `/api/trpc/*`
 to the API so the session cookie stays first-party. Anonymous dashboard reads
 are rejected. Seed creates `local@flowmark.test` on the operations project. New
 registrations create an account only; the first project and write key are
-created explicitly in Settings / onboarding. Password reset is off until
-email delivery exists. Do not enable demo mode for real customer data.
+created explicitly in Settings / onboarding. Password recovery uses the
+configured server email adapter and a one-time mailbox link; normal access does
+not require prior email verification. Do not enable demo mode for real customer data.
 
 The server's authenticated-ingestion integration suite exercises real
 registration, Better Auth session cookies, project/key creation, ingestion,

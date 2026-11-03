@@ -45,7 +45,8 @@
     "@flowmark/db": "workspace:*",
     "better-auth": "^1.7.13",
     "drizzle-orm": "^0.44.5",
-    "effect": "4.1.0"
+    "effect": "4.1.0",
+    "@flowmark/email": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.18.6",

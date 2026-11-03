@@ -9,6 +9,8 @@ import {
   AUTH_CLIENT_IP_HEADER,
   normalizeAuthClientIdentity,
 } from "./client-identity.js"
+import type { Email } from "@flowmark/email"
+import { createAuthEmailCallbacks } from "./email-callbacks.js"
 import { createAuthRateLimitStorage } from "./rate-limit-storage.js"
 
 class AuthRequestError extends Data.TaggedError("AuthRequestError")<{
@@ -45,12 +47,17 @@ export function createFlowmarkAuth(options: {
   readonly secret: string
   readonly baseURL?: string
   readonly trustedOrigins?: ReadonlyArray<string>
+  readonly emailDelivery?: Email["Service"]
+  readonly scheduleEmail?: (task: Promise<unknown>) => void
 }): ReturnType<typeof betterAuth> {
   const storage = createAuthRateLimitStorage(options.db, options.secret)
   const sourceRule = (max: number) => (request: Request) =>
     request.headers.has(AUTH_CLIENT_IP_HEADER)
       ? { window: 60, max }
       : (false as const)
+  const email = options.emailDelivery
+    ? createAuthEmailCallbacks(options.emailDelivery, options.scheduleEmail)
+    : undefined
   const configuration: BetterAuthOptions = {
     appName: "Flowmark",
     secret: options.secret,
@@ -71,6 +78,7 @@ export function createFlowmarkAuth(options: {
     ],
     database: drizzleAdapter(options.db, {
       provider: "pg",
+      transaction: true,
       schema: {
         user,
         session,
@@ -78,11 +86,22 @@ export function createFlowmarkAuth(options: {
         verification,
       },
     }),
+    // Email ownership is proved by a recovery link when needed, not a login gate.
+    verification: {
+      storeIdentifier: {
+        default: "plain",
+        overrides: { "reset-password:": "hashed" },
+      },
+    },
+    user: { changeEmail: { enabled: false } },
+    emailVerification: email?.emailVerification,
     emailAndPassword: {
       enabled: true,
       minPasswordLength: 8,
       autoSignIn: true,
+      requireEmailVerification: false,
       revokeSessionsOnPasswordReset: true,
+      ...email?.emailAndPassword,
     },
     rateLimit: {
       enabled: true,
@@ -108,6 +127,10 @@ export function createFlowmarkAuth(options: {
     plugins: [accountRateLimits(storage)],
     // Keep the same provider CSRF/origin checks in tests and deployed requests.
     advanced: {
+      backgroundTasks:
+        options.emailDelivery && options.scheduleEmail
+          ? { handler: options.scheduleEmail }
+          : undefined,
       disableOriginCheck: false,
       disableCSRFCheck: false,
       ipAddress: { ipAddressHeaders: [AUTH_CLIENT_IP_HEADER] },
@@ -116,6 +139,10 @@ export function createFlowmarkAuth(options: {
   const auth = betterAuth(configuration)
   // Explicit provider HTTP boundary: normalize trust before the native limiter.
   const handler = async (request: Request) => {
+    const startedAt = Date.now()
+    const isRecoveryRequest = new URL(request.url).pathname
+      .replace(/\/$/, "")
+      .endsWith("/request-password-reset")
     const result = await Effect.runPromiseExit(
       Effect.gen(function* () {
         const normalized = yield* normalizeAuthClientIdentity(request)
@@ -124,6 +151,11 @@ export function createFlowmarkAuth(options: {
           catch: (cause) => new AuthRequestError({ cause }),
         })
       }).pipe(
+        Effect.tap(() =>
+          isRecoveryRequest
+            ? Effect.sleep(Math.max(0, 500 - (Date.now() - startedAt)))
+            : Effect.void,
+        ),
         Effect.catchTag("AuthClientIdentityError", (error) =>
           Effect.succeed(
             Response.json(

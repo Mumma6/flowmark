@@ -155,9 +155,11 @@ isolation, cookies, direct API limits, alias limits and retry feedback. Preview
 is currently paused; do not enable it as part of this change. Production remains
 a separate release gate.
 
-Verification and reset delivery remain disabled until the email and recovery
-work is ready. Recovery is explicitly configured to revoke previous sessions;
-its token/mail success journey will be verified when that flow is enabled.
+Password recovery is implemented separately through the server email adapter,
+with one-time links and prior-session revocation. Normal signup/sign-in does not
+require email verification. The historical hosted acceptance below predates this
+consumer; deploying recovery requires review of its environment/revision and
+separate inbox acceptance.
 
 ## Evidence
 
