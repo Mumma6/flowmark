@@ -399,7 +399,7 @@ export function BusinessOutcomes({
                       ))}
                     </TableBody>
                   </Table>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-sm text-muted-foreground">
                     Missing canonical outcome: {window.missingOutcome}. Other
                     outcomes outside the top 20: {window.otherOutcomeRuns}.
                     Technical completion does not prove business accomplishment.

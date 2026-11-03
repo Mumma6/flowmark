@@ -1,5 +1,9 @@
 # Meridian Health synthetic telemetry
 
+For the fictional business, workflow relationships and investigations to try,
+start with [Understanding the Meridian Health demo](BUSINESS-CONTEXT.md).
+This README covers implementation and operation of the telemetry generator.
+
 Meridian Health is a fictional healthcare integration platform. This private,
 workstation-only tool creates deterministic workflow observations for exploring
 Flowmark. It never performs healthcare work or sends patient notifications.

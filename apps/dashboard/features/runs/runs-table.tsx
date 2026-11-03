@@ -11,6 +11,8 @@ import {
 } from "@flowmark/ui"
 import { ArrowUpRight } from "lucide-react"
 import Link from "next/link"
+import { usePathname, useSearchParams } from "next/navigation"
+import { runInvestigationPath } from "./investigation-navigation"
 import { StatusBadge } from "../shared/dashboard-components"
 import { type Run } from "../platform/api-types"
 import { formatDuration, formatTimestamp } from "../shared/format"
@@ -20,7 +22,7 @@ function ReportedResult({ run }: { run: Run }) {
   const highlights = getRunResultHighlights(run.result ?? {})
   return (
     <div className="space-y-1">
-      <p className="text-xs">
+      <p className="text-sm">
         <span className="text-muted-foreground">Business outcome: </span>
         {run.outcome ?? "Not reported"}
         {run.workflow.startsWith("browser.")
@@ -30,14 +32,14 @@ function ReportedResult({ run }: { run: Run }) {
       {highlights.length > 0 ? (
         <span className="flex min-w-0 flex-wrap gap-x-3 gap-y-1 [overflow-wrap:anywhere]">
           {highlights.map((item) => (
-            <span key={item.key} className="text-xs">
+            <span key={item.key} className="text-sm">
               <span className="text-muted-foreground">{item.label}</span>{" "}
               <span className="font-medium tabular-nums">{item.value}</span>
             </span>
           ))}
         </span>
       ) : (
-        <span className="text-xs text-muted-foreground">
+        <span className="text-sm text-muted-foreground">
           {run.result == null ? "Not reported" : "Open run for result"}
         </span>
       )}
@@ -52,6 +54,9 @@ export function RunsTable({
   runs: readonly Run[]
   showWorkflow?: boolean
 }) {
+  const pathname = usePathname()
+  const params = useSearchParams()
+  const from = `${pathname}${params.size ? `?${params}` : ""}`
   if (runs.length === 0) {
     return (
       <p className="px-5 py-8 text-center text-sm text-muted-foreground">
@@ -70,7 +75,7 @@ export function RunsTable({
             <div className="flex items-start justify-between gap-2">
               <Link
                 className="min-w-0 break-all text-sm font-medium hover:text-primary"
-                href={`/runs/${run.id}`}
+                href={runInvestigationPath(run.id, from)}
               >
                 {showWorkflow ? run.workflow : run.externalId.slice(0, 12)}
                 <span className="sr-only"> · Open run {run.externalId}</span>
@@ -78,7 +83,7 @@ export function RunsTable({
               <StatusBadge status={run.status} />
             </div>
             <ReportedResult run={run} />
-            <div className="flex flex-wrap justify-between gap-2 text-xs text-muted-foreground">
+            <div className="flex flex-wrap justify-between gap-2 text-sm text-muted-foreground">
               <time dateTime={run.startedAt}>
                 {formatTimestamp(run.startedAt)} UTC
               </time>
@@ -119,8 +124,8 @@ export function RunsTable({
                 )}
                 <TableCell>
                   <Link
-                    href={`/runs/${run.id}`}
-                    className="font-mono text-xs text-muted-foreground hover:text-primary hover:underline"
+                    href={runInvestigationPath(run.id, from)}
+                    className="font-mono text-sm text-muted-foreground hover:text-primary hover:underline"
                     title={run.externalId}
                   >
                     {run.externalId.slice(0, 12)}
@@ -135,7 +140,7 @@ export function RunsTable({
                 <TableCell className="whitespace-nowrap text-right tabular-nums">
                   {formatDuration(run.durationMs)}
                 </TableCell>
-                <TableCell className="whitespace-nowrap text-xs tabular-nums text-muted-foreground">
+                <TableCell className="whitespace-nowrap text-sm tabular-nums text-muted-foreground">
                   <time dateTime={run.startedAt}>
                     {formatTimestamp(run.startedAt)}
                   </time>
@@ -143,7 +148,7 @@ export function RunsTable({
                 <TableCell>
                   <Button asChild variant="ghost" size="icon">
                     <Link
-                      href={`/runs/${run.id}`}
+                      href={runInvestigationPath(run.id, from)}
                       aria-label={`Open run ${run.externalId}`}
                     >
                       <ArrowUpRight aria-hidden="true" />

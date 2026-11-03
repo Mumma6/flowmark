@@ -22,8 +22,8 @@ export function useRunExplorer(workflow?: string) {
   const { current } = useProject()
   const params = useSearchParams()
   const pathname = usePathname()
-  const signature = params.toString()
   const filters = useMemo(() => readExplorerFilters(params), [params])
+  const signature = JSON.stringify(filters)
   const setFilters = (next: ExplorerFilters) => {
     const url = new URLSearchParams(params.toString())
     Arr.forEach(Arr.fromIterable(Object.entries(next)), ([key, value]) => {
