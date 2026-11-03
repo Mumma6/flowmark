@@ -24,10 +24,19 @@ export const createAuthEmailCallbacks = (
       Effect.runPromise,
     )
 
+  const submitInLifetime = async (message: WithoutMessageId<EmailMessage>) => {
+    const task = submit(message)
+    if (schedule) {
+      schedule(task)
+      return
+    }
+    await task
+  }
+
   const sendVerificationEmail: NonNullable<
     VerificationOptions["sendVerificationEmail"]
   > = ({ user, url }) =>
-    submit({
+    submitInLifetime({
       kind: "verify-email",
       to: user.email,
       actionUrl: url,
@@ -44,20 +53,14 @@ export const createAuthEmailCallbacks = (
       expiresInMinutes: tokenLifetimeSeconds / 60,
     })
 
-  const onPasswordReset: NonNullable<
-    PasswordOptions["onPasswordReset"]
-  > = async ({ user }) => {
-    const task = submit({
+  const onPasswordReset: NonNullable<PasswordOptions["onPasswordReset"]> = ({
+    user,
+  }) =>
+    submitInLifetime({
       kind: "security-notice",
       to: user.email,
       event: "password-changed",
     })
-    if (schedule) {
-      schedule(task)
-      return
-    }
-    await task
-  }
 
   return {
     emailVerification: {

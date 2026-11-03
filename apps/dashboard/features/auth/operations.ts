@@ -28,6 +28,9 @@ export class BrowserAuth extends Context.Service<
     readonly changePassword: (
       input: PasswordInput,
     ) => Effect.Effect<void, DashboardAuthError>
+    readonly sendVerification: (
+      email: string,
+    ) => Effect.Effect<void, DashboardAuthError>
     readonly signOut: () => Effect.Effect<void, DashboardAuthError>
   }
 >()("@flowmark/dashboard/BrowserAuth") {}
@@ -61,4 +64,11 @@ export const changeAccountPassword = Effect.fn(
 export const signOut = Effect.fn("Dashboard.signOut")(function* () {
   const auth = yield* BrowserAuth
   yield* auth.signOut()
+})
+
+export const requestAccountEmailVerification = Effect.fn(
+  "Dashboard.requestEmailVerification",
+)(function* (email: string) {
+  const auth = yield* BrowserAuth
+  yield* auth.sendVerification(email)
 })
