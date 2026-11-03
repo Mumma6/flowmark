@@ -1,4 +1,7 @@
 export enum DatabaseOperation {
+  InspectDataset = "inspect-dataset",
+  ResetDataset = "reset-dataset",
+  DatasetTransaction = "dataset-transaction",
   AuthRateLimit = "auth-rate-limit",
   ReadOperationFacts = "read-operation-facts",
   BackfillRunFacts = "backfill-run-facts",

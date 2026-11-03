@@ -18,6 +18,11 @@ import { Database, MissingRunError } from "../../database.js"
 import { DatabaseOperation } from "../../database-operation.js"
 import { runQuery } from "../../run-query.js"
 import {
+  eventTransaction,
+  FixtureEventTransaction,
+  ownsFixtureTransaction,
+} from "../../event-transaction.js"
+import {
   eventError,
   eventFailure,
   eventProperties,
@@ -67,18 +72,24 @@ export const appendEvent = Effect.fn("appendEvent")(function* (
   event: WorkflowEvent,
 ) {
   const db = yield* Database
+  const fixtureTransaction = yield* FixtureEventTransaction
   const expectationClock = yield* ExpectationObservationClock
   const accepted = yield* runQuery(DatabaseOperation.AppendEvent, () =>
     // Drizzle owns the transaction lifetime; bridge at its Promise callback boundary.
-    db.transaction((tx) =>
+    eventTransaction(db, fixtureTransaction, (tx) =>
       Effect.runPromise(
         Effect.gen(function* () {
           // Reserve envelope identity before creating rows; a rejected start leaves no phantom run.
-          yield* runQuery(DatabaseOperation.AppendEvent, () =>
-            tx.execute(
-              sql`select pg_advisory_xact_lock(hashtextextended(${eventId}::text, 0))`,
-            ),
-          )
+          // A fixture already owns one atomic transaction and rejects every conflict.
+          // Unique event IDs still arbitrate concurrent envelopes. Per-event xact locks
+          // would otherwise accumulate until the whole historical import commits.
+          if (!ownsFixtureTransaction(db, fixtureTransaction)) {
+            yield* runQuery(DatabaseOperation.AppendEvent, () =>
+              tx.execute(
+                sql`select pg_advisory_xact_lock(hashtextextended(${eventId}::text, 0))`,
+              ),
+            )
+          }
           const [existing] = yield* runQuery(
             DatabaseOperation.AppendEvent,
             () =>

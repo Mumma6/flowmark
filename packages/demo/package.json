@@ -1,0 +1,25 @@
+{
+  "name": "@flowmark/demo",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json",
+    "lint": "eslint src test",
+    "test": "node --import tsx --test test/*.test.ts",
+    "demo": "node --import tsx src/cli/main.ts"
+  },
+  "dependencies": {
+    "@flowmark/api": "workspace:*",
+    "@flowmark/db": "workspace:*",
+    "@flowmarkdev/core": "workspace:*",
+    "effect": "4.1.0"
+  },
+  "devDependencies": {
+    "@flowmark/auth": "workspace:*",
+    "@types/node": "^22.18.6",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.2"
+  }
+}

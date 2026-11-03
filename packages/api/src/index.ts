@@ -95,3 +95,5 @@ export { ExpectationStateSchema } from "@flowmarkdev/core"
 export type { RunExpectations, ExpectationAttention } from "@flowmarkdev/core"
 
 export { ExpectationSourceForbidden } from "./errors.js"
+
+export { ResultDeclarationsLive } from "./features/result-declarations/adapters/result-declarations.js"
