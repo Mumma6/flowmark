@@ -17,10 +17,15 @@ import {
 import { Result } from "effect"
 import { useEffect, useState, type FormEvent } from "react"
 import { runBrowserAuth } from "../auth/auth-browser-runtime"
+import { EmailVerificationPanel } from "../auth/email-verification-panel"
 import { authClient } from "../auth/auth-client"
 import { changeAccountPassword, updateAccountName } from "../auth/operations"
 
-export function AccountSettings() {
+export function AccountSettings({
+  verificationLinkFailed = false,
+}: {
+  readonly verificationLinkFailed?: boolean
+}) {
   const session = authClient.useSession()
   const email = session.data?.user.email ?? ""
   const [name, setName] = useState(session.data?.user.name ?? "")
@@ -48,6 +53,15 @@ export function AccountSettings() {
             ? ". The local harness already sends events with FLOWMARK_API_KEY=fm_demo_write_local_only."
             : "."}
         </p>
+        <EmailVerificationPanel
+          key={session.data?.user.id ?? "session"}
+          user={session.data?.user ?? null}
+          loading={session.isPending}
+          sessionError={Boolean(session.error)}
+          linkFailed={verificationLinkFailed}
+          refresh={() => session.refetch()}
+        />
+        <Separator />
         <form
           className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end"
           onSubmit={async (event: FormEvent) => {

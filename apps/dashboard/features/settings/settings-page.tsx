@@ -90,7 +90,12 @@ function SettingsPageInner() {
           <AgentPromptCard />
         </TabsContent>
         <TabsContent value="account" className="mt-6">
-          <AccountSettings />
+          <AccountSettings
+            verificationLinkFailed={
+              searchParams.get("emailVerification") === "complete" &&
+              searchParams.has("error")
+            }
+          />
         </TabsContent>
       </Tabs>
     </div>

@@ -114,3 +114,30 @@ checks do not replace deployed-delivery acceptance.
 
 Reference guidance: [OWASP password recovery](https://cheatsheetseries.owasp.org/cheatsheets/Forgot_Password_Cheat_Sheet.html)
 and [Better Auth options](https://better-auth.com/docs/reference/options).
+
+## Optional verification in account settings
+
+Settings → Account displays the signed-in session's actual email verification
+status and lets an unverified owner request/resend a confirmation link. This is
+optional; signup, sign-in and normal app access remain unchanged. Request receipt
+is not shown as verified status. Loading, expired sessions, failed status lookups,
+expired/invalid links, delivery errors and throttling have explicit recovery.
+Refresh status re-fetches the session instead of trusting a callback parameter.
+
+Explicit verification mail uses the same Next.js-managed lifetime as recovery
+notices. Anonymous known/unknown request responses stay generic even when the
+provider submission fails; safe diagnostics retain delivery failures.
+
+The client fixes the callback to its own account-settings route. Better Auth
+validates recipients, signed-in email matching, callback origins and token expiry;
+existing durable address/source/service limits still apply. The callback never
+automatically signs in or switches the current browser's user. Provider email
+verification links can be revisited idempotently until expiry; this is distinct
+from the single-use password-reset token contract. There is no new token engine,
+schema, hosted setting or additional verification requirement.
+
+Contract tests cover callback construction and safe delivery failures; browser
+checks cover status and feedback presentation. The managed HTTP/PostgreSQL
+suite covers confirmation, wrong-browser session isolation, mismatched addresses,
+untrusted callbacks, expired/tampered links and atomic resend limits. Tests use
+in-memory mail capture; live inbox acceptance remains a separate rollout check.
