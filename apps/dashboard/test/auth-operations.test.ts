@@ -19,6 +19,7 @@ const makeAuth = (
       Effect.sync(() => {
         events.push("signIn")
       }),
+    sendVerification: () => Effect.void,
     signOut: () => Effect.void,
     updateName: () => Effect.void,
     changePassword: () => Effect.void,

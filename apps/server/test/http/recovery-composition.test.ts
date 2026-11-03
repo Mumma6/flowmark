@@ -7,11 +7,11 @@ vi.mock("next/server", () => ({
   after: (work: () => Promise<void>) => afterWork.push(work),
 }))
 const origin = "http://localhost:3001"
-const post = (path: string, body: unknown) =>
+const post = (path: string, body: unknown, cookie = "") =>
   POST(
     new Request(`${origin}/api/auth/${path}`, {
       method: "POST",
-      headers: { origin, "content-type": "application/json" },
+      headers: { origin, cookie, "content-type": "application/json" },
       body: JSON.stringify(body),
     }),
   )
@@ -99,6 +99,38 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
       expect(
         (await post("sign-in/email", { email, password: newPassword })).status,
       ).toBe(200)
+      const loggedIn = await post("sign-in/email", {
+        email,
+        password: newPassword,
+      })
+      const cookie = loggedIn.headers
+        .getSetCookie()
+        .map((value) => value.split(";")[0])
+        .join("; ")
+      const confirmation = await post(
+        "send-verification-email",
+        { email, callbackURL: `${origin}/settings?section=account` },
+        cookie,
+      )
+      expect(confirmation.status).toBe(200)
+      expect(afterWork).toHaveLength(3)
+      resolveDelivery(Response.json({}, { status: 503 }))
+      await afterWork[2]()
+      const anonymousKnown = await post("send-verification-email", {
+        email,
+        callbackURL: `${origin}/settings?section=account`,
+      })
+      expect(anonymousKnown.status).toBe(200)
+      expect(afterWork).toHaveLength(4)
+      resolveDelivery(Response.json({}, { status: 503 }))
+      await afterWork[3]()
+      const anonymousUnknown = await post("send-verification-email", {
+        email: `${randomUUID()}@example.test`,
+        callbackURL: `${origin}/settings?section=account`,
+      })
+      expect(anonymousUnknown.status).toBe(anonymousKnown.status)
+      expect(await anonymousKnown.json()).toEqual(await anonymousUnknown.json())
+      expect(afterWork).toHaveLength(4)
       expect(JSON.stringify(log.mock.calls)).not.toContain(email)
       expect(JSON.stringify(log.mock.calls)).not.toContain(
         "synthetic-private-provider-value",
