@@ -69,6 +69,24 @@ const proxyToApi = Effect.fn("proxyToApi")(function* (
       forwarded.append("set-cookie", cookieValue)
     },
   )
+  const location = response.headers.get("location")
+  if (location && pathname.startsWith("/api/auth/")) {
+    const destination = yield* Effect.try({
+      try: () => new URL(location, incoming),
+      catch: (cause) => new DashboardProxyError({ cause }),
+    })
+    if (
+      destination.origin !== incoming.origin ||
+      destination.username ||
+      destination.password
+    ) {
+      return yield* new DashboardProxyError({
+        cause: new Error("Untrusted auth redirect"),
+      })
+    }
+    forwarded.set("location", destination.href)
+  }
+  forwarded.set("referrer-policy", "no-referrer")
   const responseType = response.headers.get("content-type")
   if (responseType) {
     forwarded.set("content-type", responseType)
@@ -88,7 +106,7 @@ const proxyToApi = Effect.fn("proxyToApi")(function* (
 
 export async function proxyToApiHandler(request: Request, pathname: string) {
   const result = await runDashboardServerExit(proxyToApi(request, pathname))
-  return Exit.match(result, {
+  const response = Exit.match(result, {
     onSuccess: (response) => response,
     onFailure: (cause) =>
       Match.value(
@@ -118,4 +136,8 @@ export async function proxyToApiHandler(request: Request, pathname: string) {
         ),
       ),
   })
+  const headers = new Headers(response.headers)
+  headers.set("cache-control", "no-store")
+  headers.set("referrer-policy", "no-referrer")
+  return new Response(response.body, { status: response.status, headers })
 }

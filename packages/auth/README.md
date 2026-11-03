@@ -25,3 +25,92 @@ unmanaged and non-loopback databases. Setup also refuses a migration URL naming 
 port, database, or role before SQL. It migrates and seeds through the runtime
 URL, retaining that URL's connection settings. Hosted environment names and
 migration wrappers are unchanged.
+
+## Transactional email callbacks
+
+`createFlowmarkAuth` accepts an optional `emailDelivery` service from the private
+`@flowmark/email` package. Resolve the service at the server composition root
+and inject it explicitly. With no injection, verification and password-reset
+sending callbacks remain absent even when Resend settings exist in the process.
+There is no implicit network client or capture fallback in the auth factory.
+
+The provider callback adapter sends verification and reset messages using the
+original Better Auth URL, recipient and a fresh opaque message ID. Both token
+lifetimes are 30 minutes, matching the template expiry text. There are no
+automatic submission retries. A successful password reset invokes a token-free
+password-changed notice. The provider owns token validation/consumption,
+password updates and session revocation; reset does not mark an address verified.
+
+`apps/server` resolves Resend from the existing server-only email settings and
+canonical `BETTER_AUTH_URL`. With no mail configuration, recovery remains
+unavailable; partial/invalid configuration fails explicitly rather than falling
+back to capture. Existing Staging/Production bindings are sufficient, with no
+new hosted variable. Deploying this revision with those bindings activates
+recovery, so review the rollout environment/revision before deployment.
+
+The server injects a lifetime-managed background task handler backed by Next.js
+`after()`. Provider mail requests acknowledge the request without waiting for
+external delivery. Failed submissions retain safe server diagnostics and do not
+reveal whether an address exists. A 500ms minimum response duration covers the
+ordinary lookup/write timing difference; source/account/service rate limits
+still apply. This is not a durable queue or a delivery guarantee.
+
+Reset-completion notices use the same lifetime handler after the password/session
+transaction commits, so notification failure does not turn completed recovery
+into an HTTP failure. Without a supplied lifetime handler, the callbacks await
+submission, which is useful for capture tests. Requests never log raw tokens,
+recipients, provider bodies or credentials. No automatic verification send or
+verification auto-sign-in is enabled; normal access remains unverified-compatible.
+
+The dashboard provides `/forgot-password` and `/reset-password`, generic request
+feedback, explicit invalid/expired/used-link recovery and a sign-in route after
+success. Network/5xx ambiguity during completion offers sign-in with the new
+password and blocks blind resubmission. The reset page is dynamic/no-store,
+noindex and no-referrer; the browser removes the token query after hydration and
+keeps it in the current client render rather than local/session storage.
+Refreshing that page requires a new link.
+Auth proxy callbacks forward only same-origin redirects, with no-store and
+no-referrer. No tracking or third-party content is added to recovery pages.
+
+Validate the seam without a database or real outbound messages:
+
+```sh
+pnpm --filter @flowmark/auth... build
+pnpm --filter @flowmark/auth lint
+pnpm --filter @flowmark/auth test
+```
+
+## Account security policy
+
+Normal email/password signup and sign-in explicitly do not require a previously
+verified address. Recovery proves control of the existing account mailbox by
+requiring a valid, unused, time-limited provider link. No prior verification step
+is required, and resetting a password does not mark the address verified as an
+unrelated side effect. Optional email verification remains available through the
+prepared callback, without automatic sign-in after verification.
+
+The Drizzle auth adapter explicitly enables transactions. Token consumption,
+prior-session revocation and the password write must commit together; a failed
+write must leave the token usable for a deliberate retry and keep old sessions
+valid. Reset identifiers are SHA-256 hashed using Better Auth's supported storage
+option, scoped to `reset-password:`. Other verification identifiers keep their
+existing representation, and the installed provider supports reading legacy
+plain identifiers during adoption. No custom token/password implementation or
+schema migration is introduced.
+
+Dashboard password change requires the current password through the provider
+and requests revocation of other sessions. Password recovery revokes all prior
+sessions. Email change remains explicitly disabled until its separately scoped
+confirmation/reauthentication flow is implemented; adding a delivery callback
+must not enable it implicitly. Existing per-account, service and trusted-source
+limits remain in place for recovery and verification requests.
+
+The database-backed recovery suite exercises optional verification, generic
+request responses including simulated delivery failure, hashed token storage, replay/concurrent
+use, rollback on failed password write, expired/tampered links, old-session
+revocation and unchanged user identity/verification state. Run it only through
+`pnpm test:integration` against its managed disposable PostgreSQL target. These
+checks do not replace deployed-delivery acceptance.
+
+Reference guidance: [OWASP password recovery](https://cheatsheetseries.owasp.org/cheatsheets/Forgot_Password_Cheat_Sheet.html)
+and [Better Auth options](https://better-auth.com/docs/reference/options).

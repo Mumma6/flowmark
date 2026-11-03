@@ -14,17 +14,15 @@
   <a href="https://flowmark.dev"><img alt="flowmark.dev" src="https://img.shields.io/badge/flowmark.dev-0d1311" /></a>
 </p>
 
-A completed run is only part of the story. Flowmark records what a process in
-your application actually did: milestones, timed operations, progress, errors,
-and the business result your code reported. Many executions then become a
-picture of volume, duration, failures, and reported outcomes.
+Flowmark shows what the processes in your application actually do. Mark a
+checkout, an import, a sync, or a background job in ordinary TypeScript. Each
+execution keeps its milestones, timed work, progress, errors, and the business
+result your code reported.
 
-Flowmark observes work your application already owns. It does not execute,
-schedule, or retry that work. A completed run is not proof that every record
-succeeded. Missing terminal telemetry does not prove that a run is still active
-or that it failed.
+One run is enough to investigate a single case. Many runs show volume,
+duration, failures, and how those reported outcomes change over time.
 
-## Install
+## Getting started
 
 Requires Node.js 20.19 or newer.
 
@@ -32,31 +30,35 @@ Requires Node.js 20.19 or newer.
 npm i @flowmarkdev/node
 ```
 
-```ts
-// Next.js Route Handler or Server Action
-import { createFlowmark } from "@flowmarkdev/node/next"
-export const flowmark = createFlowmark()
-```
-
-```ts
-// Node worker or long-lived server
-import { createFlowmark } from "@flowmarkdev/node"
-export const flowmark = createFlowmark()
-```
+Create one shared client. Keep the write key on the server. Never place it in
+`NEXT_PUBLIC_*` or a browser bundle. `FLOWMARK_API_URL` is the API origin, not
+a path such as `/v1/events`.
 
 ```bash
 FLOWMARK_API_KEY=<project write key>
 FLOWMARK_API_URL=https://api.flowmark.dev
 ```
 
-The write key stays on the server. Never put it in `NEXT_PUBLIC_*` or a browser
-bundle. `FLOWMARK_API_URL` is the API origin, not `/v1/events`.
+```ts
+// Next.js Route Handler or Server Action
+import { createFlowmark } from "@flowmarkdev/node/next"
+
+export const flowmark = createFlowmark()
+```
+
+```ts
+// Node.js worker or long-lived server
+import { createFlowmark } from "@flowmarkdev/node"
+
+export const flowmark = createFlowmark()
+```
 
 ```ts
 export async function completeCheckout(orderId: string) {
   const flow = flowmark.workflow("checkout.order", {
     properties: { orderId },
   })
+
   try {
     flow.step("payment-captured")
     const shipment = await flow.operation("create-shipment", () =>
@@ -74,77 +76,91 @@ export async function completeCheckout(orderId: string) {
 }
 ```
 
-Keep the function's return value and thrown errors. Telemetry failures do not
-change business behavior. In Node, call `await flowmark.shutdown()` before the
-process exits. The Next.js adapter drains with `after()`.
+The function keeps its return value and its thrown errors. In Node.js, call
+`await flowmark.shutdown()` before the process exits. The Next.js client drains
+delivery with `after()`.
 
-Customer documentation: [docs.flowmark.dev](https://docs.flowmark.dev). Package
-details: [`packages/sdk/README.md`](./packages/sdk/README.md).
+Create a project and a write key in the
+[dashboard](https://app.flowmark.dev), run the code, and open the recorded
+execution. Browser setup, typed workflows, and the rest of the API are in the
+[documentation](https://docs.flowmark.dev).
 
-## What you can record
+## Capabilities
 
-`@flowmarkdev/node` 0.2.0, `@flowmarkdev/node/next`, and
-`@flowmarkdev/node/browser` share the same run markers:
+**Follow one execution.** Open a run and see the sequence of milestones and
+operations, where time was spent, the latest progress, and the errors your code
+recorded along the way.
 
-- A named workflow run, continued later with the same name and `id`
-- Steps, overlapping operations, absolute progress, and non-terminal errors
-- A bounded JSON result and an optional business outcome on `done()` or `fail()`
-- Non-final `report()` snapshots that do not become the final result
-- Explicit `correlationId` and `parentRunId` links you pass yourself
-- Optional typed `defineWorkflow()` handles, explicit attempt metadata, and
-  durable expectations
+**Read the reported result.** `done()` and `fail()` can carry a business
+outcome and a small JSON summary: imported and skipped counts, a shipment id,
+how far a sync got. The same facts are available on the run and across recent
+history.
 
-Newer markers need an API that accepts them. Delivery is best-effort. Browser
-workflows use a public browser key and are stored with a `browser.` name
-prefix. The SDK does not invent retries, schedules, or verified business
-correctness.
+**See what changed.** Workflow views show volume, completion, duration, and
+reported outcomes over time. Compare a recent window, then open the runs behind
+the change.
 
-## What you can investigate
+**Find a specific case.** Search run history by an enabled business reference,
+such as an order or customer id, and continue from that run into the timeline.
 
-Sign in on the dashboard, create a project, and create a write key. Password
-reset is not available. The dashboard then shows project-scoped evidence:
+**Connect related work.** Continue one run across later requests with the same
+workflow name and id. Pass `correlationId` or `parentRunId` when separate runs
+belong together.
 
-- Execution volume, success rate, duration, and trends
-- Slow operations, failure codes, and run timelines
-- Reported results, business outcomes, and last-reported progress
-- Peer comparison and explicitly related runs
-- Enabled business-reference search on run history
+## How it works
 
-Overview panels use bounded snapshots, including the latest 100 runs for recent
-failures. Run history itself is server-paginated and is not limited to that
-snapshot.
+Your application keeps running the work. Flowmark records the markers you add
+around it.
 
-|           |                                                                        |
-| --------- | ---------------------------------------------------------------------- |
-| Landing   | [flowmark.dev](https://flowmark.dev)                                   |
-| Dashboard | [app.flowmark.dev](https://app.flowmark.dev)                           |
-| Docs      | [docs.flowmark.dev](https://docs.flowmark.dev)                         |
-| API       | [api.flowmark.dev](https://api.flowmark.dev)                           |
-| npm       | [`@flowmarkdev/node`](https://www.npmjs.com/package/@flowmarkdev/node) |
+```text
+Your application
+  -> @flowmarkdev/node
+  -> https://api.flowmark.dev
+  -> a project in the dashboard
+```
+
+A workflow is a stable name, such as `checkout.order`. A run is one execution
+of that name. Steps are milestones. Operations are timed pieces of work and may
+overlap. Progress is an absolute snapshot. An outcome is the business result
+your code chooses to report, alongside technical completion or failure.
+
+The same markers work from a Node.js process, a Next.js server, or the browser.
+Browser clients use a public browser key, or a same-origin proxy that keeps the
+server write key private. See
+[browser integration](https://docs.flowmark.dev/docs/browser).
+
+Self-hosting uses these applications, the committed migrations, and PostgreSQL
+you control.
+
+## Documentation
+
+- [flowmark.dev](https://flowmark.dev) — product
+- [app.flowmark.dev](https://app.flowmark.dev) — dashboard
+- [docs.flowmark.dev](https://docs.flowmark.dev) — guides and SDK reference
+- [api.flowmark.dev](https://api.flowmark.dev) — API
+- [`@flowmarkdev/node`](https://www.npmjs.com/package/@flowmarkdev/node) — npm
+- [`packages/sdk/README.md`](./packages/sdk/README.md) — package details
 
 ## Repository
 
-| Path                 | Purpose                                      |
-| -------------------- | -------------------------------------------- |
-| `packages/sdk`       | `@flowmarkdev/node`                          |
-| `packages/core`      | Shared event contracts (`@flowmarkdev/core`) |
-| `packages/api`       | Use cases and ports                          |
-| `packages/auth`      | Internal authentication (`@flowmark/auth`)   |
-| `packages/db`        | Schema, migrations, persistence              |
-| `packages/ui`        | Shared UI                                    |
-| `apps/server`        | HTTP and tRPC shell                          |
-| `apps/dashboard`     | Signed-in product UI                         |
-| `apps/web`           | Landing page                                 |
-| `apps/docs`          | Customer documentation                       |
-| `apps/dev-harness`   | Local-only fixture app                       |
-| `apps/internal-docs` | Local-only contributor docs                  |
+| Path             | Role                                        |
+| ---------------- | ------------------------------------------- |
+| `packages/sdk`   | Public SDK, `@flowmarkdev/node`             |
+| `packages/core`  | Shared event contracts, `@flowmarkdev/core` |
+| `packages/api`   | Use cases and ports                         |
+| `packages/db`    | Schema, migrations, and persistence         |
+| `apps/server`    | HTTP and tRPC shell                         |
+| `apps/dashboard` | Signed-in product                           |
+| `apps/web`       | Landing page                                |
+| `apps/docs`      | Customer documentation                      |
 
-`apps/dev-harness` and `apps/internal-docs` bind to loopback. Do not deploy
-them.
+Sessions and local accounts live in `packages/auth`. `apps/dev-harness` and
+`apps/internal-docs` are local-only and bind to loopback. The
+[architecture guide](./docs/architecture.md) describes how the pieces connect.
 
 ## Local development
 
-Node.js 20.19+ (24 LTS recommended), pnpm 10.18.1, and Docker Compose.
+Node.js 20.19 or newer, pnpm 10.18.1, and Docker Compose.
 
 ```sh
 pnpm install
@@ -154,65 +170,25 @@ pnpm db:setup
 pnpm dev
 ```
 
-`pnpm db:setup` runs once. It applies the committed migrations and provisions
-the local demo in this checkout's PostgreSQL 18 Compose database
-(`127.0.0.1:55432`, database and role `flowmark`). Sign in to the dashboard at
-`http://localhost:3001` as `local@flowmark.test` with password `local-dev-only`.
-The harness at `http://127.0.0.1:3004` records sample runs with its server
-write key. A later session can use `pnpm dev:stack`: it prepares env files,
-starts that same database, then every application and Drizzle Studio. It does
-not migrate or seed.
+`pnpm db:setup` runs once against this checkout's Compose database. Do not point
+it at a hosted database. The dashboard is at <http://localhost:3001>.
 
-`pnpm dev` starts the API on port 3003, the dashboard on 3001, customer docs on
-3002, the harness on 3004, contributor docs on 3005, and the library watchers.
-`pnpm dev:all` also starts the marketing site on 3000. Both require the
-database to already be healthy. Append `--ui=stream` for ordinary logs. Applications and watchers run
-natively on OrbStack, Docker Desktop, or Docker Engine.
-
-`pnpm dev:stack` starts Drizzle Studio with the applications. `pnpm dev` and
-`pnpm dev:all` do not. To open Studio while those sessions are already running:
-
-```sh
-pnpm db:studio
-```
-
-Open [https://local.drizzle.studio](https://local.drizzle.studio) after the
-local server starts. Studio binds only to `127.0.0.1:4983`, reads the same
-checkout-owned Compose database, and can edit or delete rows. It refuses a
-hosted database. Stopping `dev:stack` stops Studio with the other tasks.
-
-Use `pnpm infra <operation>` for `doctor`, `up`, `status`, `logs`,
-`restart postgres`, or `down`. Commands verify checkout ownership, and `down`
-keeps the named volume. Existing env files and databases are preserved. Older
-configuration must be changed to Compose explicitly; see
-[existing local data](./docs/development.md#existing-local-data).
-
-`pnpm test:integration` creates a separate disposable PostgreSQL instance and
-removes only its own containers and network. It never touches development or
-demo data. `pnpm check` works without Docker. Use one dev session per checkout
-and stop its watchers before builds, checks, or integration tests, or use
-another worktree. The [command inventory](./docs/development-commands.md)
-covers all tooling.
-
-Database setup builds its workspace prerequisites, including core. If
-`DATABASE_MIGRATION_URL` is set, it must name the same local host, port,
-database, and role as `DATABASE_URL`; otherwise setup stops before SQL.
-
-The [development guide](./docs/development.md) covers the local pipeline,
-checks, and database safety. Self-hosting needs the same apps, committed
-migrations, and any PostgreSQL you control.
+Ports, checks, Drizzle Studio, and database safety are in the
+[development guide](./docs/development.md).
 
 ## Contributing
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md) and [SECURITY.md](./SECURITY.md).
-Maintained hosted infrastructure follows the
-[Pulumi writer policy](./docs/infrastructure.md#pulumi-is-the-infrastructure-writer).
 Feature branches start from `staging` and open pull requests into `staging`.
-Release policy is in [application releases](./docs/releases.md).
+Releases follow [application releases](./docs/releases.md). Maintained hosted
+infrastructure follows the
+[Pulumi writer policy](./docs/infrastructure.md#pulumi-is-the-infrastructure-writer).
 
 - [Development](./docs/development.md)
 - [Architecture](./docs/architecture.md)
 - [Documentation index](./docs/README.md)
 - [Decisions](./docs/decisions/)
 
-License: [MIT](./LICENSE).
+## License
+
+[MIT](./LICENSE)

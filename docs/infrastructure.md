@@ -113,8 +113,9 @@ does not authorize infrastructure changes. See [database rollout](./migrations.m
 
 People sign in to the dashboard with email and password. Applications send
 telemetry with a project write key. Those are different credentials. Password
-reset remains disabled until the separately implemented and verified account
-flows consume the transactional email package. Sign-up creates an account. The
+recovery uses the transactional email package when server mail settings are
+configured. Recovery requires a one-time mailbox link; normal signup/sign-in does
+not require a previously verified address. Sign-up creates an account. The
 first project and write key are created in onboarding or Settings.
 
 ## Environments
