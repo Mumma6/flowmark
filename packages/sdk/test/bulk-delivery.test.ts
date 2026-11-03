@@ -1,4 +1,4 @@
-import { Deferred, Effect, Layer } from "effect"
+import { Array, Deferred, Effect, Layer, pipe } from "effect"
 import { describe, expect, it } from "vitest"
 import type { WorkflowEvent } from "@flowmarkdev/core"
 import { makeClient } from "../src/client/runtime.js"
@@ -145,25 +145,28 @@ describe("bounded bulk delivery", () => {
   it("keeps default history per call and reserves bounded space against snapshot saturation", async () => {
     const { client, events, diagnostics, release } = blockedClient()
     const flow = client.workflow("default")
-    for (let completed = 1; completed <= 10_000; completed++) {
-      flow.progress({ completed })
-    }
-    flow.report({ saved: 10_000 })
+    // Cross the 900-entry snapshot limit and the 20-failure sample limit
+    // without repeating thousands of rejected calls on slower CI runners.
+    pipe(
+      Array.range(1, 1_000),
+      Array.forEach((completed) => flow.progress({ completed })),
+    )
+    flow.report({ saved: 1_000 })
     const operation = flow.operation("commit")
     operation.done()
-    flow.done({ result: { saved: 10_000 } })
+    flow.done({ result: { saved: 1_000 } })
     expect(client.deliveryHealth()).toMatchObject({
       pending: 903,
       coalesced: 0,
-      dropped: 9102,
+      dropped: 102,
     })
     release()
     await expect(client.flush()).rejects.toMatchObject({
-      failureCount: 9102,
-      omittedFailureCount: 9082,
+      failureCount: 102,
+      omittedFailureCount: 82,
       failures: { length: 20 },
     })
-    expect(diagnostics()).toBe(9102)
+    expect(diagnostics()).toBe(102)
     expect(events.filter((event) => event.type === "progress")).toHaveLength(
       899,
     )
@@ -174,7 +177,7 @@ describe("bounded bulk delivery", () => {
     ])
     // Drains reset error samples, never cumulative health.
     await client.flush()
-    expect(client.deliveryHealth()).toMatchObject({ pending: 0, dropped: 9102 })
+    expect(client.deliveryHealth()).toMatchObject({ pending: 0, dropped: 102 })
     await client.shutdown()
   })
 
