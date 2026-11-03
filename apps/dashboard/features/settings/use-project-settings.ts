@@ -1,5 +1,6 @@
 "use client"
 
+import { toast } from "@flowmark/ui"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useEffect, useState } from "react"
 import { useTRPC } from "../platform/api-trpc"
@@ -16,6 +17,7 @@ export function useProjectSettings() {
   const rename = useMutation(
     trpc.project.rename.mutationOptions({
       onSuccess: () => {
+        toast.add({ title: "Project name saved", type: "success" })
         void queryClient.invalidateQueries()
       },
     }),

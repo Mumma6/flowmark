@@ -1,5 +1,6 @@
 "use client"
 
+import { toast } from "@flowmark/ui"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useTRPC } from "../platform/api-trpc"
 
@@ -35,6 +36,7 @@ export function useCreateDeclaration(onSaved: () => void) {
   return useMutation(
     trpc.resultDeclarations.create.mutationOptions({
       onSuccess: () => {
+        toast.add({ title: "Result declaration saved", type: "success" })
         onSaved()
         void cache.invalidateQueries({
           queryKey: trpc.resultDeclarations.list.queryKey(),
@@ -49,6 +51,7 @@ export function useSaveSearchFields(onSaved: () => void) {
   return useMutation(
     trpc.resultDeclarations.setSearchFields.mutationOptions({
       onSuccess: () => {
+        toast.add({ title: "Search fields saved", type: "success" })
         onSaved()
         void cache.invalidateQueries({
           queryKey: trpc.resultDeclarations.searchFields.queryKey(),

@@ -1,5 +1,6 @@
 "use client"
 
+import { toast } from "@flowmark/ui"
 import { useMutation } from "@tanstack/react-query"
 import { useEffect, useRef, useState } from "react"
 import { useTRPC } from "../platform/api-trpc"
@@ -32,6 +33,7 @@ export function useCreateProject(onCreated?: (secret: CreatedSecret) => void) {
   const create = useMutation(
     trpc.project.create.mutationOptions({
       onSuccess: (result) => {
+        toast.add({ title: "Project created", type: "success" })
         setSecret(result.writeKey)
         setShownFor(result.project.id)
         setNewName("")

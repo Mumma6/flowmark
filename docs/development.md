@@ -276,6 +276,12 @@ merge pipeline and approved standalone **Migrate database** job use those wrappe
 Ordinary PR checks receive no hosted credentials. Never seed Neon or migrate
 inside Vercel builds/requests. See the guide for exact commands and approvals.
 
+Dashboard action feedback uses the shared shadcn Base UI `Toaster` and `toast`
+exports from `@flowmark/ui`. Mount one toaster in the dashboard providers. Use
+success toasts after confirmed saves, project/key changes, and clipboard actions;
+keep actionable form errors and one-time key material in the owning view. Never
+include secret values in a toast or notify for routine background refreshes.
+
 The dashboard uses a same-origin server proxy for tRPC and Better Auth. Its
 server-side `FLOWMARK_API_URL` defaults to `http://localhost:3003`. Dashboard
 reads use the signed-in session; workflow queries read PostgreSQL, not mock
