@@ -254,6 +254,10 @@ test("local target selection keeps guards and redacts malformed URL errors", () 
   }
 })
 
+// Cold Drizzle/Effect imports share CPU with the other workspace checks in CI.
+// Bound startup without treating a slow runner as a configuration-guard failure.
+const studioStartupTimeoutMs = 60_000
+
 test("Studio config refuses unsafe configuration before database access", () => {
   const runtime =
     "postgresql://flowmark:local_dev_only@127.0.0.1:55432/flowmark"
@@ -270,7 +274,7 @@ test("Studio config refuses unsafe configuration before database access", () => 
       {
         cwd: fileURLToPath(new URL("../..", import.meta.url)),
         encoding: "utf8",
-        timeout: 10000,
+        timeout: studioStartupTimeoutMs,
         env: {
           ...process.env,
           PATH: "/missing",
@@ -285,6 +289,7 @@ test("Studio config refuses unsafe configuration before database access", () => 
     )
   // A valid URL alone is insufficient: Docker ownership proof is mandatory.
   const missingDocker = run()
+  assert.ifError(missingDocker.error)
   assert.equal(missingDocker.status, 1)
   assert.match(missingDocker.stderr, /Docker CLI is missing/)
   for (const overrides of [
@@ -299,6 +304,7 @@ test("Studio config refuses unsafe configuration before database access", () => 
     { FLOWMARK_DEMO_MODE: "false" },
   ]) {
     const result = run(overrides)
+    assert.ifError(result.error)
     assert.equal(result.status, 1)
     assert.match(
       result.stderr,
@@ -312,7 +318,7 @@ test("Studio CLI prints an actionable, redacted refusal before starting", () => 
   const result = spawnSync("pnpm", ["db:studio"], {
     cwd: fileURLToPath(new URL("../..", import.meta.url)),
     encoding: "utf8",
-    timeout: 10000,
+    timeout: studioStartupTimeoutMs,
     env: {
       ...process.env,
       DATABASE_URL:
@@ -324,6 +330,7 @@ test("Studio CLI prints an actionable, redacted refusal before starting", () => 
       VERCEL_ENV: "",
     },
   })
+  assert.ifError(result.error)
   assert.equal(result.status, 1)
   assert.match(result.stdout + result.stderr, /database must be on loopback/)
   assert.doesNotMatch(result.stdout + result.stderr, /secret|postgresql:\/\//)
