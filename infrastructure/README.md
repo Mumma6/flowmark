@@ -104,7 +104,7 @@ Enter the key using the secure prompt, never a command argument:
 
 ```sh
 cd infrastructure
-pulumi config set --stack "$PULUMI_ORG/nonprod" --secret stagingResendApiKey
+pulumi config set stagingResendApiKey --stack "$PULUMI_ORG/nonprod" --secret
 ```
 
 `Pulumi.nonprod.yaml` is ignored local stack configuration; the secret is
