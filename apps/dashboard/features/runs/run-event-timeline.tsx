@@ -3,9 +3,9 @@
 import { Badge, Button } from "@flowmark/ui"
 import { ChevronDown, ChevronRight } from "lucide-react"
 import { useState } from "react"
-import { JsonData } from "../../components/json-data"
-import type { RunEvent } from "../../lib/api/types"
-import { formatDuration } from "../../lib/format"
+import { JsonData } from "../shared/json-data"
+import type { RunEvent } from "../platform/api-types"
+import { formatDuration } from "../shared/format"
 import { eventLabel } from "./event-label"
 import {
   getRunTimelineKind,

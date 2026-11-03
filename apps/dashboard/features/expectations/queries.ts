@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query"
 import { useMemo } from "react"
-import { useTRPC } from "../../lib/api/trpc"
+import { useTRPC } from "../platform/api-trpc"
 import { useProject } from "../projects/project-context"
 
 export function useRunExpectations(id: string) {

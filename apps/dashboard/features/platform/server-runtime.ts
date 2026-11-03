@@ -1,10 +1,10 @@
 import { Effect, Layer } from "effect"
 import { cache } from "react"
 import "server-only"
-import { DashboardApi } from "./api/server-client"
-import { readDashboardAccess } from "./auth/access"
-import { readDashboardSession } from "./auth/session"
-import { DashboardServerConfig } from "./config/server"
+import { DashboardApi } from "./api-server-client"
+import { readDashboardAccess } from "../auth/auth-access"
+import { readDashboardSession } from "../auth/auth-session"
+import { DashboardServerConfig } from "./config-server"
 
 // Layers are descriptions. Configuration and upstream clients are acquired for
 // each execution; no cookies or request identity live in shared mutable state.

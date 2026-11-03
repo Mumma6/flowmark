@@ -1,6 +1,6 @@
 import { Context, Data, Effect, Layer } from "effect"
 import "server-only"
-import { DashboardServerConfig } from "../config/server"
+import { DashboardServerConfig } from "./config-server"
 
 export class DashboardRequestError extends Data.TaggedError(
   "DashboardRequestError",

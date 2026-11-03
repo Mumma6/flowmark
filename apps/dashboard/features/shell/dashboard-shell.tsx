@@ -35,15 +35,12 @@ import {
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useMemo, useState, type ReactNode } from "react"
-import { signOut } from "../../features/auth/operations"
-import {
-  ProjectProvider,
-  useProject,
-} from "../../features/projects/project-context"
-import { CommandPalette } from "../../features/search/command-palette"
-import { runBrowserAuth } from "../../lib/auth/browser-runtime"
-import { publicConfig } from "../../lib/config/public"
-import { RuntimeConfigProvider } from "../runtime-config"
+import { signOut } from "../auth/operations"
+import { ProjectProvider, useProject } from "../projects/project-context"
+import { CommandPalette } from "../search/command-palette"
+import { runBrowserAuth } from "../auth/auth-browser-runtime"
+import { publicConfig } from "../platform/config-public"
+import { RuntimeConfigProvider } from "../platform/runtime-config"
 import { ThemeSelect } from "./theme-select"
 
 const navigation = [

@@ -1,5 +1,8 @@
 import { expect, it } from "vitest"
-import { publicConfig, resolveDocumentationUrl } from "../lib/config/public"
+import {
+  publicConfig,
+  resolveDocumentationUrl,
+} from "../features/platform/config-public"
 
 it("keeps browser API calls relative and documentation defaults explicit", () => {
   expect(publicConfig.trpcPath).toBe("/api/trpc")

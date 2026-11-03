@@ -2,8 +2,8 @@ import { Option } from "effect"
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import type { ReactNode } from "react"
-import { DashboardShell } from "../../components/layout/dashboard-shell"
-import { getDashboardAccess } from "../../lib/server-runtime"
+import { DashboardShell } from "../../features/shell/dashboard-shell"
+import { getDashboardAccess } from "../../features/platform/server-runtime"
 
 export const dynamic = "force-dynamic"
 

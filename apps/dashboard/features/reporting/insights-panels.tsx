@@ -18,9 +18,9 @@ import {
   TableRow,
 } from "@flowmark/ui"
 import Link from "next/link"
-import { windowLabel } from "../../features/period/period"
-import { type Intelligence, type Snapshot } from "../../lib/api/types"
-import { formatDuration } from "../../lib/format"
+import { windowLabel } from "../period/period"
+import { type Intelligence, type Snapshot } from "../platform/api-types"
+import { formatDuration } from "../shared/format"
 import {
   DailyDurationChart,
   DailyVolumeChart,

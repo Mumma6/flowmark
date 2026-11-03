@@ -10,7 +10,7 @@ import {
   Input,
 } from "@flowmark/ui"
 import { Search } from "lucide-react"
-import { DataState, FilterSelect } from "../../components/dashboard-components"
+import { DataState, FilterSelect } from "../shared/dashboard-components"
 import { explorerDefaults, type ExplorerFilters } from "./explorer-filters"
 import { RunsTable } from "./runs-table"
 import { useRunExplorer } from "./use-run-explorer"

@@ -13,9 +13,9 @@ import {
 } from "@flowmark/ui"
 import type { inferRouterOutputs } from "@trpc/server"
 import Link from "next/link"
-import { DataState } from "../../components/dashboard-components"
-import { JsonData } from "../../components/json-data"
-import { formatTimestamp } from "../../lib/format"
+import { DataState } from "../shared/dashboard-components"
+import { JsonData } from "../shared/json-data"
+import { formatTimestamp } from "../shared/format"
 import { useRunExpectations } from "./queries"
 
 type Record =

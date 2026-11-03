@@ -3,7 +3,7 @@ import {
   filterWorkflows,
   workflowsNeedingAttention,
 } from "../features/workflows/workflow-directory-model"
-import type { WorkflowSummary } from "../lib/api/types"
+import type { WorkflowSummary } from "../features/platform/api-types"
 
 const workflow = (
   name: string,

@@ -8,7 +8,7 @@ import {
   Input,
 } from "@flowmark/ui"
 import { type FormEvent } from "react"
-import { CopyButton } from "../../components/dashboard-components"
+import { CopyButton } from "../shared/dashboard-components"
 import type { CreatedSecret } from "./types"
 import { useCreateProject } from "./use-create-project"
 

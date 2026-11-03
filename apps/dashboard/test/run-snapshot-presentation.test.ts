@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
-import type { RunEvent } from "../lib/api/types"
-import { buildRunSnapshot } from "../lib/telemetry/run-snapshot-presentation"
+import type { RunEvent } from "../features/platform/api-types"
+import { buildRunSnapshot } from "../features/runs/run-snapshot-presentation"
 
 function event(
   id: string,

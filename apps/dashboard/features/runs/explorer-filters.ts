@@ -1,34 +1,34 @@
-import { Option, Result, Schema, pipe } from "effect"
-import type { RouterInputs } from "../../lib/api/types"
+import { Data, Option, Result, Schema, pipe } from "effect"
+import type { RouterInputs } from "../platform/api-types"
 
-export type ExplorerFilters = {
-  expectationState: string
-  startedBeforeExact: string
-  ratioNumerator: string
-  ratioDenominator: string
-  definitionRevision: string
-  outcome: string
-  terminalOnly: string
-  startedAfterExact: string
-  startedBeforeExclusive: string
-  resultPath: string
-  resultOperator: string
-  resultValue: string
-  resultKind: string
-  resultReason: string
-
-  businessKey: string
-  businessValue: string
-  search: string
-  status: string
-  workflow: string
-  namespace: string
-  failCode: string
-  environment: string
-  release: string
-  startedAfter: string
-  startedBefore: string
-}
+export const ExplorerFilters = Schema.Struct({
+  expectationState: Schema.String,
+  startedBeforeExact: Schema.String,
+  ratioNumerator: Schema.String,
+  ratioDenominator: Schema.String,
+  definitionRevision: Schema.String,
+  outcome: Schema.String,
+  terminalOnly: Schema.String,
+  startedAfterExact: Schema.String,
+  startedBeforeExclusive: Schema.String,
+  resultPath: Schema.String,
+  resultOperator: Schema.String,
+  resultValue: Schema.String,
+  resultKind: Schema.String,
+  resultReason: Schema.String,
+  businessKey: Schema.String,
+  businessValue: Schema.String,
+  search: Schema.String,
+  status: Schema.String,
+  workflow: Schema.String,
+  namespace: Schema.String,
+  failCode: Schema.String,
+  environment: Schema.String,
+  release: Schema.String,
+  startedAfter: Schema.String,
+  startedBefore: Schema.String,
+})
+export type ExplorerFilters = typeof ExplorerFilters.Type
 
 export const explorerDefaults: ExplorerFilters = {
   expectationState: "all",
@@ -60,9 +60,24 @@ export const explorerDefaults: ExplorerFilters = {
 }
 
 const PathFromJson = Schema.fromJsonString(Schema.Array(Schema.String))
-export const parseResultPath = (value: string) =>
+export class InvalidResultPath extends Data.TaggedError("InvalidResultPath")<{
+  readonly operation: "decodeResultPath"
+  readonly cause: unknown
+}> {}
+
+/** Keep the schema failure available to callers that need to explain a bad URL. */
+export const decodeResultPath = (value: unknown) =>
   pipe(
     Schema.decodeUnknownResult(PathFromJson)(value),
+    Result.mapError(
+      (cause) =>
+        new InvalidResultPath({ operation: "decodeResultPath", cause }),
+    ),
+  )
+
+export const parseResultPath = (value: string) =>
+  pipe(
+    decodeResultPath(value),
     Result.match({
       onFailure: () => Option.none<string[]>(),
       onSuccess: Option.some,
@@ -72,12 +87,14 @@ export const parseResultPath = (value: string) =>
 export function readExplorerFilters(
   params: Pick<URLSearchParams, "get">,
 ): ExplorerFilters {
-  return Object.fromEntries(
-    Object.entries(explorerDefaults).map(([key, fallback]) => [
-      key,
-      params.get(key) ?? fallback,
-    ]),
-  ) as ExplorerFilters
+  return Schema.decodeUnknownSync(ExplorerFilters)(
+    Object.fromEntries(
+      Object.entries(explorerDefaults).map(([key, fallback]) => [
+        key,
+        params.get(key) ?? fallback,
+      ]),
+    ),
+  )
 }
 
 /** Invalid selections remain invalid inputs for API validation, never a broader query. */

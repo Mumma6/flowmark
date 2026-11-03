@@ -15,13 +15,10 @@ import {
 import { ArrowRight, Search } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
-import {
-  FilterSelect,
-  TablePagination,
-} from "../../components/dashboard-components"
-import { type WorkflowSummary } from "../../lib/api/types"
-import { groupBy, paginate } from "../../lib/collections"
-import { formatDuration } from "../../lib/format"
+import { FilterSelect, TablePagination } from "../shared/dashboard-components"
+import { type WorkflowSummary } from "../platform/api-types"
+import { groupBy, paginate } from "../shared/collections"
+import { formatDuration } from "../shared/format"
 import { filterWorkflows } from "./workflow-directory-model"
 import { workflowFamily } from "./workflow-family"
 

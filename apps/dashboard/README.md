@@ -16,7 +16,8 @@ signing secret. User and session policy live in `@flowmark/auth`.
 See [dashboard architecture](./ARCHITECTURE.md) for feature ownership, Effect
 execution boundaries, data access, configuration and verification. Next routes
 compose views from `features/`; shared dashboard presentation lives in
-`components/`, and runtime adapters/configuration live in `lib/`.
+`features/shared/`, and runtime adapters/configuration live beside their owning
+features (`auth`, `platform`, `runs` and `reporting`).
 
 ## Pages and populations
 

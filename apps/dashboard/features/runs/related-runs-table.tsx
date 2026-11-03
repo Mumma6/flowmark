@@ -12,12 +12,9 @@ import {
 import type { inferRouterOutputs } from "@trpc/server"
 import Link from "next/link"
 import { useState } from "react"
-import {
-  StatusBadge,
-  TablePagination,
-} from "../../components/dashboard-components"
-import { paginate } from "../../lib/collections"
-import { formatTimestamp } from "../../lib/format"
+import { StatusBadge, TablePagination } from "../shared/dashboard-components"
+import { paginate } from "../shared/collections"
+import { formatTimestamp } from "../shared/format"
 
 type RunRelationships = inferRouterOutputs<AppRouter>["run"]["related"]
 type RelatedRun = RunRelationships["related"][number]

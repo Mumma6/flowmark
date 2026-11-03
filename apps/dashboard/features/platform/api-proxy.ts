@@ -1,11 +1,12 @@
+import { Array as Arr } from "effect"
 import {
   AUTH_PROXY_IDENTITY_HEADER,
   signAuthProxyIdentity,
 } from "@flowmark/auth/client-identity"
 import { Data, Effect, Exit, Match } from "effect"
 import "server-only"
-import { runDashboardServerExit } from "../server-runtime"
-import { DashboardApi } from "./server-client"
+import { runDashboardServerExit } from "./server-runtime"
+import { DashboardApi } from "./api-server-client"
 
 class DashboardProxyError extends Data.TaggedError("DashboardProxyError")<{
   readonly cause: unknown
@@ -18,21 +19,24 @@ const proxyToApi = Effect.fn("proxyToApi")(function* (
   const api = yield* DashboardApi
   const incoming = new URL(request.url)
   const headers = new Headers()
-  for (const name of [
-    "cookie",
-    "content-type",
-    "origin",
-    "referer",
-    "user-agent",
-    "sec-fetch-site",
-    "authorization",
-    "x-flowmark-project-id",
-  ]) {
-    const value = request.headers.get(name)
-    if (value) {
-      headers.set(name, value)
-    }
-  }
+  Arr.forEach(
+    Arr.fromIterable([
+      "cookie",
+      "content-type",
+      "origin",
+      "referer",
+      "user-agent",
+      "sec-fetch-site",
+      "authorization",
+      "x-flowmark-project-id",
+    ]),
+    (name) => {
+      const value = request.headers.get(name)
+      if (value) {
+        headers.set(name, value)
+      }
+    },
+  )
   if (pathname === "/api/register" || pathname.startsWith("/api/auth/")) {
     const identity = yield* signAuthProxyIdentity(request, pathname)
     if (identity) {
@@ -59,19 +63,22 @@ const proxyToApi = Effect.fn("proxyToApi")(function* (
     )
     .pipe(Effect.mapError((cause) => new DashboardProxyError({ cause })))
   const forwarded = new Headers()
-  for (const cookieValue of response.headers.getSetCookie?.() ?? []) {
-    forwarded.append("set-cookie", cookieValue)
-  }
+  Arr.forEach(
+    Arr.fromIterable(response.headers.getSetCookie?.() ?? []),
+    (cookieValue) => {
+      forwarded.append("set-cookie", cookieValue)
+    },
+  )
   const responseType = response.headers.get("content-type")
   if (responseType) {
     forwarded.set("content-type", responseType)
   }
-  for (const name of ["retry-after", "x-retry-after"]) {
+  Arr.forEach(Arr.fromIterable(["retry-after", "x-retry-after"]), (name) => {
     const value = response.headers.get(name)
     if (value) {
       forwarded.set(name, value)
     }
-  }
+  })
   forwarded.set("cache-control", "no-store")
   return new Response(response.body, {
     status: response.status,

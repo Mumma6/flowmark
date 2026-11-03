@@ -1,5 +1,5 @@
 import { Array, Option, pipe } from "effect"
-import type { RouterInputs, RouterOutputs } from "../../lib/api/types"
+import type { RouterInputs, RouterOutputs } from "../platform/api-types"
 import { defaultIntelligenceQuery } from "../period/period"
 import type { ResultDeclaration } from "./result-presentation"
 

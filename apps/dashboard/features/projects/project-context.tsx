@@ -9,7 +9,7 @@ import {
   useState,
   type ReactNode,
 } from "react"
-import { useTRPC } from "../../lib/api/trpc"
+import { useTRPC } from "../platform/api-trpc"
 import { readStoredProjectId, storeProjectId } from "./project-selection"
 
 type Project = {

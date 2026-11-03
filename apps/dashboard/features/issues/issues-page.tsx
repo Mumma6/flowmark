@@ -21,8 +21,8 @@ import {
   PageHeading,
   StatusBadge,
   ViewLink,
-} from "../../components/dashboard-components"
-import { formatDuration, formatTimestamp } from "../../lib/format"
+} from "../shared/dashboard-components"
+import { formatDuration, formatTimestamp } from "../shared/format"
 import { ExpectationAttention } from "../expectations/expectation-attention"
 import { windowLabel } from "../period/period"
 import { PeriodControls } from "../period/period-controls"

@@ -1,7 +1,7 @@
 "use client"
 
 import { Badge, Button } from "@flowmark/ui"
-import { getRunResultHighlights } from "../../lib/telemetry/run-presentation"
+import { getRunResultHighlights } from "../runs/run-presentation"
 import { useProject } from "../projects/project-context"
 import { useResultDeclarations } from "./queries"
 import { declarationForRun, declaredResults } from "./result-presentation"

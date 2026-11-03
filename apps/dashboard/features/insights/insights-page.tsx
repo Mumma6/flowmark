@@ -20,12 +20,12 @@ import {
   DataState,
   PageHeading,
   ViewLink,
-} from "../../components/dashboard-components"
+} from "../shared/dashboard-components"
 import {
   DailyDurationPanel,
   DailyVolumePanel,
-} from "../../components/reporting/insights-panels"
-import { formatDuration } from "../../lib/format"
+} from "../reporting/insights-panels"
+import { formatDuration } from "../shared/format"
 import { OverviewMetrics } from "../overview/overview-panels"
 import { windowLabel } from "../period/period"
 import { PeriodControls } from "../period/period-controls"

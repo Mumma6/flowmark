@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query"
 import { useMemo } from "react"
-import { useTRPC } from "../../lib/api/trpc"
+import { useTRPC } from "../platform/api-trpc"
 import { defaultIntelligenceQuery } from "../period/period"
 import { useProject } from "../projects/project-context"
 

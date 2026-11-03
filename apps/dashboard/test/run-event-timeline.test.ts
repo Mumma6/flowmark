@@ -3,7 +3,7 @@ import {
   getRunTimelineKind,
   runTimelineDetail,
 } from "../features/runs/timeline-presentation"
-import type { RunEvent } from "../lib/api/types"
+import type { RunEvent } from "../features/platform/api-types"
 
 function event(
   partial: Partial<RunEvent> & Pick<RunEvent, "id" | "type" | "timestamp">,

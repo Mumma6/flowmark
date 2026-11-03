@@ -1,4 +1,4 @@
-import { formatDuration } from "../../lib/format"
+import { formatDuration } from "../shared/format"
 import { type PeriodDays } from "./period"
 
 export function insightsPath(days: PeriodDays, workflow?: string) {

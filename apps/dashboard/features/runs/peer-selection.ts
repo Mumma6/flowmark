@@ -1,4 +1,4 @@
-import type { RouterInputs } from "../../lib/api/types"
+import type { RouterInputs } from "../platform/api-types"
 
 export function peerSelection(
   params: Pick<URLSearchParams, "get">,

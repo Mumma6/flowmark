@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query"
 import type { inferRouterOutputs } from "@trpc/server"
 import { usePathname, useSearchParams } from "next/navigation"
 import { useState } from "react"
-import { useTRPC } from "../../lib/api/trpc"
+import { useTRPC } from "../platform/api-trpc"
 import { useProject } from "../projects/project-context"
 import {
   businessEvidencePath,

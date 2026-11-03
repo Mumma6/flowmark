@@ -1,4 +1,5 @@
-import type { DayInsight, Run } from "../api/types"
+import { Array as Arr } from "effect"
+import type { DayInsight, Run } from "../platform/api-types"
 
 export function percentile(values: readonly number[], p: number) {
   if (values.length === 0) {
@@ -69,21 +70,24 @@ export function dailyFromRuns(runs: readonly Run[], days = 30): DayInsight[] {
       durations: number[]
     }
   >()
-  for (let offset = days - 1; offset >= 0; offset -= 1) {
-    const date = new Date(today)
-    date.setUTCDate(today.getUTCDate() - offset)
-    byDate.set(date.toISOString().slice(0, 10), {
-      completed: 0,
-      failed: 0,
-      running: 0,
-      durations: [],
-    })
-  }
-  for (const run of runs) {
+  Arr.forEach(
+    Arr.makeBy(days, (index) => days - 1 - index),
+    (offset) => {
+      const date = new Date(today)
+      date.setUTCDate(today.getUTCDate() - offset)
+      byDate.set(date.toISOString().slice(0, 10), {
+        completed: 0,
+        failed: 0,
+        running: 0,
+        durations: [],
+      })
+    },
+  )
+  Arr.forEach(Arr.fromIterable(runs), (run) => {
     const day = run.startedAt.slice(0, 10)
     const bucket = byDate.get(day)
     if (!bucket) {
-      continue
+      return
     }
     if (run.status === "Completed") {
       bucket.completed += 1
@@ -95,7 +99,7 @@ export function dailyFromRuns(runs: readonly Run[], days = 30): DayInsight[] {
     if (run.durationMs != null) {
       bucket.durations.push(run.durationMs)
     }
-  }
+  })
   return [...byDate.entries()].map(([date, bucket]) => {
     const finished = bucket.completed + bucket.failed
     return {

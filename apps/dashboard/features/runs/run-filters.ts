@@ -1,4 +1,4 @@
-import type { Run } from "../../lib/api/types"
+import type { Run } from "../platform/api-types"
 
 export function workflowOutliers(runs: readonly Run[], limit = 3) {
   const failed = [...runs]

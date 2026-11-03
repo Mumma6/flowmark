@@ -23,11 +23,11 @@ import {
 import type { inferRouterOutputs } from "@trpc/server"
 import Link from "next/link"
 import { usePathname, useSearchParams } from "next/navigation"
-import { StatusBadge } from "../../components/dashboard-components"
-import { RunCompareChart } from "../../components/reporting/insight-charts"
-import { formatDuration, formatTimestamp } from "../../lib/format"
-import { getRunResultHighlights } from "../../lib/telemetry/run-presentation"
-import { durationDelta } from "../../lib/telemetry/run-state"
+import { StatusBadge } from "../shared/dashboard-components"
+import { RunCompareChart } from "../reporting/insight-charts"
+import { formatDuration, formatTimestamp } from "../shared/format"
+import { getRunResultHighlights } from "./run-presentation"
+import { durationDelta } from "./run-state"
 
 type RunComparison = inferRouterOutputs<AppRouter>["run"]["compare"]
 

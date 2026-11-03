@@ -2,7 +2,7 @@ import { Option } from "effect"
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import { OnboardingFlow } from "../../features/onboarding/onboarding-flow"
-import { getDashboardAccess } from "../../lib/server-runtime"
+import { getDashboardAccess } from "../../features/platform/server-runtime"
 
 export const dynamic = "force-dynamic"
 

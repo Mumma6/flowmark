@@ -1,7 +1,7 @@
 import { Data, Effect, Option, Schema } from "effect"
 import { cookies } from "next/headers"
 import "server-only"
-import { DashboardApi } from "../api/server-client"
+import { DashboardApi } from "../platform/api-server-client"
 
 export type DashboardSession = typeof SessionBody.Type
 export type DashboardOnboarding = typeof OnboardingState.Type

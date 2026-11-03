@@ -4,7 +4,7 @@ import {
   selectBusinessOutcomes,
 } from "../features/results/business-outcomes-model"
 import type { ResultDeclaration } from "../features/results/result-presentation"
-import type { RouterOutputs } from "../lib/api/types"
+import type { RouterOutputs } from "../features/platform/api-types"
 
 const declarations: ResultDeclaration[] = [
   {
