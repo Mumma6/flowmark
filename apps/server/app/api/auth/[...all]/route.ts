@@ -9,3 +9,6 @@ async function handlers() {
 
 export const GET = async (request: Request) => (await handlers()).GET(request)
 export const POST = async (request: Request) => (await handlers()).POST(request)
+
+// Covers the bounded mail submission plus request processing/after work.
+export const maxDuration = 30

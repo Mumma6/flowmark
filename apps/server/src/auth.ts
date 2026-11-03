@@ -1,10 +1,14 @@
-import { Effect } from "effect"
+import { after } from "next/server"
+import { Email, resendLayer } from "@flowmark/email"
+import { Data, Effect, Exit } from "effect"
 import { createDatabase } from "@flowmark/db"
 import { createFlowmarkAuth, readAuthSecret } from "@flowmark/auth"
 import { assertPreviewDatabase } from "@flowmark/db/environment"
 import { ConfigurationError } from "@flowmark/api"
 
 import { serverOrigins } from "./server-env"
+
+class AuthEmailTaskError extends Data.TaggedError("AuthEmailTaskError") {}
 
 let cached: ReturnType<typeof createFlowmarkAuth> | undefined
 
@@ -35,12 +39,44 @@ export const getAuth = Effect.fn("getAuth")(function* () {
       Effect.fail(new ConfigurationError({ cause: error })),
     ),
   )
+  const emailDelivery = yield* Effect.gen(function* () {
+    const configured = [
+      "RESEND_API_KEY",
+      "FLOWMARK_EMAIL_FROM",
+      "FLOWMARK_EMAIL_REPLY_TO",
+      "FLOWMARK_EMAIL_ENVIRONMENT",
+    ].some((name) => Boolean(process.env[name]?.trim()))
+    if (!configured) {
+      return undefined
+    }
+    return yield* Email.pipe(
+      Effect.provide(resendLayer({ ...process.env, BETTER_AUTH_URL: baseURL })),
+      Effect.mapError((cause) => new ConfigurationError({ cause })),
+    )
+  })
   const { db } = createDatabase(url)
   cached = createFlowmarkAuth({
     db,
     secret,
     baseURL,
     trustedOrigins: [dashboardOrigin],
+    emailDelivery,
+    scheduleEmail: (task) => {
+      // Attach rejection handling immediately; Next owns the remaining lifetime.
+      const result = Effect.runPromiseExit(
+        Effect.tryPromise({
+          try: () => task,
+          catch: () => new AuthEmailTaskError(),
+        }),
+      )
+      after(async () => {
+        if (Exit.isFailure(await result)) {
+          console.error("[Flowmark auth] Email delivery failed", {
+            operation: "email-delivery",
+          })
+        }
+      })
+    },
   })
   return cached
 })

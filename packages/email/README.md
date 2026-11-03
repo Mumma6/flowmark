@@ -2,8 +2,9 @@
 
 Private, server-only transactional email using Effect 4 and Resend's HTTP API.
 There is no extra provider SDK. This package prepares delivery; it does not
-enable Better Auth verification, recovery or email-change flows. Those callbacks
-belong in `@flowmark/auth` when the account flows are implemented.
+enable identity flows itself. `@flowmark/auth` owns the provider callbacks, and
+`apps/server` composes recovery delivery from its existing mail settings. Email
+change remains disabled; normal access does not require prior verification.
 
 ## Use at a server composition boundary
 

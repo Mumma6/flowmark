@@ -170,3 +170,58 @@ it("preserves provider retry guidance and browser CSRF metadata without forwardi
     },
   )
 })
+
+it("forwards same-origin auth callback redirects without caching or referrer leakage", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn().mockResolvedValue(
+      new Response(null, {
+        status: 302,
+        headers: {
+          location:
+            "https://dashboard.example/reset-password?token=synthetic-preview-token",
+        },
+      }),
+    ),
+  )
+  const response = await proxyToApiHandler(
+    new Request(
+      "https://dashboard.example/api/auth/reset-password/synthetic-preview-token",
+    ),
+    "/api/auth/reset-password/synthetic-preview-token",
+  )
+  expect(response.status).toBe(302)
+  expect(response.headers.get("location")).toBe(
+    "https://dashboard.example/reset-password?token=synthetic-preview-token",
+  )
+  expect(response.headers.get("cache-control")).toBe("no-store")
+  expect(response.headers.get("referrer-policy")).toBe("no-referrer")
+})
+
+it("blocks cross-origin callback redirects and does not leak their bearer URL", async () => {
+  const log = vi.spyOn(console, "error").mockImplementation(() => {})
+  vi.stubGlobal(
+    "fetch",
+    vi.fn().mockResolvedValue(
+      new Response(null, {
+        status: 302,
+        headers: {
+          location:
+            "https://untrusted.example/reset?token=synthetic-preview-token",
+        },
+      }),
+    ),
+  )
+  const response = await proxyToApiHandler(
+    new Request(
+      "https://dashboard.example/api/auth/reset-password/synthetic-preview-token",
+    ),
+    "/api/auth/reset-password/synthetic-preview-token",
+  )
+  expect(response.status).toBe(502)
+  expect(response.headers.has("location")).toBe(false)
+  expect(response.headers.get("cache-control")).toBe("no-store")
+  expect(JSON.stringify(log.mock.calls)).not.toContain(
+    "synthetic-preview-token",
+  )
+})

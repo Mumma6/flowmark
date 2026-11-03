@@ -71,7 +71,9 @@ adoption. No connection string belongs in a browser bundle.
 from stage), `FLOWMARK_EMAIL_FROM` and `FLOWMARK_EMAIL_REPLY_TO`.
 Production uses only the Production target; Staging uses Preview target plus
 `gitBranch=staging`. General Preview remains disabled. These bindings do not
-deploy code or enable verification/recovery callbacks.
+deploy code. The server recovery consumer activates when a reviewed application
+revision containing it is rolled out with these settings. Normal login does not
+require email verification.
 
 Production uses `accounts@flowmark.dev`; Staging uses `staging@flowmark.dev`.
 Both share the verified `flowmark.dev` domain with Ireland region and tracking
