@@ -1,5 +1,6 @@
 import { Array, Option, pipe } from "effect"
 import type { RouterInputs, RouterOutputs } from "../platform/api-types"
+import { exploreHref, readExplorerFilters } from "../runs/explorer-filters"
 import { defaultIntelligenceQuery } from "../period/period"
 import type { ResultDeclaration } from "./result-presentation"
 
@@ -161,5 +162,5 @@ export function businessEvidencePath(
       query.set("resultReason", selection.resultSelection.reason)
     }
   }
-  return `/runs?${query}`
+  return exploreHref(readExplorerFilters(query))
 }

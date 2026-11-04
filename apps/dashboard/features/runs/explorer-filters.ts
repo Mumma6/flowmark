@@ -1,4 +1,4 @@
-import { Data, Option, Result, Schema, pipe } from "effect"
+import { Array as Arr, Data, Option, Result, Schema, pipe } from "effect"
 import type { RouterInputs } from "../platform/api-types"
 
 export const ExplorerFilters = Schema.Struct({
@@ -123,6 +123,20 @@ export function readExplorerFilters(
       ]),
     ),
   )
+}
+
+export function exploreHref(filters: ExplorerFilters) {
+  const params = new URLSearchParams()
+  Arr.forEach(
+    Arr.fromIterable(Object.entries(explorerDefaults)),
+    ([key, fallback]) => {
+      const value = filters[key as keyof ExplorerFilters]
+      if (value !== fallback) {
+        params.set(key, value)
+      }
+    },
+  )
+  return `/${params.size ? `?${params}` : ""}`
 }
 
 /** Invalid selections remain invalid inputs for API validation, never a broader query. */
