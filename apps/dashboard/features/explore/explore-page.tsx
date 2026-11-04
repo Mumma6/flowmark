@@ -23,7 +23,9 @@ import {
   X,
 } from "lucide-react"
 import Link from "next/link"
-import { useSearchParams } from "next/navigation"
+import { usePathname, useSearchParams } from "next/navigation"
+import { readInspectorRunId } from "../runs/investigation-navigation"
+import { RunInspector } from "../runs/run-inspector"
 import { publicConfig } from "../platform/config-public"
 import { useProject } from "../projects/project-context"
 import { useSnapshot } from "../projects/queries"
@@ -72,7 +74,7 @@ function ExploreWorkspace() {
   }
 
   return (
-    <div className="grid gap-7">
+    <div id="explore-workspace" className="grid gap-7">
       <div className="flex flex-wrap items-end justify-between gap-5">
         <div>
           <p className="mb-3 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
@@ -133,7 +135,11 @@ function ExploreWorkspace() {
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-[linear-gradient(110deg,hsl(var(--primary)/0.035),transparent_65%)] px-5 py-4 sm:px-6">
             <div className="flex items-center gap-2.5">
               <CircleDot aria-hidden="true" className="size-4 text-primary" />
-              <h2 id="evidence-title" className="text-xs font-medium">
+              <h2
+                id="evidence-title"
+                tabIndex={-1}
+                className="text-xs font-medium"
+              >
                 Execution evidence
               </h2>
             </div>
@@ -362,8 +368,10 @@ function ExploreWorkspace() {
 }
 
 export function StudioExplore() {
+  const pathname = usePathname()
+  const inspectorId = readInspectorRunId(pathname)
   const { projects, current, pending, error, retry } = useProject()
-  if (error) {
+  if (error && !current) {
     return <DataState pending={false} error={error} retry={retry} />
   }
   if (pending || (!current && projects.length > 0)) {
@@ -396,5 +404,11 @@ export function StudioExplore() {
       </div>
     )
   }
-  return <ExploreWorkspace key={current.id} />
+  return (
+    <>
+      {error ? <DataState pending={false} error={error} retry={retry} /> : null}
+      <ExploreWorkspace key={current.id} />
+      {inspectorId ? <RunInspector key={inspectorId} id={inspectorId} /> : null}
+    </>
+  )
 }

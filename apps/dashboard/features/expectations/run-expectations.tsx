@@ -17,6 +17,7 @@ import { DataState } from "../shared/dashboard-components"
 import { JsonData } from "../shared/json-data"
 import { formatTimestamp } from "../shared/format"
 import { useRunExpectations } from "./queries"
+import { runInvestigationPath } from "../runs/investigation-navigation"
 
 type Record =
   inferRouterOutputs<AppRouter>["run"]["expectations"]["expectations"][number]
@@ -36,7 +37,15 @@ export function expectationLabel(
   }
   return labels[record.state]
 }
-export function RunExpectations({ id }: { id: string }) {
+export function RunExpectations({
+  id,
+  source,
+  replace = false,
+}: {
+  id: string
+  source?: string
+  replace?: boolean
+}) {
   const query = useRunExpectations(id)
   const data = query.data
   return (
@@ -160,14 +169,28 @@ export function RunExpectations({ id }: { id: string }) {
                 <div className="flex flex-wrap gap-4 text-sm text-primary">
                   {record.declaration && (
                     <Link
-                      href={`/runs/${id}?event=${record.declaration.eventId}#event-${record.declaration.eventId}`}
+                      href={runInvestigationPath(
+                        id,
+                        source,
+                        "timeline",
+                        record.declaration.eventId,
+                      )}
+                      replace={replace}
+                      scroll={false}
                     >
                       View declaration event
                     </Link>
                   )}
                   {record.settlement && (
                     <Link
-                      href={`/runs/${id}?event=${record.settlement.eventId}#event-${record.settlement.eventId}`}
+                      href={runInvestigationPath(
+                        id,
+                        source,
+                        "timeline",
+                        record.settlement.eventId,
+                      )}
+                      replace={replace}
+                      scroll={false}
                     >
                       View settlement event
                     </Link>

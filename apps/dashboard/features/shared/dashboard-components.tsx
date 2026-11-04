@@ -217,9 +217,11 @@ export function TablePagination({
 export function ViewLink({
   href,
   children,
+  replace = false,
 }: {
   href: string
   children: ReactNode
+  replace?: boolean
 }) {
   return (
     <Button
@@ -228,7 +230,7 @@ export function ViewLink({
       className="min-h-10 text-xs text-primary sm:min-h-8"
       asChild
     >
-      <Link href={href}>
+      <Link href={href} replace={replace}>
         {children}
         <ArrowRight aria-hidden="true" />
       </Link>

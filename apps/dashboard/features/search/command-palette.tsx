@@ -27,6 +27,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { useEffect, useState, useSyncExternalStore } from "react"
 import { publicConfig } from "../platform/config-public"
 import { explorerDefaults, readExplorerFilters } from "../runs/explorer-filters"
+import { readInspectorRunId } from "../runs/investigation-navigation"
 import { useProject } from "../projects/project-context"
 import {
   commandPages,
@@ -158,6 +159,13 @@ function ProjectCommandPalette() {
     setOpen(false)
     if (external) {
       window.location.assign(href)
+      return
+    }
+    if (
+      document.getElementById("explore-workspace") &&
+      readInspectorRunId(href.split("?")[0] ?? "")
+    ) {
+      window.history.pushState(null, "", href)
       return
     }
     router.push(href)
