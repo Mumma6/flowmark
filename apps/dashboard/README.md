@@ -1,10 +1,14 @@
-# Flowmark web interface
+# Flowmark Studio
 
-This is the current signed-in interface and the foundation for **Flowmark
-Studio**, the planned contextual investigation workspace in Product 1.0. Preserve
-existing evidence views, filters, comparisons and deep links while evolving their
-composition. The directory/package name remains `dashboard`; this documentation
-change implements no Studio features, MCP connection or saved investigation.
+The authenticated process-intelligence workspace. Studio starts with Explore:
+select a process, search its execution evidence, inspect a run and return to the
+same filters. The existing account, project, tRPC and evidence foundation powers
+the new interface. The source/package remains `dashboard` for this first slice;
+hosting and domains keep their existing configuration.
+
+The contextual inspector, unified search evolution, saved investigations and
+connected-agent experience remain separate increments. Studio does not render
+the landing's synthetic examples or claim that an agent is connected.
 
 Anonymous visitors are redirected to sign in. Registration creates the account;
 onboarding/Settings creates the first project and write key. Existing local demo
@@ -19,7 +23,7 @@ signing secret. User and session policy live in `@flowmark/auth`.
 
 ## Architecture
 
-See [dashboard architecture](./ARCHITECTURE.md) for feature ownership, Effect
+See [Studio architecture](./ARCHITECTURE.md) for feature ownership, Effect
 execution boundaries, data access, configuration and verification. Next routes
 compose views from `features/`; shared dashboard presentation lives in
 `features/shared/`, and runtime adapters/configuration live beside their owning
@@ -27,7 +31,13 @@ features (`auth`, `platform`, `runs` and `reporting`).
 
 ## Pages and populations
 
-- **Overview:** four seven-day execution metrics from `project.intelligence`,
+- **Explore (`/`):** the first Studio workspace. Its process rail uses the
+  existing project snapshot; execution evidence uses full, cursor-paginated
+  `run.list` through the existing explorer controller. Search/process/status
+  filters stay in the URL; all applied conditions remain visible. All filters
+  opens the existing history with the exact same conditions. Process selection
+  becomes a compact selector on mobile. Run links preserve the return cohort.
+- **Overview (`/overview`):** four seven-day execution metrics from `project.intelligence`,
   all-recorded workflow summaries, failures within the latest-100 snapshot,
   five recent runs with reported results, 30-day trend charts, observed-change
   evidence and all-recorded diagnostics. Populations are labelled separately.
@@ -53,6 +63,14 @@ features (`auth`, `platform`, `runs` and `reporting`).
   contract, and exact enabled business references come from `search.project`
   for the selected project. References match configured keys exactly; other
   property values stay unsearchable.
+- **Account and workspace:** the shared Sheet holds navigation to history,
+  overview, settings and the setup guide, alongside appearance and sign-out.
+  Project loading failures show retry feedback rather than an empty account.
+- **Onboarding:** five persisted setup steps retain the existing project/key
+  and completion logic. Installation uses the validated API origin. Agent
+  instructions contain no write key and do not establish an agent connection.
+  Completed users can revisit `/onboarding?mode=guide`; that mode changes only
+  local step navigation and never rewrites completed onboarding state.
 
 Technical completion is not business success. Missing terminal telemetry is
 labelled **No final outcome**, and progress is **Last reported**. Result scalar
@@ -67,7 +85,8 @@ See [Flowmark design system](../../docs/design-system.md) for typography, spacin
 color/status meanings, ownership and data-scope rules. Use Tailwind utilities,
 semantic theme variables and shared `@flowmark/ui` controls. Dashboard and harness
 use Tailwind 3; web/docs use Tailwind 4. Recharts composes through shared chart
-primitives. The mobile navigation Sheet uses Base UI focus management. Theme
+primitives. Studio uses a top bar and horizontal Explore/Processes/Insights/Attention
+navigation. The account Sheet uses Base UI focus management. Theme
 preferences include system/light/dark with dark as the default.
 
 Run detail and the landing illustration use the same `RunSnapshot` component

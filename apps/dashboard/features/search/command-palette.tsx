@@ -12,6 +12,7 @@ import {
 import {
   BookOpen,
   CircleAlert,
+  Compass,
   Folder,
   GitBranch,
   LayoutDashboard,
@@ -41,6 +42,7 @@ import {
 import { useProjectSearch } from "./queries"
 
 const pageIcons = {
+  explore: Compass,
   overview: LayoutDashboard,
   workflows: Workflow,
   runs: GitBranch,
@@ -145,7 +147,7 @@ export function CommandPalette() {
       <Button
         type="button"
         variant="outline"
-        className="size-11 shrink-0 px-0 text-muted-foreground sm:h-9 sm:w-56 sm:px-3"
+        className="size-10 shrink-0 border-transparent bg-transparent px-0 text-muted-foreground shadow-none sm:h-9 sm:w-60 sm:border-border sm:bg-card/60 sm:px-3"
         aria-label="Search"
         aria-keyshortcuts="Meta+K Control+K"
         aria-expanded={open}
@@ -154,7 +156,7 @@ export function CommandPalette() {
       >
         <Search aria-hidden="true" />
         <span className="hidden min-w-0 flex-1 truncate text-left sm:inline">
-          Search
+          Find in your workspace…
         </span>
         <kbd className="hidden rounded border border-border bg-muted px-1.5 font-sans text-[10px] font-medium leading-5 sm:inline">
           {shortcut}

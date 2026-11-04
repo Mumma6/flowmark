@@ -2,7 +2,7 @@ import { Match, Result, Schema } from "effect"
 
 const InvestigationSource = Schema.String.check(
   Schema.isPattern(
-    /^\/(?:runs|issues|insights|workflows(?:\/[^?/#\\\s]+)?)?(?:\?[^#\\\s]*)?$/,
+    /^\/(?:overview|runs|issues|insights|workflows(?:\/[^?/#\\\s]+)?)?(?:\?[^#\\\s]*)?$/,
   ),
 )
 
@@ -30,7 +30,11 @@ export function investigationReturn(value: unknown) {
             (path) => path.startsWith("/insights"),
             () => "Back to Insights",
           ),
-          Match.orElse(() => "Back to Overview"),
+          Match.when(
+            (path) => path.startsWith("/overview"),
+            () => "Back to Overview",
+          ),
+          Match.orElse(() => "Back to Explore"),
         ),
       }),
     }),

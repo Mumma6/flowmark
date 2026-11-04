@@ -5,10 +5,10 @@ export const steps: ReadonlyArray<{
   readonly title: string
 }> = [
   { id: "project", title: "Create a project" },
-  { id: "key", title: "Save your write key" },
+  { id: "key", title: "Secure your write key" },
   { id: "install", title: "Install the SDK" },
-  { id: "instrument", title: "Mark one process" },
-  { id: "run", title: "Open your first run" },
+  { id: "instrument", title: "Instrument a process" },
+  { id: "run", title: "Explore your evidence" },
 ]
 
 export const stepIndex = (value: string): number => {
