@@ -54,8 +54,8 @@ export function ProjectSettings() {
           <CardDescription>
             A project name is a label for its runs and keys. It does not limit
             which environment an application can report. Reported environment is
-            telemetry, not a permission boundary. Switch projects in the
-            sidebar, or create another for a second application.
+            telemetry, not a permission boundary. Switch projects in the Studio
+            header, or create another for a second application.
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-6">

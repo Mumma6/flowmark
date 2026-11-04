@@ -101,6 +101,13 @@ export {
   CommandShortcut,
 } from "./command"
 export { RunSnapshot } from "./run-snapshot"
+export {
+  StudioChrome,
+  StudioWorkspace,
+  StudioProcessPane,
+  StudioEvidenceList,
+} from "./studio-workspace"
+export type { StudioEvidenceRun } from "./studio-workspace"
 export type {
   RunSnapshotProps,
   RunSnapshotMetric,

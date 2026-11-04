@@ -2,14 +2,19 @@
 
 import { useQuery } from "@tanstack/react-query"
 import { useMemo } from "react"
-import { useTRPC } from "../platform/api-trpc"
+import { useTRPC, useTRPCClient } from "../platform/api-trpc"
 import { useProject } from "../projects/project-context"
 
 export function useRunExpectations(id: string) {
   const trpc = useTRPC()
+  const client = useTRPCClient()
   const { current } = useProject()
   return useQuery({
-    ...trpc.run.expectations.queryOptions({ id }),
+    queryKey: [
+      ...trpc.run.expectations.queryKey({ id }),
+      { projectId: current?.id ?? null },
+    ],
+    queryFn: ({ signal }) => client.run.expectations.query({ id }, { signal }),
     enabled: Boolean(current),
     refetchInterval: 10000,
   })

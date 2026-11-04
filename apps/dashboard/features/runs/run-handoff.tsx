@@ -28,9 +28,11 @@ const subscribe = () => () => undefined
 export function RunHandoff({
   runId,
   events,
+  contextual = false,
 }: {
   runId: string
   events: readonly RunEvent[]
+  contextual?: boolean
 }) {
   const params = useSearchParams()
   const source = params.has("from")
@@ -80,10 +82,16 @@ export function RunHandoff({
           investigate in the owning application.
         </p>
         <div className="flex flex-wrap gap-2">
-          <ViewLink href={runInvestigationPath(runId, source, "timeline")}>
+          <ViewLink
+            href={runInvestigationPath(runId, source, "timeline")}
+            replace={contextual}
+          >
             Review timeline
           </ViewLink>
-          <ViewLink href={runInvestigationPath(runId, source, "context")}>
+          <ViewLink
+            href={runInvestigationPath(runId, source, "context")}
+            replace={contextual}
+          >
             Find application identifiers
           </ViewLink>
         </div>

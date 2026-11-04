@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic"
 export default async function OnboardingPage({
   searchParams,
 }: {
-  searchParams: Promise<{ step?: string }>
+  searchParams: Promise<{ step?: string; mode?: string }>
 }) {
   await cookies()
   const access = Option.getOrNull(await getDashboardAccess())
@@ -17,15 +17,19 @@ export default async function OnboardingPage({
     redirect("/sign-in")
   }
   const state = Option.getOrNull(access.onboarding)
-  if (state?.completedAt) {
+  const params = await searchParams
+  const reviewMode = Boolean(state?.completedAt) && params.mode === "guide"
+  if (state?.completedAt && !reviewMode) {
     redirect("/")
   }
-  const params = await searchParams
   return (
     <OnboardingFlow
       email={access.session.user.email}
       apiOrigin={access.apiOrigin}
-      initialStep={params.step ?? state?.step ?? "project"}
+      initialStep={
+        params.step ?? (reviewMode ? "project" : state?.step) ?? "project"
+      }
+      reviewMode={reviewMode}
     />
   )
 }

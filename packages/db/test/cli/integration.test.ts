@@ -154,16 +154,14 @@ test("interruption terminates the owned child process before resource cleanup fi
   t.after(() => rmSync(directory, { recursive: true, force: true }))
   const pidFile = join(directory, "pid")
   const controller = new AbortController()
+  const script =
+    'const fs = require("node:fs"); process.on("SIGTERM", () => { fs.writeFileSync(process.argv[1] + ".stopped", String(process.pid)); process.exit(0) }); fs.writeFileSync(process.argv[1], String(process.pid)); setInterval(() => {}, 1000)'
   const running = Effect.runPromise(
-    integrationCommand(
-      process.execPath,
-      [
-        "-e",
-        'require("node:fs").writeFileSync(process.argv[1], String(process.pid)); setInterval(() => {}, 1000)',
-        pidFile,
-      ],
-      { cwd: directory, env: process.env, detached: true },
-    ),
+    integrationCommand(process.execPath, ["-e", script, pidFile], {
+      cwd: directory,
+      env: process.env,
+      detached: true,
+    }),
     { signal: controller.signal },
   )
   const rejected = assert.rejects(running)
@@ -174,7 +172,8 @@ test("interruption terminates the owned child process before resource cleanup fi
   const pid = Number(readFileSync(pidFile, "utf8"))
   controller.abort()
   await rejected
-  assert.throws(() => process.kill(pid, 0), { code: "ESRCH" })
+  // Linux may retain an exited orphan's zombie PID until init reaps it.
+  assert.equal(readFileSync(pidFile + ".stopped", "utf8"), String(pid))
 })
 
 test("interruption also stops descendants after their process-group leader has exited", async (t) => {

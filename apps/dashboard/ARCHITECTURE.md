@@ -1,8 +1,40 @@
-# Dashboard architecture
+# Studio application architecture
 
 The dashboard presents application-reported workflow telemetry. It does not
 execute or retry application work. Technical completion, reported business
 results and missing terminal evidence remain separate concepts.
+
+## Product 1.0: first Studio workspace
+
+Studio evolves in the existing `apps/dashboard` application. Reusing its
+authenticated request boundary, project selection, typed tRPC/React Query clients
+and evidence controllers avoids a second app/auth/proxy lifecycle. The first
+slice changes the product experience; source/package/hosted names and domains
+retain their existing configuration. Their eventual rename is a separate change.
+
+`features/shell/studio-shell.tsx` replaces the global sidebar with two-level
+workspace chrome: brand/project/search/account, then focused product navigation.
+Project selection is owned by `features/projects/project-switcher.tsx`; its
+existing cache invalidation and server-enforced project membership remain intact.
+Failures are explicit rather than presented as a project-free account.
+
+`features/explore` composes the existing `useRunExplorer` controller and
+`useSnapshot`. It introduces no query transport or analytics population. Process
+counts describe the recorded summaries; the evidence list has its own full
+history/loading/error state. Project changes remount the Explore workspace to
+discard its old cursor. Applied filters and return links preserve exact cohorts.
+The existing history remains at `/runs`; Overview moves to `/overview`, while
+workflow/detail, insights, issues, settings and export paths remain reachable.
+
+The new sign-in/onboarding presentation retains the existing operations and
+access gates. Setup instructions use `useApiOrigin`, never browser `origin`.
+Only completed, authenticated users get the explicitly requested guide mode;
+it walks local steps without advancing/completing onboarding again. Fresh
+onboarding retains its persisted mutations. Step changes focus the new heading.
+
+No entity schema, shared-query framework, MCP handler, agent authorization or
+backend execution behavior is added by this slice. The contextual inspector and
+further Studio flows keep their existing roadmap owners.
 
 ## Responsibilities and dependency direction
 

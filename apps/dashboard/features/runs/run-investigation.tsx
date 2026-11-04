@@ -61,6 +61,7 @@ export function RunInvestigation({
   comparison,
   comparisonLoading = false,
   comparisonError,
+  contextual = false,
 }: {
   runId: string
   events: readonly RunEvent[]
@@ -70,6 +71,7 @@ export function RunInvestigation({
   comparison?: RunComparison
   comparisonLoading?: boolean
   comparisonError?: string
+  contextual?: boolean
 }) {
   const routeParams = useSearchParams()
   const source = routeParams.has("from")
@@ -104,6 +106,8 @@ export function RunInvestigation({
   return (
     <div className="grid min-w-0 gap-6">
       <PageSections
+        compact={contextual}
+        history={contextual ? "replace" : "push"}
         label="Run investigation sections"
         defaultValue={linkedEventId ? "timeline" : "summary"}
         sections={[
@@ -115,7 +119,13 @@ export function RunInvestigation({
             content: (
               <>
                 {snapshot && (
-                  <div className="[&_p]:text-sm [&_dt]:text-sm [&_dd+dd]:text-sm [&_h3]:text-base [&_pre]:text-sm [&_button_span]:text-sm">
+                  <div
+                    className={
+                      contextual
+                        ? ""
+                        : "[&_p]:text-sm [&_dt]:text-sm [&_dd+dd]:text-sm [&_h3]:text-base [&_pre]:text-sm [&_button_span]:text-sm"
+                    }
+                  >
                     <RunSnapshot
                       {...snapshot}
                       actions={
@@ -153,11 +163,13 @@ export function RunInvestigation({
                 <div className="flex flex-wrap gap-2">
                   <ViewLink
                     href={runInvestigationPath(runId, source, "timeline")}
+                    replace={contextual}
                   >
                     Inspect the timeline
                   </ViewLink>
                   <ViewLink
                     href={runInvestigationPath(runId, source, "handoff")}
+                    replace={contextual}
                   >
                     Take findings forward
                   </ViewLink>
@@ -481,6 +493,8 @@ export function RunInvestigation({
             content: (
               <>
                 <RunComparisonPanel
+                  source={source}
+                  replace={contextual}
                   comparison={comparison}
                   loading={comparisonLoading}
                   error={comparisonError}
@@ -571,6 +585,8 @@ export function RunInvestigation({
                           </p>
                         )}
                         <RelatedRunsTable
+                          source={source}
+                          replace={contextual}
                           title="Previous execution (explicit retry link)"
                           runs={relationships?.retryMatches ?? []}
                           empty={
@@ -580,11 +596,15 @@ export function RunInvestigation({
                           }
                         />
                         <RelatedRunsTable
+                          source={source}
+                          replace={contextual}
                           title="Later executions retrying this run"
                           runs={relationships?.retries ?? []}
                           empty="No later retry links recorded in this project."
                         />
                         <RelatedRunsTable
+                          source={source}
+                          replace={contextual}
                           title="Parent matches"
                           runs={relationships?.parentMatches ?? []}
                           empty={
@@ -594,6 +614,8 @@ export function RunInvestigation({
                           }
                         />
                         <RelatedRunsTable
+                          source={source}
+                          replace={contextual}
                           title="Shared correlation"
                           runs={relationships?.related ?? []}
                           empty={
@@ -614,14 +636,26 @@ export function RunInvestigation({
             label: "Confirmations",
             description:
               "Inspect the confirmations this application expected and any observed resolutions. A completed run can still be waiting for a confirmation.",
-            content: <RunExpectations id={runId} />,
+            content: (
+              <RunExpectations
+                id={runId}
+                source={source}
+                replace={contextual}
+              />
+            ),
           },
           {
             value: "handoff",
             label: "Take findings forward",
             description:
               "Finish with a factual record of this execution. Copy the investigation summary for an issue or application-log search, and add your own diagnosis after checking the evidence.",
-            content: <RunHandoff runId={runId} events={events} />,
+            content: (
+              <RunHandoff
+                runId={runId}
+                events={events}
+                contextual={contextual}
+              />
+            ),
           },
         ]}
       />

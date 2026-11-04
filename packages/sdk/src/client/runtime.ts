@@ -52,6 +52,8 @@ export function makeClient(
   defaults: Pick<WorkflowRunOptions, "environment" | "release"> = {},
   deliveryOptions: DeliveryOptions = {},
   source: "server" | "browser" | "proxy" = "server",
+  /** Runs once after this client's run records its terminal event. */
+  releaseOnTerminal?: () => void,
 ): InternalClient {
   const options = Result.match(
     Schema.decodeUnknownResult(
@@ -82,7 +84,11 @@ export function makeClient(
 
   const runMarker = (command: Effect.Effect<void>) => {
     if (shutdownResult) {
-      console.warn("[Flowmark] Ignored workflow marker after client shutdown")
+      // A long-lived client was shut down by the caller. The one-shot advanced
+      // entry releases itself at the terminal event and keeps later markers quiet.
+      if (releaseOnTerminal === undefined) {
+        console.warn("[Flowmark] Ignored workflow marker after client shutdown")
+      }
       return
     }
     runtime.runSync(command)
@@ -157,12 +163,21 @@ export function makeClient(
         throw new FlowmarkConfigError({ cause: "Client has been shut down" })
       }
       const handle = runtime.runSync(
-        engine.start(workflowName, {
-          ...defaults,
-          ...options,
-          environment: options.environment ?? defaults.environment,
-          release: options.release ?? defaults.release,
-        }),
+        engine.start(
+          workflowName,
+          {
+            ...defaults,
+            ...options,
+            environment: options.environment ?? defaults.environment,
+            release: options.release ?? defaults.release,
+          },
+          releaseOnTerminal === undefined
+            ? undefined
+            : Effect.sync(() => {
+                // After this terminal effect returns, so shutdown does not re-enter it.
+                queueMicrotask(releaseOnTerminal)
+              }),
+        ),
       )
       function operation(
         name: WorkflowStepName,
@@ -182,6 +197,7 @@ export function makeClient(
         const effectHandle = shutdownResult
           ? {
               operationId: globalThis.crypto.randomUUID(),
+              observeCallbackFailure: false,
               done: Effect.void,
               fail: () => Effect.void,
             }
@@ -194,26 +210,31 @@ export function makeClient(
         if (args.callback === undefined) {
           return operationHandle
         }
-        return withOperationCallback(operationHandle, args.callback, (cause) =>
-          runMarker(
-            mapOperationFailure(cause, args.options).pipe(
-              Effect.catchTag("FlowmarkErrorMappingError", (error) =>
-                queue
-                  .diagnose(error, {
-                    type: "operation_failed",
-                    workflow: nameOfWorkflow,
-                    runId: handle.runId,
-                    operationId: operationHandle.operationId,
-                    operationName: name,
-                    durationMs: 0,
-                    timestamp: new Date().toISOString(),
-                    failure: genericOperationFailure,
-                  })
-                  .pipe(Effect.as(genericOperationFailure)),
-              ),
-              Effect.flatMap(effectHandle.fail),
-            ),
-          ),
+        return withOperationCallback(
+          operationHandle,
+          args.callback,
+          effectHandle.observeCallbackFailure
+            ? (cause) =>
+                runMarker(
+                  mapOperationFailure(cause, args.options).pipe(
+                    Effect.catchTag("FlowmarkErrorMappingError", (error) =>
+                      queue
+                        .diagnose(error, {
+                          type: "operation_failed",
+                          workflow: nameOfWorkflow,
+                          runId: handle.runId,
+                          operationId: operationHandle.operationId,
+                          operationName: name,
+                          durationMs: 0,
+                          timestamp: new Date().toISOString(),
+                          failure: genericOperationFailure,
+                        })
+                        .pipe(Effect.as(genericOperationFailure)),
+                    ),
+                    Effect.flatMap(effectHandle.fail),
+                  ),
+                )
+            : () => undefined,
         )
       }
       return {

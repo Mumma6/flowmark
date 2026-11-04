@@ -21,6 +21,8 @@ import type {
 
 export interface WorkflowOperationHandle {
   readonly operationId: string
+  /** False when this start was ignored, so callback rejection is not mapped. */
+  readonly observeCallbackFailure: boolean
   readonly done: Effect.Effect<void>
   readonly fail: (failure: WorkflowOperationFailure) => Effect.Effect<void>
 }

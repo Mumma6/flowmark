@@ -52,6 +52,7 @@ export function makeOperations(run: RunLifecycle) {
     })
     return {
       operationId,
+      observeCallbackFailure: canStart,
       done: finish((durationMs) => ({
         type: "operation_completed",
         ...attempt,

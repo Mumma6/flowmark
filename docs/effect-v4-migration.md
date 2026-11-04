@@ -58,8 +58,8 @@ queue limit, bounded retries, stable retry event IDs, timeouts, request cancella
 and explicit flush/shutdown errors. UUID validators keep the established hexadecimal UUID shape instead of v4's
 stricter RFC version/variant check. A comparison of 5,663 valid/invalid decodes
 against v3 matched after this adjustment; focused regression tests cover event,
-operation and tRPC identifiers. The pre-existing pending-completion property
-behavior documented in [architecture](./architecture.md) remains unchanged.
+operation and tRPC identifiers. Pending-completion property amendments follow the shared run-state rule
+documented in [architecture](./architecture.md).
 
 ## Measured SDK costs
 

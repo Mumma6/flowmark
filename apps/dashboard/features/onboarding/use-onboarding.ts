@@ -11,7 +11,7 @@ import type { CreatedSecret } from "../projects/types"
 import { flowmarkAgentPrompt } from "./agent-prompt"
 import { stepIndex, steps } from "./steps"
 
-export function useOnboarding(initialStep: string) {
+export function useOnboarding(initialStep: string, reviewMode = false) {
   const trpc = useTRPC()
   const router = useRouter()
   const { current, projects } = useProject()
@@ -58,6 +58,14 @@ export function useOnboarding(initialStep: string) {
   }
 
   const next = () => {
+    if (reviewMode) {
+      if (step === steps.length - 1) {
+        router.push("/")
+        return
+      }
+      setStep((value) => value + 1)
+      return
+    }
     if (step === steps.length - 1) {
       complete.mutate()
       return
@@ -69,6 +77,8 @@ export function useOnboarding(initialStep: string) {
     current,
     projects,
     snapshot,
+    keys,
+    origin,
     step,
     setStep,
     createdSecret,

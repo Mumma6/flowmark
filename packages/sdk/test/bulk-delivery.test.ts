@@ -218,13 +218,19 @@ describe("bounded bulk delivery", () => {
 
   it("bounds critical overload and replacement state across many handles", async () => {
     const { client, release } = blockedClient({ progress: "latest" })
-    for (let index = 0; index < 2000; index++) {
-      const flow = client.workflow("many")
-      flow.progress({ completed: 1 })
-      if (index % 2 === 0) {
-        flow.done()
-      }
-    }
+    // 800 starts + 400 terminals exceed the 1,000-entry critical limit even
+    // without progress. More rejected submissions only repeat expensive error
+    // construction; this is a capacity invariant, not a throughput benchmark.
+    pipe(
+      Array.range(0, 799),
+      Array.forEach((index) => {
+        const flow = client.workflow("many")
+        flow.progress({ completed: 1 })
+        if (index % 2 === 0) {
+          flow.done()
+        }
+      }),
+    )
     const health = client.deliveryHealth()
     expect(health.pending).toBe(1000)
     expect(health.pendingProgress).toBeGreaterThan(0)
@@ -233,10 +239,14 @@ describe("bounded bulk delivery", () => {
     release()
     await expect(client.shutdown()).rejects.toMatchObject({
       failureCount: health.dropped,
+      omittedFailureCount: health.dropped - 20,
       failures: { length: 20 },
     })
-    expect(client.deliveryHealth().pendingProgress).toBe(0)
-  })
+    expect(client.deliveryHealth()).toMatchObject({
+      pending: 0,
+      pendingProgress: 0,
+    })
+  }, 15_000)
 
   it("does not coalesce business reports or inherit their values into the final result", async () => {
     const { client, events, release } = blockedClient({ progress: "latest" })

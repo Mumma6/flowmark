@@ -41,7 +41,7 @@ export function CopyButton({
       type="button"
       variant={variant}
       size="sm"
-      className="min-h-10 text-sm"
+      className="min-h-10 text-xs sm:min-h-8"
       onClick={async () => {
         const result = await Effect.runPromise(
           Effect.tryPromise({
@@ -217,18 +217,20 @@ export function TablePagination({
 export function ViewLink({
   href,
   children,
+  replace = false,
 }: {
   href: string
   children: ReactNode
+  replace?: boolean
 }) {
   return (
     <Button
       variant="ghost"
       size="sm"
-      className="min-h-10 text-sm text-primary"
+      className="min-h-10 text-xs text-primary sm:min-h-8"
       asChild
     >
-      <Link href={href}>
+      <Link href={href} replace={replace}>
         {children}
         <ArrowRight aria-hidden="true" />
       </Link>

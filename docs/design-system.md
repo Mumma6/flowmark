@@ -72,11 +72,26 @@ is 32 px on desktop and 16 px on mobile. Typical section gaps are 24–28 px and
 panel padding 20–24 px. Use the existing `--radius: 0.7rem` and derived radii.
 Avoid nested metric cards, gratuitous shadows and ornamental borders.
 
-Sidebar width is 224 px. Main content is capped at 1440 px. Navigation uses
-36 px controls on desktop and a 44 px menu target on mobile. Investigation and
-Settings tabs use the shared line variant with 44 px tab targets. Tables allow
+Studio uses a two-level top bar and content capped at 1680 px. Explore has a
+230–260 px contextual process pane on desktop, replaced by a selector on mobile.
+Global navigation fits narrow screens; account utilities live in a shared Sheet.
+Investigation and Settings tabs use the shared line variant with 32 px desktop
+controls and 40 px mobile targets. Use the shared Button defaults (36 px), or
+32 px small/utility actions. Avoid oversized minimum-height and text-size
+overrides; dense desktop controls keep larger mobile hit areas when needed.
+Buttons use intrinsic width by default, including inside grid forms. Opt into
+`w-full` explicitly when the layout calls for a full-width action. Tables allow
 rows to grow for results and long identifiers. Mobile run summaries use a
 semantic list rather than hiding essential values in a wide table.
+
+Studio and the landing's interactive example share `StudioChrome`,
+`StudioWorkspace`, `StudioProcessPane` and `StudioEvidenceList` from
+`@flowmark/ui`. These components accept presentation data and interaction slots;
+they own no project queries, authentication, routing or business classification.
+The dashboard projects real run DTOs into the list and supplies Next links;
+the landing supplies fixed synthetic evidence and opens the shared `RunSnapshot`.
+Keep the synthetic disclosure visible and preserve actual Studio query/error
+states when changing shared presentation.
 
 ## Component ownership
 
@@ -113,7 +128,7 @@ import { Badge, Button, TabsList } from "@flowmark/ui"
 Most icons are neutral Lucide icons at 16 px. Decorative icons are hidden from
 assistive technology. Navigation and evidence use real links with visible focus.
 Keep appearance, project settings and documentation accessible without competing
-with the primary Overview → Workflows → Runs → Insights → Issues navigation.
+with the primary Explore → Processes → Insights → Attention navigation.
 
 ### shadcn workflow
 
@@ -131,7 +146,11 @@ shared primitive; do not upgrade styling frameworks for a dashboard redesign.
 
 ## Information hierarchy and data scope
 
-Overview shows one four-metric execution strip, a short link to Issues, the
+Explore is the entry point: process selection, full recorded execution history,
+visible filter conditions and links into evidence. Its process-summary and
+run-list loading/error states are independent. All filters preserves the same
+cohort in the existing history. The retained Overview at `/overview` shows one
+four-metric execution strip, a short link to Issues, the
 workflow list and the latest runs. Insights owns period trends, workflow
 comparisons and declared business outcomes. Issues owns derived failure groups
 and the runs behind them. Workflow detail leads with run history and reported
@@ -187,8 +206,9 @@ commands in the [dashboard README](../apps/dashboard/README.md).
 
 ## Product 1.0 landing and Studio direction
 
-The landing establishes the visual direction for Product 1.0; it does not rename
-or replace the current dashboard. Keep charcoal surfaces, the Flowmark mark and
+The landing establishes the visual direction for Product 1.0. The authenticated
+application now evolves as Studio in `apps/dashboard`, with its existing hosting
+configuration. Keep charcoal surfaces, the Flowmark mark and
 accent dot, system fonts and restrained lime. Its neutral charcoal palette
 reduces the old green cast. The public site is dark-only; authenticated product
 surfaces continue to support their existing themes.
@@ -245,3 +265,46 @@ same fictional booking from application code into context, a reported result and
 an expected confirmation. Expandable details explain distinct signals; code copy
 uses the executable example. Keep the closing invitation bold and concise, with
 open-source/self-host details integrated there rather than a separate section.
+
+## Studio workspace, authentication and setup
+
+Use the landing's neutral charcoal and restrained lime in real application
+surfaces, with the existing light/system preferences preserved. Workspace
+headings may use 30–40 px editorial type. Dense execution rows use 13–14 px for
+identity and 10–12 px for secondary metadata; keep long explanations readable.
+Separate reported lifecycle, business results and absent confirmations.
+
+Studio has horizontal product navigation and a contextual process pane rather
+than the old global sidebar. A real project selector and the existing command
+palette remain visible; settings, theme, setup help and sign-out are grouped in
+the account Sheet. Keep the source of filtered evidence visible and provide
+clear no-match recovery. Empty accounts lead to project creation.
+
+Studio search is project-scoped and keyboard accessible. Show processes, runs
+and enabled exact business references as distinct result groups; do not imply
+arbitrary property or entity search. A process or reference opens its cohort in
+Explore, retaining status, time and result predicates. Exact references stay
+qualified by process and field, and repeated matches offer one cohort entry.
+Single-run results retain a return link to Explore. Keep this workspace search
+distinct from the inline text filter over the current run list. Selecting a
+search result and clearing Explore create history entries; incremental typing
+replaces the current entry. A project change discards the open search and its
+pending text, and cached search results are keyed by project.
+
+From Explore, a run opens in a right-hand inspector over the mounted cohort.
+Use the shared Sheet for focus management and narrow screens. Native history
+updates keep the ordinary `/runs/:id` URL without replacing the Explore page;
+direct loads and Open full page use the existing full run page. Evidence modes,
+peer selection and linked-run navigation replace the inspector's history entry,
+so Close/Escape/back return to the original cohort, cursor page and row focus.
+Keep all evidence modes available on mobile. Reuse `RunDetailContent` and
+`RunInvestigation`; project changes discard the panel and scoped URL state.
+Detail, relationship, comparison and expectation queries stay project-keyed.
+
+Authentication pairs a focused form with the product story. Setup uses a
+five-step rail, compact mobile progress, a distinct content panel and real
+loading/error states. Each step change focuses its heading. Code panels use the
+shared copy controls and the validated API origin. Existing-key evidence does
+not mean the application is installed, and copied instructions never mean an
+agent is connected. The completed user's setup guide is a local walkthrough,
+not a reset of their saved onboarding state.

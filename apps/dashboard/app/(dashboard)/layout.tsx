@@ -2,7 +2,7 @@ import { Option } from "effect"
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import type { ReactNode } from "react"
-import { DashboardShell } from "../../features/shell/dashboard-shell"
+import { StudioShell } from "../../features/shell/studio-shell"
 import { getDashboardAccess } from "../../features/platform/server-runtime"
 
 export const dynamic = "force-dynamic"
@@ -22,11 +22,8 @@ export default async function DashboardLayout({
     redirect(`/onboarding?step=${state.step}`)
   }
   return (
-    <DashboardShell
-      email={access.session.user.email}
-      apiOrigin={access.apiOrigin}
-    >
+    <StudioShell email={access.session.user.email} apiOrigin={access.apiOrigin}>
       {children}
-    </DashboardShell>
+    </StudioShell>
   )
 }

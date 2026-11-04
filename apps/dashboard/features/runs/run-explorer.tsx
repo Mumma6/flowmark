@@ -6,7 +6,11 @@ import { PageSections } from "../shared/page-sections"
 import { Search } from "lucide-react"
 import Link from "next/link"
 import { DataState, FilterSelect } from "../shared/dashboard-components"
-import { explorerDefaults, type ExplorerFilters } from "./explorer-filters"
+import {
+  explorerDefaults,
+  explorerFilterLabels,
+  type ExplorerFilters,
+} from "./explorer-filters"
 import { RunsTable } from "./runs-table"
 import { useRunExplorer } from "./use-run-explorer"
 
@@ -501,38 +505,10 @@ export function RunExplorer({
             )
             .map(([key, value]) => (
               <Badge key={key} variant="secondary">
-                {
-                  (
-                    {
-                      ratioNumerator: "Ratio numerator",
-                      ratioDenominator: "Ratio denominator",
-                      definitionRevision: "Definition",
-                      outcome: "Outcome",
-                      terminalOnly: "Finished only",
-                      expectationState: "Expectation state",
-                      startedBeforeExact: "Before (exact)",
-                      startedAfterExact: "After (exact)",
-                      startedBeforeExclusive: "Before (exclusive)",
-                      resultPath: "Result path",
-                      resultOperator: "Result operator",
-                      resultValue: "Result value",
-                      resultKind: "Result type",
-                      resultReason: "Reason",
-                      businessKey: "Business field",
-                      businessValue: "Business value",
-                      search: "Search",
-                      workflow: "Workflow",
-                      status: "Status",
-                      namespace: "Namespace",
-                      failCode: "Failure code",
-                      environment: "Environment",
-                      release: "Release",
-                      startedAfter: "From",
-                      startedBefore: "Through",
-                    } as const
-                  )[key as keyof ExplorerFilters]
-                }
-                : {value === "Running" ? "No final outcome" : value}
+                {explorerFilterLabels[key as keyof ExplorerFilters]}:{" "}
+                {key === "status" && value === "Running"
+                  ? "No final outcome"
+                  : value}
               </Badge>
             ))}
         </div>

@@ -8,23 +8,26 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
+  DialogTrigger,
 } from "@flowmark/ui"
 import {
+  ArrowUpRight,
   BookOpen,
   CircleAlert,
+  Compass,
   Folder,
   GitBranch,
   LayoutDashboard,
   LineChart,
   Search,
   Settings,
-  Tag,
   Workflow,
 } from "lucide-react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useEffect, useState, useSyncExternalStore } from "react"
 import { publicConfig } from "../platform/config-public"
-import { runStatusLabel } from "../runs/run-presentation"
+import { explorerDefaults, readExplorerFilters } from "../runs/explorer-filters"
+import { readInspectorRunId } from "../runs/investigation-navigation"
 import { useProject } from "../projects/project-context"
 import {
   commandPages,
@@ -32,15 +35,16 @@ import {
   filterCommandPages,
   matchingProjects,
   normalizeSearchQuery,
-  runHistoryHref,
-  runHref,
+  exploreHref,
+  runSearchExploreHref,
   shouldRequestProjectSearch,
-  workflowHref,
   type CommandPage,
 } from "./command-search"
 import { useProjectSearch } from "./queries"
+import { ProjectSearchResults } from "./project-search-results"
 
 const pageIcons = {
+  explore: Compass,
   overview: LayoutDashboard,
   workflows: Workflow,
   runs: GitBranch,
@@ -70,7 +74,15 @@ function useDebouncedQuery(value: string, delay: number) {
 }
 
 export function CommandPalette() {
+  const { current } = useProject()
+  // A project change discards open results and pending debounced text together.
+  return <ProjectCommandPalette key={current?.id ?? "no-project"} />
+}
+
+function ProjectCommandPalette() {
   const router = useRouter()
+  const params = useSearchParams()
+  const filters = readExplorerFilters(params)
   const { projects, current, pending, select } = useProject()
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState("")
@@ -114,22 +126,34 @@ export function CommandPalette() {
     query,
   )
   const projectMatches = matchingProjects(projects, query)
-  const serverResults = settled && requested ? search.data : undefined
+  const serverResults =
+    settled && requested && !search.isError ? search.data : undefined
   const searching =
     Boolean(current) &&
     shouldRequestProjectSearch(typed) &&
     (!settled || search.isLoading)
   const failed = settled && requested && search.isError
-  const showRunHistory = Boolean(current) && typed.length > 0
+  const showExplore =
+    Boolean(current) && typed.length > 0 && !searching && !failed
   const needsProject = !pending && typed.length > 0 && !current
-  const catalogMatches =
-    pages.length +
-    projectMatches.length +
+  const evidenceMatches =
     (serverResults?.workflows.length ?? 0) +
     (serverResults?.runs.length ?? 0) +
     (serverResults?.references.length ?? 0)
-  const catalogEmpty =
-    settled && requested && !failed && !searching && catalogMatches === 0
+  const evidenceEmpty =
+    Boolean(current) &&
+    settled &&
+    requested &&
+    !failed &&
+    !searching &&
+    evidenceMatches === 0
+  const hasFilters = Object.entries(filters).some(
+    ([key, value]) =>
+      value !== explorerDefaults[key as keyof typeof explorerDefaults],
+  )
+  const returnTo = hasFilters
+    ? exploreHref(filters)
+    : runSearchExploreHref(typed)
 
   function go(href: string, external = false) {
     setOpen(false)
@@ -137,41 +161,70 @@ export function CommandPalette() {
       window.location.assign(href)
       return
     }
+    if (
+      document.getElementById("explore-workspace") &&
+      readInspectorRunId(href.split("?")[0] ?? "")
+    ) {
+      window.history.pushState(null, "", href)
+      return
+    }
     router.push(href)
   }
 
   return (
     <>
-      <Button
-        type="button"
-        variant="outline"
-        className="size-11 shrink-0 px-0 text-muted-foreground sm:h-9 sm:w-56 sm:px-3"
-        aria-label="Search"
-        aria-keyshortcuts="Meta+K Control+K"
-        aria-expanded={open}
-        aria-haspopup="dialog"
-        onClick={() => setOpen(true)}
-      >
-        <Search aria-hidden="true" />
-        <span className="hidden min-w-0 flex-1 truncate text-left sm:inline">
-          Search
-        </span>
-        <kbd className="hidden rounded border border-border bg-muted px-1.5 font-sans text-[10px] font-medium leading-5 sm:inline">
-          {shortcut}
-        </kbd>
-      </Button>
       <CommandDialog
+        trigger={
+          <DialogTrigger
+            render={
+              <Button
+                type="button"
+                variant="outline"
+                className="size-9 shrink-0 border-transparent bg-transparent px-0 text-muted-foreground shadow-none sm:h-9 sm:w-72 sm:border-border sm:bg-card/60 sm:px-3"
+                aria-label="Search"
+                aria-keyshortcuts="Meta+K Control+K"
+                aria-expanded={open}
+                aria-haspopup="dialog"
+              />
+            }
+          >
+            <Search aria-hidden="true" />
+            <span className="hidden min-w-0 flex-1 truncate text-left sm:inline">
+              Search processes, runs, references…
+            </span>
+            <kbd className="hidden rounded border border-border bg-muted px-1.5 font-sans text-[10px] font-medium leading-5 sm:inline">
+              {shortcut}
+            </kbd>
+          </DialogTrigger>
+        }
         open={open}
         onOpenChange={setOpen}
         title="Search"
-        description="Search pages, projects, workflows, runs and enabled business references."
+        description="Search the selected project's processes, runs and explicitly enabled business references."
+        className="top-[8vh] max-h-[84dvh] sm:top-[12vh] sm:max-w-2xl"
       >
         <Command shouldFilter={false} loop vimBindings={false} label="Search">
+          <div className="flex min-w-0 items-center gap-2 border-b border-border bg-background/40 px-4 py-3 pr-12">
+            <Compass
+              aria-hidden="true"
+              className="size-3.5 shrink-0 text-primary"
+            />
+            <span className="shrink-0 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+              Studio search
+            </span>
+            <span aria-hidden="true" className="text-border">
+              /
+            </span>
+            <span className="truncate text-xs">
+              {current?.name ?? "No project selected"}
+            </span>
+          </div>
           <CommandInput
             autoFocus
             value={query}
             onValueChange={(value) => setQuery(value.slice(0, 200))}
-            placeholder="Workflows, runs, projects, pages…"
+            placeholder="A process, run ID or exact reference…"
+            className="h-11 text-sm"
             aria-label="Search query"
             onKeyDown={(event) => {
               if (event.key === "Escape") {
@@ -180,7 +233,10 @@ export function CommandPalette() {
               }
             }}
           />
-          <CommandList>
+          <CommandList
+            className="max-h-[48dvh] p-2 sm:max-h-[26rem]"
+            aria-busy={searching}
+          >
             {searching && (
               <p
                 className="px-3 py-2 text-sm text-muted-foreground"
@@ -205,16 +261,42 @@ export function CommandPalette() {
                 </Button>
               </div>
             )}
-            {catalogEmpty && (
+            {evidenceEmpty && (
               <p
-                className="px-3 py-2 text-sm text-muted-foreground"
+                className="px-4 py-6 text-center text-xs leading-6 text-muted-foreground"
                 role="status"
               >
-                No matches.
+                No processes, runs or exact references found in this project.
               </p>
             )}
+            {serverResults && (
+              <ProjectSearchResults
+                results={serverResults}
+                filters={filters}
+                returnTo={returnTo}
+                go={go}
+              />
+            )}
+            {showExplore && (
+              <CommandGroup heading="Explore">
+                <CommandItem
+                  value={`explore:${typed}`}
+                  onSelect={() => go(runSearchExploreHref(typed, filters))}
+                  className="gap-3 px-3 py-3"
+                >
+                  <Search aria-hidden="true" className="text-primary" />
+                  <span className="min-w-0 flex-1 truncate text-xs">
+                    Filter execution evidence by “{typed}”
+                  </span>
+                  <ArrowUpRight
+                    aria-hidden="true"
+                    className="text-muted-foreground"
+                  />
+                </CommandItem>
+              </CommandGroup>
+            )}
             {pages.length > 0 && (
-              <CommandGroup heading="Pages">
+              <CommandGroup heading="Navigate">
                 {pages.map((page) => {
                   const Icon = pageIcons[page.id]
                   return (
@@ -254,83 +336,32 @@ export function CommandPalette() {
                 ))}
               </CommandGroup>
             )}
-            {(serverResults?.workflows.length ?? 0) > 0 && (
-              <CommandGroup heading="Workflows">
-                {serverResults?.workflows.map((workflow) => (
-                  <CommandItem
-                    key={workflow.name}
-                    value={`workflow:${workflow.name}`}
-                    onSelect={() => go(workflowHref(workflow.name))}
-                  >
-                    <Workflow aria-hidden="true" />
-                    <span className="min-w-0 flex-1 truncate">
-                      {workflow.name}
-                    </span>
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-            )}
-            {showRunHistory && (
-              <CommandGroup heading="Runs">
-                {serverResults?.runs.map((run) => (
-                  <CommandItem
-                    key={run.id}
-                    value={`run:${run.id}`}
-                    onSelect={() => go(runHref(run.id))}
-                  >
-                    <GitBranch aria-hidden="true" />
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate">{run.workflow}</span>
-                      <span className="block truncate text-xs text-muted-foreground">
-                        {runStatusLabel(run.status)} ·{" "}
-                        <span className="font-mono">{run.externalId}</span>
-                        {run.failCode ? ` · ${run.failCode}` : ""}
-                      </span>
-                    </span>
-                  </CommandItem>
-                ))}
-                <CommandItem
-                  value={`run-history:${typed}`}
-                  onSelect={() => go(runHistoryHref(typed))}
-                >
-                  <Search aria-hidden="true" />
-                  <span className="min-w-0 flex-1 truncate">
-                    Open run history for “{typed}”
-                  </span>
-                </CommandItem>
-              </CommandGroup>
-            )}
-            {(serverResults?.references.length ?? 0) > 0 && (
-              <CommandGroup heading="Business references">
-                {serverResults?.references.map((reference) => (
-                  <CommandItem
-                    key={`${reference.runId}:${reference.key}`}
-                    value={`reference:${reference.runId}:${reference.key}`}
-                    onSelect={() => go(runHref(reference.runId))}
-                  >
-                    <Tag aria-hidden="true" />
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate font-mono text-xs">
-                        {reference.key}={reference.value}
-                      </span>
-                      <span className="block truncate text-xs text-muted-foreground">
-                        {reference.workflow} · {reference.externalId}
-                      </span>
-                    </span>
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-            )}
             {needsProject && (
               <p className="px-3 py-2 text-sm text-muted-foreground">
-                Select a project to search workflows and runs.
+                Select a project to search processes, runs and references.
               </p>
             )}
           </CommandList>
-          <p className="border-t border-border px-3 py-2 text-xs leading-5 text-muted-foreground">
-            Run search matches ids, workflow names, correlation and fail codes.
-            Business references match enabled fields exactly.
-          </p>
+          <div className="border-t border-border bg-background/40 px-4 py-3 text-[11px] leading-5 text-muted-foreground">
+            <p>
+              Run text matches IDs, process names, correlation and failure
+              codes. References match explicitly enabled fields exactly.
+            </p>
+            {hasFilters && (
+              <p className="mt-1 text-foreground/80">
+                Explore selections retain your current status, time and evidence
+                filters.
+              </p>
+            )}
+            <p
+              className="mt-2 hidden gap-4 font-mono text-[10px] sm:flex"
+              aria-hidden="true"
+            >
+              <span>↑ ↓ navigate</span>
+              <span>↵ open</span>
+              <span>esc close</span>
+            </p>
+          </div>
         </Command>
       </CommandDialog>
     </>

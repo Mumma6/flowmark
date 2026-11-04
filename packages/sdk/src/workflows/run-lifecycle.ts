@@ -14,6 +14,7 @@ export interface WorkflowRunsService {
   readonly start: (
     workflow: WorkflowName,
     options: WorkflowRunOptions,
+    onTerminal?: Effect.Effect<void>,
   ) => Effect.Effect<RunLifecycle>
 }
 
@@ -28,10 +29,15 @@ export class WorkflowRuns extends Context.Service<
       const events = yield* WorkflowEvents
 
       const start = Effect.fn("Flowmark.WorkflowRuns.start")(
-        function* (workflow: WorkflowName, options: WorkflowRunOptions) {
+        function* (
+          workflow: WorkflowName,
+          options: WorkflowRunOptions,
+          onTerminal?: Effect.Effect<void>,
+        ) {
           const runId =
             options.id ??
             (yield* Effect.sync(() => globalThis.crypto.randomUUID()))
+          const notifyTerminal = onTerminal ?? Effect.void
 
           const { record, diagnose } = yield* events.forRun(workflow, runId)
 
@@ -41,6 +47,7 @@ export class WorkflowRuns extends Context.Service<
             function* (options?: WorkflowDoneOptions) {
               if (yield* state.finish) {
                 yield* record(completedEvent(options))
+                yield* notifyTerminal
               }
             },
           )
@@ -62,6 +69,7 @@ export class WorkflowRuns extends Context.Service<
           ) {
             if (yield* state.fail) {
               yield* record(failedEvent(options))
+              yield* notifyTerminal
             }
           })
 

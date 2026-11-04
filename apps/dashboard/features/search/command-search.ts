@@ -1,7 +1,16 @@
+import { Array as Arr } from "effect"
+import type { RouterOutputs } from "../platform/api-types"
+import {
+  explorerDefaults,
+  type ExplorerFilters,
+} from "../runs/explorer-filters"
+import { runInvestigationPath } from "../runs/investigation-navigation"
+
 export const commandSearchDebounceMs = 300
 
 export type CommandPage = {
   readonly id:
+    | "explore"
     | "overview"
     | "workflows"
     | "runs"
@@ -18,24 +27,31 @@ export type CommandPage = {
 export function commandPages(docsUrl: string): readonly CommandPage[] {
   return [
     {
-      id: "overview",
-      label: "Overview",
+      id: "explore",
+      label: "Explore",
       href: "/",
-      keywords: "home dashboard",
+      keywords: "home studio evidence",
+      external: false,
+    },
+    {
+      id: "overview",
+      label: "Project overview",
+      href: "/overview",
+      keywords: "dashboard summary",
       external: false,
     },
     {
       id: "workflows",
-      label: "Workflows",
+      label: "Processes",
       href: "/workflows",
-      keywords: "directory",
+      keywords: "directory workflows",
       external: false,
     },
     {
       id: "runs",
-      label: "Runs",
+      label: "Execution history",
       href: "/runs",
-      keywords: "history executions",
+      keywords: "history executions runs",
       external: false,
     },
     {
@@ -47,9 +63,9 @@ export function commandPages(docsUrl: string): readonly CommandPage[] {
     },
     {
       id: "issues",
-      label: "Issues",
+      label: "Attention",
       href: "/issues",
-      keywords: "failures problems errors investigate",
+      keywords: "issues failures problems errors investigate",
       external: false,
     },
     {
@@ -102,14 +118,68 @@ export function shouldRequestProjectSearch(query: string) {
   return normalizeSearchQuery(query).length > 0
 }
 
-export function workflowHref(name: string) {
-  return `/workflows/${encodeURIComponent(name)}`
+export function exploreHref(filters: ExplorerFilters) {
+  const params = new URLSearchParams()
+  Arr.forEach(
+    Arr.fromIterable(Object.entries(explorerDefaults)),
+    ([key, fallback]) => {
+      const value = filters[key as keyof ExplorerFilters]
+      if (value !== fallback) {
+        params.set(key, value)
+      }
+    },
+  )
+  return `/${params.size ? `?${params}` : ""}`
 }
 
-export function runHref(id: string) {
-  return `/runs/${id}`
+/** A process selection replaces text/reference scope, retaining evidence predicates. */
+export function workflowExploreHref(
+  name: string,
+  filters: ExplorerFilters = explorerDefaults,
+) {
+  return exploreHref({
+    ...filters,
+    workflow: name,
+    search: "",
+    businessKey: "",
+    businessValue: "",
+  })
 }
 
-export function runHistoryHref(query: string) {
-  return `/runs?search=${encodeURIComponent(normalizeSearchQuery(query))}`
+type SearchReference = RouterOutputs["search"]["project"]["references"][number]
+
+/** References are exact, declared, workflow-qualified selections, never free text. */
+export function referenceExploreHref(
+  reference: Pick<SearchReference, "workflow" | "key" | "value">,
+  filters: ExplorerFilters = explorerDefaults,
+) {
+  return exploreHref({
+    ...filters,
+    workflow: reference.workflow,
+    businessKey: reference.key,
+    businessValue: reference.value,
+    search: "",
+  })
+}
+
+export function runSearchExploreHref(
+  query: string,
+  filters: ExplorerFilters = explorerDefaults,
+) {
+  return exploreHref({ ...filters, search: normalizeSearchQuery(query) })
+}
+
+export function runHref(id: string, from: string) {
+  return runInvestigationPath(id, from)
+}
+
+/** The bounded API returns matching runs; Studio offers each exact cohort once. */
+export function distinctSearchReferences(
+  references: readonly SearchReference[],
+) {
+  return Arr.dedupeWith(
+    references,
+    (a, b) =>
+      a.workflow === b.workflow && a.key === b.key && a.value === b.value,
+  )
 }
