@@ -1,13 +1,15 @@
-import { ArchitectureSection } from "./components/architecture-section"
 import { ClosingSection } from "./components/closing-section"
 import { FaqSection } from "./components/faq-section"
 import { HeroSection } from "./components/hero-section"
-import { InsightsSection } from "./components/insights-section"
-import { InstrumentationSection } from "./components/instrumentation-section"
-import { ProductSection } from "./components/product-section"
 import { SiteFooter } from "./components/site-footer"
 import { SiteHeader } from "./components/site-header"
-import { ValueSection } from "./components/value-section"
+import {
+  EverywhereSection,
+  OpenSourceSection,
+  OrganizationSection,
+  PlatformSection,
+  ProductDimensions,
+} from "../features/product-landing/product-story"
 
 export default function HomePage() {
   return (
@@ -21,11 +23,11 @@ export default function HomePage() {
       <SiteHeader />
       <main id="main" tabIndex={-1}>
         <HeroSection />
-        <ValueSection />
-        <ProductSection />
-        <InsightsSection />
-        <ArchitectureSection />
-        <InstrumentationSection />
+        <ProductDimensions />
+        <OrganizationSection />
+        <EverywhereSection />
+        <PlatformSection />
+        <OpenSourceSection />
         <FaqSection />
         <ClosingSection />
       </main>

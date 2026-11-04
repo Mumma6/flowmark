@@ -25,67 +25,63 @@ In development, documentation links default to
 
 ## Product story
 
-Product 1.0 positioning is “Understand what your software actually does”: open-source
-process intelligence for people and agents. The current site still uses its earlier
-workflow-focused copy; a dedicated content/UI task will apply the new narrative.
-Both narratives lead from application-reported results to evidence. Completion
-and business results remain separate facts. The central
-example is a customer import: 1,000 received, 988 imported, 12 skipped, with a
-handled CRM rate limit. Flowmark observes application-owned work; it does not
-execute, schedule, or retry it. Open-source/MIT and self-hosting are part of the
-Product 1.0 value story.
+“Understand what your software actually does.” Flowmark is open-source process
+intelligence for people and agents. Platform, Studio and Everywhere describe one
+product: instrument application-owned work, collect evidence, and understand
+technical and reported business outcomes over time.
 
-The landing presents the complete Product 1.0 as already implemented, using
-present tense for Studio, Platform, Everywhere, agent access and portable
-experiences. This is the maintainer's latest product-story instruction and
-supersedes the earlier availability-label requirement. Explain and visualize the
-finished product without roadmap language or future-status teasers.
+The landing presents the complete Product 1.0 in present tense, including the
+Studio, agent/MCP and portable-interface experience. It is also the visual
+blueprint for those product surfaces. This narrative does not establish the
+operational state of a deployed tool, authorize a connection or execute work.
+Source inventories and setup guides retain their actual implementation status.
 
-Keep fictional/sample illustrations identifiable, CTAs functional, and actual
-account/connection state accurate. An interactive product illustration does not
-authorize a real OAuth session, submit telemetry or prove a live deployment.
-Operational guides and source acceptance records remain precise about the
-implemented and deployed revision.
+Meridian Health is a fictional reference organization. Two fixed synthetic cases
+show a completed booking with an unobserved confirmation and a completed referral
+batch with mixed results. There is no patient data, live account, API request,
+OAuth flow or telemetry submission in these examples. Missing evidence does not
+establish failure; technical completion does not verify business correctness.
 
-Never claim independently verified business correctness or infer active work,
-terminal failure, or root cause from missing telemetry alone.
+## Composition and interactions
 
-## Composition and shared product UI
+`app/page.tsx` composes the server-rendered narrative, navigation, FAQ, closing and
+footer. `features/product-landing/` owns the Studio illustration, fixtures,
+organization perspectives, agent examples and product story. Metadata and the
+generated Open Graph image use the same identity.
 
-`app/page.tsx` composes Server Components: hero, completion/result distinction,
-investigation and execution trends, business outcomes and team perspectives,
-positioning, developer examples, FAQ, product-led closing and footer. Metadata
-and generated Open Graph artwork use the same positioning.
+- **Studio:** search by process, customer, integration or reference; recover from
+  no matches; switch investigations; inspect connected evidence. “Inspect run”
+  opens the existing shared `RunSnapshot` in a shared Dialog.
+- **Agent / structured data:** view the active investigation as a cited example
+  answer or structured evidence document. The answer's evidence button returns
+  to that case in Studio. These are local illustrations, not live agent calls.
+- **Organization:** five role perspectives read the same synthetic booking,
+  without implying five independent products or permission grants.
+- **Agent clients:** Codex, Cursor, Claude Code and custom-agent tabs show
+  concrete setup/investigation prompts and link to real documentation.
+- **SDK:** retained before/after code, copy feedback and expandable evidence.
+  Runtime tests verify unchanged business calls, return values and thrown errors.
+- **Mobile:** the shared Sheet manages navigation focus and Escape dismissal.
 
-The main product demonstration uses **the same `RunSnapshot` component** exported
-by `@flowmark/ui` and rendered in the dashboard's `RunInvestigation`. The landing
-passes static illustrative props in `workflow-demo.tsx`; the dashboard projects
-recorded events with `buildRunSnapshot` in `run-snapshot-presentation.ts`. The
-shared component owns run identity/status, result metrics, milestone selection,
-payload inspection, and last-reported progress. Dashboard actions, raw results,
-full timeline, operations, comparisons and related runs remain available.
+Static narrative stays in Server Components. Client boundaries own only local
+interaction state. Shared controls come from `@flowmark/ui`; no new UI kit,
+backend, dependencies or infrastructure are introduced. The removed legacy
+sections/effects have no remaining consumers.
 
-`RunSnapshot` is the narrow client boundary; the surrounding fixture and page
-composition are server rendered. It uses keyboard-operable shared Buttons,
-unique evidence IDs, an announced detail region, bounded payload overflow,
-semantic status colors, and native progress. It holds no API clients, secrets,
-or data-fetching logic. Web dark tokens and system fonts match the dashboard;
-shared classes are compatible with Tailwind 3 and 4.
+## Visual direction and verification
 
-`mobile-navigation.tsx` uses the shared Sheet with focus management and Escape
-dismissal. `code-showcase.tsx` retains the before/after application scenarios,
-code copying, and expandable evidence. Code-example tests execute both versions
-against controlled helpers and check preserved behavior and line budgets.
-All illustrations are static fixtures; no work is executed, no telemetry is
-sent, and no customer data or credentials are needed.
+See [the design system](../../docs/design-system.md#product-10-landing-and-studio-direction).
+The landing uses a dark charcoal canvas, system typography, restrained lime,
+editorial headings, structural dividers and evidence-led product visuals.
+It does not implement a light-theme switch. Semantic completion, attention and
+failure colors remain distinct from brand emphasis.
 
-The hero reuses the original decorative Spotlight, Spotlight Wash, Background
-Beams, Meteors, and subtle grid/dot treatments. The effects are CSS/SVG, clipped
-to the hero background, hidden from assistive technology, and never intercept
-pointer input. Meteors disappear under reduced motion; beams and spotlights
-become static. Existing source attributions remain in the effect components.
+Global CSS owns tokens, base rules and a short entrance keyframe. The entrance
+is enabled only when motion is allowed; anchor scrolling respects reduced
+motion. No animation dependency, scroll listener, remote font or image request
+is required.
 
-Global CSS contains theme tokens, base rules and animation keyframes. Smooth
-anchors and arrival motion respect reduced-motion preferences. Hover and
-selection feedback use CSS transitions. No timers, scroll listeners, remote
-font requests, animation dependencies, or backend changes are needed.
+Verify desktop and mobile layouts, keyboard tabs, search/clear recovery, evidence
+selection, cross-interface context, Dialog/Sheet dismissal and focus restoration,
+SDK scenario switching and copying, FAQ expansion, anchor destinations, metadata
+and the browser console. The synthetic landing needs no database or other app.

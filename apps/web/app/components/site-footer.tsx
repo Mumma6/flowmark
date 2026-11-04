@@ -7,16 +7,16 @@ const columns = [
   {
     title: "Product",
     links: [
-      { href: "#product", label: "Product" },
-      { href: "#how-it-works", label: "How it works" },
-      { href: "#outcomes", label: "Outcomes" },
+      { href: "#platform", label: "Platform" },
+      { href: "#studio", label: "Studio" },
+      { href: "#everywhere", label: "Everywhere" },
       { href: "#faq", label: "FAQ" },
     ],
   },
   {
     title: "Resources",
     links: [
-      { href: appUrl, label: "Dashboard" },
+      { href: appUrl, label: "Open Studio" },
       { href: docsUrl, label: "Documentation" },
       { href: githubUrl, label: "GitHub" },
     ],
@@ -32,7 +32,7 @@ export function SiteFooter() {
         <div>
           <BrandLink />
           <p className="mt-3 max-w-xs text-sm leading-6 text-muted-foreground">
-            Workflow observability for application code. Open source under MIT.
+            Process intelligence for people and agents. Open source under MIT.
           </p>
         </div>
         {columns.map((column) => (
@@ -57,7 +57,7 @@ export function SiteFooter() {
         className={`${shellClassName} flex flex-col gap-2 py-5 text-[11px] text-muted-foreground sm:flex-row sm:items-center sm:justify-between`}
       >
         <p>© 2026 Flowmark</p>
-        <p>Your processes, made understandable.</p>
+        <p>Understand what your software actually does.</p>
       </div>
     </footer>
   )

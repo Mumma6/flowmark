@@ -25,14 +25,14 @@ export function ClosingSection() {
           you wish you understood.
         </h2>
         <p className="mx-auto mt-5 max-w-md text-sm leading-7 text-muted-foreground">
-          Add markers. Run your code. Read the result.
+          Instrument once. Understand together.
           <br />
-          Turn the next “what happened?” into a run you can open.
+          For the people building your software — and everyone depending on it.
         </p>
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
           <Button asChild size="lg" className="h-11 px-6">
             <a href={docsUrl}>
-              Instrument your first workflow <Arrow />
+              Start building with Flowmark <Arrow />
             </a>
           </Button>
           <Button asChild size="lg" variant="outline" className="h-11 px-6">

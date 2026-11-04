@@ -17,21 +17,21 @@ export function SiteHeader() {
         >
           <a
             className="py-3 transition-colors hover:text-foreground"
-            href="#product"
+            href="#platform"
           >
-            Product
+            Platform
           </a>
           <a
             className="py-3 transition-colors hover:text-foreground"
-            href="#how-it-works"
+            href="#studio"
           >
-            Developers
+            Studio
           </a>
           <a
             className="py-3 transition-colors hover:text-foreground"
-            href="#outcomes"
+            href="#everywhere"
           >
-            Outcomes
+            Everywhere
           </a>
           <a
             className="py-3 transition-colors hover:text-foreground"
@@ -53,7 +53,7 @@ export function SiteHeader() {
             className="hidden h-10 px-3 text-xs min-[360px]:inline-flex sm:px-4"
           >
             <a href={appUrl}>
-              Dashboard <Arrow />
+              Open Studio <Arrow />
             </a>
           </Button>
           <MobileNavigation />
