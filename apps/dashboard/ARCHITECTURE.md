@@ -206,6 +206,20 @@ Observed existing follow-up: resolved for non-tRPC proxy 502 responses — the
 browser transport maps them to explicit retry guidance instead of the generic
 tRPC transform failure. Authorization and upstream tRPC envelopes are unchanged.
 
+Product TASK-003.6 verified locally on 4 November 2026 (staging `a279cc4`):
+
+- Root `pnpm check` passed, including `studio-explore-compat` and transport
+  error tests; Webpack production build passed with unchanged routes.
+- Browser on loopback production dashboard (existing Fieldwork Operations
+  fixture data): command search → `qa.inspector-pagination` cohort → contextual
+  inspector → Escape/back restored the same list page; Overview, Insights,
+  Issues, Runs full page and `/overview` deep links opened; project switch
+  remounted Explore and closed cross-project inspector state.
+- Mobile 390 × 844 and 200% zoom: execution evidence stays first in the Explore
+  column; analytics tabs use the `analytics` query key; horizontal overflow
+  clipped at the shell; account sheet exposes history/overview/settings; run
+  inspector and evidence modes remained reachable.
+
 ## Feature colocation
 
 All dashboard UI, query controllers, pure models and runtime adapters now live
