@@ -32,6 +32,7 @@ function CommandDialog({
   title = "Search",
   description = "Search pages, projects, workflows and runs.",
   children,
+  trigger,
   className,
   showCloseButton = true,
   ...props
@@ -41,9 +42,11 @@ function CommandDialog({
   className?: string
   showCloseButton?: boolean
   children: ReactNode
+  trigger?: ReactNode
 }) {
   return (
     <Dialog {...props}>
+      {trigger}
       <DialogContent
         className={cn(
           "top-[15vh] translate-y-0 gap-0 overflow-hidden p-0 sm:max-w-xl",

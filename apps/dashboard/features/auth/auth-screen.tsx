@@ -229,7 +229,7 @@ export function AuthScreen({
             <Button
               type="submit"
               disabled={pending}
-              className="mt-1 h-11 text-xs"
+              className="mt-1 h-10 text-xs sm:h-9"
             >
               {pending
                 ? "Please wait…"

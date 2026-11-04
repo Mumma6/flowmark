@@ -41,7 +41,7 @@ export function CopyButton({
       type="button"
       variant={variant}
       size="sm"
-      className="min-h-10 text-sm"
+      className="min-h-10 text-xs sm:min-h-8"
       onClick={async () => {
         const result = await Effect.runPromise(
           Effect.tryPromise({
@@ -225,7 +225,7 @@ export function ViewLink({
     <Button
       variant="ghost"
       size="sm"
-      className="min-h-10 text-sm text-primary"
+      className="min-h-10 text-xs text-primary sm:min-h-8"
       asChild
     >
       <Link href={href}>

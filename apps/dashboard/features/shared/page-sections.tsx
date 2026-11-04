@@ -67,7 +67,7 @@ export function PageSections({
       <TabsList
         variant="line"
         aria-label={label}
-        className="w-full flex-wrap justify-start gap-x-2 gap-y-1 border-b border-border p-0 pb-2 [&_[data-slot=tabs-trigger]]:min-h-11 [&_[data-slot=tabs-trigger]]:flex-none [&_[data-slot=tabs-trigger]]:px-3 [&_[data-slot=tabs-trigger]]:text-sm sm:[&_[data-slot=tabs-trigger]]:text-base"
+        className="w-full flex-wrap justify-start gap-x-2 gap-y-1 border-b border-border p-0 pb-2 [&_[data-slot=tabs-trigger]]:min-h-10 sm:[&_[data-slot=tabs-trigger]]:min-h-8 [&_[data-slot=tabs-trigger]]:flex-none [&_[data-slot=tabs-trigger]]:px-3 [&_[data-slot=tabs-trigger]]:text-xs"
       >
         {sections.map((section) => (
           <TabsTrigger key={section.value} value={section.value}>

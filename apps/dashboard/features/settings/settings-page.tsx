@@ -82,7 +82,7 @@ function SettingsPageInner() {
         <TabsList
           variant="line"
           aria-label="Settings sections"
-          className="h-auto w-full flex-wrap justify-start gap-1 border-b border-border pb-2 [&_[data-slot=tabs-trigger]]:min-h-11 [&_[data-slot=tabs-trigger]]:flex-none [&_[data-slot=tabs-trigger]]:text-base"
+          className="h-auto w-full flex-wrap justify-start gap-1 border-b border-border pb-2 [&_[data-slot=tabs-trigger]]:min-h-10 sm:[&_[data-slot=tabs-trigger]]:min-h-8 [&_[data-slot=tabs-trigger]]:flex-none [&_[data-slot=tabs-trigger]]:text-xs"
         >
           {sections.map((item) => (
             <TabsTrigger key={item.id} value={item.id}>
