@@ -224,3 +224,16 @@ all evidence and actions rather than clipping a desktop console. Use shared
 Tabs, Button, Input, Sheet, Dialog and Accordion; no second component system.
 Keep visible keyboard focus, meaningful no-match recovery, Escape dismissal and
 focus restoration. Entrance motion and anchor scrolling honor reduced motion.
+
+Platform uses one evidence-to-interface diagram rather than a disconnected grid
+of infrastructure features. Show the application-owned process, shared meaning
+and the people/agent/API clients together. Reuse the same fictional reference
+across illustrations. Diagram connectors are decorative; labels and working
+links carry the meaning on mobile and for assistive navigation.
+
+Everywhere pairs client-specific prompts with explicit synthetic evidence and a
+portable view that switches host shells while keeping the same facts. Shared
+RunSnapshot remains the inspection surface. Match Studio’s fine lime borders,
+quiet glows and selected-state emphasis; use the existing warning/success roles
+for evidence status. Illustrative hosts do not perform live tool calls, authorize
+connections or create a second analytics/presentation system.

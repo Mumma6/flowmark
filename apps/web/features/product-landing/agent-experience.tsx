@@ -11,6 +11,7 @@ import {
 } from "@flowmark/ui"
 import { Arrow } from "../../app/components/brand"
 import { docsUrl } from "../../app/components/site-links"
+import { investigations } from "./evidence"
 
 const clients = [
   {
@@ -41,6 +42,7 @@ const clients = [
 
 export function AgentExperience() {
   const [client, setClient] = useState<string>(clients[0].name)
+  const example = investigations[0]!
   return (
     <Tabs
       value={client}
@@ -49,14 +51,16 @@ export function AgentExperience() {
           setClient(value)
         }
       }}
-      className="gap-0 overflow-hidden rounded-xl border border-border bg-card"
+      className="gap-0 overflow-hidden rounded-xl border border-primary/25 bg-card shadow-[0_24px_80px_-24px_#000,0_0_70px_-40px_#b9f59750]"
     >
-      <div className="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
+      <div className="flex items-center justify-between gap-3 border-b border-primary/10 bg-[linear-gradient(110deg,#b9f59710,transparent_70%)] px-5 py-4">
         <div className="flex items-center gap-2 text-xs">
           <FlowmarkMark className="size-4 text-primary" />
           Connect your agent
         </div>
-        <span className="font-mono text-[9px] text-muted-foreground">MCP</span>
+        <span className="rounded border border-primary/20 bg-primary/5 px-2 py-1 font-mono text-[9px] text-primary">
+          MCP
+        </span>
       </div>
       <TabsList
         aria-label="Agent integration examples"
@@ -78,13 +82,41 @@ export function AgentExperience() {
           <p className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground">
             {item.context}
           </p>
-          <div className="mt-5 min-h-32 rounded-lg border border-border bg-background/60 p-4">
+          <div className="mt-5 rounded-lg border border-border bg-background/70 p-4">
+            <p className="mb-2 font-mono text-[8px] uppercase tracking-widest text-muted-foreground">
+              You / {item.name}
+            </p>
             <span className="text-primary" aria-hidden="true">
               ›
             </span>
             <span className="ml-2 text-xs leading-7 text-foreground/90">
               {item.prompt}
             </span>
+          </div>
+          <div className="mt-4 rounded-lg border border-primary/15 bg-[linear-gradient(135deg,#b9f59708,transparent)] p-4">
+            <div className="flex items-center justify-between gap-3 text-[10px]">
+              <span className="flex items-center gap-2">
+                <FlowmarkMark className="size-3.5 text-primary" />
+                Process evidence
+              </span>
+              <code className="text-primary/80">get_run</code>
+            </div>
+            <p className="mt-4 font-mono text-[11px]">
+              {example.snapshot.workflow}
+            </p>
+            <p className="mt-1.5 break-all text-[9px] text-muted-foreground">
+              {example.reference} · {example.customer}
+            </p>
+            <dl className="mt-4 grid grid-cols-2 gap-4 border-t border-border pt-3 text-[10px]">
+              <div>
+                <dt className="text-muted-foreground">Execution</dt>
+                <dd className="mt-1.5 text-success">Completed · 1.8 s</dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground">Confirmation</dt>
+                <dd className="mt-1.5 text-warning">Not recorded</dd>
+              </div>
+            </dl>
           </div>
           <div className="mt-5 flex flex-wrap gap-2 text-[9px] text-muted-foreground">
             <span className="rounded border border-border px-2 py-1">
@@ -98,7 +130,7 @@ export function AgentExperience() {
             </span>
           </div>
           <p className="mt-4 text-[10px] leading-5 text-muted-foreground">
-            Illustrative agent prompt · synthetic Meridian Health context
+            Illustrative agent interaction · synthetic Meridian Health context
           </p>
           <Button asChild variant="link" className="mt-3 h-11 px-0 text-xs">
             <a href={docsUrl}>

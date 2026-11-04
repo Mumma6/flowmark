@@ -57,8 +57,14 @@ generated Open Graph image use the same identity.
   to that case in Studio. These are local illustrations, not live agent calls.
 - **Organization:** five role perspectives read the same synthetic booking,
   without implying five independent products or permission grants.
-- **Agent clients:** Codex, Cursor, Claude Code and custom-agent tabs show
-  concrete setup/investigation prompts and link to real documentation.
+- **Agent clients:** Codex, Cursor, Claude Code and custom-agent tabs pair
+  concrete prompts with the same fixed synthetic process evidence and link to
+  real documentation. No MCP call or connection is made.
+- **Portable evidence:** switch between MCP App and internal-tool illustration
+  shells, then inspect the same synthetic booking in the shared run Dialog.
+- **Platform:** a server-rendered evidence-to-client diagram connects the SDK,
+  process meaning, Studio, MCP and custom tools. It illustrates the product
+  model rather than inventing a wire/API contract.
 - **SDK:** retained before/after code, copy feedback and expandable evidence.
   Runtime tests verify unchanged business calls, return values and thrown errors.
 - **Mobile:** the shared Sheet manages navigation focus and Escape dismissal.
