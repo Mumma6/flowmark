@@ -21,6 +21,7 @@ import { Data, Effect, Result } from "effect"
 import { ArrowRight, RefreshCw } from "lucide-react"
 import Link from "next/link"
 import { useMemo, type ReactNode } from "react"
+import { presentQueryError } from "../platform/api-transport-errors"
 import { runStatusLabel, type RunStatus } from "../runs/run-presentation"
 
 class ClipboardError extends Data.TaggedError("ClipboardError")<{
@@ -130,7 +131,7 @@ export function DataState({
     return (
       <Alert variant="destructive">
         <AlertTitle>Could not load data</AlertTitle>
-        <AlertDescription>{error.message}</AlertDescription>
+        <AlertDescription>{presentQueryError(error)}</AlertDescription>
         {retry && (
           <Button variant="outline" size="sm" onClick={retry} className="mt-3">
             <RefreshCw aria-hidden="true" />
