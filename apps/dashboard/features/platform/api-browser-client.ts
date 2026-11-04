@@ -4,6 +4,7 @@ import type { AppRouter } from "@flowmark/server/trpc"
 import { QueryClient } from "@tanstack/react-query"
 import { createTRPCClient, httpBatchLink } from "@trpc/client"
 import { readStoredProjectId } from "../projects/project-selection"
+import { dashboardTrpcFetch } from "./api-transport-errors"
 import { publicConfig } from "./config-public"
 
 export const createDashboardQueryClient = () =>
@@ -20,9 +21,7 @@ export const createDashboardTRPCClient = () =>
           const projectId = readStoredProjectId()
           return projectId ? { "x-flowmark-project-id": projectId } : {}
         },
-        fetch(url, options) {
-          return fetch(url, { ...options, credentials: "include" })
-        },
+        fetch: dashboardTrpcFetch,
       }),
     ],
   })

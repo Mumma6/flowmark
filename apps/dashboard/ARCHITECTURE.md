@@ -202,10 +202,9 @@ selection and polling intentionally remain; moving telemetry reads to RSC would
 require a separate cache/project-selection design. Exhaustive visual snapshots
 and real hosted Preview/Staging journeys remain separate from local checks.
 
-Observed existing follow-up: when the proxy returns a non-tRPC 502 response,
-React Query displays the explicit failure state but its detail reads
-`Unable to transform response from server`. Improving that transport-specific
-message is separate from this behavior-preserving refactor.
+Observed existing follow-up: resolved for non-tRPC proxy 502 responses — the
+browser transport maps them to explicit retry guidance instead of the generic
+tRPC transform failure. Authorization and upstream tRPC envelopes are unchanged.
 
 ## Feature colocation
 

@@ -126,6 +126,20 @@ it("preserves an upstream storage 503 instead of converting it into a proxy 502"
   expect(log).not.toHaveBeenCalled()
 })
 
+it("feeds the browser transport mapper the same safe 502 copy", async () => {
+  const { readDashboardTransportError, proxyUnavailableMessage } =
+    await import("../features/platform/api-transport-errors")
+  vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("upstream down")))
+  const response = await proxyToApiHandler(
+    new Request("http://localhost/api/trpc"),
+    "api/trpc",
+  )
+  expect(response.status).toBe(502)
+  expect(await readDashboardTransportError(response)).toBe(
+    proxyUnavailableMessage,
+  )
+})
+
 it("preserves provider retry guidance and browser CSRF metadata without forwarding claimed client IPs", async () => {
   const fetch = vi.fn().mockResolvedValue(
     Response.json(
