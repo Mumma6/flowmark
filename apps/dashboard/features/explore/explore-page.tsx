@@ -1,6 +1,13 @@
 "use client"
 
-import { Badge, Button, Input, Skeleton } from "@flowmark/ui"
+import {
+  Badge,
+  Button,
+  Input,
+  Skeleton,
+  StudioWorkspace,
+  StudioProcessPane,
+} from "@flowmark/ui"
 import { Array as Arr } from "effect"
 import {
   ArrowDown,
@@ -60,7 +67,7 @@ function ExploreWorkspace() {
   historyParams.set("view", "runs")
   const historyHref = `/runs?${historyParams}`
   const clearFilters = () => {
-    setFilters({ ...explorerDefaults })
+    setFilters({ ...explorerDefaults }, "push")
     setCursorStack([null])
   }
 
@@ -86,7 +93,7 @@ function ExploreWorkspace() {
         <Button
           asChild
           variant="ghost"
-          className="h-10 px-0 text-xs text-muted-foreground"
+          className="h-9 px-0 text-xs text-muted-foreground"
         >
           <Link href="/overview">
             Project overview
@@ -95,83 +102,33 @@ function ExploreWorkspace() {
         </Button>
       </div>
 
-      <div className="grid min-w-0 overflow-hidden rounded-xl border border-border bg-card shadow-[0_18px_70px_-45px_hsl(var(--primary)/0.12)] lg:grid-cols-[230px_minmax(0,1fr)] xl:grid-cols-[260px_minmax(0,1fr)]">
-        <aside
-          aria-label="Process selection"
-          className="hidden min-w-0 border-r border-border bg-background/35 lg:flex lg:flex-col"
-        >
-          <div className="flex items-center justify-between border-b border-border px-5 py-5">
-            <h2 className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-              Processes
-            </h2>
-            <span className="font-mono text-[10px] text-muted-foreground">
-              {snapshot.data ? workflows.length : "—"}
-            </span>
-          </div>
-          <div className="px-3 py-3">
-            <Button
-              variant="ghost"
-              aria-pressed={filters.workflow === "all"}
-              onClick={() => update("workflow", "all")}
-              className={`h-10 w-full justify-start gap-2 px-3 text-xs ${filters.workflow === "all" ? "bg-primary/10 text-primary" : "text-muted-foreground"}`}
-            >
-              <Workflow aria-hidden="true" className="size-3.5" />
-              All processes
-            </Button>
-          </div>
-          <div className="px-5">
-            <DataState
-              pending={snapshot.isPending}
-              error={snapshot.error}
-              retry={() => void snapshot.refetch()}
-            />
-          </div>
-          {!snapshot.isPending && !snapshot.error ? (
-            <div className="max-h-[32rem] overflow-y-auto px-3 pb-4">
-              {workflows.map((workflow) => (
-                <button
-                  key={workflow.name}
-                  type="button"
-                  aria-pressed={filters.workflow === workflow.name}
-                  onClick={() => update("workflow", workflow.name)}
-                  className={`group mb-1 w-full rounded-lg border px-3 py-3 text-left transition-colors ${filters.workflow === workflow.name ? "border-primary/20 bg-primary/5" : "border-transparent hover:bg-secondary/70"}`}
-                >
-                  <span
-                    className={`block break-words font-mono text-[11px] leading-5 ${filters.workflow === workflow.name ? "text-primary" : "text-foreground/80"}`}
-                  >
-                    {workflow.name}
-                  </span>
-                  <span className="mt-1.5 block text-[10px] text-muted-foreground">
-                    {workflow.runs.toLocaleString()} recorded runs
-                  </span>
-                </button>
-              ))}
-              {workflows.length === 0 ? (
-                <p className="px-3 py-3 text-xs leading-6 text-muted-foreground">
-                  Processes appear when your application reports its first
-                  execution.
-                </p>
-              ) : null}
-            </div>
-          ) : null}
-          <div className="mt-auto border-t border-border p-5">
-            <p className="text-[10px] leading-6 text-muted-foreground">
-              Application-owned work.
-              <br />
-              Recorded evidence.
-              <br />
-              Shared understanding.
-            </p>
-            <Link
-              href="/workflows"
-              className="mt-4 inline-flex min-h-9 items-center gap-2 text-[11px] text-primary hover:underline"
-            >
-              Process directory
-              <ArrowRight aria-hidden="true" className="size-3" />
-            </Link>
-          </div>
-        </aside>
-
+      <StudioWorkspace
+        processes={
+          <StudioProcessPane
+            processes={
+              snapshot.isPending || snapshot.error ? undefined : workflows
+            }
+            selected={filters.workflow}
+            onSelect={(name) => update("workflow", name)}
+            state={
+              <DataState
+                pending={snapshot.isPending}
+                error={snapshot.error}
+                retry={() => void snapshot.refetch()}
+              />
+            }
+            directory={
+              <Link
+                href="/workflows"
+                className="mt-4 inline-flex min-h-9 items-center gap-2 text-[11px] text-primary hover:underline"
+              >
+                Process directory
+                <ArrowRight aria-hidden="true" className="size-3" />
+              </Link>
+            }
+          />
+        }
+      >
         <section aria-labelledby="evidence-title" className="min-w-0">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-[linear-gradient(110deg,hsl(var(--primary)/0.035),transparent_65%)] px-5 py-4 sm:px-6">
             <div className="flex items-center gap-2.5">
@@ -201,7 +158,7 @@ function ExploreWorkspace() {
           </div>
           <div className="flex flex-wrap items-center gap-3 border-b border-border p-4 sm:px-6 sm:py-5">
             <label className="relative order-1 min-w-0 flex-[1_1_100%] lg:flex-[1_1_220px]">
-              <span className="sr-only">Search execution evidence</span>
+              <span className="sr-only">Filter these runs</span>
               <Search
                 aria-hidden="true"
                 className="pointer-events-none absolute left-3 top-3 size-4 text-muted-foreground"
@@ -210,14 +167,14 @@ function ExploreWorkspace() {
                 type="search"
                 value={filters.search}
                 onChange={(event) => update("search", event.target.value)}
-                placeholder="Process, run ID, correlation or failure code…"
+                placeholder="Filter runs by ID, process, correlation or failure code…"
                 className="h-10 border-border bg-background/60 pl-9 text-xs placeholder:text-muted-foreground/70"
               />
             </label>
             <Button
               asChild
               variant="outline"
-              className="order-3 h-10 gap-2 bg-transparent text-xs"
+              className="order-3 h-10 gap-2 sm:h-9 bg-transparent text-xs"
             >
               <Link href={historyHref}>
                 <SlidersHorizontal aria-hidden="true" className="size-3.5" />
@@ -269,7 +226,7 @@ function ExploreWorkspace() {
                 ? "Loading evidence…"
                 : list.error
                   ? "Evidence unavailable"
-                  : `${total.toLocaleString()} matching runs`}
+                  : `${total.toLocaleString()} matching ${total === 1 ? "run" : "runs"}`}
             </span>
           </div>
           {activeFilters.length > 0 ? (
@@ -367,7 +324,7 @@ function ExploreWorkspace() {
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-9 text-[11px]"
+                className="h-10 text-[11px] sm:h-8"
                 disabled={pageIndex === 0 || list.isFetching}
                 onClick={() =>
                   setCursorStack((stack) =>
@@ -381,7 +338,7 @@ function ExploreWorkspace() {
               <Button
                 variant="outline"
                 size="sm"
-                className="h-9 text-[11px]"
+                className="h-10 text-[11px] sm:h-8"
                 disabled={!nextCursor || list.isFetching}
                 onClick={() =>
                   setCursorStack((stack) => [...stack, nextCursor])
@@ -393,7 +350,7 @@ function ExploreWorkspace() {
             </div>
           </div>
         </section>
-      </div>
+      </StudioWorkspace>
       <p className="flex items-start gap-2 text-[10px] leading-6 text-muted-foreground">
         <ArrowDown aria-hidden="true" className="mt-1 size-3 shrink-0" />
         Open an execution to inspect its result, timeline, relationships and

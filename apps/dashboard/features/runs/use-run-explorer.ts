@@ -24,7 +24,10 @@ export function useRunExplorer(workflow?: string) {
   const pathname = usePathname()
   const filters = useMemo(() => readExplorerFilters(params), [params])
   const signature = JSON.stringify(filters)
-  const setFilters = (next: ExplorerFilters) => {
+  const setFilters = (
+    next: ExplorerFilters,
+    history: "replace" | "push" = "replace",
+  ) => {
     const url = new URLSearchParams(params.toString())
     Arr.forEach(Arr.fromIterable(Object.entries(next)), ([key, value]) => {
       if (value === explorerDefaults[key as keyof ExplorerFilters]) {
@@ -33,7 +36,7 @@ export function useRunExplorer(workflow?: string) {
         url.set(key, value)
       }
     })
-    window.history.replaceState(
+    window.history[history === "push" ? "pushState" : "replaceState"](
       null,
       "",
       `${pathname}${url.size ? `?${url}` : ""}`,

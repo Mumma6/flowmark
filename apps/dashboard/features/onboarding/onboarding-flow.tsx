@@ -223,7 +223,7 @@ function OnboardingContent({
                     disabled={index > step || busy}
                     onClick={() => setStep(index)}
                     aria-current={index === step ? "step" : undefined}
-                    className={`flex min-h-14 w-full items-center gap-3 rounded-lg border px-3 text-left text-xs ${index === step ? "border-primary/20 bg-primary/5 text-foreground" : "border-transparent text-muted-foreground disabled:opacity-60"}`}
+                    className={`flex min-h-10 w-full items-center gap-3 rounded-lg border px-3 text-left text-xs ${index === step ? "border-primary/20 bg-primary/5 text-foreground" : "border-transparent text-muted-foreground disabled:opacity-60"}`}
                   >
                     <span
                       className={`grid size-6 shrink-0 place-items-center rounded-full border font-mono text-[9px] ${index <= step ? "border-primary/30 text-primary" : "border-border"}`}
@@ -417,7 +417,7 @@ function OnboardingContent({
                 variant="ghost"
                 disabled={step === 0 || busy}
                 onClick={() => setStep((value) => Math.max(0, value - 1))}
-                className="h-10 text-xs"
+                className="h-9 text-xs"
               >
                 <ArrowLeft aria-hidden="true" className="size-3.5" />
                 Back
@@ -425,7 +425,7 @@ function OnboardingContent({
               <Button
                 disabled={blocked}
                 onClick={next}
-                className="h-10 px-5 text-xs"
+                className="h-9 px-4 text-xs"
               >
                 {busy
                   ? "Saving…"

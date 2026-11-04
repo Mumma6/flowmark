@@ -8,6 +8,7 @@ import {
   SheetDescription,
   SheetTitle,
   SheetTrigger,
+  StudioChrome,
 } from "@flowmark/ui"
 import { Result } from "effect"
 import {
@@ -62,7 +63,7 @@ function AccountPanel({ email }: { email: string }) {
           <Button
             variant="ghost"
             size="icon"
-            className="size-10 rounded-full border border-border bg-card"
+            className="size-9 rounded-full border border-border bg-card"
             aria-label="Account and workspace"
           />
         }
@@ -86,7 +87,7 @@ function AccountPanel({ email }: { email: string }) {
               key={href}
               asChild
               variant="ghost"
-              className="h-11 justify-start text-sm text-muted-foreground"
+              className="h-9 justify-start text-xs text-muted-foreground"
             >
               <Link href={href} onClick={() => setOpen(false)}>
                 <Icon aria-hidden="true" className="size-4" />
@@ -97,7 +98,7 @@ function AccountPanel({ email }: { email: string }) {
           <Button
             asChild
             variant="ghost"
-            className="h-11 justify-start text-sm text-muted-foreground"
+            className="h-9 justify-start text-xs text-muted-foreground"
           >
             <a href={publicConfig.documentationUrl}>
               <BookOpen aria-hidden="true" className="size-4" />
@@ -113,7 +114,7 @@ function AccountPanel({ email }: { email: string }) {
         <Button
           variant="outline"
           disabled={pending}
-          className="mt-8 h-11 justify-start text-xs"
+          className="mt-8 h-9 justify-start text-xs"
           onClick={async () => {
             setError(null)
             setPending(true)
@@ -165,8 +166,8 @@ export function StudioShell({
             Skip to content
           </a>
           <header className="sticky top-0 z-30 border-b border-border bg-background/90 backdrop-blur-xl">
-            <div className="mx-auto flex h-16 max-w-[1680px] items-center justify-between gap-3 px-4 sm:px-8">
-              <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-5">
+            <StudioChrome
+              brand={
                 <Link
                   href="/"
                   aria-label="Flowmark Studio home"
@@ -180,54 +181,48 @@ export function StudioShell({
                     Studio
                   </span>
                 </Link>
-                <span
-                  aria-hidden="true"
-                  className="hidden text-border sm:block"
+              }
+              project={<ProjectSwitcher />}
+              search={<CommandPalette />}
+              account={<AccountPanel email={email} />}
+              navigation={
+                <nav
+                  aria-label="Main navigation"
+                  className="flex min-w-0 gap-1 overflow-x-auto"
                 >
-                  /
-                </span>
-                <div className="min-w-0 max-w-[240px] flex-1">
-                  <ProjectSwitcher />
-                </div>
-              </div>
-              <div className="flex shrink-0 items-center gap-2 sm:gap-4">
-                <CommandPalette />
-                <AccountPanel email={email} />
-              </div>
-            </div>
-            <div className="mx-auto flex max-w-[1680px] items-center justify-between gap-3 px-2 sm:px-6">
-              <nav
-                aria-label="Main navigation"
-                className="flex min-w-0 gap-1 overflow-x-auto"
-              >
-                {navigation.map(({ href, label, icon: Icon }) => {
-                  const active =
-                    href === "/" ? pathname === "/" : pathname.startsWith(href)
-                  return (
-                    <Link
-                      key={href}
-                      href={href}
-                      aria-current={active ? "page" : undefined}
-                      className={`relative flex min-h-12 shrink-0 items-center gap-2 px-2.5 text-[11px] transition-colors sm:px-4 sm:text-xs ${active ? "text-foreground after:absolute after:inset-x-3 after:bottom-0 after:h-px after:bg-primary" : "text-muted-foreground hover:text-foreground"}`}
-                    >
-                      <Icon
-                        aria-hidden="true"
-                        className={`hidden size-3.5 sm:block ${active ? "text-primary" : ""}`}
-                      />
-                      {label}
-                    </Link>
-                  )
-                })}
-              </nav>
-              <Link
-                href="/runs"
-                className="hidden items-center gap-2 px-2 py-3 text-[11px] text-muted-foreground hover:text-foreground md:flex"
-              >
-                <History aria-hidden="true" className="size-3.5" />
-                Execution history
-                <ArrowUpRight aria-hidden="true" className="size-3" />
-              </Link>
-            </div>
+                  {navigation.map(({ href, label, icon: Icon }) => {
+                    const active =
+                      href === "/"
+                        ? pathname === "/"
+                        : pathname.startsWith(href)
+                    return (
+                      <Link
+                        key={href}
+                        href={href}
+                        aria-current={active ? "page" : undefined}
+                        className={`relative flex min-h-10 shrink-0 items-center gap-2 px-2.5 text-[11px] transition-colors sm:px-4 sm:text-xs ${active ? "text-foreground after:absolute after:inset-x-3 after:bottom-0 after:h-px after:bg-primary" : "text-muted-foreground hover:text-foreground"}`}
+                      >
+                        <Icon
+                          aria-hidden="true"
+                          className={`hidden size-3.5 sm:block ${active ? "text-primary" : ""}`}
+                        />
+                        {label}
+                      </Link>
+                    )
+                  })}
+                </nav>
+              }
+              utility={
+                <Link
+                  href="/runs"
+                  className="hidden items-center gap-2 px-2 py-3 text-[11px] text-muted-foreground hover:text-foreground md:flex"
+                >
+                  <History aria-hidden="true" className="size-3.5" />
+                  Execution history
+                  <ArrowUpRight aria-hidden="true" className="size-3" />
+                </Link>
+              }
+            />
           </header>
           <main
             id="studio-main"

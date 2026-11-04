@@ -75,10 +75,23 @@ Avoid nested metric cards, gratuitous shadows and ornamental borders.
 Studio uses a two-level top bar and content capped at 1680 px. Explore has a
 230–260 px contextual process pane on desktop, replaced by a selector on mobile.
 Global navigation fits narrow screens; account utilities live in a shared Sheet.
-Investigation and
-Settings tabs use the shared line variant with 44 px tab targets. Tables allow
+Investigation and Settings tabs use the shared line variant with 32 px desktop
+controls and 40 px mobile targets. Use the shared Button defaults (36 px), or
+32 px small/utility actions. Avoid oversized minimum-height and text-size
+overrides; dense desktop controls keep larger mobile hit areas when needed.
+Buttons use intrinsic width by default, including inside grid forms. Opt into
+`w-full` explicitly when the layout calls for a full-width action. Tables allow
 rows to grow for results and long identifiers. Mobile run summaries use a
 semantic list rather than hiding essential values in a wide table.
+
+Studio and the landing's interactive example share `StudioChrome`,
+`StudioWorkspace`, `StudioProcessPane` and `StudioEvidenceList` from
+`@flowmark/ui`. These components accept presentation data and interaction slots;
+they own no project queries, authentication, routing or business classification.
+The dashboard projects real run DTOs into the list and supplies Next links;
+the landing supplies fixed synthetic evidence and opens the shared `RunSnapshot`.
+Keep the synthetic disclosure visible and preserve actual Studio query/error
+states when changing shared presentation.
 
 ## Component ownership
 
@@ -266,6 +279,17 @@ than the old global sidebar. A real project selector and the existing command
 palette remain visible; settings, theme, setup help and sign-out are grouped in
 the account Sheet. Keep the source of filtered evidence visible and provide
 clear no-match recovery. Empty accounts lead to project creation.
+
+Studio search is project-scoped and keyboard accessible. Show processes, runs
+and enabled exact business references as distinct result groups; do not imply
+arbitrary property or entity search. A process or reference opens its cohort in
+Explore, retaining status, time and result predicates. Exact references stay
+qualified by process and field, and repeated matches offer one cohort entry.
+Single-run results retain a return link to Explore. Keep this workspace search
+distinct from the inline text filter over the current run list. Selecting a
+search result and clearing Explore create history entries; incremental typing
+replaces the current entry. A project change discards the open search and its
+pending text, and cached search results are keyed by project.
 
 Authentication pairs a focused form with the product story. Setup uses a
 five-step rail, compact mobile progress, a distinct content panel and real

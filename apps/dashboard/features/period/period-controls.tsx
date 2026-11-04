@@ -31,7 +31,7 @@ export function PeriodControls({
               type="button"
               size="sm"
               variant={days === value ? "secondary" : "ghost"}
-              className="min-h-10 text-sm shadow-none"
+              className="min-h-10 text-xs shadow-none sm:min-h-8"
               aria-pressed={days === value}
               onClick={() => onChange(value, workflow)}
             >
