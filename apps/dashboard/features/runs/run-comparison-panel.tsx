@@ -28,6 +28,8 @@ import { RunCompareChart } from "../reporting/insight-charts"
 import { formatDuration, formatTimestamp } from "../shared/format"
 import { getRunResultHighlights } from "./run-presentation"
 import { durationDelta } from "./run-state"
+import { Array as Arr } from "effect"
+import { runInvestigationPath } from "./investigation-navigation"
 
 type RunComparison = inferRouterOutputs<AppRouter>["run"]["compare"]
 
@@ -35,10 +37,14 @@ export function RunComparisonPanel({
   comparison,
   loading,
   error,
+  source,
+  replace = false,
 }: {
   comparison?: RunComparison
   loading: boolean
   error?: string
+  source?: string
+  replace?: boolean
 }) {
   const params = useSearchParams()
   const pathname = usePathname()
@@ -64,7 +70,36 @@ export function RunComparisonPanel({
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        <form action={pathname} className="grid gap-3 sm:grid-cols-2">
+        <form
+          action={pathname}
+          className="grid gap-3 sm:grid-cols-2"
+          onSubmit={(event) => {
+            event.preventDefault()
+            const form = new FormData(event.currentTarget)
+            const next = new URLSearchParams(params.toString())
+            next.set("view", "compare")
+            Arr.forEach(
+              [
+                "peerDays",
+                "peerEnvironment",
+                "peerRelease",
+                "peerDimension",
+                "peerValue",
+              ],
+              (key) => {
+                const value = form.get(key)
+                if (typeof value === "string") {
+                  next.set(key, value)
+                }
+              },
+            )
+            window.history[replace ? "replaceState" : "pushState"](
+              null,
+              "",
+              `${pathname}?${next}`,
+            )
+          }}
+        >
           <input type="hidden" name="view" value="compare" />
           <label className="text-sm">
             Previous days
@@ -290,7 +325,9 @@ export function RunComparisonPanel({
                                   <Link
                                     key={runId}
                                     className="font-mono text-muted-foreground hover:text-primary hover:underline"
-                                    href={`/runs/${runId}`}
+                                    href={runInvestigationPath(runId, source)}
+                                    replace={replace}
+                                    scroll={false}
                                   >
                                     {runId.slice(0, 8)}
                                   </Link>
@@ -328,7 +365,9 @@ export function RunComparisonPanel({
                       <TableCell>
                         <Link
                           className="break-all font-mono text-xs hover:text-primary hover:underline"
-                          href={`/runs/${peer.id}`}
+                          href={runInvestigationPath(peer.id, source)}
+                          replace={replace}
+                          scroll={false}
                         >
                           <code>{peer.externalId}</code>
                         </Link>

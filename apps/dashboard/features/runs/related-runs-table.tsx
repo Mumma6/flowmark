@@ -15,6 +15,7 @@ import { useState } from "react"
 import { StatusBadge, TablePagination } from "../shared/dashboard-components"
 import { paginate } from "../shared/collections"
 import { formatTimestamp } from "../shared/format"
+import { runInvestigationPath } from "./investigation-navigation"
 
 type RunRelationships = inferRouterOutputs<AppRouter>["run"]["related"]
 type RelatedRun = RunRelationships["related"][number]
@@ -23,10 +24,14 @@ export function RelatedRunsTable({
   title,
   runs,
   empty,
+  source,
+  replace = false,
 }: {
   title: string
   runs: readonly RelatedRun[]
   empty: string
+  source?: string
+  replace?: boolean
 }) {
   const [page, setPage] = useState(1)
   const result = paginate(runs, page, 10)
@@ -58,7 +63,9 @@ export function RelatedRunsTable({
                   <TableCell>
                     <Link
                       className="font-medium hover:text-primary hover:underline"
-                      href={`/runs/${run.id}`}
+                      href={runInvestigationPath(run.id, source)}
+                      replace={replace}
+                      scroll={false}
                     >
                       <code>{run.externalId}</code>
                     </Link>

@@ -291,6 +291,16 @@ search result and clearing Explore create history entries; incremental typing
 replaces the current entry. A project change discards the open search and its
 pending text, and cached search results are keyed by project.
 
+From Explore, a run opens in a right-hand inspector over the mounted cohort.
+Use the shared Sheet for focus management and narrow screens. Native history
+updates keep the ordinary `/runs/:id` URL without replacing the Explore page;
+direct loads and Open full page use the existing full run page. Evidence modes,
+peer selection and linked-run navigation replace the inspector's history entry,
+so Close/Escape/back return to the original cohort, cursor page and row focus.
+Keep all evidence modes available on mobile. Reuse `RunDetailContent` and
+`RunInvestigation`; project changes discard the panel and scoped URL state.
+Detail, relationship, comparison and expectation queries stay project-keyed.
+
 Authentication pairs a focused form with the product story. Setup uses a
 five-step rail, compact mobile progress, a distinct content panel and real
 loading/error states. Each step change focuses its heading. Code panels use the

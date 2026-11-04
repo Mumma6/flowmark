@@ -6,7 +6,10 @@ import Link from "next/link"
 import { usePathname, useSearchParams } from "next/navigation"
 import type { Run } from "../platform/api-types"
 import { formatDuration, formatTimestamp } from "../shared/format"
-import { runInvestigationPath } from "../runs/investigation-navigation"
+import {
+  readInspectorRunId,
+  runInvestigationPath,
+} from "../runs/investigation-navigation"
 import {
   getRunResultHighlights,
   runStatusLabel,
@@ -31,7 +34,23 @@ export function ExploreRunList({ runs }: { runs: readonly Run[] }) {
         startedAt: run.startedAt,
       }))}
       renderLink={(run, props) => (
-        <Link href={runInvestigationPath(run.id, from)} {...props} />
+        <Link
+          onNavigate={(event) => {
+            if (!readInspectorRunId(`/runs/${encodeURIComponent(run.id)}`)) {
+              return
+            }
+            event.preventDefault()
+            window.history.pushState(
+              null,
+              "",
+              runInvestigationPath(run.id, from),
+            )
+          }}
+          href={runInvestigationPath(run.id, from)}
+          data-run-id={run.id}
+          scroll={false}
+          {...props}
+        />
       )}
     />
   )

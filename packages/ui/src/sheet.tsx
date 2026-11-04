@@ -12,8 +12,9 @@ export const SheetClose = Dialog.Close
 export function SheetContent({
   className,
   children,
+  closeLabel = "Close navigation",
   ...props
-}: ComponentProps<typeof Dialog.Popup>) {
+}: ComponentProps<typeof Dialog.Popup> & { closeLabel?: string }) {
   return (
     <Dialog.Portal>
       <Dialog.Backdrop className="fixed inset-0 z-40 bg-black/50 data-[closed]:hidden" />
@@ -27,7 +28,7 @@ export function SheetContent({
       >
         {children}
         <Dialog.Close
-          aria-label="Close navigation"
+          aria-label={closeLabel}
           className="absolute right-4 top-4 rounded-sm p-1 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <X className="h-4 w-4" />

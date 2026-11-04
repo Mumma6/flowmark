@@ -29,12 +29,16 @@ export function PageSections({
   defaultValue,
   hashSections,
   queryKey = "view",
+  history = "push",
+  compact = false,
 }: {
   label: string
   sections: readonly PageSection[]
   defaultValue: string
   hashSections?: Readonly<Record<string, string>>
   queryKey?: string
+  history?: "push" | "replace"
+  compact?: boolean
 }) {
   const params = useSearchParams()
   const pathname = usePathname()
@@ -60,7 +64,11 @@ export function PageSections({
         }
         const query = new URLSearchParams(window.location.search)
         query.set(queryKey, value)
-        window.history.pushState(null, "", `${pathname}?${query}`)
+        window.history[history === "replace" ? "replaceState" : "pushState"](
+          null,
+          "",
+          `${pathname}?${query}`,
+        )
       }}
       className="gap-5"
     >
@@ -80,9 +88,15 @@ export function PageSections({
           key={section.value}
           value={section.value}
           keepMounted={section.keepMounted}
-          className="grid gap-5 text-base"
+          className={compact ? "grid gap-4 text-sm" : "grid gap-5 text-base"}
         >
-          <p className="max-w-3xl text-base leading-7 text-muted-foreground">
+          <p
+            className={
+              compact
+                ? "max-w-3xl text-sm leading-6 text-muted-foreground"
+                : "max-w-3xl text-base leading-7 text-muted-foreground"
+            }
+          >
             {section.description}
           </p>
           {section.content}
