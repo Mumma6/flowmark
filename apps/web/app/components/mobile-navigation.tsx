@@ -41,14 +41,15 @@ export function MobileNavigation() {
       <SheetContent className="bg-background p-6">
         <SheetTitle>Explore Flowmark</SheetTitle>
         <SheetDescription>
-          Workflow observability for your application.
+          Process intelligence for people and agents.
         </SheetDescription>
         <nav aria-label="Mobile navigation" className="mt-8 grid gap-2">
           {[
-            { label: "Product", href: "#product" },
-            { label: "Developers", href: "#how-it-works" },
-            { label: "Outcomes", href: "#outcomes" },
-            { label: "Dashboard", href: appUrl },
+            { label: "Platform", href: "#platform" },
+            { label: "Studio", href: "#studio" },
+            { label: "Everywhere", href: "#everywhere" },
+            { label: "Your team", href: "#organization" },
+            { label: "Open Studio", href: appUrl },
             { label: "Documentation", href: docsUrl },
             { label: "GitHub", href: githubUrl },
             { label: "Questions", href: "#faq" },

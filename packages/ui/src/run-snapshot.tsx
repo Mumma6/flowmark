@@ -142,12 +142,12 @@ export function RunSnapshot({
             {metrics.map((metric, index) => (
               <div
                 key={`${metric.label}-${index}`}
-                className="min-w-0 border-border p-4 odd:border-r [&:nth-child(n+3)]:border-t sm:border-r sm:last:border-r-0 sm:[&:nth-child(n+3)]:border-t-0"
+                className="min-w-0 border-border p-3 odd:border-r [&:nth-child(n+3)]:border-t sm:border-r sm:p-4 sm:last:border-r-0 sm:[&:nth-child(n+3)]:border-t-0"
               >
                 <dt className="break-words text-[11px] text-muted-foreground">
                   {metric.label}
                 </dt>
-                <dd className="mt-2 break-words text-[28px] leading-tight font-medium tracking-tight tabular-nums">
+                <dd className="mt-2 break-words text-xl leading-tight font-medium tracking-tight tabular-nums sm:text-[28px]">
                   {metric.value}
                 </dd>
                 <dd className="mt-2 text-[10px] text-muted-foreground">
