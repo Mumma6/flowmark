@@ -19,7 +19,9 @@ existing cache invalidation and server-enforced project membership remain intact
 Failures are explicit rather than presented as a project-free account.
 
 `features/explore` composes the existing `useRunExplorer` controller and
-`useSnapshot`. It introduces no query transport or analytics population. Process
+`useSnapshot`, plus `ExploreAnalyticsContext` (period report, recorded changes,
+business outcomes and failure groups from the Insights/Attention controllers).
+It introduces no query transport or analytics population. Process
 counts describe the recorded summaries; the evidence list has its own full
 history/loading/error state. Project changes remount the Explore workspace to
 discard its old cursor. Applied filters and return links preserve exact cohorts.
