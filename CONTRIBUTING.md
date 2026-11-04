@@ -1,8 +1,9 @@
 # Contributing
 
-Thanks for helping improve Flowmark. This repository is the application,
-SDK, and dashboard source. You can explore and change it without access to
-maintainer-only planning or infrastructure notes.
+Flowmark is an open-source process-intelligence platform for people and agents.
+This repository contains its SDK, application services and current web interface,
+which is evolving into Flowmark Studio. You can explore and change it without
+access to maintainer-only planning or infrastructure notes.
 
 ## Get started locally
 

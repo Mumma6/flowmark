@@ -5,7 +5,7 @@
 <h1 align="center">flowmark.</h1>
 
 <p align="center">
-  <strong>Know what your workflows actually accomplish.</strong>
+  <strong>Understand what your software actually does.</strong>
 </p>
 
 <p align="center">
@@ -14,13 +14,19 @@
   <a href="https://flowmark.dev"><img alt="flowmark.dev" src="https://img.shields.io/badge/flowmark.dev-0d1311" /></a>
 </p>
 
-Flowmark shows what the processes in your application actually do. Mark a
-checkout, an import, a sync, or a background job in ordinary TypeScript. Each
-execution keeps its milestones, timed work, progress, errors, and the business
-result your code reported.
+Flowmark is an open-source process-intelligence platform for people and AI
+agents. Instrument the processes your application already runs, collect execution
+evidence, and understand technical and reported business outcomes over time.
 
-One run is enough to investigate a single case. Many runs show volume,
-duration, failures, and how those reported outcomes change over time.
+Today, the TypeScript SDK and web interface support workflow investigation,
+related executions, progress, outcomes, confirmations and historical business
+analytics. Your application keeps ownership of execution.
+
+**Product 1.0 direction:** Flowmark Platform supplies the programmable foundation;
+Flowmark Studio brings it into a contextual investigation workspace; Flowmark
+Everywhere carries it into agents, custom tools and portable interfaces. These
+are dimensions of one product. The unified Studio, delegated MCP access, saved
+investigations and portable agent UI are planned, not current availability claims.
 
 ## Getting started
 
@@ -150,7 +156,7 @@ you control.
 | `packages/api`   | Use cases and ports                         |
 | `packages/db`    | Schema, migrations, and persistence         |
 | `apps/server`    | HTTP and tRPC shell                         |
-| `apps/dashboard` | Signed-in product                           |
+| `apps/dashboard` | Current web interface, evolving into Studio |
 | `apps/web`       | Landing page                                |
 | `apps/docs`      | Customer documentation                      |
 

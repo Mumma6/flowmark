@@ -25,20 +25,27 @@ In development, documentation links default to
 
 ## Product story
 
-“Know what your workflows actually accomplish” leads with application-reported
-results. Completion and business results remain separate facts. The central
+Product 1.0 positioning is “Understand what your software actually does”: open-source
+process intelligence for people and agents. The current site still uses its earlier
+workflow-focused copy; a dedicated content/UI task will apply the new narrative.
+Both narratives lead from application-reported results to evidence. Completion
+and business results remain separate facts. The central
 example is a customer import: 1,000 received, 988 imported, 12 skipped, with a
 handled CRM rate limit. Flowmark observes application-owned work; it does not
-execute, schedule, or retry it. Open-source/MIT is secondary context in source
-links and the footer, not the main value proposition.
+execute, schedule, or retry it. Open-source/MIT and self-hosting are part of the
+Product 1.0 value story.
 
-The public landing describes the intended product experience in present tense,
-including outcome analytics, business-reference search, and expectations. It is
-product storytelling rather than a release-status page; roadmap sections and
-availability labels are kept out of the marketing UI. This does not change the
-SDK/API contracts or the implementation status tracked separately in product
-planning. The analytics panel uses sample data, not a live query or a screenshot
-of shipped analytics.
+The landing presents the complete Product 1.0 as already implemented, using
+present tense for Studio, Platform, Everywhere, agent access and portable
+experiences. This is the maintainer's latest product-story instruction and
+supersedes the earlier availability-label requirement. Explain and visualize the
+finished product without roadmap language or future-status teasers.
+
+Keep fictional/sample illustrations identifiable, CTAs functional, and actual
+account/connection state accurate. An interactive product illustration does not
+authorize a real OAuth session, submit telemetry or prove a live deployment.
+Operational guides and source acceptance records remain precise about the
+implemented and deployed revision.
 
 Never claim independently verified business correctness or infer active work,
 terminal failure, or root cause from missing telemetry alone.
