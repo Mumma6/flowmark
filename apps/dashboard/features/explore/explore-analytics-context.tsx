@@ -22,6 +22,7 @@ import { RecordedChangesSection } from "../reporting/recorded-changes-section"
 import { DataState, ViewLink } from "../shared/dashboard-components"
 import { PageSections } from "../shared/page-sections"
 import { FailureGroupsPanel } from "../issues/failure-groups-panel"
+import { exploreAnalyticsQueryKey } from "./explore-analytics-query"
 
 export function ExploreAnalyticsContext({
   exploreFrom,
@@ -95,6 +96,9 @@ export function ExploreAnalyticsContext({
           <PageSections
             label="Explore analytics sections"
             defaultValue="summary"
+            queryKey={exploreAnalyticsQueryKey}
+            history="replace"
+            compact
             sections={[
               {
                 value: "summary",

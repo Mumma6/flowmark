@@ -154,7 +154,7 @@ export function StudioShell({
   return (
     <RuntimeConfigProvider apiOrigin={apiOrigin}>
       <ProjectProvider>
-        <div className="relative isolate min-h-screen bg-background">
+        <div className="relative isolate min-h-screen overflow-x-clip bg-background">
           <div
             aria-hidden="true"
             className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[480px] bg-[radial-gradient(ellipse_at_50%_0%,hsl(var(--primary)/0.04),transparent_65%)]"

@@ -37,6 +37,7 @@ import {
 import { useRunExplorer } from "../runs/use-run-explorer"
 import { DataState, FilterSelect } from "../shared/dashboard-components"
 import { ExploreAnalyticsContext } from "./explore-analytics-context"
+import { exploreAnalyticsQueryKey } from "./explore-analytics-query"
 import { ExploreRunList } from "./explore-run-list"
 
 const executionStates = [
@@ -68,6 +69,7 @@ function ExploreWorkspace() {
     ([key, value]) => value !== explorerDefaults[key as keyof ExplorerFilters],
   )
   const historyParams = new URLSearchParams(params.toString())
+  historyParams.delete(exploreAnalyticsQueryKey)
   historyParams.set("view", "runs")
   const historyHref = `/runs?${historyParams}`
   const clearFilters = () => {
@@ -135,8 +137,13 @@ function ExploreWorkspace() {
         }
       >
         <div className="grid min-w-0 gap-7">
-          <ExploreAnalyticsContext exploreFrom={exploreFrom} />
-          <section aria-labelledby="evidence-title" className="min-w-0">
+          <div className="order-2 min-w-0 lg:order-1">
+            <ExploreAnalyticsContext exploreFrom={exploreFrom} />
+          </div>
+          <section
+            aria-labelledby="evidence-title"
+            className="order-1 min-w-0 lg:order-2"
+          >
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-[linear-gradient(110deg,hsl(var(--primary)/0.035),transparent_65%)] px-5 py-4 sm:px-6">
               <div className="flex items-center gap-2.5">
                 <CircleDot aria-hidden="true" className="size-4 text-primary" />

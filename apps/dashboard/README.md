@@ -33,8 +33,11 @@ features (`auth`, `platform`, `runs` and `reporting`).
 
 - **Explore (`/`):** the first Studio workspace. Its process rail uses the
   existing project snapshot; execution evidence uses full, cursor-paginated
-  `run.list` through the existing explorer controller. Search/process/status
-  filters stay in the URL; all applied conditions remain visible. All filters
+  `run.list` through the existing explorer controller. Period analytics (summary,
+  reported results and failure groups) reuse Insights/Attention controllers;
+  on narrow viewports execution evidence appears first, analytics second. Analytics
+  tab state uses the `analytics` query key so it does not collide with run
+  `view` or history `view=runs`. Search/process/status filters stay in the URL; all applied conditions remain visible. All filters
   opens the existing history with the exact same conditions. Process selection
   becomes a compact selector on mobile. Run links preserve the return cohort.
 - **Overview (`/overview`):** four seven-day execution metrics from `project.intelligence`,
