@@ -47,7 +47,8 @@ Continue with the same workflow name and external run ID. Transport a plain
 WorkflowRunReference explicitly through application-owned storage/payloads;
 correlation/parent IDs do not resume a run. Repeated starts do not change initial
 properties, environment, release or links. Use setProperties for accepted shallow
-context changes while the run is open. A new attempt gets a new run ID.
+context changes until the run records a terminal event, including while
+completion waits for open operations. A new attempt gets a new run ID.
 
 ## Compatibility and historical interpretation
 

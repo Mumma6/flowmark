@@ -141,11 +141,11 @@ Delivery fibers belong to a scoped `FiberSet`, and a managed runtime owns their
 lifetime. Effect execution is confined to the public client boundary; the
 services themselves only return composable Effects.
 
-Compatibility note: the shared client's `setProperties()` currently accepts
-updates while `done()` waits for open operations, although other markers are
-ignored then. The low-level `workflow()` wrapper already ignores those updates.
-The architecture refactor preserves this difference; aligning the guards needs
-a separate behavior change and corresponding documentation review.
+`setProperties()` accepts amendments while `done()` waits for open operations.
+Steps, reports, progress, handled errors and new operations are ignored during
+that interval. Every marker stops after a recorded terminal event. The low-level
+`workflow()` entry point uses this same run state and releases its dedicated
+delivery resources after that terminal event.
 
 Each execution gets a distinct run ID; business identifiers are optional
 properties. HTTP delivery attaches a stable event UUID for retry deduplication.

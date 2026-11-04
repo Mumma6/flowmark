@@ -10,6 +10,7 @@ export interface WorkflowEngineService {
   readonly start: (
     name: WorkflowName,
     options: WorkflowRunOptions,
+    onTerminal?: Effect.Effect<void>,
   ) => Effect.Effect<WorkflowHandle>
 }
 
@@ -25,8 +26,9 @@ export class WorkflowEngine extends Context.Service<
       const start = Effect.fn("Flowmark.WorkflowEngine.start")(function* (
         workflow: WorkflowName,
         options: WorkflowRunOptions,
+        onTerminal?: Effect.Effect<void>,
       ) {
-        const run = yield* runs.start(workflow, options)
+        const run = yield* runs.start(workflow, options, onTerminal)
         return {
           runId: run.runId,
           ...makeMarkers(run, workflow),

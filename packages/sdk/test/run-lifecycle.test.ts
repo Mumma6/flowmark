@@ -4,6 +4,8 @@ import { makeClient } from "../src/client/runtime.js"
 import {
   MemoryTransport,
   WorkflowTransport,
+  workflow,
+  type Flow,
   type WorkflowEvent,
 } from "../src/index.js"
 
@@ -13,7 +15,46 @@ function clientWithMemory() {
   return { client, events: transport.events }
 }
 
+function exercisePendingProperties(flow: Flow) {
+  const operation = flow.operation("load")
+  flow.done()
+  flow.setProperties({ phase: "closing" })
+  flow.report({ ignored: true })
+  flow.step("ignored")
+  flow.progress({ completed: 1 })
+  flow.error({ code: "ignored", handled: true })
+  operation.done()
+  flow.setProperties({ ignored: true })
+  flow.fail({ code: "ignored" })
+}
+
 describe("run lifecycle characterization", () => {
+  it("records the same pending-completion evidence for the shared client and advanced workflow", async () => {
+    const { client, events: sharedEvents } = clientWithMemory()
+    exercisePendingProperties(client.workflow("import", { id: "shared" }))
+    const sharedSettled = client.shutdown()
+
+    const transport = new MemoryTransport()
+    exercisePendingProperties(workflow("import", { id: "advanced", transport }))
+    await vi.waitFor(() =>
+      expect(transport.events.at(-1)?.type).toBe("completed"),
+    )
+    await sharedSettled
+    const types = (events: ReadonlyArray<WorkflowEvent>) =>
+      events.map((event) => event.type)
+    expect(types(transport.events)).toEqual(types(sharedEvents))
+    expect(types(sharedEvents)).toEqual([
+      "started",
+      "operation_started",
+      "properties",
+      "operation_completed",
+      "completed",
+    ])
+    expect(transport.events[2]).toMatchObject({
+      properties: { phase: "closing" },
+    })
+  })
+
   it("isolates pending completion and properties between overlapping runs", async () => {
     const { client, events } = clientWithMemory()
     const first = client.workflow("import", { id: "first" })

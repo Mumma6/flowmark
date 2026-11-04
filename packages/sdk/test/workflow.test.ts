@@ -3,6 +3,23 @@ import { describe, expect, it, vi } from "vitest"
 import { MemoryTransport, type WorkflowEvent, workflow } from "../src/index.js"
 
 describe("workflow", () => {
+  it("releases delivery resources after the terminal event", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined)
+    const flow = workflow("checkout", {
+      id: "release",
+      transport: {
+        emit: () => Effect.fail(new Error("delivery failed")),
+      },
+    })
+    flow.done()
+    await vi.waitFor(() =>
+      expect(warn.mock.calls.map((call) => String(call[0]))).toContain(
+        "[Flowmark] Custom transport workflow completed with delivery failures",
+      ),
+    )
+    warn.mockRestore()
+  })
+
   it("records a start, semantic steps, and successful completion", async () => {
     const transport = new MemoryTransport()
     const flow = workflow("checkout", {
