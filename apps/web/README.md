@@ -65,8 +65,10 @@ generated Open Graph image use the same identity.
 
 Static narrative stays in Server Components. Client boundaries own only local
 interaction state. Shared controls come from `@flowmark/ui`; no new UI kit,
-backend, dependencies or infrastructure are introduced. The removed legacy
-sections/effects have no remaining consumers.
+backend, dependencies or infrastructure are introduced. Unused legacy sections
+remain removed. The earlier `SpotlightWash` and
+`BackgroundBeams` decorations are reused behind the hero, with their source
+attributions preserved.
 
 ## Visual direction and verification
 
@@ -76,10 +78,12 @@ editorial headings, structural dividers and evidence-led product visuals.
 It does not implement a light-theme switch. Semantic completion, attention and
 failure colors remain distinct from brand emphasis.
 
-Global CSS owns tokens, base rules and a short entrance keyframe. The entrance
-is enabled only when motion is allowed; anchor scrolling respects reduced
-motion. No animation dependency, scroll listener, remote font or image request
-is required.
+Global CSS owns tokens, base rules, the short entrance and slow light/beam
+keyframes. Decorative light cones and lines never receive pointer input or
+accessibility focus; their motion is enabled only when motion is allowed. Studio
+uses a lime rim light, soft ambient glow and stronger selected-state accents.
+Anchor scrolling respects reduced motion. No animation dependency, scroll
+listener, remote font or image request is required.
 
 Verify desktop and mobile layouts, keyboard tabs, search/clear recovery, evidence
 selection, cross-interface context, Dialog/Sheet dismissal and focus restoration,

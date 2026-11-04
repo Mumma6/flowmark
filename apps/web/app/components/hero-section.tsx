@@ -1,8 +1,10 @@
 import { Button } from "@flowmark/ui"
 import { StudioExperience } from "../../features/product-landing/studio-experience"
+import { BackgroundBeams } from "./background-beams"
 import { Arrow } from "./brand"
 import { shellClassName } from "./shell"
 import { docsUrl } from "./site-links"
+import { SpotlightWash } from "./spotlight-wash"
 
 export function HeroSection() {
   return (
@@ -12,8 +14,13 @@ export function HeroSection() {
     >
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 top-56 -z-10 h-[780px] bg-[radial-gradient(ellipse_at_50%_50%,var(--hero-glow),transparent_65%)]"
-      />
+        className="pointer-events-none absolute inset-0 -z-10 overflow-hidden [mask-image:linear-gradient(to_bottom,#000_65%,transparent)]"
+      >
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_25%,var(--hero-glow),transparent_65%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(#b9f59708_1px,transparent_1px),linear-gradient(90deg,#b9f59708_1px,transparent_1px)] bg-size-[72px_72px] [mask-image:radial-gradient(ellipse_at_50%_15%,#000,transparent_70%)]" />
+        <SpotlightWash className="opacity-60 sm:opacity-80" />
+        <BackgroundBeams className="opacity-35 sm:opacity-50" />
+      </div>
       <div className={shellClassName}>
         <div className="flex flex-wrap items-center gap-3 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground sm:text-[11px]">
           <span className="size-1.5 rounded-full bg-primary" />

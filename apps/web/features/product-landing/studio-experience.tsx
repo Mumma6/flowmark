@@ -53,7 +53,7 @@ function EvidenceWorkspace({ example }: { example: InvestigationExample }) {
               variant="ghost"
               aria-pressed={stepIndex === index}
               onClick={() => setStepIndex(index)}
-              className={`relative h-auto min-h-28 flex-col items-start justify-start gap-3 whitespace-normal rounded-lg border p-3 text-left text-foreground ${stepIndex === index ? "border-primary/50 bg-primary/5" : "border-border/70 bg-background/40 hover:bg-secondary"}`}
+              className={`relative h-auto min-h-28 flex-col items-start justify-start gap-3 whitespace-normal rounded-lg border p-3 text-left text-foreground ${stepIndex === index ? "border-primary/60 bg-primary/10 shadow-[0_0_20px_-8px_#b9f59730]" : "border-border/70 bg-background/40 hover:bg-secondary"}`}
             >
               <span
                 className={`grid size-6 place-items-center rounded-full border text-[10px] ${item.state === "attention" ? "border-warning/30 text-warning" : "border-success/30 text-success"}`}
@@ -88,7 +88,7 @@ function EvidenceWorkspace({ example }: { example: InvestigationExample }) {
         </div>
       </div>
       <aside
-        className="min-w-0 border-t border-border bg-background/35 p-5 lg:border-t-0 lg:border-l"
+        className="min-w-0 border-t border-border bg-[linear-gradient(160deg,#b9f59708,transparent_60%)] p-5 lg:border-t-0 lg:border-l"
         aria-label="Selected evidence"
         aria-live="polite"
       >
@@ -107,7 +107,7 @@ function EvidenceWorkspace({ example }: { example: InvestigationExample }) {
         <pre
           tabIndex={0}
           aria-label="Selected evidence JSON"
-          className="mt-5 overflow-x-auto rounded-md border border-border bg-background p-3 font-mono text-[10px] leading-6 text-primary"
+          className="mt-5 overflow-x-auto rounded-md border border-primary/15 bg-background/80 p-3 font-mono text-[10px] leading-6 text-primary"
         >
           <code>{JSON.stringify(JSON.parse(step.payload), null, 2)}</code>
         </pre>
@@ -221,15 +221,23 @@ export function StudioExperience() {
           Interactive example · synthetic data
         </span>
       </div>
-      <div className="overflow-hidden rounded-xl border border-border bg-card shadow-[0_24px_100px_-32px_#000]">
-        <div className="flex min-h-14 items-center justify-between gap-4 border-b border-border bg-background/40 px-4 sm:px-5">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -inset-x-12 top-8 -bottom-12 -z-10 rounded-full bg-[radial-gradient(ellipse_at_50%_35%,var(--studio-glow),transparent_70%)] blur-3xl"
+      />
+      <div className="relative overflow-hidden rounded-xl border border-primary/25 bg-card shadow-[0_0_0_1px_#b9f59708,0_32px_100px_-28px_#000,0_0_90px_-40px_#b9f59760]">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-8 top-0 h-px bg-linear-to-r from-transparent via-primary/70 to-transparent"
+        />
+        <div className="flex min-h-14 items-center justify-between gap-4 border-b border-primary/10 bg-[linear-gradient(110deg,#b9f59710,transparent_65%)] px-4 sm:px-5">
           <div className="flex items-center gap-3 text-xs">
             <FlowmarkMark className="size-5 text-primary" />
             <span className="font-medium">Meridian Health</span>
             <span className="text-muted-foreground">/</span>
-            <span className="text-muted-foreground">Studio</span>
+            <span className="text-primary">Studio</span>
           </div>
-          <span className="hidden rounded border border-border px-2 py-1 font-mono text-[9px] text-muted-foreground sm:block">
+          <span className="hidden rounded border border-primary/20 bg-primary/5 px-2 py-1 font-mono text-[9px] text-primary/80 sm:block">
             Reference workspace
           </span>
         </div>
@@ -246,7 +254,7 @@ export function StudioExperience() {
             <TabsList
               aria-label="Explore Flowmark interfaces"
               variant="line"
-              className="gap-4 p-0"
+              className="gap-4 p-0 [&_[data-active]]:text-primary"
             >
               <TabsTrigger
                 value="studio"
@@ -298,7 +306,7 @@ export function StudioExperience() {
                       variant="ghost"
                       aria-pressed={visible?.id === item.id}
                       onClick={() => setSelection(item.id)}
-                      className={`h-auto min-h-16 flex-col items-start gap-2 whitespace-normal px-3 py-3 text-left ${visible?.id === item.id ? "bg-secondary text-foreground" : "text-muted-foreground"}`}
+                      className={`h-auto min-h-16 flex-col items-start gap-2 whitespace-normal px-3 py-3 text-left ${visible?.id === item.id ? "bg-primary/10 text-primary ring-1 ring-primary/20 ring-inset" : "text-muted-foreground"}`}
                     >
                       <span className="text-[11px]">{item.title}</span>
                       <span className="text-[9px] font-normal text-warning">

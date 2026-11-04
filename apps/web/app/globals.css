@@ -27,6 +27,10 @@
     "Segoe UI Symbol", "Noto Color Emoji";
   --font-mono: ui-monospace, SFMono-Regular, Consolas, monospace;
   --animate-arrive: arrive 700ms cubic-bezier(0.2, 0.7, 0.3, 1) both;
+  --animate-beam-travel: beam-travel 16s linear infinite;
+  --animate-spotlight-pan: spotlight-pan 24s ease-in-out infinite;
+  --animate-spotlight-pan-reverse: spotlight-pan-reverse 28s ease-in-out
+    infinite;
   --radius-lg: 0.7rem;
   --radius-md: calc(0.7rem - 2px);
   --radius-sm: calc(0.7rem - 4px);
@@ -43,7 +47,8 @@
   --border: hsl(160 7% 18%);
   --success: 152 42% 65%;
   --success-foreground: 152 42% 65%;
-  --hero-glow: #a2d28813;
+  --hero-glow: #a2d28824;
+  --studio-glow: #b9f59724;
 }
 
 @layer base {
@@ -80,5 +85,36 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes beam-travel {
+  from {
+    stroke-dasharray: 48 720;
+    stroke-dashoffset: 768;
+  }
+  to {
+    stroke-dasharray: 48 720;
+    stroke-dashoffset: -768;
+  }
+}
+
+@keyframes spotlight-pan {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(4rem);
+  }
+}
+
+@keyframes spotlight-pan-reverse {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(-4rem);
   }
 }

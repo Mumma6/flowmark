@@ -195,9 +195,12 @@ surfaces continue to support their existing themes.
 
 Use large editorial headings (fluid 45–88 px for the public hero), short readable
 explanations and open sections divided by fine rules. Monospace identifies
-references, source, context and exact payloads. Avoid decorative card grids,
-animated spotlights and ornament competing with evidence. A faint static light
-behind the Studio connects the composition without becoming the subject.
+references, source, context and exact payloads. Avoid decorative card grids and
+ornament competing with evidence. Soft lime
+light cones, a faint grid and slowly travelling background beams frame the hero.
+Keep them behind content and disable their movement under reduced motion. Studio
+gets a stronger rim light, ambient glow and selected-state accents so the product
+illustration stands out without changing status colors or interaction behavior.
 
 The primary visual is a working contextual investigation, not a screenshot:
 process selection → connected evidence → inspector → existing run detail.
