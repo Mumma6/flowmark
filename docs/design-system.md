@@ -17,11 +17,16 @@ result. It does not establish that an external business process succeeded.
 - **Not reported:** the application did not attach the relevant result.
 - **Last reported progress:** an absolute snapshot, never a heartbeat.
 
-Do not classify arbitrary result keys as success, warning or failure. Do not infer
-pending confirmations, overdue work, root causes or business outcome categories.
-Business outcome distributions require an explicit workflow-specific contract.
-The current dashboard presents execution summaries and individual reported
-results; it does not claim to implement aggregate business outcome analytics.
+Do not classify arbitrary result keys as success, warning or failure. Pending
+and overdue confirmations require the existing explicit expectation contract;
+missing telemetry alone establishes neither. Business analytics use declared
+fields, immutable revisions, exact cohorts and visible coverage. These capabilities
+already exist; preserve their semantics when composing Studio views.
+
+Product 1.0 introduces a contextual Studio over this foundation. Preserve the
+current palette, mark, shared components and accessibility. Context, answer and
+evidence should form one continuous interaction. Existing page compositions below
+describe current behavior, not a permanent navigation constraint.
 
 ## Foundations
 
@@ -179,3 +184,40 @@ Verify desktop, laptop, mobile, both themes, keyboard/focus, Sheet dismissal,
 long identifiers, zoom/reflow and reduced motion. Preserve layout during refresh
 and retain explicit errors. Target WCAG AA text contrast. Use the pinned pnpm
 commands in the [dashboard README](../apps/dashboard/README.md).
+
+## Product 1.0 landing and Studio direction
+
+The landing establishes the visual direction for Product 1.0; it does not rename
+or replace the current dashboard. Keep charcoal surfaces, the Flowmark mark and
+accent dot, system fonts and restrained lime. Its neutral charcoal palette
+reduces the old green cast. The public site is dark-only; authenticated product
+surfaces continue to support their existing themes.
+
+Use large editorial headings (fluid 45–88 px for the public hero), short readable
+explanations and open sections divided by fine rules. Monospace identifies
+references, source, context and exact payloads. Avoid decorative card grids,
+animated spotlights and ornament competing with evidence. A faint static light
+behind the Studio connects the composition without becoming the subject.
+
+The primary visual is a working contextual investigation, not a screenshot:
+process selection → connected evidence → inspector → existing run detail.
+Studio, agent and structured-data views preserve the selected case. A shared
+Dialog reveals `RunSnapshot`; its schema and dashboard consumer are unchanged.
+An explicit observation snapshot accompanies missing-confirmation evidence.
+Completed execution remains separate from reported results and expectations.
+RunSnapshot uses 20 px metric values and 12 px metric padding on narrow screens,
+returning to 28 px and 16 px at the small breakpoint. Inspection initially focuses
+its title so long mobile content opens at the beginning.
+
+Organization perspectives adapt the question and depth around the same reference.
+Agent and portable-view illustrations show how that context travels; they do not
+simulate authorization or a real connected client. Keep fictional organizations
+and synthetic data identifiable. Landing copy describes the full Product 1.0 in
+present tense; actual operational state elsewhere stays factual.
+
+On narrow screens, navigation becomes the shared Sheet, investigation selection
+becomes a compact two-column list, and the journey and inspector stack. Preserve
+all evidence and actions rather than clipping a desktop console. Use shared
+Tabs, Button, Input, Sheet, Dialog and Accordion; no second component system.
+Keep visible keyboard focus, meaningful no-match recovery, Escape dismissal and
+focus restoration. Entrance motion and anchor scrolling honor reduced motion.

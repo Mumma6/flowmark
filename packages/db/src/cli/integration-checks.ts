@@ -90,6 +90,8 @@ export const runIntegrationChecks = Effect.fn("runIntegrationChecks")(
       "@flowmark/api...",
       "--filter",
       "@flowmark/auth...",
+      "--filter",
+      "@flowmark/demo...",
       "build",
     ])
     yield* command(["db:migrate"])
@@ -150,5 +152,6 @@ export const runIntegrationChecks = Effect.fn("runIntegrationChecks")(
         }),
     })
     yield* verifyServerReport(server)
+    yield* command(["--filter", "@flowmark/demo", "test"])
   },
 )

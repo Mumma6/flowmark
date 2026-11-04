@@ -36,7 +36,7 @@ export function WorkflowDirectory({
   return (
     <Card className="overflow-hidden shadow-none">
       <div className="flex flex-wrap items-end gap-3 border-b border-border/60 bg-muted/20 p-5">
-        <label className="grid min-w-0 flex-[1_1_240px] gap-2 text-xs text-muted-foreground sm:max-w-[360px]">
+        <label className="grid min-w-0 flex-[1_1_240px] gap-2 text-sm text-muted-foreground sm:max-w-[360px]">
           <span>Search workflows</span>
           <div className="relative">
             <Search
@@ -82,7 +82,7 @@ export function WorkflowDirectory({
           ]}
         />
       </div>
-      <p className="px-5 py-3 text-xs leading-6 text-muted-foreground">
+      <p className="px-5 py-3 text-sm leading-6 text-muted-foreground">
         All recorded runs · completion rate is among finished runs. Namespace
         follows the workflow name, not verified provenance.
       </p>
@@ -116,7 +116,7 @@ export function WorkflowDirectory({
                   <TableHead
                     colSpan={7}
                     scope="rowgroup"
-                    className="h-10 border-y border-border px-4 text-xs font-medium text-foreground"
+                    className="h-10 border-y border-border px-4 text-sm font-medium text-foreground"
                   >
                     {family}
                     <span className="ml-2 font-normal text-muted-foreground">

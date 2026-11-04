@@ -1,5 +1,12 @@
 # Architecture
 
+This document describes the implemented system. Product 1.0 evolves it toward a
+shared process-intelligence platform: Studio, external APIs, MCP and portable
+views will reuse authorized use cases and evidence semantics. Unified Studio,
+delegated agent access and saved investigations remain planned. The product
+identity changes without renaming packages, replacing the workflow/run model or
+changing the current deployment topology.
+
 ```text
 Customer server application
   -> @flowmarkdev/node or @flowmarkdev/node/next

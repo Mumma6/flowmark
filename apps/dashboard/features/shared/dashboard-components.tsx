@@ -30,15 +30,18 @@ class ClipboardError extends Data.TaggedError("ClipboardError")<{
 export function CopyButton({
   value,
   label = "Copy",
+  variant = "outline",
 }: {
   value: string
   label?: string
+  variant?: "default" | "outline"
 }) {
   return (
     <Button
       type="button"
-      variant="outline"
+      variant={variant}
       size="sm"
+      className="min-h-10 text-sm"
       onClick={async () => {
         const result = await Effect.runPromise(
           Effect.tryPromise({
@@ -102,10 +105,10 @@ export function PageHeading({
   return (
     <header className="flex flex-col justify-between gap-5 sm:flex-row sm:items-start">
       <div>
-        <h1 className="break-words text-2xl font-semibold leading-9 tracking-tight sm:text-[28px]">
+        <h1 className="break-words text-3xl font-semibold leading-10 tracking-tight sm:text-4xl">
           {title}
         </h1>
-        <p className="mt-1.5 max-w-2xl text-sm leading-6 text-muted-foreground">
+        <p className="mt-2 max-w-3xl text-base leading-7 text-muted-foreground">
           {description}
         </p>
       </div>
@@ -163,7 +166,7 @@ export function FilterSelect({
     [options],
   )
   return (
-    <div className="grid min-w-0 flex-[1_1_140px] gap-2 text-xs text-muted-foreground sm:max-w-[260px]">
+    <div className="grid min-w-0 flex-[1_1_140px] gap-2 text-sm text-muted-foreground sm:max-w-[260px]">
       <label htmlFor={fieldId}>{label}</label>
       <Select items={items} value={value} onValueChange={onChange}>
         <SelectTrigger id={fieldId}>
@@ -194,7 +197,7 @@ export function TablePagination({
 }) {
   return (
     <div className="flex flex-col items-start justify-between gap-4 border-t border-border px-5 py-4 sm:flex-row sm:items-center">
-      <p role="status" className="text-xs text-muted-foreground">
+      <p role="status" className="text-sm text-muted-foreground">
         {total} matches · Page {page} of {pages}
       </p>
       <Pagination>
@@ -219,7 +222,12 @@ export function ViewLink({
   children: ReactNode
 }) {
   return (
-    <Button variant="ghost" size="sm" asChild>
+    <Button
+      variant="ghost"
+      size="sm"
+      className="min-h-10 text-sm text-primary"
+      asChild
+    >
       <Link href={href}>
         {children}
         <ArrowRight aria-hidden="true" />

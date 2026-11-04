@@ -1,61 +1,82 @@
 ---
 title: Introduction
-description: Turn business processes into data-driven insight.
+description: Process intelligence for people and agents, built on application-reported evidence.
 ---
 
-Mark a process in TypeScript. See its volume, duration, success rate, and
-the result each execution reported.
+**Understand what your software actually does.**
+
+Flowmark is an open-source process-intelligence platform. Instrument the processes
+your application already runs, collect execution evidence, and understand technical
+and reported business outcomes over time.
+
+A completed import can still have skipped records. A failed order can already
+have captured a payment. A completed request can still have an outstanding
+confirmation. Flowmark keeps those observations distinct and lets you inspect
+the evidence behind them. Your application owns execution, scheduling and retries.
+
+## Start with one process
 
 ```ts
 const run = flowmark.workflow("invoice.import", { properties: { batchId } })
 run.step("source-loaded", { properties: { count: 1000 } })
-run.done({ result: { imported: 988, skipped: 12 } })
+run.done({ outcome: "partial", result: { imported: 988, skipped: 12 } })
 ```
 
-This is an instrumentation sketch. The [quickstart](/docs/sdk) shows where
-the markers belong around real work, including failure handling and delivery.
-
-## Install
+This is an instrumentation sketch. The [quickstart](/docs/sdk) shows shared-client
+setup, real work, failure handling and delivery. Configure a server write key
+outside browser bundles and use an API that accepts the markers you enable.
 
 ```bash
 npm i @flowmarkdev/node
 ```
 
-Then open the [quickstart](/docs/sdk) to create a client and mark a process.
+## What you can use today
 
-## Start here
+- **Record executions:** workflows, milestones, overlapping operations, handled
+  errors, absolute progress and context amendments.
+- **Describe business evidence:** explicit final outcomes/results and non-final
+  reports. Typed definitions provide reusable instrumentation handles.
+- **Follow related work:** continue a run across requests, or explicitly link
+  distinct runs and application-owned attempts.
+- **Inspect confirmations:** declare an expectation and report its resolution or
+  cancellation. Deadlines are evaluated on read; there is no background alerting.
+- **Investigate history:** search enabled references, filter runs, compare peers
+  and examine timelines/waterfalls in the current web interface.
+- **Analyze reported outcomes:** declared fields, revisions, coverage, reasons,
+  weighted ratios and release comparisons, with links to the matching runs.
 
-| Your goal                                | Read this                                    |
-| ---------------------------------------- | -------------------------------------------- |
-| Record your first execution              | [Quickstart](/docs/sdk)                      |
-| Understand workflows, runs, and outcomes | [Core concepts](/docs/concepts/runs)         |
-| See what the dashboard measures          | [Insights](/docs/concepts/insights)          |
-| Instrument a Next.js server              | [Next.js integration](/docs/nextjs)          |
-| Track browser interactions               | [Browser integration](/docs/browser)         |
-| Look up a method or type                 | [SDK reference](/docs/reference)             |
-| Run the stack locally                    | [Local development](/docs/local-development) |
+SDK marker availability depends on the deployed accepting server. Missing values
+are not zero; completion is not verified business success. Browser reports remain
+untrusted. See [delivery](/docs/delivery) and [metric meanings](/docs/concepts/insights).
 
-## Insights you can use
+## Product 1.0 direction
 
-- **Volume:** how often a process runs, including daily counts for 30 days.
-- **Outcomes:** success rate among finished runs, plus failed-run count.
-- **Performance:** median duration from start to `done()` or `fail()`, and
-  per-operation timing on the timeline.
-- **Progress:** the last reported snapshot, such as 600 of 1,000 records.
-- **Result:** the business summary your code attached — imported, skipped,
-  shipped, paid.
+Flowmark is evolving through three connected dimensions:
 
-A completed import can still have skipped records. A failed order can already
-have captured a payment. Those facts sit on the same execution.
+- **Platform:** the SDK, evidence, contextual relationships, analysis and
+  programmable access.
+- **Studio:** a unified workspace for exploring processes, business references,
+  comparisons and supporting evidence.
+- **Everywhere:** access through agents, APIs, embedded views and custom tools.
 
-## Current project status
+The current web interface is the foundation for Studio. Unified Studio, delegated
+MCP connections, saved investigations and portable agent interfaces are planned.
+Today, setup guidance and factual run exports can support manual agent handoff;
+that is distinct from an authenticated MCP connection. A Studio assistant is a
+later extension. Engineering, Product, Customer Success, Sales and Operations
+will use the same intelligence with appropriate access and depth.
 
-Instrument a process, ingest events, sign in, and inspect a run. The hosted
-reference deployment is at `flowmark.dev` / `app.flowmark.dev` /
-`api.flowmark.dev`. Install `@flowmarkdev/node` (0.2.0). Dashboard sign-in is
-email and password. Sign-up creates the account; the first project and write
-key are created in onboarding or Settings. Password reset is not available yet.
+## Where to go next
 
-The SDK can also record business outcomes, non-final reports, explicit attempt
-metadata, and durable expectations. Those markers need an API that accepts
-them. Start with [quickstart](/docs/sdk).
+- [Quickstart](/docs/sdk): instrument your first meaningful process.
+- [Concepts](/docs/concepts/runs): workflows, executions and reported outcomes.
+- [Current web interface](/docs/concepts/dashboard): find an answer and inspect evidence.
+- [Next.js](/docs/nextjs) and [browser](/docs/browser): integration boundaries.
+- [SDK reference](/docs/reference): actual methods and types.
+- [Local development](/docs/local-development): run the open-source stack.
+
+Hosted reference addresses are [flowmark.dev](https://flowmark.dev),
+[app.flowmark.dev](https://app.flowmark.dev) and
+[api.flowmark.dev](https://api.flowmark.dev). Self-hosters use their own origins.
+Sign-up creates an account; onboarding creates the first project/write key.
+Email recovery and verification depend on configured deployment email delivery.

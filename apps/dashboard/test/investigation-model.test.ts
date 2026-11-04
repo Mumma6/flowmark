@@ -3,6 +3,7 @@ import { expect, it } from "vitest"
 import { buildInvestigation } from "../features/runs/investigation-model"
 import type { RunEvent } from "../features/platform/api-types"
 import { durationDelta, terminalEvidence } from "../features/runs/run-state"
+import { investigationHandoff } from "../features/runs/investigation-handoff"
 
 const event = (
   type: RunEvent["type"],
@@ -45,4 +46,45 @@ it("does not turn an observed handled error or absent terminal telemetry into fa
   ).toBe("Running")
   expect(durationDelta(null, 10)).toBeNull()
   expect(durationDelta(0, 0)).toBe(0)
+})
+
+it("hands off missing final telemetry without claiming the run is active or failed", () => {
+  const summary = Option.getOrThrow(
+    investigationHandoff(
+      [
+        event("started"),
+        event("error", { error: { code: "OBSERVED", handled: true } }),
+      ],
+      "/runs/recorded-run",
+    ),
+  )
+  expect(summary).toContain("Execution status: No final outcome recorded")
+  expect(summary).toContain("Failure code: Not recorded")
+  expect(summary).toContain("Reported outcome: Not recorded")
+  expect(summary).toContain("Evidence: /runs/recorded-run")
+  expect(Option.isNone(investigationHandoff([], "/runs/missing"))).toBe(true)
+})
+
+it("hands off failure evidence with precedence over completion and retains identifiers", () => {
+  const summary = Option.getOrThrow(
+    investigationHandoff(
+      [
+        event("started", {
+          correlationId: "reference-1",
+          environment: "staging",
+        }),
+        event("completed", { outcome: "accepted" }),
+        event("failed", {
+          outcome: "partial",
+          error: { code: "UPSTREAM_TIMEOUT", message: "No response" },
+        }),
+      ],
+      "/runs/recorded-run",
+    ),
+  )
+  expect(summary).toContain("Execution status: Failed")
+  expect(summary).toContain("Failure code: UPSTREAM_TIMEOUT")
+  expect(summary).toContain("Reported outcome: partial")
+  expect(summary).toContain("Correlation ID: reference-1")
+  expect(summary).toContain("root cause are not verified")
 })

@@ -32,12 +32,12 @@ export function BusinessResult({
         <Badge variant="secondary">Non-final snapshot</Badge>
       ) : (
         <div>
-          <p className="text-xs text-muted-foreground">Business outcome</p>
+          <p className="text-sm text-muted-foreground">Business outcome</p>
           <Badge variant="secondary">{outcome ?? "Not reported"}</Badge>
         </div>
       )}
       {workflow.startsWith("browser.") && (
-        <p className="text-xs text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           Untrusted browser-reported evidence.
         </p>
       )}
@@ -59,13 +59,13 @@ export function BusinessResult({
       )}
       {declaration ? (
         <>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-sm text-muted-foreground">
             Definition revision: {declaration.revision}
           </p>
           <dl className="grid gap-3 sm:grid-cols-2">
             {declaredResults(result, declaration).map((field, index) => (
               <div key={index}>
-                <dt className="text-xs text-muted-foreground">
+                <dt className="text-sm text-muted-foreground">
                   {field.label}
                   {field.unit ? ` (${field.unit})` : ""}
                 </dt>
@@ -94,7 +94,7 @@ export function BusinessResult({
         <dl className="grid gap-3 sm:grid-cols-2">
           {getRunResultHighlights(result ?? {}).map((field) => (
             <div key={field.key}>
-              <dt className="text-xs text-muted-foreground">{field.label}</dt>
+              <dt className="text-sm text-muted-foreground">{field.label}</dt>
               <dd className="text-sm">{field.value}</dd>
             </div>
           ))}

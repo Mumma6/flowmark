@@ -38,6 +38,26 @@ review of every workspace manifest, root script, database CLI and Actions workfl
 `pnpm infra down --container <id>` only when they started it. Neither normal
 stop nor test cleanup may delete volumes. Unit tests can run without Docker.
 
+## Meridian Health demo
+
+The private workstation fixture uses the existing application use cases and
+guarded database connections. See [the operational guide](../packages/demo/README.md)
+for initial builds, secure account setup, ownership checks and exact approvals.
+It never runs as part of application startup or deployment.
+
+| Command                                      | Behavior                                                                                                                                                                                                            |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm demo:plan --reference <UTC-timestamp>` | Deterministic 30-day plan without database access.                                                                                                                                                                  |
+| `pnpm demo:setup --env local\|staging ...`   | Normal auth registration/sign-in and owned project provisioning; password via secure stdin. Hosted setup requires separate approval/confirmation.                                                                   |
+| `pnpm demo:status --env local\|staging`      | Verifies target, key, ownership and manifest; reports dataset completeness.                                                                                                                                         |
+| `pnpm demo:seed --env local\|staging`        | Idempotent authenticated fixture ingestion. Hosted seed requires `--confirm-staging-seed` after approval.                                                                                                           |
+| `pnpm demo:reset --env local\|staging`       | Deletes only manifest-verified demo runs/events and cascading projections; retains accounts, projects, keys, settings and unrelated telemetry. Requires the environment-specific reset confirmation after approval. |
+| `pnpm demo:reseed --env local\|staging`      | Verified reset and seed in one transaction; hosted use requires both reset and seed approval/confirmations.                                                                                                         |
+
+The disposable integration runner also executes Meridian provisioning,
+ingestion, search/analytics, seed/reset/reseed and preservation coverage.
+Ordinary unit runs skip its database case when no proven test target is supplied.
+
 ## Workspace scripts
 
 These package-local commands support Turbo, root dispatchers or specific app

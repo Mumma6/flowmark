@@ -7,6 +7,12 @@
     "node": ">=20.19"
   },
   "scripts": {
+    "demo:plan": "pnpm --filter @flowmark/demo demo plan",
+    "demo:setup": "pnpm --filter @flowmark/demo demo setup",
+    "demo:seed": "pnpm --filter @flowmark/demo demo seed",
+    "demo:reset": "pnpm --filter @flowmark/demo demo reset",
+    "demo:reseed": "pnpm --filter @flowmark/demo demo reseed",
+    "demo:status": "pnpm --filter @flowmark/demo demo status",
     "build": "turbo build",
     "dev": "pnpm dev:setup && pnpm infra doctor --require-ready && turbo dev --filter=@flowmark/server... --filter=@flowmark/dashboard... --filter=@flowmark/dev-harness... --filter=@flowmark/docs... --filter=@flowmark/internal-docs...",
     "dev:setup": "node scripts/prepare-dev.mjs",

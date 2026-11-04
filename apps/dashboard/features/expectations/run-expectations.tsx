@@ -56,7 +56,7 @@ export function RunExpectations({ id }: { id: string }) {
         />
         {data && (
           <>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               Observed at {formatTimestamp(data.asOf)} UTC ·{" "}
               {data.expectations.length} declared expectations ·{" "}
               {data.unmatched.length} unmatched settlements
@@ -93,13 +93,13 @@ export function RunExpectations({ id }: { id: string }) {
                     {expectationLabel(record)}
                   </Badge>
                 </div>
-                <p className="break-all text-xs text-muted-foreground">
+                <p className="break-all text-sm text-muted-foreground">
                   {record.reference.expectationId} ·{" "}
                   {record.source === "browser"
                     ? "Untrusted browser evidence"
                     : "Application server report — not independently verified"}
                 </p>
-                <dl className="grid gap-2 text-xs sm:grid-cols-3">
+                <dl className="grid gap-2 text-sm sm:grid-cols-3">
                   <div>
                     <dt className="text-muted-foreground">
                       Declaration observed (UTC)
@@ -145,13 +145,13 @@ export function RunExpectations({ id }: { id: string }) {
                   </p>
                 )}
                 {record.outOfOrder && (
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-sm text-muted-foreground">
                     Settlement was observed before the declaration. Original
                     receipt order is preserved.
                   </p>
                 )}
                 {record.state === "met-late" && (
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-sm text-muted-foreground">
                     Observed late by Flowmark. Delivery delay and clock
                     differences mean this does not prove the provider responded
                     late.
@@ -189,7 +189,7 @@ export function RunExpectations({ id }: { id: string }) {
                 </details>
               </section>
             ))}
-            <p className="text-xs leading-6 text-muted-foreground">
+            <p className="text-sm leading-6 text-muted-foreground">
               Counts cover retained declared evidence. Deadlines survive process
               restarts but do not extend retention. Timing does not verify the
               reported business outcome.

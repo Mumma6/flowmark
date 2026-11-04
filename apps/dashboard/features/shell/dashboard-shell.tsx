@@ -117,8 +117,8 @@ function Navigation({
                 variant={active ? "secondary" : "ghost"}
                 className={
                   active
-                    ? "justify-start border border-primary/10 bg-primary/10 text-primary shadow-none"
-                    : "justify-start text-muted-foreground hover:bg-muted hover:text-foreground"
+                    ? "min-h-11 justify-start border border-primary/10 bg-primary/10 text-base text-primary shadow-none"
+                    : "min-h-11 justify-start text-base text-muted-foreground hover:bg-muted hover:text-foreground"
                 }
               >
                 <Link
@@ -362,7 +362,7 @@ export function DashboardShell({
             </header>
             <main
               id="dashboard-main"
-              className="mx-auto w-full max-w-[1440px] p-4 sm:p-8"
+              className="mx-auto w-full max-w-[1440px] p-4 text-base sm:p-8 [&_table]:text-base [&_[data-slot=card-title]]:text-lg [&_[data-slot=card-description]]:text-base [&_[data-slot=select-trigger]]:min-h-10 [&_[data-slot=select-trigger]]:text-sm [&_input]:min-h-10 [&_input]:text-base"
             >
               {children}
             </main>

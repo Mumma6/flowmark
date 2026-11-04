@@ -17,7 +17,7 @@ export function PeriodControls({
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end">
       <div className="grid gap-2">
-        <span id="period-days" className="text-xs text-muted-foreground">
+        <span id="period-days" className="text-sm text-muted-foreground">
           Started during
         </span>
         <div
@@ -31,7 +31,7 @@ export function PeriodControls({
               type="button"
               size="sm"
               variant={days === value ? "secondary" : "ghost"}
-              className="shadow-none"
+              className="min-h-10 text-sm shadow-none"
               aria-pressed={days === value}
               onClick={() => onChange(value, workflow)}
             >
@@ -43,7 +43,7 @@ export function PeriodControls({
       <div className="grid min-w-0 flex-1 gap-2 sm:max-w-xs">
         <label
           htmlFor="period-workflow"
-          className="text-xs text-muted-foreground"
+          className="text-sm text-muted-foreground"
         >
           Workflow
         </label>

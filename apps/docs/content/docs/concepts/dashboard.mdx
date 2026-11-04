@@ -3,22 +3,44 @@ title: Reading the dashboard
 description: Move from workflow outcomes to the evidence behind a specific execution.
 ---
 
+This guide describes the current web interface. Product 1.0 plans to evolve it
+into Flowmark Studio: a contextual workspace connecting process exploration,
+comparisons and evidence. Existing navigation below remains the actual behavior.
+
+## Choose the question you want to answer
+
+Use **Overview → Where to go next** to choose an investigation path:
+
+- **Issues:** identify affected runs and gather evidence for an application investigation.
+- **Insights:** determine which recorded measurements changed between two periods.
+- **Runs:** find a known execution and take its identifiers and evidence to your application logs.
+
+Each page groups its content into tabs. The selected tab is included in the URL,
+so you can reload or share the same view. Switching tabs preserves the current
+filters; it does not clear the investigation scope.
+Opening a run from the history also keeps a return link to the same filtered
+list, so you can inspect an execution and return to the affected population.
+
 ## Start with the workflow overview
 
 The overview shows volume, run completion, failed-run count and p95 duration
 for runs started in the last seven UTC days, compared with the previous seven.
-It also lists workflows and the latest runs. Open **Insights** for trends and
+**Health & attention** lists workflows and attention links; **Latest activity**
+shows the latest runs. Open **Insights** for trends and
 reported outcomes, and **Issues** for failure groups that need investigation.
 
 ## Browse workflows and runs
 
 Open **Workflows** for a table grouped by name prefix. Search, filter by naming
 namespace, or sort by name group or run count. Each page contains
-at most 12 workflows; selecting one opens its summary and recent executions.
+at most 12 workflows. Selecting one opens tabs for **Overview**, **Runs**, **Reported results**,
+**Confirmations**, **Diagnostics**, and **Configuration**.
 
 Open **Runs** to search SDK run IDs, workflow names, last checkpoints,
 correlation IDs or parent IDs. Combine workflow, status and naming-namespace
-filters; sort by start time or duration; optionally group rows by workflow.
+filters using the **Execution**, **Reported results**, **Business reference**,
+and **Technical context** filter tabs. All groups narrow the same list, and
+the applied-filter chips remain visible when switching groups.
 Each page requests 25 runs. Enabled business-reference keys and declared
 result fields can add an exact filter. Arbitrary JSON is not searchable.
 
@@ -42,9 +64,10 @@ Longer operation medians are recorded differences, not confirmed anomalies.
 
 ## Open an execution
 
-Run details open on **Outcome**. Separate tabs keep investigation focused:
+Run details open on **Run summary**. Separate tabs keep investigation focused:
 
-- **Outcome:** reported result, failure, last-reported progress, and evidence
+- **Run summary:** execution status, reported highlights and recorded milestones.
+- **Reported results:** reported result, failure, last-reported progress, and evidence
   counts. Expand raw result data when needed.
 - **Timeline:** filter event types and expand rows for occurrence/receipt
   times, operation timing, properties, progress and safe error details.
@@ -55,6 +78,15 @@ Run details open on **Outcome**. Separate tabs keep investigation focused:
   with the peer median and p95.
 - **Related runs:** explicitly declared parent matches and correlated runs,
   paginated independently at 10 rows per table.
+- **Confirmations:** application-declared expectations and observed resolutions,
+  separate from technical completion.
+- **Take findings forward:** copy an investigation summary with status, failure
+  evidence, timestamps and identifiers, or export the run and timeline as JSON.
+
+An investigation is useful when you can identify the execution, describe what
+was observed and decide the next action in the owning application. Use the
+summary as a factual handoff and add your diagnosis separately. It does not
+claim a root cause or verified business correctness.
 
 For an import, check the imported/skipped result first. For an interrupted sync,
 inspect the last-reported progress and the failure. For an order failure,

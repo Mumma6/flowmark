@@ -27,11 +27,6 @@
     "Segoe UI Symbol", "Noto Color Emoji";
   --font-mono: ui-monospace, SFMono-Regular, Consolas, monospace;
   --animate-arrive: arrive 700ms cubic-bezier(0.2, 0.7, 0.3, 1) both;
-  --animate-spotlight: spotlight-in 2.4s ease-out 0.3s 1 both;
-  --animate-meteor: meteor 8s linear infinite;
-  --animate-beam-travel: beam-travel 9s linear infinite;
-  --animate-spotlight-pan: spotlight-pan 9s ease-in-out infinite;
-  --animate-spotlight-pan-reverse: spotlight-pan-reverse 9s ease-in-out infinite;
   --radius-lg: 0.7rem;
   --radius-md: calc(0.7rem - 2px);
   --radius-sm: calc(0.7rem - 4px);
@@ -39,16 +34,16 @@
 
 :root {
   color-scheme: dark;
-  --bg: hsl(204 24% 4.5%);
-  --surface: hsl(165 10% 8%);
-  --surface-raised: hsl(165 15% 12%);
+  --bg: hsl(160 9% 5.5%);
+  --surface: hsl(160 6% 8%);
+  --surface-raised: hsl(160 6% 12%);
   --text: hsl(144 16% 94%);
   --muted: hsl(157 7% 63%);
   --accent: hsl(98 82% 78%);
   --border: hsl(160 7% 18%);
   --success: 152 42% 65%;
   --success-foreground: 152 42% 65%;
-  --hero-glow: #7cbd4730;
+  --hero-glow: #a2d28813;
 }
 
 @layer base {
@@ -85,61 +80,5 @@
   to {
     opacity: 1;
     transform: translateY(0);
-  }
-}
-
-@keyframes spotlight-in {
-  from {
-    opacity: 0;
-    transform: translateY(-14px) scale(0.97);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-@keyframes meteor {
-  0% {
-    transform: rotate(215deg) translateX(0);
-    opacity: 1;
-  }
-  70% {
-    opacity: 1;
-  }
-  100% {
-    transform: rotate(215deg) translateX(-32rem);
-    opacity: 0;
-  }
-}
-
-@keyframes beam-travel {
-  0% {
-    stroke-dasharray: 48 720;
-    stroke-dashoffset: 768;
-  }
-  100% {
-    stroke-dasharray: 48 720;
-    stroke-dashoffset: -768;
-  }
-}
-
-@keyframes spotlight-pan {
-  0%,
-  100% {
-    transform: translateX(0);
-  }
-  50% {
-    transform: translateX(5rem);
-  }
-}
-
-@keyframes spotlight-pan-reverse {
-  0%,
-  100% {
-    transform: translateX(0);
-  }
-  50% {
-    transform: translateX(-5rem);
   }
 }
