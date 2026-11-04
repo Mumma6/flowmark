@@ -1,13 +1,11 @@
-import { Button } from "@flowmark/ui"
 import { Arrow } from "../../app/components/brand"
-import { CodeShowcase } from "../../app/components/code-showcase"
 import {
   overlineClassName,
   sectionTitleClassName,
   shellClassName,
 } from "../../app/components/shell"
-import { docsUrl, githubUrl } from "../../app/components/site-links"
 import { AgentExperience } from "./agent-experience"
+import { InstrumentationExperience } from "./instrumentation-experience"
 import { OrganizationPerspectives } from "./organization-perspectives"
 import { PlatformFabric } from "./platform-fabric"
 import { PortableEvidence } from "./portable-evidence"
@@ -16,26 +14,26 @@ export function ProductDimensions() {
   return (
     <section
       id="product"
-      className={`${shellClassName} pb-20 sm:pb-28`}
+      className={shellClassName}
       aria-label="One Flowmark product"
     >
       <div className="grid border-y border-border md:grid-cols-3">
         {[
           {
             number: "01",
-            name: "Platform",
-            href: "#platform",
-            title: "Instrument once. Build on the evidence.",
-            detail:
-              "Typed SDK, connected context, historical analysis and programmable access.",
-          },
-          {
-            number: "02",
             name: "Studio",
             href: "#studio",
             title: "A workspace for understanding.",
             detail:
               "Explore connected processes. Save an investigation, share its evidence and pick up where you left off.",
+          },
+          {
+            number: "02",
+            name: "Platform",
+            href: "#platform",
+            title: "Instrument once. Build on the evidence.",
+            detail:
+              "Typed SDK, connected context, historical analysis and programmable access.",
           },
           {
             number: "03",
@@ -83,7 +81,7 @@ export function OrganizationSection() {
   return (
     <section
       id="organization"
-      className={`${shellClassName} pb-20 sm:pb-28`}
+      className={`${shellClassName} py-20 sm:py-28`}
       aria-labelledby="organization-title"
     >
       <div className="grid gap-5 md:grid-cols-[1.2fr_1fr] md:items-end lg:gap-24">
@@ -239,85 +237,7 @@ export function PlatformSection() {
         </p>
       </div>
       <PlatformFabric />
-      <div className="border-t border-border pt-9">
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-          <p className={overlineClassName}>
-            Start with the code you already own
-          </p>
-          <span className="font-mono text-[10px] text-muted-foreground">
-            TypeScript SDK · Ordinary functions & Promises
-          </span>
-        </div>
-        <CodeShowcase />
-      </div>
-      <div className="mt-8 flex flex-wrap items-center justify-between gap-4 rounded-lg border border-border bg-card px-5 py-4">
-        <code className="text-xs">
-          <span className="mr-3 text-muted-foreground" aria-hidden="true">
-            $
-          </span>
-          npm i @flowmarkdev/node
-        </code>
-        <Button asChild variant="link" className="h-10 px-0 text-xs">
-          <a href={docsUrl}>
-            Read the quickstart <Arrow />
-          </a>
-        </Button>
-      </div>
-      <p className="mt-4 max-w-2xl text-[11px] leading-6 text-muted-foreground">
-        Examples use a configured client and your application helpers. Flush
-        delivery at the process boundary or use the Next.js lifecycle adapter.
-        Flowmark observes your work; your application owns execution.
-      </p>
-    </section>
-  )
-}
-
-export function OpenSourceSection() {
-  return (
-    <section
-      className="border-y border-border bg-card/50 py-14 sm:py-20"
-      aria-labelledby="open-source-title"
-    >
-      <div
-        className={`${shellClassName} grid items-center gap-10 md:grid-cols-[1.2fr_0.8fr] lg:gap-20`}
-      >
-        <div>
-          <p className={overlineClassName}>Open by design</p>
-          <h2
-            id="open-source-title"
-            className="mt-4 text-3xl leading-tight font-medium tracking-[-0.045em] sm:text-4xl"
-          >
-            Your evidence.
-            <br />
-            Your infrastructure. Your possibilities.
-          </h2>
-          <p className="mt-5 max-w-lg text-sm leading-7 text-muted-foreground">
-            Inspect the source. Self-host the platform. Build the interface your
-            team needs. Flowmark is an open-source foundation for understanding
-            the software you own.
-          </p>
-          <Button asChild variant="link" className="mt-5 h-11 px-0 text-xs">
-            <a href={githubUrl}>
-              Explore the source <Arrow diagonal />
-            </a>
-          </Button>
-        </div>
-        <div className="grid grid-cols-2 gap-x-8 gap-y-8 border-l border-border pl-8 sm:pl-12">
-          {[
-            ["TypeScript", "From SDK to Studio"],
-            ["PostgreSQL", "Evidence with history"],
-            ["MIT", "Open-source license"],
-            ["Composable", "SDK · API · MCP · UI"],
-          ].map(([title, detail]) => (
-            <div key={title}>
-              <p className="text-lg font-medium tracking-tight">{title}</p>
-              <p className="mt-2 text-[11px] leading-5 text-muted-foreground">
-                {detail}
-              </p>
-            </div>
-          ))}
-        </div>
-      </div>
+      <InstrumentationExperience />
     </section>
   )
 }

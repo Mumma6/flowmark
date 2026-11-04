@@ -231,9 +231,17 @@ and the people/agent/API clients together. Reuse the same fictional reference
 across illustrations. Diagram connectors are decorative; labels and working
 links carry the meaning on mobile and for assistive navigation.
 
-Everywhere pairs client-specific prompts with explicit synthetic evidence and a
+Everywhere pairs one client-independent conversation with synthetic evidence and a
 portable view that switches host shells while keeping the same facts. Shared
 RunSnapshot remains the inspection surface. Match Studio’s fine lime borders,
 quiet glows and selected-state emphasis; use the existing warning/success roles
 for evidence status. Illustrative hosts do not perform live tool calls, authorize
 connections or create a second analytics/presentation system.
+
+Follow the page order in desktop/mobile navigation, product links and footer:
+Studio → Platform → Everywhere. Keep one useful agent conversation instead of
+client tabs that only substitute prompt text. The SDK illustration follows the
+same fictional booking from application code into context, a reported result and
+an expected confirmation. Expandable details explain distinct signals; code copy
+uses the executable example. Keep the closing invitation bold and concise, with
+open-source/self-host details integrated there rather than a separate section.

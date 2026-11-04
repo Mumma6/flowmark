@@ -17,15 +17,15 @@ export function SiteHeader() {
         >
           <a
             className="py-3 transition-colors hover:text-foreground"
-            href="#platform"
-          >
-            Platform
-          </a>
-          <a
-            className="py-3 transition-colors hover:text-foreground"
             href="#studio"
           >
             Studio
+          </a>
+          <a
+            className="py-3 transition-colors hover:text-foreground"
+            href="#platform"
+          >
+            Platform
           </a>
           <a
             className="py-3 transition-colors hover:text-foreground"

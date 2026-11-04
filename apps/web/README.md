@@ -57,21 +57,26 @@ generated Open Graph image use the same identity.
   to that case in Studio. These are local illustrations, not live agent calls.
 - **Organization:** five role perspectives read the same synthetic booking,
   without implying five independent products or permission grants.
-- **Agent clients:** Codex, Cursor, Claude Code and custom-agent tabs pair
-  concrete prompts with the same fixed synthetic process evidence and link to
-  real documentation. No MCP call or connection is made.
+- **Agents:** one client-independent conversation pairs a concrete question with
+  synthetic process evidence. Codex, Cursor, Claude Code and other MCP clients
+  share the same story; no redundant client tabs, MCP call or connection state.
 - **Portable evidence:** switch between MCP App and internal-tool illustration
   shells, then inspect the same synthetic booking in the shared run Dialog.
 - **Platform:** a server-rendered evidence-to-client diagram connects the SDK,
   process meaning, Studio, MCP and custom tools. It illustrates the product
   model rather than inventing a wire/API contract.
-- **SDK:** retained before/after code, copy feedback and expandable evidence.
-  Runtime tests verify unchanged business calls, return values and thrown errors.
+- **SDK:** one executable booking example connects code to customer/integration
+  context, a reported business result and a separate confirmation expectation.
+  Expandable evidence explains those signals. Runtime checks verify the original
+  result/error and forwarded confirmation reference, including a negative result.
 - **Mobile:** the shared Sheet manages navigation focus and Escape dismissal.
 
 Static narrative stays in Server Components. Client boundaries own only local
 interaction state. Shared controls come from `@flowmark/ui`; no new UI kit,
-backend, dependencies or infrastructure are introduced. Unused legacy sections
+backend, dependencies or infrastructure are introduced. The story and product
+navigation follow Studio → Platform → Everywhere, then organization perspectives
+and questions. The closing invitation carries the open-source/self-host message;
+there is no separate open-source feature section. Unused legacy sections
 remain removed. The earlier `SpotlightWash` and
 `BackgroundBeams` decorations are reused behind the hero, with their source
 attributions preserved.
@@ -93,5 +98,5 @@ listener, remote font or image request is required.
 
 Verify desktop and mobile layouts, keyboard tabs, search/clear recovery, evidence
 selection, cross-interface context, Dialog/Sheet dismissal and focus restoration,
-SDK scenario switching and copying, FAQ expansion, anchor destinations, metadata
+SDK evidence expansion and copying, FAQ expansion, anchor destinations, metadata
 and the browser console. The synthetic landing needs no database or other app.
