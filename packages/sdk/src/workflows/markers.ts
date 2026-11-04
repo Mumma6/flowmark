@@ -67,8 +67,8 @@ export function makeMarkers(run: RunLifecycle, workflow: string) {
       whenOpen(() => ({ type: "report", result })),
     setProperties: Effect.fn("Flowmark.WorkflowMarkers.setProperties")(
       function* (properties: WorkflowProperties) {
-        // Preserve the shared client's existing pending-completion behavior.
-        // Aligning this guard with other markers requires a separate behavior change.
+        // Accepted rule for every entry point: amendments stay available while
+        // completion waits for open operations, and stop after a terminal event.
         if (!(yield* run.isFinished)) {
           yield* run.record({ type: "properties", properties })
         }

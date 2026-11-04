@@ -111,7 +111,7 @@ export async function completeCheckout(orderId: string) {
 | `flow.progress({ completed, total?, unit? })`    | Absolute snapshot                                                  |
 | `flow.report(snapshot)`                          | Absolute non-final business result                                 |
 | `flow.error({ code, handled, retryable? })`      | Non-terminal observation                                           |
-| `flow.setProperties(props)`                      | Shallow context amendment while the run is open                    |
+| `flow.setProperties(props)`                      | Shallow context amendment until a terminal event                   |
 | `flow.expect(name, options)`                     | Declare expected evidence; does not wait or perform work           |
 | `flow.done({ outcome?, result? })`               | End the run as completed                                           |
 | `flow.fail({ code, outcome?, result? })`         | End the run as failed                                              |
@@ -183,7 +183,8 @@ presentation revision with `properties.definitionRevision` at start.
 Persist `flow.runId`, or pass your own execution id. A later call with the same
 workflow name and `id` continues that run. Call `done()` or `fail()` only when
 the whole process is finished. Repeated starts do not amend the original
-context, release, or environment. Use `setProperties()` while the run is open.
+context, release, or environment. Use `setProperties()` until the run records
+a terminal event, including while completion waits for open operations.
 Durable entity ids belong in `properties`, not in the run id.
 
 ```ts
