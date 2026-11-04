@@ -180,7 +180,7 @@ export function GettingStartedChecklist({
               >
                 Settings → Ingestion keys
               </Link>
-              . Dashboard sign-in is a different credential.
+              . Studio sign-in is a different credential.
             </p>
             {hasWriteKey ? (
               <p>This project already has at least one write key.</p>
@@ -446,7 +446,7 @@ export function OnboardingGuide({
                   >
                     Settings → Ingestion keys
                   </Link>
-                  . Dashboard sign-in is a different credential.
+                  . Studio sign-in is a different credential.
                 </p>
                 {createdSecret ? (
                   <SecretAlert

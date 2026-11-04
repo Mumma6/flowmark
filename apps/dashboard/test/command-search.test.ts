@@ -15,6 +15,7 @@ const pages = commandPages("https://docs.example/docs/introduction")
 describe("command palette search", () => {
   it("offers navigation pages before a query and filters them by label or keyword", () => {
     expect(filterCommandPages(pages, "  ").map((page) => page.id)).toEqual([
+      "explore",
       "overview",
       "workflows",
       "runs",

@@ -32,7 +32,7 @@ const sections: ReadonlyArray<{
 
 const sectionHelp: Record<SettingsSection, string> = {
   projects:
-    "Create or select the project that owns the work you want to observe. Switch projects in the sidebar to inspect their runs.",
+    "Create or select the project that owns the work you want to observe. Switch projects in the Studio header to inspect their runs.",
   keys: "Give your application an ingestion key for the selected project. After connecting it, open Runs to verify that an execution was recorded.",
   setup:
     "Follow the setup instructions to connect your application, report one execution, then verify its outcome and timeline in Runs.",

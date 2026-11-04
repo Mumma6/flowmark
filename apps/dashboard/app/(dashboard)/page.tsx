@@ -1,1 +1,1 @@
-export { DashboardOverview as default } from "../../features/overview/overview-page"
+export { StudioExplore as default } from "../../features/explore/explore-page"

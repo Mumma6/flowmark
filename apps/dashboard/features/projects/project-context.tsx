@@ -22,6 +22,8 @@ type ProjectContextValue = {
   readonly projects: readonly Project[]
   readonly current: Project | null
   readonly pending: boolean
+  readonly error: { readonly message: string } | null
+  readonly retry: () => void
   readonly select: (projectId: string) => void
 }
 
@@ -59,6 +61,8 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
       projects,
       current: projects.find((project) => project.id === selectedId) ?? null,
       pending: list.isPending,
+      error: list.error,
+      retry: () => void list.refetch(),
       select: (projectId: string) => {
         storeProjectId(projectId)
         setSelectedId(projectId)
@@ -71,7 +75,14 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
         void queryClient.invalidateQueries()
       },
     }
-  }, [list.data, list.isPending, queryClient, selectedId])
+  }, [
+    list.data,
+    list.isPending,
+    list.error,
+    list.refetch,
+    queryClient,
+    selectedId,
+  ])
 
   return (
     <ProjectContext.Provider value={value}>{children}</ProjectContext.Provider>

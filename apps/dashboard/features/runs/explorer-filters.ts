@@ -59,6 +59,34 @@ export const explorerDefaults: ExplorerFilters = {
   startedBefore: "",
 }
 
+export const explorerFilterLabels: Record<keyof ExplorerFilters, string> = {
+  expectationState: "Expectation state",
+  startedBeforeExact: "Before (exact)",
+  ratioNumerator: "Ratio numerator",
+  ratioDenominator: "Ratio denominator",
+  definitionRevision: "Definition",
+  outcome: "Outcome",
+  terminalOnly: "Finished only",
+  startedAfterExact: "After (exact)",
+  startedBeforeExclusive: "Before (exclusive)",
+  resultPath: "Result path",
+  resultOperator: "Result operator",
+  resultValue: "Result value",
+  resultKind: "Result type",
+  resultReason: "Reason",
+  businessKey: "Business field",
+  businessValue: "Business value",
+  search: "Search",
+  workflow: "Workflow",
+  status: "Status",
+  namespace: "Namespace",
+  failCode: "Failure code",
+  environment: "Environment",
+  release: "Release",
+  startedAfter: "From",
+  startedBefore: "Through",
+}
+
 const PathFromJson = Schema.fromJsonString(Schema.Array(Schema.String))
 export class InvalidResultPath extends Data.TaggedError("InvalidResultPath")<{
   readonly operation: "decodeResultPath"

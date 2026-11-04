@@ -2,6 +2,7 @@ export const commandSearchDebounceMs = 300
 
 export type CommandPage = {
   readonly id:
+    | "explore"
     | "overview"
     | "workflows"
     | "runs"
@@ -18,24 +19,31 @@ export type CommandPage = {
 export function commandPages(docsUrl: string): readonly CommandPage[] {
   return [
     {
-      id: "overview",
-      label: "Overview",
+      id: "explore",
+      label: "Explore",
       href: "/",
-      keywords: "home dashboard",
+      keywords: "home studio evidence",
+      external: false,
+    },
+    {
+      id: "overview",
+      label: "Project overview",
+      href: "/overview",
+      keywords: "dashboard summary",
       external: false,
     },
     {
       id: "workflows",
-      label: "Workflows",
+      label: "Processes",
       href: "/workflows",
-      keywords: "directory",
+      keywords: "directory workflows",
       external: false,
     },
     {
       id: "runs",
-      label: "Runs",
+      label: "Execution history",
       href: "/runs",
-      keywords: "history executions",
+      keywords: "history executions runs",
       external: false,
     },
     {
@@ -47,9 +55,9 @@ export function commandPages(docsUrl: string): readonly CommandPage[] {
     },
     {
       id: "issues",
-      label: "Issues",
+      label: "Attention",
       href: "/issues",
-      keywords: "failures problems errors investigate",
+      keywords: "issues failures problems errors investigate",
       external: false,
     },
     {

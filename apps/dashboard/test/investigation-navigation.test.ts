@@ -38,3 +38,21 @@ it("keeps a workflow investigation's selected tab and business reference", () =>
     "/workflows/orders.fulfill?view=runs&businessKey=orderRef&businessValue=SYN-123"
   expect(investigationReturn(href)).toEqual({ href, label: "Back to workflow" })
 })
+
+it("returns to the exact Studio Explore population while preserving advanced evidence bounds", () => {
+  const href =
+    "/?workflow=appointment.book&expectationState=overdue&startedBeforeExclusive=2026-11-04T00%3A00%3A00Z"
+  const target = new URL(
+    runInvestigationPath("booking", href),
+    "https://flowmark.test",
+  )
+  expect(investigationReturn(target.searchParams.get("from"))).toEqual({
+    href,
+    label: "Back to Explore",
+  })
+})
+
+it("keeps the original overview available as a distinct return destination", () => {
+  const href = "/overview?days=30"
+  expect(investigationReturn(href)).toEqual({ href, label: "Back to Overview" })
+})

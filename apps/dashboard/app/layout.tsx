@@ -3,8 +3,9 @@ import { Providers } from "../features/platform/providers"
 import "./globals.css"
 
 export const metadata: Metadata = {
-  title: "Flowmark Dashboard",
-  description: "Workflow observability for application code",
+  title: "Flowmark Studio",
+  description:
+    "Explore your application's processes, outcomes and execution evidence.",
 }
 
 export default function RootLayout({
