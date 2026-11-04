@@ -45,8 +45,8 @@ export function MobileNavigation() {
         </SheetDescription>
         <nav aria-label="Mobile navigation" className="mt-8 grid gap-2">
           {[
-            { label: "Platform", href: "#platform" },
             { label: "Studio", href: "#studio" },
+            { label: "Platform", href: "#platform" },
             { label: "Everywhere", href: "#everywhere" },
             { label: "Your team", href: "#organization" },
             { label: "Open Studio", href: appUrl },

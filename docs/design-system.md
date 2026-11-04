@@ -195,9 +195,12 @@ surfaces continue to support their existing themes.
 
 Use large editorial headings (fluid 45–88 px for the public hero), short readable
 explanations and open sections divided by fine rules. Monospace identifies
-references, source, context and exact payloads. Avoid decorative card grids,
-animated spotlights and ornament competing with evidence. A faint static light
-behind the Studio connects the composition without becoming the subject.
+references, source, context and exact payloads. Avoid decorative card grids and
+ornament competing with evidence. Soft lime
+light cones, a faint grid and slowly travelling background beams frame the hero.
+Keep them behind content and disable their movement under reduced motion. Studio
+gets a stronger rim light, ambient glow and selected-state accents so the product
+illustration stands out without changing status colors or interaction behavior.
 
 The primary visual is a working contextual investigation, not a screenshot:
 process selection → connected evidence → inspector → existing run detail.
@@ -221,3 +224,24 @@ all evidence and actions rather than clipping a desktop console. Use shared
 Tabs, Button, Input, Sheet, Dialog and Accordion; no second component system.
 Keep visible keyboard focus, meaningful no-match recovery, Escape dismissal and
 focus restoration. Entrance motion and anchor scrolling honor reduced motion.
+
+Platform uses one evidence-to-interface diagram rather than a disconnected grid
+of infrastructure features. Show the application-owned process, shared meaning
+and the people/agent/API clients together. Reuse the same fictional reference
+across illustrations. Diagram connectors are decorative; labels and working
+links carry the meaning on mobile and for assistive navigation.
+
+Everywhere pairs one client-independent conversation with synthetic evidence and a
+portable view that switches host shells while keeping the same facts. Shared
+RunSnapshot remains the inspection surface. Match Studio’s fine lime borders,
+quiet glows and selected-state emphasis; use the existing warning/success roles
+for evidence status. Illustrative hosts do not perform live tool calls, authorize
+connections or create a second analytics/presentation system.
+
+Follow the page order in desktop/mobile navigation, product links and footer:
+Studio → Platform → Everywhere. Keep one useful agent conversation instead of
+client tabs that only substitute prompt text. The SDK illustration follows the
+same fictional booking from application code into context, a reported result and
+an expected confirmation. Expandable details explain distinct signals; code copy
+uses the executable example. Keep the closing invitation bold and concise, with
+open-source/self-host details integrated there rather than a separate section.

@@ -1,39 +1,39 @@
-import { Button, FlowmarkMark } from "@flowmark/ui"
 import { Arrow } from "../../app/components/brand"
-import { CodeShowcase } from "../../app/components/code-showcase"
 import {
   overlineClassName,
   sectionTitleClassName,
   shellClassName,
 } from "../../app/components/shell"
-import { docsUrl, githubUrl } from "../../app/components/site-links"
 import { AgentExperience } from "./agent-experience"
+import { InstrumentationExperience } from "./instrumentation-experience"
 import { OrganizationPerspectives } from "./organization-perspectives"
+import { PlatformFabric } from "./platform-fabric"
+import { PortableEvidence } from "./portable-evidence"
 
 export function ProductDimensions() {
   return (
     <section
       id="product"
-      className={`${shellClassName} pb-20 sm:pb-28`}
+      className={shellClassName}
       aria-label="One Flowmark product"
     >
       <div className="grid border-y border-border md:grid-cols-3">
         {[
           {
             number: "01",
-            name: "Platform",
-            href: "#platform",
-            title: "Instrument once. Build on the evidence.",
-            detail:
-              "Typed SDK, connected context, historical analysis and programmable access.",
-          },
-          {
-            number: "02",
             name: "Studio",
             href: "#studio",
             title: "A workspace for understanding.",
             detail:
               "Explore connected processes. Save an investigation, share its evidence and pick up where you left off.",
+          },
+          {
+            number: "02",
+            name: "Platform",
+            href: "#platform",
+            title: "Instrument once. Build on the evidence.",
+            detail:
+              "Typed SDK, connected context, historical analysis and programmable access.",
           },
           {
             number: "03",
@@ -47,13 +47,19 @@ export function ProductDimensions() {
           <a
             key={item.name}
             href={item.href}
-            className="group min-w-0 border-border py-7 transition-colors hover:bg-secondary/30 first:pl-0 last:pr-0 max-md:border-b max-md:last:border-b-0 md:px-7 md:not-last:border-r lg:px-9"
+            className="group relative min-w-0 border-border py-7 transition-colors hover:bg-primary/[0.03] first:pl-0 last:pr-0 max-md:border-b max-md:last:border-b-0 md:px-7 md:not-last:border-r lg:px-9"
           >
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-primary/70 to-transparent opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
+            />
             <div className="flex items-center gap-3">
               <span className="font-mono text-[9px] text-muted-foreground">
                 {item.number}
               </span>
-              <h2 className="text-sm font-medium">{item.name}</h2>
+              <h2 className="text-sm font-medium transition-colors group-hover:text-primary">
+                {item.name}
+              </h2>
               <span className="ml-auto text-muted-foreground transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
                 <Arrow diagonal />
               </span>
@@ -75,7 +81,7 @@ export function OrganizationSection() {
   return (
     <section
       id="organization"
-      className={`${shellClassName} pb-20 sm:pb-28`}
+      className={`${shellClassName} py-20 sm:py-28`}
       aria-labelledby="organization-title"
     >
       <div className="grid gap-5 md:grid-cols-[1.2fr_1fr] md:items-end lg:gap-24">
@@ -111,9 +117,13 @@ export function EverywhereSection() {
   return (
     <section
       id="everywhere"
-      className="relative border-y border-border bg-secondary/10 py-20 sm:py-28"
+      className="relative isolate overflow-hidden border-y border-border bg-secondary/10 py-20 sm:py-28"
       aria-labelledby="everywhere-title"
     >
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_80%_20%,#b9f59712,transparent_55%)]"
+      />
       <div className={shellClassName}>
         <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-20">
           <div>
@@ -171,7 +181,8 @@ export function EverywhereSection() {
         </div>
         <div className="mt-16 grid items-center gap-8 border-t border-border pt-10 md:grid-cols-2 lg:gap-20">
           <div>
-            <h3 className="text-xl font-medium tracking-tight">
+            <p className={overlineClassName}>Portable by design</p>
+            <h3 className="mt-4 text-3xl leading-tight font-medium tracking-[-0.04em]">
               The interface travels, too.
             </h3>
             <p className="mt-3 max-w-md text-xs leading-6 text-muted-foreground">
@@ -179,36 +190,22 @@ export function EverywhereSection() {
               internal tool, or continue in Studio. Useful context doesn’t
               belong to one browser tab.
             </p>
-          </div>
-          <div className="rounded-lg border border-border bg-background p-4 sm:p-5">
-            <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
-              <FlowmarkMark className="size-3.5 text-primary" />
-              <span>Flowmark · portable evidence</span>
-              <span className="ml-auto font-mono text-[9px]">MCP App</span>
-            </div>
-            <div className="mt-5 flex flex-wrap justify-between gap-3">
+            <div className="mt-6 grid gap-4 border-t border-border pt-5 text-xs sm:grid-cols-2">
               <div>
-                <p className="font-mono text-xs">appointment.book</p>
-                <p className="mt-2 text-[10px] text-muted-foreground">
-                  Cedar Health · SYN-BOOK-RECENT
+                <p className="font-medium">MCP Apps</p>
+                <p className="mt-1.5 text-[11px] leading-6 text-muted-foreground">
+                  Explore evidence directly in compatible conversations.
                 </p>
               </div>
-              <span className="self-start rounded border border-warning/25 bg-warning/5 px-2 py-1 text-[9px] text-warning">
-                Confirmation overdue
-              </span>
-            </div>
-            <div className="mt-5 flex items-center justify-between gap-4 border-t border-border pt-3">
-              <span className="text-[9px] text-muted-foreground">
-                Synthetic evidence · 24 Oct, 11:00 UTC
-              </span>
-              <a
-                href="#studio"
-                className="flex min-h-10 items-center gap-2 text-[10px] text-primary hover:underline"
-              >
-                Explore Studio <Arrow />
-              </a>
+              <div>
+                <p className="font-medium">Embedded interfaces</p>
+                <p className="mt-1.5 text-[11px] leading-6 text-muted-foreground">
+                  Bring the same understanding into the tools your team builds.
+                </p>
+              </div>
             </div>
           </div>
+          <PortableEvidence />
         </div>
       </div>
     </section>
@@ -228,8 +225,9 @@ export function PlatformSection() {
             Platform / Built around your application
           </p>
           <h2 id="platform-title" className={`${sectionTitleClassName} mt-4`}>
-            A small amount of code.
-            <br />A much bigger picture.
+            From application code.
+            <br />
+            To shared understanding.
           </h2>
         </div>
         <p className="max-w-md text-sm leading-7 text-muted-foreground">
@@ -238,98 +236,8 @@ export function PlatformSection() {
           outcomes, relationships, reports and expectations.
         </p>
       </div>
-      <CodeShowcase />
-      <div className="mt-8 grid gap-6 border-t border-border pt-7 sm:grid-cols-3">
-        {[
-          [
-            "Context that connects",
-            "Link executions to business references, integrations and one another.",
-          ],
-          [
-            "Memory across time",
-            "Compare outcomes, releases and customers. Return to the contributing evidence.",
-          ],
-          [
-            "A programmable foundation",
-            "Read through APIs and MCP. Compose the investigation into your own tools.",
-          ],
-        ].map(([title, description]) => (
-          <div key={title}>
-            <h3 className="text-sm font-medium">{title}</h3>
-            <p className="mt-2 text-xs leading-6 text-muted-foreground">
-              {description}
-            </p>
-          </div>
-        ))}
-      </div>
-      <div className="mt-8 flex flex-wrap items-center justify-between gap-4 rounded-lg border border-border bg-card px-5 py-4">
-        <code className="text-xs">
-          <span className="mr-3 text-muted-foreground" aria-hidden="true">
-            $
-          </span>
-          npm i @flowmarkdev/node
-        </code>
-        <Button asChild variant="link" className="h-10 px-0 text-xs">
-          <a href={docsUrl}>
-            Read the quickstart <Arrow />
-          </a>
-        </Button>
-      </div>
-      <p className="mt-4 max-w-2xl text-[11px] leading-6 text-muted-foreground">
-        Examples use a configured client and your application helpers. Flush
-        delivery at the process boundary or use the Next.js lifecycle adapter.
-        Flowmark observes your work; your application owns execution.
-      </p>
-    </section>
-  )
-}
-
-export function OpenSourceSection() {
-  return (
-    <section
-      className="border-y border-border bg-card/50 py-14 sm:py-20"
-      aria-labelledby="open-source-title"
-    >
-      <div
-        className={`${shellClassName} grid items-center gap-10 md:grid-cols-[1.2fr_0.8fr] lg:gap-20`}
-      >
-        <div>
-          <p className={overlineClassName}>Open by design</p>
-          <h2
-            id="open-source-title"
-            className="mt-4 text-3xl leading-tight font-medium tracking-[-0.045em] sm:text-4xl"
-          >
-            Your evidence.
-            <br />
-            Your infrastructure. Your possibilities.
-          </h2>
-          <p className="mt-5 max-w-lg text-sm leading-7 text-muted-foreground">
-            Inspect the source. Self-host the platform. Build the interface your
-            team needs. Flowmark is an open-source foundation for understanding
-            the software you own.
-          </p>
-          <Button asChild variant="link" className="mt-5 h-11 px-0 text-xs">
-            <a href={githubUrl}>
-              Explore the source <Arrow diagonal />
-            </a>
-          </Button>
-        </div>
-        <div className="grid grid-cols-2 gap-x-8 gap-y-8 border-l border-border pl-8 sm:pl-12">
-          {[
-            ["TypeScript", "From SDK to Studio"],
-            ["PostgreSQL", "Evidence with history"],
-            ["MIT", "Open-source license"],
-            ["Composable", "SDK · API · MCP · UI"],
-          ].map(([title, detail]) => (
-            <div key={title}>
-              <p className="text-lg font-medium tracking-tight">{title}</p>
-              <p className="mt-2 text-[11px] leading-5 text-muted-foreground">
-                {detail}
-              </p>
-            </div>
-          ))}
-        </div>
-      </div>
+      <PlatformFabric />
+      <InstrumentationExperience />
     </section>
   )
 }

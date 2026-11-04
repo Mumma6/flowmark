@@ -5,7 +5,6 @@ import { SiteFooter } from "./components/site-footer"
 import { SiteHeader } from "./components/site-header"
 import {
   EverywhereSection,
-  OpenSourceSection,
   OrganizationSection,
   PlatformSection,
   ProductDimensions,
@@ -24,10 +23,9 @@ export default function HomePage() {
       <main id="main" tabIndex={-1}>
         <HeroSection />
         <ProductDimensions />
-        <OrganizationSection />
-        <EverywhereSection />
         <PlatformSection />
-        <OpenSourceSection />
+        <EverywhereSection />
+        <OrganizationSection />
         <FaqSection />
         <ClosingSection />
       </main>
