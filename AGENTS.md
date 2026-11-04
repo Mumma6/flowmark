@@ -3,8 +3,10 @@
 ## Start here
 
 - Product direction, roadmap, and infrastructure operating notes live in the
-  local-only `private/` folder (`PRODUCT-VISION.md`, `NEXT-PHASE-PLAN.md`,
-  `MVP-INFRA.md`, `docs/infrastructure.md`). That folder is listed in
+  local-only `private/` folder. `PRODUCT-VISION.md` is the authoritative
+  Product 1.0 direction; `plans/product-1-0/{SPEC,ROADMAP,BRAND}.md` own the
+  experience, delivery plan and messaging. `INFRASTRUCTURE-ROADMAP.md` and
+  `docs/infrastructure.md` retain operational ownership. That folder is listed in
   `.gitignore` and is not in the public Git tree. Confirmed provider
   and auth choices are in
   [ADR 0006](./docs/decisions/0006-mvp-0.1-infrastructure.md). Neon and the
@@ -18,10 +20,12 @@
 
 - Flowmark observes application-owned work; it never executes, schedules, or
   retries that work. Preserve the workflow/run abstraction.
-- Flowmark is a focused open-source workflow observability product. Ambition
-  inside that domain is welcome. It is not an enterprise observability
-  platform or a public multi-tenant SaaS. Prefer the local product vision
-  before expanding scope.
+- Flowmark Product 1.0 is an open-source, programmable process-intelligence
+  platform for people and AI agents. Platform, Studio and Everywhere are
+  dimensions of one product. Serve organization-wide questions over shared
+  authorized evidence; preserve workflow/run semantics. Follow the local vision
+  rather than retired MVP scope limits. This direction does not authorize
+  enterprise identity/billing, an execution engine or hosted operations.
 - Business results are application-reported evidence, not verified correctness.
   Completed does not mean every record succeeded. Progress is last reported;
   missing terminal telemetry does not prove a run is active or failed.
@@ -96,7 +100,7 @@
   classes, CSS modules, or inline styling for normal layouts. Theme variables
   and Tailwind directives belong in global CSS.
 - Preserve accessible interaction, responsive layouts, and real loading/error/
-  empty states. English product UI/docs; respond to the maintainer in Swedish.
+  empty states. English product UI/docs; use the maintainer's requested response language.
 
 ## Working practices
 

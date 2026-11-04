@@ -17,11 +17,16 @@ result. It does not establish that an external business process succeeded.
 - **Not reported:** the application did not attach the relevant result.
 - **Last reported progress:** an absolute snapshot, never a heartbeat.
 
-Do not classify arbitrary result keys as success, warning or failure. Do not infer
-pending confirmations, overdue work, root causes or business outcome categories.
-Business outcome distributions require an explicit workflow-specific contract.
-The current dashboard presents execution summaries and individual reported
-results; it does not claim to implement aggregate business outcome analytics.
+Do not classify arbitrary result keys as success, warning or failure. Pending
+and overdue confirmations require the existing explicit expectation contract;
+missing telemetry alone establishes neither. Business analytics use declared
+fields, immutable revisions, exact cohorts and visible coverage. These capabilities
+already exist; preserve their semantics when composing Studio views.
+
+Product 1.0 introduces a contextual Studio over this foundation. Preserve the
+current palette, mark, shared components and accessibility. Context, answer and
+evidence should form one continuous interaction. Existing page compositions below
+describe current behavior, not a permanent navigation constraint.
 
 ## Foundations
 

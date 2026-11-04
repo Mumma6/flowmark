@@ -1,5 +1,12 @@
 # Documentation
 
+Flowmark's Product 1.0 direction is one process-intelligence platform with a
+programmable foundation, a contextual Studio and access through agents/custom
+interfaces. The [README](../README.md) and [product introduction](../apps/docs/content/docs/introduction.mdx)
+distinguish implemented capabilities from that direction. Maintainer vision,
+specification, roadmap and messaging remain in ignored `private/`; public guides
+must not depend on those files.
+
 Contributor guides that ship with the public repository:
 
 - [Contributing](../CONTRIBUTING.md): onboarding, branches, local-only apps,

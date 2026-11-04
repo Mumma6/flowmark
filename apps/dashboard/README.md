@@ -1,4 +1,10 @@
-# Flowmark dashboard
+# Flowmark web interface
+
+This is the current signed-in interface and the foundation for **Flowmark
+Studio**, the planned contextual investigation workspace in Product 1.0. Preserve
+existing evidence views, filters, comparisons and deep links while evolving their
+composition. The directory/package name remains `dashboard`; this documentation
+change implements no Studio features, MCP connection or saved investigation.
 
 Anonymous visitors are redirected to sign in. Registration creates the account;
 onboarding/Settings creates the first project and write key. Existing local demo
@@ -50,8 +56,10 @@ features (`auth`, `platform`, `runs` and `reporting`).
 
 Technical completion is not business success. Missing terminal telemetry is
 labelled **No final outcome**, and progress is **Last reported**. Result scalar
-highlights remain application-reported values; no arbitrary JSON is interpreted
-as aggregate business outcome analytics. No workflow execution/retry was added.
+highlights remain application-reported values. Declared result fields already
+support business analytics with revision/coverage rules; arbitrary JSON does not
+become a metric. Expectations are explicit observed confirmations, not a liveness
+claim. Flowmark does not execute or retry application work.
 
 ## Design and shared UI
 
