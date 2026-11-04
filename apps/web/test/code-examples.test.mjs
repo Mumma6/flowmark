@@ -15,115 +15,90 @@ const exports = {}
 runInNewContext(
   compile(
     readFileSync(
-      new URL("../app/components/code-examples.ts", import.meta.url),
+      new URL(
+        "../features/product-landing/instrumentation-example.ts",
+        import.meta.url,
+      ),
       "utf8",
     ),
   ),
   { exports },
 )
-const { examples } = exports
-const functions = {
-  checkout: "checkoutOrder",
-  sync: "syncRecords",
-  job: "runNightlyJob",
-}
 
-function execute(example, code, failure) {
+function execute({ accepted = true, failure } = {}) {
   const events = []
-  const businessCalls = []
-  const result = { succeeded: 988, failed: 12 }
-  const shipment = { id: "shipment-001" }
+  const submissions = []
+  const booking = { accepted, reference: "SYN-BOOK-RECENT" }
+  const confirmation = {
+    version: 1,
+    workflow: "appointment.book",
+    runId: "synthetic-run-id",
+    expectationId: "synthetic-confirmation-id",
+  }
   const run = {
-    step: (...args) => events.push(["step", ...args]),
-    progress: (...args) => events.push(["progress", ...args]),
+    expect: (...args) => {
+      events.push(["expect", ...args])
+      return confirmation
+    },
     done: (...args) => events.push(["done", ...args]),
     fail: (...args) => events.push(["fail", ...args]),
   }
-  const context = {
-    flowmark: {
-      workflow: (...args) => {
-        events.push(["started", ...args])
-        return run
+  const fn = runInNewContext(
+    `${compile(exports.bookingCode)}\nbookAppointment`,
+    {
+      flowmark: {
+        workflow: (...args) => {
+          events.push(["start", ...args])
+          return run
+        },
+      },
+      submitBooking: async (input) => {
+        submissions.push(input)
+        if (failure) throw failure
+        return booking
       },
     },
-    logger: {
-      error: (data, message) =>
-        businessCalls.push(["log", { ...data }, message]),
-    },
-    loadWork: async () => {
-      businessCalls.push("load")
-      return Array(1000).fill({})
-    },
-    processWork: async () => {
-      businessCalls.push("process")
-      if (failure) throw failure
-      return result
-    },
-    countRecords: async () => 1000,
-    fetchRecordPages: async function* () {
-      yield Array(300).fill({})
-      yield Array(300).fill({})
-      if (failure) throw failure
-    },
-    updateRecords: async (page) => businessCalls.push(["update", page.length]),
-    capturePayment: async () => businessCalls.push("payment"),
-    createShipment: async () => {
-      businessCalls.push("shipment")
-      if (failure) throw failure
-      return shipment
-    },
-  }
-  const fn = runInNewContext(
-    `${compile(code)}\n${functions[example.id]}`,
-    context,
   )
-  return { promise: fn("sample-001"), events, businessCalls, result, shipment }
+  return {
+    promise: fn("SYN-REF-2049"),
+    events,
+    submissions,
+    booking,
+    confirmation,
+  }
 }
 
-for (const example of examples) {
-  test(`${example.label}: small instrumentation budget and inspectable evidence`, () => {
-    const before = example.existingCode.split("\n").length
-    const after = example.code.split("\n").length
-    assert.ok(after - before <= 7, `Added ${after - before} lines`)
-    assert.ok(after <= 18, `Example is ${after} lines long`)
-    assert.ok(example.preview.events.every((event) => event.detail.length > 0))
-    assert.equal(
-      new Set(example.preview.events.map((event) => event.id)).size,
-      example.preview.events.length,
-    )
-  })
+test("booking example preserves the application result and forwards its confirmation reference", async () => {
+  const execution = execute()
+  assert.equal(await execution.promise, execution.booking)
+  assert.equal(execution.submissions.length, 1)
+  assert.equal(execution.submissions[0].referralRef, "SYN-REF-2049")
+  assert.equal(execution.submissions[0].confirmation, execution.confirmation)
+  const [, workflow, options] = execution.events[0]
+  assert.equal(workflow, "appointment.book")
+  assert.equal(options.correlationId, "SYN-REF-2049")
+  assert.equal(options.properties.customer, "Cedar Health")
+  assert.equal(options.properties.integration, "orbit")
+  assert.equal(execution.events[1][1], "booking.confirmed")
+  assert.equal(execution.events[1][2].within, "20m")
+  assert.equal(execution.events.at(-1)[1].outcome, "submitted")
+  assert.equal(execution.events.at(-1)[1].result.accepted, true)
+})
 
-  test(`${example.label}: preserves business result and calls`, async () => {
-    const before = execute(example, example.existingCode)
-    const after = execute(example, example.code)
-    const [original, instrumented] = await Promise.all([
-      before.promise,
-      after.promise,
-    ])
-    assert.deepEqual(instrumented, original)
-    assert.deepEqual(after.businessCalls, before.businessCalls)
-    assert.equal(after.events.at(-1)[0], "done")
-    if (example.id === "job") assert.equal(instrumented, after.result)
-    if (example.id === "checkout") assert.equal(instrumented, after.shipment)
-  })
+test("booking example reports the actual returned acceptance, including a negative result", async () => {
+  const execution = execute({ accepted: false })
+  assert.equal(await execution.promise, execution.booking)
+  assert.equal(execution.events.at(-1)[0], "done")
+  assert.equal(execution.events.at(-1)[1].outcome, "submitted")
+  assert.equal(execution.events.at(-1)[1].result.accepted, false)
+})
 
-  test(`${example.label}: preserves original error and logging`, async () => {
-    const cause = new Error("application failure")
-    const before = execute(example, example.existingCode, cause)
-    const after = execute(example, example.code, cause)
-    await Promise.all([
-      assert.rejects(before.promise, (error) => error === cause),
-      assert.rejects(after.promise, (error) => error === cause),
-    ])
-    assert.deepEqual(after.businessCalls, before.businessCalls)
-    assert.equal(after.events.at(-1)[0], "fail")
-    assert.ok(!after.events.some(([type]) => type === "done"))
-    if (example.id === "sync") {
-      assert.equal(
-        after.events.filter(([type]) => type === "progress").at(-1)[1]
-          .completed,
-        600,
-      )
-    }
-  })
-}
+test("booking example rethrows the original submission error and never reports completion", async () => {
+  const cause = new Error("application submission failed")
+  const execution = execute({ failure: cause })
+  await assert.rejects(execution.promise, (error) => error === cause)
+  assert.equal(execution.submissions.length, 1)
+  assert.equal(execution.events.at(-1)[0], "fail")
+  assert.equal(execution.events.at(-1)[1].code, "BOOKING_FAILED")
+  assert.ok(!execution.events.some(([kind]) => kind === "done"))
+})

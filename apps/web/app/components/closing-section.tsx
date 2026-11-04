@@ -6,33 +6,34 @@ import { docsUrl, githubUrl } from "./site-links"
 export function ClosingSection() {
   return (
     <section
-      className="relative isolate overflow-hidden border-t border-border bg-card py-16 sm:py-24"
+      className="relative isolate overflow-hidden border-t border-primary/20 bg-card py-20 sm:py-28"
       aria-labelledby="closing-title"
     >
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_50%_100%,var(--hero-glow),transparent_65%)]"
+        className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_50%_100%,var(--studio-glow),transparent_65%)]"
       />
       <div className={`${shellClassName} text-center`}>
-        <FlowmarkMark className="mx-auto mb-6 size-10 text-primary" />
-        <p className={overlineClassName}>Start with one process</p>
+        <div className="mx-auto mb-8 grid size-16 place-items-center rounded-2xl border border-primary/25 bg-primary/5 shadow-[0_0_60px_-15px_#b9f59745]">
+          <FlowmarkMark className="size-8 text-primary" />
+        </div>
+        <p className={overlineClassName}>Built to be understood</p>
         <h2
           id="closing-title"
-          className="mx-auto mt-4 max-w-2xl text-balance text-[clamp(2.3rem,5vw,4rem)] leading-[1.08] font-medium tracking-[-0.05em]"
+          className="mx-auto mt-5 max-w-4xl text-balance text-[clamp(2.6rem,6vw,5rem)] leading-[1.04] font-medium tracking-[-0.055em]"
         >
-          Start with the process
+          You build the software.
           <br />
-          you wish you understood.
+          <span className="text-primary">Make it understood.</span>
         </h2>
-        <p className="mx-auto mt-5 max-w-md text-sm leading-7 text-muted-foreground">
-          Instrument once. Understand together.
-          <br />
-          For the people building your software — and everyone depending on it.
+        <p className="mx-auto mt-6 max-w-lg text-sm leading-7 text-muted-foreground">
+          Connect what runs to what it means. Put that understanding in the
+          hands of your team, your agents and the tools you build.
         </p>
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
           <Button asChild size="lg" className="h-11 px-6">
             <a href={docsUrl}>
-              Start building with Flowmark <Arrow />
+              Build with Flowmark <Arrow />
             </a>
           </Button>
           <Button asChild size="lg" variant="outline" className="h-11 px-6">
@@ -41,6 +42,9 @@ export function ClosingSection() {
             </a>
           </Button>
         </div>
+        <p className="mt-6 text-[11px] text-muted-foreground">
+          Open source · MIT licensed · Self-host on your infrastructure
+        </p>
       </div>
     </section>
   )

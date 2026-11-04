@@ -17,14 +17,14 @@ function HighlightedCode({ value }: { value: string }) {
 
   return (
     <CodeBlockContent
-      className="overflow-auto text-xs leading-[1.9]"
+      className="max-h-96 overflow-auto text-[11px] leading-[1.9] lg:max-h-none"
       lineNumbers
     >
       {lines.map((line, index) => (
         <CodeBlockLine
           key={index}
           className={
-            /\b(?:flowmark\.workflow|run\.(?:step|done|fail|progress))\(/.test(
+            /\b(?:flowmark\.workflow|run\.(?:expect|done|fail))\(/.test(
               sourceLines[index] ?? "",
             )
               ? "bg-primary/10 shadow-[inset_2px_0_0_var(--accent)]"
