@@ -4,7 +4,7 @@
  */
 export const AGENT_ACCESS_MCP_DEPENDENCY_PROPOSAL = {
   adr: "docs/decisions/0007-connect-agent-mcp-dependencies.md",
-  status: "proposed",
+  status: "accepted",
   reviewedOn: "2026-11-05",
   evidence: {
     npmPackInspection: [
