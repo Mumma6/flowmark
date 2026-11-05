@@ -2,9 +2,10 @@ import { Effect, Layer } from "effect"
 import { WorkflowStore } from "@flowmark/db/persistence"
 import {
   persist,
+  toInvalidInput,
   toPersistenceError,
+  toRunNotFound,
 } from "../../../adapters/persistence-error.js"
-import { InvalidInput, RunNotFound } from "../../../errors.js"
 import { WorkflowRepository } from "../ports/workflow-repository.js"
 
 export type { WorkflowReadModelContract } from "./read-model-contract.js"
@@ -22,8 +23,7 @@ export const WorkflowRepositoryLive = Layer.effect(
           store.businessInsights(projectId, query).pipe(
             Effect.catchTags({
               DatabaseError: toPersistenceError,
-              InvalidResultQuery: (error) =>
-                new InvalidInput({ cause: error.message }),
+              InvalidResultQuery: toInvalidInput,
             }),
           ),
       ),
@@ -32,8 +32,7 @@ export const WorkflowRepositoryLive = Layer.effect(
           store.append(projectId, eventId, event).pipe(
             Effect.catchTags({
               DatabaseError: toPersistenceError,
-              MissingRunError: (error) =>
-                new RunNotFound({ runId: error.runId }),
+              MissingRunError: toRunNotFound,
             }),
           ),
       ),
@@ -41,24 +40,21 @@ export const WorkflowRepositoryLive = Layer.effect(
         persist(store.snapshot(projectId)),
       ),
       workflows: Effect.fn("WorkflowRepositoryLive.workflows")((projectId) =>
-        store.workflows(projectId).pipe(Effect.mapError(toPersistenceError)),
+        persist(store.workflows(projectId)),
       ),
-      listRuns: Effect.fn("WorkflowRepositoryLive.listRuns")(
-        (projectId, query) =>
-          store.listRuns(projectId, query).pipe(
-            Effect.catchTags({
-              DatabaseError: toPersistenceError,
-              InvalidResultQuery: (error) =>
-                new InvalidInput({ cause: error.message }),
-            }),
-          ),
+      listRuns: Effect.fn("WorkflowRepositoryLive.listRuns")((projectId, query) =>
+        store.listRuns(projectId, query).pipe(
+          Effect.catchTags({
+            DatabaseError: toPersistenceError,
+            InvalidResultQuery: toInvalidInput,
+          }),
+        ),
       ),
       search: Effect.fn("WorkflowRepositoryLive.search")((projectId, query) =>
         store.search(projectId, query).pipe(
           Effect.catchTags({
             DatabaseError: toPersistenceError,
-            InvalidResultQuery: (error) =>
-              new InvalidInput({ cause: error.message }),
+            InvalidResultQuery: toInvalidInput,
           }),
         ),
       ),
@@ -70,8 +66,7 @@ export const WorkflowRepositoryLive = Layer.effect(
           store.runEventPage(projectId, query).pipe(
             Effect.catchTags({
               DatabaseError: toPersistenceError,
-              InvalidResultQuery: (error) =>
-                new InvalidInput({ cause: error.message }),
+              InvalidResultQuery: toInvalidInput,
             }),
           ),
       ),
@@ -81,8 +76,7 @@ export const WorkflowRepositoryLive = Layer.effect(
         store.runInvestigationSummary(projectId, runId).pipe(
           Effect.catchTags({
             DatabaseError: toPersistenceError,
-            InvalidResultQuery: (error) =>
-              new InvalidInput({ cause: error.message }),
+            InvalidResultQuery: toInvalidInput,
           }),
         ),
       ),
@@ -91,8 +85,7 @@ export const WorkflowRepositoryLive = Layer.effect(
           store.relatedRunsPage(projectId, query).pipe(
             Effect.catchTags({
               DatabaseError: toPersistenceError,
-              InvalidResultQuery: (error) =>
-                new InvalidInput({ cause: error.message }),
+              InvalidResultQuery: toInvalidInput,
             }),
           ),
       ),
@@ -101,8 +94,7 @@ export const WorkflowRepositoryLive = Layer.effect(
           store.expectationsPage(projectId, query).pipe(
             Effect.catchTags({
               DatabaseError: toPersistenceError,
-              InvalidResultQuery: (error) =>
-                new InvalidInput({ cause: error.message }),
+              InvalidResultQuery: toInvalidInput,
             }),
           ),
       ),
@@ -111,8 +103,7 @@ export const WorkflowRepositoryLive = Layer.effect(
           store.operationsPage(projectId, query).pipe(
             Effect.catchTags({
               DatabaseError: toPersistenceError,
-              InvalidResultQuery: (error) =>
-                new InvalidInput({ cause: error.message }),
+              InvalidResultQuery: toInvalidInput,
             }),
           ),
       ),
@@ -124,8 +115,7 @@ export const WorkflowRepositoryLive = Layer.effect(
           store.compare(projectId, runId, selection).pipe(
             Effect.catchTags({
               DatabaseError: toPersistenceError,
-              InvalidResultQuery: (error) =>
-                new InvalidInput({ cause: error.message }),
+              InvalidResultQuery: toInvalidInput,
             }),
           ),
       ),
