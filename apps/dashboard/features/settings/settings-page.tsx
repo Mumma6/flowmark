@@ -33,9 +33,9 @@ const sections: ReadonlyArray<{
 const sectionHelp: Record<SettingsSection, string> = {
   projects:
     "Create or select the project that owns the work you want to observe. Switch projects in the Studio header to inspect their runs.",
-  keys: "Give your application an ingestion key for the selected project. After connecting it, open Runs to verify that an execution was recorded.",
+  keys: "Give your application an ingestion key for the selected project. Ingestion keys are not agent read access — use Connect → Read evidence for manual investigation handoff.",
   setup:
-    "Follow agent or manual SDK instructions to instrument your application, then verify evidence in Runs. Copied instructions are not a connection.",
+    "Follow coding-agent or manual SDK instructions to instrument your application, then verify evidence in Runs. For reading evidence with Codex, Cursor, Claude Code or a custom agent, open Connect and scroll to agent access.",
   account:
     "Update the identity and credentials you use to sign in to the dashboard.",
 }
