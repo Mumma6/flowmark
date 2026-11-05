@@ -42,13 +42,14 @@ export const WorkflowRepositoryLive = Layer.effect(
       workflows: Effect.fn("WorkflowRepositoryLive.workflows")((projectId) =>
         persist(store.workflows(projectId)),
       ),
-      listRuns: Effect.fn("WorkflowRepositoryLive.listRuns")((projectId, query) =>
-        store.listRuns(projectId, query).pipe(
-          Effect.catchTags({
-            DatabaseError: toPersistenceError,
-            InvalidResultQuery: toInvalidInput,
-          }),
-        ),
+      listRuns: Effect.fn("WorkflowRepositoryLive.listRuns")(
+        (projectId, query) =>
+          store.listRuns(projectId, query).pipe(
+            Effect.catchTags({
+              DatabaseError: toPersistenceError,
+              InvalidResultQuery: toInvalidInput,
+            }),
+          ),
       ),
       search: Effect.fn("WorkflowRepositoryLive.search")((projectId, query) =>
         store.search(projectId, query).pipe(
