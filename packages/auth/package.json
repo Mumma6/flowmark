@@ -29,6 +29,11 @@
       "types": "./dist/seed-local-user.d.ts",
       "node": "./dist/seed-local-user.js",
       "default": "./dist/server-only.js"
+    },
+    "./agent-access": {
+      "types": "./dist/agent-access/index.d.ts",
+      "node": "./dist/agent-access/index.js",
+      "default": "./dist/server-only.js"
     }
   },
   "scripts": {

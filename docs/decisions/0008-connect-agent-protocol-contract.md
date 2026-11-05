@@ -15,8 +15,9 @@ later tasks do not invent competing auth designs.
 This ADR is **decision/review only**. It does not install packages, migrate
 Neon, enable hosted MCP, or implement tools.
 
-Machine-readable constants live in
-`packages/auth/src/agent-access/protocol-contract.ts`.
+Machine-readable constants live under
+`packages/auth/src/agent-access/` (`protocol-constants.ts`, `protocol-schemas.ts`,
+`protocol-contract.ts`, exported from `@flowmark/auth` and `@flowmark/auth/agent-access`).
 
 ## Decision (proposal)
 
@@ -199,6 +200,6 @@ Does **not** authorize package installation (still gated per ADR 0007).
 ## References
 
 - Dependencies: [ADR 0007](./0007-connect-agent-mcp-dependencies.md)
-- Machine-readable: `packages/auth/src/agent-access/protocol-contract.ts`
+- Machine-readable: `packages/auth/src/agent-access/` (re-exported as `@flowmark/auth/agent-access`)
 - Perimeter: [Authentication boundaries](../auth-perimeter.md)
 - Connect feature spec (maintainer-local `private/plans/connect-your-agent/SPEC.md`)

@@ -1,30 +1,47 @@
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
-import { Cause, Effect, Exit } from "effect"
+import { Cause, Effect, Exit, Schema } from "effect"
 import {
   AGENT_ACCESS_MCP_TOOLS,
   AGENT_ACCESS_OAUTH_SCOPE_READ,
+  AGENT_ACCESS_QUERY_BOUNDS,
   AGENT_ACCESS_REFERENCE_DEPLOYMENTS,
   AgentAccessContractError,
+  AgentAccessMcpToolNameSchema,
   assertAgentAccessReadScopes,
   buildAgentAccessRouteMap,
   buildRequireMcpAuthOverrides,
+  decodeAgentAccessMcpToolName,
+  decodeAgentAccessPageSize,
   requireAgentAccessProjectId,
   resolveAgentAccessOrigins,
-} from "../src/agent-access/protocol-contract.js"
+} from "../src/agent-access/index.js"
 
-const run = (effect: Effect.Effect<void, AgentAccessContractError>) =>
+const runContract = <A>(effect: Effect.Effect<A, AgentAccessContractError>) =>
   Effect.runPromiseExit(effect)
 
-const expectFail = async (
-  effect: Effect.Effect<unknown, AgentAccessContractError>,
+const expectFailure = async <A>(
+  effect: Effect.Effect<A, AgentAccessContractError>,
 ) => {
-  const exit = await run(effect as Effect.Effect<void, AgentAccessContractError>)
+  const exit = await runContract(effect)
   assert.equal(Exit.isFailure(exit), true)
   if (Exit.isFailure(exit)) {
     const failed = exit.cause.reasons.find(Cause.isFailReason)
-    assert.ok(failed?.error._tag === "AgentAccessContractError")
+    assert.equal(failed?.error._tag, "AgentAccessContractError")
+    return failed!.error
   }
+  throw new Error("unreachable")
+}
+
+const expectSuccess = async <A>(
+  effect: Effect.Effect<A, AgentAccessContractError>,
+) => {
+  const exit = await runContract(effect)
+  assert.equal(Exit.isSuccess(exit), true)
+  if (Exit.isSuccess(exit)) {
+    return exit.value
+  }
+  throw new Error("unreachable")
 }
 
 describe("Agent TASK-001.2 protocol contract", () => {
@@ -47,25 +64,41 @@ describe("Agent TASK-001.2 protocol contract", () => {
   })
 
   it("requires projectId on project-scoped tools but not on get_connection", async () => {
-    assert.equal(
-      Exit.isSuccess(
-        await run(requireAgentAccessProjectId("get_connection", undefined)),
-      ),
-      true,
+    await expectSuccess(
+      requireAgentAccessProjectId("get_connection", undefined),
     )
-    await expectFail(requireAgentAccessProjectId("find_runs", ""))
-    assert.equal(
-      Exit.isSuccess(await run(requireAgentAccessProjectId("find_runs", "proj_abc"))),
-      true,
+    const missingProject = await expectFailure(
+      requireAgentAccessProjectId("find_runs", ""),
     )
+    assert.match(missingProject.reason, /projectId/)
+    await expectSuccess(requireAgentAccessProjectId("find_runs", "proj_abc"))
+  })
+
+  it("rejects unknown tool names at the contract boundary", async () => {
+    const error = await expectFailure(
+      decodeAgentAccessMcpToolName("delete_everything"),
+    )
+    assert.match(error.reason, /tool name/i)
   })
 
   it("rejects origins with paths or credentials", async () => {
-    await expectFail(
+    await expectFailure(
       resolveAgentAccessOrigins({
         dashboardOrigin: "https://app.example/extra",
         apiOrigin: "https://api.example",
       }),
+    )
+  })
+
+  it("keeps Schema tool literals aligned with the frozen public tool list", () => {
+    for (const tool of AGENT_ACCESS_MCP_TOOLS) {
+      assert.equal(
+        Schema.decodeUnknownSync(AgentAccessMcpToolNameSchema)(tool),
+        tool,
+      )
+    }
+    assert.throws(() =>
+      Schema.decodeUnknownSync(AgentAccessMcpToolNameSchema)("not_a_tool"),
     )
   })
 
@@ -75,6 +108,17 @@ describe("Agent TASK-001.2 protocol contract", () => {
   })
 
   it("fails closed when the read scope is missing", async () => {
-    await expectFail(assertAgentAccessReadScopes(new Set(["openid"])))
+    const error = await expectFailure(
+      assertAgentAccessReadScopes(new Set(["openid"])),
+    )
+    assert.match(error.reason, /flowmark:read/)
+  })
+
+  it("bounds page sizes through Schema decode", async () => {
+    assert.equal(await expectSuccess(decodeAgentAccessPageSize(25)), 25)
+    await expectFailure(decodeAgentAccessPageSize(101))
+    await expectFailure(
+      decodeAgentAccessPageSize(AGENT_ACCESS_QUERY_BOUNDS.maxPageSize + 1),
+    )
   })
 })

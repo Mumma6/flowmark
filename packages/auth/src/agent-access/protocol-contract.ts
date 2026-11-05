@@ -1,87 +1,15 @@
-import { Data, Effect, Schema } from "effect"
-import { AGENT_ACCESS_MCP_DEPENDENCY_PROPOSAL } from "./mcp-dependency-proposal.js"
+import { Array as Arr, Effect, Schema } from "effect"
+import {
+  AGENT_ACCESS_OAUTH_SCOPE_READ,
+  AGENT_ACCESS_PROJECT_SCOPED_TOOLS,
+  type AgentAccessMcpToolName,
+} from "./protocol-constants.js"
+import { AgentAccessContractError } from "./contract-errors.js"
+import { decodeAgentAccessMcpToolName } from "./protocol-schemas.js"
 
-/**
- * Agent TASK-001.2 frozen protocol contract. Implementation tasks must import
- * these constants instead of redefining paths, scopes, tools or bounds.
- */
-export const AGENT_ACCESS_PROTOCOL_CONTRACT = {
-  adr: "docs/decisions/0008-connect-agent-protocol-contract.md",
-  status: "proposed",
-  dependencyAdr: AGENT_ACCESS_MCP_DEPENDENCY_PROPOSAL.adr,
-  reviewedOn: "2026-11-05",
-} as const
-
-export class AgentAccessContractError extends Data.TaggedError(
-  "AgentAccessContractError",
-)<{
-  readonly reason: string
-}> {}
-
-export const AGENT_ACCESS_OAUTH_SCOPE_READ = "flowmark:read" as const
-export const AGENT_ACCESS_OAUTH_SCOPE_OFFLINE = "offline_access" as const
-
-export const AGENT_ACCESS_ACCESS_TOKEN_TTL_SECONDS = 10 * 60
-export const AGENT_ACCESS_REFRESH_FAMILY_MAX_DAYS = 30
-
-export const AGENT_ACCESS_GRANT_POLICY = {
-  maxProjectsPerAuthorization: 10,
-  requireExplicitProjectIdOnProjectScopedTools: true,
-  intersectGrantWithCurrentMembership: true,
-  forbidUnrestrictedUserReaderFallback: true,
-  forbidImplicitDefaultProject: true,
-  revocationCheckedOnEveryAuthorizedRequest: true,
-  jwtExpiryAloneIsInsufficient: true,
-} as const
-
-export const AGENT_ACCESS_CLIENT_POLICY = {
-  registrationPrimary: "cimd",
-  cimdMetadataProfile: "mcp-2026-07-28",
-  dynamicClientRegistrationDefault: false,
-  pkceRequired: true,
-  codeChallengeMethod: "S256",
-  treatRemoteClientMetadataAsUntrusted: true,
-  noClientSecretInDistributedDesktopConfig: true,
-  nativeLoopbackRedirectHosts: ["127.0.0.1", "localhost", "[::1]"] as const,
-  nativeLoopbackRedirectSchemes: ["http"] as const,
-  dashboardProxyExternalRedirectsDefault: false,
-} as const
-
-export const AGENT_ACCESS_MCP_TOOLS = [
-  "get_connection",
-  "list_workflows",
-  "find_runs",
-  "get_run",
-  "compare_run",
-  "get_workflow_insights",
-] as const
-
-export type AgentAccessMcpToolName = (typeof AGENT_ACCESS_MCP_TOOLS)[number]
-
-export const AGENT_ACCESS_PROJECT_SCOPED_TOOLS = [
-  "list_workflows",
-  "find_runs",
-  "get_run",
-  "compare_run",
-  "get_workflow_insights",
-] as const satisfies ReadonlyArray<AgentAccessMcpToolName>
-
-export const AGENT_ACCESS_QUERY_BOUNDS = {
-  defaultPageSize: 25,
-  maxPageSize: 100,
-  defaultEventPageSize: 50,
-  maxEventPageSize: 100,
-  maxHistoryWindowDays: 31,
-  maxInsightWindowDays: 31,
-  defaultPeerLookbackDays: 30,
-  maxSerializedResponseBytes: 64 * 1024,
-} as const
-
-export const AGENT_ACCESS_DASHBOARD_BROWSER_PATHS = {
-  existingAuthApiPrefix: "/api/auth",
-  oauthLoginPage: "/sign-in",
-  oauthConsentPage: "/connect/agent/consent",
-} as const
+export { AgentAccessContractError } from "./contract-errors.js"
+export * from "./protocol-constants.js"
+export * from "./protocol-schemas.js"
 
 export interface AgentAccessResolvedOrigins {
   readonly issuerOrigin: string
@@ -148,7 +76,10 @@ export const resolveAgentAccessOrigins = Effect.fn(
   readonly dashboardOrigin: string
   readonly apiOrigin: string
 }) {
-  const issuerOrigin = yield* readOrigin("dashboardOrigin", input.dashboardOrigin)
+  const issuerOrigin = yield* readOrigin(
+    "dashboardOrigin",
+    input.dashboardOrigin,
+  )
   const apiOrigin = yield* readOrigin("apiOrigin", input.apiOrigin)
   return {
     issuerOrigin,
@@ -201,19 +132,19 @@ export const buildRequireMcpAuthOverrides = (
 })
 
 export const isAgentAccessProjectScopedTool = (
-  toolName: string,
-): toolName is (typeof AGENT_ACCESS_PROJECT_SCOPED_TOOLS)[number] =>
-  (AGENT_ACCESS_PROJECT_SCOPED_TOOLS as readonly string[]).includes(toolName)
+  toolName: AgentAccessMcpToolName,
+): boolean => Arr.contains(AGENT_ACCESS_PROJECT_SCOPED_TOOLS, toolName)
 
 export const requireAgentAccessProjectId = Effect.fn(
   "AgentAccess.requireProjectId",
-)(function* (toolName: AgentAccessMcpToolName, projectId: unknown) {
-  if (!isAgentAccessProjectScopedTool(toolName)) {
+)(function* (toolName: unknown, projectId: unknown) {
+  const decodedTool = yield* decodeAgentAccessMcpToolName(toolName)
+  if (!isAgentAccessProjectScopedTool(decodedTool)) {
     return
   }
   if (typeof projectId !== "string" || projectId.trim().length === 0) {
     return yield* new AgentAccessContractError({
-      reason: `Tool "${toolName}" requires a non-empty projectId; default-project fallback is forbidden.`,
+      reason: `Tool "${decodedTool}" requires a non-empty projectId; default-project fallback is forbidden.`,
     })
   }
 })
@@ -247,19 +178,3 @@ export const AGENT_ACCESS_REFERENCE_DEPLOYMENTS = {
     apiOrigin: "http://localhost:3000",
   }),
 } as const
-
-/** Initial admission budgets (Flowmark policy). Separate MCP limiter from login. */
-export const AGENT_ACCESS_ADMISSION_BUDGETS_PROVISIONAL = {
-  oauthAuthorizePerTrustedSourcePerMinute: 60,
-  oauthTokenPerTrustedSourcePerMinute: 120,
-  mcpToolCallsPerGrantFamilyPerMinute: 120,
-  unauthenticatedDiscoveryPerServicePerMinute: 300,
-} as const
-
-export const AGENT_ACCESS_DEFERRED_EMPIRICAL_CHECKS = [
-  "Agent TASK-008: Codex CLI OAuth + MCP on approved endpoint",
-  "Agent TASK-008: Cursor desktop Add-to-Cursor + OAuth callback",
-  "Agent TASK-008: Claude Code HTTP MCP + refresh/reconnect",
-  "Agent TASK-008: Custom client CIMD fetch + native loopback redirect",
-  "Agent TASK-008: Cross-origin issuer proxy with external authorize redirect to loopback",
-] as const
