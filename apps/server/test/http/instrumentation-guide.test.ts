@@ -7,7 +7,9 @@ const guide = async (url: string) => {
   expect(response.headers.get("content-type")).toBe(
     "text/markdown; charset=utf-8",
   )
-  expect(response.headers.get("cache-control")).toBe("no-store")
+  expect(response.headers.get("cache-control")).toContain("public")
+  expect(response.headers.get("cache-control")).toContain("s-maxage=300")
+  expect(response.headers.get("cache-control")).not.toContain("no-store")
   return response.text()
 }
 
@@ -31,6 +33,17 @@ it("returns the instrumentation guide for the API origin that was fetched", asyn
   expect(body).toContain("must never change business behavior")
   expect(body).toContain("There is no `track()`, `span()`, or `metric()`.")
   expect(body).not.toMatch(/fm_[A-Za-z0-9]+/)
+})
+
+it("redirects query strings to the canonical guide", () => {
+  const response = GET(
+    new Request("https://api.flowmark.dev/v1/instrumentation?retry=1"),
+  )
+  expect(response.status).toBe(308)
+  expect(response.headers.get("location")).toBe(
+    "https://api.flowmark.dev/v1/instrumentation",
+  )
+  expect(response.headers.get("cache-control")).toContain("s-maxage=300")
 })
 
 it("uses the request origin instead of a fixed production host", async () => {

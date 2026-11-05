@@ -106,7 +106,7 @@ const endpoints: Endpoint[] = [
     title: "Read the instrumentation guide",
     auth: "No key",
     description:
-      "Public Markdown for a coding agent. It describes the current SDK and this API origin. It contains no write key, and fetching it does not connect an agent.",
+      "Public Markdown for a coding agent. It describes the current SDK and this API origin. It contains no write key, and fetching it does not connect an agent. The response may be cached for five minutes per origin.",
     request: 'curl "$FLOWMARK_API_URL/v1/instrumentation"',
     response: "# Set up Flowmark",
     codes: [["200", "Markdown guide for the origin that served it."]],
