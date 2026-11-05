@@ -348,9 +348,9 @@ function OnboardingContent({
                     </span>
                   </div>
                   <p className="text-xs leading-7 text-muted-foreground">
-                    Paste these instructions into your coding workspace. They
-                    include your API origin and SDK guidance; configure the
-                    write key in your server environment yourself.
+                    Paste this into your coding workspace. The agent fetches the
+                    instrumentation guide from the API. Configure the write key
+                    in your server environment yourself.
                   </p>
                   <SetupCode
                     title="Instrumentation instructions"
