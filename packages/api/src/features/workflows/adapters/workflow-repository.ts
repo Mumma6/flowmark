@@ -65,6 +65,27 @@ export const WorkflowRepositoryLive = Layer.effect(
       timeline: Effect.fn("WorkflowRepositoryLive.timeline")(
         (projectId, runId) => persist(store.timeline(projectId, runId)),
       ),
+      runEventPage: Effect.fn("WorkflowRepositoryLive.runEventPage")(
+        (projectId, query) =>
+          store.runEventPage(projectId, query).pipe(
+            Effect.catchTags({
+              DatabaseError: toPersistenceError,
+              InvalidResultQuery: (error) =>
+                new InvalidInput({ cause: error.message }),
+            }),
+          ),
+      ),
+      runInvestigationSummary: Effect.fn(
+        "WorkflowRepositoryLive.runInvestigationSummary",
+      )((projectId, runId) =>
+        store.runInvestigationSummary(projectId, runId).pipe(
+          Effect.catchTags({
+            DatabaseError: toPersistenceError,
+            InvalidResultQuery: (error) =>
+              new InvalidInput({ cause: error.message }),
+          }),
+        ),
+      ),
       related: Effect.fn("WorkflowRepositoryLive.related")((projectId, runId) =>
         persist(store.related(projectId, runId)),
       ),

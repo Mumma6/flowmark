@@ -21,6 +21,9 @@ import type {
   ProjectSnapshot,
   RelatedRuns,
   RunComparison,
+  RunEventPage,
+  RunEventPageQuery,
+  RunInvestigationSummary,
   RunTimelineEvent,
   WorkflowIntelligence,
   ProjectSearch,
@@ -75,6 +78,20 @@ export interface GetProjectWorkflowDataService {
   ) => Effect.Effect<
     ReadonlyArray<RunTimelineEvent>,
     Unauthorized | PersistenceError
+  >
+  readonly runEventPage: (
+    reader: ProjectReader,
+    query: RunEventPageQuery,
+  ) => Effect.Effect<
+    RunEventPage,
+    Unauthorized | PersistenceError | InvalidInput
+  >
+  readonly runInvestigationSummary: (
+    reader: ProjectReader,
+    runId: string,
+  ) => Effect.Effect<
+    RunInvestigationSummary,
+    Unauthorized | PersistenceError | InvalidInput
   >
   readonly related: (
     reader: ProjectReader,
@@ -165,6 +182,18 @@ export class GetProjectWorkflowData extends Context.Service<
         const projectId = yield* authorizeReader(reader)
         return yield* repository.timeline(projectId, runId)
       })
+      const runEventPage = Effect.fn("GetProjectWorkflowData.runEventPage")(
+        function* (reader: ProjectReader, query: RunEventPageQuery) {
+          const projectId = yield* authorizeReader(reader)
+          return yield* repository.runEventPage(projectId, query)
+        },
+      )
+      const runInvestigationSummary = Effect.fn(
+        "GetProjectWorkflowData.runInvestigationSummary",
+      )(function* (reader: ProjectReader, runId: string) {
+        const projectId = yield* authorizeReader(reader)
+        return yield* repository.runInvestigationSummary(projectId, runId)
+      })
       const related = Effect.fn("GetProjectWorkflowData.related")(function* (
         reader: ProjectReader,
         runId: string,
@@ -219,6 +248,8 @@ export class GetProjectWorkflowData extends Context.Service<
         listRuns,
         search,
         timeline,
+        runEventPage,
+        runInvestigationSummary,
         related,
         compare,
         intelligence,
