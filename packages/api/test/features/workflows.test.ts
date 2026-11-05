@@ -77,6 +77,33 @@ function repository(overrides: Partial<WorkflowRepositoryService> = {}) {
       }),
     search: () => Effect.succeed({ workflows: [], runs: [], references: [] }),
     timeline: () => Effect.succeed([]),
+    runEventPage: () =>
+      Effect.succeed({
+        runId: "run-id",
+        events: [],
+        nextCursor: null,
+        limit: 50,
+        totalEvents: 0,
+      }),
+    runInvestigationSummary: () =>
+      Effect.succeed({
+        id: "run-id",
+        externalId: "ext",
+        workflow: "wf",
+        status: "Completed" as const,
+        startedAt: "2026-10-23T12:00:00.000Z",
+        durationMs: 1,
+        step: null,
+        outcome: null,
+        environment: null,
+        release: null,
+        correlationId: null,
+        parentRunId: null,
+        eventCount: 0,
+        operationCount: 0,
+        errorCount: 0,
+        reportCount: 0,
+      }),
     related: () => Effect.succeed({ parentMatches: [], related: [] }),
     compare: () =>
       Effect.succeed({

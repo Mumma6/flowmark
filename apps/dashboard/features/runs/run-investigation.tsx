@@ -45,7 +45,7 @@ import { buildInvestigation } from "./investigation-model"
 import { RelatedRunsTable } from "./related-runs-table"
 import { RunAttempts } from "./run-attempts"
 import { RunComparisonPanel } from "./run-comparison-panel"
-import { EventTable } from "./run-event-table"
+import { RunEventPagePanel } from "./run-event-page-panel"
 import { RunEventTimeline } from "./run-event-timeline"
 import { OperationWaterfall, ProgressStrip } from "./run-waterfall"
 
@@ -424,9 +424,8 @@ export function RunInvestigation({
                     {timelineView === "waterfall" ? (
                       <OperationWaterfall events={events} />
                     ) : timelineView === "events" ? (
-                      <EventTable
-                        key={evidenceSelection?.revision}
-                        events={events}
+                      <RunEventPagePanel
+                        runId={runId}
                         initialEventId={evidenceSelection?.id}
                       />
                     ) : (

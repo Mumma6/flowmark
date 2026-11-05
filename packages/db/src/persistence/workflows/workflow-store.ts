@@ -22,6 +22,8 @@ import {
   getRunTimeline,
   type RunTimelineEvent,
 } from "./queries/get-run-timeline.js"
+import { getRunEventPage } from "./queries/get-run-event-page.js"
+import { getRunInvestigationSummary } from "./queries/get-run-investigation-summary.js"
 import { listRuns } from "./queries/list-runs.js"
 import { searchProject } from "./queries/search-project.js"
 import { appendEvent } from "./writes/append-event.js"
@@ -31,6 +33,9 @@ import type {
   ProjectSnapshot,
   RelatedRuns,
   RunComparison,
+  RunEventPage,
+  RunEventPageQuery,
+  RunInvestigationSummary,
   PeriodReport,
   WorkflowIntelligence,
   WorkflowSummary,
@@ -70,6 +75,17 @@ export interface WorkflowStoreService {
     projectId: string,
     runId: string,
   ) => Effect.Effect<ReadonlyArray<RunTimelineEvent>, DatabaseError>
+  readonly runEventPage: (
+    projectId: string,
+    query: RunEventPageQuery,
+  ) => Effect.Effect<RunEventPage, DatabaseError | InvalidResultQuery>
+  readonly runInvestigationSummary: (
+    projectId: string,
+    runId: string,
+  ) => Effect.Effect<
+    RunInvestigationSummary,
+    DatabaseError | InvalidResultQuery
+  >
   readonly related: (
     projectId: string,
     runId: string,
@@ -106,6 +122,10 @@ export class WorkflowStore extends Context.Service<WorkflowStore>()(
         search: (projectId, query) => provide(searchProject(projectId, query)),
         timeline: (projectId, runId) =>
           provide(getRunTimeline(projectId, runId)),
+        runEventPage: (projectId, query) =>
+          provide(getRunEventPage(projectId, query)),
+        runInvestigationSummary: (projectId, runId) =>
+          provide(getRunInvestigationSummary(projectId, runId)),
         related: (projectId, runId) =>
           provide(getRelatedRuns(projectId, runId)),
         compare: (projectId, runId, selection) =>

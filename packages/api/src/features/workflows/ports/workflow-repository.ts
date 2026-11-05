@@ -20,6 +20,9 @@ import type {
   ProjectSnapshot,
   RelatedRuns,
   RunComparison,
+  RunEventPage,
+  RunEventPageQuery,
+  RunInvestigationSummary,
   RunTimelineEvent,
   WorkflowIntelligence,
   WorkflowSummary,
@@ -58,6 +61,14 @@ export interface WorkflowRepositoryService {
     projectId: string,
     runId: string,
   ) => Effect.Effect<ReadonlyArray<RunTimelineEvent>, PersistenceError>
+  readonly runEventPage: (
+    projectId: string,
+    query: RunEventPageQuery,
+  ) => Effect.Effect<RunEventPage, PersistenceError | InvalidInput>
+  readonly runInvestigationSummary: (
+    projectId: string,
+    runId: string,
+  ) => Effect.Effect<RunInvestigationSummary, PersistenceError | InvalidInput>
   readonly related: (
     projectId: string,
     runId: string,

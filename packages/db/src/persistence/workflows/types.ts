@@ -2,6 +2,7 @@ import type { PeerPopulation } from "@flowmarkdev/core"
 import type { RatioSelection } from "@flowmarkdev/core"
 import type { ResultSelection } from "@flowmarkdev/core"
 import type { WorkflowResult } from "@flowmarkdev/core"
+import type { RunTimelineEvent } from "./queries/get-run-timeline.js"
 
 export type RunStatus = "Completed" | "Failed" | "Running"
 
@@ -258,4 +259,39 @@ export type ProjectSearch = {
   readonly workflows: ReadonlyArray<ProjectSearchWorkflow>
   readonly runs: ReadonlyArray<ProjectSearchRun>
   readonly references: ReadonlyArray<ProjectSearchReference>
+}
+
+/** Bounded inspector / agent read: paged run timeline events. */
+export interface RunEventPageQuery {
+  readonly runId: string
+  readonly cursor?: string
+  readonly limit?: number
+}
+
+export interface RunEventPage {
+  readonly runId: string
+  readonly events: ReadonlyArray<RunTimelineEvent>
+  readonly nextCursor: string | null
+  readonly limit: number
+  readonly totalEvents: number
+}
+
+/** Bounded run header + aggregate counts without loading the full timeline. */
+export interface RunInvestigationSummary {
+  readonly id: string
+  readonly externalId: string
+  readonly workflow: string
+  readonly status: RunStatus
+  readonly startedAt: string
+  readonly durationMs: number | null
+  readonly step: string | null
+  readonly outcome: string | null
+  readonly environment: string | null
+  readonly release: string | null
+  readonly correlationId: string | null
+  readonly parentRunId: string | null
+  readonly eventCount: number
+  readonly operationCount: number
+  readonly errorCount: number
+  readonly reportCount: number
 }
