@@ -1,3 +1,10 @@
+import type { FirstRunVerification } from "./first-run-evidence"
+import {
+  awaitingFirstRunDetail,
+  firstRunEvidenceSummary,
+  unavailableFirstRunDetail,
+} from "./first-run-evidence"
+
 export type SetupPath = "agent" | "manual"
 
 export type ConnectSetupTransient = {
@@ -24,7 +31,7 @@ export function clearConnectSetupTransient(): ConnectSetupTransient {
 
 export type ConnectSetupProgress = {
   readonly hasWriteKey: boolean
-  readonly hasRuns: boolean
+  readonly verification: FirstRunVerification
   readonly transient: ConnectSetupTransient
 }
 
@@ -33,6 +40,7 @@ export type ConnectSetupStage = {
   readonly label: string
   readonly detail: string
   readonly complete: boolean
+  readonly runId: string | null
 }
 
 export function connectSetupStages(
@@ -40,6 +48,18 @@ export function connectSetupStages(
 ): readonly ConnectSetupStage[] {
   const instructionsCopied =
     progress.transient.agentCopied || progress.transient.manualCopied
+  const evidenceVerified = progress.verification.kind === "verified"
+  const evidenceRunId =
+    progress.verification.kind === "verified"
+      ? progress.verification.run.id
+      : null
+  const evidenceDetail =
+    progress.verification.kind === "verified"
+      ? firstRunEvidenceSummary(progress.verification.run)
+      : progress.verification.kind === "unavailable"
+        ? unavailableFirstRunDetail()
+        : awaitingFirstRunDetail()
+
   return [
     {
       id: "instructions",
@@ -48,6 +68,7 @@ export function connectSetupStages(
         ? "Copied locally in this browser. That is not a connection, authorization, or proof of instrumentation."
         : "Choose the coding-agent or manual path below and copy the instructions you need.",
       complete: instructionsCopied,
+      runId: null,
     },
     {
       id: "configuration",
@@ -58,14 +79,18 @@ export function connectSetupStages(
         ? "Put the key in your server environment with the API origin shown below. Studio sign-in is separate."
         : "Create or recover a server write key in Settings before your application can authenticate.",
       complete: progress.hasWriteKey,
+      runId: null,
     },
     {
       id: "evidence",
-      label: progress.hasRuns ? "Evidence observed" : "Awaiting first evidence",
-      detail: progress.hasRuns
-        ? "This project has recorded runs. Open Runs to inspect timeline and reported outcomes."
-        : "Copying instructions or creating a key does not prove telemetry. Run your process and return when evidence arrives.",
-      complete: progress.hasRuns,
+      label: evidenceVerified
+        ? "Evidence observed"
+        : progress.verification.kind === "unavailable"
+          ? "Evidence unavailable"
+          : "Awaiting first evidence",
+      detail: evidenceDetail,
+      complete: evidenceVerified,
+      runId: evidenceRunId,
     },
   ]
 }

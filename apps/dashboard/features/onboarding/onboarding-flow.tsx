@@ -29,6 +29,12 @@ import Link from "next/link"
 import { DataState } from "../shared/dashboard-components"
 import { SetupPathTabs } from "../connect/setup-path-tabs"
 import { setupRecoveryCopy } from "../connect/setup-instructions"
+import {
+  awaitingFirstRunDetail,
+  firstRunEvidenceSummary,
+  firstRunPath,
+  unavailableFirstRunDetail,
+} from "../connect/first-run-evidence"
 import { publicConfig } from "../platform/config-public"
 import { RuntimeConfigProvider } from "../platform/runtime-config"
 import { CreateProjectForm, SecretAlert } from "../projects/create-project-form"
@@ -119,7 +125,9 @@ function OnboardingContent({
     setCreatedSecret,
     currentStep,
     hasWriteKey,
-    hasRuns,
+    hasVerifiedRun,
+    firstRun,
+    verification,
     advance,
     complete,
     snippet,
@@ -372,16 +380,22 @@ function OnboardingContent({
               {currentStep.id === "run" ? (
                 <div className="grid gap-4">
                   <DataState
-                    pending={snapshot.isPending}
-                    error={snapshot.error}
-                    retry={() => void snapshot.refetch()}
+                    pending={snapshot.isPending || firstRun.isPending}
+                    error={snapshot.error ?? firstRun.error}
+                    retry={() => {
+                      void snapshot.refetch()
+                      void firstRun.refetch()
+                    }}
                   />
-                  {!snapshot.isPending && !snapshot.error ? (
+                  {!snapshot.isPending &&
+                  !firstRun.isPending &&
+                  !snapshot.error &&
+                  !firstRun.error ? (
                     <div
-                      className={`rounded-xl border p-5 sm:p-6 ${hasRuns ? "border-primary/25 bg-primary/5" : "border-border bg-background/40"}`}
+                      className={`rounded-xl border p-5 sm:p-6 ${hasVerifiedRun ? "border-primary/25 bg-primary/5" : "border-border bg-background/40"}`}
                     >
                       <span className="mb-4 grid size-10 place-items-center rounded-full border border-border">
-                        {hasRuns ? (
+                        {hasVerifiedRun ? (
                           <Check
                             aria-hidden="true"
                             className="size-4 text-primary"
@@ -394,15 +408,26 @@ function OnboardingContent({
                         )}
                       </span>
                       <h3 className="text-base font-medium">
-                        {hasRuns
-                          ? "Your application is reporting evidence."
-                          : "Ready for your first execution."}
+                        {hasVerifiedRun
+                          ? "Recorded evidence is available."
+                          : verification.kind === "unavailable"
+                            ? "Could not verify evidence yet."
+                            : "Awaiting your first execution."}
                       </h3>
                       <p className="mt-3 text-xs leading-7 text-muted-foreground">
-                        {hasRuns
-                          ? `${snapshot.data?.metrics.totalRuns.toLocaleString()} runs recorded in this project. Open Studio to explore the supporting evidence.`
-                          : "Run the process in your application. Evidence appears after the API receives it. You can finish setup now and return when it arrives."}
+                        {verification.kind === "verified"
+                          ? firstRunEvidenceSummary(verification.run)
+                          : verification.kind === "unavailable"
+                            ? unavailableFirstRunDetail()
+                            : awaitingFirstRunDetail()}
                       </p>
+                      {verification.kind === "verified" ? (
+                        <Button asChild size="sm" className="mt-4 h-9 text-xs">
+                          <Link href={firstRunPath(verification.run.id)}>
+                            Open recorded run
+                          </Link>
+                        </Button>
+                      ) : null}
                     </div>
                   ) : null}
                 </div>
@@ -441,9 +466,11 @@ function OnboardingContent({
                 {busy
                   ? "Saving…"
                   : currentStep.id === "run"
-                    ? hasRuns
-                      ? "Open Studio"
-                      : "Finish setup"
+                    ? hasVerifiedRun
+                      ? "Finish setup"
+                      : firstRun.isFetching
+                        ? "Checking…"
+                        : "Check for evidence"
                     : "Continue"}
                 <ArrowRight aria-hidden="true" className="size-3.5" />
               </Button>

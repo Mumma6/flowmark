@@ -9,6 +9,7 @@ import { useProjectKeys } from "../projects/keys-query"
 import { useProject } from "../projects/project-context"
 import type { CreatedSecret } from "../projects/types"
 import { flowmarkAgentPrompt } from "./agent-prompt"
+import { useFirstRunEvidence } from "../connect/use-first-run-evidence"
 import { stepIndex, steps } from "./steps"
 
 export function useOnboarding(initialStep: string, reviewMode = false) {
@@ -23,8 +24,13 @@ export function useOnboarding(initialStep: string, reviewMode = false) {
     ...trpc.project.snapshot.queryOptions(),
     enabled: Boolean(current?.id),
   })
+  const {
+    list: firstRun,
+    verification,
+    hasVerifiedRun,
+  } = useFirstRunEvidence(Boolean(current?.id))
   const hasWriteKey = (keys.data?.apiKeys.length ?? 0) > 0
-  const hasRuns = (snapshot.data?.metrics.totalRuns ?? 0) > 0
+  const hasRuns = hasVerifiedRun
   const advance = useMutation(
     trpc.onboarding.advance.mutationOptions({
       onSuccess: () => undefined,
@@ -68,6 +74,10 @@ export function useOnboarding(initialStep: string, reviewMode = false) {
       return
     }
     if (step === steps.length - 1) {
+      if (!hasVerifiedRun) {
+        void firstRun.refetch()
+        return
+      }
       complete.mutate()
       return
     }
@@ -78,6 +88,8 @@ export function useOnboarding(initialStep: string, reviewMode = false) {
     current,
     projects,
     snapshot,
+    firstRun,
+    verification,
     keys,
     origin,
     step,
@@ -87,6 +99,7 @@ export function useOnboarding(initialStep: string, reviewMode = false) {
     currentStep,
     hasWriteKey,
     hasRuns,
+    hasVerifiedRun,
     advance,
     complete,
     snippet,

@@ -15,6 +15,7 @@ import {
   type SetupPath,
 } from "./connect-setup-state"
 import { flowmarkAgentPrompt } from "./setup-instructions"
+import { useFirstRunEvidence } from "./use-first-run-evidence"
 
 export function useConnectSetup() {
   const trpc = useTRPC()
@@ -30,8 +31,12 @@ export function useConnectSetup() {
     ...trpc.project.snapshot.queryOptions(),
     enabled: Boolean(current?.id),
   })
+  const {
+    list: firstRun,
+    verification,
+    hasVerifiedRun,
+  } = useFirstRunEvidence(Boolean(current?.id))
   const hasWriteKey = (keys.data?.apiKeys.length ?? 0) > 0
-  const hasRuns = (snapshot.data?.metrics.totalRuns ?? 0) > 0
   const agentPrompt = useMemo(() => flowmarkAgentPrompt(origin), [origin])
 
   useEffect(() => {
@@ -46,10 +51,10 @@ export function useConnectSetup() {
     () =>
       connectSetupStages({
         hasWriteKey,
-        hasRuns,
+        verification,
         transient,
       }),
-    [hasRuns, hasWriteKey, transient],
+    [hasWriteKey, transient, verification],
   )
 
   return {
@@ -57,8 +62,10 @@ export function useConnectSetup() {
     current,
     keys,
     snapshot,
+    firstRun,
+    verification,
     hasWriteKey,
-    hasRuns,
+    hasVerifiedRun,
     agentPrompt,
     stages,
     markCopied,

@@ -4,6 +4,10 @@ import {
   markSetupCopied,
 } from "../features/connect/connect-setup-state"
 import {
+  verifyFirstRunEvidence,
+  firstRunEvidenceSummary,
+} from "../features/connect/first-run-evidence"
+import {
   instrumentationGuideUrl,
   serverEnvironmentSnippet,
   setupRecoveryCopy,
@@ -12,7 +16,7 @@ import {
 it("keeps copied, configured, and observed setup stages separate", () => {
   const copiedOnly = connectSetupStages({
     hasWriteKey: false,
-    hasRuns: false,
+    verification: { kind: "awaiting" },
     transient: markSetupCopied(
       { agentCopied: false, manualCopied: false },
       "agent",
@@ -23,13 +27,35 @@ it("keeps copied, configured, and observed setup stages separate", () => {
   expect(copiedOnly[2]?.complete).toBe(false)
   expect(copiedOnly[0]?.detail).toContain("not a connection")
 
-  const configured = connectSetupStages({
+  const verified = connectSetupStages({
     hasWriteKey: true,
-    hasRuns: false,
+    verification: verifyFirstRunEvidence(
+      [
+        {
+          id: "run-1",
+          workflow: "imports.daily",
+          status: "Completed",
+          outcome: "ok",
+        },
+      ],
+      false,
+    ),
     transient: { agentCopied: false, manualCopied: false },
   })
-  expect(configured[1]?.complete).toBe(true)
-  expect(configured[2]?.detail).toContain("does not prove telemetry")
+  expect(verified[2]?.complete).toBe(true)
+  expect(verified[2]?.runId).toBe("run-1")
+  expect(verified[2]?.detail).toContain("imports.daily")
+})
+
+it("treats missing terminal evidence as unknown in summaries", () => {
+  const summary = firstRunEvidenceSummary({
+    id: "run-1",
+    workflow: "checkout",
+    status: "Running",
+  })
+  expect(summary).toContain("No final outcome")
+  expect(summary).toContain("unknown")
+  expect(summary).not.toContain("connected")
 })
 
 it("builds manual setup snippets and recovery copy for the validated origin", () => {

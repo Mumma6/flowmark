@@ -1,5 +1,6 @@
 import { Context, Effect, Layer } from "effect"
 import { InvalidInput, PersistenceError } from "../../../errors.js"
+import { WorkflowRepository } from "../../workflows/ports/workflow-repository.js"
 import {
   ProjectCredentials,
   type OnboardingState,
@@ -48,6 +49,7 @@ export class Onboarding extends Context.Service<
     Onboarding,
     Effect.gen(function* () {
       const credentials = yield* ProjectCredentials
+      const repository = yield* WorkflowRepository
       const state = Effect.fn("Onboarding.state")(function* (userId: string) {
         return (yield* credentials.onboardingState(userId)) ?? defaultState
       })
@@ -82,6 +84,13 @@ export class Onboarding extends Context.Service<
         if (keys[0].length === 0) {
           return yield* new InvalidInput({
             cause: "Create an ingestion key before completing onboarding.",
+          })
+        }
+        const runs = yield* repository.listRuns(projectId, { limit: 1 })
+        if (runs.runs.length === 0 && runs.total === 0) {
+          return yield* new InvalidInput({
+            cause:
+              "Recorded evidence is required before completing setup. Run your application and return when a run appears for this project.",
           })
         }
         yield* credentials.updateOnboardingState(userId, "run", new Date())

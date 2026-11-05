@@ -5,6 +5,10 @@ import { AuthorizeProject } from "../../src/features/project-access/use-cases/au
 import { ManageProject } from "../../src/features/project-access/use-cases/manage-project"
 import { Onboarding } from "../../src/features/project-access/use-cases/onboarding"
 import {
+  WorkflowRepository,
+  type WorkflowRepositoryService,
+} from "../../src/features/workflows/ports/workflow-repository"
+import {
   ProjectCredentials,
   type ProjectCredentialsService,
 } from "../../src/features/project-access/ports/project-credentials"
@@ -103,9 +107,56 @@ function provide(credentials = projectCredentials()) {
   )
 }
 
-function provideOnboarding(credentials = projectCredentials()) {
+function workflowRepository(
+  overrides: Partial<WorkflowRepositoryService> = {},
+) {
+  return WorkflowRepository.of({
+    expectations: () => Effect.die("not implemented"),
+    businessInsights: () => Effect.die("not implemented"),
+    append: () => Effect.die("not implemented"),
+    snapshot: () => Effect.die("not implemented"),
+    workflows: () => Effect.die("not implemented"),
+    listRuns: () =>
+      Effect.succeed({
+        runs: [
+          {
+            id: "run-1",
+            externalId: "ext-1",
+            workflow: "example.process",
+            startedAt: "2026-10-25T00:00:00.000Z",
+            status: "Completed",
+            durationMs: 10,
+            step: null,
+            outcome: "ok",
+            result: null,
+            correlationId: null,
+            parentRunId: null,
+            environment: null,
+            release: null,
+            failCode: null,
+          },
+        ],
+        nextCursor: null,
+        total: 1,
+        limit: 1,
+      }),
+    search: () => Effect.die("not implemented"),
+    timeline: () => Effect.die("not implemented"),
+    related: () => Effect.die("not implemented"),
+    compare: () => Effect.die("not implemented"),
+    intelligence: () => Effect.die("not implemented"),
+    periodReport: () => Effect.die("not implemented"),
+    ...overrides,
+  })
+}
+
+function provideOnboarding(
+  credentials = projectCredentials(),
+  repository = workflowRepository(),
+) {
   return Onboarding.layer.pipe(
     Layer.provide(Layer.succeed(ProjectCredentials, credentials)),
+    Layer.provide(Layer.succeed(WorkflowRepository, repository)),
   )
 }
 
@@ -358,6 +409,42 @@ describe("Onboarding", () => {
         Effect.provide(
           provideOnboarding(
             projectCredentials({ listApiKeys: () => Effect.succeed([]) }),
+          ),
+        ),
+      ),
+    )
+
+    expectLeft(result, { _tag: "InvalidInput" })
+  })
+
+  it("requires persisted run evidence before completing", async () => {
+    const result = await Effect.runPromise(
+      Effect.flatMap(Onboarding, (onboarding) =>
+        Effect.result(onboarding.complete("user-1")),
+      ).pipe(
+        Effect.provide(
+          provideOnboarding(
+            projectCredentials({
+              listApiKeys: () =>
+                Effect.succeed([
+                  {
+                    id: "key-1",
+                    name: "Write key",
+                    prefix: "fm_write_abcdef",
+                    permission: "write" as const,
+                    createdAt: "2026-10-25T00:00:00.000Z",
+                  },
+                ]),
+            }),
+            workflowRepository({
+              listRuns: () =>
+                Effect.succeed({
+                  runs: [],
+                  nextCursor: null,
+                  total: 0,
+                  limit: 1,
+                }),
+            }),
           ),
         ),
       ),

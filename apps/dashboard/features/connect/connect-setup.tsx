@@ -16,6 +16,7 @@ import { Check } from "lucide-react"
 import Link from "next/link"
 import { DataState, PageHeading } from "../shared/dashboard-components"
 import type { ConnectSetupStage } from "./connect-setup-state"
+import { firstRunPath } from "./first-run-evidence"
 import { setupRecoveryCopy } from "./setup-instructions"
 import { SetupPathTabs } from "./setup-path-tabs"
 import { useConnectSetup } from "./use-connect-setup"
@@ -93,6 +94,16 @@ function ConnectSetupStages({
           <p className="text-sm leading-6 text-muted-foreground">
             {stage.detail}
           </p>
+          {stage.runId ? (
+            <Button
+              asChild
+              size="sm"
+              variant="outline"
+              className="justify-self-start"
+            >
+              <Link href={firstRunPath(stage.runId)}>Open recorded run</Link>
+            </Button>
+          ) : null}
         </li>
       ))}
     </ol>
