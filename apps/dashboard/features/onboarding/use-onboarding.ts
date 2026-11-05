@@ -74,10 +74,6 @@ export function useOnboarding(initialStep: string, reviewMode = false) {
       return
     }
     if (step === steps.length - 1) {
-      if (!hasVerifiedRun) {
-        void firstRun.refetch()
-        return
-      }
       complete.mutate()
       return
     }

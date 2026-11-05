@@ -43,7 +43,7 @@ export function firstRunEvidenceSummary(run: FirstRunRecord): string {
 }
 
 export function awaitingFirstRunDetail(): string {
-  return "Copying instructions or creating a key does not prove telemetry. Run your process and return when the API records an execution for this project."
+  return "Copying instructions or creating a key does not prove telemetry. Run your process and return when the API records an execution for this project. You can still enter Studio while you wait — finishing setup is not evidence verification."
 }
 
 export function unavailableFirstRunDetail(): string {

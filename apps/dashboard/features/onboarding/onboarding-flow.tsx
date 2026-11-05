@@ -468,9 +468,7 @@ function OnboardingContent({
                   : currentStep.id === "run"
                     ? hasVerifiedRun
                       ? "Finish setup"
-                      : firstRun.isFetching
-                        ? "Checking…"
-                        : "Check for evidence"
+                      : "Enter Studio"
                     : "Continue"}
                 <ArrowRight aria-hidden="true" className="size-3.5" />
               </Button>
