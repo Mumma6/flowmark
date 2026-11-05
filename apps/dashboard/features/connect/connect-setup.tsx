@@ -17,6 +17,7 @@ import Link from "next/link"
 import { DataState, PageHeading } from "../shared/dashboard-components"
 import type { ConnectSetupStage } from "./connect-setup-state"
 import { setupRecoveryCopy } from "./setup-instructions"
+import { AgentAccessGuide } from "./agent-access-guide"
 import { SetupPathTabs } from "./setup-path-tabs"
 import { useConnectSetup } from "./use-connect-setup"
 import { useProject } from "../projects/project-context"
@@ -156,7 +157,7 @@ export function ConnectPage() {
     <div className="grid min-w-0 gap-6">
       <PageHeading
         title="Connect"
-        description="Instrument the application you already own with a coding agent or manual SDK steps. Copied instructions, configured keys, and observed evidence stay separate — none of them register an OAuth client or connected agent."
+        description="Instrument your application, then read evidence with the agent you already use. Ingestion keys, copied setup instructions, manual handoff, and any future remote read access stay separate — none of them imply OAuth, MCP, or a verified agent connection by themselves."
       />
       {projects.length === 0 ? (
         <Alert>
@@ -181,7 +182,20 @@ export function ConnectPage() {
             . Switch projects in the header when you change which application
             you are configuring.
           </p>
-          <ConnectSetupPanel />
+          <div className="grid gap-8">
+            <div className="grid gap-2">
+              <h2 className="text-lg font-semibold tracking-tight">
+                Instrument your application
+              </h2>
+              <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
+                Add telemetry with a coding agent or manual SDK steps. This uses
+                ingestion write keys — not agent read access.
+              </p>
+            </div>
+            <ConnectSetupPanel />
+            <hr className="border-border" />
+            <AgentAccessGuide />
+          </div>
         </>
       )}
     </div>
