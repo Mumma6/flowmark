@@ -295,3 +295,74 @@ export interface RunInvestigationSummary {
   readonly errorCount: number
   readonly reportCount: number
 }
+
+export type RelatedRunRelationship =
+  "parent" | "correlated" | "retryOf" | "retry"
+
+export interface RelatedRunLink {
+  readonly id: string
+  readonly externalId: string
+  readonly workflow: string
+  readonly startedAt: string
+  readonly status: RunStatus
+  readonly correlationId: string | null
+  readonly parentRunId: string | null
+  readonly relationship: RelatedRunRelationship
+}
+
+export interface RelatedRunsPageQuery {
+  readonly runId: string
+  readonly cursor?: string
+  readonly limit?: number
+}
+
+export interface RelatedRunsPage {
+  readonly runId: string
+  readonly items: ReadonlyArray<RelatedRunLink>
+  readonly nextCursor: string | null
+  readonly limit: number
+  readonly totalLinks: number
+}
+
+export interface RunExpectationsPageQuery {
+  readonly runId: string
+  readonly cursor?: string
+  readonly limit?: number
+}
+
+export interface RunExpectationsPage {
+  readonly runId: string
+  readonly asOf: string
+  readonly expectations: ReadonlyArray<
+    import("@flowmarkdev/core").ExpectationRecord
+  >
+  readonly unmatched: ReadonlyArray<
+    import("@flowmarkdev/core").ExpectationRecord
+  >
+  readonly nextCursor: string | null
+  readonly limit: number
+  readonly totalRecords: number
+  readonly unavailableCount: number
+}
+
+export interface RunOperationOccurrence {
+  readonly operationId: string
+  readonly name: string
+  readonly startedAt: string
+  readonly durationMs: number | null
+  readonly status: "completed" | "failed" | "open"
+}
+
+export interface RunOperationsPageQuery {
+  readonly runId: string
+  readonly cursor?: string
+  readonly limit?: number
+}
+
+export interface RunOperationsPage {
+  readonly runId: string
+  readonly operations: ReadonlyArray<RunOperationOccurrence>
+  readonly nextCursor: string | null
+  readonly limit: number
+  readonly totalOperations: number
+}

@@ -16,7 +16,7 @@ export function RunDetailContent({
   contextual?: boolean
 }) {
   const params = useSearchParams()
-  const { detail, relationships, comparison } = queries
+  const { detail, comparison } = queries
   return (
     <>
       <DataState
@@ -35,9 +35,6 @@ export function RunDetailContent({
           runId={id}
           events={detail.data}
           contextual={contextual}
-          relationships={relationships.data}
-          relationshipsLoading={relationships.isPending}
-          relationshipsError={relationships.error?.message}
           comparison={comparison.data}
           comparisonLoading={comparison.isPending}
           comparisonError={comparison.error?.message}

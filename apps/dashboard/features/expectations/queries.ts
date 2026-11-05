@@ -1,6 +1,6 @@
 "use client"
 
-import { useQuery } from "@tanstack/react-query"
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query"
 import { useMemo } from "react"
 import { useTRPC, useTRPCClient } from "../platform/api-trpc"
 import { useProject } from "../projects/project-context"
@@ -9,12 +9,18 @@ export function useRunExpectations(id: string) {
   const trpc = useTRPC()
   const client = useTRPCClient()
   const { current } = useProject()
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: [
-      ...trpc.run.expectations.queryKey({ id }),
+      ...trpc.run.expectationsPage.queryKey({ runId: id }),
       { projectId: current?.id ?? null },
     ],
-    queryFn: ({ signal }) => client.run.expectations.query({ id }, { signal }),
+    initialPageParam: undefined as string | undefined,
+    queryFn: ({ pageParam, signal }) =>
+      client.run.expectationsPage.query(
+        { runId: id, cursor: pageParam },
+        { signal },
+      ),
+    getNextPageParam: (page) => page.nextCursor ?? undefined,
     enabled: Boolean(current),
     refetchInterval: 10000,
   })

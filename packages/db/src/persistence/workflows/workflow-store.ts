@@ -24,6 +24,9 @@ import {
 } from "./queries/get-run-timeline.js"
 import { getRunEventPage } from "./queries/get-run-event-page.js"
 import { getRunInvestigationSummary } from "./queries/get-run-investigation-summary.js"
+import { getRelatedRunsPage } from "./queries/get-related-runs-page.js"
+import { getRunExpectationsPage } from "./queries/get-run-expectations-page.js"
+import { getRunOperationsPage } from "./queries/get-run-operations-page.js"
 import { listRuns } from "./queries/list-runs.js"
 import { searchProject } from "./queries/search-project.js"
 import { appendEvent } from "./writes/append-event.js"
@@ -36,6 +39,12 @@ import type {
   RunEventPage,
   RunEventPageQuery,
   RunInvestigationSummary,
+  RelatedRunsPage,
+  RelatedRunsPageQuery,
+  RunExpectationsPage,
+  RunExpectationsPageQuery,
+  RunOperationsPage,
+  RunOperationsPageQuery,
   PeriodReport,
   WorkflowIntelligence,
   WorkflowSummary,
@@ -86,6 +95,18 @@ export interface WorkflowStoreService {
     RunInvestigationSummary,
     DatabaseError | InvalidResultQuery
   >
+  readonly relatedRunsPage: (
+    projectId: string,
+    query: RelatedRunsPageQuery,
+  ) => Effect.Effect<RelatedRunsPage, DatabaseError | InvalidResultQuery>
+  readonly expectationsPage: (
+    projectId: string,
+    query: RunExpectationsPageQuery,
+  ) => Effect.Effect<RunExpectationsPage, DatabaseError | InvalidResultQuery>
+  readonly operationsPage: (
+    projectId: string,
+    query: RunOperationsPageQuery,
+  ) => Effect.Effect<RunOperationsPage, DatabaseError | InvalidResultQuery>
   readonly related: (
     projectId: string,
     runId: string,
@@ -126,6 +147,12 @@ export class WorkflowStore extends Context.Service<WorkflowStore>()(
           provide(getRunEventPage(projectId, query)),
         runInvestigationSummary: (projectId, runId) =>
           provide(getRunInvestigationSummary(projectId, runId)),
+        relatedRunsPage: (projectId, query) =>
+          provide(getRelatedRunsPage(projectId, query)),
+        expectationsPage: (projectId, query) =>
+          provide(getRunExpectationsPage(projectId, query)),
+        operationsPage: (projectId, query) =>
+          provide(getRunOperationsPage(projectId, query)),
         related: (projectId, runId) =>
           provide(getRelatedRuns(projectId, runId)),
         compare: (projectId, runId, selection) =>
