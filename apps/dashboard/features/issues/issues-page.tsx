@@ -16,6 +16,7 @@ import {
 } from "@flowmark/ui"
 import { RefreshCw } from "lucide-react"
 import Link from "next/link"
+import { usePathname, useSearchParams } from "next/navigation"
 import {
   DataState,
   PageHeading,
@@ -34,6 +35,9 @@ import { issueEvidence } from "./issue-model"
 import { useFailedRuns } from "./queries"
 
 export function IssuesPage() {
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const issuesSourcePath = `${pathname}${searchParams.size ? `?${searchParams}` : ""}`
   const { days, workflow, period, report, replace, workflowNames } =
     usePeriodSelection()
   const failed = useFailedRuns(workflow, period)
@@ -96,6 +100,9 @@ export function IssuesPage() {
                       truncated={report.data.failureGroupsTruncated}
                       startedAfter={period.currentStartedAfter}
                       startedBefore={period.currentStartedBefore}
+                      previousStartedAfter={period.previousStartedAfter}
+                      previousStartedBefore={period.previousStartedBefore}
+                      sourcePath={issuesSourcePath}
                       scopedWorkflow={Boolean(workflow)}
                     />
                     <IncreasedFailures

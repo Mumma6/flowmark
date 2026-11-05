@@ -156,6 +156,9 @@ export function ExploreAnalyticsContext({
                     truncated={report.data.failureGroupsTruncated}
                     startedAfter={period.currentStartedAfter}
                     startedBefore={period.currentStartedBefore}
+                    previousStartedAfter={period.previousStartedAfter}
+                    previousStartedBefore={period.previousStartedBefore}
+                    sourcePath={exploreFrom}
                     scopedWorkflow={Boolean(scopedWorkflow)}
                     matchingRunsHref={matchingRunsHref}
                     exampleRunFrom={exploreFrom}
