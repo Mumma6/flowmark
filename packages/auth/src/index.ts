@@ -14,6 +14,8 @@ export {
   AGENT_ACCESS_OAUTH_SCOPE_READ,
   AGENT_ACCESS_QUERY_BOUNDS,
   AGENT_ACCESS_GRANT_POLICY,
+  AgentAccessContractError,
+  assertAgentAccessReadScopes,
   buildAgentAccessRouteMap,
   buildRequireMcpAuthOverrides,
   requireAgentAccessProjectId,

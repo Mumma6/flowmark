@@ -1,3 +1,4 @@
+import { Data, Effect, Schema } from "effect"
 import { AGENT_ACCESS_MCP_DEPENDENCY_PROPOSAL } from "./mcp-dependency-proposal.js"
 
 /**
@@ -10,6 +11,12 @@ export const AGENT_ACCESS_PROTOCOL_CONTRACT = {
   dependencyAdr: AGENT_ACCESS_MCP_DEPENDENCY_PROPOSAL.adr,
   reviewedOn: "2026-11-05",
 } as const
+
+export class AgentAccessContractError extends Data.TaggedError(
+  "AgentAccessContractError",
+)<{
+  readonly reason: string
+}> {}
 
 export const AGENT_ACCESS_OAUTH_SCOPE_READ = "flowmark:read" as const
 export const AGENT_ACCESS_OAUTH_SCOPE_OFFLINE = "offline_access" as const
@@ -100,27 +107,59 @@ export interface AgentAccessRouteMap {
   readonly dashboardProxyForwardPrefixes: readonly string[]
 }
 
-const ORIGIN_PATTERN = /^https?:\/\/[^/?#]+(?::\d+)?$/i
+const HttpOrigin = Schema.String.pipe(
+  Schema.check(
+    Schema.makeFilter((value) => {
+      try {
+        const url = new URL(value)
+        return (
+          (url.protocol === "https:" || url.protocol === "http:") &&
+          !url.username &&
+          !url.password &&
+          !url.search &&
+          !url.hash &&
+          url.pathname === "/"
+        )
+      } catch {
+        return false
+      }
+    }),
+  ),
+)
 
-export function resolveAgentAccessOrigins(input: {
+const readOrigin = Effect.fn("AgentAccess.readOrigin")(function* (
+  label: string,
+  value: string,
+) {
+  yield* Schema.decodeUnknownEffect(HttpOrigin)(value).pipe(
+    Effect.mapError(
+      () =>
+        new AgentAccessContractError({
+          reason: `${label} must be an HTTP(S) origin without credentials, path, query, or fragment.`,
+        }),
+    ),
+  )
+  return new URL(value).origin
+})
+
+export const resolveAgentAccessOrigins = Effect.fn(
+  "AgentAccess.resolveOrigins",
+)(function* (input: {
   readonly dashboardOrigin: string
   readonly apiOrigin: string
-}): AgentAccessResolvedOrigins {
-  const issuerOrigin = normalizeOrigin(input.dashboardOrigin, "dashboardOrigin")
-  const apiOrigin = normalizeOrigin(input.apiOrigin, "apiOrigin")
-  if (issuerOrigin === apiOrigin) {
-    // Local dev often collapses origins; resource URL still uses explicit /mcp path.
-  }
+}) {
+  const issuerOrigin = yield* readOrigin("dashboardOrigin", input.dashboardOrigin)
+  const apiOrigin = yield* readOrigin("apiOrigin", input.apiOrigin)
   return {
     issuerOrigin,
     apiOrigin,
     mcpResourceUrl: `${apiOrigin}/mcp`,
-  }
-}
+  } satisfies AgentAccessResolvedOrigins
+})
 
-export function buildAgentAccessRouteMap(
+export const buildAgentAccessRouteMap = (
   origins: AgentAccessResolvedOrigins,
-): AgentAccessRouteMap {
+): AgentAccessRouteMap => {
   const { issuerOrigin, apiOrigin, mcpResourceUrl } = origins
   return {
     issuerOrigin,
@@ -147,72 +186,63 @@ export function buildAgentAccessRouteMap(
   }
 }
 
-export function buildRequireMcpAuthOverrides(
+export const buildRequireMcpAuthOverrides = (
   origins: AgentAccessResolvedOrigins,
 ): {
   readonly issuer: string
   readonly resource: string
   readonly jwksUrl: string
   readonly requiredScopes: readonly [typeof AGENT_ACCESS_OAUTH_SCOPE_READ]
-} {
-  return {
-    issuer: origins.issuerOrigin,
-    resource: origins.mcpResourceUrl,
-    jwksUrl: `${origins.issuerOrigin}/jwks`,
-    requiredScopes: [AGENT_ACCESS_OAUTH_SCOPE_READ],
-  }
-}
+} => ({
+  issuer: origins.issuerOrigin,
+  resource: origins.mcpResourceUrl,
+  jwksUrl: `${origins.issuerOrigin}/jwks`,
+  requiredScopes: [AGENT_ACCESS_OAUTH_SCOPE_READ],
+})
 
-export function isAgentAccessProjectScopedTool(
+export const isAgentAccessProjectScopedTool = (
   toolName: string,
-): toolName is (typeof AGENT_ACCESS_PROJECT_SCOPED_TOOLS)[number] {
-  return (AGENT_ACCESS_PROJECT_SCOPED_TOOLS as readonly string[]).includes(
-    toolName,
-  )
-}
+): toolName is (typeof AGENT_ACCESS_PROJECT_SCOPED_TOOLS)[number] =>
+  (AGENT_ACCESS_PROJECT_SCOPED_TOOLS as readonly string[]).includes(toolName)
 
-export class AgentAccessContractError extends Error {
-  readonly _tag = "AgentAccessContractError"
-  constructor(message: string) {
-    super(message)
-    this.name = "AgentAccessContractError"
-  }
-}
-
-export function requireAgentAccessProjectId(
-  toolName: AgentAccessMcpToolName,
-  projectId: unknown,
-): asserts projectId is string {
+export const requireAgentAccessProjectId = Effect.fn(
+  "AgentAccess.requireProjectId",
+)(function* (toolName: AgentAccessMcpToolName, projectId: unknown) {
   if (!isAgentAccessProjectScopedTool(toolName)) {
     return
   }
   if (typeof projectId !== "string" || projectId.trim().length === 0) {
-    throw new AgentAccessContractError(
-      `Tool "${toolName}" requires a non-empty projectId; default-project fallback is forbidden.`,
-    )
+    return yield* new AgentAccessContractError({
+      reason: `Tool "${toolName}" requires a non-empty projectId; default-project fallback is forbidden.`,
+    })
   }
-}
+})
 
-export function assertAgentAccessReadScopes(
-  grantedScopes: ReadonlySet<string>,
-): void {
+export const assertAgentAccessReadScopes = Effect.fn(
+  "AgentAccess.assertReadScopes",
+)(function* (grantedScopes: ReadonlySet<string>) {
   if (!grantedScopes.has(AGENT_ACCESS_OAUTH_SCOPE_READ)) {
-    throw new AgentAccessContractError(
-      `Missing required scope "${AGENT_ACCESS_OAUTH_SCOPE_READ}".`,
-    )
+    return yield* new AgentAccessContractError({
+      reason: `Missing required scope "${AGENT_ACCESS_OAUTH_SCOPE_READ}".`,
+    })
   }
-}
+})
+
+const referenceDeployment = (input: {
+  readonly dashboardOrigin: string
+  readonly apiOrigin: string
+}) => Effect.runSync(resolveAgentAccessOrigins(input))
 
 export const AGENT_ACCESS_REFERENCE_DEPLOYMENTS = {
-  production: resolveAgentAccessOrigins({
+  production: referenceDeployment({
     dashboardOrigin: "https://app.flowmark.dev",
     apiOrigin: "https://api.flowmark.dev",
   }),
-  staging: resolveAgentAccessOrigins({
+  staging: referenceDeployment({
     dashboardOrigin: "https://app.staging.flowmark.dev",
     apiOrigin: "https://api.staging.flowmark.dev",
   }),
-  local: resolveAgentAccessOrigins({
+  local: referenceDeployment({
     dashboardOrigin: "http://localhost:3001",
     apiOrigin: "http://localhost:3000",
   }),
@@ -233,29 +263,3 @@ export const AGENT_ACCESS_DEFERRED_EMPIRICAL_CHECKS = [
   "Agent TASK-008: Custom client CIMD fetch + native loopback redirect",
   "Agent TASK-008: Cross-origin issuer proxy with external authorize redirect to loopback",
 ] as const
-
-function normalizeOrigin(value: string, label: string): string {
-  let url: URL
-  try {
-    url = new URL(value)
-  } catch {
-    throw new AgentAccessContractError(`${label} must be an absolute URL.`)
-  }
-  if (url.username || url.password || url.search || url.hash) {
-    throw new AgentAccessContractError(
-      `${label} must not include credentials, query, or fragment.`,
-    )
-  }
-  if (url.pathname !== "/" && url.pathname !== "") {
-    throw new AgentAccessContractError(
-      `${label} must be an origin without a path.`,
-    )
-  }
-  const origin = url.origin
-  if (!ORIGIN_PATTERN.test(origin)) {
-    throw new AgentAccessContractError(
-      `${label} is not a valid HTTP(S) origin.`,
-    )
-  }
-  return origin
-}
