@@ -185,7 +185,28 @@ export function StudioShell({
                 </Link>
               }
               project={<ProjectSwitcher />}
-              search={<CommandPalette />}
+              search={
+                <>
+                  <CommandPalette />
+                  <Button
+                    asChild
+                    className="h-9 shrink-0 border border-neutral-950/15 bg-white px-2.5 text-neutral-950 shadow-sm hover:bg-neutral-100 sm:px-3"
+                  >
+                    <Link
+                      href="/connect"
+                      aria-current={
+                        pathname.startsWith("/connect") ? "page" : undefined
+                      }
+                    >
+                      <Link2 aria-hidden="true" />
+                      <span className="lg:hidden">Connect</span>
+                      <span className="hidden lg:inline">
+                        Connect your agent
+                      </span>
+                    </Link>
+                  </Button>
+                </>
+              }
               account={<AccountPanel email={email} />}
               navigation={
                 <nav
