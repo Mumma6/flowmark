@@ -13,6 +13,7 @@ import {
 import Link from "next/link"
 import { formatTimestamp } from "../shared/format"
 import { failedRunsPath } from "../period/period-presentation"
+import { FailureGroupHandoff } from "../runs/failure-group-handoff"
 import { runInvestigationPath } from "../runs/investigation-navigation"
 
 export type FailureGroupRow = {
@@ -33,6 +34,9 @@ export function FailureGroupsPanel({
   scopedWorkflow,
   matchingRunsHref = (input) => failedRunsPath(input),
   exampleRunFrom,
+  sourcePath,
+  previousStartedAfter,
+  previousStartedBefore,
 }: {
   groups: readonly FailureGroupRow[]
   truncated: boolean
@@ -46,6 +50,9 @@ export function FailureGroupsPanel({
     readonly startedBefore: string
   }) => string
   exampleRunFrom?: string
+  sourcePath: string
+  previousStartedAfter: string
+  previousStartedBefore: string
 }) {
   return (
     <section id="failure-groups" className="grid gap-3">
@@ -138,6 +145,25 @@ export function FailureGroupsPanel({
                               : `Example ${index + 1}`}
                           </Link>
                         ))}
+                        <FailureGroupHandoff
+                          sourcePath={sourcePath}
+                          currentStartedAfter={startedAfter}
+                          currentStartedBefore={startedBefore}
+                          previousStartedAfter={previousStartedAfter}
+                          previousStartedBefore={previousStartedBefore}
+                          workflow={group.workflow}
+                          code={group.code}
+                          currentCount={group.currentCount}
+                          previousCount={group.previousCount}
+                          countDelta={group.countDelta}
+                          matchingRunsPath={matchingRunsHref({
+                            workflow: group.workflow,
+                            code: group.code,
+                            startedAfter,
+                            startedBefore,
+                          })}
+                          truncated={truncated}
+                        />
                       </div>
                     </TableCell>
                   </TableRow>
