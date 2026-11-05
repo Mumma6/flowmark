@@ -51,13 +51,13 @@ function AgentPromptBody() {
   return (
     <div className="grid gap-3">
       <p className="text-sm leading-6 text-muted-foreground">
-        Put the write key in the server environment yourself. This prompt does
-        not contain it. Install with <code>npm i @flowmarkdev/node</code>.
+        Copy this into the agent chat. The agent fetches the guide from the
+        API. Put the write key in the server environment yourself.
       </p>
       <pre className="max-h-80 overflow-auto rounded-lg border border-border bg-muted p-4 text-xs leading-6 whitespace-pre-wrap">
         {prompt}
       </pre>
-      <CopyButton value={prompt} label="Copy prompt" />
+      <CopyButton value={prompt} label="Copy instruction" />
     </div>
   )
 }
@@ -68,9 +68,9 @@ export function AgentPromptCard() {
       <CardHeader>
         <CardTitle>Coding agent</CardTitle>
         <CardDescription>
-          Paste this into your agent chat. It tells the agent to add{" "}
-          <code>@flowmarkdev/node</code>, set the server environment, and look
-          for processes where a workflow is worth marking.
+          Copy one instruction. The agent fetches the instrumentation guide
+          from the API and follows it. The write key stays in the server
+          environment.
         </CardDescription>
       </CardHeader>
       <CardContent>

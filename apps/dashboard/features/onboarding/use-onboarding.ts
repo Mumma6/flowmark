@@ -39,10 +39,7 @@ export function useOnboarding(initialStep: string, reviewMode = false) {
     }),
   )
   const origin = useApiOrigin()
-  const snippet = useMemo(
-    () => `${flowmarkAgentPrompt(origin)}\n\nFLOWMARK_API_URL=${origin}`,
-    [origin],
-  )
+  const snippet = useMemo(() => flowmarkAgentPrompt(origin), [origin])
 
   const goTo = (next: number) => {
     const nextStep = steps[next]
