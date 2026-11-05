@@ -34,7 +34,8 @@ Contributor guides that ship with the public repository:
   limits.
 - [Design system](./design-system): dashboard and landing presentation rules.
 - [Architecture decisions](./decisions/0001-turborepo): accepted decisions and
-  their consequences.
+  their consequences. See [ADR 0007](./decisions/0007-connect-agent-mcp-dependencies.md)
+  for the proposed Connect Your Agent MCP/OAuth dependency tranche.
 
 SDK contracts used by the implementation live under `docs/sdk/`:
 
