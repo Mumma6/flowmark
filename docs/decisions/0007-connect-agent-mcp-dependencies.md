@@ -1,6 +1,6 @@
 # ADR 0007: Connect Your Agent — MCP and OAuth dependency proposal
 
-- Status: proposed
+- Status: accepted
 - Date: 2026-11-05
 - Task: Agent TASK-001.1 (dependency compatibility decision)
 - Evidence: npm registry metadata plus read-only `npm pack` inspection of
@@ -254,8 +254,8 @@ are **not** claimed passed here. TASK-008 owns external client/version evidence.
   do not pin different versions locally.
 - **`pnpm add` for MCP packages requires explicit maintainer approval** separate
   from merging this decision record.
-- TASK-001.2 freezes issuer paths, scopes, tool names, and client registration
-  on top of this tranche.
+- Issuer paths, scopes, tool names, and client registration are frozen in
+  [ADR 0008](./0008-connect-agent-protocol-contract.md).
 - Enabling agent access in Production remains a feature flag / rollout gate, not
   implied by merging this ADR.
 

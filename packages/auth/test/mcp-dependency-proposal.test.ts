@@ -82,6 +82,11 @@ describe("Agent TASK-001.1 MCP dependency proposal", () => {
       true,
     )
     assert.match(
+      AGENT_ACCESS_MCP_DEPENDENCY_PROPOSAL.protocolContractAdr,
+      /0008/,
+    )
+    assert.equal(AGENT_ACCESS_MCP_DEPENDENCY_PROPOSAL.frozenPublicToolCount, 6)
+    assert.match(
       AGENT_ACCESS_MCP_DEPENDENCY_PROPOSAL.deferredVerification,
       /008/,
     )

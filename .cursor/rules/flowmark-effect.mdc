@@ -1,0 +1,35 @@
+---
+description: Flowmark TypeScript uses Effect-first conventions; read flowmark-effect before editing internal TS.
+alwaysApply: true
+---
+
+# Effect-first TypeScript
+
+Before **writing or refactoring** TypeScript in `packages/`, `apps/` (except
+generated Next types), `infrastructure/` application scripts, or tests that
+mirror production code:
+
+1. **Read and apply**
+   [flowmark-effect](../../.agents/skills/flowmark-effect/SKILL.md) (and
+   [flowmark-architecture](../../.agents/skills/flowmark-architecture/SKILL.md)
+   when boundaries change).
+
+2. **Default patterns**
+   - Failures: `Data.TaggedError` in the **error channel**, not `throw` / plain
+     `Error` (except at explicit public SDK Promise boundaries).
+   - Validation of unknown input: `Schema` + `decodeUnknownEffect` at the owning
+     boundary.
+   - Workflows: `Effect.fn`, `pipe`, `Match` / `Result.match` / `Exit.match`.
+   - Pure iteration: Effect `Array` / `Record` helpers, not ad-hoc `for` loops.
+
+3. **Frozen `as const` policy** (ADR mirrors, tool name lists, numeric bounds) may
+   stay as constants; **any decode, guard, or rule enforcement** on that policy
+   uses Effect + Schema (see `@flowmark/auth/agent-access/`).
+
+4. **Exceptions** (do not force Effect runtime here)
+   - Pulumi infrastructure resources ([flowmark-infrastructure](../../.agents/skills/flowmark-infrastructure/SKILL.md))
+   - Published `@flowmarkdev/*` SDK public API (Promises at the boundary)
+   - Config-only files with no validation logic
+
+5. **Before finishing** a TS change in scope: if you added throw-based helpers or
+   hand-rolled validation, refactor to Effect or justify the exception in the PR.

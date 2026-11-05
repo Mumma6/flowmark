@@ -4,7 +4,7 @@
  */
 export const AGENT_ACCESS_MCP_DEPENDENCY_PROPOSAL = {
   adr: "docs/decisions/0007-connect-agent-mcp-dependencies.md",
-  status: "proposed",
+  status: "accepted",
   reviewedOn: "2026-11-05",
   evidence: {
     npmPackInspection: [
@@ -72,4 +72,7 @@ export const AGENT_ACCESS_MCP_DEPENDENCY_PROPOSAL = {
     resourceOrigin: "API origin (FLOWMARK_API_URL or server public URL)",
   },
   deferredVerification: "Agent TASK-008 external MCP clients",
+  protocolContractAdr: "docs/decisions/0008-connect-agent-protocol-contract.md",
+  frozenReadScope: "flowmark:read",
+  frozenPublicToolCount: 6,
 } as const
