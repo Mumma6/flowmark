@@ -23,6 +23,12 @@ import type {
   RunEventPage,
   RunEventPageQuery,
   RunInvestigationSummary,
+  RelatedRunsPage,
+  RelatedRunsPageQuery,
+  RunExpectationsPage,
+  RunExpectationsPageQuery,
+  RunOperationsPage,
+  RunOperationsPageQuery,
   RunTimelineEvent,
   WorkflowIntelligence,
   WorkflowSummary,
@@ -69,6 +75,18 @@ export interface WorkflowRepositoryService {
     projectId: string,
     runId: string,
   ) => Effect.Effect<RunInvestigationSummary, PersistenceError | InvalidInput>
+  readonly relatedRunsPage: (
+    projectId: string,
+    query: RelatedRunsPageQuery,
+  ) => Effect.Effect<RelatedRunsPage, PersistenceError | InvalidInput>
+  readonly expectationsPage: (
+    projectId: string,
+    query: RunExpectationsPageQuery,
+  ) => Effect.Effect<RunExpectationsPage, PersistenceError | InvalidInput>
+  readonly operationsPage: (
+    projectId: string,
+    query: RunOperationsPageQuery,
+  ) => Effect.Effect<RunOperationsPage, PersistenceError | InvalidInput>
   readonly related: (
     projectId: string,
     runId: string,

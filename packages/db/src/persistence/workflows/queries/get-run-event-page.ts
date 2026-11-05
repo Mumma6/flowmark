@@ -12,6 +12,7 @@ import {
   decodeRunEventPageCursor,
   encodeRunEventPageCursor,
 } from "../run-event-page-cursor.js"
+import { boundJsonPreview } from "../bounded-record-preview.js"
 import type { RunEventPage, RunEventPageQuery } from "../types.js"
 import {
   mapRunTimelineRows,
@@ -150,7 +151,25 @@ export const getRunEventPage = Effect.fn("getRunEventPage")(function* (
         ),
       ),
   ).pipe(Effect.map((result) => result[0]?.latest ?? 0))
-  const events = mapRunTimelineRows(mappedRows, latestReportOrder)
+  const events = mapRunTimelineRows(mappedRows, latestReportOrder).map(
+    (event) => {
+      const properties = boundJsonPreview(event.properties)
+      const result = boundJsonPreview(event.result)
+      const error = boundJsonPreview(event.error)
+      const omissions = [
+        ...properties.omissions,
+        ...result.omissions,
+        ...error.omissions,
+      ]
+      return {
+        ...event,
+        properties: properties.value as typeof event.properties,
+        result: result.value as typeof event.result,
+        error: error.value as typeof event.error,
+        ...(omissions.length > 0 ? { boundedPreviewOmissions: omissions } : {}),
+      }
+    },
+  )
   const last = pageRows.at(-1)
   const nextCursor =
     hasMore && last

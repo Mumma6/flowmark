@@ -5,6 +5,7 @@ import {
   Alert,
   AlertDescription,
   Badge,
+  Button,
   Card,
   CardContent,
   CardDescription,
@@ -20,7 +21,7 @@ import { useRunExpectations } from "./queries"
 import { runInvestigationPath } from "../runs/investigation-navigation"
 
 type Record =
-  inferRouterOutputs<AppRouter>["run"]["expectations"]["expectations"][number]
+  inferRouterOutputs<AppRouter>["run"]["expectationsPage"]["expectations"][number]
 export function expectationLabel(
   record: Pick<Record, "state" | "cancelledAfterDeadline">,
 ) {
@@ -47,7 +48,13 @@ export function RunExpectations({
   replace?: boolean
 }) {
   const query = useRunExpectations(id)
-  const data = query.data
+  const firstPage = query.data?.pages[0]
+  const expectations =
+    query.data?.pages.flatMap((page) => page.expectations) ?? []
+  const unmatched = query.data?.pages.flatMap((page) => page.unmatched) ?? []
+  const totalRecords = firstPage?.totalRecords
+  const unavailableCount = firstPage?.unavailableCount ?? 0
+  const asOf = firstPage?.asOf
   return (
     <Card>
       <CardHeader>
@@ -63,29 +70,32 @@ export function RunExpectations({
           error={query.error}
           retry={() => void query.refetch()}
         />
-        {data && (
+        {asOf ? (
           <>
             <p className="text-sm text-muted-foreground">
-              Observed at {formatTimestamp(data.asOf)} UTC ·{" "}
-              {data.expectations.length} declared expectations ·{" "}
-              {data.unmatched.length} unmatched settlements
+              Observed at {formatTimestamp(asOf)} UTC · {expectations.length}{" "}
+              declared expectations loaded
+              {totalRecords !== undefined && totalRecords > expectations.length
+                ? ` of ${totalRecords}`
+                : ""}{" "}
+              · {unmatched.length} unmatched settlements loaded
             </p>
-            {data.unavailableCount > 0 && (
+            {unavailableCount > 0 && (
               <Alert>
                 <AlertDescription>
                   Expectation evidence unavailable under current access or
-                  retention ({data.unavailableCount}). Incomplete evidence is
+                  retention ({unavailableCount}). Incomplete evidence is
                   excluded from state counts.
                 </AlertDescription>
               </Alert>
             )}
-            {data.expectations.length + data.unmatched.length === 0 && (
+            {expectations.length + unmatched.length === 0 ? (
               <p className="text-sm text-muted-foreground">
                 No retained expectation evidence. Absence does not prove
                 business success or failure.
               </p>
-            )}
-            {[...data.expectations, ...data.unmatched].map((record) => (
+            ) : null}
+            {[...expectations, ...unmatched].map((record) => (
               <section
                 className="grid min-w-0 gap-3 rounded-lg border border-border p-4"
                 key={record.reference.expectationId}
@@ -212,13 +222,25 @@ export function RunExpectations({
                 </details>
               </section>
             ))}
+            {query.hasNextPage ? (
+              <Button
+                type="button"
+                variant="outline"
+                disabled={query.isFetchingNextPage}
+                onClick={() => void query.fetchNextPage()}
+              >
+                {query.isFetchingNextPage
+                  ? "Loading expectations…"
+                  : "Load more expectations"}
+              </Button>
+            ) : null}
             <p className="text-sm leading-6 text-muted-foreground">
               Counts cover retained declared evidence. Deadlines survive process
               restarts but do not extend retention. Timing does not verify the
               reported business outcome.
             </p>
           </>
-        )}
+        ) : null}
       </CardContent>
     </Card>
   )

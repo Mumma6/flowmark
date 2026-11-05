@@ -104,6 +104,33 @@ function repository(overrides: Partial<WorkflowRepositoryService> = {}) {
         errorCount: 0,
         reportCount: 0,
       }),
+    relatedRunsPage: () =>
+      Effect.succeed({
+        runId: "run-id",
+        items: [],
+        nextCursor: null,
+        limit: 25,
+        totalLinks: 0,
+      }),
+    expectationsPage: () =>
+      Effect.succeed({
+        runId: "run-id",
+        asOf: new Date(0).toISOString(),
+        expectations: [],
+        unmatched: [],
+        nextCursor: null,
+        limit: 25,
+        totalRecords: 0,
+        unavailableCount: 0,
+      }),
+    operationsPage: () =>
+      Effect.succeed({
+        runId: "run-id",
+        operations: [],
+        nextCursor: null,
+        limit: 25,
+        totalOperations: 0,
+      }),
     related: () => Effect.succeed({ parentMatches: [], related: [] }),
     compare: () =>
       Effect.succeed({

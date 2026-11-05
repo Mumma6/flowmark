@@ -86,6 +86,36 @@ export const WorkflowRepositoryLive = Layer.effect(
           }),
         ),
       ),
+      relatedRunsPage: Effect.fn("WorkflowRepositoryLive.relatedRunsPage")(
+        (projectId, query) =>
+          store.relatedRunsPage(projectId, query).pipe(
+            Effect.catchTags({
+              DatabaseError: toPersistenceError,
+              InvalidResultQuery: (error) =>
+                new InvalidInput({ cause: error.message }),
+            }),
+          ),
+      ),
+      expectationsPage: Effect.fn("WorkflowRepositoryLive.expectationsPage")(
+        (projectId, query) =>
+          store.expectationsPage(projectId, query).pipe(
+            Effect.catchTags({
+              DatabaseError: toPersistenceError,
+              InvalidResultQuery: (error) =>
+                new InvalidInput({ cause: error.message }),
+            }),
+          ),
+      ),
+      operationsPage: Effect.fn("WorkflowRepositoryLive.operationsPage")(
+        (projectId, query) =>
+          store.operationsPage(projectId, query).pipe(
+            Effect.catchTags({
+              DatabaseError: toPersistenceError,
+              InvalidResultQuery: (error) =>
+                new InvalidInput({ cause: error.message }),
+            }),
+          ),
+      ),
       related: Effect.fn("WorkflowRepositoryLive.related")((projectId, runId) =>
         persist(store.related(projectId, runId)),
       ),

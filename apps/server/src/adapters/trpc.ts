@@ -628,6 +628,72 @@ export const appRouter = t.router({
           ),
         ),
       ),
+    relatedPage: t.procedure
+      .input(
+        Schema.toStandardSchemaV1(
+          Schema.Struct({
+            runId: UuidSchema,
+            cursor: Schema.optional(Schema.String),
+            limit: Schema.optional(
+              Schema.Number.pipe(
+                Schema.check(Schema.isInt()),
+                Schema.check(Schema.isBetween({ minimum: 1, maximum: 100 })),
+              ),
+            ),
+          }),
+        ),
+      )
+      .query(({ ctx, input }) =>
+        readQuery(ctx.request, (reader) =>
+          Effect.flatMap(GetProjectWorkflowData, (queries) =>
+            queries.relatedRunsPage(reader, input),
+          ),
+        ),
+      ),
+    expectationsPage: t.procedure
+      .input(
+        Schema.toStandardSchemaV1(
+          Schema.Struct({
+            runId: UuidSchema,
+            cursor: Schema.optional(Schema.String),
+            limit: Schema.optional(
+              Schema.Number.pipe(
+                Schema.check(Schema.isInt()),
+                Schema.check(Schema.isBetween({ minimum: 1, maximum: 100 })),
+              ),
+            ),
+          }),
+        ),
+      )
+      .query(({ ctx, input }) =>
+        readQuery(ctx.request, (reader) =>
+          Effect.flatMap(GetProjectWorkflowData, (queries) =>
+            queries.expectationsPage(reader, input),
+          ),
+        ),
+      ),
+    operationsPage: t.procedure
+      .input(
+        Schema.toStandardSchemaV1(
+          Schema.Struct({
+            runId: UuidSchema,
+            cursor: Schema.optional(Schema.String),
+            limit: Schema.optional(
+              Schema.Number.pipe(
+                Schema.check(Schema.isInt()),
+                Schema.check(Schema.isBetween({ minimum: 1, maximum: 100 })),
+              ),
+            ),
+          }),
+        ),
+      )
+      .query(({ ctx, input }) =>
+        readQuery(ctx.request, (reader) =>
+          Effect.flatMap(GetProjectWorkflowData, (queries) =>
+            queries.operationsPage(reader, input),
+          ),
+        ),
+      ),
     expectations: t.procedure
       .input(Schema.toStandardSchemaV1(Schema.Struct({ id: UuidSchema })))
       .query(({ ctx, input }) =>

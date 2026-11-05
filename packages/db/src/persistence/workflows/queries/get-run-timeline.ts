@@ -47,6 +47,7 @@ export type RunTimelineEvent = {
   release: string | null
   correlationId: string | null
   parentRunId: string | null
+  readonly boundedPreviewOmissions?: ReadonlyArray<string>
 }
 
 export const getRunTimeline = Effect.fn("getRunTimeline")(function* (

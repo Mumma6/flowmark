@@ -24,6 +24,12 @@ import type {
   RunEventPage,
   RunEventPageQuery,
   RunInvestigationSummary,
+  RelatedRunsPage,
+  RelatedRunsPageQuery,
+  RunExpectationsPage,
+  RunExpectationsPageQuery,
+  RunOperationsPage,
+  RunOperationsPageQuery,
   RunTimelineEvent,
   WorkflowIntelligence,
   ProjectSearch,
@@ -91,6 +97,27 @@ export interface GetProjectWorkflowDataService {
     runId: string,
   ) => Effect.Effect<
     RunInvestigationSummary,
+    Unauthorized | PersistenceError | InvalidInput
+  >
+  readonly relatedRunsPage: (
+    reader: ProjectReader,
+    query: RelatedRunsPageQuery,
+  ) => Effect.Effect<
+    RelatedRunsPage,
+    Unauthorized | PersistenceError | InvalidInput
+  >
+  readonly expectationsPage: (
+    reader: ProjectReader,
+    query: RunExpectationsPageQuery,
+  ) => Effect.Effect<
+    RunExpectationsPage,
+    Unauthorized | PersistenceError | InvalidInput
+  >
+  readonly operationsPage: (
+    reader: ProjectReader,
+    query: RunOperationsPageQuery,
+  ) => Effect.Effect<
+    RunOperationsPage,
     Unauthorized | PersistenceError | InvalidInput
   >
   readonly related: (
@@ -194,6 +221,24 @@ export class GetProjectWorkflowData extends Context.Service<
         const projectId = yield* authorizeReader(reader)
         return yield* repository.runInvestigationSummary(projectId, runId)
       })
+      const relatedRunsPage = Effect.fn(
+        "GetProjectWorkflowData.relatedRunsPage",
+      )(function* (reader: ProjectReader, query: RelatedRunsPageQuery) {
+        const projectId = yield* authorizeReader(reader)
+        return yield* repository.relatedRunsPage(projectId, query)
+      })
+      const expectationsPage = Effect.fn(
+        "GetProjectWorkflowData.expectationsPage",
+      )(function* (reader: ProjectReader, query: RunExpectationsPageQuery) {
+        const projectId = yield* authorizeReader(reader)
+        return yield* repository.expectationsPage(projectId, query)
+      })
+      const operationsPage = Effect.fn("GetProjectWorkflowData.operationsPage")(
+        function* (reader: ProjectReader, query: RunOperationsPageQuery) {
+          const projectId = yield* authorizeReader(reader)
+          return yield* repository.operationsPage(projectId, query)
+        },
+      )
       const related = Effect.fn("GetProjectWorkflowData.related")(function* (
         reader: ProjectReader,
         runId: string,
@@ -250,6 +295,9 @@ export class GetProjectWorkflowData extends Context.Service<
         timeline,
         runEventPage,
         runInvestigationSummary,
+        relatedRunsPage,
+        expectationsPage,
+        operationsPage,
         related,
         compare,
         intelligence,
