@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useApiOrigin } from "../platform/runtime-config"
 import { useTRPC } from "../platform/api-trpc"
 import { useProjectKeys } from "../projects/keys-query"
@@ -40,6 +40,10 @@ export function useOnboarding(initialStep: string, reviewMode = false) {
   )
   const origin = useApiOrigin()
   const snippet = useMemo(() => flowmarkAgentPrompt(origin), [origin])
+
+  useEffect(() => {
+    setCreatedSecret(null)
+  }, [current?.id])
 
   const goTo = (next: number) => {
     const nextStep = steps[next]

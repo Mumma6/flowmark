@@ -20,6 +20,7 @@ import {
   History,
   LayoutGrid,
   LineChart,
+  Link2,
   LogOut,
   Settings,
   UserRound,
@@ -47,6 +48,7 @@ const navigation = [
 const utilities = [
   { href: "/runs", label: "Execution history", icon: History },
   { href: "/overview", label: "Project overview", icon: LayoutGrid },
+  { href: "/connect", label: "Connect", icon: Link2 },
   { href: "/settings", label: "Settings", icon: Settings },
   { href: "/onboarding?mode=guide", label: "Setup guide", icon: Code2 },
 ] as const

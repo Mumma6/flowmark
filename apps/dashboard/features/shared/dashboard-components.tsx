@@ -23,6 +23,11 @@ import Link from "next/link"
 import { useMemo, type ReactNode } from "react"
 import { presentQueryError } from "../platform/api-transport-errors"
 import { runStatusLabel, type RunStatus } from "../runs/run-presentation"
+import {
+  clipboardCopyFailureDescription,
+  clipboardCopyFailureTitle,
+  clipboardCopySuccessTitle,
+} from "./clipboard-state"
 
 class ClipboardError extends Data.TaggedError("ClipboardError")<{
   readonly cause: unknown
@@ -32,10 +37,12 @@ export function CopyButton({
   value,
   label = "Copy",
   variant = "outline",
+  onCopied,
 }: {
   value: string
   label?: string
   variant?: "default" | "outline"
+  onCopied?: () => void
 }) {
   return (
     <Button
@@ -51,18 +58,19 @@ export function CopyButton({
           }).pipe(Effect.result),
         )
         Result.match(result, {
-          onSuccess: () =>
+          onSuccess: () => {
+            onCopied?.()
             toast.add({
               id: "clipboard",
-              title: "Copied to clipboard",
+              title: clipboardCopySuccessTitle,
               type: "success",
-            }),
+            })
+          },
           onFailure: () =>
             toast.add({
               id: "clipboard",
-              title: "Could not copy",
-              description:
-                "Select the text and copy it manually, or check clipboard permissions.",
+              title: clipboardCopyFailureTitle,
+              description: clipboardCopyFailureDescription,
               type: "error",
             }),
         })
