@@ -14,7 +14,11 @@ describe("Agent TASK-001.1 MCP dependency proposal", () => {
     )
     assert.equal(
       AGENT_ACCESS_MCP_DEPENDENCY_PROPOSAL.proposed.mcpServerSdk,
-      "@modelcontextprotocol/server@2.4.0",
+      "@modelcontextprotocol/server@2.3.1",
+    )
+    assert.equal(
+      AGENT_ACCESS_MCP_DEPENDENCY_PROPOSAL.proposed.betterCall,
+      "1.4.5",
     )
     assert.equal(
       AGENT_ACCESS_MCP_DEPENDENCY_PROPOSAL.current.betterAuth,
@@ -23,6 +27,28 @@ describe("Agent TASK-001.1 MCP dependency proposal", () => {
     assert.equal(
       AGENT_ACCESS_MCP_DEPENDENCY_PROPOSAL.current.mcpPackagesInstalled,
       false,
+    )
+    assert.equal(
+      AGENT_ACCESS_MCP_DEPENDENCY_PROPOSAL.current.oauthTablesInDb,
+      false,
+    )
+  })
+
+  it("lists oauth provider schema models and required plugins", () => {
+    assert.deepEqual(
+      AGENT_ACCESS_MCP_DEPENDENCY_PROPOSAL.oauthProviderSchemaModels,
+      [
+        "oauthClient",
+        "oauthResource",
+        "oauthClientResource",
+        "oauthAccessToken",
+        "oauthConsent",
+        "oauthClientAssertion",
+      ],
+    )
+    assert.deepEqual(
+      AGENT_ACCESS_MCP_DEPENDENCY_PROPOSAL.proposed.requiredBetterAuthPlugins,
+      ["jwt", "mcp", "cimd"],
     )
   })
 
@@ -49,6 +75,11 @@ describe("Agent TASK-001.1 MCP dependency proposal", () => {
     assert.equal(
       AGENT_ACCESS_MCP_DEPENDENCY_PROPOSAL.routeSketch.mcpResourcePath,
       "/mcp",
+    )
+    assert.equal(
+      AGENT_ACCESS_MCP_DEPENDENCY_PROPOSAL.integrationConstraints
+        .requireMcpAuthIssuerOverride,
+      true,
     )
     assert.match(
       AGENT_ACCESS_MCP_DEPENDENCY_PROPOSAL.deferredVerification,
