@@ -12,7 +12,7 @@ import {
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { Suspense } from "react"
 import { PageHeading } from "../shared/dashboard-components"
-import { AgentPromptCard } from "../onboarding/getting-started"
+import { ConnectSetupPanel } from "../connect/connect-setup"
 import { useProject } from "../projects/project-context"
 import { AccountSettings } from "./account-settings"
 import { KeySettings } from "./key-settings"
@@ -35,7 +35,7 @@ const sectionHelp: Record<SettingsSection, string> = {
     "Create or select the project that owns the work you want to observe. Switch projects in the Studio header to inspect their runs.",
   keys: "Give your application an ingestion key for the selected project. After connecting it, open Runs to verify that an execution was recorded.",
   setup:
-    "Follow the setup instructions to connect your application, report one execution, then verify its outcome and timeline in Runs.",
+    "Follow agent or manual SDK instructions to instrument your application, then verify evidence in Runs. Copied instructions are not a connection.",
   account:
     "Update the identity and credentials you use to sign in to the dashboard.",
 }
@@ -100,7 +100,7 @@ function SettingsPageInner() {
           <KeySettings />
         </TabsContent>
         <TabsContent value="setup" className="mt-6">
-          <AgentPromptCard />
+          <ConnectSetupPanel compact />
         </TabsContent>
         <TabsContent value="account" className="mt-6">
           <AccountSettings
