@@ -550,6 +550,19 @@ export const appRouter = t.router({
           }),
         ),
       ),
+    revokeConnection: t.procedure
+      .input(AgentAccessConnectionInput)
+      .mutation(({ ctx, input }) =>
+        sessionAgentAccessQuery(ctx.request, (userId) =>
+          Effect.flatMap(AgentAccess, (access) =>
+            access.revokeConnection({
+              userId,
+              authorizationCodeId: input.authorizationCodeId,
+              clientId: input.clientId,
+            }),
+          ),
+        ),
+      ),
   }),
   resultDeclarations: t.router({
     searchFields: t.procedure

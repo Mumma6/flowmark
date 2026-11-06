@@ -337,6 +337,7 @@ function agentAccess(overrides: Partial<AgentAccessService> = {}) {
     getConnection: () => Effect.succeed(undefined),
     submitConsent: () => Effect.succeed("authorization-code-id"),
     recordLastAuthenticated: () => Effect.void,
+    revokeConnection: () => Effect.void,
     ...overrides,
   })
 }

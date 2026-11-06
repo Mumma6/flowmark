@@ -1,4 +1,4 @@
-import { and, desc, eq, gt, isNull, or } from "drizzle-orm"
+import { and, desc, eq, gt, isNull, or, sql } from "drizzle-orm"
 import { Array as EffectArray, Effect } from "effect"
 import {
   agentAccessGrantProjects,
@@ -12,6 +12,7 @@ import { DatabaseOperation } from "../../database-operation.js"
 import { runQuery } from "../../run-query.js"
 import { AgentAccessConsentRejected } from "../agent-access-errors.js"
 import { getMemberProject } from "../queries/get-member-project.js"
+import { revokeGrantFamilyInTransaction } from "./revoke-grant-family-in-transaction.js"
 
 const MAX_PROJECTS = 10
 
@@ -134,6 +135,29 @@ export const submitAgentAccessConsent = Effect.fn("submitAgentAccessConsent")(
         }),
       )
     }
+    const [priorIntent] = yield* runQuery(
+      DatabaseOperation.SubmitAgentAccessConsent,
+      () =>
+        db
+          .select({
+            authorizationCodeId:
+              agentAccessOauthConsentIntents.authorizationCodeId,
+          })
+          .from(agentAccessOauthConsentIntents)
+          .where(
+            and(
+              eq(
+                agentAccessOauthConsentIntents.oauthConsentId,
+                input.oauthConsentId,
+              ),
+              eq(agentAccessOauthConsentIntents.userId, input.userId),
+              eq(agentAccessOauthConsentIntents.clientId, input.clientId),
+            ),
+          )
+          .limit(1),
+    )
+    const priorAuthorizationCodeId = priorIntent?.authorizationCodeId
+
     const refreshRows = yield* runQuery(
       DatabaseOperation.SubmitAgentAccessConsent,
       () =>
@@ -151,6 +175,7 @@ export const submitAgentAccessConsent = Effect.fn("submitAgentAccessConsent")(
                 isNull(oauthRefreshToken.expiresAt),
                 gt(oauthRefreshToken.expiresAt, new Date()),
               ),
+              sql`"oauth_refresh_token"."authorization_code_id" IS NOT NULL`,
             ),
           )
           .orderBy(desc(oauthRefreshToken.createdAt)),
@@ -168,6 +193,32 @@ export const submitAgentAccessConsent = Effect.fn("submitAgentAccessConsent")(
     }
     return yield* runQuery(DatabaseOperation.SubmitAgentAccessConsent, () =>
       db.transaction(async (tx) => {
+        const now = new Date()
+        if (
+          priorAuthorizationCodeId &&
+          priorAuthorizationCodeId !== authorizationCodeId
+        ) {
+          await revokeGrantFamilyInTransaction(tx, {
+            now,
+            userId: input.userId,
+            clientId: input.clientId,
+            authorizationCodeId: priorAuthorizationCodeId,
+            markConsentIntentsRevoked: false,
+          })
+          await tx
+            .update(agentAccessOauthConsentIntents)
+            .set({ state: "superseded", updatedAt: now })
+            .where(
+              and(
+                eq(agentAccessOauthConsentIntents.userId, input.userId),
+                eq(agentAccessOauthConsentIntents.clientId, input.clientId),
+                eq(
+                  agentAccessOauthConsentIntents.authorizationCodeId,
+                  priorAuthorizationCodeId,
+                ),
+              ),
+            )
+        }
         await tx
           .delete(agentAccessGrantProjects)
           .where(

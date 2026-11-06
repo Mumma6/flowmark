@@ -18,6 +18,9 @@ import {
   flowmarkAgentAccessSchema,
 } from "./agent-access/compose-provider.js"
 
+/** Optional hook after primary-account password changes (reset or credential update). */
+export type RevokeDelegatedAgentAccess = (userId: string) => Promise<void>
+
 class AuthRequestError extends Data.TaggedError("AuthRequestError")<{
   readonly cause: unknown
 }> {}
@@ -54,6 +57,11 @@ export function createFlowmarkAuth(options: {
   readonly trustedOrigins?: ReadonlyArray<string>
   readonly emailDelivery?: Email["Service"]
   readonly scheduleEmail?: (task: Promise<unknown>) => void
+  /**
+   * Revoke delegated agent OAuth grant families for this user (e.g. after password reset).
+   * Runs before `emailAndPassword.onPasswordReset` when both are set.
+   */
+  readonly onRevokeDelegatedAgentAccess?: RevokeDelegatedAgentAccess
   /** Omitted or absent keeps agent OAuth/MCP discovery off. */
   readonly agentAccess?: {
     readonly issuerOrigin: string
@@ -120,7 +128,13 @@ export function createFlowmarkAuth(options: {
       autoSignIn: true,
       requireEmailVerification: false,
       revokeSessionsOnPasswordReset: true,
-      ...email?.emailAndPassword,
+      ...(email?.emailAndPassword ?? {}),
+      onPasswordReset: async (data, request) => {
+        if (options.onRevokeDelegatedAgentAccess) {
+          await options.onRevokeDelegatedAgentAccess(data.user.id)
+        }
+        await email?.emailAndPassword?.onPasswordReset?.(data, request)
+      },
     },
     rateLimit: {
       enabled: true,
