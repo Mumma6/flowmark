@@ -30,6 +30,10 @@ import type {
   RunExpectationsPageQuery,
   RunOperationsPage,
   RunOperationsPageQuery,
+  WorkflowDiscoveryPage,
+  WorkflowDiscoveryQuery,
+  WorkflowMeaningPage,
+  WorkflowMeaningQuery,
   RunTimelineEvent,
   WorkflowIntelligence,
   ProjectSearch,
@@ -118,6 +122,20 @@ export interface GetProjectWorkflowDataService {
     query: RunOperationsPageQuery,
   ) => Effect.Effect<
     RunOperationsPage,
+    Unauthorized | PersistenceError | InvalidInput
+  >
+  readonly discoverWorkflows: (
+    reader: ProjectReader,
+    query: WorkflowDiscoveryQuery,
+  ) => Effect.Effect<
+    WorkflowDiscoveryPage,
+    Unauthorized | PersistenceError | InvalidInput
+  >
+  readonly discoverWorkflowMeaning: (
+    reader: ProjectReader,
+    query: WorkflowMeaningQuery,
+  ) => Effect.Effect<
+    WorkflowMeaningPage,
     Unauthorized | PersistenceError | InvalidInput
   >
   readonly related: (
@@ -239,6 +257,18 @@ export class GetProjectWorkflowData extends Context.Service<
           return yield* repository.operationsPage(projectId, query)
         },
       )
+      const discoverWorkflows = Effect.fn(
+        "GetProjectWorkflowData.discoverWorkflows",
+      )(function* (reader: ProjectReader, query: WorkflowDiscoveryQuery) {
+        const projectId = yield* authorizeReader(reader)
+        return yield* repository.discoverWorkflows(projectId, query)
+      })
+      const discoverWorkflowMeaning = Effect.fn(
+        "GetProjectWorkflowData.discoverWorkflowMeaning",
+      )(function* (reader: ProjectReader, query: WorkflowMeaningQuery) {
+        const projectId = yield* authorizeReader(reader)
+        return yield* repository.discoverWorkflowMeaning(projectId, query)
+      })
       const related = Effect.fn("GetProjectWorkflowData.related")(function* (
         reader: ProjectReader,
         runId: string,
@@ -298,6 +328,8 @@ export class GetProjectWorkflowData extends Context.Service<
         relatedRunsPage,
         expectationsPage,
         operationsPage,
+        discoverWorkflows,
+        discoverWorkflowMeaning,
         related,
         compare,
         intelligence,

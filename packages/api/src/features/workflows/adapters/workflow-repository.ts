@@ -108,6 +108,25 @@ export const WorkflowRepositoryLive = Layer.effect(
             }),
           ),
       ),
+      discoverWorkflows: Effect.fn("WorkflowRepositoryLive.discoverWorkflows")(
+        (projectId, query) =>
+          store.discoverWorkflows(projectId, query).pipe(
+            Effect.catchTags({
+              DatabaseError: toPersistenceError,
+              InvalidResultQuery: toInvalidInput,
+            }),
+          ),
+      ),
+      discoverWorkflowMeaning: Effect.fn(
+        "WorkflowRepositoryLive.discoverWorkflowMeaning",
+      )((projectId, query) =>
+        store.discoverWorkflowMeaning(projectId, query).pipe(
+          Effect.catchTags({
+            DatabaseError: toPersistenceError,
+            InvalidResultQuery: toInvalidInput,
+          }),
+        ),
+      ),
       related: Effect.fn("WorkflowRepositoryLive.related")((projectId, runId) =>
         persist(store.related(projectId, runId)),
       ),

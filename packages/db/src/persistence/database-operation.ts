@@ -45,6 +45,8 @@ export enum DatabaseOperation {
   ReadRelatedRuns = "read-related-runs",
   ReadRun = "read-run",
   ReadWorkflowSummaries = "read-workflow-summaries",
+  ReadWorkflowDiscovery = "read-workflow-discovery",
+  ReadDeclarationDiscovery = "read-declaration-discovery",
   ReadWorkflowIntelligence = "read-workflow-intelligence",
   ReadPeriodWorkflows = "read-period-workflows",
   ReadPeriodDaily = "read-period-daily",

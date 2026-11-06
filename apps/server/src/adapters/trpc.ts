@@ -505,6 +505,43 @@ export const appRouter = t.router({
         ),
       ),
     ),
+    discover: t.procedure
+      .input(
+        Schema.toStandardSchemaV1(
+          Schema.Struct({
+            cursor: Schema.optional(Schema.String),
+            limit: Schema.optional(Schema.Number),
+          }),
+        ),
+      )
+      .query(({ ctx, input }) =>
+        readQuery(ctx.request, (reader) =>
+          Effect.flatMap(GetProjectWorkflowData, (queries) =>
+            queries.discoverWorkflows(reader, input),
+          ),
+        ),
+      ),
+    meaning: t.procedure
+      .input(
+        Schema.toStandardSchemaV1(
+          Schema.Struct({
+            workflow: Schema.String.check(
+              Schema.isMinLength(1),
+              Schema.isMaxLength(200),
+            ),
+            revision: Schema.optional(Schema.String),
+            cursor: Schema.optional(Schema.String),
+            limit: Schema.optional(Schema.Number),
+          }),
+        ),
+      )
+      .query(({ ctx, input }) =>
+        readQuery(ctx.request, (reader) =>
+          Effect.flatMap(GetProjectWorkflowData, (queries) =>
+            queries.discoverWorkflowMeaning(reader, input),
+          ),
+        ),
+      ),
   }),
   search: t.router({
     project: t.procedure
