@@ -1,4 +1,4 @@
-import { and, eq, gt, or, sql } from "drizzle-orm"
+import { and, eq, sql } from "drizzle-orm"
 import { Effect } from "effect"
 import {
   workflowEvents,
@@ -47,23 +47,8 @@ const assertRunInProject = Effect.fn("assertRunInProject")(function* (
 
 const cursorPredicate = (
   cursor: NonNullable<ReturnType<typeof decodeRunEventPageCursor>>,
-) => {
-  const occurredAt = new Date(cursor.occurredAt)
-  const receivedAt = new Date(cursor.receivedAt)
-  return or(
-    gt(workflowEvents.occurredAt, occurredAt),
-    and(
-      eq(workflowEvents.occurredAt, occurredAt),
-      or(
-        gt(workflowEvents.createdAt, receivedAt),
-        and(
-          eq(workflowEvents.createdAt, receivedAt),
-          gt(workflowEvents.eventId, cursor.eventId),
-        ),
-      ),
-    ),
-  )
-}
+) =>
+  sql`(${workflowEvents.occurredAt}, ${workflowEvents.createdAt}, ${workflowEvents.eventId}) > (${cursor.occurredAt}::timestamptz, ${cursor.receivedAt}::timestamptz, ${cursor.eventId}::uuid)`
 
 export const getRunEventPage = Effect.fn("getRunEventPage")(function* (
   projectId: string,
@@ -95,7 +80,11 @@ export const getRunEventPage = Effect.fn("getRunEventPage")(function* (
   )
   const rows = yield* runQuery(DatabaseOperation.ReadRun, () =>
     db
-      .select(runTimelineSelection)
+      .select({
+        ...runTimelineSelection,
+        cursorOccurredAt: sql<string>`to_char(${workflowEvents.occurredAt} AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')`,
+        cursorReceivedAt: sql<string>`to_char(${workflowEvents.createdAt} AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')`,
+      })
       .from(workflowEvents)
       .innerJoin(workflowRuns, eq(workflowEvents.runId, workflowRuns.id))
       .innerJoin(workflows, eq(workflowRuns.workflowId, workflows.id))
@@ -174,8 +163,8 @@ export const getRunEventPage = Effect.fn("getRunEventPage")(function* (
   const nextCursor =
     hasMore && last
       ? encodeRunEventPageCursor({
-          timestamp: last.timestamp,
-          receivedAt: last.receivedAt,
+          occurredAt: last.cursorOccurredAt,
+          receivedAt: last.cursorReceivedAt,
           eventId: last.eventId,
         })
       : null

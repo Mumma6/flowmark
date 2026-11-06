@@ -8,13 +8,13 @@ import {
 describe("run event page cursor", () => {
   it("round-trips stable ordering keys", () => {
     const encoded = encodeRunEventPageCursor({
-      timestamp: new Date("2026-01-02T10:00:00.000Z"),
-      receivedAt: new Date("2026-01-02T10:00:01.000Z"),
+      occurredAt: "2026-01-02T10:00:00.123456Z",
+      receivedAt: "2026-01-02T10:00:01.000001Z",
       eventId: "11111111-1111-4111-8111-111111111111",
     })
     assert.deepEqual(decodeRunEventPageCursor(encoded), {
-      occurredAt: "2026-01-02T10:00:00.000Z",
-      receivedAt: "2026-01-02T10:00:01.000Z",
+      occurredAt: "2026-01-02T10:00:00.123456Z",
+      receivedAt: "2026-01-02T10:00:01.000001Z",
       eventId: "11111111-1111-4111-8111-111111111111",
     })
   })

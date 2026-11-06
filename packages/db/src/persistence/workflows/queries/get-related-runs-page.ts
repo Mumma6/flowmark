@@ -78,7 +78,7 @@ export const getRelatedRunsPage = Effect.fn("getRelatedRunsPage")(function* (
         links.id,
         links."externalId",
         links.workflow,
-        links."startedAt",
+        links."startedAt"::text AS "startedAt",
         links.status,
         links."correlationId",
         links."parentRunId",
@@ -86,7 +86,7 @@ export const getRelatedRunsPage = Effect.fn("getRelatedRunsPage")(function* (
       FROM (${allRelatedRunLinksSql(projectId, query.runId)}) links
       WHERE (
         ${decoded?.startedAt ?? null}::timestamptz IS NULL
-        OR (links."startedAt", links.id) > (${decoded?.startedAt ?? null}::timestamptz, ${decoded?.id ?? null}::uuid)
+        OR (links."startedAt"::timestamptz, links.id) > (${decoded?.startedAt ?? null}::timestamptz, ${decoded?.id ?? null}::uuid)
       )
       ORDER BY links."startedAt", links.id, links.relationship
       LIMIT ${limit + 1}
