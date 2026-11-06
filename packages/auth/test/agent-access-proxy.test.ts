@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
-import { Array as Arr, Effect, Option } from "effect"
+import { Array as EffectArray, Effect, Option } from "effect"
 import { createDatabase } from "@flowmark/db"
 import { createFlowmarkAuth } from "../src/create-auth.js"
 import { AGENT_ACCESS_REFERENCE_DEPLOYMENTS } from "../src/agent-access/protocol-contract.js"
@@ -96,7 +96,7 @@ describe("issuer proxy routes", () => {
       ),
     )
     assert.equal(
-      Arr.every(denied, (result) => result._tag === "Failure"),
+      EffectArray.every(denied, (result) => result._tag === "Failure"),
       true,
     )
   })
@@ -146,7 +146,10 @@ it(
                 catch: (cause) => cause,
               })
               assert.equal(
-                Arr.contains(["localhost", "127.0.0.1", "[::1]"], hostname),
+                EffectArray.contains(
+                  ["localhost", "127.0.0.1", "[::1]"],
+                  hostname,
+                ),
                 true,
               )
               const database = yield* Effect.acquireRelease(
@@ -180,7 +183,10 @@ it(
                   ),
                 ),
               )
-              assert.equal(Arr.contains([200, 302, 400], response.status), true)
+              assert.equal(
+                EffectArray.contains([200, 302, 400], response.status),
+                true,
+              )
               const location = response.headers.get("location")
               if (location) {
                 const forwarded = yield* decideAuthProxyLocation({

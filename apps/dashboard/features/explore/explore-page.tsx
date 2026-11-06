@@ -8,7 +8,7 @@ import {
   StudioWorkspace,
   StudioProcessPane,
 } from "@flowmark/ui"
-import { Array as Arr } from "effect"
+import { Array as EffectArray } from "effect"
 import {
   ArrowDown,
   ArrowLeft,
@@ -64,8 +64,8 @@ function ExploreWorkspace() {
     setCursorStack,
   } = explorer
   const workflows = snapshot.data?.workflows ?? []
-  const activeFilters = Arr.filter(
-    Arr.fromIterable(Object.entries(filters)),
+  const activeFilters = EffectArray.filter(
+    EffectArray.fromIterable(Object.entries(filters)),
     ([key, value]) => value !== explorerDefaults[key as keyof ExplorerFilters],
   )
   const historyParams = new URLSearchParams(params.toString())

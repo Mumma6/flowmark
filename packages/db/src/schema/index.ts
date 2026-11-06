@@ -18,6 +18,7 @@ import {
   uniqueIndex,
 } from "drizzle-orm/pg-core"
 import { user } from "./auth.js"
+import { oauthClient, oauthConsent } from "./oauth-provider.js"
 import type {
   WorkflowError,
   WorkflowFailure,
@@ -55,6 +56,13 @@ export const workflowEventType = pgEnum("workflow_event_type", [
   "progress",
   "report",
   "completed",
+  "failed",
+])
+
+export const oauthConsentIntentState = pgEnum("oauth_consent_intent_state", [
+  "pending",
+  "completed",
+  "superseded",
   "failed",
 ])
 
@@ -391,5 +399,71 @@ export const agentAccessGrantProjects = pgTable(
     index("agent_access_grant_projects_auth_code_idx").on(
       table.authorizationCodeId,
     ),
+  ],
+)
+
+/**
+ * Records session-submitted consent binding work; does not store tokens.
+ * Links the Better Auth `oauth_consent` row to a chosen project allowlist.
+ */
+export const agentAccessOauthConsentIntents = pgTable(
+  "agent_access_oauth_consent_intents",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    clientId: text("client_id")
+      .notNull()
+      .references(() => oauthClient.clientId, { onDelete: "cascade" }),
+    oauthConsentId: text("oauth_consent_id")
+      .notNull()
+      .references(() => oauthConsent.id, { onDelete: "cascade" }),
+    authorizationCodeId: text("authorization_code_id").notNull(),
+    resourceUrl: text("resource_url").notNull(),
+    redirectUri: text("redirect_uri"),
+    requestedScopes: jsonb("requested_scopes").$type<ReadonlyArray<string>>(),
+    state: oauthConsentIntentState("state").notNull().default("completed"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("agent_access_oauth_consent_intents_user_idx").on(table.userId),
+    index("agent_access_oauth_consent_intents_client_idx").on(table.clientId),
+    uniqueIndex("agent_access_oauth_consent_intents_consent_uidx").on(
+      table.oauthConsentId,
+    ),
+  ],
+)
+
+/** Coarse last delegated read verification (no tokens). */
+export const agentAccessConnectionLastAuth = pgTable(
+  "agent_access_connection_last_auth",
+  {
+    authorizationCodeId: text("authorization_code_id").primaryKey().notNull(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    clientId: text("client_id")
+      .notNull()
+      .references(() => oauthClient.clientId, { onDelete: "cascade" }),
+    lastAuthenticatedAt: timestamp("last_authenticated_at", {
+      withTimezone: true,
+    })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("agent_access_connection_last_auth_user_idx").on(table.userId),
+    index("agent_access_connection_last_auth_client_idx").on(table.clientId),
   ],
 )

@@ -1,7 +1,7 @@
 "use client"
 
 import { StudioEvidenceList } from "@flowmark/ui"
-import { Array as Arr } from "effect"
+import { Array as EffectArray } from "effect"
 import Link from "next/link"
 import { usePathname, useSearchParams } from "next/navigation"
 import type { Run } from "../platform/api-types"
@@ -21,7 +21,7 @@ export function ExploreRunList({ runs }: { runs: readonly Run[] }) {
   const from = `${pathname}${params.size ? `?${params}` : ""}`
   return (
     <StudioEvidenceList
-      runs={Arr.map(runs, (run) => ({
+      runs={EffectArray.map(runs, (run) => ({
         id: run.id,
         workflow: run.workflow,
         externalId: run.externalId,

@@ -1,4 +1,4 @@
-import { Array as Arr, Option, pipe } from "effect"
+import { Array as EffectArray, Option, pipe } from "effect"
 import type {
   RouterInputs,
   RouterOutputs,
@@ -44,7 +44,7 @@ function finalizeHandoff(
   bodyLines: readonly string[],
   extraOmissions: readonly string[] = [],
 ): SafeRunContextHandoff {
-  const omissions = Arr.fromIterable(
+  const omissions = EffectArray.fromIterable(
     new Set([...defaultOmissions, ...extraOmissions]),
   )
   const preview = [
@@ -133,8 +133,8 @@ export function summarizeSourceSelection(
     : null
   const filterLines: string[] = []
   const omissionSet = new Set<string>()
-  Arr.forEach(
-    Arr.fromIterable(
+  EffectArray.forEach(
+    EffectArray.fromIterable(
       Object.keys(explorerDefaults) as Array<keyof ExplorerFilters>,
     ),
     (key) => {
@@ -157,7 +157,7 @@ export function summarizeSourceSelection(
     sourceUrl,
     utcWindow: utcWindowDescription(filters),
     filterLines,
-    omissions: Arr.fromIterable(omissionSet),
+    omissions: EffectArray.fromIterable(omissionSet),
   }
 }
 
@@ -168,7 +168,7 @@ export function buildSafeRunContextHandoff(
   studioOrigin: string,
 ): Option.Option<SafeRunContextHandoff> {
   return pipe(
-    Arr.head(events),
+    EffectArray.head(events),
     Option.map((first) => {
       const selection = summarizeSourceSelection(
         input.filters,

@@ -1,4 +1,4 @@
-import { Array as Arr, Match, Result, Schema } from "effect"
+import { Array as EffectArray, Match, Result, Schema } from "effect"
 import { explorerDefaults } from "./explorer-filters"
 
 const InvestigationSource = Schema.String.check(
@@ -67,12 +67,15 @@ export function runInvestigationPath(
   const source = from ? investigationReturn(from).href : ""
   if (source.startsWith("/?")) {
     const cohort = new URLSearchParams(source.slice(2))
-    Arr.forEach(Arr.fromIterable(Object.keys(explorerDefaults)), (key) => {
-      const value = cohort.get(key)
-      if (value !== null) {
-        params.set(key, value)
-      }
-    })
+    EffectArray.forEach(
+      EffectArray.fromIterable(Object.keys(explorerDefaults)),
+      (key) => {
+        const value = cohort.get(key)
+        if (value !== null) {
+          params.set(key, value)
+        }
+      },
+    )
   }
   if (from) {
     params.set("from", from)

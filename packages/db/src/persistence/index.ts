@@ -1,5 +1,7 @@
 export * from "./database-operation.js"
 export * from "./database.js"
+export * from "./project-access/agent-access-errors.js"
+export * from "./project-access/agent-access-store.js"
 export * from "./project-access/project-credentials-store.js"
 export * from "./project-access/queries/allow-browser-origin.js"
 export * from "./project-access/queries/authenticate-browser-key.js"

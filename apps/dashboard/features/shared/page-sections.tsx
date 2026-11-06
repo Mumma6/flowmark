@@ -1,7 +1,7 @@
 "use client"
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@flowmark/ui"
-import { Array as Arr, Option } from "effect"
+import { Array as EffectArray, Option } from "effect"
 import { usePathname, useSearchParams } from "next/navigation"
 import { useSyncExternalStore, type ReactNode } from "react"
 
@@ -48,7 +48,7 @@ export function PageSections({
     () => "",
   )
   const requested = params.get(queryKey) ?? hashSections?.[hash] ?? defaultValue
-  const selected = Arr.findFirst(
+  const selected = EffectArray.findFirst(
     sections,
     (item) => item.value === requested,
   ).pipe(

@@ -1,5 +1,5 @@
 import { and, eq, gt, isNull, or } from "drizzle-orm"
-import { Array as Arr, Effect, Option, Schema } from "effect"
+import { Array as EffectArray, Effect, Option, Schema } from "effect"
 import type { FlowmarkDatabase } from "@flowmark/db"
 import { oauthRefreshToken } from "@flowmark/db/schema"
 import { AgentAccessContractError } from "./contract-errors.js"
@@ -56,9 +56,9 @@ export const readAgentAccessGrantFamily = Effect.fn(
         reason: "Grant family could not be read.",
       }),
   })
-  const familyIds = Arr.dedupe(
-    Arr.getSomes(
-      Arr.map(rows, (row) =>
+  const familyIds = EffectArray.dedupe(
+    EffectArray.getSomes(
+      EffectArray.map(rows, (row) =>
         row.familyId ? Option.some(row.familyId) : Option.none(),
       ),
     ),
@@ -69,8 +69,8 @@ export const readAgentAccessGrantFamily = Effect.fn(
       reason: "Grant family is missing or ambiguous.",
     })
   }
-  const bound = Arr.every(rows, (row) =>
-    Arr.contains(row.resources ?? [], input.resource),
+  const bound = EffectArray.every(rows, (row) =>
+    EffectArray.contains(row.resources ?? [], input.resource),
   )
   if (!bound) {
     return yield* new AgentAccessContractError({

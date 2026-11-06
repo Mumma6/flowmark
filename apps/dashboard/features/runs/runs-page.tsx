@@ -15,7 +15,7 @@ import {
 } from "@flowmark/ui"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
-import { Array as Arr } from "effect"
+import { Array as EffectArray } from "effect"
 import { explorerDefaults } from "./explorer-filters"
 import {
   DataState,
@@ -109,8 +109,8 @@ export function ProjectRuns({
   initialSearch?: string
 }) {
   const params = useSearchParams()
-  const hasRunFilters = Arr.some(
-    Arr.fromIterable(Object.keys(explorerDefaults)),
+  const hasRunFilters = EffectArray.some(
+    EffectArray.fromIterable(Object.keys(explorerDefaults)),
     (key) => params.has(key),
   )
   const { data, isPending, error, isFetching, refetch } = useSnapshot()
