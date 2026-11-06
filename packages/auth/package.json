@@ -34,6 +34,11 @@
       "types": "./dist/agent-access/index.d.ts",
       "node": "./dist/agent-access/index.js",
       "default": "./dist/server-only.js"
+    },
+    "./agent-access/proxy-route": {
+      "types": "./dist/agent-access/proxy-route.d.ts",
+      "node": "./dist/agent-access/proxy-route.js",
+      "default": "./dist/server-only.js"
     }
   },
   "scripts": {

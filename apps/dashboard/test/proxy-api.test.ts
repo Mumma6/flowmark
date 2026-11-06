@@ -8,7 +8,10 @@ import { Effect } from "effect"
 import { randomUUID } from "node:crypto"
 import { inspect } from "node:util"
 import { afterEach, beforeEach, expect, it, vi } from "vitest"
-import { proxyToApiHandler } from "../features/platform/api-proxy"
+import {
+  proxyIssuerPath,
+  proxyToApiHandler,
+} from "../features/platform/api-proxy"
 
 beforeEach(() => {
   vi.stubEnv("NODE_ENV", "production")
@@ -238,4 +241,120 @@ it("blocks cross-origin callback redirects and does not leak their bearer URL", 
   expect(JSON.stringify(log.mock.calls)).not.toContain(
     "synthetic-preview-token",
   )
+})
+
+it("forwards an authorization request to the API origin and returns the provider response", async () => {
+  const redirectUri = "http://127.0.0.1:4312/callback"
+  const fetch = vi.fn().mockResolvedValue(
+    new Response(null, {
+      status: 302,
+      headers: {
+        location: `${redirectUri}?code=synthetic&state=one`,
+        "content-type": "application/json",
+      },
+    }),
+  )
+  vi.stubGlobal("fetch", fetch)
+  const response = await proxyIssuerPath(
+    new Request(
+      `https://dashboard.example/oauth2/authorize?response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&state=one`,
+    ),
+    "/oauth2/authorize",
+  )
+  const target = fetch.mock.calls[0][0] as URL
+  expect(target.origin).toBe("http://localhost:3003")
+  expect(target.pathname).toBe("/api/auth/oauth2/authorize")
+  expect(target.searchParams.get("redirect_uri")).toBe(redirectUri)
+  expect(target.searchParams.get("state")).toBe("one")
+  expect(response.status).toBe(302)
+  expect(response.headers.get("location")).toBe(
+    `${redirectUri}?code=synthetic&state=one`,
+  )
+  expect(response.headers.get("access-control-allow-origin")).toBeNull()
+  expect(response.headers.get("cache-control")).toBe("no-store")
+})
+
+it("preserves token status, media type and protocol headers", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn().mockResolvedValue(
+      Response.json(
+        { access_token: "synthetic-access-token", token_type: "Bearer" },
+        {
+          status: 200,
+          headers: { "www-authenticate": 'Bearer error="invalid_token"' },
+        },
+      ),
+    ),
+  )
+  const response = await proxyIssuerPath(
+    new Request("https://dashboard.example/oauth2/token", {
+      method: "POST",
+      headers: { "content-type": "application/x-www-form-urlencoded" },
+      body: "grant_type=authorization_code&code=synthetic",
+    }),
+    "/oauth2/token",
+  )
+  expect(response.status).toBe(200)
+  expect(response.headers.get("content-type")).toContain("application/json")
+  expect(response.headers.get("www-authenticate")).toBe(
+    'Bearer error="invalid_token"',
+  )
+  expect(response.headers.get("cache-control")).toBe("no-store")
+  const body = await response.json()
+  expect(body.token_type).toBe("Bearer")
+})
+
+it("denies a foreign authorize redirect and does not widen ordinary auth redirects", async () => {
+  const foreign =
+    "https://untrusted.example/callback?code=synthetic-preview-token"
+  const fetch = vi
+    .fn()
+    .mockResolvedValue(
+      new Response(null, { status: 302, headers: { location: foreign } }),
+    )
+  vi.stubGlobal("fetch", fetch)
+  const log = vi.spyOn(console, "error").mockImplementation(() => {})
+  const oauth = await proxyIssuerPath(
+    new Request(
+      "https://dashboard.example/oauth2/authorize?redirect_uri=http%3A%2F%2F127.0.0.1%3A4312%2Fcallback",
+    ),
+    "/oauth2/authorize",
+  )
+  expect(oauth.status).toBe(502)
+  expect(oauth.headers.has("location")).toBe(false)
+  const ordinary = await proxyToApiHandler(
+    new Request(
+      "https://dashboard.example/api/auth/oauth2/authorize?redirect_uri=http%3A%2F%2F127.0.0.1%3A4312%2Fcallback",
+    ),
+    "/api/auth/oauth2/authorize",
+  )
+  expect(ordinary.status).toBe(502)
+  expect(ordinary.headers.has("location")).toBe(false)
+  expect(JSON.stringify(log.mock.calls)).not.toContain(
+    "synthetic-preview-token",
+  )
+})
+
+it("ignores a spoofed forwarded host when selecting the API origin", async () => {
+  const fetch = vi
+    .fn()
+    .mockResolvedValue(Response.json({ issuer: "https://dashboard.example" }))
+  vi.stubGlobal("fetch", fetch)
+  const response = await proxyIssuerPath(
+    new Request(
+      "https://dashboard.example/.well-known/oauth-authorization-server",
+      { headers: { "x-forwarded-host": "untrusted.example" } },
+    ),
+    "/.well-known/oauth-authorization-server",
+  )
+  const target = fetch.mock.calls[0][0] as URL
+  expect(target.origin).toBe("http://localhost:3003")
+  expect(target.pathname).toBe(
+    "/api/auth/.well-known/oauth-authorization-server",
+  )
+  expect(response.status).toBe(200)
+  expect(await response.json()).toEqual({
+    issuer: "https://dashboard.example",
+  })
 })

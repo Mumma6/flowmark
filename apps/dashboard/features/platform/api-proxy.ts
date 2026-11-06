@@ -3,7 +3,12 @@ import {
   AUTH_PROXY_IDENTITY_HEADER,
   signAuthProxyIdentity,
 } from "@flowmark/auth/client-identity"
-import { Data, Effect, Exit, Match } from "effect"
+import {
+  agentAccessUpstreamPath,
+  decideAuthProxyLocation,
+  redirectUriFromRequest,
+} from "@flowmark/auth/agent-access/proxy-route"
+import { Data, Effect, Exit, Match, Option } from "effect"
 import "server-only"
 import { runDashboardServerExit } from "./server-runtime"
 import { DashboardApi } from "./api-server-client"
@@ -15,6 +20,7 @@ class DashboardProxyError extends Data.TaggedError("DashboardProxyError")<{
 const proxyToApi = Effect.fn("proxyToApi")(function* (
   request: Request,
   pathname: string,
+  issuerPath = pathname,
 ) {
   const api = yield* DashboardApi
   const incoming = new URL(request.url)
@@ -50,6 +56,11 @@ const proxyToApi = Effect.fn("proxyToApi")(function* (
           try: () => request.text(),
           catch: (cause) => new DashboardProxyError({ cause }),
         })
+  const redirectUri = yield* redirectUriFromRequest({
+    requestUrl: request.url,
+    contentType: request.headers.get("content-type"),
+    body,
+  }).pipe(Effect.mapError((cause) => new DashboardProxyError({ cause })))
   const response = yield* api
     .request(
       `${pathname}${incoming.search}`,
@@ -71,32 +82,35 @@ const proxyToApi = Effect.fn("proxyToApi")(function* (
   )
   const location = response.headers.get("location")
   if (location && pathname.startsWith("/api/auth/")) {
-    const destination = yield* Effect.try({
-      try: () => new URL(location, incoming),
-      catch: (cause) => new DashboardProxyError({ cause }),
-    })
-    if (
-      destination.origin !== incoming.origin ||
-      destination.username ||
-      destination.password
-    ) {
-      return yield* new DashboardProxyError({
-        cause: new Error("Untrusted auth redirect"),
-      })
-    }
-    forwarded.set("location", destination.href)
+    const destination = yield* decideAuthProxyLocation({
+      issuerPath,
+      location,
+      requestUrl: incoming.href,
+      redirectUri,
+    }).pipe(
+      Effect.mapError(
+        () =>
+          new DashboardProxyError({
+            cause: new Error("Untrusted auth redirect"),
+          }),
+      ),
+    )
+    forwarded.set("location", destination)
   }
   forwarded.set("referrer-policy", "no-referrer")
   const responseType = response.headers.get("content-type")
   if (responseType) {
     forwarded.set("content-type", responseType)
   }
-  Arr.forEach(Arr.fromIterable(["retry-after", "x-retry-after"]), (name) => {
-    const value = response.headers.get(name)
-    if (value) {
-      forwarded.set(name, value)
-    }
-  })
+  Arr.forEach(
+    Arr.fromIterable(["retry-after", "x-retry-after", "www-authenticate"]),
+    (name) => {
+      const value = response.headers.get(name)
+      if (value) {
+        forwarded.set(name, value)
+      }
+    },
+  )
   forwarded.set("cache-control", "no-store")
   return new Response(response.body, {
     status: response.status,
@@ -104,8 +118,14 @@ const proxyToApi = Effect.fn("proxyToApi")(function* (
   })
 })
 
-export async function proxyToApiHandler(request: Request, pathname: string) {
-  const result = await runDashboardServerExit(proxyToApi(request, pathname))
+export async function proxyToApiHandler(
+  request: Request,
+  pathname: string,
+  options?: { readonly issuerPath?: string },
+) {
+  const result = await runDashboardServerExit(
+    proxyToApi(request, pathname, options?.issuerPath),
+  )
   const response = Exit.match(result, {
     onSuccess: (response) => response,
     onFailure: (cause) =>
@@ -140,4 +160,17 @@ export async function proxyToApiHandler(request: Request, pathname: string) {
   headers.set("cache-control", "no-store")
   headers.set("referrer-policy", "no-referrer")
   return new Response(response.body, { status: response.status, headers })
+}
+
+export function proxyIssuerPath(request: Request, issuerPath: string) {
+  return Option.match(agentAccessUpstreamPath(issuerPath), {
+    onNone: () =>
+      Promise.resolve(
+        new Response(null, {
+          status: 404,
+          headers: { "cache-control": "no-store" },
+        }),
+      ),
+    onSome: (pathname) => proxyToApiHandler(request, pathname, { issuerPath }),
+  })
 }
