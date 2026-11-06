@@ -13,9 +13,9 @@ import type { Email } from "@flowmark/email"
 import { createAuthEmailCallbacks } from "./email-callbacks.js"
 import { createAuthRateLimitStorage } from "./rate-limit-storage.js"
 import {
+  alignAgentAccessWithBaseUrl,
   flowmarkAgentAccessPlugins,
   flowmarkAgentAccessSchema,
-  resolveEnabledAgentAccess,
 } from "./agent-access/compose-provider.js"
 
 class AuthRequestError extends Data.TaggedError("AuthRequestError")<{
@@ -68,25 +68,18 @@ export function createFlowmarkAuth(options: {
   const email = options.emailDelivery
     ? createAuthEmailCallbacks(options.emailDelivery, options.scheduleEmail)
     : undefined
-  const agentAccess = options.agentAccess
-    ? Effect.runSync(
-        resolveEnabledAgentAccess(options.agentAccess).pipe(
-          Effect.mapError((cause) => new AuthConfigurationError({ cause })),
-        ),
-      )
-    : undefined
   const baseURL =
     options.baseURL ??
     process.env.BETTER_AUTH_URL ??
     process.env.FLOWMARK_DASHBOARD_ORIGIN ??
     "http://localhost:3001"
-  if (agentAccess && new URL(baseURL).origin !== agentAccess.issuerOrigin) {
-    throw new AuthConfigurationError({
-      cause: new Error(
-        "BETTER_AUTH_URL must be the agent-access issuer origin.",
-      ),
-    })
-  }
+  const agentAccess = options.agentAccess
+    ? Effect.runSync(
+        alignAgentAccessWithBaseUrl(options.agentAccess, baseURL).pipe(
+          Effect.mapError((cause) => new AuthConfigurationError({ cause })),
+        ),
+      )
+    : undefined
   const configuration: BetterAuthOptions = {
     appName: "Flowmark",
     secret: options.secret,

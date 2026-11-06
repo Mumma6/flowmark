@@ -6,7 +6,16 @@ import {
   oauthProviderOpenIdConfigMetadata,
 } from "@better-auth/oauth-provider"
 import { jwt } from "better-auth/plugins"
-import { Effect } from "effect"
+import {
+  Array as Arr,
+  Data,
+  Effect,
+  Match,
+  Option,
+  Record,
+  Result,
+  Schema,
+} from "effect"
 import {
   jwks,
   oauthAccessToken,
@@ -34,7 +43,13 @@ type MetadataAuth = {
 const refreshTokenExpiresIn =
   AGENT_ACCESS_REFRESH_FAMILY_MAX_DAYS * 24 * 60 * 60
 
-const loopbackHosts = new Set(["localhost", "127.0.0.1", "[::1]"])
+const loopbackHosts = ["localhost", "127.0.0.1", "[::1]"] as const
+
+class AgentAccessDiscoveryError extends Data.TaggedError(
+  "AgentAccessDiscoveryError",
+)<{
+  readonly cause: unknown
+}> {}
 
 export const FLOWMARK_AGENT_ACCESS_PROVIDER = {
   enabledByDefault: false,
@@ -66,6 +81,12 @@ export const flowmarkAgentAccessSchema = {
   oauthClientAssertion,
 } as const
 
+const readUrl = (value: string, reason: string) =>
+  Effect.try({
+    try: () => new URL(value),
+    catch: () => new AgentAccessContractError({ reason }),
+  })
+
 export const resolveEnabledAgentAccess = Effect.fn(
   "AgentAccess.resolveEnabled",
 )(function* (input: {
@@ -76,15 +97,50 @@ export const resolveEnabledAgentAccess = Effect.fn(
     dashboardOrigin: input.issuerOrigin,
     apiOrigin: input.apiOrigin,
   })
-  const resource = new URL(origins.mcpResourceUrl)
-  if (resource.protocol !== "https:" && !loopbackHosts.has(resource.hostname)) {
-    return yield* new AgentAccessContractError({
-      reason:
-        "MCP resource HTTP is allowed only on loopback. Hosted and self-host resources require HTTPS.",
-    })
-  }
-  return origins
+  const resource = yield* readUrl(
+    origins.mcpResourceUrl,
+    "MCP resource URL is not valid.",
+  )
+  return yield* Match.value(resource.protocol).pipe(
+    Match.when("https:", () => Effect.succeed(origins)),
+    Match.when("http:", () =>
+      Arr.contains(loopbackHosts, resource.hostname)
+        ? Effect.succeed(origins)
+        : Effect.fail(
+            new AgentAccessContractError({
+              reason:
+                "MCP resource HTTP is allowed only on loopback. Hosted and self-host resources require HTTPS.",
+            }),
+          ),
+    ),
+    Match.orElse(() =>
+      Effect.fail(
+        new AgentAccessContractError({
+          reason:
+            "MCP resource HTTP is allowed only on loopback. Hosted and self-host resources require HTTPS.",
+        }),
+      ),
+    ),
+  )
 })
+
+export const alignAgentAccessWithBaseUrl = Effect.fn("AgentAccess.alignIssuer")(
+  function* (
+    input: {
+      readonly issuerOrigin: string
+      readonly apiOrigin: string
+    },
+    baseURL: string,
+  ) {
+    const origins = yield* resolveEnabledAgentAccess(input)
+    const base = yield* readUrl(baseURL, "Auth base URL is not a valid origin.")
+    return yield* base.origin === origins.issuerOrigin
+      ? Effect.succeed(origins)
+      : new AgentAccessContractError({
+          reason: "BETTER_AUTH_URL must be the agent-access issuer origin.",
+        })
+  },
+)
 
 const scopes = [
   "openid",
@@ -131,51 +187,85 @@ export const flowmarkAgentAccessPlugins = (input: {
   }),
 ]
 
-const hasOAuthMetadata = (
-  auth: MetadataAuth,
-): auth is MetadataAuth & {
-  api: {
-    getOAuthServerConfig: (...args: never[]) => unknown
-    getOpenIdConfig: (...args: never[]) => unknown
-  }
-} => "getOAuthServerConfig" in auth.api && "getOpenIdConfig" in auth.api
-
-const canonicalDiscoveryDocument = async (response: Response) => {
-  const document = (await response.json()) as Record<string, unknown>
-  const issuer = document.issuer
-  if (typeof issuer !== "string") {
-    return Response.json(document, { status: response.status })
-  }
-  const mountedPrefix = `${issuer}/api/auth`
-  const canonical = Object.fromEntries(
-    Object.entries(document).map(([key, value]) => [
-      key,
-      typeof value === "string" && value.startsWith(mountedPrefix)
-        ? `${issuer}${value.slice(mountedPrefix.length)}`
-        : value,
-    ]),
-  )
-  return Response.json(canonical, {
-    status: response.status,
-    headers: { "cache-control": "no-store" },
-  })
+type OAuthMetadataApi = {
+  readonly getOAuthServerConfig: (...args: never[]) => unknown
+  readonly getOpenIdConfig: (...args: never[]) => unknown
 }
+
+const DiscoveryDocument = Schema.Record(Schema.String, Schema.Unknown)
+
+const oauthMetadataApi = (auth: MetadataAuth) => {
+  const api: Partial<OAuthMetadataApi> = auth.api
+  return typeof api.getOAuthServerConfig === "function" &&
+    typeof api.getOpenIdConfig === "function"
+    ? Option.some(api as OAuthMetadataApi)
+    : Option.none()
+}
+
+const canonicalizeDiscoveryDocument = (document: Record<string, unknown>) =>
+  Schema.decodeUnknownResult(Schema.String)(document.issuer).pipe(
+    Result.match({
+      onFailure: () => document,
+      onSuccess: (issuer) => {
+        const mountedPrefix = `${issuer}/api/auth`
+        return Record.map(document, (value) =>
+          typeof value === "string" && value.startsWith(mountedPrefix)
+            ? `${issuer}${value.slice(mountedPrefix.length)}`
+            : value,
+        )
+      },
+    }),
+  )
+
+const canonicalDiscoveryDocument = Effect.fn("AgentAccess.canonicalDiscovery")(
+  function* (response: Response) {
+    const body = yield* Effect.tryPromise({
+      try: () => response.json() as Promise<unknown>,
+      catch: (cause) => new AgentAccessDiscoveryError({ cause }),
+    })
+    const document = yield* Schema.decodeUnknownEffect(DiscoveryDocument)(
+      body,
+    ).pipe(Effect.mapError((cause) => new AgentAccessDiscoveryError({ cause })))
+    return Response.json(canonicalizeDiscoveryDocument(document), {
+      status: response.status,
+      headers: { "cache-control": "no-store" },
+    })
+  },
+)
+
+const serveDiscovery = (
+  effect: Effect.Effect<Response, AgentAccessDiscoveryError>,
+) =>
+  Effect.runPromise(
+    effect.pipe(
+      Effect.catchTag("AgentAccessDiscoveryError", () =>
+        Effect.succeed(
+          Response.json(
+            { message: "Agent access discovery is unavailable." },
+            { status: 503, headers: { "cache-control": "no-store" } },
+          ),
+        ),
+      ),
+    ),
+  )
 
 const discoveryDocument = (
   auth: MetadataAuth,
   handler: (
-    auth: MetadataAuth & {
-      api: {
-        getOAuthServerConfig: (...args: never[]) => unknown
-        getOpenIdConfig: (...args: never[]) => unknown
-      }
-    },
+    auth: MetadataAuth & { api: OAuthMetadataApi },
   ) => (request: Request) => Promise<Response>,
 ) =>
-  hasOAuthMetadata(auth)
-    ? async (request: Request) =>
-        canonicalDiscoveryDocument(await handler(auth)(request))
-    : async () => new Response(null, { status: 404 })
+  Option.match(oauthMetadataApi(auth), {
+    onNone: () => (_request: Request) =>
+      serveDiscovery(Effect.succeed(new Response(null, { status: 404 }))),
+    onSome: (api) => (request: Request) =>
+      serveDiscovery(
+        Effect.tryPromise({
+          try: () => handler({ ...auth, api })(request),
+          catch: (cause) => new AgentAccessDiscoveryError({ cause }),
+        }).pipe(Effect.flatMap(canonicalDiscoveryDocument)),
+      ),
+  })
 
 export const flowmarkAuthorizationServerMetadata = (auth: MetadataAuth) =>
   discoveryDocument(auth, oauthProviderAuthServerMetadata)
