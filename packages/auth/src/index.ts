@@ -3,6 +3,7 @@ export {
   createFlowmarkAuth,
   readAuthSecret,
   type FlowmarkAuth,
+  type RevokeDelegatedAgentAccess,
 } from "./create-auth.js"
 
 export { createAuthEmailCallbacks } from "./email-callbacks.js"

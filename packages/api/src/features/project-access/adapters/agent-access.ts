@@ -33,6 +33,23 @@ export const AgentAccessLive = Layer.effect(
       recordLastAuthenticated: Effect.fn(
         "AgentAccessLive.recordLastAuthenticated",
       )((input) => persist(store.recordLastAuthenticated(input))),
+      revokeConnection: Effect.fn("AgentAccessLive.revokeConnection")(
+        function* (input) {
+          return yield* store.revokeConnection(input).pipe(
+            Effect.catchTag("AgentAccessNotFound", () =>
+              Effect.fail(
+                new InvalidInput({
+                  cause:
+                    "That agent connection is not active or was already revoked.",
+                }),
+              ),
+            ),
+            Effect.catchTag("DatabaseError", (e) =>
+              Effect.fail(toPersistenceError(e)),
+            ),
+          )
+        },
+      ),
     })
   }),
 )

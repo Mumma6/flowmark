@@ -30,6 +30,8 @@ export enum DatabaseOperation {
   SubmitAgentAccessConsent = "submit-agent-access-consent",
   ListAgentAccessConnections = "list-agent-access-connections",
   GetAgentAccessConnectionDetail = "get-agent-access-connection-detail",
+  RevokeAgentAccessConnection = "revoke-agent-access-connection",
+  RevokeAllAgentAccessConnectionsForUser = "revoke-all-agent-access-connections-for-user",
   GetProjectForUser = "get-project-for-user",
   GetWorkspaceForUser = "get-workspace-for-user",
   ListApiKeys = "list-api-keys",

@@ -57,7 +57,9 @@ still apply. This is not a durable queue or a delivery guarantee.
 
 Reset-completion notices use the same lifetime handler after the password/session
 transaction commits, so notification failure does not turn completed recovery
-into an HTTP failure. Without a supplied lifetime handler, the callbacks await
+into an HTTP failure. After a successful reset, delegated agent OAuth connections
+for that account are revoked in the database (long-lived refresh families), so the
+agent must complete Connect Your Agent again. Without a supplied lifetime handler, the callbacks await
 submission, which is useful for capture tests. Requests never log raw tokens,
 recipients, provider bodies or credentials. No automatic verification send or
 verification auto-sign-in is enabled; normal access remains unverified-compatible.

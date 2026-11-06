@@ -4,8 +4,12 @@ import { Database, provideDatabase } from "../database.js"
 import type { AgentAccessConnectionSummary } from "./queries/list-agent-access-connections.js"
 import { getAgentAccessConnectionDetail } from "./queries/get-agent-access-connection-detail.js"
 import { listAgentAccessConnections } from "./queries/list-agent-access-connections.js"
-import { AgentAccessConsentRejected } from "./agent-access-errors.js"
+import {
+  AgentAccessConsentRejected,
+  AgentAccessNotFound,
+} from "./agent-access-errors.js"
 import { recordAgentAccessLastAuth } from "./writes/record-agent-access-last-auth.js"
+import { revokeAgentAccessConnection } from "./writes/revoke-agent-access-connection.js"
 import { submitAgentAccessConsent } from "./writes/submit-agent-access-consent.js"
 
 export interface AgentAccessStoreService {
@@ -32,6 +36,11 @@ export interface AgentAccessStoreService {
     readonly authorizationCodeId: string
     readonly at: Date
   }) => Effect.Effect<void, DatabaseError>
+  readonly revokeConnection: (input: {
+    readonly userId: string
+    readonly authorizationCodeId: string
+    readonly clientId: string
+  }) => Effect.Effect<void, AgentAccessNotFound | DatabaseError>
 }
 
 export class AgentAccessStore extends Context.Service<AgentAccessStore>()(
@@ -47,6 +56,8 @@ export class AgentAccessStore extends Context.Service<AgentAccessStore>()(
         submitConsent: (input) => provide(submitAgentAccessConsent(input)),
         recordLastAuthenticated: (input) =>
           provide(recordAgentAccessLastAuth(input)),
+        revokeConnection: (input) =>
+          provide(revokeAgentAccessConnection(input)),
       } satisfies AgentAccessStoreService
     }),
   },

@@ -34,6 +34,11 @@ export interface AgentAccessService {
     readonly authorizationCodeId: string
     readonly at: Date
   }) => Effect.Effect<void, PersistenceError>
+  readonly revokeConnection: (input: {
+    readonly userId: string
+    readonly authorizationCodeId: string
+    readonly clientId: string
+  }) => Effect.Effect<void, InvalidInput | PersistenceError>
 }
 
 export class AgentAccess extends Context.Service<

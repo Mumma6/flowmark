@@ -73,11 +73,16 @@ still a **project member** **and** there is an **active** (not revoked, unexpire
 refresh token row for that user, client and authorization-code id. Sending only
 one of the two grant headers fails closed (read unauthorized).
 
-**Note.** Rows in `agent_access_grant_projects` are written when consent binds
-projects to a connection (later TASK-004.x). Until populated, delegated reads
-deny even when OAuth exchange succeeds — provider tokens alone do not imply
-project scope. Ordinary dashboard reads (session + optional `x-flowmark-project-id`
-without grant headers) are unchanged.
+**Grant rows and revocation.** Session consent (`agentAccess.submitConsent`) writes
+`agent_access_grant_projects` for the active grant family. Revoking a connection
+(`agentAccess.revokeConnection`) or completing **password reset** revokes OAuth
+refresh/access rows in storage, deletes grant and last-auth rows for that family,
+and marks consent intents `revoked` where applicable — so a **second API instance**
+still denies delegated reads because authorization re-reads stored state. Submitting
+consent for a **new** grant family supersedes a prior family (old tokens revoked;
+intents `superseded`); reconnection cannot widen or resurrect revoked credentials.
+Ordinary dashboard reads (session + optional `x-flowmark-project-id` without grant
+headers) are unchanged.
 
 Authentication responses through the proxy and registration alias use
 `Cache-Control: no-store`. Provider diagnostics retain severity with a fixed

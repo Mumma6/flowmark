@@ -64,6 +64,7 @@ export const oauthConsentIntentState = pgEnum("oauth_consent_intent_state", [
   "completed",
   "superseded",
   "failed",
+  "revoked",
 ])
 
 export const workspaces = pgTable("workspaces", {
