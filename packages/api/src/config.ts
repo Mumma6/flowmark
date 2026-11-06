@@ -5,11 +5,14 @@ import { ConfigurationError } from "./errors.js"
 const SettingsSchema = Schema.Struct({
   databaseUrl: Schema.Redacted(Schema.NonEmptyString),
   demoMode: Schema.Boolean,
+  /** MCP resource URL for consent/grant checks, e.g. `{apiOrigin}/mcp`. */
+  mcpResourceUrl: Schema.optional(Schema.String),
 })
 
 export interface ApiSettingsService {
   readonly databaseUrl: Redacted.Redacted<string>
   readonly demoMode: boolean
+  readonly mcpResourceUrl: string | undefined
 }
 export class ApiSettings extends Context.Service<
   ApiSettings,
@@ -18,13 +21,23 @@ export class ApiSettings extends Context.Service<
   static readonly layer = Layer.effect(
     ApiSettings,
     Effect.gen(function* () {
-      const input = yield* Effect.sync(() => ({
-        databaseUrl:
-          process.env.DATABASE_URL === undefined
-            ? undefined
-            : Redacted.make(process.env.DATABASE_URL),
-        demoMode: process.env.FLOWMARK_DEMO_MODE === "true",
-      }))
+      const input = yield* Effect.sync(() => {
+        const flowmarkApiUrl = process.env.FLOWMARK_API_URL?.trim()
+        const explicitMcp = process.env.FLOWMARK_MCP_RESOURCE_URL?.trim()
+        const derivedMcp =
+          explicitMcp ??
+          (flowmarkApiUrl
+            ? `${flowmarkApiUrl.replace(/\/$/, "")}/mcp`
+            : undefined)
+        return {
+          databaseUrl:
+            process.env.DATABASE_URL === undefined
+              ? undefined
+              : Redacted.make(process.env.DATABASE_URL),
+          demoMode: process.env.FLOWMARK_DEMO_MODE === "true",
+          mcpResourceUrl: derivedMcp,
+        }
+      })
       if (
         input.demoMode &&
         (process.env.NODE_ENV === "production" ||
@@ -53,9 +66,14 @@ export class ApiSettings extends Context.Service<
             Effect.fail(new ConfigurationError({ cause: error })),
         }),
       )
-      return yield* Schema.decodeUnknownEffect(SettingsSchema)(input).pipe(
-        Effect.mapError((cause) => new ConfigurationError({ cause })),
-      )
+      const decoded = yield* Schema.decodeUnknownEffect(SettingsSchema)(
+        input,
+      ).pipe(Effect.mapError((cause) => new ConfigurationError({ cause })))
+      return {
+        databaseUrl: decoded.databaseUrl,
+        demoMode: decoded.demoMode,
+        mcpResourceUrl: decoded.mcpResourceUrl ?? undefined,
+      } satisfies ApiSettingsService
     }),
   )
 }

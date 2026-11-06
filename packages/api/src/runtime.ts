@@ -4,12 +4,15 @@ import { ResultDeclarationStore } from "@flowmark/db/persistence"
 import { Effect, Layer } from "effect"
 import { ApiSettings } from "./config.js"
 import { AuthorizeProject } from "./features/project-access/use-cases/authorize-project.js"
+import { AgentAccessLive } from "./features/project-access/adapters/agent-access.js"
+import { AgentAccess } from "./features/project-access/ports/agent-access.js"
 import { ManageProject } from "./features/project-access/use-cases/manage-project.js"
 import { Onboarding } from "./features/project-access/use-cases/onboarding.js"
 import { IngestWorkflowEvents } from "./features/workflows/use-cases/ingest-events.js"
 import { GetProjectWorkflowData } from "./features/workflows/use-cases/get-project-workflow-data.js"
 import { IngestBrowserWorkflowEvents } from "./features/workflows/use-cases/ingest-browser-events.js"
 import {
+  AgentAccessStore,
   ProjectCredentialsStore,
   WorkflowStore,
 } from "@flowmark/db/persistence"
@@ -21,6 +24,7 @@ const persistence = Layer.mergeAll(
   ResultDeclarationStore.layer,
   WorkflowStore.layer,
   ProjectCredentialsStore.layer,
+  AgentAccessStore.layer,
 ).pipe(Layer.provide(DatabaseLive))
 const databaseAdapters = Layer.mergeAll(
   ResultDeclarationsLive,
@@ -30,6 +34,7 @@ const databaseAdapters = Layer.mergeAll(
 const dependencies = AuthorizeProject.layer.pipe(
   Layer.provideMerge(databaseAdapters),
 )
+const agentAccessAdapter = AgentAccessLive.pipe(Layer.provide(persistence))
 
 export const ApiLive = Layer.mergeAll(
   ManageResultDeclarations.layer,
@@ -38,13 +43,18 @@ export const ApiLive = Layer.mergeAll(
   IngestBrowserWorkflowEvents.layer,
   ManageProject.layer,
   Onboarding.layer,
-).pipe(Layer.provide(dependencies), Layer.provide(ApiSettings.layer))
+).pipe(
+  Layer.provideMerge(agentAccessAdapter),
+  Layer.provide(dependencies),
+  Layer.provide(ApiSettings.layer),
+)
 
 /** Request boundary: acquire dependencies, execute once, then release the scope. */
 export function runApi<A, E>(
   operation: Effect.Effect<
     A,
     E,
+    | AgentAccess
     | ManageResultDeclarations
     | IngestWorkflowEvents
     | GetProjectWorkflowData

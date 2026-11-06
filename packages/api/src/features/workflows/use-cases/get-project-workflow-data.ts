@@ -7,6 +7,7 @@ import {
   type PersistenceError,
   type Unauthorized,
 } from "../../../errors.js"
+import { AgentAccess } from "../../project-access/ports/agent-access.js"
 import { AuthorizeProject } from "../../project-access/use-cases/authorize-project.js"
 import {
   PeriodReportQuerySchema,
@@ -178,6 +179,7 @@ export class GetProjectWorkflowData extends Context.Service<
     Effect.gen(function* () {
       const authorization = yield* AuthorizeProject
       const repository = yield* WorkflowRepository
+      const agentAccess = yield* AgentAccess
 
       const authorizeReader = Effect.fn(
         "GetProjectWorkflowData.authorizeReader",
@@ -190,7 +192,17 @@ export class GetProjectWorkflowData extends Context.Service<
             authorization.authorizeUser(userId, projectId),
           ),
           Match.tag("DelegatedUser", (delegated) =>
-            authorization.authorizeDelegatedReader(delegated),
+            Effect.gen(function* () {
+              const projectId =
+                yield* authorization.authorizeDelegatedReader(delegated)
+              yield* agentAccess.recordLastAuthenticated({
+                userId: delegated.userId,
+                clientId: delegated.clientId,
+                authorizationCodeId: delegated.authorizationCodeId,
+                at: new Date(),
+              })
+              return projectId
+            }),
           ),
           Match.exhaustive,
         )

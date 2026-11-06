@@ -1,4 +1,4 @@
-import { Array as Arr } from "effect"
+import { Array as EffectArray } from "effect"
 import type { DayInsight, Run } from "../platform/api-types"
 
 export function percentile(values: readonly number[], p: number) {
@@ -70,8 +70,8 @@ export function dailyFromRuns(runs: readonly Run[], days = 30): DayInsight[] {
       durations: number[]
     }
   >()
-  Arr.forEach(
-    Arr.makeBy(days, (index) => days - 1 - index),
+  EffectArray.forEach(
+    EffectArray.makeBy(days, (index) => days - 1 - index),
     (offset) => {
       const date = new Date(today)
       date.setUTCDate(today.getUTCDate() - offset)
@@ -83,7 +83,7 @@ export function dailyFromRuns(runs: readonly Run[], days = 30): DayInsight[] {
       })
     },
   )
-  Arr.forEach(Arr.fromIterable(runs), (run) => {
+  EffectArray.forEach(EffectArray.fromIterable(runs), (run) => {
     const day = run.startedAt.slice(0, 10)
     const bucket = byDate.get(day)
     if (!bucket) {

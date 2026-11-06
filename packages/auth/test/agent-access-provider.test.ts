@@ -1,7 +1,14 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 import { sql } from "drizzle-orm"
-import { Array as Arr, Cause, Effect, Exit, Option, Schema } from "effect"
+import {
+  Array as EffectArray,
+  Cause,
+  Effect,
+  Exit,
+  Option,
+  Schema,
+} from "effect"
 import { createDatabase } from "@flowmark/db"
 import { createFlowmarkAuth } from "../src/create-auth.js"
 import { requireAgentAccessProjectId } from "../src/agent-access/protocol-contract.js"
@@ -50,7 +57,7 @@ test("disabled agent access keeps ordinary auth and hides discovery", () =>
       const auth = authFor(local, false)
       const context = yield* Effect.promise(() => auth.$context)
       assert.deepEqual(
-        Arr.map(context.options.plugins ?? [], (plugin) => plugin.id),
+        EffectArray.map(context.options.plugins ?? [], (plugin) => plugin.id),
         ["flowmark-account-rate-limits"],
       )
       assert.equal(context.options.advanced?.disableCSRFCheck, false)
@@ -89,7 +96,10 @@ test("enabled discovery uses canonical local and self-host values", () =>
           const auth = authFor(deployment, true)
           const context = yield* Effect.promise(() => auth.$context)
           assert.deepEqual(
-            Arr.map(context.options.plugins ?? [], (plugin) => plugin.id),
+            EffectArray.map(
+              context.options.plugins ?? [],
+              (plugin) => plugin.id,
+            ),
             [
               "flowmark-account-rate-limits",
               ...FLOWMARK_AGENT_ACCESS_PROVIDER.pluginIdsWhenEnabled,
@@ -115,8 +125,11 @@ test("enabled discovery uses canonical local and self-host values", () =>
           )
           assert.equal(metadata.jwks_uri, `${deployment.issuerOrigin}/jwks`)
           assert.equal(metadata.registration_endpoint, undefined)
-          assert.equal(Arr.contains(scopes, "flowmark:read"), true)
-          assert.equal(Arr.contains(grants, "client_credentials"), false)
+          assert.equal(EffectArray.contains(scopes, "flowmark:read"), true)
+          assert.equal(
+            EffectArray.contains(grants, "client_credentials"),
+            false,
+          )
           assert.equal(JSON.stringify(metadata).includes("projectId"), false)
           const openId = yield* Effect.promise(() =>
             flowmarkOpenIdConfiguration(auth)(
@@ -127,7 +140,7 @@ test("enabled discovery uses canonical local and self-host values", () =>
           ).pipe(Effect.flatMap(readDocument))
           const claims = yield* stringList(openId, "claims_supported")
           assert.equal(openId.issuer, deployment.issuerOrigin)
-          assert.equal(Arr.contains(claims, "project_id"), false)
+          assert.equal(EffectArray.contains(claims, "project_id"), false)
         }),
       { concurrency: 1 },
     ),
@@ -173,7 +186,10 @@ test(
                 catch: (cause) => cause,
               })
               assert.equal(
-                Arr.contains(["localhost", "127.0.0.1", "[::1]"], hostname),
+                EffectArray.contains(
+                  ["localhost", "127.0.0.1", "[::1]"],
+                  hostname,
+                ),
                 true,
               )
               const database = yield* Effect.acquireRelease(
@@ -206,7 +222,7 @@ test(
                   ),
                 catch: (cause) => cause,
               })
-              assert.equal(Arr.fromIterable(rows)[0]?.count, 1)
+              assert.equal(EffectArray.fromIterable(rows)[0]?.count, 1)
             }),
           ),
       }),

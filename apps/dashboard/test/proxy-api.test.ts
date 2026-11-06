@@ -1,4 +1,4 @@
-import { Array as Arr } from "effect"
+import { Array as EffectArray } from "effect"
 import {
   AUTH_CLIENT_IP_HEADER,
   AUTH_PROXY_IDENTITY_HEADER,
@@ -97,8 +97,8 @@ it("returns 502 and logs only a safe label for an upstream transport failure", a
     type: "DashboardProxyError",
   })
   const output = inspect(log.mock.calls)
-  Arr.forEach(
-    Arr.fromIterable([target.href, target.password, privateValue]),
+  EffectArray.forEach(
+    EffectArray.fromIterable([target.href, target.password, privateValue]),
     (value) => {
       expect(output.includes(value)).toBe(false)
     },
@@ -170,14 +170,17 @@ it("preserves provider retry guidance and browser CSRF metadata without forwardi
   )
   expect(response.status).toBe(429)
   expect(response.headers.get("cache-control")).toBe("no-store")
-  Arr.forEach(Arr.fromIterable(["retry-after", "x-retry-after"]), (name) => {
-    expect(response.headers.get(name)).toBe("30")
-  })
+  EffectArray.forEach(
+    EffectArray.fromIterable(["retry-after", "x-retry-after"]),
+    (name) => {
+      expect(response.headers.get(name)).toBe("30")
+    },
+  )
   const forwarded = fetch.mock.calls[0][1].headers as Headers
   expect(forwarded.get("origin")).toBe("https://untrusted.example")
   expect(forwarded.get("sec-fetch-site")).toBe("cross-site")
-  Arr.forEach(
-    Arr.fromIterable([
+  EffectArray.forEach(
+    EffectArray.fromIterable([
       "x-forwarded-for",
       "x-real-ip",
       "x-vercel-forwarded-for",

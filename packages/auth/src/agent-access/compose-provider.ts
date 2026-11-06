@@ -7,7 +7,7 @@ import {
 } from "@better-auth/oauth-provider"
 import { jwt } from "better-auth/plugins"
 import {
-  Array as Arr,
+  Array as EffectArray,
   Data,
   Effect,
   Match,
@@ -106,7 +106,7 @@ export const resolveEnabledAgentAccess = Effect.fn(
   return yield* Match.value(resource.protocol).pipe(
     Match.when("https:", () => Effect.succeed(origins)),
     Match.when("http:", () =>
-      Arr.contains(loopbackHosts, resource.hostname)
+      EffectArray.contains(loopbackHosts, resource.hostname)
         ? Effect.succeed(origins)
         : Effect.fail(
             new AgentAccessContractError({

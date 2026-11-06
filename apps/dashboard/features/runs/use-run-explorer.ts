@@ -1,5 +1,5 @@
 "use client"
-import { Array as Arr } from "effect"
+import { Array as EffectArray } from "effect"
 
 import { useQuery } from "@tanstack/react-query"
 import { usePathname, useSearchParams } from "next/navigation"
@@ -29,13 +29,16 @@ export function useRunExplorer(workflow?: string) {
     history: "replace" | "push" = "replace",
   ) => {
     const url = new URLSearchParams(params.toString())
-    Arr.forEach(Arr.fromIterable(Object.entries(next)), ([key, value]) => {
-      if (value === explorerDefaults[key as keyof ExplorerFilters]) {
-        url.delete(key)
-      } else {
-        url.set(key, value)
-      }
-    })
+    EffectArray.forEach(
+      EffectArray.fromIterable(Object.entries(next)),
+      ([key, value]) => {
+        if (value === explorerDefaults[key as keyof ExplorerFilters]) {
+          url.delete(key)
+        } else {
+          url.set(key, value)
+        }
+      },
+    )
     window.history[history === "push" ? "pushState" : "replaceState"](
       null,
       "",

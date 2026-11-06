@@ -15,6 +15,12 @@ export {
   type AuthorizeProjectService,
 } from "./features/project-access/use-cases/authorize-project.js"
 export {
+  AgentAccess,
+  type AgentAccessConnection,
+  type AgentAccessService,
+} from "./features/project-access/ports/agent-access.js"
+export { AgentAccessLive } from "./features/project-access/adapters/agent-access.js"
+export {
   ManageProject,
   type ManageProjectService,
 } from "./features/project-access/use-cases/manage-project.js"

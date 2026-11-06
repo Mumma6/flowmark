@@ -1,4 +1,4 @@
-import { Array as Arr } from "effect"
+import { Array as EffectArray } from "effect"
 import type { RouterOutputs } from "../platform/api-types"
 import {
   explorerDefaults,
@@ -166,7 +166,7 @@ export function runHref(id: string, from: string) {
 export function distinctSearchReferences(
   references: readonly SearchReference[],
 ) {
-  return Arr.dedupeWith(
+  return EffectArray.dedupeWith(
     references,
     (a, b) =>
       a.workflow === b.workflow && a.key === b.key && a.value === b.value,

@@ -2,7 +2,7 @@ import { createHash, randomBytes, randomUUID } from "node:crypto"
 import assert from "node:assert/strict"
 import { it } from "node:test"
 import {
-  Array as Arr,
+  Array as EffectArray,
   Cause,
   Effect,
   Exit,
@@ -110,7 +110,10 @@ it(
               assert.equal(mismatchText.includes(secret), false)
               const hostname = new URL(url).hostname
               assert.equal(
-                Arr.contains(["localhost", "127.0.0.1", "[::1]"], hostname),
+                EffectArray.contains(
+                  ["localhost", "127.0.0.1", "[::1]"],
+                  hostname,
+                ),
                 true,
               )
               const database = yield* Effect.acquireRelease(
@@ -140,8 +143,11 @@ it(
               })
               const context = yield* Effect.promise(() => auth.$context)
               assert.equal(
-                Arr.contains(
-                  Arr.map(context.options.plugins ?? [], (plugin) => plugin.id),
+                EffectArray.contains(
+                  EffectArray.map(
+                    context.options.plugins ?? [],
+                    (plugin) => plugin.id,
+                  ),
                   "flowmark-account-rate-limits",
                 ),
                 true,
@@ -212,7 +218,10 @@ it(
                   }),
                 ),
               )
-              assert.equal(Arr.contains([403, 503], forged.status), true)
+              assert.equal(
+                EffectArray.contains([403, 503], forged.status),
+                true,
+              )
               const forgedBody = JSON.stringify(yield* readJson(forged))
               assert.equal(forgedBody.includes(password), false)
               assert.equal(forgedBody.includes("forged-proxy-identity"), false)
@@ -237,7 +246,7 @@ it(
               assert.equal(recovery.status, 200)
               const recoveryBody = JSON.stringify(yield* readJson(recovery))
               const messages = yield* capture.read
-              const reset = Arr.findFirst(messages, (message) =>
+              const reset = EffectArray.findFirst(messages, (message) =>
                 message.subject.includes("Reset"),
               )
               const resetToken = Option.match(reset, {

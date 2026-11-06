@@ -1,4 +1,4 @@
-import { Array as Arr, Effect, Schema } from "effect"
+import { Array as EffectArray, Effect, Schema } from "effect"
 import {
   AGENT_ACCESS_DASHBOARD_BROWSER_PATHS,
   AGENT_ACCESS_ISSUER_PROXY_PATHS,
@@ -137,7 +137,7 @@ export const buildRequireMcpAuthOverrides = (
 
 export const isAgentAccessProjectScopedTool = (
   toolName: AgentAccessMcpToolName,
-): boolean => Arr.contains(AGENT_ACCESS_PROJECT_SCOPED_TOOLS, toolName)
+): boolean => EffectArray.contains(AGENT_ACCESS_PROJECT_SCOPED_TOOLS, toolName)
 
 export const requireAgentAccessProjectId = Effect.fn(
   "AgentAccess.requireProjectId",

@@ -1,4 +1,4 @@
-import { Array as Arr } from "effect"
+import { Array as EffectArray } from "effect"
 import {
   AUTH_PROXY_IDENTITY_HEADER,
   signAuthProxyIdentity,
@@ -25,8 +25,8 @@ const proxyToApi = Effect.fn("proxyToApi")(function* (
   const api = yield* DashboardApi
   const incoming = new URL(request.url)
   const headers = new Headers()
-  Arr.forEach(
-    Arr.fromIterable([
+  EffectArray.forEach(
+    EffectArray.fromIterable([
       "cookie",
       "content-type",
       "origin",
@@ -74,8 +74,8 @@ const proxyToApi = Effect.fn("proxyToApi")(function* (
     )
     .pipe(Effect.mapError((cause) => new DashboardProxyError({ cause })))
   const forwarded = new Headers()
-  Arr.forEach(
-    Arr.fromIterable(response.headers.getSetCookie?.() ?? []),
+  EffectArray.forEach(
+    EffectArray.fromIterable(response.headers.getSetCookie?.() ?? []),
     (cookieValue) => {
       forwarded.append("set-cookie", cookieValue)
     },
@@ -102,8 +102,12 @@ const proxyToApi = Effect.fn("proxyToApi")(function* (
   if (responseType) {
     forwarded.set("content-type", responseType)
   }
-  Arr.forEach(
-    Arr.fromIterable(["retry-after", "x-retry-after", "www-authenticate"]),
+  EffectArray.forEach(
+    EffectArray.fromIterable([
+      "retry-after",
+      "x-retry-after",
+      "www-authenticate",
+    ]),
     (name) => {
       const value = response.headers.get(name)
       if (value) {

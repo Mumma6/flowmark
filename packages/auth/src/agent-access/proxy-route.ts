@@ -1,5 +1,5 @@
 import {
-  Array as Arr,
+  Array as EffectArray,
   Data,
   Effect,
   Match,
@@ -37,16 +37,17 @@ const unsafeSegment = (segment: string) =>
 export const oauthIssuerPath = (
   segments: readonly string[],
 ): Option.Option<string> =>
-  Arr.some(segments, unsafeSegment)
+  EffectArray.some(segments, unsafeSegment)
     ? Option.none()
     : Option.some(
-        `${AGENT_ACCESS_ISSUER_PROXY_PATHS.oauthPrefix}/${Arr.join(segments, "/")}`,
+        `${AGENT_ACCESS_ISSUER_PROXY_PATHS.oauthPrefix}/${EffectArray.join(segments, "/")}`,
       )
 
 export const agentAccessUpstreamPath = (
   issuerPath: string,
 ): Option.Option<string> =>
-  Arr.contains(exactIssuerPaths, issuerPath) || oauthIssuerPathname(issuerPath)
+  EffectArray.contains(exactIssuerPaths, issuerPath) ||
+  oauthIssuerPathname(issuerPath)
     ? Option.some(
         `${AGENT_ACCESS_DASHBOARD_BROWSER_PATHS.existingAuthApiPrefix}${issuerPath}`,
       )
@@ -120,7 +121,7 @@ const callbackTransport = (url: URL) =>
   Match.value(url.protocol).pipe(
     Match.when("https:", () => Effect.void),
     Match.when("http:", () =>
-      Arr.contains(
+      EffectArray.contains(
         AGENT_ACCESS_CLIENT_POLICY.nativeLoopbackRedirectHosts,
         url.hostname,
       )
@@ -135,8 +136,8 @@ const callbackTransport = (url: URL) =>
   )
 
 const registeredSearchHeld = (registered: URL, destination: URL) =>
-  Arr.every(
-    Arr.fromIterable(registered.searchParams.entries()),
+  EffectArray.every(
+    EffectArray.fromIterable(registered.searchParams.entries()),
     ([key, value]) => destination.searchParams.get(key) === value,
   )
 

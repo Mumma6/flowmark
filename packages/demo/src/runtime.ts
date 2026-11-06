@@ -42,6 +42,7 @@ export const fixtureApi = (
       Layer.succeed(ApiSettings, {
         demoMode: false,
         databaseUrl: Redacted.make("fixture-transaction"),
+        mcpResourceUrl: undefined,
       }),
     ),
   )

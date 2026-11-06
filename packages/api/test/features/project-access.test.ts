@@ -99,6 +99,7 @@ function provide(credentials = projectCredentials()) {
       Layer.succeed(ApiSettings, {
         databaseUrl: Redacted.make("postgresql://unused"),
         demoMode: true,
+        mcpResourceUrl: undefined,
       }),
     ),
   )

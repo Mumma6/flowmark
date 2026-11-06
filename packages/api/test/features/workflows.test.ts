@@ -16,6 +16,10 @@ import {
 import { PersistenceError, RunNotFound } from "../../src/errors"
 import { WorkflowRepositoryLive } from "../../src/features/workflows/adapters/workflow-repository"
 import { ApiSettings } from "../../src/config"
+import {
+  AgentAccess,
+  type AgentAccessService,
+} from "../../src/features/project-access/ports/agent-access"
 import { AuthorizeProject } from "../../src/features/project-access/use-cases/authorize-project"
 import { IngestWorkflowEvents } from "../../src/features/workflows/use-cases/ingest-events"
 import { IngestBrowserWorkflowEvents } from "../../src/features/workflows/use-cases/ingest-browser-events"
@@ -327,22 +331,35 @@ function projectCredentials(
   })
 }
 
+function agentAccess(overrides: Partial<AgentAccessService> = {}) {
+  return AgentAccess.of({
+    listConnections: () => Effect.succeed([]),
+    getConnection: () => Effect.succeed(undefined),
+    submitConsent: () => Effect.succeed("authorization-code-id"),
+    recordLastAuthenticated: () => Effect.void,
+    ...overrides,
+  })
+}
+
 function dependencies(
   store = repository(),
   demoMode = true,
   credentials = projectCredentials(),
+  access = agentAccess(),
 ) {
   return AuthorizeProject.layer.pipe(
     Layer.provideMerge(
       Layer.mergeAll(
         Layer.succeed(WorkflowRepository, store),
         Layer.succeed(ProjectCredentials, credentials),
+        Layer.succeed(AgentAccess, access),
       ),
     ),
     Layer.provide(
       Layer.succeed(ApiSettings, {
         databaseUrl: Redacted.make("postgresql://unused"),
         demoMode,
+        mcpResourceUrl: undefined,
       }),
     ),
   )
@@ -395,6 +412,7 @@ describe("API Effect services", () => {
                 Layer.succeed(ApiSettings, {
                   databaseUrl: Redacted.make("postgresql://unused"),
                   demoMode: false,
+                  mcpResourceUrl: undefined,
                 }),
               ),
             ),
@@ -770,6 +788,7 @@ describe("API Effect services", () => {
   it("keeps workflow reads behind delegated grant intersection", async () => {
     const snapshot = vi.fn(repository().snapshot)
     const delegatedReaderProject = vi.fn(() => Effect.succeed("p-delegated"))
+    const recordLastAuthenticated = vi.fn(() => Effect.void)
     await Effect.runPromise(
       Effect.flatMap(GetProjectWorkflowData, (service) =>
         service.snapshot({
@@ -787,6 +806,7 @@ describe("API Effect services", () => {
                 repository({ snapshot }),
                 true,
                 projectCredentials({ delegatedReaderProject }),
+                agentAccess({ recordLastAuthenticated }),
               ),
             ),
           ),
@@ -800,6 +820,12 @@ describe("API Effect services", () => {
       projectId: "p-delegated",
     })
     expect(snapshot).toHaveBeenCalledWith("p-delegated")
+    expect(recordLastAuthenticated).toHaveBeenCalledWith({
+      userId: "user-1",
+      clientId: "client-1",
+      authorizationCodeId: "fam-1",
+      at: expect.any(Date),
+    })
   })
 
   it("passes redacted keys and required permissions to storage", async () => {

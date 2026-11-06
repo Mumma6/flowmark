@@ -13,6 +13,7 @@ import {
 import { initTRPC, TRPCError } from "@trpc/server"
 import { Effect, Exit, Match, Option, Schema } from "effect"
 import {
+  AgentAccess,
   ManageResultDeclarations,
   ResultDeclarationSchema,
   ConfigurationError,
@@ -94,6 +95,28 @@ const OnboardingStep = Schema.toStandardSchemaV1(
     step: Schema.Literals(["project", "key", "install", "instrument", "run"]),
   }),
 )
+const NonEmptyString = Schema.Trim.pipe(Schema.check(Schema.isMinLength(1)))
+const HttpOrHttpsUrlSchema = Schema.String.pipe(
+  Schema.check(Schema.isPattern(/^https?:\/\/.+/)),
+)
+const AgentAccessSubmitConsentInput = Schema.toStandardSchemaV1(
+  Schema.Struct({
+    oauthConsentId: NonEmptyString,
+    clientId: NonEmptyString,
+    redirectUri: HttpOrHttpsUrlSchema,
+    requestedScopes: Schema.Array(NonEmptyString),
+    resourceUrl: Schema.optional(HttpOrHttpsUrlSchema),
+    projectIds: Schema.Array(UuidSchema).pipe(
+      Schema.check(Schema.isMinLength(1)),
+    ),
+  }),
+)
+const AgentAccessConnectionInput = Schema.toStandardSchemaV1(
+  Schema.Struct({
+    authorizationCodeId: NonEmptyString,
+    clientId: NonEmptyString,
+  }),
+)
 
 const sessionUserId = Effect.fn("sessionUserId")(function* (request: Request) {
   if (!request.headers.get("cookie") || !process.env.DATABASE_URL) {
@@ -139,6 +162,7 @@ async function executeQuery<A>(
     | ConfigurationError
     | InvalidInput
     | ManagementRateLimited,
+    | AgentAccess
     | GetProjectWorkflowData
     | ManageProject
     | Onboarding
@@ -269,7 +293,7 @@ function sessionQuery<A>(
   ) => Effect.Effect<
     A,
     Unauthorized | PersistenceError | InvalidInput | ManagementRateLimited,
-    ManageProject | ManageResultDeclarations
+    ManageProject | ManageResultDeclarations | AgentAccess
   >,
 ) {
   return executeQuery(
@@ -302,6 +326,29 @@ function onboardingQuery<A>(
         Option.match({
           onNone: () => Effect.fail(new Unauthorized({ permission: "read" })),
           onSome: operation,
+        }),
+      ),
+    ),
+  )
+}
+
+function sessionAgentAccessQuery<A>(
+  request: Request,
+  forUser: (
+    userId: string,
+  ) => Effect.Effect<
+    A,
+    Unauthorized | PersistenceError | InvalidInput | ManagementRateLimited,
+    AgentAccess
+  >,
+) {
+  return executeQuery(
+    request,
+    sessionUserId(request).pipe(
+      Effect.flatMap(
+        Option.match({
+          onNone: () => Effect.fail(new Unauthorized({ permission: "read" })),
+          onSome: forUser,
         }),
       ),
     ),
@@ -449,6 +496,60 @@ export const appRouter = t.router({
         Effect.flatMap(Onboarding, (onboarding) => onboarding.complete(userId)),
       ),
     ),
+  }),
+  agentAccess: t.router({
+    list: t.procedure.query(({ ctx }) =>
+      sessionAgentAccessQuery(ctx.request, (userId) =>
+        Effect.flatMap(AgentAccess, (access) => access.listConnections(userId)),
+      ),
+    ),
+    connection: t.procedure
+      .input(AgentAccessConnectionInput)
+      .query(({ ctx, input }) =>
+        sessionAgentAccessQuery(ctx.request, (userId) =>
+          Effect.flatMap(AgentAccess, (access) =>
+            access.getConnection({
+              userId,
+              authorizationCodeId: input.authorizationCodeId,
+              clientId: input.clientId,
+            }),
+          ),
+        ),
+      ),
+    submitConsent: t.procedure
+      .input(AgentAccessSubmitConsentInput)
+      .mutation(({ ctx, input }) =>
+        sessionAgentAccessQuery(ctx.request, (userId) =>
+          Effect.gen(function* () {
+            const explicitMcp = process.env.FLOWMARK_MCP_RESOURCE_URL?.trim()
+            const flowmarkApiUrl = process.env.FLOWMARK_API_URL?.trim()
+            const derivedMcp =
+              explicitMcp ??
+              (flowmarkApiUrl
+                ? `${flowmarkApiUrl.replace(/\/$/, "")}/mcp`
+                : undefined)
+            const resourceUrl = input.resourceUrl?.trim() ?? derivedMcp
+            if (!resourceUrl) {
+              return yield* Effect.fail(
+                new InvalidInput({
+                  cause:
+                    "Resource URL is required, or set FLOWMARK_API_URL / FLOWMARK_MCP_RESOURCE_URL for the default MCP resource.",
+                }),
+              )
+            }
+            const access = yield* AgentAccess
+            return yield* access.submitConsent({
+              userId,
+              oauthConsentId: input.oauthConsentId,
+              clientId: input.clientId,
+              redirectUri: input.redirectUri,
+              requestedScopes: input.requestedScopes,
+              resourceUrl,
+              projectIds: input.projectIds,
+            })
+          }),
+        ),
+      ),
   }),
   resultDeclarations: t.router({
     searchFields: t.procedure

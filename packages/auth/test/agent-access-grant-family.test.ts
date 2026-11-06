@@ -2,7 +2,7 @@ import { createHash, randomBytes, randomUUID } from "node:crypto"
 import assert from "node:assert/strict"
 import { it } from "node:test"
 import { eq, like } from "drizzle-orm"
-import { Array as Arr, Effect, Option, Schema } from "effect"
+import { Array as EffectArray, Effect, Option, Schema } from "effect"
 import {
   createDatabase,
   oauthClient,
@@ -70,7 +70,10 @@ it(
               void restore
               const hostname = new URL(url).hostname
               assert.equal(
-                Arr.contains(["localhost", "127.0.0.1", "[::1]"], hostname),
+                EffectArray.contains(
+                  ["localhost", "127.0.0.1", "[::1]"],
+                  hostname,
+                ),
                 true,
               )
               const database = yield* Effect.acquireRelease(
@@ -298,7 +301,7 @@ it(
               )
               assert.equal(claims.iss, local.issuerOrigin)
               assert.equal(
-                Arr.contains(
+                EffectArray.contains(
                   typeof claims.aud === "string" ? [claims.aud] : claims.aud,
                   `${local.apiOrigin}/mcp`,
                 ),
