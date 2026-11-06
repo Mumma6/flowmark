@@ -29,9 +29,11 @@ the local fixture use the same provider login implementation.
   called with `agentAccess`. The disabled factory keeps the existing email,
   session, origin and CSRF plugins only. Enabled discovery documents advertise issuer-root
   `/.well-known/oauth-authorization-server`,
-  `/.well-known/openid-configuration`, `/oauth2/*` and `/jwks`. The auth
-  handler still serves those routes under `/api/auth` until the dashboard
-  forwards the issuer-root paths. The MCP resource identifier is
+  `/.well-known/openid-configuration`, `/oauth2/*` and `/jwks`. The dashboard
+  forwards only those issuer paths to the API auth handler under `/api/auth`.
+  Ordinary `/api/auth/*` redirects stay on the dashboard origin. An
+  `/oauth2/*` response may redirect to the request's own loopback or HTTPS
+  `redirect_uri`, and nowhere else. The MCP resource identifier is
   `{apiOrigin}/mcp`.
   Dynamic client registration is off, and remote client-metadata documents are
   refused. A provider token is not a project grant: project reads still require

@@ -73,6 +73,14 @@ export const AGENT_ACCESS_DASHBOARD_BROWSER_PATHS = {
   oauthConsentPage: "/connect/agent/consent",
 } as const
 
+/** Issuer paths the dashboard proxy forwards onto the API auth handler. */
+export const AGENT_ACCESS_ISSUER_PROXY_PATHS = {
+  authorizationServerMetadata: "/.well-known/oauth-authorization-server",
+  openIdConfiguration: "/.well-known/openid-configuration",
+  jwks: "/jwks",
+  oauthPrefix: "/oauth2",
+} as const
+
 /** Initial admission budgets (Flowmark policy). Separate MCP limiter from login. */
 export const AGENT_ACCESS_ADMISSION_BUDGETS_PROVISIONAL = {
   oauthAuthorizePerTrustedSourcePerMinute: 60,

@@ -1,5 +1,7 @@
 import { Array as Arr, Effect, Schema } from "effect"
 import {
+  AGENT_ACCESS_DASHBOARD_BROWSER_PATHS,
+  AGENT_ACCESS_ISSUER_PROXY_PATHS,
   AGENT_ACCESS_OAUTH_SCOPE_READ,
   AGENT_ACCESS_PROJECT_SCOPED_TOOLS,
   type AgentAccessMcpToolName,
@@ -98,21 +100,23 @@ export const buildAgentAccessRouteMap = (
     mcpResourceUrl,
     mcpHttpPostPath: "/mcp",
     protectedResourceMetadataPath: "/.well-known/oauth-protected-resource",
-    authorizationServerMetadataPath: "/.well-known/oauth-authorization-server",
-    openIdConfigurationPath: "/.well-known/openid-configuration",
-    jwksPath: "/jwks",
-    oauthPrefix: "/oauth2",
+    authorizationServerMetadataPath:
+      AGENT_ACCESS_ISSUER_PROXY_PATHS.authorizationServerMetadata,
+    openIdConfigurationPath:
+      AGENT_ACCESS_ISSUER_PROXY_PATHS.openIdConfiguration,
+    jwksPath: AGENT_ACCESS_ISSUER_PROXY_PATHS.jwks,
+    oauthPrefix: AGENT_ACCESS_ISSUER_PROXY_PATHS.oauthPrefix,
     oauthAuthorizePath: "/oauth2/authorize",
     oauthTokenPath: "/oauth2/token",
     oauthIntrospectPath: "/oauth2/introspect",
     oauthRevokePath: "/oauth2/revoke",
     oauthUserInfoPath: "/oauth2/userinfo",
     dashboardProxyForwardPrefixes: [
-      "/api/auth",
-      "/oauth2",
-      "/.well-known/oauth-authorization-server",
-      "/.well-known/openid-configuration",
-      "/jwks",
+      AGENT_ACCESS_DASHBOARD_BROWSER_PATHS.existingAuthApiPrefix,
+      AGENT_ACCESS_ISSUER_PROXY_PATHS.oauthPrefix,
+      AGENT_ACCESS_ISSUER_PROXY_PATHS.authorizationServerMetadata,
+      AGENT_ACCESS_ISSUER_PROXY_PATHS.openIdConfiguration,
+      AGENT_ACCESS_ISSUER_PROXY_PATHS.jwks,
     ],
   }
 }
