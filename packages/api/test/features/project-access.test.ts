@@ -26,6 +26,7 @@ function projectCredentials(
     authenticate: () => Effect.succeed("project-1"),
     projectForUser: () => Effect.succeed("project-1"),
     memberProject: () => Effect.succeed("project-1"),
+    delegatedReaderProject: () => Effect.succeed("project-1"),
     listProjects: () =>
       Effect.succeed([
         {

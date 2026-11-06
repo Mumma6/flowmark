@@ -269,6 +269,7 @@ function projectCredentials(
     authenticate: () => Effect.succeed("project-from-key"),
     projectForUser: () => Effect.succeed("project-from-key"),
     memberProject: () => Effect.succeed("project-from-key"),
+    delegatedReaderProject: () => Effect.succeed("project-from-key"),
     listProjects: () => Effect.succeed([]),
     workspaceForUser: () => Effect.succeed("workspace-from-key"),
     onboardingState: () =>
@@ -713,6 +714,92 @@ describe("API Effect services", () => {
       ),
     )
     expectLeft(result, { _tag: "Unauthorized", permission: "read" })
+  })
+
+  it("authorizes a delegated reader only when grant and membership intersect", async () => {
+    const delegatedReaderProject = vi.fn(() => Effect.succeed("grant-project"))
+    const input = {
+      userId: "user-1",
+      clientId: "client-1",
+      authorizationCodeId: "auth-family-1",
+      projectId: "grant-project",
+    }
+    const result = await Effect.runPromise(
+      Effect.flatMap(AuthorizeProject, (service) =>
+        service.authorizeDelegatedReader(input),
+      ).pipe(
+        Effect.provide(
+          dependencies(
+            repository(),
+            true,
+            projectCredentials({ delegatedReaderProject }),
+          ),
+        ),
+      ),
+    )
+    expect(result).toBe("grant-project")
+    expect(delegatedReaderProject).toHaveBeenCalledWith(input)
+  })
+
+  it("rejects a delegated reader when the grant does not cover the project", async () => {
+    const result = await Effect.runPromise(
+      Effect.flatMap(AuthorizeProject, (service) =>
+        Effect.result(
+          service.authorizeDelegatedReader({
+            userId: "user-1",
+            clientId: "client-1",
+            authorizationCodeId: "auth-family-1",
+            projectId: "not-on-grant",
+          }),
+        ),
+      ).pipe(
+        Effect.provide(
+          dependencies(
+            repository(),
+            true,
+            projectCredentials({
+              delegatedReaderProject: () => Effect.succeed(undefined),
+            }),
+          ),
+        ),
+      ),
+    )
+    expectLeft(result, { _tag: "Unauthorized", permission: "read" })
+  })
+
+  it("keeps workflow reads behind delegated grant intersection", async () => {
+    const snapshot = vi.fn(repository().snapshot)
+    const delegatedReaderProject = vi.fn(() => Effect.succeed("p-delegated"))
+    await Effect.runPromise(
+      Effect.flatMap(GetProjectWorkflowData, (service) =>
+        service.snapshot({
+          _tag: "DelegatedUser",
+          userId: "user-1",
+          clientId: "client-1",
+          authorizationCodeId: "fam-1",
+          projectId: "p-delegated",
+        }),
+      ).pipe(
+        Effect.provide(
+          GetProjectWorkflowData.layer.pipe(
+            Layer.provide(
+              dependencies(
+                repository({ snapshot }),
+                true,
+                projectCredentials({ delegatedReaderProject }),
+              ),
+            ),
+          ),
+        ),
+      ),
+    )
+    expect(delegatedReaderProject).toHaveBeenCalledWith({
+      userId: "user-1",
+      clientId: "client-1",
+      authorizationCodeId: "fam-1",
+      projectId: "p-delegated",
+    })
+    expect(snapshot).toHaveBeenCalledWith("p-delegated")
   })
 
   it("passes redacted keys and required permissions to storage", async () => {

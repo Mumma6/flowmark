@@ -25,6 +25,7 @@ export enum DatabaseOperation {
   CreateOwnedProject = "create-owned-project",
   CreateProject = "create-project",
   GetMemberProject = "get-member-project",
+  GetDelegatedReaderProject = "get-delegated-reader-project",
   GetProjectForUser = "get-project-for-user",
   GetWorkspaceForUser = "get-workspace-for-user",
   ListApiKeys = "list-api-keys",

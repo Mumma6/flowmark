@@ -72,6 +72,12 @@ export interface ProjectCredentialsService {
     userId: string,
     projectId: string,
   ) => Effect.Effect<string | undefined, PersistenceError>
+  readonly delegatedReaderProject: (input: {
+    readonly userId: string
+    readonly clientId: string
+    readonly authorizationCodeId: string
+    readonly projectId: string
+  }) => Effect.Effect<string | undefined, PersistenceError>
   readonly listProjects: (
     userId: string,
   ) => Effect.Effect<ReadonlyArray<ProjectSummary>, PersistenceError>

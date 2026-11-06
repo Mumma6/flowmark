@@ -192,7 +192,11 @@ Does **not** authorize package installation (still gated per ADR 0007).
 ## Consequences
 
 - TASK-003 implements provider composition and proxy forwarding **exactly** from this map.
-- TASK-004 owns grant persistence, revocation SQL, and lifecycle hooks.
+- TASK-004 owns grant persistence, revocation SQL, and lifecycle hooks. **Partial
+  implementation (004.1):** table `agent_access_grant_projects`, SQL intersection
+  with membership and active `oauth_refresh_token`, and tRPC delegated reader
+  headers are documented in [auth-perimeter.md](../auth-perimeter.md#delegated-workflow-reads-trpc).
+  Consent/session APIs that populate rows remain later TASK-004.x.
 - TASK-005 registers **only** these six tool names with the frozen bounds.
 - TASK-008 owns empirical client verification listed in the contract export.
 - Changes to scope strings, tool names, origin layout, or default lifetimes require a **new ADR**.

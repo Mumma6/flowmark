@@ -116,6 +116,20 @@ function requestedProjectId(request: Request) {
   return value && Schema.is(UuidSchema)(value) ? value : undefined
 }
 
+/** OAuth client id for delegated reads; must be paired with grant auth-code id and project id. */
+function requestedGrantClientId(request: Request) {
+  const value = request.headers.get("x-flowmark-grant-client-id")?.trim()
+  return value && value.length > 0 ? value : undefined
+}
+
+/** Grant family (`oauth_refresh_token.authorization_code_id`) for delegated reads. */
+function requestedGrantAuthorizationCodeId(request: Request) {
+  const value = request.headers
+    .get("x-flowmark-grant-authorization-code-id")
+    ?.trim()
+  return value && value.length > 0 ? value : undefined
+}
+
 async function executeQuery<A>(
   request: Request,
   operation: Effect.Effect<
@@ -201,20 +215,50 @@ function readQuery<A>(
   >,
 ) {
   const projectId = requestedProjectId(request)
+  const grantClientId = requestedGrantClientId(request)
+  const grantAuthorizationCodeId = requestedGrantAuthorizationCodeId(request)
+  const grantHeaderCount =
+    (grantClientId ? 1 : 0) + (grantAuthorizationCodeId ? 1 : 0)
   return executeQuery(
     request,
-    sessionUserId(request).pipe(
-      Effect.flatMap(
-        Option.match({
-          onNone: () =>
-            read({
-              _tag: "Key",
-              header: request.headers.get("authorization"),
+    Effect.gen(function* () {
+      if (grantHeaderCount === 1) {
+        return yield* Effect.fail(new Unauthorized({ permission: "read" }))
+      }
+      if (grantHeaderCount === 2) {
+        if (!projectId || !grantClientId || !grantAuthorizationCodeId) {
+          return yield* Effect.fail(new Unauthorized({ permission: "read" }))
+        }
+        const userId = yield* sessionUserId(request).pipe(
+          Effect.flatMap(
+            Option.match({
+              onNone: () =>
+                Effect.fail(new Unauthorized({ permission: "read" })),
+              onSome: Effect.succeed,
             }),
-          onSome: (userId) => read({ _tag: "User", userId, projectId }),
-        }),
-      ),
-    ),
+          ),
+        )
+        return yield* read({
+          _tag: "DelegatedUser",
+          userId,
+          clientId: grantClientId,
+          authorizationCodeId: grantAuthorizationCodeId,
+          projectId,
+        })
+      }
+      return yield* sessionUserId(request).pipe(
+        Effect.flatMap(
+          Option.match({
+            onNone: () =>
+              read({
+                _tag: "Key",
+                header: request.headers.get("authorization"),
+              }),
+            onSome: (userId) => read({ _tag: "User", userId, projectId }),
+          }),
+        ),
+      )
+    }),
   )
 }
 

@@ -11,6 +11,7 @@ import {
   jsonb,
   pgEnum,
   pgTable,
+  primaryKey,
   text,
   timestamp,
   uuid,
@@ -367,5 +368,28 @@ export const workflowExpectations = pgTable(
     index("workflow_expectations_deadline_idx")
       .on(table.deadlineAt, table.runId)
       .where(sql`${table.settlementEventId} is null`),
+  ],
+)
+
+/**
+ * Immutable project allowlist for one OAuth authorization-code / grant family
+ * (`oauth_refresh_token.authorization_code_id`). Insert/update/delete stays in
+ * grant lifecycle tasks; reads intersect with current membership.
+ */
+export const agentAccessGrantProjects = pgTable(
+  "agent_access_grant_projects",
+  {
+    authorizationCodeId: text("authorization_code_id").notNull(),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+  },
+  (table) => [
+    primaryKey({
+      columns: [table.authorizationCodeId, table.projectId],
+    }),
+    index("agent_access_grant_projects_auth_code_idx").on(
+      table.authorizationCodeId,
+    ),
   ],
 )
