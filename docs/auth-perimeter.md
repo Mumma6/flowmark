@@ -42,7 +42,13 @@ the local fixture use the same provider login implementation.
   provider. The server-owned grant family is that provider authorization-code
   id, with the subject, client, configured issuer and MCP resource. It carries
   no project. A provider token is not a project grant: project reads still
-  require a later explicit grant intersected with current membership.
+  require a later explicit grant intersected with current membership. Enabling
+  the provider leaves signup, sign-in, password recovery, origin checks and
+  account limits on the same handlers. `get-session` accepts the dashboard
+  session cookie and does not treat the provider access token as that session.
+  `POST /mcp` is not served by the auth handler. A mismatched issuer and auth
+  base URL fails before the provider is composed. With `agentAccess` omitted,
+  discovery and the token endpoint stay unavailable.
 - tRPC reads resolve project-scoped session or programmatic read authority.
   Account and project management require session authority; ingestion keys do
   not grant account-management rights. Existing isolation tests cover these
