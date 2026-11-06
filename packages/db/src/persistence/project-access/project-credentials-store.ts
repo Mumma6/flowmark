@@ -3,6 +3,7 @@ import { Database, DatabaseError, provideDatabase } from "../database.js"
 import { browserOriginAllowed } from "./queries/allow-browser-origin.js"
 import { authenticateBrowserKey } from "./queries/authenticate-browser-key.js"
 import { authenticateKey } from "./queries/authenticate-key.js"
+import { getDelegatedReaderProject } from "./queries/get-delegated-reader-project.js"
 import { getMemberProject } from "./queries/get-member-project.js"
 import { getOnboardingState } from "./queries/get-onboarding-state.js"
 import { getProjectForUser } from "./queries/get-project-for-user.js"
@@ -72,6 +73,12 @@ export interface ProjectCredentialsStoreService {
     userId: string,
     projectId: string,
   ) => Effect.Effect<string | undefined, DatabaseError>
+  readonly delegatedReaderProject: (input: {
+    readonly userId: string
+    readonly clientId: string
+    readonly authorizationCodeId: string
+    readonly projectId: string
+  }) => Effect.Effect<string | undefined, DatabaseError>
   readonly listProjects: (
     userId: string,
   ) => Effect.Effect<ReadonlyArray<ProjectSummary>, DatabaseError>
@@ -169,6 +176,8 @@ export class ProjectCredentialsStore extends Context.Service<ProjectCredentialsS
         projectForUser: (userId) => provide(getProjectForUser(userId)),
         memberProject: (userId, projectId) =>
           provide(getMemberProject(userId, projectId)),
+        delegatedReaderProject: (input) =>
+          provide(getDelegatedReaderProject(input)),
         listProjects: (userId) => provide(listProjectsForUser(userId)),
         workspaceForUser: (userId) => provide(getWorkspaceForUser(userId)),
         onboardingState: (userId) => provide(getOnboardingState(userId)),

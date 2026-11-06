@@ -46,6 +46,13 @@ export type ProjectReader =
       readonly userId: string
       readonly projectId?: string
     }
+  | {
+      readonly _tag: "DelegatedUser"
+      readonly userId: string
+      readonly clientId: string
+      readonly authorizationCodeId: string
+      readonly projectId: string
+    }
 
 export interface GetProjectWorkflowDataService {
   readonly expectations: (
@@ -181,6 +188,9 @@ export class GetProjectWorkflowData extends Context.Service<
           ),
           Match.tag("User", ({ userId, projectId }) =>
             authorization.authorizeUser(userId, projectId),
+          ),
+          Match.tag("DelegatedUser", (delegated) =>
+            authorization.authorizeDelegatedReader(delegated),
           ),
           Match.exhaustive,
         )

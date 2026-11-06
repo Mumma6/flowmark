@@ -134,6 +134,13 @@
       "when": 1793971314830,
       "tag": "0018_solid_major_mapleleaf",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1793994801528,
+      "tag": "0019_optimal_old_lace",
+      "breakpoints": true
     }
   ]
 }
