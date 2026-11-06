@@ -27,6 +27,8 @@ import { getRunInvestigationSummary } from "./queries/get-run-investigation-summ
 import { getRelatedRunsPage } from "./queries/get-related-runs-page.js"
 import { getRunExpectationsPage } from "./queries/get-run-expectations-page.js"
 import { getRunOperationsPage } from "./queries/get-run-operations-page.js"
+import { getWorkflowDiscoveryPage } from "./queries/get-workflow-discovery-page.js"
+import { getWorkflowMeaningPage } from "./queries/get-workflow-meaning-page.js"
 import { listRuns } from "./queries/list-runs.js"
 import { searchProject } from "./queries/search-project.js"
 import { appendEvent } from "./writes/append-event.js"
@@ -45,6 +47,10 @@ import type {
   RunExpectationsPageQuery,
   RunOperationsPage,
   RunOperationsPageQuery,
+  WorkflowDiscoveryPage,
+  WorkflowDiscoveryQuery,
+  WorkflowMeaningPage,
+  WorkflowMeaningQuery,
   PeriodReport,
   WorkflowIntelligence,
   WorkflowSummary,
@@ -107,6 +113,14 @@ export interface WorkflowStoreService {
     projectId: string,
     query: RunOperationsPageQuery,
   ) => Effect.Effect<RunOperationsPage, DatabaseError | InvalidResultQuery>
+  readonly discoverWorkflows: (
+    projectId: string,
+    query: WorkflowDiscoveryQuery,
+  ) => Effect.Effect<WorkflowDiscoveryPage, DatabaseError | InvalidResultQuery>
+  readonly discoverWorkflowMeaning: (
+    projectId: string,
+    query: WorkflowMeaningQuery,
+  ) => Effect.Effect<WorkflowMeaningPage, DatabaseError | InvalidResultQuery>
   readonly related: (
     projectId: string,
     runId: string,
@@ -153,6 +167,10 @@ export class WorkflowStore extends Context.Service<WorkflowStore>()(
           provide(getRunExpectationsPage(projectId, query)),
         operationsPage: (projectId, query) =>
           provide(getRunOperationsPage(projectId, query)),
+        discoverWorkflows: (projectId, query) =>
+          provide(getWorkflowDiscoveryPage(projectId, query)),
+        discoverWorkflowMeaning: (projectId, query) =>
+          provide(getWorkflowMeaningPage(projectId, query)),
         related: (projectId, runId) =>
           provide(getRelatedRuns(projectId, runId)),
         compare: (projectId, runId, selection) =>

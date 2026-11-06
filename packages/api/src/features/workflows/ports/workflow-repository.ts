@@ -29,6 +29,10 @@ import type {
   RunExpectationsPageQuery,
   RunOperationsPage,
   RunOperationsPageQuery,
+  WorkflowDiscoveryPage,
+  WorkflowDiscoveryQuery,
+  WorkflowMeaningPage,
+  WorkflowMeaningQuery,
   RunTimelineEvent,
   WorkflowIntelligence,
   WorkflowSummary,
@@ -87,6 +91,14 @@ export interface WorkflowRepositoryService {
     projectId: string,
     query: RunOperationsPageQuery,
   ) => Effect.Effect<RunOperationsPage, PersistenceError | InvalidInput>
+  readonly discoverWorkflows: (
+    projectId: string,
+    query: WorkflowDiscoveryQuery,
+  ) => Effect.Effect<WorkflowDiscoveryPage, PersistenceError | InvalidInput>
+  readonly discoverWorkflowMeaning: (
+    projectId: string,
+    query: WorkflowMeaningQuery,
+  ) => Effect.Effect<WorkflowMeaningPage, PersistenceError | InvalidInput>
   readonly related: (
     projectId: string,
     runId: string,

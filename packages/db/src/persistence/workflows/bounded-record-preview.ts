@@ -11,6 +11,7 @@ const byteLength = (value: string) => new TextEncoder().encode(value).length
 export function boundJsonPreview(
   value: unknown,
   maxBytes: number = BOUNDED_RECORD_PREVIEW_MAX_BYTES,
+  omission = `Recorded payload exceeds the ${maxBytes}-byte bounded preview limit; open the full timeline export or paginated event read for complete evidence.`,
 ): BoundedRecordPreview {
   if (value === undefined) {
     return { value, truncated: false, omissions: [] }
@@ -35,8 +36,6 @@ export function boundJsonPreview(
       maxBytes,
     },
     truncated: true,
-    omissions: [
-      `Recorded payload exceeds the ${maxBytes}-byte bounded preview limit; open the full timeline export or paginated event read for complete evidence.`,
-    ],
+    omissions: [omission],
   }
 }
