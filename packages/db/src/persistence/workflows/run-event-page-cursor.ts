@@ -6,11 +6,11 @@ export type RunEventPageCursor = {
 }
 
 export function encodeRunEventPageCursor(row: {
-  readonly timestamp: Date
-  readonly receivedAt: Date
+  readonly occurredAt: string
+  readonly receivedAt: string
   readonly eventId: string
 }): string {
-  return `${row.timestamp.toISOString()}|${row.receivedAt.toISOString()}|${row.eventId}`
+  return `${row.occurredAt}|${row.receivedAt}|${row.eventId}`
 }
 
 export function decodeRunEventPageCursor(
