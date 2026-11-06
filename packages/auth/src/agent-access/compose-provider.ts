@@ -256,7 +256,7 @@ const discoveryDocument = (
   ) => (request: Request) => Promise<Response>,
 ) =>
   Option.match(oauthMetadataApi(auth), {
-    onNone: () => (_request: Request) =>
+    onNone: () => () =>
       serveDiscovery(Effect.succeed(new Response(null, { status: 404 }))),
     onSome: (api) => (request: Request) =>
       serveDiscovery(
