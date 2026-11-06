@@ -6,6 +6,11 @@ export {
   resolveEnabledAgentAccess,
 } from "./compose-provider.js"
 export {
+  AgentAccessGrantFamilySchema,
+  readAgentAccessGrantFamily,
+  type AgentAccessGrantFamily,
+} from "./grant-family.js"
+export {
   AgentAccessContractError,
   AGENT_ACCESS_ADMISSION_BUDGETS_PROVISIONAL,
   AGENT_ACCESS_CLIENT_POLICY,
