@@ -1,10 +1,13 @@
-import { Array as Arr } from "effect"
+import { Array as EffectArray } from "effect"
 import type { RouterOutputs } from "../platform/api-types"
 import {
   explorerDefaults,
+  exploreHref,
   type ExplorerFilters,
 } from "../runs/explorer-filters"
 import { runInvestigationPath } from "../runs/investigation-navigation"
+
+export { exploreHref }
 
 export const commandSearchDebounceMs = 300
 
@@ -118,20 +121,6 @@ export function shouldRequestProjectSearch(query: string) {
   return normalizeSearchQuery(query).length > 0
 }
 
-export function exploreHref(filters: ExplorerFilters) {
-  const params = new URLSearchParams()
-  Arr.forEach(
-    Arr.fromIterable(Object.entries(explorerDefaults)),
-    ([key, fallback]) => {
-      const value = filters[key as keyof ExplorerFilters]
-      if (value !== fallback) {
-        params.set(key, value)
-      }
-    },
-  )
-  return `/${params.size ? `?${params}` : ""}`
-}
-
 /** A process selection replaces text/reference scope, retaining evidence predicates. */
 export function workflowExploreHref(
   name: string,
@@ -177,7 +166,7 @@ export function runHref(id: string, from: string) {
 export function distinctSearchReferences(
   references: readonly SearchReference[],
 ) {
-  return Arr.dedupeWith(
+  return EffectArray.dedupeWith(
     references,
     (a, b) =>
       a.workflow === b.workflow && a.key === b.key && a.value === b.value,

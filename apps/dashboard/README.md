@@ -33,8 +33,11 @@ features (`auth`, `platform`, `runs` and `reporting`).
 
 - **Explore (`/`):** the first Studio workspace. Its process rail uses the
   existing project snapshot; execution evidence uses full, cursor-paginated
-  `run.list` through the existing explorer controller. Search/process/status
-  filters stay in the URL; all applied conditions remain visible. All filters
+  `run.list` through the existing explorer controller. Period analytics (summary,
+  reported results and failure groups) reuse Insights/Attention controllers;
+  on narrow viewports execution evidence appears first, analytics second. Analytics
+  tab state uses the `analytics` query key so it does not collide with run
+  `view` or history `view=runs`. Search/process/status filters stay in the URL; all applied conditions remain visible. All filters
   opens the existing history with the exact same conditions. Process selection
   becomes a compact selector on mobile. Run links preserve the return cohort.
 - **Overview (`/overview`):** four seven-day execution metrics from `project.intelligence`,
@@ -56,7 +59,8 @@ features (`auth`, `platform`, `runs` and `reporting`).
   result; Outcome, Timeline, Context, Compare and Related runs tabs. Timeline
   offers a waterfall and paginated event table. Peer sample size and recorded
   links remain explicit; raw data/exports are available without dominating.
-- **Settings:** project creation/rename, write/browser key management, setup help
+- **Connect (`/connect`):** agent and manual SDK setup with separate copied, configured, and observed states, instrumentation guide links, and recovery for lost keys or wrong project/origin.
+- **Settings:** project creation/rename, write/browser key management, Connect setup help
   and account controls. Project switching stays in the navigation.
 - **Search:** the navbar command palette opens with ⌘K / Ctrl+K. Pages and
   project names resolve locally. Workflow names, the existing run text
@@ -64,7 +68,7 @@ features (`auth`, `platform`, `runs` and `reporting`).
   for the selected project. References match configured keys exactly; other
   property values stay unsearchable.
 - **Account and workspace:** the shared Sheet holds navigation to history,
-  overview, settings and the setup guide, alongside appearance and sign-out.
+  overview, Connect, settings and the setup guide, alongside appearance and sign-out.
   Project loading failures show retry feedback rather than an empty account.
 - **Onboarding:** five persisted setup steps retain the existing project/key
   and completion logic. Installation uses the validated API origin. Agent

@@ -28,7 +28,7 @@ import { RunCompareChart } from "../reporting/insight-charts"
 import { formatDuration, formatTimestamp } from "../shared/format"
 import { getRunResultHighlights } from "./run-presentation"
 import { durationDelta } from "./run-state"
-import { Array as Arr } from "effect"
+import { Array as EffectArray } from "effect"
 import { runInvestigationPath } from "./investigation-navigation"
 
 type RunComparison = inferRouterOutputs<AppRouter>["run"]["compare"]
@@ -78,7 +78,7 @@ export function RunComparisonPanel({
             const form = new FormData(event.currentTarget)
             const next = new URLSearchParams(params.toString())
             next.set("view", "compare")
-            Arr.forEach(
+            EffectArray.forEach(
               [
                 "peerDays",
                 "peerEnvironment",

@@ -29,6 +29,16 @@
       "types": "./dist/seed-local-user.d.ts",
       "node": "./dist/seed-local-user.js",
       "default": "./dist/server-only.js"
+    },
+    "./agent-access": {
+      "types": "./dist/agent-access/index.d.ts",
+      "node": "./dist/agent-access/index.js",
+      "default": "./dist/server-only.js"
+    },
+    "./agent-access/proxy-route": {
+      "types": "./dist/agent-access/proxy-route.d.ts",
+      "node": "./dist/agent-access/proxy-route.js",
+      "default": "./dist/server-only.js"
     }
   },
   "scripts": {
@@ -41,12 +51,16 @@
     "dev": "tsc -p tsconfig.json --watch --preserveWatchOutput"
   },
   "dependencies": {
-    "@better-auth/drizzle-adapter": "^1.7.13",
+    "@better-auth/cimd": "1.7.17",
+    "@better-auth/drizzle-adapter": "1.7.17",
+    "@better-auth/mcp": "1.7.17",
+    "@better-auth/oauth-provider": "1.7.17",
     "@flowmark/db": "workspace:*",
-    "better-auth": "^1.7.13",
-    "drizzle-orm": "^0.44.5",
-    "effect": "4.1.0",
-    "@flowmark/email": "workspace:*"
+    "@flowmark/email": "workspace:*",
+    "better-auth": "1.7.17",
+    "better-call": "1.4.5",
+    "drizzle-orm": "^0.45.4",
+    "effect": "4.1.0"
   },
   "devDependencies": {
     "@types/node": "^22.18.6",

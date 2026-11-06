@@ -273,8 +273,10 @@ The API follows feature-first ports-and-adapters:
 - `GetProjectWorkflowData` performs read authorization and project-scoped
   snapshot, workflow-list, and timeline queries. The workflow list reads
   workflow summaries only. Snapshot still returns runs, metrics, daily volume,
-  operations, and failure codes. Each read takes one reader: a bearer key, or
-  a signed-in user with an optional project id.
+  operations, and failure codes. Each read takes one reader: a bearer key, a
+  signed-in user with an optional `x-flowmark-project-id`, or a **delegated**
+  session reader (grant headers plus project id — see
+  [Authentication boundaries](./auth-perimeter.md#delegated-workflow-reads-trpc)).
 - `WorkflowRepository` exposes typed storage operations backed by the existing
   database package. Tests inject implementations without PostgreSQL or HTTP.
 
@@ -301,10 +303,12 @@ exposes:
 - `run.list`, `run.detail`, `run.expectations`, `run.related`, `run.compare`
 
 Reads accept a signed-in session cookie forwarded by the dashboard proxy, or a
-project read key when no session is present. Project and declaration mutations
-require a session. Browser ingestion uses CORS preflight and the browser-key
-origin allowlist; it does not grant read access or authorize a private-key
-write.
+project read key when no session is present. Optional **delegated** read headers
+bind the request to a stored grant allowlist and active OAuth refresh state;
+see [Delegated workflow reads (tRPC)](./auth-perimeter.md#delegated-workflow-reads-trpc).
+Project and declaration mutations require a session. Browser ingestion uses CORS
+preflight and the browser-key origin allowlist; it does not grant read access or
+authorize a private-key write.
 
 `runtime.ts` composes the live layers and executes effects at the request
 boundary. Database acquisition/release belongs to a scoped database adapter,
@@ -352,11 +356,14 @@ key creation quotas stay in `@flowmark/api` and `@flowmark/db`.
 
 Versioned Drizzle migrations create Better Auth users/sessions, workspaces,
 projects, project members, hashed project API keys, workflow definitions,
-runs and append-only events. Unique constraints prevent duplicate workflow
-definitions, runs and retried events. Event ingestion requires a write key;
-dashboard queries require a signed-in session and project membership. The
-project is resolved from the session or key, never accepted from the request
-body. Queries and run detail lookups always include that project.
+runs and append-only events, OAuth-provider tables from Better Auth, and
+`agent_access_grant_projects` (immutable allowlisted project ids per OAuth
+authorization-code family for delegated reads). Unique constraints prevent
+duplicate workflow definitions, runs and retried events. Event ingestion
+requires a write key; dashboard queries require a signed-in session and project
+membership. Delegated reads additionally require a matching grant row and active
+refresh token. The project is resolved from the session or key, never accepted
+from the request body. Queries and run detail lookups always include that project.
 
 The database is an injected Effect service. Driver promises are converted at the
 driver boundary; typed errors preserve operation/cause. HTTP/tRPC boundaries

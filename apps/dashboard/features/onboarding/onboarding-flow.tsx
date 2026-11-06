@@ -27,6 +27,8 @@ import {
 import { useEffect, useRef } from "react"
 import Link from "next/link"
 import { DataState } from "../shared/dashboard-components"
+import { SetupPathTabs } from "../connect/setup-path-tabs"
+import { setupRecoveryCopy } from "../connect/setup-instructions"
 import { publicConfig } from "../platform/config-public"
 import { RuntimeConfigProvider } from "../platform/runtime-config"
 import { CreateProjectForm, SecretAlert } from "../projects/create-project-form"
@@ -339,23 +341,32 @@ function OnboardingContent({
               ) : null}
               {currentStep.id === "instrument" ? (
                 <div className="grid gap-4">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <p className="text-xs font-medium">
-                      Set up with your coding agent
-                    </p>
-                    <span className="text-[10px] text-muted-foreground">
-                      Codex · Cursor · Claude Code
-                    </span>
-                  </div>
-                  <p className="text-xs leading-7 text-muted-foreground">
-                    Paste these instructions into your coding workspace. They
-                    include your API origin and SDK guidance; configure the
-                    write key in your server environment yourself.
-                  </p>
-                  <SetupCode
-                    title="Instrumentation instructions"
-                    value={snippet}
+                  <SetupPathTabs
+                    origin={origin}
+                    agentPrompt={snippet}
+                    onCopied={() => undefined}
                   />
+                  <Alert>
+                    <AlertTitle>Need a write key?</AlertTitle>
+                    <AlertDescription className="grid gap-3">
+                      <p>
+                        {
+                          setupRecoveryCopy(origin, current?.name ?? null)
+                            .lostKey
+                        }
+                      </p>
+                      <Button
+                        asChild
+                        size="sm"
+                        variant="outline"
+                        className="justify-self-start"
+                      >
+                        <Link href="/settings?section=keys">
+                          Open ingestion keys
+                        </Link>
+                      </Button>
+                    </AlertDescription>
+                  </Alert>
                 </div>
               ) : null}
               {currentStep.id === "run" ? (

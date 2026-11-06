@@ -6,8 +6,20 @@ import {
   DIAGNOSTICS_WRITE_KEY,
   DIAGNOSTICS_BROWSER_KEY,
 } from "@flowmark/db/demo"
+import {
+  DatabaseError,
+  DatabaseOperation,
+  InvalidResultQuery,
+  WorkflowStore,
+  type WorkflowStoreService,
+} from "@flowmark/db/persistence"
 import { PersistenceError, RunNotFound } from "../../src/errors"
+import { WorkflowRepositoryLive } from "../../src/features/workflows/adapters/workflow-repository"
 import { ApiSettings } from "../../src/config"
+import {
+  AgentAccess,
+  type AgentAccessService,
+} from "../../src/features/project-access/ports/agent-access"
 import { AuthorizeProject } from "../../src/features/project-access/use-cases/authorize-project"
 import { IngestWorkflowEvents } from "../../src/features/workflows/use-cases/ingest-events"
 import { IngestBrowserWorkflowEvents } from "../../src/features/workflows/use-cases/ingest-browser-events"
@@ -77,6 +89,104 @@ function repository(overrides: Partial<WorkflowRepositoryService> = {}) {
       }),
     search: () => Effect.succeed({ workflows: [], runs: [], references: [] }),
     timeline: () => Effect.succeed([]),
+    runEventPage: () =>
+      Effect.succeed({
+        runId: "run-id",
+        events: [],
+        nextCursor: null,
+        limit: 50,
+        totalEvents: 0,
+      }),
+    runInvestigationSummary: () =>
+      Effect.succeed({
+        id: "run-id",
+        externalId: "ext",
+        workflow: "wf",
+        status: "Completed" as const,
+        startedAt: "2026-10-23T12:00:00.000Z",
+        durationMs: 1,
+        step: null,
+        outcome: null,
+        environment: null,
+        release: null,
+        correlationId: null,
+        parentRunId: null,
+        eventCount: 0,
+        operationCount: 0,
+        errorCount: 0,
+        reportCount: 0,
+      }),
+    relatedRunsPage: () =>
+      Effect.succeed({
+        runId: "run-id",
+        items: [],
+        nextCursor: null,
+        limit: 25,
+        totalLinks: 0,
+      }),
+    expectationsPage: () =>
+      Effect.succeed({
+        runId: "run-id",
+        asOf: new Date(0).toISOString(),
+        expectations: [],
+        unmatched: [],
+        nextCursor: null,
+        limit: 25,
+        totalRecords: 0,
+        unavailableCount: 0,
+      }),
+    operationsPage: () =>
+      Effect.succeed({
+        runId: "run-id",
+        operations: [],
+        nextCursor: null,
+        limit: 25,
+        totalOperations: 0,
+      }),
+    discoverWorkflows: () =>
+      Effect.succeed({
+        workflows: [],
+        nextCursor: null,
+        limit: 25,
+        total: 0,
+        applied: {
+          projectId: "project-from-key",
+          workflow: null,
+          revision: null,
+          cursor: null,
+          limit: 25,
+        },
+        omissions: { continued: false, truncatedRecords: 0 },
+        capabilities: {
+          reads: ["workflows", "revisions", "searchFields"],
+          mutations: [],
+          unsupportedFilters: ["environment", "status", "release", "aggregate"],
+        },
+      }),
+    discoverWorkflowMeaning: () =>
+      Effect.succeed({
+        workflow: "import",
+        revisions: [],
+        searchFields: [],
+        lookupKeys: [],
+        dimensionKeys: [],
+        nextCursor: null,
+        limit: 25,
+        totalRevisions: 0,
+        applied: {
+          projectId: "project-from-key",
+          workflow: "import",
+          revision: null,
+          cursor: null,
+          limit: 25,
+        },
+        omissions: { continued: false, truncatedRecords: 0 },
+        capabilities: {
+          reads: ["workflows", "revisions", "searchFields"],
+          mutations: [],
+          unsupportedFilters: ["environment", "status", "release", "aggregate"],
+        },
+      }),
     related: () => Effect.succeed({ parentMatches: [], related: [] }),
     compare: () =>
       Effect.succeed({
@@ -163,6 +273,7 @@ function projectCredentials(
     authenticate: () => Effect.succeed("project-from-key"),
     projectForUser: () => Effect.succeed("project-from-key"),
     memberProject: () => Effect.succeed("project-from-key"),
+    delegatedReaderProject: () => Effect.succeed("project-from-key"),
     listProjects: () => Effect.succeed([]),
     workspaceForUser: () => Effect.succeed("workspace-from-key"),
     onboardingState: () =>
@@ -220,22 +331,36 @@ function projectCredentials(
   })
 }
 
+function agentAccess(overrides: Partial<AgentAccessService> = {}) {
+  return AgentAccess.of({
+    listConnections: () => Effect.succeed([]),
+    getConnection: () => Effect.succeed(undefined),
+    submitConsent: () => Effect.succeed("authorization-code-id"),
+    recordLastAuthenticated: () => Effect.void,
+    revokeConnection: () => Effect.void,
+    ...overrides,
+  })
+}
+
 function dependencies(
   store = repository(),
   demoMode = true,
   credentials = projectCredentials(),
+  access = agentAccess(),
 ) {
   return AuthorizeProject.layer.pipe(
     Layer.provideMerge(
       Layer.mergeAll(
         Layer.succeed(WorkflowRepository, store),
         Layer.succeed(ProjectCredentials, credentials),
+        Layer.succeed(AgentAccess, access),
       ),
     ),
     Layer.provide(
       Layer.succeed(ApiSettings, {
         databaseUrl: Redacted.make("postgresql://unused"),
         demoMode,
+        mcpResourceUrl: undefined,
       }),
     ),
   )
@@ -288,6 +413,7 @@ describe("API Effect services", () => {
                 Layer.succeed(ApiSettings, {
                   databaseUrl: Redacted.make("postgresql://unused"),
                   demoMode: false,
+                  mcpResourceUrl: undefined,
                 }),
               ),
             ),
@@ -609,6 +735,100 @@ describe("API Effect services", () => {
     expectLeft(result, { _tag: "Unauthorized", permission: "read" })
   })
 
+  it("authorizes a delegated reader only when grant and membership intersect", async () => {
+    const delegatedReaderProject = vi.fn(() => Effect.succeed("grant-project"))
+    const input = {
+      userId: "user-1",
+      clientId: "client-1",
+      authorizationCodeId: "auth-family-1",
+      projectId: "grant-project",
+    }
+    const result = await Effect.runPromise(
+      Effect.flatMap(AuthorizeProject, (service) =>
+        service.authorizeDelegatedReader(input),
+      ).pipe(
+        Effect.provide(
+          dependencies(
+            repository(),
+            true,
+            projectCredentials({ delegatedReaderProject }),
+          ),
+        ),
+      ),
+    )
+    expect(result).toBe("grant-project")
+    expect(delegatedReaderProject).toHaveBeenCalledWith(input)
+  })
+
+  it("rejects a delegated reader when the grant does not cover the project", async () => {
+    const result = await Effect.runPromise(
+      Effect.flatMap(AuthorizeProject, (service) =>
+        Effect.result(
+          service.authorizeDelegatedReader({
+            userId: "user-1",
+            clientId: "client-1",
+            authorizationCodeId: "auth-family-1",
+            projectId: "not-on-grant",
+          }),
+        ),
+      ).pipe(
+        Effect.provide(
+          dependencies(
+            repository(),
+            true,
+            projectCredentials({
+              delegatedReaderProject: () => Effect.succeed(undefined),
+            }),
+          ),
+        ),
+      ),
+    )
+    expectLeft(result, { _tag: "Unauthorized", permission: "read" })
+  })
+
+  it("keeps workflow reads behind delegated grant intersection", async () => {
+    const snapshot = vi.fn(repository().snapshot)
+    const delegatedReaderProject = vi.fn(() => Effect.succeed("p-delegated"))
+    const recordLastAuthenticated = vi.fn(() => Effect.void)
+    await Effect.runPromise(
+      Effect.flatMap(GetProjectWorkflowData, (service) =>
+        service.snapshot({
+          _tag: "DelegatedUser",
+          userId: "user-1",
+          clientId: "client-1",
+          authorizationCodeId: "fam-1",
+          projectId: "p-delegated",
+        }),
+      ).pipe(
+        Effect.provide(
+          GetProjectWorkflowData.layer.pipe(
+            Layer.provide(
+              dependencies(
+                repository({ snapshot }),
+                true,
+                projectCredentials({ delegatedReaderProject }),
+                agentAccess({ recordLastAuthenticated }),
+              ),
+            ),
+          ),
+        ),
+      ),
+    )
+    expect(delegatedReaderProject).toHaveBeenCalledWith({
+      userId: "user-1",
+      clientId: "client-1",
+      authorizationCodeId: "fam-1",
+      projectId: "p-delegated",
+    })
+    expect(snapshot).toHaveBeenCalledWith("p-delegated")
+    expect(recordLastAuthenticated).toHaveBeenCalledWith({
+      userId: "user-1",
+      clientId: "client-1",
+      authorizationCodeId: "fam-1",
+      at: expect.any(Date),
+    })
+  })
+
   it("passes redacted keys and required permissions to storage", async () => {
     const authenticate = vi.fn(projectCredentials().authenticate)
     await Effect.runPromise(
@@ -888,5 +1108,147 @@ describe("API Effect services", () => {
     )
     expectLeft(result, { _tag: "Unauthorized" })
     expect(search).not.toHaveBeenCalled()
+  })
+
+  it("discovers workflows for an authorized read key without declaration writes", async () => {
+    const discoverWorkflows = vi.fn(repository().discoverWorkflows)
+    const result = await Effect.runPromise(
+      Effect.flatMap(GetProjectWorkflowData, (service) =>
+        service.discoverWorkflows(
+          { _tag: "Key", header: "Bearer key" },
+          { limit: 25 },
+        ),
+      ).pipe(
+        Effect.provide(
+          GetProjectWorkflowData.layer.pipe(
+            Layer.provide(dependencies(repository({ discoverWorkflows }))),
+          ),
+        ),
+      ),
+    )
+    const names = await Effect.runPromise(
+      Effect.flatMap(GetProjectWorkflowData, (service) =>
+        Effect.succeed(Object.keys(service)),
+      ).pipe(
+        Effect.provide(
+          GetProjectWorkflowData.layer.pipe(
+            Layer.provide(dependencies(repository())),
+          ),
+        ),
+      ),
+    )
+    expect(discoverWorkflows).toHaveBeenCalledWith("project-from-key", {
+      limit: 25,
+    })
+    expect(result.applied.projectId).toBe("project-from-key")
+    expect(result.capabilities.mutations).toEqual([])
+    expect(names).toContain("discoverWorkflows")
+    expect(names).toContain("discoverWorkflowMeaning")
+    expect(names).not.toContain("setSearchFields")
+    expect(names).not.toContain("create")
+  })
+
+  it("does not discover workflows in a project the user cannot read", async () => {
+    const discoverWorkflows = vi.fn(() =>
+      Effect.die("Must not read another project"),
+    )
+    const result = await Effect.runPromise(
+      Effect.flatMap(GetProjectWorkflowData, (service) =>
+        Effect.result(
+          service.discoverWorkflows(
+            { _tag: "User", userId: "user-1", projectId: "foreign-project" },
+            {},
+          ),
+        ),
+      ).pipe(
+        Effect.provide(
+          GetProjectWorkflowData.layer.pipe(
+            Layer.provide(
+              dependencies(
+                repository({ discoverWorkflows }),
+                true,
+                projectCredentials({
+                  memberProject: () => Effect.succeed(undefined),
+                }),
+              ),
+            ),
+          ),
+        ),
+      ),
+    )
+    expectLeft(result, { _tag: "Unauthorized", permission: "read" })
+    expect(discoverWorkflows).not.toHaveBeenCalled()
+  })
+
+  it("maps discovery cursor failures to invalid input", async () => {
+    const discoverWorkflows = vi.fn(() =>
+      Effect.fail(
+        new InvalidResultQuery({
+          message: "Invalid workflow discovery cursor.",
+        }),
+      ),
+    )
+    const store = new Proxy({} as WorkflowStoreService, {
+      get: (_target, property) =>
+        property === "discoverWorkflows"
+          ? discoverWorkflows
+          : () => Effect.die(String(property)),
+    })
+    const result = await Effect.runPromise(
+      Effect.flatMap(WorkflowRepository, (repository) =>
+        Effect.result(
+          repository.discoverWorkflows("project-a", { cursor: "foreign" }),
+        ),
+      ).pipe(
+        Effect.provide(
+          WorkflowRepositoryLive.pipe(
+            Layer.provide(Layer.succeed(WorkflowStore, store as never)),
+          ),
+        ),
+      ),
+    )
+    expectLeft(result, {
+      _tag: "InvalidInput",
+      cause: "Invalid workflow discovery cursor.",
+    })
+    expect(discoverWorkflows).toHaveBeenCalledWith("project-a", {
+      cursor: "foreign",
+    })
+  })
+
+  it("maps discovery database failures to persistence errors", async () => {
+    const discoverWorkflowMeaning = vi.fn(() =>
+      Effect.fail(
+        new DatabaseError({
+          operation: DatabaseOperation.ReadDeclarationDiscovery,
+          cause: "down",
+        }),
+      ),
+    )
+    const store = new Proxy({} as WorkflowStoreService, {
+      get: (_target, property) =>
+        property === "discoverWorkflowMeaning"
+          ? discoverWorkflowMeaning
+          : () => Effect.die(String(property)),
+    })
+    const result = await Effect.runPromise(
+      Effect.flatMap(WorkflowRepository, (repository) =>
+        Effect.result(
+          repository.discoverWorkflowMeaning("project-a", {
+            workflow: "import",
+          }),
+        ),
+      ).pipe(
+        Effect.provide(
+          WorkflowRepositoryLive.pipe(
+            Layer.provide(Layer.succeed(WorkflowStore, store as never)),
+          ),
+        ),
+      ),
+    )
+    expectLeft(result, {
+      _tag: "PersistenceError",
+      operation: DatabaseOperation.ReadDeclarationDiscovery,
+    })
   })
 })

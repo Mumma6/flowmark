@@ -19,7 +19,9 @@ existing cache invalidation and server-enforced project membership remain intact
 Failures are explicit rather than presented as a project-free account.
 
 `features/explore` composes the existing `useRunExplorer` controller and
-`useSnapshot`. It introduces no query transport or analytics population. Process
+`useSnapshot`, plus `ExploreAnalyticsContext` (period report, recorded changes,
+business outcomes and failure groups from the Insights/Attention controllers).
+It introduces no query transport or analytics population. Process
 counts describe the recorded summaries; the evidence list has its own full
 history/loading/error state. Project changes remount the Explore workspace to
 discard its old cursor. Applied filters and return links preserve exact cohorts.
@@ -200,10 +202,23 @@ selection and polling intentionally remain; moving telemetry reads to RSC would
 require a separate cache/project-selection design. Exhaustive visual snapshots
 and real hosted Preview/Staging journeys remain separate from local checks.
 
-Observed existing follow-up: when the proxy returns a non-tRPC 502 response,
-React Query displays the explicit failure state but its detail reads
-`Unable to transform response from server`. Improving that transport-specific
-message is separate from this behavior-preserving refactor.
+Observed existing follow-up: resolved for non-tRPC proxy 502 responses — the
+browser transport maps them to explicit retry guidance instead of the generic
+tRPC transform failure. Authorization and upstream tRPC envelopes are unchanged.
+
+Product TASK-003.6 verified locally on 4 November 2026 (staging `a279cc4`):
+
+- Root `pnpm check` passed, including `studio-explore-compat` and transport
+  error tests; Webpack production build passed with unchanged routes.
+- Browser on loopback production dashboard (existing Fieldwork Operations
+  fixture data): command search → `qa.inspector-pagination` cohort → contextual
+  inspector → Escape/back restored the same list page; Overview, Insights,
+  Issues, Runs full page and `/overview` deep links opened; project switch
+  remounted Explore and closed cross-project inspector state.
+- Mobile 390 × 844 and 200% zoom: execution evidence stays first in the Explore
+  column; analytics tabs use the `analytics` query key; horizontal overflow
+  clipped at the shell; account sheet exposes history/overview/settings; run
+  inspector and evidence modes remained reachable.
 
 ## Feature colocation
 

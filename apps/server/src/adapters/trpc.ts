@@ -13,6 +13,7 @@ import {
 import { initTRPC, TRPCError } from "@trpc/server"
 import { Effect, Exit, Match, Option, Schema } from "effect"
 import {
+  AgentAccess,
   ManageResultDeclarations,
   ResultDeclarationSchema,
   ConfigurationError,
@@ -94,6 +95,28 @@ const OnboardingStep = Schema.toStandardSchemaV1(
     step: Schema.Literals(["project", "key", "install", "instrument", "run"]),
   }),
 )
+const NonEmptyString = Schema.Trim.pipe(Schema.check(Schema.isMinLength(1)))
+const HttpOrHttpsUrlSchema = Schema.String.pipe(
+  Schema.check(Schema.isPattern(/^https?:\/\/.+/)),
+)
+const AgentAccessSubmitConsentInput = Schema.toStandardSchemaV1(
+  Schema.Struct({
+    oauthConsentId: NonEmptyString,
+    clientId: NonEmptyString,
+    redirectUri: HttpOrHttpsUrlSchema,
+    requestedScopes: Schema.Array(NonEmptyString),
+    resourceUrl: Schema.optional(HttpOrHttpsUrlSchema),
+    projectIds: Schema.Array(UuidSchema).pipe(
+      Schema.check(Schema.isMinLength(1)),
+    ),
+  }),
+)
+const AgentAccessConnectionInput = Schema.toStandardSchemaV1(
+  Schema.Struct({
+    authorizationCodeId: NonEmptyString,
+    clientId: NonEmptyString,
+  }),
+)
 
 const sessionUserId = Effect.fn("sessionUserId")(function* (request: Request) {
   if (!request.headers.get("cookie") || !process.env.DATABASE_URL) {
@@ -116,6 +139,20 @@ function requestedProjectId(request: Request) {
   return value && Schema.is(UuidSchema)(value) ? value : undefined
 }
 
+/** OAuth client id for delegated reads; must be paired with grant auth-code id and project id. */
+function requestedGrantClientId(request: Request) {
+  const value = request.headers.get("x-flowmark-grant-client-id")?.trim()
+  return value && value.length > 0 ? value : undefined
+}
+
+/** Grant family (`oauth_refresh_token.authorization_code_id`) for delegated reads. */
+function requestedGrantAuthorizationCodeId(request: Request) {
+  const value = request.headers
+    .get("x-flowmark-grant-authorization-code-id")
+    ?.trim()
+  return value && value.length > 0 ? value : undefined
+}
+
 async function executeQuery<A>(
   request: Request,
   operation: Effect.Effect<
@@ -125,6 +162,7 @@ async function executeQuery<A>(
     | ConfigurationError
     | InvalidInput
     | ManagementRateLimited,
+    | AgentAccess
     | GetProjectWorkflowData
     | ManageProject
     | Onboarding
@@ -201,20 +239,50 @@ function readQuery<A>(
   >,
 ) {
   const projectId = requestedProjectId(request)
+  const grantClientId = requestedGrantClientId(request)
+  const grantAuthorizationCodeId = requestedGrantAuthorizationCodeId(request)
+  const grantHeaderCount =
+    (grantClientId ? 1 : 0) + (grantAuthorizationCodeId ? 1 : 0)
   return executeQuery(
     request,
-    sessionUserId(request).pipe(
-      Effect.flatMap(
-        Option.match({
-          onNone: () =>
-            read({
-              _tag: "Key",
-              header: request.headers.get("authorization"),
+    Effect.gen(function* () {
+      if (grantHeaderCount === 1) {
+        return yield* Effect.fail(new Unauthorized({ permission: "read" }))
+      }
+      if (grantHeaderCount === 2) {
+        if (!projectId || !grantClientId || !grantAuthorizationCodeId) {
+          return yield* Effect.fail(new Unauthorized({ permission: "read" }))
+        }
+        const userId = yield* sessionUserId(request).pipe(
+          Effect.flatMap(
+            Option.match({
+              onNone: () =>
+                Effect.fail(new Unauthorized({ permission: "read" })),
+              onSome: Effect.succeed,
             }),
-          onSome: (userId) => read({ _tag: "User", userId, projectId }),
-        }),
-      ),
-    ),
+          ),
+        )
+        return yield* read({
+          _tag: "DelegatedUser",
+          userId,
+          clientId: grantClientId,
+          authorizationCodeId: grantAuthorizationCodeId,
+          projectId,
+        })
+      }
+      return yield* sessionUserId(request).pipe(
+        Effect.flatMap(
+          Option.match({
+            onNone: () =>
+              read({
+                _tag: "Key",
+                header: request.headers.get("authorization"),
+              }),
+            onSome: (userId) => read({ _tag: "User", userId, projectId }),
+          }),
+        ),
+      )
+    }),
   )
 }
 
@@ -225,7 +293,7 @@ function sessionQuery<A>(
   ) => Effect.Effect<
     A,
     Unauthorized | PersistenceError | InvalidInput | ManagementRateLimited,
-    ManageProject | ManageResultDeclarations
+    ManageProject | ManageResultDeclarations | AgentAccess
   >,
 ) {
   return executeQuery(
@@ -258,6 +326,29 @@ function onboardingQuery<A>(
         Option.match({
           onNone: () => Effect.fail(new Unauthorized({ permission: "read" })),
           onSome: operation,
+        }),
+      ),
+    ),
+  )
+}
+
+function sessionAgentAccessQuery<A>(
+  request: Request,
+  forUser: (
+    userId: string,
+  ) => Effect.Effect<
+    A,
+    Unauthorized | PersistenceError | InvalidInput | ManagementRateLimited,
+    AgentAccess
+  >,
+) {
+  return executeQuery(
+    request,
+    sessionUserId(request).pipe(
+      Effect.flatMap(
+        Option.match({
+          onNone: () => Effect.fail(new Unauthorized({ permission: "read" })),
+          onSome: forUser,
         }),
       ),
     ),
@@ -406,6 +497,73 @@ export const appRouter = t.router({
       ),
     ),
   }),
+  agentAccess: t.router({
+    list: t.procedure.query(({ ctx }) =>
+      sessionAgentAccessQuery(ctx.request, (userId) =>
+        Effect.flatMap(AgentAccess, (access) => access.listConnections(userId)),
+      ),
+    ),
+    connection: t.procedure
+      .input(AgentAccessConnectionInput)
+      .query(({ ctx, input }) =>
+        sessionAgentAccessQuery(ctx.request, (userId) =>
+          Effect.flatMap(AgentAccess, (access) =>
+            access.getConnection({
+              userId,
+              authorizationCodeId: input.authorizationCodeId,
+              clientId: input.clientId,
+            }),
+          ),
+        ),
+      ),
+    submitConsent: t.procedure
+      .input(AgentAccessSubmitConsentInput)
+      .mutation(({ ctx, input }) =>
+        sessionAgentAccessQuery(ctx.request, (userId) =>
+          Effect.gen(function* () {
+            const explicitMcp = process.env.FLOWMARK_MCP_RESOURCE_URL?.trim()
+            const flowmarkApiUrl = process.env.FLOWMARK_API_URL?.trim()
+            const derivedMcp =
+              explicitMcp ??
+              (flowmarkApiUrl
+                ? `${flowmarkApiUrl.replace(/\/$/, "")}/mcp`
+                : undefined)
+            const resourceUrl = input.resourceUrl?.trim() ?? derivedMcp
+            if (!resourceUrl) {
+              return yield* Effect.fail(
+                new InvalidInput({
+                  cause:
+                    "Resource URL is required, or set FLOWMARK_API_URL / FLOWMARK_MCP_RESOURCE_URL for the default MCP resource.",
+                }),
+              )
+            }
+            const access = yield* AgentAccess
+            return yield* access.submitConsent({
+              userId,
+              oauthConsentId: input.oauthConsentId,
+              clientId: input.clientId,
+              redirectUri: input.redirectUri,
+              requestedScopes: input.requestedScopes,
+              resourceUrl,
+              projectIds: input.projectIds,
+            })
+          }),
+        ),
+      ),
+    revokeConnection: t.procedure
+      .input(AgentAccessConnectionInput)
+      .mutation(({ ctx, input }) =>
+        sessionAgentAccessQuery(ctx.request, (userId) =>
+          Effect.flatMap(AgentAccess, (access) =>
+            access.revokeConnection({
+              userId,
+              authorizationCodeId: input.authorizationCodeId,
+              clientId: input.clientId,
+            }),
+          ),
+        ),
+      ),
+  }),
   resultDeclarations: t.router({
     searchFields: t.procedure
       .input(
@@ -505,6 +663,43 @@ export const appRouter = t.router({
         ),
       ),
     ),
+    discover: t.procedure
+      .input(
+        Schema.toStandardSchemaV1(
+          Schema.Struct({
+            cursor: Schema.optional(Schema.String),
+            limit: Schema.optional(Schema.Number),
+          }),
+        ),
+      )
+      .query(({ ctx, input }) =>
+        readQuery(ctx.request, (reader) =>
+          Effect.flatMap(GetProjectWorkflowData, (queries) =>
+            queries.discoverWorkflows(reader, input),
+          ),
+        ),
+      ),
+    meaning: t.procedure
+      .input(
+        Schema.toStandardSchemaV1(
+          Schema.Struct({
+            workflow: Schema.String.check(
+              Schema.isMinLength(1),
+              Schema.isMaxLength(200),
+            ),
+            revision: Schema.optional(Schema.String),
+            cursor: Schema.optional(Schema.String),
+            limit: Schema.optional(Schema.Number),
+          }),
+        ),
+      )
+      .query(({ ctx, input }) =>
+        readQuery(ctx.request, (reader) =>
+          Effect.flatMap(GetProjectWorkflowData, (queries) =>
+            queries.discoverWorkflowMeaning(reader, input),
+          ),
+        ),
+      ),
   }),
   search: t.router({
     project: t.procedure
@@ -594,6 +789,103 @@ export const appRouter = t.router({
         readQuery(ctx.request, (reader) =>
           Effect.flatMap(GetProjectWorkflowData, (queries) =>
             queries.timeline(reader, input.id),
+          ),
+        ),
+      ),
+    investigationSummary: t.procedure
+      .input(Schema.toStandardSchemaV1(Schema.Struct({ id: UuidSchema })))
+      .query(({ ctx, input }) =>
+        readQuery(ctx.request, (reader) =>
+          Effect.flatMap(GetProjectWorkflowData, (queries) =>
+            queries.runInvestigationSummary(reader, input.id),
+          ),
+        ),
+      ),
+    eventPage: t.procedure
+      .input(
+        Schema.toStandardSchemaV1(
+          Schema.Struct({
+            runId: UuidSchema,
+            cursor: Schema.optional(Schema.String),
+            limit: Schema.optional(
+              Schema.Number.pipe(
+                Schema.check(Schema.isInt()),
+                Schema.check(Schema.isBetween({ minimum: 1, maximum: 100 })),
+              ),
+            ),
+          }),
+        ),
+      )
+      .query(({ ctx, input }) =>
+        readQuery(ctx.request, (reader) =>
+          Effect.flatMap(GetProjectWorkflowData, (queries) =>
+            queries.runEventPage(reader, input),
+          ),
+        ),
+      ),
+    relatedPage: t.procedure
+      .input(
+        Schema.toStandardSchemaV1(
+          Schema.Struct({
+            runId: UuidSchema,
+            cursor: Schema.optional(Schema.String),
+            limit: Schema.optional(
+              Schema.Number.pipe(
+                Schema.check(Schema.isInt()),
+                Schema.check(Schema.isBetween({ minimum: 1, maximum: 100 })),
+              ),
+            ),
+          }),
+        ),
+      )
+      .query(({ ctx, input }) =>
+        readQuery(ctx.request, (reader) =>
+          Effect.flatMap(GetProjectWorkflowData, (queries) =>
+            queries.relatedRunsPage(reader, input),
+          ),
+        ),
+      ),
+    expectationsPage: t.procedure
+      .input(
+        Schema.toStandardSchemaV1(
+          Schema.Struct({
+            runId: UuidSchema,
+            cursor: Schema.optional(Schema.String),
+            limit: Schema.optional(
+              Schema.Number.pipe(
+                Schema.check(Schema.isInt()),
+                Schema.check(Schema.isBetween({ minimum: 1, maximum: 100 })),
+              ),
+            ),
+          }),
+        ),
+      )
+      .query(({ ctx, input }) =>
+        readQuery(ctx.request, (reader) =>
+          Effect.flatMap(GetProjectWorkflowData, (queries) =>
+            queries.expectationsPage(reader, input),
+          ),
+        ),
+      ),
+    operationsPage: t.procedure
+      .input(
+        Schema.toStandardSchemaV1(
+          Schema.Struct({
+            runId: UuidSchema,
+            cursor: Schema.optional(Schema.String),
+            limit: Schema.optional(
+              Schema.Number.pipe(
+                Schema.check(Schema.isInt()),
+                Schema.check(Schema.isBetween({ minimum: 1, maximum: 100 })),
+              ),
+            ),
+          }),
+        ),
+      )
+      .query(({ ctx, input }) =>
+        readQuery(ctx.request, (reader) =>
+          Effect.flatMap(GetProjectWorkflowData, (queries) =>
+            queries.operationsPage(reader, input),
           ),
         ),
       ),

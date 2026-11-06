@@ -12,6 +12,14 @@ import {
 import type { Email } from "@flowmark/email"
 import { createAuthEmailCallbacks } from "./email-callbacks.js"
 import { createAuthRateLimitStorage } from "./rate-limit-storage.js"
+import {
+  alignAgentAccessWithBaseUrl,
+  flowmarkAgentAccessPlugins,
+  flowmarkAgentAccessSchema,
+} from "./agent-access/compose-provider.js"
+
+/** Optional hook after primary-account password changes (reset or credential update). */
+export type RevokeDelegatedAgentAccess = (userId: string) => Promise<void>
 
 class AuthRequestError extends Data.TaggedError("AuthRequestError")<{
   readonly cause: unknown
@@ -49,6 +57,16 @@ export function createFlowmarkAuth(options: {
   readonly trustedOrigins?: ReadonlyArray<string>
   readonly emailDelivery?: Email["Service"]
   readonly scheduleEmail?: (task: Promise<unknown>) => void
+  /**
+   * Revoke delegated agent OAuth grant families for this user (e.g. after password reset).
+   * Runs before `emailAndPassword.onPasswordReset` when both are set.
+   */
+  readonly onRevokeDelegatedAgentAccess?: RevokeDelegatedAgentAccess
+  /** Omitted or absent keeps agent OAuth/MCP discovery off. */
+  readonly agentAccess?: {
+    readonly issuerOrigin: string
+    readonly apiOrigin: string
+  }
 }): ReturnType<typeof betterAuth> {
   const storage = createAuthRateLimitStorage(options.db, options.secret)
   const sourceRule = (max: number) => (request: Request) =>
@@ -57,6 +75,18 @@ export function createFlowmarkAuth(options: {
       : (false as const)
   const email = options.emailDelivery
     ? createAuthEmailCallbacks(options.emailDelivery, options.scheduleEmail)
+    : undefined
+  const baseURL =
+    options.baseURL ??
+    process.env.BETTER_AUTH_URL ??
+    process.env.FLOWMARK_DASHBOARD_ORIGIN ??
+    "http://localhost:3001"
+  const agentAccess = options.agentAccess
+    ? Effect.runSync(
+        alignAgentAccessWithBaseUrl(options.agentAccess, baseURL).pipe(
+          Effect.mapError((cause) => new AuthConfigurationError({ cause })),
+        ),
+      )
     : undefined
   const configuration: BetterAuthOptions = {
     appName: "Flowmark",
@@ -67,11 +97,7 @@ export function createFlowmarkAuth(options: {
       log: (level) =>
         console[level]("[Flowmark auth] Provider diagnostic", { level }),
     },
-    baseURL:
-      options.baseURL ??
-      process.env.BETTER_AUTH_URL ??
-      process.env.FLOWMARK_DASHBOARD_ORIGIN ??
-      "http://localhost:3001",
+    baseURL,
     trustedOrigins: [
       ...(options.trustedOrigins ?? []),
       process.env.FLOWMARK_DASHBOARD_ORIGIN ?? "http://localhost:3001",
@@ -84,6 +110,7 @@ export function createFlowmarkAuth(options: {
         session,
         account,
         verification,
+        ...(agentAccess ? flowmarkAgentAccessSchema : {}),
       },
     }),
     // Email ownership is proved by a recovery link when needed, not a login gate.
@@ -101,7 +128,13 @@ export function createFlowmarkAuth(options: {
       autoSignIn: true,
       requireEmailVerification: false,
       revokeSessionsOnPasswordReset: true,
-      ...email?.emailAndPassword,
+      ...(email?.emailAndPassword ?? {}),
+      onPasswordReset: async (data, request) => {
+        if (options.onRevokeDelegatedAgentAccess) {
+          await options.onRevokeDelegatedAgentAccess(data.user.id)
+        }
+        await email?.emailAndPassword?.onPasswordReset?.(data, request)
+      },
     },
     rateLimit: {
       enabled: true,
@@ -124,7 +157,10 @@ export function createFlowmarkAuth(options: {
         }),
       },
     },
-    plugins: [accountRateLimits(storage)],
+    plugins: [
+      accountRateLimits(storage),
+      ...(agentAccess ? flowmarkAgentAccessPlugins(agentAccess) : []),
+    ] as BetterAuthOptions["plugins"],
     // Keep the same provider CSRF/origin checks in tests and deployed requests.
     advanced: {
       backgroundTasks:

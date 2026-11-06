@@ -129,3 +129,32 @@ Local tests exercise old-style raw inserts as well as accepted SDK ingestion,
 legacy mixed terminals, missing results, separate reports, repeated/late operation
 samples, project isolation, transactional rollback, keyset resume and repair.
 Production performance and storage costs require deployment-specific measurement.
+
+## Bounded investigation reads
+
+Studio and later agent reads page evidence in SQL. The limits below are applied
+before a response is serialized. The 64 KiB figure is the maximum serialized
+tool response from the agent contract; it is not a substitute for the SQL limit.
+Oversized properties, results, errors and expectation payloads become an explicit
+preview (8 KiB) with omission text. Retention is unchanged: these reads do not
+backfill, delete or extend telemetry lifetime.
+
+| Read                                                              | SQL bound                         | Ordering                                                             |
+| ----------------------------------------------------------------- | --------------------------------- | -------------------------------------------------------------------- |
+| Run event page                                                    | 50 default, 100 max (`LIMIT n+1`) | `occurred_at`, `created_at`, `event_id` with microsecond cursor text |
+| Related runs, expectations, operations, workflow names, revisions | 25 default, 100 max               | Stable keyset for that section                                       |
+| Run list                                                          | 50 default, 100 max               | `started_at` desc, `id` desc                                         |
+| Full timeline (`getRunTimeline` / `run.detail`)                   | Unpaged                           | Same event order as the event page                                   |
+
+A page walk over a stable history returns each row once. An append that sorts
+after the caller's cursor is visible on a later page. An append that sorts at or
+before that cursor is not revisited and is not inserted into pages already
+returned. Malformed cursors and runs outside the authorized project fail the
+read. A cursor does not switch project or workflow.
+
+`run.detail` still returns the full timeline, including payloads the paged read
+previews. The inspector Events view uses `run.eventPage`. Related runs,
+confirmations and the operations view use `run.relatedPage`,
+`run.expectationsPage` and `run.operationsPage`. Peer, period and business
+arithmetic stay on the existing aggregate reads. Compact facts remain preferred;
+a run with no fact row still resolves through the raw-event fallback.

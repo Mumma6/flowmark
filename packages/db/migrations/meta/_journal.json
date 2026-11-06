@@ -127,6 +127,34 @@
       "when": 1793614774098,
       "tag": "0017_auth_rate_limits",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1793971314830,
+      "tag": "0018_solid_major_mapleleaf",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1793994801528,
+      "tag": "0019_optimal_old_lace",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1793995967680,
+      "tag": "0020_eager_ozymandias",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1793998552430,
+      "tag": "0021_wandering_slipstream",
+      "breakpoints": true
     }
   ]
 }

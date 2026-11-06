@@ -25,11 +25,64 @@ the local fixture use the same provider login implementation.
   It preserves provider `X-Retry-After` and standard `Retry-After` headers on
   responses. It does not forward browser-supplied client-IP headers as trusted
   identity.
+- Agent OAuth and MCP discovery stay off unless `createFlowmarkAuth` is
+  called with `agentAccess`. The disabled factory keeps the existing email,
+  session, origin and CSRF plugins only. Enabled discovery documents advertise issuer-root
+  `/.well-known/oauth-authorization-server`,
+  `/.well-known/openid-configuration`, `/oauth2/*` and `/jwks`. The dashboard
+  forwards only those issuer paths to the API auth handler under `/api/auth`.
+  Ordinary `/api/auth/*` redirects stay on the dashboard origin. An
+  `/oauth2/*` response may redirect to the request's own loopback or HTTPS
+  `redirect_uri`, and nowhere else. The MCP resource identifier is
+  `{apiOrigin}/mcp`. That resource accepts the issued scopes, including
+  `offline_access`, so the provider can keep and rotate a refresh token.
+  The audience stays the MCP resource.
+  Dynamic client registration is off, and remote client-metadata documents are
+  refused. Authorization-code exchange, PKCE and refresh rotation stay in the
+  provider. The server-owned grant family is that provider authorization-code
+  id, with the subject, client, configured issuer and MCP resource. It carries
+  no project. A provider token is not a project grant: project reads still
+  require a later explicit grant intersected with current membership. Enabling
+  the provider leaves signup, sign-in, password recovery, origin checks and
+  account limits on the same handlers. `get-session` accepts the dashboard
+  session cookie and does not treat the provider access token as that session.
+  `POST /mcp` is not served by the auth handler. A mismatched issuer and auth
+  base URL fails before the provider is composed. With `agentAccess` omitted,
+  discovery and the token endpoint stay unavailable.
 - tRPC reads resolve project-scoped session or programmatic read authority.
   Account and project management require session authority; ingestion keys do
   not grant account-management rights. Existing isolation tests cover these
   separate boundaries, including expired, forged, signed-out and revoked
   sessions.
+
+### Delegated workflow reads (tRPC)
+
+When **all** of the following are present on a read request, the API resolves
+authority through the **delegated reader** path (`ProjectReader` tag `DelegatedUser`):
+
+| Header                                   | Role                                                                          |
+| ---------------------------------------- | ----------------------------------------------------------------------------- |
+| `x-flowmark-project-id`                  | UUID of the project to read (required for delegated reads).                   |
+| `x-flowmark-grant-client-id`             | OAuth `client_id` for the connection.                                         |
+| `x-flowmark-grant-authorization-code-id` | Grant family id (matches `oauth_refresh_token.authorization_code_id`).        |
+| Session cookie                           | Same requirement as other session-backed reads; headers alone are not enough. |
+
+**Semantics.** The server authorizes read only if the project id appears in
+`agent_access_grant_projects` for that grant family **and** the subject user is
+still a **project member** **and** there is an **active** (not revoked, unexpired)
+refresh token row for that user, client and authorization-code id. Sending only
+one of the two grant headers fails closed (read unauthorized).
+
+**Grant rows and revocation.** Session consent (`agentAccess.submitConsent`) writes
+`agent_access_grant_projects` for the active grant family. Revoking a connection
+(`agentAccess.revokeConnection`) or completing **password reset** revokes OAuth
+refresh/access rows in storage, deletes grant and last-auth rows for that family,
+and marks consent intents `revoked` where applicable — so a **second API instance**
+still denies delegated reads because authorization re-reads stored state. Submitting
+consent for a **new** grant family supersedes a prior family (old tokens revoked;
+intents `superseded`); reconnection cannot widen or resurrect revoked credentials.
+Ordinary dashboard reads (session + optional `x-flowmark-project-id` without grant
+headers) are unchanged.
 
 Authentication responses through the proxy and registration alias use
 `Cache-Control: no-store`. Provider diagnostics retain severity with a fixed

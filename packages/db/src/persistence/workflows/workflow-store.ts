@@ -22,6 +22,13 @@ import {
   getRunTimeline,
   type RunTimelineEvent,
 } from "./queries/get-run-timeline.js"
+import { getRunEventPage } from "./queries/get-run-event-page.js"
+import { getRunInvestigationSummary } from "./queries/get-run-investigation-summary.js"
+import { getRelatedRunsPage } from "./queries/get-related-runs-page.js"
+import { getRunExpectationsPage } from "./queries/get-run-expectations-page.js"
+import { getRunOperationsPage } from "./queries/get-run-operations-page.js"
+import { getWorkflowDiscoveryPage } from "./queries/get-workflow-discovery-page.js"
+import { getWorkflowMeaningPage } from "./queries/get-workflow-meaning-page.js"
 import { listRuns } from "./queries/list-runs.js"
 import { searchProject } from "./queries/search-project.js"
 import { appendEvent } from "./writes/append-event.js"
@@ -31,6 +38,19 @@ import type {
   ProjectSnapshot,
   RelatedRuns,
   RunComparison,
+  RunEventPage,
+  RunEventPageQuery,
+  RunInvestigationSummary,
+  RelatedRunsPage,
+  RelatedRunsPageQuery,
+  RunExpectationsPage,
+  RunExpectationsPageQuery,
+  RunOperationsPage,
+  RunOperationsPageQuery,
+  WorkflowDiscoveryPage,
+  WorkflowDiscoveryQuery,
+  WorkflowMeaningPage,
+  WorkflowMeaningQuery,
   PeriodReport,
   WorkflowIntelligence,
   WorkflowSummary,
@@ -70,6 +90,37 @@ export interface WorkflowStoreService {
     projectId: string,
     runId: string,
   ) => Effect.Effect<ReadonlyArray<RunTimelineEvent>, DatabaseError>
+  readonly runEventPage: (
+    projectId: string,
+    query: RunEventPageQuery,
+  ) => Effect.Effect<RunEventPage, DatabaseError | InvalidResultQuery>
+  readonly runInvestigationSummary: (
+    projectId: string,
+    runId: string,
+  ) => Effect.Effect<
+    RunInvestigationSummary,
+    DatabaseError | InvalidResultQuery
+  >
+  readonly relatedRunsPage: (
+    projectId: string,
+    query: RelatedRunsPageQuery,
+  ) => Effect.Effect<RelatedRunsPage, DatabaseError | InvalidResultQuery>
+  readonly expectationsPage: (
+    projectId: string,
+    query: RunExpectationsPageQuery,
+  ) => Effect.Effect<RunExpectationsPage, DatabaseError | InvalidResultQuery>
+  readonly operationsPage: (
+    projectId: string,
+    query: RunOperationsPageQuery,
+  ) => Effect.Effect<RunOperationsPage, DatabaseError | InvalidResultQuery>
+  readonly discoverWorkflows: (
+    projectId: string,
+    query: WorkflowDiscoveryQuery,
+  ) => Effect.Effect<WorkflowDiscoveryPage, DatabaseError | InvalidResultQuery>
+  readonly discoverWorkflowMeaning: (
+    projectId: string,
+    query: WorkflowMeaningQuery,
+  ) => Effect.Effect<WorkflowMeaningPage, DatabaseError | InvalidResultQuery>
   readonly related: (
     projectId: string,
     runId: string,
@@ -106,6 +157,20 @@ export class WorkflowStore extends Context.Service<WorkflowStore>()(
         search: (projectId, query) => provide(searchProject(projectId, query)),
         timeline: (projectId, runId) =>
           provide(getRunTimeline(projectId, runId)),
+        runEventPage: (projectId, query) =>
+          provide(getRunEventPage(projectId, query)),
+        runInvestigationSummary: (projectId, runId) =>
+          provide(getRunInvestigationSummary(projectId, runId)),
+        relatedRunsPage: (projectId, query) =>
+          provide(getRelatedRunsPage(projectId, query)),
+        expectationsPage: (projectId, query) =>
+          provide(getRunExpectationsPage(projectId, query)),
+        operationsPage: (projectId, query) =>
+          provide(getRunOperationsPage(projectId, query)),
+        discoverWorkflows: (projectId, query) =>
+          provide(getWorkflowDiscoveryPage(projectId, query)),
+        discoverWorkflowMeaning: (projectId, query) =>
+          provide(getWorkflowMeaningPage(projectId, query)),
         related: (projectId, runId) =>
           provide(getRelatedRuns(projectId, runId)),
         compare: (projectId, runId, selection) =>

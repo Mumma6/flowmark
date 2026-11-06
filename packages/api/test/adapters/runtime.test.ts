@@ -14,6 +14,7 @@ afterEach(() => {
 const settings = Layer.succeed(ApiSettings, {
   databaseUrl: Redacted.make("postgresql://127.0.0.1:1/unused"),
   demoMode: false,
+  mcpResourceUrl: undefined,
 })
 
 describe("API request resource scope", () => {

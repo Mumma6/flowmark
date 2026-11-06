@@ -2,6 +2,10 @@ import { after } from "next/server"
 import { Email, resendLayer } from "@flowmark/email"
 import { Data, Effect, Exit } from "effect"
 import { createDatabase } from "@flowmark/db"
+import {
+  Database,
+  revokeAllAgentAccessConnectionsForUser,
+} from "@flowmark/db/persistence"
 import { createFlowmarkAuth, readAuthSecret } from "@flowmark/auth"
 import { assertPreviewDatabase } from "@flowmark/db/environment"
 import { ConfigurationError } from "@flowmark/api"
@@ -61,6 +65,22 @@ export const getAuth = Effect.fn("getAuth")(function* () {
     baseURL,
     trustedOrigins: [dashboardOrigin],
     emailDelivery,
+    onRevokeDelegatedAgentAccess: async (userId) => {
+      try {
+        await Effect.runPromise(
+          revokeAllAgentAccessConnectionsForUser(userId).pipe(
+            Effect.provideService(Database, db),
+          ),
+        )
+      } catch {
+        console.error(
+          "[Flowmark auth] Delegated agent access revocation failed",
+          {
+            operation: "revoke-delegated-agent-access",
+          },
+        )
+      }
+    },
     scheduleEmail: (task) => {
       // Attach rejection handling immediately; Next owns the remaining lifetime.
       const result = Effect.runPromiseExit(

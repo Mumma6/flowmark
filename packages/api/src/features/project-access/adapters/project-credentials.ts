@@ -30,6 +30,9 @@ export const ProjectCredentialsLive = Layer.effect(
       memberProject: Effect.fn("ProjectCredentialsLive.memberProject")(
         (userId, projectId) => persist(store.memberProject(userId, projectId)),
       ),
+      delegatedReaderProject: Effect.fn(
+        "ProjectCredentialsLive.delegatedReaderProject",
+      )((input) => persist(store.delegatedReaderProject(input))),
       listProjects: Effect.fn("ProjectCredentialsLive.listProjects")((userId) =>
         persist(store.listProjects(userId)),
       ),

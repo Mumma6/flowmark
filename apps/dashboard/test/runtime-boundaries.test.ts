@@ -1,4 +1,4 @@
-import { Array as Arr } from "effect"
+import { Array as EffectArray } from "effect"
 import { existsSync, readFileSync, readdirSync } from "node:fs"
 import { dirname, relative, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
@@ -31,8 +31,8 @@ it("keeps every client module's transitive runtime imports free of server-only c
       return
     }
     visited.add(path)
-    Arr.forEach(
-      Arr.fromIterable(sources.get(path)?.statements ?? []),
+    EffectArray.forEach(
+      EffectArray.fromIterable(sources.get(path)?.statements ?? []),
       (node) => {
         if (
           !ts.isImportDeclaration(node) ||
@@ -75,7 +75,7 @@ it("keeps every client module's transitive runtime imports free of server-only c
       },
     )
   }
-  Arr.forEach(Arr.fromIterable(sources), ([path, source]) => {
+  EffectArray.forEach(EffectArray.fromIterable(sources), ([path, source]) => {
     if (/^[\s]*["']use client["']/.test(source.text)) {
       visit(path)
     }
@@ -115,8 +115,9 @@ it("keeps dashboard application code free of imperative loops", () => {
     }
     ts.forEachChild(node, (child) => inspect(child, path))
   }
-  Arr.forEach(Arr.fromIterable(sources.entries()), ([path, source]) =>
-    inspect(source, path),
+  EffectArray.forEach(
+    EffectArray.fromIterable(sources.entries()),
+    ([path, source]) => inspect(source, path),
   )
   expect(loops).toEqual([])
 })

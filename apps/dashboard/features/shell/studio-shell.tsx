@@ -20,6 +20,7 @@ import {
   History,
   LayoutGrid,
   LineChart,
+  Link2,
   LogOut,
   Settings,
   UserRound,
@@ -47,6 +48,7 @@ const navigation = [
 const utilities = [
   { href: "/runs", label: "Execution history", icon: History },
   { href: "/overview", label: "Project overview", icon: LayoutGrid },
+  { href: "/connect", label: "Connect", icon: Link2 },
   { href: "/settings", label: "Settings", icon: Settings },
   { href: "/onboarding?mode=guide", label: "Setup guide", icon: Code2 },
 ] as const
@@ -154,7 +156,7 @@ export function StudioShell({
   return (
     <RuntimeConfigProvider apiOrigin={apiOrigin}>
       <ProjectProvider>
-        <div className="relative isolate min-h-screen bg-background">
+        <div className="relative isolate min-h-screen overflow-x-clip bg-background">
           <div
             aria-hidden="true"
             className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[480px] bg-[radial-gradient(ellipse_at_50%_0%,hsl(var(--primary)/0.04),transparent_65%)]"
@@ -183,7 +185,28 @@ export function StudioShell({
                 </Link>
               }
               project={<ProjectSwitcher />}
-              search={<CommandPalette />}
+              search={
+                <>
+                  <CommandPalette />
+                  <Button
+                    asChild
+                    className="h-9 shrink-0 border border-neutral-950/15 bg-white px-2.5 text-neutral-950 shadow-sm hover:bg-neutral-100 sm:px-3"
+                  >
+                    <Link
+                      href="/connect"
+                      aria-current={
+                        pathname.startsWith("/connect") ? "page" : undefined
+                      }
+                    >
+                      <Link2 aria-hidden="true" />
+                      <span className="lg:hidden">Connect</span>
+                      <span className="hidden lg:inline">
+                        Connect your agent
+                      </span>
+                    </Link>
+                  </Button>
+                </>
+              }
               account={<AccountPanel email={email} />}
               navigation={
                 <nav

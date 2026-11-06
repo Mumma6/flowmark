@@ -42,22 +42,19 @@ import {
 import { formatReportedProgress } from "./run-presentation"
 import { BusinessResult } from "../results/business-result"
 import { buildInvestigation } from "./investigation-model"
-import { RelatedRunsTable } from "./related-runs-table"
+import { RunOperationsPagePanel } from "./run-operations-page-panel"
+import { RunRelatedRunsPanel } from "./run-related-runs-panel"
 import { RunAttempts } from "./run-attempts"
 import { RunComparisonPanel } from "./run-comparison-panel"
-import { EventTable } from "./run-event-table"
+import { RunEventPagePanel } from "./run-event-page-panel"
 import { RunEventTimeline } from "./run-event-timeline"
-import { OperationWaterfall, ProgressStrip } from "./run-waterfall"
+import { ProgressStrip } from "./run-waterfall"
 
-type RunRelationships = inferRouterOutputs<AppRouter>["run"]["related"]
 type RunComparison = inferRouterOutputs<AppRouter>["run"]["compare"]
 
 export function RunInvestigation({
   runId,
   events,
-  relationships,
-  relationshipsLoading = false,
-  relationshipsError,
   comparison,
   comparisonLoading = false,
   comparisonError,
@@ -65,9 +62,6 @@ export function RunInvestigation({
 }: {
   runId: string
   events: readonly RunEvent[]
-  relationships?: RunRelationships
-  relationshipsLoading?: boolean
-  relationshipsError?: string
   comparison?: RunComparison
   comparisonLoading?: boolean
   comparisonError?: string
@@ -363,7 +357,7 @@ export function RunInvestigation({
                       </CardTitle>
                       <CardDescription className="mt-2">
                         {timelineView === "waterfall"
-                          ? "Recorded operation intervals, overlap, and idle gaps between endpoints."
+                          ? "Recorded operations load in bounded pages. Use the event timeline for full interval overlap."
                           : timelineView === "events"
                             ? "Filter and expand rows for full payloads and timestamps."
                             : "Checkpoints, operations, progress, and failures in order. Expand rows with payloads."}
@@ -422,11 +416,10 @@ export function RunInvestigation({
                       }}
                     />
                     {timelineView === "waterfall" ? (
-                      <OperationWaterfall events={events} />
+                      <RunOperationsPagePanel runId={runId} />
                     ) : timelineView === "events" ? (
-                      <EventTable
-                        key={evidenceSelection?.revision}
-                        events={events}
+                      <RunEventPagePanel
+                        runId={runId}
                         initialEventId={evidenceSelection?.id}
                       />
                     ) : (
@@ -563,69 +556,14 @@ export function RunInvestigation({
                         </dd>
                       </div>
                     </dl>
-                    {relationshipsError ? (
-                      <Alert variant="destructive">
-                        <AlertDescription>
-                          Could not load linked runs: {relationshipsError}
-                        </AlertDescription>
-                      </Alert>
-                    ) : relationshipsLoading ? (
-                      <p role="status">Loading linked runs…</p>
-                    ) : (
-                      <>
-                        {first.retryOf && (
-                          <p className="my-3 text-sm">
-                            Retry of{" "}
-                            <code>
-                              {first.retryOf.workflow} / {first.retryOf.runId}
-                            </code>
-                            . This execution has its own status and reported
-                            result; totals across executions are not
-                            deduplicated items.
-                          </p>
-                        )}
-                        <RelatedRunsTable
-                          source={source}
-                          replace={contextual}
-                          title="Previous execution (explicit retry link)"
-                          runs={relationships?.retryMatches ?? []}
-                          empty={
-                            first.retryOf
-                              ? "Referenced execution not recorded or not accessible in this project."
-                              : "No retry-of reference supplied."
-                          }
-                        />
-                        <RelatedRunsTable
-                          source={source}
-                          replace={contextual}
-                          title="Later executions retrying this run"
-                          runs={relationships?.retries ?? []}
-                          empty="No later retry links recorded in this project."
-                        />
-                        <RelatedRunsTable
-                          source={source}
-                          replace={contextual}
-                          title="Parent matches"
-                          runs={relationships?.parentMatches ?? []}
-                          empty={
-                            first.parentRunId
-                              ? "No matching parent recorded in this project."
-                              : "No parent link supplied."
-                          }
-                        />
-                        <RelatedRunsTable
-                          source={source}
-                          replace={contextual}
-                          title="Shared correlation"
-                          runs={relationships?.related ?? []}
-                          empty={
-                            first.correlationId
-                              ? "No other matching runs recorded."
-                              : "No correlation ID supplied."
-                          }
-                        />
-                      </>
-                    )}
+                    <RunRelatedRunsPanel
+                      runId={runId}
+                      source={source}
+                      replace={contextual}
+                      retryOf={first.retryOf}
+                      correlationId={first.correlationId}
+                      parentRunId={first.parentRunId}
+                    />
                   </CardContent>
                 </Card>
               </>

@@ -1,0 +1,1 @@
+ALTER TYPE "public"."oauth_consent_intent_state" ADD VALUE 'revoked';

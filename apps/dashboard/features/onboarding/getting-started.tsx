@@ -26,39 +26,24 @@ import { CreateProjectForm, SecretAlert } from "../projects/create-project-form"
 import { useProjectKeys } from "../projects/keys-query"
 import { useProject } from "../projects/project-context"
 import type { CreatedSecret } from "../projects/types"
+import {
+  manualWorkflowSnippet,
+  serverEnvironmentSnippet,
+} from "../connect/setup-instructions"
+import { SetupPathTabs } from "../connect/setup-path-tabs"
 import { flowmarkAgentPrompt } from "./agent-prompt"
 
 const storageKey = "flowmark.dashboard.onboarding.dismissed"
 
-const installSnippet = (origin: string) => `npm i @flowmarkdev/node
-
-FLOWMARK_API_KEY=<write-key-from-settings>
-FLOWMARK_API_URL=${origin}
-
-import { createFlowmark } from "@flowmarkdev/node"
-
-export const flowmark = createFlowmark()
-
-const flow = flowmark.workflow("example.process")
-flow.step("started")
-await flow.operation("work", async () => {
-  // existing application work
-})
-flow.done({ result: { ok: true } })`
-
 function AgentPromptBody() {
-  const prompt = flowmarkAgentPrompt(useApiOrigin())
+  const origin = useApiOrigin()
   return (
-    <div className="grid gap-3">
-      <p className="text-sm leading-6 text-muted-foreground">
-        Put the write key in the server environment yourself. This prompt does
-        not contain it. Install with <code>npm i @flowmarkdev/node</code>.
-      </p>
-      <pre className="max-h-80 overflow-auto rounded-lg border border-border bg-muted p-4 text-xs leading-6 whitespace-pre-wrap">
-        {prompt}
-      </pre>
-      <CopyButton value={prompt} label="Copy prompt" />
-    </div>
+    <SetupPathTabs
+      origin={origin}
+      agentPrompt={flowmarkAgentPrompt(origin)}
+      compact
+      onCopied={() => undefined}
+    />
   )
 }
 
@@ -68,9 +53,8 @@ export function AgentPromptCard() {
       <CardHeader>
         <CardTitle>Coding agent</CardTitle>
         <CardDescription>
-          Paste this into your agent chat. It tells the agent to add{" "}
-          <code>@flowmarkdev/node</code>, set the server environment, and look
-          for processes where a workflow is worth marking.
+          Copy one instruction. The agent fetches the instrumentation guide from
+          the API and follows it. The write key stays in the server environment.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -129,7 +113,7 @@ export function GettingStartedChecklist({
   const keys = useProjectKeys()
   const hasWriteKey = (keys.data?.apiKeys.length ?? 0) > 0
   const origin = useApiOrigin()
-  const snippet = installSnippet(origin)
+  const snippet = manualWorkflowSnippet(origin)
 
   return (
     <Card>
@@ -201,11 +185,10 @@ export function GettingStartedChecklist({
               the API origin, not <code>/v1/events</code>.
             </p>
             <pre className="overflow-x-auto rounded-lg border border-border bg-muted p-4 text-xs leading-6">
-              {`FLOWMARK_API_KEY=<write key>
-FLOWMARK_API_URL=${origin}`}
+              {serverEnvironmentSnippet(origin)}
             </pre>
             <CopyButton
-              value={`FLOWMARK_API_KEY=<write key>\nFLOWMARK_API_URL=${origin}`}
+              value={serverEnvironmentSnippet(origin)}
               label="Copy env"
             />
           </ChecklistRow>
@@ -227,14 +210,18 @@ FLOWMARK_API_URL=${origin}`}
             )}
             {compact && (
               <p>
-                Use the coding-agent prompt in{" "}
+                Use agent or manual setup in{" "}
+                <Link href="/connect" className="text-primary underline">
+                  Connect
+                </Link>{" "}
+                or{" "}
                 <Link
                   href="/settings?section=setup"
                   className="text-primary underline"
                 >
                   Settings → Setup help
-                </Link>{" "}
-                or expand Getting started on Overview.
+                </Link>
+                .
               </p>
             )}
             {!hasProject && (
@@ -309,7 +296,11 @@ export function OnboardingGuide({
   const [createdSecret, setCreatedSecret] = useState<CreatedSecret | null>(null)
   const decidedOnce = useRef(false)
   const origin = useApiOrigin()
-  const snippet = installSnippet(origin)
+  const snippet = manualWorkflowSnippet(origin)
+
+  useEffect(() => {
+    setCreatedSecret(null)
+  }, [current?.id])
 
   useEffect(() => {
     if (!ready || decidedOnce.current) {
@@ -474,11 +465,10 @@ export function OnboardingGuide({
                   is the API origin, not <code>/v1/events</code>.
                 </p>
                 <pre className="overflow-x-auto rounded-lg border border-border bg-muted p-4 text-xs leading-6 text-foreground">
-                  {`FLOWMARK_API_KEY=<write key>
-FLOWMARK_API_URL=${origin}`}
+                  {serverEnvironmentSnippet(origin)}
                 </pre>
                 <CopyButton
-                  value={`FLOWMARK_API_KEY=<write key>\nFLOWMARK_API_URL=${origin}`}
+                  value={serverEnvironmentSnippet(origin)}
                   label="Copy env"
                 />
               </>

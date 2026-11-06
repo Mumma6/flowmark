@@ -1,4 +1,4 @@
-import { Array as Arr, Effect, Layer, Result } from "effect"
+import { Array as EffectArray, Effect, Layer, Result } from "effect"
 import { afterEach, expect, it, vi } from "vitest"
 import { DashboardApi } from "../features/platform/api-server-client"
 import { DashboardServerConfig } from "../features/platform/config-server"
@@ -39,7 +39,9 @@ it("isolates API origins and protection credentials across executions and preser
       { concurrency: 2 },
     ),
   )
-  Arr.forEach(responses, (response) => expect(response.status).toBe(503))
+  EffectArray.forEach(responses, (response) =>
+    expect(response.status).toBe(503),
+  )
   expect(
     fetch.mock.calls.map(([url, options]) => [
       url.origin,

@@ -18,6 +18,7 @@ import {
 } from "@flowmark/ui"
 import Link from "next/link"
 import { DataState } from "../shared/dashboard-components"
+import { InsightInvestigationHandoff } from "../runs/insight-investigation-handoff"
 import { useBusinessOutcomes } from "./use-business-outcomes"
 
 export function BusinessOutcomes({
@@ -296,6 +297,14 @@ export function BusinessOutcomes({
                 ? "Available for the selected definition; each release has at least five known observations. Differences are descriptive, not causal."
                 : insights.data.releaseComparison.reason}
             </p>
+            <InsightInvestigationHandoff
+              workflow={workflow}
+              selectedRevision={selectedRevision}
+              validDates={validDates}
+              field={field}
+              input={input}
+              insights={insights.data}
+            />
             {insights.data.windows
               .filter(
                 (window) =>

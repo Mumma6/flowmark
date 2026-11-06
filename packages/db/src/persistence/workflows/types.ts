@@ -1,7 +1,9 @@
 import type { PeerPopulation } from "@flowmarkdev/core"
 import type { RatioSelection } from "@flowmarkdev/core"
 import type { ResultSelection } from "@flowmarkdev/core"
+import type { SearchFields } from "@flowmarkdev/core"
 import type { WorkflowResult } from "@flowmarkdev/core"
+import type { RunTimelineEvent } from "./queries/get-run-timeline.js"
 
 export type RunStatus = "Completed" | "Failed" | "Running"
 
@@ -258,4 +260,188 @@ export type ProjectSearch = {
   readonly workflows: ReadonlyArray<ProjectSearchWorkflow>
   readonly runs: ReadonlyArray<ProjectSearchRun>
   readonly references: ReadonlyArray<ProjectSearchReference>
+}
+
+/** Bounded inspector / agent read: paged run timeline events. */
+export interface RunEventPageQuery {
+  readonly runId: string
+  readonly cursor?: string
+  readonly limit?: number
+}
+
+export interface RunEventPage {
+  readonly runId: string
+  readonly events: ReadonlyArray<RunTimelineEvent>
+  readonly nextCursor: string | null
+  readonly limit: number
+  readonly totalEvents: number
+}
+
+/** Bounded run header + aggregate counts without loading the full timeline. */
+export interface RunInvestigationSummary {
+  readonly id: string
+  readonly externalId: string
+  readonly workflow: string
+  readonly status: RunStatus
+  readonly startedAt: string
+  readonly durationMs: number | null
+  readonly step: string | null
+  readonly outcome: string | null
+  readonly environment: string | null
+  readonly release: string | null
+  readonly correlationId: string | null
+  readonly parentRunId: string | null
+  readonly eventCount: number
+  readonly operationCount: number
+  readonly errorCount: number
+  readonly reportCount: number
+}
+
+export type RelatedRunRelationship =
+  "parent" | "correlated" | "retryOf" | "retry"
+
+export interface RelatedRunLink {
+  readonly id: string
+  readonly externalId: string
+  readonly workflow: string
+  readonly startedAt: string
+  readonly status: RunStatus
+  readonly correlationId: string | null
+  readonly parentRunId: string | null
+  readonly relationship: RelatedRunRelationship
+}
+
+export interface RelatedRunsPageQuery {
+  readonly runId: string
+  readonly cursor?: string
+  readonly limit?: number
+}
+
+export interface RelatedRunsPage {
+  readonly runId: string
+  readonly items: ReadonlyArray<RelatedRunLink>
+  readonly nextCursor: string | null
+  readonly limit: number
+  readonly totalLinks: number
+}
+
+export interface RunExpectationsPageQuery {
+  readonly runId: string
+  readonly cursor?: string
+  readonly limit?: number
+}
+
+export interface RunExpectationsPage {
+  readonly runId: string
+  readonly asOf: string
+  readonly expectations: ReadonlyArray<
+    import("@flowmarkdev/core").ExpectationRecord
+  >
+  readonly unmatched: ReadonlyArray<
+    import("@flowmarkdev/core").ExpectationRecord
+  >
+  readonly nextCursor: string | null
+  readonly limit: number
+  readonly totalRecords: number
+  readonly unavailableCount: number
+}
+
+export interface RunOperationOccurrence {
+  readonly operationId: string
+  readonly name: string
+  readonly startedAt: string
+  readonly durationMs: number | null
+  readonly status: "completed" | "failed" | "open"
+}
+
+export interface RunOperationsPageQuery {
+  readonly runId: string
+  readonly cursor?: string
+  readonly limit?: number
+}
+
+export interface RunOperationsPage {
+  readonly runId: string
+  readonly operations: ReadonlyArray<RunOperationOccurrence>
+  readonly nextCursor: string | null
+  readonly limit: number
+  readonly totalOperations: number
+}
+
+/** Read-only discovery. Aggregate environment/status filters are not applied. */
+export const WORKFLOW_DISCOVERY_CAPABILITIES = {
+  reads: ["workflows", "revisions", "searchFields"],
+  mutations: [],
+  unsupportedFilters: ["environment", "status", "release", "aggregate"],
+} as const
+
+export interface WorkflowDiscoveryCapabilities {
+  readonly reads: readonly ["workflows", "revisions", "searchFields"]
+  readonly mutations: readonly []
+  readonly unsupportedFilters: readonly [
+    "environment",
+    "status",
+    "release",
+    "aggregate",
+  ]
+}
+
+export interface WorkflowDiscoveryScope {
+  readonly projectId: string
+  readonly workflow: string | null
+  readonly revision: string | null
+  readonly cursor: string | null
+  readonly limit: number
+}
+
+export interface WorkflowDiscoveryOmissions {
+  readonly continued: boolean
+  readonly truncatedRecords: number
+}
+
+export interface WorkflowDiscoveryQuery {
+  readonly cursor?: string
+  readonly limit?: number
+}
+
+export interface DiscoveredWorkflow {
+  readonly name: string
+}
+
+export interface WorkflowDiscoveryPage {
+  readonly workflows: ReadonlyArray<DiscoveredWorkflow>
+  readonly nextCursor: string | null
+  readonly limit: number
+  readonly total: number
+  readonly applied: WorkflowDiscoveryScope
+  readonly omissions: WorkflowDiscoveryOmissions
+  readonly capabilities: WorkflowDiscoveryCapabilities
+}
+
+export interface WorkflowMeaningQuery {
+  readonly workflow: string
+  readonly revision?: string
+  readonly cursor?: string
+  readonly limit?: number
+}
+
+export interface DiscoveredRevision {
+  readonly revision: string
+  readonly declaration: unknown
+  readonly truncated: boolean
+  readonly omissions: ReadonlyArray<string>
+}
+
+export interface WorkflowMeaningPage {
+  readonly workflow: string
+  readonly revisions: ReadonlyArray<DiscoveredRevision>
+  readonly searchFields: SearchFields
+  readonly lookupKeys: ReadonlyArray<string>
+  readonly dimensionKeys: ReadonlyArray<string>
+  readonly nextCursor: string | null
+  readonly limit: number
+  readonly totalRevisions: number
+  readonly applied: WorkflowDiscoveryScope
+  readonly omissions: WorkflowDiscoveryOmissions
+  readonly capabilities: WorkflowDiscoveryCapabilities
 }

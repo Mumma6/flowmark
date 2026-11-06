@@ -22,14 +22,6 @@ export function useRunDetail(
     queryFn: ({ signal }) => client.run.detail.query({ id }, { signal }),
     enabled: enabled && Boolean(current),
   })
-  const relationships = useQuery({
-    queryKey: [
-      ...trpc.run.related.queryKey({ id }),
-      { projectId: current?.id ?? null },
-    ],
-    queryFn: ({ signal }) => client.run.related.query({ id }, { signal }),
-    enabled: enabled && Boolean(current),
-  })
   const comparison = useQuery({
     queryKey: [
       ...trpc.run.compare.queryKey({ id, selection }),
@@ -39,5 +31,5 @@ export function useRunDetail(
       client.run.compare.query({ id, selection }, { signal }),
     enabled: enabled && Boolean(current),
   })
-  return { detail, relationships, comparison }
+  return { detail, comparison }
 }
