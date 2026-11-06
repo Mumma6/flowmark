@@ -1,5 +1,5 @@
 import { AGENT_ACCESS_ISSUER_PROXY_PATHS } from "@flowmark/auth/agent-access/proxy-route"
-import { proxyIssuerPath } from "../../../../features/platform/api-proxy"
+import { proxyIssuerPath } from "../../../features/platform/api-proxy"
 
 export const runtime = "nodejs"
 
