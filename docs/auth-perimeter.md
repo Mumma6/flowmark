@@ -55,6 +55,30 @@ the local fixture use the same provider login implementation.
   separate boundaries, including expired, forged, signed-out and revoked
   sessions.
 
+### Delegated workflow reads (tRPC)
+
+When **all** of the following are present on a read request, the API resolves
+authority through the **delegated reader** path (`ProjectReader` tag `DelegatedUser`):
+
+| Header                                   | Role                                                                          |
+| ---------------------------------------- | ----------------------------------------------------------------------------- |
+| `x-flowmark-project-id`                  | UUID of the project to read (required for delegated reads).                   |
+| `x-flowmark-grant-client-id`             | OAuth `client_id` for the connection.                                         |
+| `x-flowmark-grant-authorization-code-id` | Grant family id (matches `oauth_refresh_token.authorization_code_id`).        |
+| Session cookie                           | Same requirement as other session-backed reads; headers alone are not enough. |
+
+**Semantics.** The server authorizes read only if the project id appears in
+`agent_access_grant_projects` for that grant family **and** the subject user is
+still a **project member** **and** there is an **active** (not revoked, unexpired)
+refresh token row for that user, client and authorization-code id. Sending only
+one of the two grant headers fails closed (read unauthorized).
+
+**Note.** Rows in `agent_access_grant_projects` are written when consent binds
+projects to a connection (later TASK-004.x). Until populated, delegated reads
+deny even when OAuth exchange succeeds — provider tokens alone do not imply
+project scope. Ordinary dashboard reads (session + optional `x-flowmark-project-id`
+without grant headers) are unchanged.
+
 Authentication responses through the proxy and registration alias use
 `Cache-Control: no-store`. Provider diagnostics retain severity with a fixed
 label and exclude raw messages/arguments, which can contain callback URLs,

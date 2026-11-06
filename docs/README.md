@@ -28,6 +28,8 @@ Contributor guides that ship with the public repository:
   independent main changes such as hotfixes, not after ordinary releases.
 - [Architecture](./architecture): service boundaries, persistence, local auth,
   and current system constraints.
+- [Implementation status](./implementation-status): public mirror of shipped
+  Connect Your Agent and related Product 1.0 items through Agent TASK-004.1.
 - [Authentication boundaries](./auth-perimeter): provider login, registration,
   proxy protections, and remaining durable-limit work.
 - [Historical facts](./historical-facts): compact run projections and backfill
