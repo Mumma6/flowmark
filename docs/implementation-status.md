@@ -2,7 +2,7 @@
 
 This page summarizes capabilities that have landed in **this repository** for the
 Connect Your Agent program and related Product 1.0 work. It mirrors the maintainer
-**implementation order** through **Agent TASK-004.3** (inclusive). It does **not**
+**implementation order** through **Agent TASK-004.4** (inclusive). It does **not**
 link to internal planning paths; task IDs match public ADRs and PR history.
 
 For security and API boundaries, see [Authentication boundaries](./auth-perimeter.md)
@@ -31,6 +31,8 @@ and [ADR 0008](./decisions/0008-connect-agent-protocol-contract.md).
 
 | **004.3** | Transactional **revoke** for one connection (`agentAccess.revokeConnection`) or **all** delegated families after **password reset**; supersedes prior grant family on new consent; enum `oauth_consent_intent_state` includes `revoked`. |
 
+| **004.4** | Integration coverage for delegated grant **isolation** (`getDelegatedReaderProject`, consent, revoke): wrong project, foreign grant rows, wrong user, removed membership, non-member consent rejection, concurrent consent, post-revoke denial. Runs when `TEST_DATABASE_URL` is set (`pnpm test:integration`). |
+
 ## Product 1.0 — items completed in the same sequence window
 
 These appear under “Completed” in the implementation order; they are part of the
@@ -47,8 +49,8 @@ current public tree, not future Connect tasks.
 
 ## Explicitly not done here
 
-- Items after **Agent TASK-004.3** in the implementation order (MCP HTTP adapter,
-  tool registration, grant concurrency acceptance, and later Product/Access tasks)
+- Items after **Agent TASK-004.4** in the implementation order (MCP HTTP adapter,
+  tool registration, and later Product/Access tasks)
   are **not** described as shipped on this page until they merge.
 - **Cancelled:** Product TASK-006.3 (first persisted evidence as a Studio gate) —
   do not treat persisted telemetry as an access prerequisite; see implementation order notes.

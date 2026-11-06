@@ -6,6 +6,7 @@ export const expectedDatabaseCases = [
   "created projects return the stored timestamp with a timezone offset",
   "compact facts preserve raw historical populations, ordering, ownership and repair",
   "only accepted inserts change facts, including continuation and late terminal decisions",
+  "delegated grant reads intersect membership, reject non-members and stale rows, and survive concurrent consent",
 ] as const
 
 export const expectedServerFiles = [
