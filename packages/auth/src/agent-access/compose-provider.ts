@@ -58,6 +58,8 @@ export const FLOWMARK_AGENT_ACCESS_PROVIDER = {
   dynamicClientRegistration: false,
   clientMetadataDocuments: "closed",
   tokenAloneGrantsProject: false,
+  grantFamilyKey: "authorizationCodeId",
+  projectGrantIncluded: false,
   schemaModels: [
     "jwks",
     "oauthClient",
@@ -176,7 +178,7 @@ export const flowmarkAgentAccessPlugins = (input: {
         name: "Flowmark",
         accessTokenTtl: AGENT_ACCESS_ACCESS_TOKEN_TTL_SECONDS,
         refreshTokenTtl: refreshTokenExpiresIn,
-        allowedScopes: [AGENT_ACCESS_OAUTH_SCOPE_READ],
+        allowedScopes: [...scopes],
       },
     ],
   }),

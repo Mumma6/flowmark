@@ -34,10 +34,15 @@ the local fixture use the same provider login implementation.
   Ordinary `/api/auth/*` redirects stay on the dashboard origin. An
   `/oauth2/*` response may redirect to the request's own loopback or HTTPS
   `redirect_uri`, and nowhere else. The MCP resource identifier is
-  `{apiOrigin}/mcp`.
+  `{apiOrigin}/mcp`. That resource accepts the issued scopes, including
+  `offline_access`, so the provider can keep and rotate a refresh token.
+  The audience stays the MCP resource.
   Dynamic client registration is off, and remote client-metadata documents are
-  refused. A provider token is not a project grant: project reads still require
-  a later explicit grant intersected with current membership.
+  refused. Authorization-code exchange, PKCE and refresh rotation stay in the
+  provider. The server-owned grant family is that provider authorization-code
+  id, with the subject, client, configured issuer and MCP resource. It carries
+  no project. A provider token is not a project grant: project reads still
+  require a later explicit grant intersected with current membership.
 - tRPC reads resolve project-scoped session or programmatic read authority.
   Account and project management require session authority; ingestion keys do
   not grant account-management rights. Existing isolation tests cover these
