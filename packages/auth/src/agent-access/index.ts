@@ -1,5 +1,11 @@
 export { AGENT_ACCESS_MCP_DEPENDENCY_PROPOSAL } from "./mcp-dependency-proposal.js"
 export {
+  FLOWMARK_AGENT_ACCESS_PROVIDER,
+  flowmarkAuthorizationServerMetadata,
+  flowmarkOpenIdConfiguration,
+  resolveEnabledAgentAccess,
+} from "./compose-provider.js"
+export {
   AgentAccessContractError,
   AGENT_ACCESS_ADMISSION_BUDGETS_PROVISIONAL,
   AGENT_ACCESS_CLIENT_POLICY,

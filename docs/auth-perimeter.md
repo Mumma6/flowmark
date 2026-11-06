@@ -25,6 +25,17 @@ the local fixture use the same provider login implementation.
   It preserves provider `X-Retry-After` and standard `Retry-After` headers on
   responses. It does not forward browser-supplied client-IP headers as trusted
   identity.
+- Agent OAuth and MCP discovery stay off unless `createFlowmarkAuth` is
+  called with `agentAccess`. The disabled factory keeps the existing email,
+  session, origin and CSRF plugins only. Enabled discovery documents advertise issuer-root
+  `/.well-known/oauth-authorization-server`,
+  `/.well-known/openid-configuration`, `/oauth2/*` and `/jwks`. The auth
+  handler still serves those routes under `/api/auth` until the dashboard
+  forwards the issuer-root paths. The MCP resource identifier is
+  `{apiOrigin}/mcp`.
+  Dynamic client registration is off, and remote client-metadata documents are
+  refused. A provider token is not a project grant: project reads still require
+  a later explicit grant intersected with current membership.
 - tRPC reads resolve project-scoped session or programmatic read authority.
   Account and project management require session authority; ingestion keys do
   not grant account-management rights. Existing isolation tests cover these

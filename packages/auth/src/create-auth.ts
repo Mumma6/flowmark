@@ -12,6 +12,11 @@ import {
 import type { Email } from "@flowmark/email"
 import { createAuthEmailCallbacks } from "./email-callbacks.js"
 import { createAuthRateLimitStorage } from "./rate-limit-storage.js"
+import {
+  flowmarkAgentAccessPlugins,
+  flowmarkAgentAccessSchema,
+  resolveEnabledAgentAccess,
+} from "./agent-access/compose-provider.js"
 
 class AuthRequestError extends Data.TaggedError("AuthRequestError")<{
   readonly cause: unknown
@@ -49,6 +54,11 @@ export function createFlowmarkAuth(options: {
   readonly trustedOrigins?: ReadonlyArray<string>
   readonly emailDelivery?: Email["Service"]
   readonly scheduleEmail?: (task: Promise<unknown>) => void
+  /** Omitted or absent keeps agent OAuth/MCP discovery off. */
+  readonly agentAccess?: {
+    readonly issuerOrigin: string
+    readonly apiOrigin: string
+  }
 }): ReturnType<typeof betterAuth> {
   const storage = createAuthRateLimitStorage(options.db, options.secret)
   const sourceRule = (max: number) => (request: Request) =>
@@ -58,6 +68,25 @@ export function createFlowmarkAuth(options: {
   const email = options.emailDelivery
     ? createAuthEmailCallbacks(options.emailDelivery, options.scheduleEmail)
     : undefined
+  const agentAccess = options.agentAccess
+    ? Effect.runSync(
+        resolveEnabledAgentAccess(options.agentAccess).pipe(
+          Effect.mapError((cause) => new AuthConfigurationError({ cause })),
+        ),
+      )
+    : undefined
+  const baseURL =
+    options.baseURL ??
+    process.env.BETTER_AUTH_URL ??
+    process.env.FLOWMARK_DASHBOARD_ORIGIN ??
+    "http://localhost:3001"
+  if (agentAccess && new URL(baseURL).origin !== agentAccess.issuerOrigin) {
+    throw new AuthConfigurationError({
+      cause: new Error(
+        "BETTER_AUTH_URL must be the agent-access issuer origin.",
+      ),
+    })
+  }
   const configuration: BetterAuthOptions = {
     appName: "Flowmark",
     secret: options.secret,
@@ -67,11 +96,7 @@ export function createFlowmarkAuth(options: {
       log: (level) =>
         console[level]("[Flowmark auth] Provider diagnostic", { level }),
     },
-    baseURL:
-      options.baseURL ??
-      process.env.BETTER_AUTH_URL ??
-      process.env.FLOWMARK_DASHBOARD_ORIGIN ??
-      "http://localhost:3001",
+    baseURL,
     trustedOrigins: [
       ...(options.trustedOrigins ?? []),
       process.env.FLOWMARK_DASHBOARD_ORIGIN ?? "http://localhost:3001",
@@ -84,6 +109,7 @@ export function createFlowmarkAuth(options: {
         session,
         account,
         verification,
+        ...(agentAccess ? flowmarkAgentAccessSchema : {}),
       },
     }),
     // Email ownership is proved by a recovery link when needed, not a login gate.
@@ -124,7 +150,10 @@ export function createFlowmarkAuth(options: {
         }),
       },
     },
-    plugins: [accountRateLimits(storage)],
+    plugins: [
+      accountRateLimits(storage),
+      ...(agentAccess ? flowmarkAgentAccessPlugins(agentAccess) : []),
+    ] as BetterAuthOptions["plugins"],
     // Keep the same provider CSRF/origin checks in tests and deployed requests.
     advanced: {
       backgroundTasks:

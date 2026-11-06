@@ -27,6 +27,16 @@ import type {
 } from "@flowmarkdev/core"
 
 export { account, authRateLimits, session, user, verification } from "./auth.js"
+export {
+  jwks,
+  oauthAccessToken,
+  oauthClient,
+  oauthClientAssertion,
+  oauthClientResource,
+  oauthConsent,
+  oauthRefreshToken,
+  oauthResource,
+} from "./oauth-provider.js"
 
 export type StoredWorkflowError = WorkflowError | WorkflowFailure
 
