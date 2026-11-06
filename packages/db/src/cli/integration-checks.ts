@@ -135,6 +135,7 @@ export const runIntegrationChecks = Effect.fn("runIntegrationChecks")(
         }),
     })
     yield* verifyDatabaseReport(tap)
+    yield* command(["--filter", "@flowmark/auth", "test"])
     yield* command([
       "--filter",
       "@flowmark/server",
