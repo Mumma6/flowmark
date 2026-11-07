@@ -29,7 +29,7 @@ Contributor guides that ship with the public repository:
 - [Architecture](./architecture): service boundaries, persistence, local auth,
   and current system constraints.
 - [Implementation status](./implementation-status): public mirror of shipped
-  Connect Your Agent and related Product 1.0 items through Agent TASK-004.1.
+  Connect Your Agent and related Product 1.0 items through Agent TASK-005.4.
 - [Authentication boundaries](./auth-perimeter): provider login, registration,
   proxy protections, and remaining durable-limit work.
 - [Historical facts](./historical-facts): compact run projections and backfill
@@ -53,4 +53,4 @@ Customer-facing SDK and product docs live in `apps/docs` and at
 
 The repository root `README.md` is the shared entry point. Package details are
 in `packages/sdk/README.md`, `packages/core/README.md`, `packages/api/README.md`,
-`packages/auth/README.md`, and `packages/db/README.md`.
+`packages/auth/README.md`, `packages/db/README.md`, and `packages/mcp/README.md`.

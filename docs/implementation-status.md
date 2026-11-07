@@ -2,7 +2,7 @@
 
 This page summarizes capabilities that have landed in **this repository** for the
 Connect Your Agent program and related Product 1.0 work. It mirrors the maintainer
-**implementation order** through **Agent TASK-005.2** (inclusive). It does **not**
+**implementation order** through **Agent TASK-005.4** (inclusive). It does **not**
 link to internal planning paths; task IDs match public ADRs and PR history.
 
 For security and API boundaries, see [Authentication boundaries](./auth-perimeter.md)
@@ -53,8 +53,8 @@ current public tree, not future Connect tasks.
 
 ## Explicitly not done here
 
-- Items after **Agent TASK-005.2** in the implementation order (remaining MCP
-  investigation tools, budgets, and later Product/Access tasks) are **not**
+- The six investigation tools are registered. Durable MCP admission budgets,
+  query interruption, and items after **Agent TASK-005.4** are **not**
   described as shipped on this page until they merge.
 - **Cancelled:** Product TASK-006.3 (first persisted evidence as a Studio gate) —
   do not treat persisted telemetry as an access prerequisite; see implementation order notes.

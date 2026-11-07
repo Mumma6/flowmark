@@ -15,6 +15,7 @@ Project membership, ingestion keys, and project/key creation quotas stay in
 | -------------------------------- | ------------------------------------------------------------------- |
 | `@flowmark/auth`                 | Server auth factory and secret resolution. Not for browser bundles. |
 | `@flowmark/auth/client-identity` | Signed proxy identity. No database or provider imports.             |
+| `@flowmark/auth/agent-access`    | Protocol contract, grant-family reads, and enabled OAuth discovery. |
 | `@flowmark/auth/limits`          | Durable auth-limit storage adapter.                                 |
 | `@flowmark/auth/seed`            | Local fixture account provisioning.                                 |
 
