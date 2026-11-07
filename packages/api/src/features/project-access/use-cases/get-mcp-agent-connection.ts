@@ -22,10 +22,12 @@ export const McpAgentConnectionSnapshotSchema = Schema.Struct({
 export type McpAgentConnectionSnapshot =
   typeof McpAgentConnectionSnapshotSchema.Type
 
-const MCP_TOOLS_ENABLED = ["get_connection"] as const
-const MCP_TOOLS_PENDING = [
+const MCP_TOOLS_ENABLED = [
+  "get_connection",
   "list_workflows",
   "find_runs",
+] as const
+const MCP_TOOLS_PENDING = [
   "get_run",
   "compare_run",
   "get_workflow_insights",

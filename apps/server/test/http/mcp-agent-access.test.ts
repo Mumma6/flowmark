@@ -4,6 +4,7 @@ import { eq, like } from "drizzle-orm"
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest"
 import {
   createDatabase,
+  jwks,
   oauthClient,
   oauthClientResource,
   oauthConsent,
@@ -23,24 +24,51 @@ import {
   resetMcpRouteCacheForTests,
 } from "../../src/adapters/mcp/route"
 
-const issuerOrigin = "http://127.0.0.1:3901"
-const apiOrigin = "http://127.0.0.1:3902"
-const mcpResource = `${apiOrigin}/mcp`
+const testOrigin = "http://127.0.0.1:3902"
+const mcpResource = `${testOrigin}/mcp`
 const protocolVersion = LATEST_PROTOCOL_VERSION
 
 const codeChallenge = (verifier: string) =>
   createHash("sha256").update(verifier).digest("base64url")
 
 const mcpRequest = (body: unknown, headers: Record<string, string> = {}) =>
-  new Request(`${apiOrigin}/mcp`, {
+  new Request(`${testOrigin}/mcp`, {
     method: "POST",
     headers: {
+      accept: "application/json, text/event-stream",
       "content-type": "application/json",
       "mcp-protocol-version": protocolVersion,
       ...headers,
     },
     body: JSON.stringify(body),
   })
+
+const readMcpJsonBody = async <T>(response: Response): Promise<T> => {
+  const contentType = response.headers.get("content-type") ?? ""
+  if (contentType.includes("application/json")) {
+    return (await response.json()) as T
+  }
+  const text = await response.text()
+  const dataLine = text
+    .split("\n")
+    .map((line) => line.trim())
+    .find((line) => line.startsWith("data:"))
+  if (!dataLine) {
+    throw new Error(`Expected MCP JSON in response: ${text}`)
+  }
+  return JSON.parse(dataLine.slice("data:".length).trim()) as T
+}
+
+const mcpSessionHeaders = (
+  authHeaders: Record<string, string>,
+  sessionResponse: Response,
+) => {
+  const sessionId = sessionResponse.headers.get("mcp-session-id")
+  return {
+    ...authHeaders,
+    ...(sessionId ? { "mcp-session-id": sessionId } : {}),
+  }
+}
 
 describe.skipIf(!process.env.TEST_DATABASE_URL)(
   "protected MCP HTTP adapter",
@@ -53,21 +81,58 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         new URL(url).hostname,
       )
       vi.stubEnv("DATABASE_URL", url)
-      vi.stubEnv("BETTER_AUTH_SECRET", `${randomUUID()}${randomUUID()}`)
-      vi.stubEnv("BETTER_AUTH_URL", issuerOrigin)
-      vi.stubEnv("FLOWMARK_DASHBOARD_ORIGIN", issuerOrigin)
-      vi.stubEnv("FLOWMARK_API_URL", apiOrigin)
+      vi.stubEnv("BETTER_AUTH_URL", testOrigin)
+      vi.stubEnv("FLOWMARK_DASHBOARD_ORIGIN", testOrigin)
+      vi.stubEnv("FLOWMARK_API_URL", testOrigin)
       vi.stubEnv("FLOWMARK_AGENT_ACCESS_ENABLED", "true")
       vi.stubEnv("FLOWMARK_DEMO_MODE", "false")
       vi.stubEnv("VERCEL_ENV", "")
+      const { getAuth, resetAuthCacheForTests } =
+        await import("../../src/auth.js")
+      resetAuthCacheForTests()
       resetMcpRouteCacheForTests()
       connection = createDatabase(url)
-      const { getAuth } = await import("../../src/auth.js")
+      await connection.db.delete(jwks)
       await Effect.runPromise(getAuth())
+      const nativeFetch = globalThis.fetch
+      const issuerApiPath = (pathname: string) => {
+        if (pathname === "/jwks") {
+          return "/api/auth/jwks"
+        }
+        if (pathname.startsWith("/.well-known/")) {
+          return `/api/auth${pathname}`
+        }
+        if (pathname.startsWith("/oauth2/")) {
+          return `/api/auth${pathname}`
+        }
+        return undefined
+      }
+      vi.stubGlobal(
+        "fetch",
+        async (input: RequestInfo | URL, init?: RequestInit) => {
+          const href =
+            typeof input === "string"
+              ? input
+              : input instanceof URL
+                ? input.href
+                : input.url
+          const url = new URL(href)
+          const routed = issuerApiPath(url.pathname)
+          if (url.origin === testOrigin && routed) {
+            const auth = await Effect.runPromise(getAuth())
+            return auth.handler(
+              new Request(`${url.origin}${routed}${url.search}`, init),
+            )
+          }
+          return nativeFetch(input, init)
+        },
+      )
     })
 
     afterAll(async () => {
       await connection?.close()
+      const { resetAuthCacheForTests } = await import("../../src/auth.js")
+      resetAuthCacheForTests()
       resetMcpRouteCacheForTests()
       vi.unstubAllEnvs()
     })
@@ -86,7 +151,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
 
     it("rejects non-POST methods with an explicit safe error", async () => {
       const response = await mcpPost(
-        new Request(`${apiOrigin}/mcp`, { method: "GET" }),
+        new Request(`${testOrigin}/mcp`, { method: "GET" }),
       )
       expect(response.status).toBe(405)
       expect(response.headers.get("allow")).toBe("POST")
@@ -110,24 +175,18 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
     })
 
     it("returns only the granted project scope from get_connection", async () => {
-      const { createFlowmarkAuth } = await import("@flowmark/auth")
+      const { getAuth } = await import("../../src/auth.js")
       const redirectUri = "http://127.0.0.1:4312/callback"
       const clientId = `mcp-http-${randomUUID()}`
       const verifier = randomBytes(32).toString("base64url")
-      const auth = createFlowmarkAuth({
-        db: connection.db,
-        secret: process.env.BETTER_AUTH_SECRET!,
-        baseURL: issuerOrigin,
-        trustedOrigins: [issuerOrigin, apiOrigin],
-        agentAccess: { issuerOrigin, apiOrigin },
-      })
+      const auth = await Effect.runPromise(getAuth())
       const email = `${randomUUID()}@example.test`
       const password = `${randomUUID()}Aa1`
       const signup = await auth.handler(
-        new Request(`${apiOrigin}/api/auth/sign-up/email`, {
+        new Request(`${testOrigin}/api/auth/sign-up/email`, {
           method: "POST",
           headers: {
-            origin: issuerOrigin,
+            origin: testOrigin,
             "content-type": "application/json",
           },
           body: JSON.stringify({ name: "MCP HTTP test", email, password }),
@@ -170,7 +229,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
       })
       const authorize = await auth.handler(
         new Request(
-          `${apiOrigin}/api/auth/oauth2/authorize?${new URLSearchParams({
+          `${testOrigin}/api/auth/oauth2/authorize?${new URLSearchParams({
             response_type: "code",
             client_id: clientId,
             redirect_uri: redirectUri,
@@ -179,7 +238,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
             code_challenge: codeChallenge(verifier),
             code_challenge_method: "S256",
           })}`,
-          { headers: { cookie, origin: issuerOrigin } },
+          { headers: { cookie, origin: testOrigin } },
         ),
       )
       const code = new URL(
@@ -187,10 +246,10 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
       ).searchParams.get("code")
       assert.ok(code)
       const tokenResponse = await auth.handler(
-        new Request(`${apiOrigin}/api/auth/oauth2/token`, {
+        new Request(`${testOrigin}/api/auth/oauth2/token`, {
           method: "POST",
           headers: {
-            origin: issuerOrigin,
+            origin: testOrigin,
             "content-type": "application/x-www-form-urlencoded",
           },
           body: new URLSearchParams({
@@ -242,7 +301,13 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
           oauthConsentId: consentId,
           clientId,
           redirectUri,
-          requestedScopes: ["offline_access", "flowmark:read"],
+          requestedScopes: [
+            "openid",
+            "profile",
+            "email",
+            "offline_access",
+            "flowmark:read",
+          ],
           resourceUrl: mcpResource,
           projectIds: [projectId],
         }).pipe(Effect.provideService(Database, connection.db)),
@@ -267,26 +332,27 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         ),
       )
       expect(initialize.status).toBe(200)
+      const sessionHeaders = mcpSessionHeaders(authHeaders, initialize)
       const initialized = await handleMcpPost(
         mcpRequest(
           { jsonrpc: "2.0", method: "notifications/initialized" },
-          authHeaders,
+          sessionHeaders,
         ),
       )
       expect(initialized.status).toBe(202)
       const listed = await handleMcpPost(
         mcpRequest(
           { jsonrpc: "2.0", id: 2, method: "tools/list" },
-          authHeaders,
+          sessionHeaders,
         ),
       )
       expect(listed.status).toBe(200)
-      const tools = (await listed.json()) as {
+      const tools = await readMcpJsonBody<{
         result?: { tools?: Array<{ name: string }> }
-      }
-      expect(tools.result?.tools?.map((tool) => tool.name)).toEqual([
-        "get_connection",
-      ])
+      }>(listed)
+      expect(
+        [...(tools.result?.tools?.map((tool) => tool.name) ?? [])].sort(),
+      ).toEqual(["find_runs", "get_connection", "list_workflows"].sort())
       const connectionResult = await handleMcpPost(
         mcpRequest(
           {
@@ -295,23 +361,25 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
             method: "tools/call",
             params: { name: "get_connection", arguments: {} },
           },
-          authHeaders,
+          sessionHeaders,
         ),
       )
       expect(connectionResult.status).toBe(200)
-      const payload = (await connectionResult.json()) as {
+      const payload = await readMcpJsonBody<{
         result?: {
           structuredContent?: {
             projects?: Array<{ id: string }>
             toolsEnabled?: string[]
           }
         }
-      }
+      }>(connectionResult)
       expect(
         payload.result?.structuredContent?.projects?.map((p) => p.id),
       ).toEqual([projectId])
       expect(payload.result?.structuredContent?.toolsEnabled).toEqual([
         "get_connection",
+        "list_workflows",
+        "find_runs",
       ])
       await connection.db
         .delete(verification)

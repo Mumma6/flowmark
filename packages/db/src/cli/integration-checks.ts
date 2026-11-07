@@ -91,6 +91,8 @@ export const runIntegrationChecks = Effect.fn("runIntegrationChecks")(
       "--filter",
       "@flowmark/auth...",
       "--filter",
+      "@flowmark/mcp...",
+      "--filter",
       "@flowmark/demo...",
       "build",
     ])

@@ -17,6 +17,11 @@ class AuthEmailTaskError extends Data.TaggedError("AuthEmailTaskError") {}
 
 let cached: ReturnType<typeof createFlowmarkAuth> | undefined
 
+/** Drop the module cache when tests rotate `BETTER_AUTH_SECRET` or database URL. */
+export const resetAuthCacheForTests = () => {
+  cached = undefined
+}
+
 export const getAuth = Effect.fn("getAuth")(function* () {
   if (cached) {
     return cached

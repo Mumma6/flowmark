@@ -27,32 +27,39 @@ const HttpOrigin = Schema.String.pipe(
   ),
 )
 
+const hostedEnvironment = (env: NodeJS.ProcessEnv) =>
+  env.NODE_ENV === "production" ||
+  env.VERCEL_ENV === "production" ||
+  env.VERCEL_ENV === "preview"
+
 const readApiOrigin = Effect.fn("McpRuntime.readApiOrigin")(function* (
   env: NodeJS.ProcessEnv = process.env,
 ) {
-  const explicit = env.FLOWMARK_API_URL?.trim()
-  if (explicit) {
-    yield* Schema.decodeUnknownEffect(HttpOrigin)(explicit).pipe(
-      Effect.mapError(
-        () =>
-          new AgentAccessRuntimeError({
-            reason:
-              "FLOWMARK_API_URL must be an HTTP(S) origin without credentials, path, query, or fragment.",
-          }),
-      ),
-    )
-    return new URL(explicit).origin
-  }
-  if (
-    env.NODE_ENV === "production" ||
-    env.VERCEL_ENV === "production" ||
-    env.VERCEL_ENV === "preview"
-  ) {
-    return yield* new AgentAccessRuntimeError({
-      reason: "FLOWMARK_API_URL is required when agent access is enabled.",
-    })
-  }
-  return "http://127.0.0.1:3003"
+  return yield* Option.fromNullishOr(env.FLOWMARK_API_URL?.trim()).pipe(
+    Option.filter((value) => value.length > 0),
+    Option.match({
+      onNone: () =>
+        hostedEnvironment(env)
+          ? Effect.fail(
+              new AgentAccessRuntimeError({
+                reason:
+                  "FLOWMARK_API_URL is required when agent access is enabled.",
+              }),
+            )
+          : Effect.succeed("http://127.0.0.1:3003"),
+      onSome: (explicit) =>
+        Schema.decodeUnknownEffect(HttpOrigin)(explicit).pipe(
+          Effect.mapError(
+            () =>
+              new AgentAccessRuntimeError({
+                reason:
+                  "FLOWMARK_API_URL must be an HTTP(S) origin without credentials, path, query, or fragment.",
+              }),
+          ),
+          Effect.map((origin) => new URL(origin).origin),
+        ),
+    }),
+  )
 })
 
 const isAgentAccessEnabled = (env: NodeJS.ProcessEnv = process.env) =>
