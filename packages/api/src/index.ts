@@ -19,6 +19,12 @@ export {
   type AgentAccessConnection,
   type AgentAccessService,
 } from "./features/project-access/ports/agent-access.js"
+export {
+  GetMcpAgentConnection,
+  McpAgentConnectionSnapshotSchema,
+  type GetMcpAgentConnectionService,
+  type McpAgentConnectionSnapshot,
+} from "./features/project-access/use-cases/get-mcp-agent-connection.js"
 export { AgentAccessLive } from "./features/project-access/adapters/agent-access.js"
 export {
   ManageProject,

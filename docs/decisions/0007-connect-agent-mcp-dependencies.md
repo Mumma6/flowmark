@@ -208,12 +208,12 @@ need tighter budgets before Production agent access.
 
 ### Runtime placement
 
-| Layer                            | Owner                           | Notes                                                                       |
-| -------------------------------- | ------------------------------- | --------------------------------------------------------------------------- |
-| Auth plugins + OAuth persistence | `@flowmark/auth`                | Compose `jwt()` + `mcp()` + `cimd()` in `createFlowmarkAuth` after approval |
-| MCP HTTP adapter                 | `apps/server`                   | `requireMcpAuth` + official SDK handler; no stdio bridge in v1              |
-| Grant/project policy             | `@flowmark/api`                 | Verified JWT claims → grant family (TASK-004+)                              |
-| Tool implementations             | `apps/server` + `@flowmark/api` | Six read tools (TASK-005+)                                                  |
+| Layer                            | Owner                             | Notes                                                                       |
+| -------------------------------- | --------------------------------- | --------------------------------------------------------------------------- |
+| Auth plugins + OAuth persistence | `@flowmark/auth`                  | Compose `jwt()` + `mcp()` + `cimd()` in `createFlowmarkAuth` after approval |
+| MCP HTTP adapter                 | `@flowmark/mcp` + `apps/server`   | Protocol, tools, and SDK handler in `@flowmark/mcp`; server mounts routes   |
+| Grant/project policy             | `@flowmark/api`                   | Verified JWT claims → grant family (TASK-004+)                              |
+| Tool implementations             | `@flowmark/mcp` + `@flowmark/api` | Tool wiring in `@flowmark/mcp`; use cases in `@flowmark/api` (TASK-005+)    |
 
 Licenses: MIT for Better Auth and `@modelcontextprotocol/server` (verify SPDX at install time).
 

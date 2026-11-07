@@ -19,6 +19,8 @@ import {
 import { DatabaseLive } from "./adapters/database.js"
 import { WorkflowRepositoryLive } from "./features/workflows/adapters/workflow-repository.js"
 import { ProjectCredentialsLive } from "./features/project-access/adapters/project-credentials.js"
+import { GetMcpAgentConnectionLive } from "./features/project-access/use-cases/get-mcp-agent-connection.js"
+import { GetMcpAgentConnection } from "./features/project-access/use-cases/get-mcp-agent-connection.js"
 
 const persistence = Layer.mergeAll(
   ResultDeclarationStore.layer,
@@ -34,7 +36,10 @@ const databaseAdapters = Layer.mergeAll(
 const dependencies = AuthorizeProject.layer.pipe(
   Layer.provideMerge(databaseAdapters),
 )
-const agentAccessAdapter = AgentAccessLive.pipe(Layer.provide(persistence))
+const agentAccessAdapter = Layer.mergeAll(
+  AgentAccessLive,
+  GetMcpAgentConnectionLive,
+).pipe(Layer.provide(persistence))
 
 export const ApiLive = Layer.mergeAll(
   ManageResultDeclarations.layer,
@@ -61,6 +66,7 @@ export function runApi<A, E>(
     | IngestBrowserWorkflowEvents
     | ManageProject
     | Onboarding
+    | GetMcpAgentConnection
   >,
   signal?: AbortSignal,
 ) {
