@@ -17,12 +17,14 @@ export const resolveMcpConnection = Effect.fn("McpConnection.resolve")(
         authenticatedAt: new Date(),
       })
       .pipe(
-        Effect.mapError(
-          () =>
-            new McpConnectionResolveError({
-              reason: "Connection details could not be read.",
-            }),
-        ),
+        Effect.catchTags({
+          PersistenceError: () =>
+            Effect.fail(
+              new McpConnectionResolveError({
+                reason: "Connection details could not be read.",
+              }),
+            ),
+        }),
       )
   },
 )

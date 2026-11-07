@@ -1,6 +1,6 @@
 import { readAgentAccessGrantFamily } from "@flowmark/auth/agent-access"
 import { createDatabase } from "@flowmark/db"
-import { Effect } from "effect"
+import { Effect, Option } from "effect"
 import type { FlowmarkMcpAuthInfo } from "../../auth/claims.js"
 import {
   McpConfigurationError,
@@ -13,12 +13,17 @@ export type McpGrantFamily = {
 
 export const resolveMcpGrantFamily = Effect.fn("McpGrantFamily.resolve")(
   function* (identity: FlowmarkMcpAuthInfo) {
-    const configuredUrl = process.env.DATABASE_URL
-    if (!configuredUrl) {
-      return yield* new McpConfigurationError({
-        reason: "Workflow data is not configured.",
-      })
-    }
+    const configuredUrl = yield* Option.fromNullishOr(
+      process.env.DATABASE_URL,
+    ).pipe(
+      Option.filter((url) => url.length > 0),
+      Effect.fromOption(
+        () =>
+          new McpConfigurationError({
+            reason: "Workflow data is not configured.",
+          }),
+      ),
+    )
     const { db } = createDatabase(configuredUrl)
     return yield* readAgentAccessGrantFamily(db, {
       subjectUserId: identity.subjectUserId,
@@ -26,15 +31,14 @@ export const resolveMcpGrantFamily = Effect.fn("McpGrantFamily.resolve")(
       issuer: identity.issuer,
       resource: identity.resourceUrl,
     }).pipe(
-      Effect.catchTag("AgentAccessContractError", (error) =>
-        Effect.fail(
-          new McpConnectionResolveError({
-            reason:
-              error.reason ??
-              "This connection is revoked, expired, or not authorized for this resource.",
-          }),
-        ),
-      ),
+      Effect.catchTags({
+        AgentAccessContractError: (error) =>
+          Effect.fail(
+            new McpConnectionResolveError({
+              reason: error.reason,
+            }),
+          ),
+      }),
       Effect.map(
         (family) => ({ familyId: family.familyId }) satisfies McpGrantFamily,
       ),

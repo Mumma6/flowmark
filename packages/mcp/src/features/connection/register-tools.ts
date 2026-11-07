@@ -1,40 +1,46 @@
-import { runApi, type McpAgentConnectionSnapshot } from "@flowmark/api"
+import { GetProjectWorkflowData, runApi } from "@flowmark/api"
 import {
   createMcpHandler,
   fromJsonSchema,
   McpServer,
 } from "@modelcontextprotocol/server"
-import { Cause, Exit } from "effect"
+import { Effect, Exit } from "effect"
 import type { FlowmarkMcpAuthInfo } from "../../auth/claims.js"
 import type { ResolvedAgentAccessRuntime } from "../../runtime/agent-access-runtime.js"
 import { findRunsForMcp } from "../workflows/find-runs.js"
 import { listWorkflowsForMcp } from "../workflows/list-workflows.js"
+import { McpWorkflowTools } from "../workflows/workflow-tools.js"
 import {
-  mapWorkflowReadFailure,
   mcpToolError,
-  mcpToolResult,
+  presentMcpTool,
+  type McpToolFailure,
 } from "../../tools/response.js"
 import {
+  connectionInputJsonSchema,
   findRunsInputJsonSchema,
   listWorkflowsInputJsonSchema,
 } from "../../tools/tool-input-json-schema.js"
 import { resolveMcpConnection } from "./resolve-connection.js"
 
-const connectionToolResult = (snapshot: McpAgentConnectionSnapshot) =>
-  mcpToolResult(snapshot)
-
-const failureFromCause = (cause: Cause.Cause<unknown>) => {
-  const failed = cause.reasons.find(Cause.isFailReason)
-  return failed?.error ?? cause
-}
-
-const runMcpTool = async (effect: Parameters<typeof runApi>[0]) => {
-  const exit = await runApi(effect)
-  return Exit.match(exit, {
-    onSuccess: (value) => mcpToolResult(value as Record<string, unknown>),
-    onFailure: (cause) => mapWorkflowReadFailure(failureFromCause(cause)),
+const toolResult = <A, E>(exit: Exit.Exit<A, E>) =>
+  Exit.match(exit, {
+    onSuccess: (value) => value,
+    onFailure: () => mcpToolError("The workflow read could not be completed."),
   })
-}
+
+const runWorkflowTool = async <A extends Record<string, unknown>>(
+  use: (tools: {
+    readonly listWorkflows: typeof listWorkflowsForMcp
+    readonly findRuns: typeof findRunsForMcp
+  }) => Effect.Effect<A, McpToolFailure, GetProjectWorkflowData>,
+) =>
+  toolResult(
+    await runApi(
+      presentMcpTool(
+        McpWorkflowTools.use(use).pipe(Effect.provide(McpWorkflowTools.layer)),
+      ),
+    ),
+  )
 
 const registerConnectionTool = (
   server: McpServer,
@@ -46,16 +52,11 @@ const registerConnectionTool = (
       title: "Get connection",
       description:
         "Return the current OAuth grant, effective project scope, and which investigation tools are enabled on this deployment.",
-      inputSchema: {},
+      inputSchema: fromJsonSchema(connectionInputJsonSchema),
       annotations: { readOnlyHint: true, destructiveHint: false },
     },
-    async () => {
-      const exit = await runApi(resolveMcpConnection(identity))
-      if (Exit.isFailure(exit)) {
-        return mcpToolError("Connection details could not be read.")
-      }
-      return connectionToolResult(exit.value)
-    },
+    async () =>
+      toolResult(await runApi(presentMcpTool(resolveMcpConnection(identity)))),
   )
 }
 
@@ -72,7 +73,8 @@ const registerListWorkflowsTool = (
       inputSchema: fromJsonSchema(listWorkflowsInputJsonSchema),
       annotations: { readOnlyHint: true, destructiveHint: false },
     },
-    async (input: unknown) => runMcpTool(listWorkflowsForMcp(identity, input)),
+    async (input: unknown) =>
+      runWorkflowTool((tools) => tools.listWorkflows(identity, input)),
   )
 }
 
@@ -89,7 +91,8 @@ const registerFindRunsTool = (
       inputSchema: fromJsonSchema(findRunsInputJsonSchema),
       annotations: { readOnlyHint: true, destructiveHint: false },
     },
-    async (input: unknown) => runMcpTool(findRunsForMcp(identity, input)),
+    async (input: unknown) =>
+      runWorkflowTool((tools) => tools.findRuns(identity, input)),
   )
 }
 

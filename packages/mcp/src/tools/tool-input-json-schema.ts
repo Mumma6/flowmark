@@ -1,6 +1,12 @@
 import { AGENT_ACCESS_QUERY_BOUNDS } from "@flowmark/auth/agent-access"
 import type { JsonSchemaType } from "@modelcontextprotocol/server"
 
+export const connectionInputJsonSchema = {
+  type: "object",
+  additionalProperties: false,
+  properties: {},
+} as const satisfies JsonSchemaType
+
 const pageLimitSchema = {
   type: "integer",
   minimum: 1,

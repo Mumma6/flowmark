@@ -36,15 +36,21 @@ const methodNotAllowed = () =>
 const resolvePostHandler = Effect.fn("McpRoutes.resolvePostHandler")(
   function* () {
     const runtime = yield* resolveAgentAccessRuntime()
-    if (Option.isNone(runtime)) {
-      return () => Promise.resolve(agentAccessDisabledResponse())
-    }
-    const gateway = yield* McpAuthGateway
-    const authorizationServerMetadata =
-      yield* gateway.readAuthorizationServerMetadata(runtime.value.issuerOrigin)
-    return createFlowmarkMcpPostHandler({
-      runtime: runtime.value,
-      authorizationServerMetadata,
+    return yield* Option.match(runtime, {
+      onNone: () =>
+        Effect.succeed(() => Promise.resolve(agentAccessDisabledResponse())),
+      onSome: (resolved) =>
+        Effect.gen(function* () {
+          const gateway = yield* McpAuthGateway
+          const authorizationServerMetadata =
+            yield* gateway.readAuthorizationServerMetadata(
+              resolved.issuerOrigin,
+            )
+          return createFlowmarkMcpPostHandler({
+            runtime: resolved,
+            authorizationServerMetadata,
+          })
+        }),
     })
   },
 )
@@ -73,32 +79,37 @@ export const createMcpHttpRoutes = (run: RunMcpEffect) => {
 
   const handleMcpProtectedResourceMetadata = async (request: Request) => {
     const runtime = await run(readRuntime())
-    if (Option.isNone(runtime)) {
-      return agentAccessDisabledResponse()
-    }
-    const gateway = await run(
-      Effect.gen(function* () {
-        const auth = yield* McpAuthGateway
-        const metadata = yield* auth.readAuthorizationServerMetadata(
-          runtime.value.issuerOrigin,
+    return Option.match(runtime, {
+      onNone: () => agentAccessDisabledResponse(),
+      onSome: async (resolved) => {
+        const gateway = await run(
+          Effect.gen(function* () {
+            const auth = yield* McpAuthGateway
+            const metadata = yield* auth.readAuthorizationServerMetadata(
+              resolved.issuerOrigin,
+            )
+            return Option.some({ metadata })
+          }).pipe(
+            Effect.catchTag("McpDiscoveryError", () =>
+              Effect.succeed(Option.none()),
+            ),
+          ),
         )
-        return { metadata }
-      }),
-    ).catch(() => null)
-    if (!gateway) {
-      return discoveryUnavailable()
-    }
-    return (
-      serveMcpProtectedResourceMetadata(
-        request,
-        runtime.value,
-        gateway.metadata,
-      ) ??
-      Response.json(
-        { message: "Protected resource metadata is not available here." },
-        { status: 404, headers: { "cache-control": "no-store" } },
-      )
-    )
+        return Option.match(gateway, {
+          onNone: () => discoveryUnavailable(),
+          onSome: (discovered) =>
+            serveMcpProtectedResourceMetadata(
+              request,
+              resolved,
+              discovered.metadata,
+            ) ??
+            Response.json(
+              { message: "Protected resource metadata is not available here." },
+              { status: 404, headers: { "cache-control": "no-store" } },
+            ),
+        })
+      },
+    })
   }
 
   return {

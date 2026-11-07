@@ -6,13 +6,17 @@ import { assertHistoryWindow } from "../../tools/response.js"
 import { decodeFindRunsInput } from "../../tools/schemas.js"
 import { resolveMcpGrantFamily } from "../delegated/grant-family.js"
 import { mcpDelegatedReader } from "../delegated/reader.js"
+import type { McpToolFailure } from "../../tools/response.js"
 import type { McpFindRunsResult } from "./types.js"
 
-export const findRunsForMcp = (
+export const findRunsForMcp: (
   identity: FlowmarkMcpAuthInfo,
   rawInput: unknown,
-): Effect.Effect<McpFindRunsResult, unknown, GetProjectWorkflowData> =>
-  Effect.fn("McpFindRuns.execute")(function* () {
+) => Effect.Effect<McpFindRunsResult, McpToolFailure, GetProjectWorkflowData> =
+  Effect.fn("McpFindRuns.execute")(function* (
+    identity: FlowmarkMcpAuthInfo,
+    rawInput: unknown,
+  ) {
     const input = yield* decodeFindRunsInput(rawInput)
     yield* assertHistoryWindow(input.startedAfter, input.startedBefore)
     const family = yield* resolveMcpGrantFamily(identity)
@@ -40,13 +44,14 @@ export const findRunsForMcp = (
         limit: input.limit,
       })
       .pipe(
-        Effect.mapError((error) =>
-          error._tag === "InvalidInput" || error._tag === "Unauthorized"
-            ? error
-            : new McpToolReadError({
+        Effect.catchTags({
+          PersistenceError: () =>
+            Effect.fail(
+              new McpToolReadError({
                 reason: "Run search could not be read.",
               }),
-        ),
+            ),
+        }),
       )
     return {
       tool: "find_runs",
@@ -61,4 +66,4 @@ export const findRunsForMcp = (
         externalId: "runs[].externalId",
       },
     } satisfies McpFindRunsResult
-  })()
+  })
