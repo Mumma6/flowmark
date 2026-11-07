@@ -108,22 +108,18 @@ export const createFlowmarkMcpSdkHandler = (
   let cached: ReturnType<typeof createMcpHandler> | undefined
   return () => {
     if (!cached) {
-      cached = createMcpHandler(
-        async (ctx) => {
-          const identity = ctx.authInfo?.extra as
-            FlowmarkMcpAuthInfo | undefined
-          if (!identity) {
-            throw new Error("Agent access context is missing.")
-          }
-          const server = new McpServer(
-            { name: "flowmark", version: "0.1.0" },
-            { capabilities: { tools: {} } },
-          )
-          registerFlowmarkTools(server, identity)
-          return server
-        },
-        { legacy: "reject" },
-      )
+      cached = createMcpHandler(async (ctx) => {
+        const identity = ctx.authInfo?.extra as FlowmarkMcpAuthInfo | undefined
+        if (!identity) {
+          throw new Error("Agent access context is missing.")
+        }
+        const server = new McpServer(
+          { name: "flowmark", version: "0.1.0" },
+          { capabilities: { tools: {} } },
+        )
+        registerFlowmarkTools(server, identity)
+        return server
+      })
     }
     void runtime
     return cached
