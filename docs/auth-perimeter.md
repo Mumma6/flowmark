@@ -46,9 +46,14 @@ the local fixture use the same provider login implementation.
   the provider leaves signup, sign-in, password recovery, origin checks and
   account limits on the same handlers. `get-session` accepts the dashboard
   session cookie and does not treat the provider access token as that session.
-  `POST /mcp` is not served by the auth handler. A mismatched issuer and auth
-  base URL fails before the provider is composed. With `agentAccess` omitted,
-  discovery and the token endpoint stay unavailable.
+  `POST /mcp` is not served by the auth handler. The API app serves it only when
+  `FLOWMARK_AGENT_ACCESS_ENABLED=true` and origins resolve (`FLOWMARK_API_URL`,
+  `BETTER_AUTH_URL`, `FLOWMARK_DASHBOARD_ORIGIN`). When disabled, the route
+  returns an honest `404` (no working remote read claim). Protected-resource
+  metadata is on the API host (`/.well-known/oauth-protected-resource` and the
+  path-aware `/mcp` suffix per RFC 9728). A mismatched issuer and auth base URL
+  fails before the provider is composed. With `agentAccess` omitted, discovery
+  and the token endpoint stay unavailable.
 - tRPC reads resolve project-scoped session or programmatic read authority.
   Account and project management require session authority; ingestion keys do
   not grant account-management rights. Existing isolation tests cover these
