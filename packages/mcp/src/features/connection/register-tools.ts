@@ -7,7 +7,9 @@ import {
 import { Effect, Exit } from "effect"
 import type { FlowmarkMcpAuthInfo } from "../../auth/claims.js"
 import type { ResolvedAgentAccessRuntime } from "../../runtime/agent-access-runtime.js"
+import { compareRunForMcp } from "../workflows/compare-run.js"
 import { findRunsForMcp } from "../workflows/find-runs.js"
+import { getRunForMcp } from "../workflows/get-run.js"
 import { listWorkflowsForMcp } from "../workflows/list-workflows.js"
 import { McpWorkflowTools } from "../workflows/workflow-tools.js"
 import {
@@ -17,7 +19,9 @@ import {
 } from "../../tools/response.js"
 import {
   connectionInputJsonSchema,
+  compareRunInputJsonSchema,
   findRunsInputJsonSchema,
+  getRunInputJsonSchema,
   listWorkflowsInputJsonSchema,
 } from "../../tools/tool-input-json-schema.js"
 import { resolveMcpConnection } from "./resolve-connection.js"
@@ -32,6 +36,8 @@ const runWorkflowTool = async <A extends Record<string, unknown>>(
   use: (tools: {
     readonly listWorkflows: typeof listWorkflowsForMcp
     readonly findRuns: typeof findRunsForMcp
+    readonly getRun: typeof getRunForMcp
+    readonly compareRun: typeof compareRunForMcp
   }) => Effect.Effect<A, McpToolFailure, GetProjectWorkflowData>,
 ) =>
   toolResult(
@@ -96,6 +102,42 @@ const registerFindRunsTool = (
   )
 }
 
+const registerGetRunTool = (
+  server: McpServer,
+  identity: FlowmarkMcpAuthInfo,
+) => {
+  server.registerTool(
+    "get_run",
+    {
+      title: "Get run",
+      description:
+        "Read one authorized run as a compact summary plus one bounded page. section is events (default), related, expectations, or operations. Continue with nextCursor. Run status, recorded duration, and operation status stay distinct.",
+      inputSchema: fromJsonSchema(getRunInputJsonSchema),
+      annotations: { readOnlyHint: true, destructiveHint: false },
+    },
+    async (input: unknown) =>
+      runWorkflowTool((tools) => tools.getRun(identity, input)),
+  )
+}
+
+const registerCompareRunTool = (
+  server: McpServer,
+  identity: FlowmarkMcpAuthInfo,
+) => {
+  server.registerTool(
+    "compare_run",
+    {
+      title: "Compare run",
+      description:
+        "Compare one authorized run with the existing peer population. Optional peers uses the same selection as Studio (days 1–90, environment, release, one dimension). Durations are recorded durations, not wall time.",
+      inputSchema: fromJsonSchema(compareRunInputJsonSchema),
+      annotations: { readOnlyHint: true, destructiveHint: false },
+    },
+    async (input: unknown) =>
+      runWorkflowTool((tools) => tools.compareRun(identity, input)),
+  )
+}
+
 export const registerFlowmarkTools = (
   server: McpServer,
   identity: FlowmarkMcpAuthInfo,
@@ -103,6 +145,8 @@ export const registerFlowmarkTools = (
   registerConnectionTool(server, identity)
   registerListWorkflowsTool(server, identity)
   registerFindRunsTool(server, identity)
+  registerGetRunTool(server, identity)
+  registerCompareRunTool(server, identity)
 }
 
 export const createFlowmarkMcpSdkHandler = (

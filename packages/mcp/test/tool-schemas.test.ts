@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest"
 import { Effect } from "effect"
 import {
+  decodeCompareRunInput,
   decodeFindRunsInput,
+  decodeGetRunInput,
   decodeListWorkflowsInput,
 } from "../src/tools/schemas.js"
 import { assertHistoryWindow } from "../src/tools/response.js"
@@ -55,5 +57,47 @@ describe("MCP tool input schemas", () => {
       assertHistoryWindow(input.startedAfter, input.startedBefore),
     )
     expect(input.projectId).toBe("p1")
+  })
+
+  it("rejects get_run without a run id", async () => {
+    const result = await Effect.runPromise(
+      decodeGetRunInput({ projectId: "p1" }).pipe(Effect.flip),
+    )
+    expect(result).toBeInstanceOf(McpToolInputError)
+  })
+
+  it("accepts a bounded get_run event page", async () => {
+    const input = await Effect.runPromise(
+      decodeGetRunInput({
+        projectId: "p1",
+        runId: "run_1",
+        section: "operations",
+        limit: 50,
+      }),
+    )
+    expect(input.section).toBe("operations")
+    expect(input.limit).toBe(50)
+  })
+
+  it("rejects compare_run peer days outside 1–90", async () => {
+    const result = await Effect.runPromise(
+      decodeCompareRunInput({
+        projectId: "p1",
+        runId: "run_1",
+        peers: { days: 91 },
+      }).pipe(Effect.flip),
+    )
+    expect(result).toBeInstanceOf(McpToolInputError)
+  })
+
+  it("rejects a compare_run dimension key without a value", async () => {
+    const result = await Effect.runPromise(
+      decodeCompareRunInput({
+        projectId: "p1",
+        runId: "run_1",
+        peers: { dimensionKey: "customer" },
+      }).pipe(Effect.flip),
+    )
+    expect(result).toBeInstanceOf(McpToolInputError)
   })
 })
