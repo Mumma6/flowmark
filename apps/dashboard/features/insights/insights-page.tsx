@@ -274,7 +274,7 @@ function WorkflowBreakdown({
                   <TableRow key={item.name} className="hover:bg-muted/40">
                     <TableCell className="max-w-[220px]">
                       <Link
-                        className="font-medium hover:text-primary hover:underline"
+                        className="font-medium hover:text-highlight hover:underline"
                         href={`/workflows/${encodeURIComponent(item.name)}`}
                       >
                         {item.name}

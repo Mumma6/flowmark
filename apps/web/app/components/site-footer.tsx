@@ -43,7 +43,10 @@ export function SiteFooter() {
             <ul className="mt-3 grid gap-2 text-sm text-muted-foreground">
               {column.links.map((link) => (
                 <li key={link.href}>
-                  <a className="hover:text-primary" href={link.href}>
+                  <a
+                    className="transition-colors hover:text-highlight"
+                    href={link.href}
+                  >
                     {link.label}
                   </a>
                 </li>

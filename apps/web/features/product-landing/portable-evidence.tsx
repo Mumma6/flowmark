@@ -100,7 +100,7 @@ export function PortableEvidence() {
         <TabsList
           aria-label="Portable evidence surfaces"
           variant="line"
-          className="gap-4 p-0"
+          className="gap-4 p-0 [&_[data-slot=tabs-trigger]]:after:bg-highlight"
         >
           <TabsTrigger value="mcp" className="h-10 px-0 text-[11px]">
             MCP App

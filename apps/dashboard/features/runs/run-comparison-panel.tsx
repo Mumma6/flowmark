@@ -324,7 +324,7 @@ export function RunComparisonPanel({
                                 {row.peerRunIds.slice(0, 3).map((runId) => (
                                   <Link
                                     key={runId}
-                                    className="font-mono text-muted-foreground hover:text-primary hover:underline"
+                                    className="font-mono text-muted-foreground hover:text-highlight hover:underline"
                                     href={runInvestigationPath(runId, source)}
                                     replace={replace}
                                     scroll={false}
@@ -364,7 +364,7 @@ export function RunComparisonPanel({
                     <TableRow key={peer.id}>
                       <TableCell>
                         <Link
-                          className="break-all font-mono text-xs hover:text-primary hover:underline"
+                          className="break-all font-mono text-xs hover:text-highlight hover:underline"
                           href={runInvestigationPath(peer.id, source)}
                           replace={replace}
                           scroll={false}

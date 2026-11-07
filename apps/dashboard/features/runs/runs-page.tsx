@@ -78,7 +78,7 @@ function WorkflowOutlierLinks({
                 <TableRow key={run.id}>
                   <TableCell>
                     <Link
-                      className="font-medium hover:text-primary hover:underline"
+                      className="font-medium hover:text-highlight hover:underline"
                       href={`/runs/${run.id}`}
                     >
                       <code>{run.externalId.slice(0, 12)}</code>

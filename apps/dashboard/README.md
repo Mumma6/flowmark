@@ -116,3 +116,10 @@ all investigation tabs, keyboard/focus, chart value disclosures, overflow, both
 themes and independent loading/error/empty states. Changes to shared defaults
 also require checking directly affected consumers. Never claim production
 validation from local fixtures.
+
+## Accent hierarchy
+
+The theme-aware `highlight` token adds lavender to navigation, section markers,
+inspection context and auth surfaces. Light mode uses a darker violet for
+contrast. Primary actions remain green; execution, outcome and error colors
+retain their semantic roles. Use the accent sparingly, not as a general panel fill.

@@ -114,6 +114,10 @@ export function PageHeading({
   return (
     <header className="flex flex-col justify-between gap-5 sm:flex-row sm:items-start">
       <div>
+        <span
+          aria-hidden="true"
+          className="mb-4 block h-0.5 w-8 rounded-full bg-highlight/70"
+        />
         <h1 className="break-words text-3xl font-semibold leading-10 tracking-tight sm:text-4xl">
           {title}
         </h1>

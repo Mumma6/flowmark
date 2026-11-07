@@ -254,7 +254,7 @@ export function AgentAccessGuide() {
             <TabsList
               variant="line"
               aria-label="Agent client manual guidance"
-              className="h-auto w-full flex-wrap justify-start gap-1 border-b border-border pb-2"
+              className="h-auto w-full flex-wrap justify-start gap-1 border-b border-border pb-2 [&_[data-slot=tabs-trigger]]:after:bg-highlight"
             >
               {clients.map((client) => (
                 <TabsTrigger key={client.id} value={client.id}>
