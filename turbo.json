@@ -59,6 +59,7 @@
         "@flowmark/api#build",
         "@flowmark/auth#build",
         "@flowmark/db#build",
+        "@flowmark/mcp#build",
         "@flowmarkdev/core#build",
         "@flowmarkdev/node#build"
       ]

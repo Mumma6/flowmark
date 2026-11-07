@@ -16,7 +16,7 @@ import {
   submitAgentAccessConsent,
 } from "@flowmark/db/persistence"
 import { Effect } from "effect"
-import { LATEST_PROTOCOL_VERSION } from "@modelcontextprotocol/server"
+import { LATEST_PROTOCOL_VERSION } from "@flowmark/mcp"
 import { POST as mcpPost } from "../../app/mcp/route"
 import {
   handleMcpPost,

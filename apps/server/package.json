@@ -17,12 +17,11 @@
     }
   },
   "dependencies": {
-    "@better-auth/mcp": "1.7.17",
     "@flowmark/api": "workspace:*",
     "@flowmark/auth": "workspace:*",
     "@flowmark/db": "workspace:*",
+    "@flowmark/mcp": "workspace:*",
     "@flowmark/email": "workspace:*",
-    "@modelcontextprotocol/server": "2.3.1",
     "@trpc/server": "^11.19.0",
     "better-auth": "1.7.17",
     "effect": "4.1.0",
