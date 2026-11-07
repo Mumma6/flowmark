@@ -21,3 +21,11 @@ export class McpConnectionResolveError extends Data.TaggedError(
 )<{
   readonly reason: string
 }> {}
+
+export class McpToolInputError extends Data.TaggedError("McpToolInputError")<{
+  readonly reason: string
+}> {}
+
+export class McpToolReadError extends Data.TaggedError("McpToolReadError")<{
+  readonly reason: string
+}> {}
