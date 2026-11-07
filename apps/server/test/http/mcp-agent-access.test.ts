@@ -286,6 +286,8 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
       }
       expect(tools.result?.tools?.map((tool) => tool.name)).toEqual([
         "get_connection",
+        "list_workflows",
+        "find_runs",
       ])
       const connectionResult = await handleMcpPost(
         mcpRequest(
@@ -312,6 +314,8 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
       ).toEqual([projectId])
       expect(payload.result?.structuredContent?.toolsEnabled).toEqual([
         "get_connection",
+        "list_workflows",
+        "find_runs",
       ])
       await connection.db
         .delete(verification)
