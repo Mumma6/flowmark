@@ -108,9 +108,13 @@ export function RecoveryForm({
   }
 
   return (
-    <main className="grid min-h-screen place-items-center p-6">
-      <Card className="w-full max-w-md">
+    <main className="grid min-h-screen place-items-center bg-[radial-gradient(ellipse_at_50%_0%,hsl(var(--highlight)/0.06),transparent_60%)] p-6">
+      <Card className="w-full max-w-md border-highlight/20">
         <CardHeader>
+          <span
+            aria-hidden="true"
+            className="mb-2 block h-0.5 w-8 rounded-full bg-highlight/70"
+          />
           <CardTitle>
             {complete
               ? mode === "request"

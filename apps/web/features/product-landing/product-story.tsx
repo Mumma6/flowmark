@@ -47,17 +47,17 @@ export function ProductDimensions() {
           <a
             key={item.name}
             href={item.href}
-            className="group relative min-w-0 border-border py-7 transition-colors hover:bg-primary/[0.03] first:pl-0 last:pr-0 max-md:border-b max-md:last:border-b-0 md:px-7 md:not-last:border-r lg:px-9"
+            className="group relative min-w-0 border-border py-7 transition-colors hover:bg-highlight/[0.03] first:pl-0 last:pr-0 max-md:border-b max-md:last:border-b-0 md:px-7 md:not-last:border-r lg:px-9"
           >
             <span
               aria-hidden="true"
-              className="pointer-events-none absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-primary/70 to-transparent opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
+              className="pointer-events-none absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-highlight/70 to-transparent opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
             />
             <div className="flex items-center gap-3">
-              <span className="font-mono text-[9px] text-muted-foreground">
+              <span className="font-mono text-[9px] text-highlight/80">
                 {item.number}
               </span>
-              <h2 className="text-sm font-medium transition-colors group-hover:text-primary">
+              <h2 className="text-sm font-medium transition-colors group-hover:text-highlight">
                 {item.name}
               </h2>
               <span className="ml-auto text-muted-foreground transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
@@ -122,7 +122,7 @@ export function EverywhereSection() {
     >
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_80%_20%,#b9f59712,transparent_55%)]"
+        className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_80%_20%,hsl(var(--highlight)/0.06),transparent_55%)]"
       />
       <div className={shellClassName}>
         <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-20">
@@ -164,7 +164,7 @@ export function EverywhereSection() {
                 ],
               ].map(([n, title, detail]) => (
                 <div key={n} className="flex gap-4">
-                  <span className="pt-1 font-mono text-[9px] text-primary">
+                  <span className="pt-1 font-mono text-[9px] text-highlight">
                     {n}
                   </span>
                   <div>

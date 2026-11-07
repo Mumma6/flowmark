@@ -74,7 +74,7 @@ export function RunsTable({
           <li key={run.id} className="grid gap-3 p-4">
             <div className="flex items-start justify-between gap-2">
               <Link
-                className="min-w-0 break-all text-sm font-medium hover:text-primary"
+                className="min-w-0 break-all text-sm font-medium hover:text-highlight"
                 href={runInvestigationPath(run.id, from)}
               >
                 {showWorkflow ? run.workflow : run.externalId.slice(0, 12)}
@@ -115,7 +115,7 @@ export function RunsTable({
                 {showWorkflow && (
                   <TableCell>
                     <Link
-                      className="font-medium hover:text-primary hover:underline"
+                      className="font-medium hover:text-highlight hover:underline"
                       href={`/workflows/${encodeURIComponent(run.workflow)}`}
                     >
                       {run.workflow}
@@ -125,7 +125,7 @@ export function RunsTable({
                 <TableCell>
                   <Link
                     href={runInvestigationPath(run.id, from)}
-                    className="font-mono text-sm text-muted-foreground hover:text-primary hover:underline"
+                    className="font-mono text-sm text-muted-foreground hover:text-highlight hover:underline"
                     title={run.externalId}
                   >
                     {run.externalId.slice(0, 12)}

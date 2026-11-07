@@ -22,11 +22,12 @@ Today, the TypeScript SDK and web interface support workflow investigation,
 related executions, progress, outcomes, confirmations and historical business
 analytics. Your application keeps ownership of execution.
 
-**Product 1.0 direction:** Flowmark Platform supplies the programmable foundation;
-Flowmark Studio brings it into a contextual investigation workspace; Flowmark
-Everywhere carries it into agents, custom tools and portable interfaces. These
-are dimensions of one product. The unified Studio, delegated MCP access, saved
-investigations and portable agent UI are planned, not current availability claims.
+**Product 1.0 direction:** Flowmark Platform supplies the programmable foundation,
+Flowmark Studio is the investigation workspace, and Flowmark Everywhere is the
+direction for agents, custom tools and portable interfaces. These are dimensions
+of one product. Studio is the current dashboard. The API serves six read-only
+MCP investigation tools when that deployment enables agent access. Saved
+investigations and a portable agent UI are not built.
 
 ## Getting started
 
@@ -155,12 +156,14 @@ you control.
 | `packages/core`  | Shared event contracts, `@flowmarkdev/core` |
 | `packages/api`   | Use cases and ports                         |
 | `packages/db`    | Schema, migrations, and persistence         |
-| `apps/server`    | HTTP and tRPC shell                         |
-| `apps/dashboard` | Current web interface, evolving into Studio |
+| `packages/auth`  | Sessions, local accounts, and agent access  |
+| `packages/mcp`   | Private read-only MCP adapter               |
+| `apps/server`    | HTTP, tRPC, and MCP route shell             |
+| `apps/dashboard` | Studio                                      |
 | `apps/web`       | Landing page                                |
 | `apps/docs`      | Customer documentation                      |
 
-Sessions and local accounts live in `packages/auth`. `apps/dev-harness` and
+`apps/dev-harness` and
 `apps/internal-docs` are local-only and bind to loopback. The
 [architecture guide](./docs/architecture.md) describes how the pieces connect.
 

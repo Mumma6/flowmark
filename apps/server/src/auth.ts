@@ -1,6 +1,6 @@
 import { after } from "next/server"
 import { Email, resendLayer } from "@flowmark/email"
-import { Data, Effect, Exit } from "effect"
+import { Data, Effect, Exit, Option } from "effect"
 import { createDatabase } from "@flowmark/db"
 import {
   Database,
@@ -10,11 +10,17 @@ import { createFlowmarkAuth, readAuthSecret } from "@flowmark/auth"
 import { assertPreviewDatabase } from "@flowmark/db/environment"
 import { ConfigurationError } from "@flowmark/api"
 
+import { resolveAgentAccessRuntime } from "./agent-access-runtime"
 import { serverOrigins } from "./server-env"
 
 class AuthEmailTaskError extends Data.TaggedError("AuthEmailTaskError") {}
 
 let cached: ReturnType<typeof createFlowmarkAuth> | undefined
+
+/** Drop the module cache when tests rotate `BETTER_AUTH_SECRET` or database URL. */
+export const resetAuthCacheForTests = () => {
+  cached = undefined
+}
 
 export const getAuth = Effect.fn("getAuth")(function* () {
   if (cached) {
@@ -58,12 +64,22 @@ export const getAuth = Effect.fn("getAuth")(function* () {
       Effect.mapError((cause) => new ConfigurationError({ cause })),
     )
   })
+  const agentAccess = yield* resolveAgentAccessRuntime().pipe(
+    Effect.map((resolved) =>
+      Option.match(resolved, {
+        onNone: () => undefined,
+        onSome: (value) => value.agentAccessInput,
+      }),
+    ),
+    Effect.catchTag("AgentAccessRuntimeError", () => Effect.succeed(undefined)),
+  )
   const { db } = createDatabase(url)
   cached = createFlowmarkAuth({
     db,
     secret,
     baseURL,
     trustedOrigins: [dashboardOrigin],
+    agentAccess,
     emailDelivery,
     onRevokeDelegatedAgentAccess: async (userId) => {
       try {

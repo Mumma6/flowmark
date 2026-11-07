@@ -3,6 +3,10 @@ import type { DatabaseError } from "../database.js"
 import { Database, provideDatabase } from "../database.js"
 import type { AgentAccessConnectionSummary } from "./queries/list-agent-access-connections.js"
 import { getAgentAccessConnectionDetail } from "./queries/get-agent-access-connection-detail.js"
+import {
+  getAgentAccessMcpConnection,
+  type AgentAccessMcpConnectionSnapshot,
+} from "./queries/get-agent-access-mcp-connection.js"
 import { listAgentAccessConnections } from "./queries/list-agent-access-connections.js"
 import {
   AgentAccessConsentRejected,
@@ -41,6 +45,14 @@ export interface AgentAccessStoreService {
     readonly authorizationCodeId: string
     readonly clientId: string
   }) => Effect.Effect<void, AgentAccessNotFound | DatabaseError>
+  readonly getMcpConnection: (input: {
+    readonly userId: string
+    readonly authorizationCodeId: string
+    readonly clientId: string
+  }) => Effect.Effect<
+    AgentAccessMcpConnectionSnapshot | undefined,
+    DatabaseError
+  >
 }
 
 export class AgentAccessStore extends Context.Service<AgentAccessStore>()(
@@ -58,6 +70,8 @@ export class AgentAccessStore extends Context.Service<AgentAccessStore>()(
           provide(recordAgentAccessLastAuth(input)),
         revokeConnection: (input) =>
           provide(revokeAgentAccessConnection(input)),
+        getMcpConnection: (input) =>
+          provide(getAgentAccessMcpConnection(input)),
       } satisfies AgentAccessStoreService
     }),
   },

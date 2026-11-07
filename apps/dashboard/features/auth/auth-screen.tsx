@@ -64,7 +64,7 @@ export function AuthScreen({
       >
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_0%_40%,hsl(var(--primary)/0.075),transparent_65%)]"
+          className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_0%_40%,hsl(var(--highlight)/0.075),transparent_65%)]"
         />
         <a
           href="https://flowmark.dev"
@@ -74,7 +74,7 @@ export function AuthScreen({
           flowmark<span className="-ml-2 text-primary">.</span>
         </a>
         <div className="my-auto max-w-lg py-16">
-          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-primary">
+          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-highlight">
             Flowmark Studio
           </p>
           <p className="mt-6 text-[clamp(2.5rem,4.1vw,4.25rem)] font-medium leading-[1.06] tracking-[-0.05em]">
@@ -114,7 +114,7 @@ export function AuthScreen({
                 key={itemTitle}
                 className="flex items-center gap-4 border-b border-border py-5 last:border-0"
               >
-                <span className="grid size-9 shrink-0 place-items-center rounded-lg border border-primary/15 bg-primary/5 text-primary">
+                <span className="grid size-9 shrink-0 place-items-center rounded-lg border border-highlight/20 bg-highlight/5 text-highlight">
                   <Icon aria-hidden="true" className="size-4" />
                 </span>
                 <div>
@@ -161,7 +161,7 @@ export function AuthScreen({
         </div>
         <div className="mx-auto my-auto w-full max-w-sm py-12">
           <div className="mb-8">
-            <span className="mb-6 inline-flex rounded border border-primary/20 bg-primary/5 px-2 py-1 font-mono text-[9px] uppercase tracking-widest text-primary">
+            <span className="mb-6 inline-flex rounded border border-highlight/25 bg-highlight/10 px-2 py-1 font-mono text-[9px] uppercase tracking-widest text-highlight">
               Flowmark Studio
             </span>
             <h1 className="text-3xl font-medium tracking-[-0.04em] sm:text-[34px]">
@@ -209,7 +209,7 @@ export function AuthScreen({
                 {!isSignUp ? (
                   <Link
                     href="/forgot-password"
-                    className="text-[11px] text-muted-foreground hover:text-primary"
+                    className="text-[11px] text-muted-foreground hover:text-highlight"
                   >
                     Forgot password?
                   </Link>
@@ -246,7 +246,7 @@ export function AuthScreen({
             {isSignUp ? "Already have an account? " : "New to Flowmark? "}
             <Link
               href={isSignUp ? "/sign-in" : "/sign-up"}
-              className="text-foreground underline-offset-4 hover:text-primary hover:underline"
+              className="text-foreground underline-offset-4 hover:text-highlight hover:underline"
             >
               {isSignUp ? "Sign in" : "Create an account"}
             </Link>

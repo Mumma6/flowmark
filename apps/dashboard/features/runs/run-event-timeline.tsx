@@ -37,7 +37,7 @@ export function RunEventTimeline({ events }: { events: readonly RunEvent[] }) {
       </p>
       <ol className="relative grid gap-0 p-0" aria-label="Run event timeline">
         <span
-          className="absolute top-3 bottom-3 left-[5px] w-px bg-primary/30"
+          className="absolute top-3 bottom-3 left-[5px] w-px bg-highlight/30"
           aria-hidden="true"
         />
         {events.map((event) => {

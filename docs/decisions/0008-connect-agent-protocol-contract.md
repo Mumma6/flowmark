@@ -49,7 +49,7 @@ narrow prefixes in TASK-003 — no widening of ordinary login redirect rules):
 
 **API-visible paths** (direct to API origin — **not** dashboard-proxied):
 
-- Transport: `POST /mcp` (stateless MCP HTTP, `@modelcontextprotocol/server` v2, `legacy: "reject"`)
+- Transport: `POST /mcp` (`@modelcontextprotocol/server` v2). Clients use the legacy `initialize` handshake; follow-up requests carry `mcp-session-id`.
 - Resource metadata: `GET /.well-known/oauth-protected-resource` for the configured resource URL
 
 **Browser UX paths** (dashboard app routes; passed to `mcp({ loginPage, consentPage })`):
@@ -192,12 +192,14 @@ Does **not** authorize package installation (still gated per ADR 0007).
 ## Consequences
 
 - TASK-003 implements provider composition and proxy forwarding **exactly** from this map.
-- TASK-004 owns grant persistence, revocation SQL, and lifecycle hooks. **Partial
-  implementation (004.1):** table `agent_access_grant_projects`, SQL intersection
-  with membership and active `oauth_refresh_token`, and tRPC delegated reader
-  headers are documented in [auth-perimeter.md](../auth-perimeter.md#delegated-workflow-reads-trpc).
-  Consent/session APIs that populate rows remain later TASK-004.x.
-- TASK-005 registers **only** these six tool names with the frozen bounds.
+- TASK-004 owns grant persistence, revocation SQL, and lifecycle hooks. Grant
+  rows, consent, revoke, and isolation are in the tree. See
+  [auth-perimeter.md](../auth-perimeter.md#delegated-workflow-reads-trpc) and
+  [implementation status](../implementation-status.md).
+- TASK-005 registers **only** these six tool names with the frozen bounds. The
+  names are registered. Durable admission budgets remain a later increment.
+  The shipped `POST /mcp` handler accepts the legacy `initialize` handshake
+  that current clients send; follow-up requests carry `mcp-session-id`.
 - TASK-008 owns empirical client verification listed in the contract export.
 - Changes to scope strings, tool names, origin layout, or default lifetimes require a **new ADR**.
 

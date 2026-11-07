@@ -36,6 +36,7 @@ application Effect layers or replace it with imperative provider calls.
 apps/server (Next.js / tRPC / HTTP) ──> @flowmark/api use cases ──> ports
                                          │                         ▲
                                          └── persistence adapters ─┘
+apps/server MCP routes ──> @flowmark/mcp ──> @flowmark/api use cases
 apps/server auth routes ──> @flowmark/auth ──> @flowmark/db
 dashboard server proxy  ──> @flowmark/auth/client-identity
 ```

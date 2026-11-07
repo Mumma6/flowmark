@@ -26,7 +26,7 @@ export function HeroSection() {
           <span className="size-1.5 rounded-full bg-primary" />
           Open-source process intelligence
           <span className="hidden h-3 w-px bg-border sm:block" />
-          <span className="text-primary">For people & agents</span>
+          <span className="text-highlight">For people & agents</span>
         </div>
         <h1
           id="hero-title"

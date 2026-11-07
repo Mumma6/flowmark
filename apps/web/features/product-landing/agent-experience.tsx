@@ -15,7 +15,7 @@ export function AgentExperience() {
           <FlowmarkMark className="size-4 text-primary" />
           Connect your agent
         </div>
-        <span className="rounded border border-primary/20 bg-primary/5 px-2 py-1 font-mono text-[9px] text-primary">
+        <span className="rounded border border-highlight/25 bg-highlight/10 px-2 py-1 font-mono text-[9px] text-highlight">
           MCP
         </span>
       </div>
@@ -57,7 +57,7 @@ export function AgentExperience() {
             </div>
           </dl>
         </div>
-        <p className="mt-4 border-l border-primary/30 pl-4 text-xs leading-7 text-muted-foreground">
+        <p className="mt-4 border-l border-highlight/40 pl-4 text-xs leading-7 text-muted-foreground">
           The booking was accepted. Its separate confirmation isn’t recorded.
           That alone doesn’t establish a provider failure.
         </p>

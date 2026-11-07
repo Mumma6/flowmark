@@ -71,7 +71,7 @@ export function OrganizationPerspectives() {
       <TabsList
         aria-label="Explore organizational perspectives"
         variant="line"
-        className="w-full flex-wrap justify-start gap-x-6 gap-y-1 border-b border-border p-0 pb-1 sm:gap-x-9"
+        className="w-full flex-wrap justify-start gap-x-6 gap-y-1 border-b border-border p-0 pb-1 sm:gap-x-9 [&_[data-slot=tabs-trigger]]:after:bg-highlight"
       >
         {perspectives.map((item) => (
           <TabsTrigger
@@ -93,13 +93,13 @@ export function OrganizationPerspectives() {
               <p className="mt-4 max-w-lg text-sm leading-7 text-muted-foreground">
                 {item.answer}
               </p>
-              <p className="mt-5 font-mono text-[10px] text-primary">
+              <p className="mt-5 font-mono text-[10px] text-highlight">
                 {item.focus}
               </p>
             </div>
             <div className="relative overflow-hidden rounded-lg border border-border bg-card p-6 sm:p-8">
               <span
-                className="absolute top-0 right-8 h-10 w-px bg-linear-to-b from-primary/60 to-transparent"
+                className="absolute top-0 right-8 h-10 w-px bg-linear-to-b from-highlight/60 to-transparent"
                 aria-hidden="true"
               />
               <p className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground">

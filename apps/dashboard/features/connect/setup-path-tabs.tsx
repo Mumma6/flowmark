@@ -56,7 +56,7 @@ export function SetupPathTabs({
       <TabsList
         variant="line"
         aria-label="Instrumentation setup paths"
-        className="h-auto w-full flex-wrap justify-start gap-1 border-b border-border pb-2"
+        className="h-auto w-full flex-wrap justify-start gap-1 border-b border-border pb-2 [&_[data-slot=tabs-trigger]]:after:bg-highlight"
       >
         <TabsTrigger value="agent">Coding agent</TabsTrigger>
         <TabsTrigger value="manual">Manual SDK</TabsTrigger>
