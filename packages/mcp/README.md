@@ -15,15 +15,14 @@ answers MCP HTTP with an explicit not-found response.
 
 ## Tools
 
-| Tool             | Behavior                                                                                                |
-| ---------------- | ------------------------------------------------------------------------------------------------------- |
-| `get_connection` | Current grant, project scope, and which investigation tools this deployment enables.                    |
-| `list_workflows` | Workflow names in one authorized project. A `workflow` argument also loads bounded declaration meaning. |
-| `find_runs`      | Run history inside an explicit `startedAfter` / `startedBefore` window of at most 31 days.              |
-| `get_run`        | Compact run summary plus one page of events, related runs, expectations, or operations.                 |
-| `compare_run`    | Existing peer comparison for one run. Optional `peers` uses the same selection as Studio.               |
-
-`get_workflow_insights` is reported as pending. It is not registered.
+| Tool                    | Behavior                                                                                                       |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `get_connection`        | Current grant, project scope, and which investigation tools this deployment enables.                           |
+| `list_workflows`        | Workflow names in one authorized project. A `workflow` argument also loads bounded declaration meaning.        |
+| `find_runs`             | Run history inside an explicit `startedAfter` / `startedBefore` window of at most 31 days.                     |
+| `get_run`               | Compact run summary plus one page of events, related runs, expectations, or operations.                        |
+| `compare_run`           | Existing peer comparison for one run. Optional `peers` uses the same selection as Studio.                      |
+| `get_workflow_insights` | One mode per call: `technical` period report or `business` declared-result insights. Unsupported filters fail. |
 
 `McpWorkflowTools` exposes the project-scoped tools. They read through
 `GetProjectWorkflowData` with a delegated OAuth reader. Input is decoded with

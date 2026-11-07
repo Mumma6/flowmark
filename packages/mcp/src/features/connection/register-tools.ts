@@ -10,6 +10,7 @@ import type { ResolvedAgentAccessRuntime } from "../../runtime/agent-access-runt
 import { compareRunForMcp } from "../workflows/compare-run.js"
 import { findRunsForMcp } from "../workflows/find-runs.js"
 import { getRunForMcp } from "../workflows/get-run.js"
+import { getWorkflowInsightsForMcp } from "../workflows/get-workflow-insights.js"
 import { listWorkflowsForMcp } from "../workflows/list-workflows.js"
 import { McpWorkflowTools } from "../workflows/workflow-tools.js"
 import {
@@ -23,6 +24,7 @@ import {
   findRunsInputJsonSchema,
   getRunInputJsonSchema,
   listWorkflowsInputJsonSchema,
+  workflowInsightsInputJsonSchema,
 } from "../../tools/tool-input-json-schema.js"
 import { resolveMcpConnection } from "./resolve-connection.js"
 
@@ -38,6 +40,7 @@ const runWorkflowTool = async <A extends Record<string, unknown>>(
     readonly findRuns: typeof findRunsForMcp
     readonly getRun: typeof getRunForMcp
     readonly compareRun: typeof compareRunForMcp
+    readonly getWorkflowInsights: typeof getWorkflowInsightsForMcp
   }) => Effect.Effect<A, McpToolFailure, GetProjectWorkflowData>,
 ) =>
   toolResult(
@@ -138,6 +141,24 @@ const registerCompareRunTool = (
   )
 }
 
+const registerWorkflowInsightsTool = (
+  server: McpServer,
+  identity: FlowmarkMcpAuthInfo,
+) => {
+  server.registerTool(
+    "get_workflow_insights",
+    {
+      title: "Get workflow insights",
+      description:
+        "Read one insight mode for an authorized project. mode technical uses the existing period report. mode business uses the existing declared-result insights. Windows are canonical UTC and at most 31 days. Environment and other run filters are rejected rather than dropped. Counts and coverage come from those aggregates; this tool does not infer causes or fill missing history.",
+      inputSchema: fromJsonSchema(workflowInsightsInputJsonSchema),
+      annotations: { readOnlyHint: true, destructiveHint: false },
+    },
+    async (input: unknown) =>
+      runWorkflowTool((tools) => tools.getWorkflowInsights(identity, input)),
+  )
+}
+
 export const registerFlowmarkTools = (
   server: McpServer,
   identity: FlowmarkMcpAuthInfo,
@@ -147,6 +168,7 @@ export const registerFlowmarkTools = (
   registerFindRunsTool(server, identity)
   registerGetRunTool(server, identity)
   registerCompareRunTool(server, identity)
+  registerWorkflowInsightsTool(server, identity)
 }
 
 export const createFlowmarkMcpSdkHandler = (

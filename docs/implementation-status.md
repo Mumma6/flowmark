@@ -35,6 +35,7 @@ and [ADR 0008](./decisions/0008-connect-agent-protocol-contract.md).
 | **005.1** | **Protected MCP HTTP adapter:** `@flowmark/mcp` + thin `apps/server` transport; `POST /mcp`, RFC 9728 metadata, `get_connection` via delegated grant ∩ membership. Tests: `apps/server/test/http/mcp-agent-access.test.ts` (requires `TEST_DATABASE_URL`). |
 | **005.2** | **Workflow discovery and run finder MCP tools:** `list_workflows` and `find_runs` in `@flowmark/mcp` delegate to `GetProjectWorkflowData` with `DelegatedUser`; Standard Schema inputs, optional workflow meaning reads, explicit 31-day history window on `find_runs`. Schema tests: `packages/mcp/test/tool-schemas.test.ts`. |
 | **005.3** | **Compact run and peer comparison MCP tools:** `get_run` returns a summary plus one bounded section page (`events`, `related`, `expectations`, or `operations`). `compare_run` reuses `GetProjectWorkflowData.compare` and `PeerSelection`. Recorded duration and operation status stay distinct from wall time and terminal run status. |
+| **005.4** | **Workflow insight MCP modes:** `get_workflow_insights` delegates `technical` to `periodReport` and `business` to `businessInsights`. Mixed mode fields and unsupported aggregate filters, including `environment`, fail closed. Coverage stays on the existing aggregate. |
 
 ## Product 1.0 — items completed in the same sequence window
 
