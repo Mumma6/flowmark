@@ -34,6 +34,7 @@ and [ADR 0008](./decisions/0008-connect-agent-protocol-contract.md).
 | **004.4** | Integration coverage for delegated grant **isolation** (`getDelegatedReaderProject`, consent, revoke): wrong project, foreign grant rows, wrong user, removed membership, non-member consent rejection, concurrent consent, post-revoke denial. Runs when `TEST_DATABASE_URL` is set (`pnpm test:integration`). |
 | **005.1** | **Protected MCP HTTP adapter:** `@flowmark/mcp` + thin `apps/server` transport; `POST /mcp`, RFC 9728 metadata, `get_connection` via delegated grant ∩ membership. Tests: `apps/server/test/http/mcp-agent-access.test.ts` (requires `TEST_DATABASE_URL`). |
 | **005.2** | **Workflow discovery and run finder MCP tools:** `list_workflows` and `find_runs` in `@flowmark/mcp` delegate to `GetProjectWorkflowData` with `DelegatedUser`; Standard Schema inputs, optional workflow meaning reads, explicit 31-day history window on `find_runs`. Schema tests: `packages/mcp/test/tool-schemas.test.ts`. |
+| **005.3** | **Compact run and peer comparison MCP tools:** `get_run` returns a summary plus one bounded section page (`events`, `related`, `expectations`, or `operations`). `compare_run` reuses `GetProjectWorkflowData.compare` and `PeerSelection`. Recorded duration and operation status stay distinct from wall time and terminal run status. |
 
 ## Product 1.0 — items completed in the same sequence window
 

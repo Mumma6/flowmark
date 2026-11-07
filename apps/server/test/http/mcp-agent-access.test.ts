@@ -352,7 +352,15 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
       }>(listed)
       expect(
         [...(tools.result?.tools?.map((tool) => tool.name) ?? [])].sort(),
-      ).toEqual(["find_runs", "get_connection", "list_workflows"].sort())
+      ).toEqual(
+        [
+          "compare_run",
+          "find_runs",
+          "get_connection",
+          "get_run",
+          "list_workflows",
+        ].sort(),
+      )
       const connectionResult = await handleMcpPost(
         mcpRequest(
           {
@@ -380,7 +388,78 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         "get_connection",
         "list_workflows",
         "find_runs",
+        "get_run",
+        "compare_run",
       ])
+      const foreignRunId = randomUUID()
+      const missingRun = await handleMcpPost(
+        mcpRequest(
+          {
+            jsonrpc: "2.0",
+            id: 4,
+            method: "tools/call",
+            params: {
+              name: "get_run",
+              arguments: { projectId, runId: foreignRunId },
+            },
+          },
+          sessionHeaders,
+        ),
+      )
+      expect(missingRun.status).toBe(200)
+      const missingRunBody = await readMcpJsonBody<{
+        result?: { isError?: boolean; content?: Array<{ text?: string }> }
+      }>(missingRun)
+      expect(missingRunBody.result?.isError).toBe(true)
+      expect(missingRunBody.result?.content?.[0]?.text).toContain(
+        "Run not found",
+      )
+      const compared = await handleMcpPost(
+        mcpRequest(
+          {
+            jsonrpc: "2.0",
+            id: 5,
+            method: "tools/call",
+            params: {
+              name: "compare_run",
+              arguments: { projectId, runId: foreignRunId },
+            },
+          },
+          sessionHeaders,
+        ),
+      )
+      expect(compared.status).toBe(200)
+      const comparedBody = await readMcpJsonBody<{
+        result?: {
+          isError?: boolean
+          structuredContent?: { tool?: string; selection?: unknown }
+        }
+      }>(compared)
+      expect(comparedBody.result?.isError).toBeUndefined()
+      expect(comparedBody.result?.structuredContent?.tool).toBe("compare_run")
+      expect(comparedBody.result?.structuredContent?.selection).toBeNull()
+      const invalidPeers = await handleMcpPost(
+        mcpRequest(
+          {
+            jsonrpc: "2.0",
+            id: 6,
+            method: "tools/call",
+            params: {
+              name: "compare_run",
+              arguments: {
+                projectId,
+                runId: foreignRunId,
+                peers: { days: 91 },
+              },
+            },
+          },
+          sessionHeaders,
+        ),
+      )
+      const invalidPeersBody = await readMcpJsonBody<{
+        result?: { isError?: boolean }
+      }>(invalidPeers)
+      expect(invalidPeersBody.result?.isError).toBe(true)
       await connection.db
         .delete(verification)
         .where(like(verification.value, `%"userId":"${session.user.id}"%`))
