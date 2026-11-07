@@ -4,7 +4,7 @@ import {
   fromJsonSchema,
   McpServer,
 } from "@modelcontextprotocol/server"
-import { Cause, Effect, Exit } from "effect"
+import { Cause, Exit } from "effect"
 import type { FlowmarkMcpAuthInfo } from "../../auth/claims.js"
 import type { ResolvedAgentAccessRuntime } from "../../runtime/agent-access-runtime.js"
 import { findRunsForMcp } from "../workflows/find-runs.js"
