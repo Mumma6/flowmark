@@ -64,7 +64,7 @@ export function StudioPreview({
               <span className="hidden sm:inline">
                 flowmark<span className="text-primary">.</span>
               </span>
-              <span className="ml-1 hidden rounded border border-primary/20 bg-primary/5 px-1.5 py-0.5 text-[10px] font-medium tracking-normal text-primary lg:inline">
+              <span className="ml-1 hidden rounded border border-highlight/25 bg-highlight/10 px-1.5 py-0.5 text-[10px] font-medium tracking-normal text-highlight lg:inline">
                 Studio
               </span>
             </span>
@@ -102,7 +102,7 @@ export function StudioPreview({
                 (label) => (
                   <span
                     key={label}
-                    className={`relative flex min-h-10 shrink-0 items-center px-1 text-[10px] sm:px-4 sm:text-xs ${label === "Explore" ? "text-foreground after:absolute after:inset-x-1 after:bottom-0 after:h-px after:bg-primary sm:after:inset-x-3" : "text-muted-foreground"}`}
+                    className={`relative flex min-h-10 shrink-0 items-center px-1 text-[10px] sm:px-4 sm:text-xs ${label === "Explore" ? "text-foreground after:absolute after:inset-x-1 after:bottom-0 after:h-px after:bg-highlight sm:after:inset-x-3" : "text-muted-foreground"}`}
                   >
                     {label}
                   </span>

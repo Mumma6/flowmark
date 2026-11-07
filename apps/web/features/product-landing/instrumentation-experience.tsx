@@ -46,7 +46,7 @@ export function InstrumentationExperience() {
     <div className="border-t border-border pt-10 sm:pt-12">
       <div className="mb-7 grid gap-4 lg:grid-cols-2 lg:items-end lg:gap-16">
         <div>
-          <p className="font-mono text-[10px] uppercase tracking-widest text-primary">
+          <p className="font-mono text-[10px] uppercase tracking-widest text-highlight">
             The SDK / Small signals. Shared understanding.
           </p>
           <h3 className="mt-4 max-w-md text-3xl leading-tight font-medium tracking-[-0.04em] sm:text-4xl">
@@ -62,7 +62,7 @@ export function InstrumentationExperience() {
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4 sm:px-6">
           <span className="font-mono text-[10px] text-muted-foreground">
             Your application
-            <span aria-hidden="true" className="mx-3 text-primary">
+            <span aria-hidden="true" className="mx-3 text-highlight">
               →
             </span>
             Shared process intelligence
@@ -81,7 +81,7 @@ export function InstrumentationExperience() {
           <div className="relative isolate min-w-0 p-5 sm:p-7">
             <div
               aria-hidden="true"
-              className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_90%_0%,#b9f59712,transparent_70%)]"
+              className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_90%_0%,hsl(var(--highlight)/0.07),transparent_70%)]"
             />
             <div className="flex items-center gap-2 text-xs">
               <FlowmarkMark className="size-4 text-primary" />
@@ -103,7 +103,7 @@ export function InstrumentationExperience() {
               {signals.map((signal) => (
                 <AccordionItem key={signal.id} value={signal.id}>
                   <AccordionTrigger className="gap-3 py-5 hover:no-underline">
-                    <span className="self-start pt-1 font-mono text-[9px] text-primary">
+                    <span className="self-start pt-1 font-mono text-[9px] text-highlight">
                       {signal.number}
                     </span>
                     <span className="grid min-w-0 flex-1 gap-2 text-left">

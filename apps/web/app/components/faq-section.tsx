@@ -59,7 +59,9 @@ export function FaqSection() {
       <Accordion multiple>
         {questions.map((question) => (
           <AccordionItem value={question.value} key={question.value}>
-            <AccordionTrigger>{question.title}</AccordionTrigger>
+            <AccordionTrigger className="data-[panel-open]:text-highlight [&_svg]:text-highlight">
+              {question.title}
+            </AccordionTrigger>
             <AccordionContent>
               <p>{question.body}</p>
             </AccordionContent>

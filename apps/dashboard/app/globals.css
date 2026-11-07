@@ -10,6 +10,7 @@
     --card: 0 0% 100%;
     --card-foreground: 150 5% 10%;
     --primary: 105 45% 26%;
+    --highlight: 253 48% 43%;
     --primary-foreground: 0 0% 100%;
     --secondary: 140 5% 94%;
     --secondary-foreground: 150 5% 10%;
@@ -41,6 +42,7 @@
     --card: 140 5% 8.5%;
     --card-foreground: 130 5% 93%;
     --primary: 98 82% 78%;
+    --highlight: 253 100% 82%;
     --primary-foreground: 100 30% 7%;
     --secondary: 140 5% 13%;
     --secondary-foreground: 130 5% 93%;

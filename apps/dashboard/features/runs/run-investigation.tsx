@@ -519,7 +519,7 @@ export function RunInvestigation({
                           {first.correlationId ? (
                             <>
                               <Link
-                                className="font-medium hover:text-primary hover:underline"
+                                className="font-medium hover:text-highlight hover:underline"
                                 href={`/runs?search=${encodeURIComponent(first.correlationId)}`}
                               >
                                 <code>{first.correlationId}</code>
@@ -540,7 +540,7 @@ export function RunInvestigation({
                           {first.parentRunId ? (
                             <>
                               <Link
-                                className="font-medium hover:text-primary hover:underline"
+                                className="font-medium hover:text-highlight hover:underline"
                                 href={`/runs?search=${encodeURIComponent(first.parentRunId)}`}
                               >
                                 <code>{first.parentRunId}</code>

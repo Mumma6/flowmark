@@ -6,7 +6,7 @@ import { docsUrl, githubUrl } from "./site-links"
 export function ClosingSection() {
   return (
     <section
-      className="relative isolate overflow-hidden border-t border-primary/20 bg-card py-20 sm:py-28"
+      className="relative isolate overflow-hidden border-t border-highlight/20 bg-card py-20 sm:py-28"
       aria-labelledby="closing-title"
     >
       <div

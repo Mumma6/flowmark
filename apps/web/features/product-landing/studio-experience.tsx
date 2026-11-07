@@ -75,7 +75,7 @@ export function StudioExperience() {
       <h2 className="sr-only">Explore Flowmark Studio</h2>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3 text-[11px] text-muted-foreground">
         <span>
-          <span className="mr-2 text-primary">↳</span> One process. Every
+          <span className="mr-2 text-highlight">↳</span> One process. Every
           perspective.
         </span>
         <span className="font-mono text-[9px] uppercase tracking-widest">
@@ -86,10 +86,10 @@ export function StudioExperience() {
         aria-hidden="true"
         className="pointer-events-none absolute -inset-x-12 top-8 -bottom-12 -z-10 rounded-full bg-[radial-gradient(ellipse_at_50%_35%,var(--studio-glow),transparent_70%)] blur-3xl"
       />
-      <div className="relative overflow-hidden rounded-xl border border-primary/25 bg-card shadow-[0_0_0_1px_#b9f59708,0_32px_100px_-28px_#000,0_0_90px_-40px_#b9f59760]">
+      <div className="relative overflow-hidden rounded-xl border border-highlight/25 bg-card shadow-[0_32px_100px_-28px_#000]">
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-x-8 top-0 h-px bg-linear-to-r from-transparent via-primary/70 to-transparent"
+          className="pointer-events-none absolute inset-x-8 top-0 h-px bg-linear-to-r from-transparent via-highlight/70 to-transparent"
         />
         <Tabs
           value={surface}

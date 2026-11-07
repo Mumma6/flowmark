@@ -54,7 +54,7 @@ export function RelatedRunsTable({
                 <TableRow key={run.id}>
                   <TableCell>
                     <Link
-                      className="font-medium hover:text-primary hover:underline"
+                      className="font-medium hover:text-highlight hover:underline"
                       href={`/workflows/${encodeURIComponent(run.workflow)}`}
                     >
                       {run.workflow}
@@ -62,7 +62,7 @@ export function RelatedRunsTable({
                   </TableCell>
                   <TableCell>
                     <Link
-                      className="font-medium hover:text-primary hover:underline"
+                      className="font-medium hover:text-highlight hover:underline"
                       href={runInvestigationPath(run.id, source)}
                       replace={replace}
                       scroll={false}

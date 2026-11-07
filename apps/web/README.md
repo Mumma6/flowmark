@@ -100,3 +100,10 @@ Verify desktop and mobile layouts, keyboard tabs, search/clear recovery, evidenc
 selection, cross-interface context, Dialog/Sheet dismissal and focus restoration,
 SDK evidence expansion and copying, FAQ expansion, anchor destinations, metadata
 and the browser console. The synthetic landing needs no database or other app.
+
+### Color hierarchy
+
+Lime remains the brand and primary action color. The `highlight` token adds
+restrained lavender to Studio identity, navigation and decorative light; it
+never replaces execution or outcome status colors. Studio uses a darker violet
+in its light theme to preserve text contrast. Keep these accents sparse.

@@ -57,8 +57,8 @@ export function RunInspector({ id }: { id: string }) {
         }
         className="left-auto right-0 w-full max-w-none gap-0 border-l border-r-0 p-0 md:w-[calc(100vw-10rem)] xl:w-[min(1100px,calc(100vw-24rem))]"
       >
-        <header className="shrink-0 border-b border-border bg-card px-5 py-5 pr-12 sm:px-7 sm:pr-12">
-          <p className="mb-3 font-mono text-[10px] uppercase tracking-widest text-primary">
+        <header className="shrink-0 border-b border-highlight/20 bg-card px-5 py-5 pr-12 sm:px-7 sm:pr-12">
+          <p className="mb-3 font-mono text-[10px] uppercase tracking-widest text-highlight">
             Studio / Run inspector
           </p>
           <SheetTitle

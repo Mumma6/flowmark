@@ -84,7 +84,7 @@ function ExploreWorkspace() {
         <div>
           <p className="mb-3 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
             <span
-              className="size-1.5 rounded-full bg-primary"
+              className="size-1.5 rounded-full bg-highlight"
               aria-hidden="true"
             />
             Studio / Explore
@@ -146,7 +146,10 @@ function ExploreWorkspace() {
           >
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-[linear-gradient(110deg,hsl(var(--primary)/0.035),transparent_65%)] px-5 py-4 sm:px-6">
               <div className="flex items-center gap-2.5">
-                <CircleDot aria-hidden="true" className="size-4 text-primary" />
+                <CircleDot
+                  aria-hidden="true"
+                  className="size-4 text-highlight"
+                />
                 <h2
                   id="evidence-title"
                   tabIndex={-1}

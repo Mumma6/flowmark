@@ -128,7 +128,7 @@ export function WorkflowDirectory({
                   <TableRow key={item.name}>
                     <TableCell>
                       <Link
-                        className="font-medium hover:text-primary hover:underline"
+                        className="font-medium hover:text-highlight hover:underline"
                         href={`/workflows/${encodeURIComponent(item.name)}`}
                       >
                         {item.name}

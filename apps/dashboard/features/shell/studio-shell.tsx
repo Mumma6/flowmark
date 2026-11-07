@@ -159,7 +159,7 @@ export function StudioShell({
         <div className="relative isolate min-h-screen overflow-x-clip bg-background">
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[480px] bg-[radial-gradient(ellipse_at_50%_0%,hsl(var(--primary)/0.04),transparent_65%)]"
+            className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[480px] bg-[radial-gradient(ellipse_at_50%_0%,hsl(var(--highlight)/0.045),transparent_65%)]"
           />
           <a
             href="#studio-main"
@@ -179,7 +179,7 @@ export function StudioShell({
                   <span className="hidden sm:inline">
                     flowmark<span className="text-primary">.</span>
                   </span>
-                  <span className="ml-1 hidden rounded border border-primary/20 bg-primary/5 px-1.5 py-0.5 text-[10px] font-medium tracking-normal text-primary lg:inline">
+                  <span className="ml-1 hidden rounded border border-highlight/25 bg-highlight/10 px-1.5 py-0.5 text-[10px] font-medium tracking-normal text-highlight lg:inline">
                     Studio
                   </span>
                 </Link>
@@ -223,11 +223,11 @@ export function StudioShell({
                         key={href}
                         href={href}
                         aria-current={active ? "page" : undefined}
-                        className={`relative flex min-h-10 shrink-0 items-center gap-2 px-2.5 text-[11px] transition-colors sm:px-4 sm:text-xs ${active ? "text-foreground after:absolute after:inset-x-3 after:bottom-0 after:h-px after:bg-primary" : "text-muted-foreground hover:text-foreground"}`}
+                        className={`relative flex min-h-10 shrink-0 items-center gap-2 px-2.5 text-[11px] transition-colors sm:px-4 sm:text-xs ${active ? "text-foreground after:absolute after:inset-x-3 after:bottom-0 after:h-px after:bg-highlight" : "text-muted-foreground hover:text-foreground"}`}
                       >
                         <Icon
                           aria-hidden="true"
-                          className={`hidden size-3.5 sm:block ${active ? "text-primary" : ""}`}
+                          className={`hidden size-3.5 sm:block ${active ? "text-highlight" : ""}`}
                         />
                         {label}
                       </Link>

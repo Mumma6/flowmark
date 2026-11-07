@@ -23,7 +23,7 @@ export function PlatformFabric() {
           aria-hidden="true"
           viewBox="0 0 1000 260"
           preserveAspectRatio="none"
-          className="pointer-events-none absolute inset-0 hidden h-full w-full text-primary lg:block"
+          className="pointer-events-none absolute inset-0 hidden h-full w-full text-highlight lg:block"
           fill="none"
         >
           <path
@@ -41,7 +41,7 @@ export function PlatformFabric() {
         </svg>
         <div className="relative min-w-0">
           <p className="mb-4 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-            <span className="mr-2 text-primary">01</span>Your application
+            <span className="mr-2 text-highlight">01</span>Your application
           </p>
           <div className="overflow-hidden rounded-lg border border-border bg-background/90">
             <div className="flex items-center justify-between border-b border-border px-4 py-3 text-[10px]">
@@ -102,7 +102,7 @@ export function PlatformFabric() {
         </div>
         <div className="relative min-w-0">
           <p className="mb-4 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-            <span className="mr-2 text-primary">02</span>Every context
+            <span className="mr-2 text-highlight">02</span>Every context
           </p>
           <div className="space-y-3">
             {[
@@ -130,7 +130,7 @@ export function PlatformFabric() {
                 href={item.href}
                 className="group flex items-center gap-3 rounded-lg border border-border bg-background/90 p-4 transition-colors hover:border-primary/40 hover:bg-secondary focus-visible:border-primary"
               >
-                <span className="font-mono text-[9px] text-primary/70">
+                <span className="font-mono text-[9px] text-highlight/80">
                   {item.mark}
                 </span>
                 <div className="min-w-0">
@@ -139,7 +139,7 @@ export function PlatformFabric() {
                     {item.detail}
                   </p>
                 </div>
-                <span className="ml-auto shrink-0 text-muted-foreground transition-colors group-hover:text-primary">
+                <span className="ml-auto shrink-0 text-muted-foreground transition-colors group-hover:text-highlight">
                   <Arrow diagonal />
                 </span>
               </a>

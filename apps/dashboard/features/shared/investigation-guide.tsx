@@ -41,7 +41,7 @@ export function InvestigationGuide() {
         <Link
           key={path.href}
           href={path.href}
-          className="group flex min-w-0 flex-col gap-4 rounded-xl border border-border bg-card p-5 transition-colors hover:border-primary/50 hover:bg-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="group flex min-w-0 flex-col gap-4 rounded-xl border border-border bg-card p-5 transition-colors hover:border-highlight/40 hover:bg-highlight/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <h2 className="text-lg font-semibold">{path.title}</h2>
           <p className="text-base leading-7 text-muted-foreground">
@@ -50,7 +50,7 @@ export function InvestigationGuide() {
           <p className="border-t border-border pt-4 text-sm leading-6 text-foreground">
             {path.outcome}
           </p>
-          <span className="mt-auto flex items-center gap-2 pt-2 text-sm font-medium text-primary">
+          <span className="mt-auto flex items-center gap-2 pt-2 text-sm font-medium text-highlight">
             {path.action}
             <ArrowRight aria-hidden="true" className="size-4" />
           </span>
