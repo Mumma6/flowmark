@@ -1,15 +1,20 @@
 ---
-title: Reading the dashboard
+title: Reading Studio
 description: Move from workflow outcomes to the evidence behind a specific execution.
 ---
 
-This guide describes the current web interface. Product 1.0 plans to evolve it
-into Flowmark Studio: a contextual workspace connecting process exploration,
-comparisons and evidence. Existing navigation below remains the actual behavior.
+This guide describes Flowmark Studio. Explore is the workspace. Overview,
+Insights, Issues and execution history remain available from search and
+navigation. Saved investigations are not part of Studio.
 
 ## Choose the question you want to answer
 
-Use **Overview → Where to go next** to choose an investigation path:
+Open **Explore** to select a process, search its recorded runs and inspect one
+without losing the filters. The command palette (**⌘K** / **Ctrl+K**) reaches
+Explore, project overview, processes, execution history, Insights, Issues and
+Connect.
+
+Use **Project overview** when you want a seven-day summary and a path onward:
 
 - **Issues:** identify affected runs and gather evidence for an application investigation.
 - **Insights:** determine which recorded measurements changed between two periods.
@@ -71,13 +76,13 @@ Run details open on **Run summary**. Separate tabs keep investigation focused:
   counts. Expand raw result data when needed.
 - **Timeline:** filter event types and expand rows for occurrence/receipt
   times, operation timing, properties, progress and safe error details.
-  Each page contains at most 15 events.
+  Each page contains 50 events. The read accepts 1–100.
 - **Context:** properties, environment, release and the external SDK run ID.
 - **Compare:** this run versus up to 50 earlier runs of the same workflow.
   The default window is 30 days and the same environment. Duration is compared
   with the peer median and p95.
 - **Related runs:** explicitly declared parent matches and correlated runs,
-  paginated independently at 10 rows per table.
+  paginated independently at 25 rows per table.
 - **Confirmations:** application-declared expectations and observed resolutions,
   separate from technical completion.
 - **Take findings forward:** copy an investigation summary with status, failure
@@ -94,8 +99,11 @@ inspect checkpoints before retrying work that may already have side effects.
 
 ## Settings and projects
 
-**Settings** is where you rename or create a project, create, rotate, or
-revoke ingestion keys, and update the signed-in name or password. A write key
+**Connect** explains agent and manual SDK setup. Copied configuration, a
+configured project and an observed run stay separate. It does not establish or
+display a live agent connection. **Settings** is where you rename or create a
+project, create, rotate, or revoke ingestion keys, and update the signed-in
+name or password. A write key
 is shown once. Emergency rotation revokes the selected write key immediately.
 To overlap credentials, create a new key, update the application, then revoke
 the old one. A project name does not restrict the environment a run reports.

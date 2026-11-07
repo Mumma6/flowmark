@@ -41,7 +41,7 @@ npm i @flowmarkdev/node
 - **Inspect confirmations:** declare an expectation and report its resolution or
   cancellation. Deadlines are evaluated on read; there is no background alerting.
 - **Investigate history:** search enabled references, filter runs, compare peers
-  and examine timelines/waterfalls in the current web interface.
+  and examine timelines in Studio.
 - **Analyze reported outcomes:** declared fields, revisions, coverage, reasons,
   weighted ratios and release comparisons, with links to the matching runs.
 
@@ -51,26 +51,27 @@ untrusted. See [delivery](/docs/delivery) and [metric meanings](/docs/concepts/i
 
 ## Product 1.0 direction
 
-Flowmark is evolving through three connected dimensions:
+Flowmark is one platform with three dimensions:
 
 - **Platform:** the SDK, evidence, contextual relationships, analysis and
   programmable access.
-- **Studio:** a unified workspace for exploring processes, business references,
+- **Studio:** the workspace for exploring processes, business references,
   comparisons and supporting evidence.
-- **Everywhere:** access through agents, APIs, embedded views and custom tools.
+- **Everywhere:** agents, embedded views and custom tools.
 
-The current web interface is the foundation for Studio. Unified Studio, delegated
-MCP connections, saved investigations and portable agent interfaces are planned.
-Today, setup guidance and factual run exports can support manual agent handoff;
-that is distinct from an authenticated MCP connection. A Studio assistant is a
-later extension. Engineering, Product, Customer Success, Sales and Operations
-will use the same intelligence with appropriate access and depth.
+Studio is the current web interface. It opens in Explore and keeps the same
+filters when you inspect a run. The API includes six read-only MCP tools for an
+authorized project when the deployment enables agent access. A disabled
+deployment does not offer a working MCP connection. Saved investigations, a
+portable agent interface and a Studio assistant are not built. Setup guidance
+and a copied run summary still support a manual handoff. Engineering, Product,
+Customer Success, Sales and Operations use the same recorded evidence.
 
 ## Where to go next
 
 - [Quickstart](/docs/sdk): instrument your first meaningful process.
 - [Concepts](/docs/concepts/runs): workflows, executions and reported outcomes.
-- [Current web interface](/docs/concepts/dashboard): find an answer and inspect evidence.
+- [Studio](/docs/concepts/dashboard): find an answer and inspect evidence.
 - [Next.js](/docs/nextjs) and [browser](/docs/browser): integration boundaries.
 - [SDK reference](/docs/reference): actual methods and types.
 - [Local development](/docs/local-development): run the open-source stack.

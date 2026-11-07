@@ -34,6 +34,8 @@ the error channel and become MCP tool errors only at the response boundary.
 `createMcpHttpRoutes` returns the `POST /mcp` handler and the protected-resource
 metadata handler. The server runs those effects with its own layer. The POST
 handler validates the bearer token, then serves the streamable MCP session.
+Clients start with the legacy `initialize` handshake. Follow-up requests send
+`mcp-session-id` and accept both `application/json` and `text/event-stream`.
 
 ## Checks
 

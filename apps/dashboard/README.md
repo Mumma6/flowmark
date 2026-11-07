@@ -1,14 +1,13 @@
 # Flowmark Studio
 
-The authenticated process-intelligence workspace. Studio starts with Explore:
-select a process, search its execution evidence, inspect a run and return to the
-same filters. The existing account, project, tRPC and evidence foundation powers
-the new interface. The source/package remains `dashboard` for this first slice;
-hosting and domains keep their existing configuration.
+The authenticated Studio workspace. It starts in Explore: select a process,
+search its execution evidence, inspect a run and return to the same filters.
+The package name remains `dashboard`. Hosting and domains keep their existing
+configuration.
 
-The contextual inspector, unified search evolution, saved investigations and
-connected-agent experience remain separate increments. Studio does not render
-the landing's synthetic examples or claim that an agent is connected.
+Saved investigations are not built. Connect explains agent and manual setup and
+does not claim that an agent is connected. Studio does not render the landing's
+synthetic examples.
 
 Anonymous visitors are redirected to sign in. Registration creates the account;
 onboarding/Settings creates the first project and write key. Existing local demo

@@ -234,9 +234,14 @@ The dependency direction is:
 apps/server (Next.js + tRPC + HTTP adapters) -> @flowmark/api -> ports
                                                         ^         |
                                                         └─ DB adapters
+apps/server MCP routes -> @flowmark/mcp -> @flowmark/api
 apps/server auth routes -> @flowmark/auth -> @flowmark/db
 dashboard server proxy  -> @flowmark/auth/client-identity
 ```
+
+`@flowmark/mcp` is private and unpublished. It owns the MCP HTTP adapter and
+the six read-only investigation tools. SQL and OAuth provider composition stay
+outside that package.
 
 `@flowmark/auth` is private and unpublished. Server auth routes call its
 factory. The dashboard proxy signs client identity through
