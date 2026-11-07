@@ -37,6 +37,35 @@ export type McpCompareRunResult = {
   }
 }
 
+export type McpWorkflowInsightsResult = {
+  readonly tool: "get_workflow_insights"
+  readonly projectId: string
+  readonly mode: "technical" | "business"
+  readonly selection: unknown
+  readonly report: unknown
+  readonly evidenceFilters: {
+    readonly current: {
+      readonly tool: "find_runs"
+      readonly workflow: string | null
+      readonly startedAfter: string
+      readonly startedBefore: string
+    }
+    readonly previous: {
+      readonly tool: "find_runs"
+      readonly workflow: string | null
+      readonly startedAfter: string
+      readonly startedBefore: string
+    }
+    readonly declaredResult: unknown
+  }
+  readonly distinctions: {
+    readonly baseline: string
+    readonly coverage: string
+    readonly environment: string
+    readonly causality: string
+  }
+}
+
 export type McpFindRunsResult = {
   readonly tool: "find_runs"
   readonly projectId: string

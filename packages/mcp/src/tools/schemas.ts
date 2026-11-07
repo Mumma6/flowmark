@@ -3,8 +3,13 @@ import {
   AgentAccessPageSizeSchema,
   requireAgentAccessProjectId,
 } from "@flowmark/auth/agent-access"
-import { PeerSelectionSchema } from "@flowmark/api"
-import { Effect, Schema } from "effect"
+import {
+  BusinessInsightsQuerySchema,
+  PeerSelectionSchema,
+  PeriodReportQuerySchema,
+  periodReportWindowMessage,
+} from "@flowmark/api"
+import { Array, Effect, Match, Option, Schema } from "effect"
 import { McpToolInputError } from "../errors.js"
 
 const ProjectIdSchema = Schema.String.pipe(
@@ -148,4 +153,131 @@ export const decodeCompareRunInput = Effect.fn(
   )
   yield* requireAgentAccessProjectId("compare_run", input.projectId)
   return input
+})
+
+const technicalInsightFields = [
+  "projectId",
+  "mode",
+  "workflow",
+  "currentStartedAfter",
+  "currentStartedBefore",
+  "previousStartedAfter",
+  "previousStartedBefore",
+] as const
+
+const businessInsightFields = [
+  ...technicalInsightFields,
+  "revision",
+  "path",
+  "businessKey",
+  "businessValue",
+  "numerator",
+  "denominator",
+  "releaseA",
+  "releaseB",
+] as const
+
+const insightModeSchema = Schema.Literals(["technical", "business"])
+
+const insightRecordSchema = Schema.Record(Schema.String, Schema.Unknown)
+
+const insightInputError = (reason: string) => new McpToolInputError({ reason })
+
+const rejectInsightField = (field: string) =>
+  Match.value(field).pipe(
+    Match.when(
+      "environment",
+      () =>
+        "Aggregate insight queries do not support an environment filter. The filter is rejected so the population is not silently widened; page that cohort with find_runs.",
+    ),
+    Match.orElse(
+      (name) =>
+        `get_workflow_insights does not accept ${name}. Technical and business modes stay separate, and unsupported filters are rejected.`,
+    ),
+  )
+
+const businessInsightMessage =
+  "business mode requires workflow, revision, path, and two canonical UTC windows of at most 31 days. Ratio paths, release names, and a business key/value must each be supplied together."
+
+export type WorkflowInsightsInput =
+  | {
+      readonly mode: "technical"
+      readonly projectId: string
+      readonly query: typeof PeriodReportQuerySchema.Type
+    }
+  | {
+      readonly mode: "business"
+      readonly projectId: string
+      readonly query: typeof BusinessInsightsQuerySchema.Type
+    }
+
+export const decodeWorkflowInsightsInput = Effect.fn(
+  "McpSchemas.decodeWorkflowInsightsInput",
+)(function* (value: unknown) {
+  const record = yield* Schema.decodeUnknownEffect(insightRecordSchema)(
+    value,
+  ).pipe(
+    Effect.mapError(() =>
+      insightInputError(
+        "get_workflow_insights requires an object with mode technical or business.",
+      ),
+    ),
+  )
+  const mode = yield* Schema.decodeUnknownEffect(insightModeSchema)(
+    record.mode,
+  ).pipe(
+    Effect.mapError(() =>
+      insightInputError(
+        "get_workflow_insights mode must be technical or business. Do not combine both modes in one call.",
+      ),
+    ),
+  )
+  const allowed =
+    mode === "technical" ? technicalInsightFields : businessInsightFields
+  const foreign = Array.findFirst(
+    Object.keys(record),
+    (key) => !Array.contains(allowed, key),
+  )
+  yield* Option.match(foreign, {
+    onNone: () => Effect.void,
+    onSome: (field) =>
+      Effect.fail(insightInputError(rejectInsightField(field))),
+  })
+  const projectId = yield* Schema.decodeUnknownEffect(ProjectIdSchema)(
+    record.projectId,
+  ).pipe(
+    Effect.mapError(() =>
+      insightInputError("get_workflow_insights requires projectId."),
+    ),
+  )
+  yield* requireAgentAccessProjectId("get_workflow_insights", projectId)
+  return yield* Match.value(mode).pipe(
+    Match.when("technical", () =>
+      Schema.decodeUnknownEffect(PeriodReportQuerySchema)(record).pipe(
+        Effect.mapError(() => insightInputError(periodReportWindowMessage)),
+        Effect.map(
+          (query) =>
+            ({
+              mode: "technical",
+              projectId,
+              query,
+            }) satisfies WorkflowInsightsInput,
+        ),
+      ),
+    ),
+    Match.when("business", () =>
+      Schema.decodeUnknownEffect(BusinessInsightsQuerySchema)(record).pipe(
+        Effect.mapError(() => insightInputError(businessInsightMessage)),
+        Effect.map(
+          (query) =>
+            ({
+              mode: "business",
+              projectId,
+              query,
+            }) satisfies WorkflowInsightsInput,
+        ),
+      ),
+    ),
+    Match.exhaustive,
+  )
 })

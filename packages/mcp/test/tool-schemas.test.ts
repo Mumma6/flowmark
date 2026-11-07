@@ -5,6 +5,7 @@ import {
   decodeFindRunsInput,
   decodeGetRunInput,
   decodeListWorkflowsInput,
+  decodeWorkflowInsightsInput,
 } from "../src/tools/schemas.js"
 import { assertHistoryWindow } from "../src/tools/response.js"
 import { McpToolInputError } from "../src/errors.js"
@@ -96,6 +97,68 @@ describe("MCP tool input schemas", () => {
         projectId: "p1",
         runId: "run_1",
         peers: { dimensionKey: "customer" },
+      }).pipe(Effect.flip),
+    )
+    expect(result).toBeInstanceOf(McpToolInputError)
+  })
+
+  const insightWindows = {
+    currentStartedAfter: "2026-11-01T00:00:00.000Z",
+    currentStartedBefore: "2026-11-08T00:00:00.000Z",
+    previousStartedAfter: "2026-10-25T00:00:00.000Z",
+    previousStartedBefore: "2026-11-01T00:00:00.000Z",
+  }
+
+  it("accepts a technical insight window and echoes that mode", async () => {
+    const input = await Effect.runPromise(
+      decodeWorkflowInsightsInput({
+        projectId: "p1",
+        mode: "technical",
+        workflow: "booking",
+        ...insightWindows,
+      }),
+    )
+    expect(input.mode).toBe("technical")
+    if (input.mode === "technical") {
+      expect(input.query.workflow).toBe("booking")
+    }
+  })
+
+  it("rejects a business field on a technical insight query", async () => {
+    const result = await Effect.runPromise(
+      decodeWorkflowInsightsInput({
+        projectId: "p1",
+        mode: "technical",
+        revision: "booked",
+        ...insightWindows,
+      }).pipe(Effect.flip),
+    )
+    expect(result).toBeInstanceOf(McpToolInputError)
+  })
+
+  it("rejects an environment filter on an insight aggregate", async () => {
+    const result = await Effect.runPromise(
+      decodeWorkflowInsightsInput({
+        projectId: "p1",
+        mode: "technical",
+        environment: "production",
+        ...insightWindows,
+      }).pipe(Effect.flip),
+    )
+    expect(result).toBeInstanceOf(McpToolInputError)
+    expect(result.reason).toContain("environment")
+  })
+
+  it("rejects a business insight ratio without its pair", async () => {
+    const result = await Effect.runPromise(
+      decodeWorkflowInsightsInput({
+        projectId: "p1",
+        mode: "business",
+        workflow: "booking",
+        revision: "booked",
+        path: ["status"],
+        numerator: ["accepted"],
+        ...insightWindows,
       }).pipe(Effect.flip),
     )
     expect(result).toBeInstanceOf(McpToolInputError)

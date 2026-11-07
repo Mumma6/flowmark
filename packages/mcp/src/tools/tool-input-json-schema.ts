@@ -92,3 +92,39 @@ export const compareRunInputJsonSchema = {
     },
   },
 } as const satisfies JsonSchemaType
+
+const insightTimestampSchema = {
+  type: "string",
+  minLength: 1,
+  maxLength: 40,
+} as const satisfies JsonSchemaType
+
+const resultPathSchema = {
+  type: "array",
+  minItems: 1,
+  maxItems: 5,
+  items: { type: "string", minLength: 1, maxLength: 128 },
+} as const satisfies JsonSchemaType
+
+export const workflowInsightsInputJsonSchema = {
+  type: "object",
+  additionalProperties: false,
+  required: ["projectId", "mode"],
+  properties: {
+    projectId: { type: "string", minLength: 1, maxLength: 64 },
+    mode: { type: "string", enum: ["technical", "business"] },
+    workflow: { type: "string", minLength: 1, maxLength: 200 },
+    currentStartedAfter: insightTimestampSchema,
+    currentStartedBefore: insightTimestampSchema,
+    previousStartedAfter: insightTimestampSchema,
+    previousStartedBefore: insightTimestampSchema,
+    revision: { type: "string", minLength: 1, maxLength: 64 },
+    path: resultPathSchema,
+    businessKey: { type: "string", maxLength: 128 },
+    businessValue: { type: "string", maxLength: 2048 },
+    numerator: resultPathSchema,
+    denominator: resultPathSchema,
+    releaseA: { type: "string", minLength: 1, maxLength: 128 },
+    releaseB: { type: "string", minLength: 1, maxLength: 128 },
+  },
+} as const satisfies JsonSchemaType

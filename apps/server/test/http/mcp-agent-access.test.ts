@@ -358,6 +358,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
           "find_runs",
           "get_connection",
           "get_run",
+          "get_workflow_insights",
           "list_workflows",
         ].sort(),
       )
@@ -390,6 +391,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         "find_runs",
         "get_run",
         "compare_run",
+        "get_workflow_insights",
       ])
       const foreignRunId = randomUUID()
       const missingRun = await handleMcpPost(
@@ -460,6 +462,68 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         result?: { isError?: boolean }
       }>(invalidPeers)
       expect(invalidPeersBody.result?.isError).toBe(true)
+      const insightWindows = {
+        currentStartedAfter: "2026-11-01T00:00:00.000Z",
+        currentStartedBefore: "2026-11-08T00:00:00.000Z",
+        previousStartedAfter: "2026-10-25T00:00:00.000Z",
+        previousStartedBefore: "2026-11-01T00:00:00.000Z",
+      }
+      const insights = await handleMcpPost(
+        mcpRequest(
+          {
+            jsonrpc: "2.0",
+            id: 7,
+            method: "tools/call",
+            params: {
+              name: "get_workflow_insights",
+              arguments: {
+                projectId,
+                mode: "technical",
+                ...insightWindows,
+              },
+            },
+          },
+          sessionHeaders,
+        ),
+      )
+      expect(insights.status).toBe(200)
+      const insightsBody = await readMcpJsonBody<{
+        result?: {
+          isError?: boolean
+          structuredContent?: {
+            mode?: string
+            selection?: { currentStartedAfter?: string }
+          }
+        }
+      }>(insights)
+      expect(insightsBody.result?.isError).toBeUndefined()
+      expect(insightsBody.result?.structuredContent?.mode).toBe("technical")
+      expect(
+        insightsBody.result?.structuredContent?.selection?.currentStartedAfter,
+      ).toBe(insightWindows.currentStartedAfter)
+      const mixedInsights = await handleMcpPost(
+        mcpRequest(
+          {
+            jsonrpc: "2.0",
+            id: 8,
+            method: "tools/call",
+            params: {
+              name: "get_workflow_insights",
+              arguments: {
+                projectId,
+                mode: "technical",
+                revision: "booked",
+                ...insightWindows,
+              },
+            },
+          },
+          sessionHeaders,
+        ),
+      )
+      const mixedInsightsBody = await readMcpJsonBody<{
+        result?: { isError?: boolean }
+      }>(mixedInsights)
+      expect(mixedInsightsBody.result?.isError).toBe(true)
       await connection.db
         .delete(verification)
         .where(like(verification.value, `%"userId":"${session.user.id}"%`))
