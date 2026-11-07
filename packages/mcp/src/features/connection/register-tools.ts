@@ -1,11 +1,10 @@
 import { runApi, type McpAgentConnectionSnapshot } from "@flowmark/api"
 import {
-  FindRunsInputSchema,
-  ListWorkflowsInputSchema,
-} from "../../tools/schemas.js"
-import { Schema } from "effect"
-import { createMcpHandler, McpServer } from "@modelcontextprotocol/server"
-import { Cause, Exit, Option } from "effect"
+  createMcpHandler,
+  fromJsonSchema,
+  McpServer,
+} from "@modelcontextprotocol/server"
+import { Cause, Effect, Exit } from "effect"
 import type { FlowmarkMcpAuthInfo } from "../../auth/claims.js"
 import type { ResolvedAgentAccessRuntime } from "../../runtime/agent-access-runtime.js"
 import { findRunsForMcp } from "../workflows/find-runs.js"
@@ -15,21 +14,25 @@ import {
   mcpToolError,
   mcpToolResult,
 } from "../../tools/response.js"
+import {
+  findRunsInputJsonSchema,
+  listWorkflowsInputJsonSchema,
+} from "../../tools/tool-input-json-schema.js"
 import { resolveMcpConnection } from "./resolve-connection.js"
 
 const connectionToolResult = (snapshot: McpAgentConnectionSnapshot) =>
   mcpToolResult(snapshot)
 
-const runMcpTool = async <A>(
-  effect: import("effect").Effect.Effect<A, unknown, never>,
-) => {
+const failureFromCause = (cause: Cause.Cause<unknown>) => {
+  const failed = cause.reasons.find(Cause.isFailReason)
+  return failed?.error ?? cause
+}
+
+const runMcpTool = async (effect: Parameters<typeof runApi>[0]) => {
   const exit = await runApi(effect)
   return Exit.match(exit, {
     onSuccess: (value) => mcpToolResult(value as Record<string, unknown>),
-    onFailure: (cause) =>
-      mapWorkflowReadFailure(
-        Option.getOrElse(Cause.failureOption(cause), () => cause),
-      ),
+    onFailure: (cause) => mapWorkflowReadFailure(failureFromCause(cause)),
   })
 }
 
@@ -66,10 +69,10 @@ const registerListWorkflowsTool = (
       title: "List workflows",
       description:
         "List workflow names in an authorized project. Optionally pass workflow (and revision) to load bounded declaration, search-field and lookup meaning without any write access.",
-      inputSchema: Schema.toStandardSchemaV1(ListWorkflowsInputSchema),
+      inputSchema: fromJsonSchema(listWorkflowsInputJsonSchema),
       annotations: { readOnlyHint: true, destructiveHint: false },
     },
-    async (input) => runMcpTool(listWorkflowsForMcp(identity, input)),
+    async (input: unknown) => runMcpTool(listWorkflowsForMcp(identity, input)),
   )
 }
 
@@ -83,10 +86,10 @@ const registerFindRunsTool = (
       title: "Find runs",
       description:
         "Page run history for an authorized project inside an explicit startedAfter/startedBefore window (max 31 days). Filter by workflow, status, externalId (customer id) or internal run id via cursor pages; unsupported cursors fail closed.",
-      inputSchema: Schema.toStandardSchemaV1(FindRunsInputSchema),
+      inputSchema: fromJsonSchema(findRunsInputJsonSchema),
       annotations: { readOnlyHint: true, destructiveHint: false },
     },
-    async (input) => runMcpTool(findRunsForMcp(identity, input)),
+    async (input: unknown) => runMcpTool(findRunsForMcp(identity, input)),
   )
 }
 

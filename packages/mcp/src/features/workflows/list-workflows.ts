@@ -5,14 +5,18 @@ import { McpToolReadError } from "../../errors.js"
 import { decodeListWorkflowsInput } from "../../tools/schemas.js"
 import { resolveMcpGrantFamily } from "../delegated/grant-family.js"
 import { mcpDelegatedReader } from "../delegated/reader.js"
+import type { McpListWorkflowsResult } from "./types.js"
 
 const mapReadError = (reason: string) => (error: { readonly _tag: string }) =>
   error._tag === "InvalidInput" || error._tag === "Unauthorized"
     ? error
     : new McpToolReadError({ reason })
 
-export const listWorkflowsForMcp = Effect.fn("McpListWorkflows.execute")(
-  function* (identity: FlowmarkMcpAuthInfo, rawInput: unknown) {
+export const listWorkflowsForMcp = (
+  identity: FlowmarkMcpAuthInfo,
+  rawInput: unknown,
+): Effect.Effect<McpListWorkflowsResult, unknown, GetProjectWorkflowData> =>
+  Effect.fn("McpListWorkflows.execute")(function* () {
     const input = yield* decodeListWorkflowsInput(rawInput)
     const family = yield* resolveMcpGrantFamily(identity)
     const reader = mcpDelegatedReader(
@@ -45,10 +49,9 @@ export const listWorkflowsForMcp = Effect.fn("McpListWorkflows.execute")(
               ),
             )
     return {
-      tool: "list_workflows" as const,
+      tool: "list_workflows",
       projectId: input.projectId,
       discovery,
       ...(meaning === undefined ? {} : { meaning }),
-    }
-  },
-)
+    } satisfies McpListWorkflowsResult
+  })()
