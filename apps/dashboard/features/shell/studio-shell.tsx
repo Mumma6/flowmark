@@ -167,7 +167,7 @@ export function StudioShell({
           >
             Skip to content
           </a>
-          <header className="sticky top-0 z-30 border-b border-border bg-background/90 backdrop-blur-xl">
+          <header className="sticky top-0 z-30 border-b border-highlight/25 bg-card/95 backdrop-blur-xl">
             <StudioChrome
               brand={
                 <Link
@@ -223,7 +223,7 @@ export function StudioShell({
                         key={href}
                         href={href}
                         aria-current={active ? "page" : undefined}
-                        className={`relative flex min-h-10 shrink-0 items-center gap-2 px-2.5 text-[11px] transition-colors sm:px-4 sm:text-xs ${active ? "text-foreground after:absolute after:inset-x-3 after:bottom-0 after:h-px after:bg-highlight" : "text-muted-foreground hover:text-foreground"}`}
+                        className={`relative flex min-h-10 shrink-0 items-center gap-2 px-2.5 text-[11px] transition-colors sm:px-4 sm:text-xs ${active ? "rounded-t-md bg-highlight/10 text-foreground after:absolute after:inset-x-3 after:bottom-0 after:h-px after:bg-highlight" : "text-muted-foreground hover:text-foreground"}`}
                       >
                         <Icon
                           aria-hidden="true"

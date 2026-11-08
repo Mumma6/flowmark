@@ -123,3 +123,9 @@ The theme-aware `highlight` token adds lavender to navigation, section markers,
 inspection context and auth surfaces. Light mode uses a darker violet for
 contrast. Primary actions remain green; execution, outcome and error colors
 retain their semantic roles. Use the accent sparingly, not as a general panel fill.
+
+Studio surface hierarchy uses a dark canvas, opaque lighter cards and raised
+controls with visible neutral borders. Explore gives execution evidence a lime
+edge and analysis a lavender edge; spacing separates these independent sections.
+Inspector headers use lavender to retain orientation. Status colors keep their
+existing meanings.
