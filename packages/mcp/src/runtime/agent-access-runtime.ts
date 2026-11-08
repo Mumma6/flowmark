@@ -7,23 +7,15 @@ import { Effect, Option, Schema } from "effect"
 import { AgentAccessRuntimeError } from "../errors.js"
 import { McpHostConfiguration } from "../ports/mcp-host-configuration.js"
 
-const HttpOrigin = Schema.String.pipe(
-  Schema.check(
-    Schema.makeFilter((value) => {
-      try {
-        const url = new URL(value)
-        return (
-          (url.protocol === "https:" || url.protocol === "http:") &&
-          !url.username &&
-          !url.password &&
-          !url.search &&
-          !url.hash &&
-          url.pathname === "/"
-        )
-      } catch {
-        return false
-      }
-    }),
+const HttpOrigin = Schema.URLFromString.check(
+  Schema.makeFilter(
+    (url) =>
+      (url.protocol === "https:" || url.protocol === "http:") &&
+      !url.username &&
+      !url.password &&
+      !url.search &&
+      !url.hash &&
+      url.pathname === "/",
   ),
 )
 
@@ -56,7 +48,7 @@ const readApiOrigin = Effect.fn("McpRuntime.readApiOrigin")(function* (
                   "FLOWMARK_API_URL must be an HTTP(S) origin without credentials, path, query, or fragment.",
               }),
           ),
-          Effect.map((origin) => new URL(origin).origin),
+          Effect.map((origin) => origin.origin),
         ),
     }),
   )

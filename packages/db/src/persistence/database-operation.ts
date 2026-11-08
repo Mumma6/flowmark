@@ -1,4 +1,5 @@
 export enum DatabaseOperation {
+  GetAgentAccessGrantFamily = "get-agent-access-grant-family",
   InspectDataset = "inspect-dataset",
   ResetDataset = "reset-dataset",
   DatasetTransaction = "dataset-transaction",

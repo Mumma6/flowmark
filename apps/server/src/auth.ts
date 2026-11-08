@@ -81,22 +81,22 @@ export const getAuth = Effect.fn("getAuth")(function* () {
     trustedOrigins: [dashboardOrigin],
     agentAccess,
     emailDelivery,
-    onRevokeDelegatedAgentAccess: async (userId) => {
-      try {
-        await Effect.runPromise(
-          revokeAllAgentAccessConnectionsForUser(userId).pipe(
-            Effect.provideService(Database, db),
+    onRevokeDelegatedAgentAccess: (userId) =>
+      Effect.runPromise(
+        revokeAllAgentAccessConnectionsForUser(userId).pipe(
+          Effect.provideService(Database, db),
+          Effect.tapError(() =>
+            Effect.sync(() => {
+              console.error(
+                "[Flowmark auth] Delegated agent access revocation failed",
+                {
+                  operation: "revoke-delegated-agent-access",
+                },
+              )
+            }),
           ),
-        )
-      } catch {
-        console.error(
-          "[Flowmark auth] Delegated agent access revocation failed",
-          {
-            operation: "revoke-delegated-agent-access",
-          },
-        )
-      }
-    },
+        ),
+      ),
     scheduleEmail: (task) => {
       // Attach rejection handling immediately; Next owns the remaining lifetime.
       const result = Effect.runPromiseExit(

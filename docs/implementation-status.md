@@ -42,14 +42,23 @@ and [ADR 0008](./decisions/0008-connect-agent-protocol-contract.md).
 These appear under “Completed” in the implementation order; they are part of the
 current public tree, not future Connect tasks.
 
-| Task / item     | Summary                                                                                                                            |
-| --------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| **SDK-001**     | Advanced workflow lifecycle shared in SDK docs and types.                                                                          |
-| **003.1–003.6** | Studio shell, unified search, contextual run inspector, insights/issues in Explore, proxy failure recovery, responsive acceptance. |
-| **006.1**       | Instrumentation prompt aligned with SDK release notes.                                                                             |
-| **006.2**       | Working agent and manual setup surfaces in Connect.                                                                                |
-| **011**         | Landing narrative for Product 1.0 positioning.                                                                                     |
-| **006.4**       | Independent instrumented setup example verified (PR **#119**); demo path documented for contributors.                              |
+| Task / item     | Summary                                                                                                                                     |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| **SDK-001**     | Advanced workflow lifecycle shared in SDK docs and types.                                                                                   |
+| **003.1–003.6** | Studio shell, unified search, contextual run inspector, insights/issues in Explore, proxy failure recovery, responsive acceptance.          |
+| **006.1**       | Instrumentation prompt aligned with SDK release notes.                                                                                      |
+| **006.2**       | Working agent and manual setup surfaces in Connect.                                                                                         |
+| **011**         | Landing narrative for Product 1.0 positioning.                                                                                              |
+| **006.4**       | Independent instrumented setup example implemented (PR **#119**); memory/runtime checks passed. Loopback/Studio acceptance remains pending. |
+
+## Verification status
+
+The implementation rows describe source availability, not blanket acceptance.
+Session-only connection management still needs its full handler-level denial and
+failure matrix. The setup example still needs its documented loopback/Studio pass.
+OAuth exchange/refresh, exact token-family binding, revoke/reconnect denial,
+immutable project scope and tied-timestamp operation pagination are covered by
+managed disposable PostgreSQL integration tests.
 
 ## Explicitly not done here
 

@@ -35,6 +35,10 @@ import {
 } from "./protocol-constants.js"
 import { resolveAgentAccessOrigins } from "./protocol-contract.js"
 import { AgentAccessContractError } from "./contract-errors.js"
+import {
+  flowmarkGrantFamilyClaims,
+  hashOAuthToken,
+} from "./grant-family-claims.js"
 
 type MetadataAuth = {
   readonly api: object
@@ -163,6 +167,8 @@ export const flowmarkAgentAccessPlugins = (input: {
     },
   }),
   mcp({
+    storeTokens: { hash: hashOAuthToken },
+    extensions: [flowmarkGrantFamilyClaims],
     loginPage: AGENT_ACCESS_DASHBOARD_BROWSER_PATHS.oauthLoginPage,
     consentPage: AGENT_ACCESS_DASHBOARD_BROWSER_PATHS.oauthConsentPage,
     resource: input.mcpResourceUrl,

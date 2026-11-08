@@ -174,8 +174,8 @@ test(
         INSERT INTO workflow_events
           (event_id, run_id, type, occurred_at, operation_id, operation_name)
         SELECT gen_random_uuid(), ${dense}, 'operation_started',
-          '2026-06-02T00:00:00Z'::timestamptz + g.i * interval '1 second',
-          gen_random_uuid(), 'op-' || g.i
+          '2026-06-02T00:00:00.123456Z'::timestamptz,
+          (lpad((41 - g.i)::text, 8, '0') || '-0000-0000-0000-000000000000')::uuid, 'op-' || g.i
         FROM generate_series(1, 40) AS g(i)
       `)
       await db.execute(sql`
@@ -373,6 +373,17 @@ test(
       assert.equal(operations.operations.length, 25)
       assert.equal(operations.totalOperations, 40)
       assert.ok(operations.nextCursor)
+      const allOperations = await walk((cursor) =>
+        getRunOperationsPage(project, { runId: dense, limit: 7, cursor }).pipe(
+          Effect.map((page) => ({
+            nextCursor: page.nextCursor,
+            rows: page.operations.map((item) => item.operationId),
+          })),
+        ),
+      )
+      assert.equal(allOperations.length, 40)
+      assert.equal(new Set(allOperations).size, 40)
+      assert.deepEqual(allOperations, [...allOperations].sort())
       const expectations = Result.getOrThrow(
         await run(getRunExpectationsPage(project, { runId: dense, limit: 25 })),
       )

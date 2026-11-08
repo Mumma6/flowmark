@@ -41,7 +41,11 @@ the local fixture use the same provider login implementation.
   refused. Authorization-code exchange, PKCE and refresh rotation stay in the
   provider. The server-owned grant family is that provider authorization-code
   id, with the subject, client, configured issuer and MCP resource. It carries
-  no project. A provider token is not a project grant: project reads still
+  no project. Access tokens carry that exact id in the provider-signed
+  `flowmark_grant_family` claim; refresh preserves it. MCP checks the claimed
+  family against active PostgreSQL state and never substitutes another active
+  family for the same user/client. Tokens without the claim require fresh
+  authorization. A provider token is not a project grant: project reads still
   require a later explicit grant intersected with current membership. Enabling
   the provider leaves signup, sign-in, password recovery, origin checks and
   account limits on the same handlers. `get-session` accepts the dashboard

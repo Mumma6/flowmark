@@ -29,6 +29,12 @@ answers MCP HTTP with an explicit not-found response.
 Effect Schema. `PersistenceError` and the other tagged read failures stay in
 the error channel and become MCP tool errors only at the response boundary.
 
+Each token carries its own signed `flowmark_grant_family`. Reads check that
+exact family's active resource binding in PostgreSQL, so a revoked token cannot
+inherit a replacement connection. Tokens without this claim require fresh
+authorization. Grant reads use the API's scoped database layer, which closes
+connections on success, failure and interruption.
+
 ## HTTP
 
 `createMcpHttpRoutes` returns the `POST /mcp` handler and the protected-resource

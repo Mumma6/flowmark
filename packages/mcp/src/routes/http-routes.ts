@@ -58,11 +58,19 @@ const resolvePostHandler = Effect.fn("McpRoutes.resolvePostHandler")(
 export const createMcpHttpRoutes = (run: RunMcpEffect) => {
   const handleMcpPost = async (request: Request) => {
     if (!cachedPost) {
-      try {
-        cachedPost = await run(resolvePostHandler())
-      } catch {
-        cachedPost = () => Promise.resolve(discoveryUnavailable())
+      const resolved = await run(
+        resolvePostHandler().pipe(
+          Effect.map(Option.some),
+          Effect.catchTags({
+            AgentAccessRuntimeError: () => Effect.succeed(Option.none()),
+            McpDiscoveryError: () => Effect.succeed(Option.none()),
+          }),
+        ),
+      )
+      if (Option.isNone(resolved)) {
+        return discoveryUnavailable()
       }
+      cachedPost = resolved.value
     }
     if (request.method !== "POST") {
       return methodNotAllowed()
