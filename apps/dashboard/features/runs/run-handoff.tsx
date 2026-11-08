@@ -25,6 +25,8 @@ import {
   investigationReturn,
   runInvestigationPath,
 } from "./investigation-navigation"
+import { useAgentAccessDeployment } from "../platform/runtime-config"
+import { connectedRunCalls } from "./connected-retrieval"
 import { InvestigationContextHandoffCard } from "./investigation-context-handoff-card"
 import { buildSafeRunContextHandoff } from "./safe-run-context-handoff"
 
@@ -41,6 +43,7 @@ export function RunHandoff({
 }) {
   const params = useSearchParams()
   const { current } = useProject()
+  const deployment = useAgentAccessDeployment()
   const source = params.has("from")
     ? investigationReturn(params.get("from")).href
     : undefined
@@ -88,6 +91,9 @@ export function RunHandoff({
         returnUrl,
       },
       origin,
+      deployment.kind === "enabled"
+        ? { mode: "connected", calls: connectedRunCalls(current.id, runId) }
+        : { mode: "manual" },
     )
   }, [
     current?.id,
@@ -96,8 +102,10 @@ export function RunHandoff({
     filters,
     origin,
     returnUrl,
+    runId,
     runPath,
     sourceFrom,
+    deployment.kind,
   ])
   const summary = investigationHandoff(events, runPath)
   if (Option.isNone(summary)) {
