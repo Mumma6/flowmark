@@ -4,7 +4,7 @@ import {
   runSelectionToolInput,
 } from "@flowmarkdev/core"
 import { Result, Schema } from "effect"
-import { studioRunSelection } from "./investigation-selection"
+import { handoffRunSelection } from "./investigation-selection"
 
 export type RetrievalCall = {
   readonly tool: "get_run" | "find_runs" | "get_workflow_insights"
@@ -15,8 +15,9 @@ export type RetrievalCall = {
 export const connectedRunCalls = (
   projectId: string,
   runId: string,
+  rawSelection: string | null = null,
 ): readonly RetrievalCall[] =>
-  Result.match(studioRunSelection(projectId, runId), {
+  Result.match(handoffRunSelection(projectId, runId, rawSelection), {
     onFailure: () => [],
     onSuccess: (selection) =>
       Result.match(runSelectionToolInput(selection), {
@@ -34,7 +35,7 @@ export const connectedFailureCalls = (input: {
   readonly previousStartedAfter: string
   readonly previousStartedBefore: string
 }): readonly RetrievalCall[] => {
-  const insights = Result.match(
+  return Result.match(
     periodCohortToolInput({
       version: 1,
       kind: "period",
@@ -48,22 +49,21 @@ export const connectedFailureCalls = (input: {
     {
       onFailure: () => [],
       onSuccess: (toolInput) => [
+        { tool: "get_workflow_insights", input: toolInput },
         {
-          tool: "get_workflow_insights" as const,
-          input: toolInput,
+          tool: "find_runs",
+          input: {
+            projectId: input.projectId,
+            startedAfter: input.currentStartedAfter,
+            startedBefore: input.currentStartedBefore,
+            workflow: input.workflow,
+            status: "Failed",
+            ...(input.code ? { failCode: input.code } : {}),
+          },
         },
       ],
     },
   )
-  const runs = {
-    projectId: input.projectId,
-    startedAfter: input.currentStartedAfter,
-    startedBefore: input.currentStartedBefore,
-    workflow: input.workflow,
-    status: "Failed" as const,
-    ...(input.code ? { failCode: input.code } : {}),
-  }
-  return [...insights, { tool: "find_runs", input: runs }]
 }
 
 const businessToolInput = Schema.Struct({

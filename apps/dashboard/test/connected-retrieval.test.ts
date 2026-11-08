@@ -142,3 +142,49 @@ it("keeps a selected dimension value inside the business tool arguments", () => 
   })
   expect(calls[0]?.input).not.toHaveProperty("environment")
 })
+
+it("preserves a linked section, limit and cursor in the actual tool handoff", () => {
+  const selection = {
+    version: 1,
+    kind: "run",
+    projectId,
+    runId,
+    section: "expectations",
+    cursor: "next-page",
+    limit: 7,
+  }
+  expect(
+    connectedRunCalls(projectId, runId, JSON.stringify(selection)),
+  ).toEqual([
+    {
+      tool: "get_run",
+      input: {
+        projectId,
+        runId,
+        section: "expectations",
+        cursor: "next-page",
+        limit: 7,
+      },
+    },
+  ])
+  expect(
+    connectedRunCalls(
+      projectId,
+      runId,
+      JSON.stringify({ ...selection, projectId: runId }),
+    ),
+  ).toEqual([])
+  expect(connectedRunCalls(projectId, runId, "{damaged")).toEqual([])
+})
+
+it("does not partially replace an invalid failure selection with a broader call", () => {
+  expect(
+    connectedFailureCalls({
+      projectId,
+      workflow: "orders.import",
+      code: "TIMEOUT",
+      ...windows,
+      previousStartedBefore: "invalid",
+    }),
+  ).toEqual([])
+})

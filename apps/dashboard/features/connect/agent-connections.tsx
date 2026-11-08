@@ -18,17 +18,18 @@ import {
   DialogTitle,
 } from "@flowmark/ui"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { Array as EffectArray, Match } from "effect"
+import { Array as EffectArray, Effect, Match } from "effect"
 import Link from "next/link"
-import { useRef, useState } from "react"
+import { useCallback, useRef, useState } from "react"
 import { useTRPC } from "../platform/api-trpc"
 import { useProject } from "../projects/project-context"
 import {
   coarsenLastAuthenticated,
+  confirmConnectionRevocation,
   connectionListRecovery,
   connectionProjectLabels,
   interpretOwnedConnection,
-  interpretRevokeResult,
+  revokeAndConfirmConnection,
   type RevokeFeedback,
 } from "./connection-revocation"
 
@@ -67,8 +68,14 @@ export function AgentConnections() {
   const list = useQuery(trpc.agentAccess.list.queryOptions())
   const [selected, setSelected] = useState<ListedConnection | null>(null)
   const [feedback, setFeedback] = useState<RevokeFeedback>({ _tag: "Idle" })
+  const [feedbackTarget, setFeedbackTarget] = useState<ListedConnection | null>(
+    null,
+  )
   const [confirming, setConfirming] = useState<ListedConnection | null>(null)
-  const detailRef = useRef<HTMLDivElement>(null)
+  const listRegion = useRef<HTMLDivElement>(null)
+  const focusDetail = useCallback((node: HTMLDivElement | null) => {
+    node?.focus()
+  }, [])
   const returnFocus = useRef<HTMLButtonElement | null>(null)
   const detail = useQuery({
     ...trpc.agentAccess.connection.queryOptions({
@@ -86,7 +93,7 @@ export function AgentConnections() {
       project.name,
     ]),
   )
-  const connections = list.data ?? []
+  const connections = list.isError ? [] : (list.data ?? [])
   const listRecovery = list.isError ? connectionListRecovery(list.error) : null
   const owned = selected
     ? interpretOwnedConnection({
@@ -99,7 +106,7 @@ export function AgentConnections() {
         detail: detail.isError
           ? "unavailable"
           : detail.isPending
-            ? "present"
+            ? "pending"
             : detail.data
               ? "present"
               : "absent",
@@ -107,37 +114,51 @@ export function AgentConnections() {
     : { _tag: "Hidden" as const }
   const message = feedbackCopy(feedback)
 
+  const busy = feedback._tag === "Pending"
+  const observation = (target: ListedConnection) => ({
+    target,
+    cancelRead: () =>
+      queryClient.cancelQueries({
+        queryKey: trpc.agentAccess.list.queryKey(),
+        exact: true,
+      }),
+    read: () =>
+      queryClient.fetchQuery({
+        ...trpc.agentAccess.list.queryOptions(),
+        staleTime: 0,
+        retry: false,
+      }),
+  })
+  const refreshFeedback = async () => {
+    if (!feedbackTarget || busy) {
+      return
+    }
+    setFeedback({ _tag: "Pending" })
+    const result = await Effect.runPromise(
+      confirmConnectionRevocation(observation(feedbackTarget)),
+    )
+    setFeedback(result)
+    if (result._tag === "Revoked") {
+      setSelected(null)
+    }
+  }
   const confirmRevoke = async () => {
-    if (!confirming || revoke.isPending) {
+    if (!confirming || busy) {
       return
     }
     const target = confirming
+    setFeedbackTarget(target)
     setFeedback({ _tag: "Pending" })
-    let mutation: "succeeded" | "failed" = "failed"
-    try {
-      await revoke.mutateAsync({
-        authorizationCodeId: target.authorizationCodeId,
-        clientId: target.clientId,
-      })
-      mutation = "succeeded"
-    } catch {
-      mutation = "failed"
-    }
-    let stillListed: boolean | "unknown" = "unknown"
-    try {
-      const next = await queryClient.fetchQuery(
-        trpc.agentAccess.list.queryOptions(),
-      )
-      stillListed = EffectArray.some(
-        next,
-        (item) =>
-          item.authorizationCodeId === target.authorizationCodeId &&
-          item.clientId === target.clientId,
-      )
-    } catch {
-      stillListed = "unknown"
-    }
-    const result = interpretRevokeResult({ mutation, stillListed })
+    const result = await Effect.runPromise(
+      revokeAndConfirmConnection({
+        ...observation(target),
+        revoke: () =>
+          revoke.mutateAsync({
+            authorizationCodeId: target.authorizationCodeId,
+            clientId: target.clientId,
+          }),
+      }),
+    )
     setFeedback(result)
     setConfirming(null)
     if (result._tag === "Revoked") {
@@ -155,144 +176,197 @@ export function AgentConnections() {
           list means revoke, then connect again.
         </CardDescription>
       </CardHeader>
-      <CardContent className="grid gap-4">
-        {list.isPending ? (
-          <p className="text-sm text-muted-foreground">Loading connections…</p>
-        ) : null}
-        {listRecovery ? (
-          <Alert>
-            <AlertTitle>
-              {listRecovery._tag === "StaleSession"
-                ? "Sign in again"
-                : "Connections are unavailable"}
-            </AlertTitle>
-            <AlertDescription>
-              {listRecovery.message}
-              {listRecovery._tag === "StaleSession" ? (
-                <Button asChild size="sm" className="mt-3 min-h-10">
-                  <Link href="/sign-in">Sign in</Link>
-                </Button>
-              ) : (
+      <CardContent>
+        <div
+          role="region"
+          aria-label="Agent connections"
+          ref={listRegion}
+          tabIndex={-1}
+          className="grid gap-4 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          {list.isPending ? (
+            <p className="text-sm text-muted-foreground">
+              Loading connections…
+            </p>
+          ) : null}
+          {listRecovery ? (
+            <Alert>
+              <AlertTitle>
+                {listRecovery._tag === "StaleSession"
+                  ? "Sign in again"
+                  : "Connections are unavailable"}
+              </AlertTitle>
+              <AlertDescription>
+                {listRecovery.message}
+                {listRecovery._tag === "StaleSession" ? (
+                  <Button asChild size="sm" className="mt-3 min-h-10">
+                    <Link href="/sign-in">Sign in</Link>
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="mt-3 min-h-10"
+                    onClick={() => void list.refetch()}
+                  >
+                    Retry
+                  </Button>
+                )}
+              </AlertDescription>
+            </Alert>
+          ) : null}
+          {!list.isPending && !list.isError && connections.length === 0 ? (
+            <p className="text-sm leading-6 text-muted-foreground">
+              No active connections. An expired or revoked grant is not listed.
+              Connect again from your client. That creates a new grant and does
+              not restore the old one.
+            </p>
+          ) : null}
+          <ul className="grid gap-3">
+            {connections.map((connection) => (
+              <li
+                key={`${connection.clientId}:${connection.authorizationCodeId}`}
+                className="grid min-w-0 gap-2 rounded-lg border border-border p-4"
+              >
+                <p className="text-sm font-medium break-words text-foreground">
+                  {connection.clientName ?? "Unnamed client"}
+                </p>
+                <p className="break-all text-xs text-muted-foreground">
+                  Client identifier {connection.clientId}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Projects:{" "}
+                  {connectionProjectLabels(connection.projectIds, names).join(
+                    ", ",
+                  )}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {coarsenLastAuthenticated(connection.lastAuthenticatedAt)}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="min-h-10"
+                    onClick={() => {
+                      setSelected(connection)
+                    }}
+                  >
+                    Inspect
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="min-h-10"
+                    onClick={(event) => {
+                      returnFocus.current = event.currentTarget
+                      setFeedback({ _tag: "Idle" })
+                      setConfirming(connection)
+                    }}
+                  >
+                    Revoke
+                  </Button>
+                </div>
+              </li>
+            ))}
+          </ul>
+          {owned._tag === "Loading" ? (
+            <p role="status" className="text-sm text-muted-foreground">
+              Loading connection detail…
+            </p>
+          ) : null}
+          {owned._tag === "Unavailable" ? (
+            <Alert>
+              <AlertTitle>Connection detail is unavailable</AlertTitle>
+              <AlertDescription>
+                {connectionListRecovery(detail.error).message}
                 <Button
                   type="button"
                   size="sm"
                   variant="outline"
                   className="mt-3 min-h-10"
-                  onClick={() => void list.refetch()}
+                  onClick={() => void detail.refetch()}
                 >
-                  Retry
+                  Retry detail
                 </Button>
-              )}
-            </AlertDescription>
-          </Alert>
-        ) : null}
-        {!list.isPending && !list.isError && connections.length === 0 ? (
-          <p className="text-sm leading-6 text-muted-foreground">
-            No active connections. An expired or revoked grant is not listed.
-            Connect again from your client. That creates a new grant and does
-            not restore the old one.
-          </p>
-        ) : null}
-        <ul className="grid gap-3">
-          {connections.map((connection) => (
-            <li
-              key={`${connection.clientId}:${connection.authorizationCodeId}`}
-              className="grid min-w-0 gap-2 rounded-lg border border-border p-4"
+              </AlertDescription>
+            </Alert>
+          ) : null}
+          {owned._tag === "Owned" && detail.data ? (
+            <div
+              key={`${selected?.clientId}:${selected?.authorizationCodeId}`}
+              ref={focusDetail}
+              tabIndex={-1}
+              className="grid gap-1 text-sm leading-6 text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
-              <p className="text-sm font-medium break-words text-foreground">
-                {connection.clientName ?? "Unnamed client"}
+              <p className="font-medium text-foreground">Connection detail</p>
+              <p>
+                {detail.data.clientName ?? "Unnamed client"} ·{" "}
+                {detail.data.clientId}
               </p>
-              <p className="break-all text-xs text-muted-foreground">
-                Client identifier {connection.clientId}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Projects:{" "}
-                {connectionProjectLabels(connection.projectIds, names).join(
+              <p>
+                {connectionProjectLabels(detail.data.projectIds, names).join(
                   ", ",
                 )}
               </p>
-              <p className="text-sm text-muted-foreground">
-                {coarsenLastAuthenticated(connection.lastAuthenticatedAt)}
-              </p>
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  className="min-h-10"
-                  onClick={() => {
-                    setSelected(connection)
-                    queueMicrotask(() => detailRef.current?.focus())
-                  }}
-                >
-                  Inspect
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  className="min-h-10"
-                  onClick={(event) => {
-                    returnFocus.current = event.currentTarget
-                    setFeedback({ _tag: "Idle" })
-                    setConfirming(connection)
-                  }}
-                >
-                  Revoke
-                </Button>
-              </div>
-            </li>
-          ))}
-        </ul>
-        {owned._tag === "Owned" && detail.data ? (
-          <div
-            ref={detailRef}
-            tabIndex={-1}
-            className="grid gap-1 text-sm leading-6 text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            <p className="font-medium text-foreground">Connection detail</p>
-            <p>
-              {detail.data.clientName ?? "Unnamed client"} ·{" "}
-              {detail.data.clientId}
-            </p>
-            <p>
-              {connectionProjectLabels(detail.data.projectIds, names).join(
-                ", ",
-              )}
-            </p>
-            <p>{coarsenLastAuthenticated(detail.data.lastAuthenticatedAt)}</p>
-          </div>
-        ) : null}
-        {owned._tag === "UnavailableToAccount" ? (
-          <Alert>
-            <AlertTitle>Connection not available</AlertTitle>
-            <AlertDescription>
-              The signed-in account cannot read that connection. It may belong
-              to someone else or already be revoked.
-            </AlertDescription>
-          </Alert>
-        ) : null}
-        {message ? (
-          <Alert>
-            <AlertTitle>
-              {feedback._tag === "Revoked"
-                ? "Revocation confirmed"
-                : "Revocation not confirmed"}
-            </AlertTitle>
-            <AlertDescription>{message}</AlertDescription>
-          </Alert>
-        ) : null}
+              <p>{coarsenLastAuthenticated(detail.data.lastAuthenticatedAt)}</p>
+            </div>
+          ) : null}
+          {owned._tag === "UnavailableToAccount" ? (
+            <Alert>
+              <AlertTitle>Connection not available</AlertTitle>
+              <AlertDescription>
+                The signed-in account cannot read that connection. It may belong
+                to someone else or already be revoked.
+              </AlertDescription>
+            </Alert>
+          ) : null}
+          {message ? (
+            <Alert>
+              <AlertTitle>
+                {feedback._tag === "Revoked"
+                  ? "Revocation confirmed"
+                  : "Revocation not confirmed"}
+              </AlertTitle>
+              <AlertDescription>
+                {message}
+                {feedback._tag === "Unknown" ||
+                feedback._tag === "StillActive" ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="mt-3 min-h-10"
+                    disabled={busy}
+                    onClick={() => void refreshFeedback()}
+                  >
+                    Refresh connections
+                  </Button>
+                ) : null}
+              </AlertDescription>
+            </Alert>
+          ) : null}
+        </div>
       </CardContent>
       <Dialog
         open={confirming !== null}
-        disablePointerDismissal={revoke.isPending}
+        disablePointerDismissal={busy}
         onOpenChange={(open) => {
-          if (!open && !revoke.isPending) {
+          if (!open && !busy) {
             setConfirming(null)
-            returnFocus.current?.focus()
           }
         }}
       >
-        <DialogContent>
+        <DialogContent
+          showCloseButton={!busy}
+          finalFocus={() =>
+            returnFocus.current?.isConnected
+              ? returnFocus.current
+              : listRegion.current
+          }
+        >
           <DialogHeader>
             <DialogTitle>Revoke this connection</DialogTitle>
             <DialogDescription>
@@ -305,17 +379,17 @@ export function AgentConnections() {
             <Button
               type="button"
               variant="outline"
-              disabled={revoke.isPending}
+              disabled={busy}
               onClick={() => setConfirming(null)}
             >
               Cancel
             </Button>
             <Button
               type="button"
-              disabled={revoke.isPending}
+              disabled={busy}
               onClick={() => void confirmRevoke()}
             >
-              {revoke.isPending ? "Revoking…" : "Revoke connection"}
+              {busy ? "Confirming revocation…" : "Revoke connection"}
             </Button>
           </DialogFooter>
         </DialogContent>
