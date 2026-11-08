@@ -54,7 +54,7 @@ narrow prefixes in TASK-003 — no widening of ordinary login redirect rules):
 
 **Browser UX paths** (dashboard app routes; passed to `mcp({ loginPage, consentPage })`):
 
-- Login: `/sign-in` (existing dashboard auth)
+- Login: `/connect/agent/sign-in` (existing auth form with signed consent continuation; ordinary `/sign-in` is unchanged)
 - Consent: `/connect/agent/consent` (TASK-006.2 implements UI; path frozen here)
 
 `requireMcpAuth` on the API **must** override defaults:
@@ -157,7 +157,7 @@ Oversized records return **previews and explicit continuations**, never invalid 
 or silent omission. Unsupported filter combinations **fail with a stated limitation** —
 no broader substitute query.
 
-### Admission budgets (provisional — separate from login limiter)
+### Admission budgets (separate from login limiter)
 
 MCP and OAuth endpoints use **durable PostgreSQL limiters** patterned on existing auth
 storage — **not** shared counters with email login. Initial Flowmark targets:
@@ -167,10 +167,22 @@ storage — **not** shared counters with email login. Initial Flowmark targets:
 | OAuth authorize           | 60 / trusted source / minute  |
 | OAuth token               | 120 / trusted source / minute |
 | MCP tool calls            | 120 / grant family / minute   |
+| MCP project reads         | 600 / project / minute        |
+| MCP service reads         | 3000 / service / minute       |
+| OAuth service admission   | 3000 / service / minute       |
 | Unauthenticated discovery | 300 / service / minute        |
 
-Revocation remains available when creation/query budgets are exhausted. Exact key shapes
-and SQL are owned by TASK-005.5 / TASK-004.
+Revocation remains available when creation/query budgets are exhausted. MCP uses domain-separated hashed keys; OAuth uses separate HMAC keys and does not
+consume email-login counters. Missing trusted attribution shares one conservative
+service source. Limiter/storage failure denies admission.
+
+Requests are streamed into at most 64 KiB with a 15-second body deadline. Tool
+execution has a 15-second deadline and PostgreSQL statements a 5-second timeout.
+Client interruption cancels pending driver queries before closing the connection.
+The 64 KiB tool-result cap counts UTF-8 bytes in both text and structured content.
+Oversized paginated reads regenerate smaller SQL pages and their actual cursors; a
+single oversized record fails explicitly. Comparison fact retrieval is limited to
+1000 operation facts per run and fails rather than aggregating partial evidence.
 
 ### Disabled and rollout behavior
 
@@ -197,7 +209,7 @@ Does **not** authorize package installation (still gated per ADR 0007).
   [auth-perimeter.md](../auth-perimeter.md#delegated-workflow-reads-trpc) and
   [implementation status](../implementation-status.md).
 - TASK-005 registers **only** these six tool names with the frozen bounds. The
-  names are registered. Durable admission budgets remain a later increment.
+  names, durable admission budgets and query interruption are implemented.
   The shipped `POST /mcp` handler accepts the legacy `initialize` handshake
   that current clients send; follow-up requests carry `mcp-session-id`.
 - TASK-008 owns empirical client verification listed in the contract export.

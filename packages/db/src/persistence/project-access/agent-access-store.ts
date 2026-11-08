@@ -15,8 +15,22 @@ import {
 import { recordAgentAccessLastAuth } from "./writes/record-agent-access-last-auth.js"
 import { revokeAgentAccessConnection } from "./writes/revoke-agent-access-connection.js"
 import { submitAgentAccessConsent } from "./writes/submit-agent-access-consent.js"
+import { getAgentConsentClient } from "./queries/get-agent-consent-client.js"
+import { bindAgentConsentCode } from "./writes/bind-agent-consent-code.js"
 
 export interface AgentAccessStoreService {
+  readonly consentClient: (clientId: string) => Effect.Effect<
+    | {
+        readonly clientId: string
+        readonly name: string | null
+        readonly redirectUris: readonly string[]
+      }
+    | undefined,
+    DatabaseError
+  >
+  readonly bindConsentCode: (
+    input: Parameters<typeof bindAgentConsentCode>[0],
+  ) => Effect.Effect<void, AgentAccessConsentRejected | DatabaseError>
   readonly listConnections: (
     userId: string,
   ) => Effect.Effect<ReadonlyArray<AgentAccessConnectionSummary>, DatabaseError>
@@ -61,6 +75,8 @@ export class AgentAccessStore extends Context.Service<AgentAccessStore>()(
     make: Effect.gen(function* () {
       const provide = provideDatabase(yield* Database)
       return {
+        consentClient: (clientId) => provide(getAgentConsentClient(clientId)),
+        bindConsentCode: (input) => provide(bindAgentConsentCode(input)),
         listConnections: (userId) =>
           provide(listAgentAccessConnections(userId)),
         getConnection: (input) =>

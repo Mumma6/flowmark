@@ -109,3 +109,5 @@ export type { RunExpectations, ExpectationAttention } from "@flowmarkdev/core"
 export { ExpectationSourceForbidden } from "./errors.js"
 
 export { ResultDeclarationsLive } from "./features/result-declarations/adapters/result-declarations.js"
+
+export { AgentConsent } from "./features/project-access/use-cases/agent-consent.js"

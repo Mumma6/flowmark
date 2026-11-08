@@ -1,6 +1,7 @@
 import { createMcpProtectedRequestHandler } from "@better-auth/mcp"
 import type { AuthorizationServerMetadata } from "@modelcontextprotocol/server"
-import { Option } from "effect"
+import { Effect, Option } from "effect"
+import { McpRequestBodyError, readMcpRequest } from "./request-body.js"
 import { authInfoFromClaims, toMcpAuthInfo } from "../auth/claims.js"
 import { createFlowmarkMcpSdkHandler } from "../features/connection/register-tools.js"
 import type { ResolvedAgentAccessRuntime } from "../runtime/agent-access-runtime.js"
@@ -12,7 +13,7 @@ export const createFlowmarkMcpPostHandler = (input: {
   const mcpSdkHandler = createFlowmarkMcpSdkHandler(input.runtime)
   void input.authorizationServerMetadata
   const overrides = input.runtime.mcpAuth
-  return createMcpProtectedRequestHandler(
+  const handle = createMcpProtectedRequestHandler(
     {
       issuer: overrides.issuer,
       audience: overrides.resource,
@@ -47,4 +48,31 @@ export const createFlowmarkMcpPostHandler = (input: {
       )
     },
   )
+  return (request: Request) =>
+    Effect.runPromise(
+      readMcpRequest(request).pipe(
+        Effect.timeoutOrElse({
+          duration: 15000,
+          orElse: () => Effect.fail(new McpRequestBodyError({ status: 408 })),
+        }),
+        Effect.flatMap((bounded) => Effect.promise(() => handle(bounded))),
+        Effect.catchTag("McpRequestBodyError", (error) =>
+          Effect.succeed(
+            Response.json(
+              {
+                message:
+                  error.status === 413
+                    ? "MCP request exceeds the byte limit."
+                    : "Invalid MCP request body.",
+              },
+              {
+                status: error.status,
+                headers: { "cache-control": "no-store" },
+              },
+            ),
+          ),
+        ),
+      ),
+      { signal: request.signal },
+    )
 }

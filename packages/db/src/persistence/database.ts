@@ -23,6 +23,12 @@ export const apiKeyPrefix = (key: string) => key.slice(0, 16)
 export const Database = Context.Service<FlowmarkDatabase>(
   "@flowmark/db/Database",
 )
+
+/** Optional request-owned SQL deadline; ordinary API traffic retains its policy. */
+export const DatabaseReadBudget = Context.Reference<{
+  readonly statementTimeoutMs?: number
+  readonly maxOperationFacts?: number
+}>("@flowmark/db/ReadBudget", { defaultValue: () => ({}) })
 export const provideDatabase =
   (db: FlowmarkDatabase) =>
   <A, E>(

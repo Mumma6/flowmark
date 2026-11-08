@@ -18,6 +18,22 @@ export function createAuthRateLimitStorage(
   secret: string,
 ) {
   return {
+    consumeAgent: (key: string, rule: AuthLimitRule) =>
+      Effect.runPromise(
+        Effect.gen(function* () {
+          const admitted = yield* consumeAuthRateLimit(
+            authLimitKey(secret, "agent:admission"),
+            { window: 60, max: 3000 },
+          )
+          if (!admitted.allowed) {
+            return admitted
+          }
+          return yield* consumeAuthRateLimit(
+            authLimitKey(secret, `agent:${key}`),
+            rule,
+          )
+        }).pipe(Effect.provideService(Database, db)),
+      ),
     consume: (key: string, rule: AuthLimitRule) =>
       Effect.runPromise(
         Effect.gen(function* () {

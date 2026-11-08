@@ -48,6 +48,7 @@ export {
   TableCaption,
 } from "./table"
 export { Input } from "./input"
+export { Checkbox } from "./checkbox"
 export { NativeSelect, NativeSelectOption } from "./native-select"
 export { Badge } from "./badge"
 export {
