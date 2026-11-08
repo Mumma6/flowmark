@@ -3,7 +3,10 @@ import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import type { ReactNode } from "react"
 import { StudioShell } from "../../features/shell/studio-shell"
-import { getDashboardAccess } from "../../features/platform/server-runtime"
+import {
+  getDashboardAccess,
+  getRemoteAgentAccess,
+} from "../../features/platform/server-runtime"
 
 export const dynamic = "force-dynamic"
 
@@ -22,7 +25,11 @@ export default async function DashboardLayout({
     redirect(`/onboarding?step=${state.step}`)
   }
   return (
-    <StudioShell email={access.session.user.email} apiOrigin={access.apiOrigin}>
+    <StudioShell
+      email={access.session.user.email}
+      apiOrigin={access.apiOrigin}
+      agentAccess={await getRemoteAgentAccess(access.apiOrigin)}
+    >
       {children}
     </StudioShell>
   )

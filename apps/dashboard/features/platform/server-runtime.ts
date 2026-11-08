@@ -5,6 +5,7 @@ import { DashboardApi } from "./api-server-client"
 import { readDashboardAccess } from "../auth/auth-access"
 import { readDashboardSession } from "../auth/auth-session"
 import { DashboardServerConfig } from "./config-server"
+import { readRemoteAgentAccess } from "./read-remote-agent-access"
 
 // Layers are descriptions. Configuration and upstream clients are acquired for
 // each execution; no cookies or request identity live in shared mutable state.
@@ -30,4 +31,7 @@ export const getDashboardSession = cache(() =>
 )
 export const getDashboardAccess = cache(() =>
   runDashboardServer(readDashboardAccess()),
+)
+export const getRemoteAgentAccess = cache((apiOrigin: string) =>
+  runDashboardServer(readRemoteAgentAccess(apiOrigin)),
 )

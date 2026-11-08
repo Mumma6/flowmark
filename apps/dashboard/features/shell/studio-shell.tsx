@@ -33,6 +33,7 @@ import { runBrowserAuth } from "../auth/auth-browser-runtime"
 import { signOut } from "../auth/operations"
 import { publicConfig } from "../platform/config-public"
 import { RuntimeConfigProvider } from "../platform/runtime-config"
+import type { RemoteAgentAccessDeployment } from "../connect/agent-access-capability"
 import { ProjectProvider } from "../projects/project-context"
 import { ProjectSwitcher } from "../projects/project-switcher"
 import { CommandPalette } from "../search/command-palette"
@@ -147,14 +148,16 @@ export function StudioShell({
   children,
   email,
   apiOrigin,
+  agentAccess,
 }: {
   children: ReactNode
   email: string
   apiOrigin: string
+  agentAccess: RemoteAgentAccessDeployment
 }) {
   const pathname = usePathname()
   return (
-    <RuntimeConfigProvider apiOrigin={apiOrigin}>
+    <RuntimeConfigProvider apiOrigin={apiOrigin} agentAccess={agentAccess}>
       <ProjectProvider>
         <div className="relative isolate min-h-screen overflow-x-clip bg-background">
           <div
