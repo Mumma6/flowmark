@@ -110,6 +110,7 @@ function ExploreWorkspace() {
       </div>
 
       <StudioWorkspace
+        className="border-primary/30 shadow-lg [&>aside]:bg-background/70 [&>aside]:border-primary/20"
         processes={
           <StudioProcessPane
             processes={
@@ -136,20 +137,17 @@ function ExploreWorkspace() {
           />
         }
       >
-        <div className="grid min-w-0 gap-7">
+        <div className="grid min-w-0 gap-6 bg-background/50 p-3 sm:p-5">
           <div className="order-2 min-w-0 lg:order-1">
             <ExploreAnalyticsContext exploreFrom={exploreFrom} />
           </div>
           <section
             aria-labelledby="evidence-title"
-            className="order-1 min-w-0 lg:order-2"
+            className="order-1 min-w-0 overflow-hidden rounded-xl border border-primary/30 bg-card shadow-sm lg:order-2"
           >
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-[linear-gradient(110deg,hsl(var(--primary)/0.035),transparent_65%)] px-5 py-4 sm:px-6">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-[linear-gradient(110deg,hsl(var(--primary)/0.10),transparent_65%)] px-5 py-4 sm:px-6">
               <div className="flex items-center gap-2.5">
-                <CircleDot
-                  aria-hidden="true"
-                  className="size-4 text-highlight"
-                />
+                <CircleDot aria-hidden="true" className="size-4 text-primary" />
                 <h2
                   id="evidence-title"
                   tabIndex={-1}

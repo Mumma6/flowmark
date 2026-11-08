@@ -46,12 +46,19 @@ export function StudioChrome({
 export function StudioWorkspace({
   processes,
   children,
+  className,
 }: {
   processes: ReactNode
   children: ReactNode
+  className?: string
 }) {
   return (
-    <div className="grid min-w-0 overflow-hidden rounded-xl border border-border bg-card shadow-sm lg:grid-cols-[230px_minmax(0,1fr)] xl:grid-cols-[260px_minmax(0,1fr)]">
+    <div
+      className={cn(
+        "grid min-w-0 overflow-hidden rounded-xl border border-border bg-card shadow-sm lg:grid-cols-[230px_minmax(0,1fr)] xl:grid-cols-[260px_minmax(0,1fr)]",
+        className,
+      )}
+    >
       {processes}
       {children}
     </div>
