@@ -1,4 +1,11 @@
-import { Array as EffectArray, Match, Result, Schema } from "effect"
+import {
+  Array as EffectArray,
+  Data,
+  Effect,
+  Match,
+  Result,
+  Schema,
+} from "effect"
 
 const months = [
   "Jan",
@@ -18,7 +25,7 @@ const months = [
 /** Day resolution in UTC. An exact clock is not a live agent. */
 export const coarsenLastAuthenticated = (value: string | null) => {
   if (value === null) {
-    return "No authenticated read recorded"
+    return "No authenticated request recorded"
   }
   const parsed = Date.parse(value)
   if (Number.isNaN(parsed)) {
@@ -41,21 +48,23 @@ export const connectionProjectLabels = (
 export type OwnedConnectionView =
   | { readonly _tag: "Hidden" }
   | { readonly _tag: "Owned" }
+  | { readonly _tag: "Loading" }
   | { readonly _tag: "UnavailableToAccount" }
   | { readonly _tag: "Unavailable" }
 
 export const interpretOwnedConnection = (input: {
   readonly listed: boolean
-  readonly detail: "present" | "absent" | "unavailable"
+  readonly detail: "pending" | "present" | "absent" | "unavailable"
 }): OwnedConnectionView =>
   Match.value(input).pipe(
+    Match.when({ listed: false }, () => ({ _tag: "Hidden" as const })),
+    Match.when({ detail: "pending" }, () => ({ _tag: "Loading" as const })),
     Match.when({ detail: "unavailable" }, () => ({
       _tag: "Unavailable" as const,
     })),
     Match.when({ detail: "absent" }, () => ({
       _tag: "UnavailableToAccount" as const,
     })),
-    Match.when({ listed: false }, () => ({ _tag: "Hidden" as const })),
     Match.orElse(() => ({ _tag: "Owned" as const })),
   )
 
@@ -68,7 +77,6 @@ export type RevokeFeedback =
 
 /** Success is the persisted absence of the connection, not the mutation response alone. */
 export const interpretRevokeResult = (input: {
-  readonly mutation: "succeeded" | "failed"
   readonly stillListed: boolean | "unknown"
 }): RevokeFeedback =>
   Match.value(input.stillListed).pipe(
@@ -102,3 +110,69 @@ export const connectionListRecovery = (error: unknown) =>
             } as const),
     }),
   )
+
+class ConnectionRequestError extends Data.TaggedError(
+  "ConnectionRequestError",
+)<{
+  readonly operation: "revoke" | "confirm"
+  readonly cause: unknown
+}> {}
+
+type ConnectionReference = {
+  readonly clientId: string
+  readonly authorizationCodeId: string
+}
+type ConnectionObservation = {
+  readonly target: ConnectionReference
+  readonly cancelRead: () => Promise<void>
+  readonly read: () => Promise<readonly ConnectionReference[]>
+}
+
+/** Cancel older polls so only a newly requested server response can confirm. */
+export const confirmConnectionRevocation = Effect.fn(
+  "Connect.confirmRevocation",
+)(function* (input: ConnectionObservation) {
+  const observed = yield* Effect.result(
+    Effect.gen(function* () {
+      yield* Effect.tryPromise({
+        try: input.cancelRead,
+        catch: (cause) =>
+          new ConnectionRequestError({ operation: "confirm", cause }),
+      })
+      return yield* Effect.tryPromise({
+        try: input.read,
+        catch: (cause) =>
+          new ConnectionRequestError({ operation: "confirm", cause }),
+      })
+    }),
+  )
+  return interpretRevokeResult({
+    stillListed: Result.match(observed, {
+      onFailure: () => "unknown" as const,
+      onSuccess: (connections) =>
+        EffectArray.some(
+          connections,
+          (item) =>
+            item.clientId === input.target.clientId &&
+            item.authorizationCodeId === input.target.authorizationCodeId,
+        ),
+    }),
+  })
+})
+
+/** A lost mutation response still requires a fresh server observation. */
+export const revokeAndConfirmConnection = Effect.fn("Connect.revokeAndConfirm")(
+  function* (
+    input: ConnectionObservation & { readonly revoke: () => Promise<unknown> },
+  ) {
+    // The authoritative follow-up read decides the outcome, even after a lost reply.
+    yield* Effect.result(
+      Effect.tryPromise({
+        try: input.revoke,
+        catch: (cause) =>
+          new ConnectionRequestError({ operation: "revoke", cause }),
+      }),
+    )
+    return yield* confirmConnectionRevocation(input)
+  },
+)

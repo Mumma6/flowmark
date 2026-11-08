@@ -14,7 +14,7 @@ const connectedGuide = (
     steps: [
       `Register the MCP endpoint ${mcpUrl} in ${label}. Use OAuth; do not paste an ingestion key or a dashboard cookie.`,
       "Approve only the projects you select on the Studio consent screen.",
-      "After that client completes an authorized read, return here. Access verified appears only from that read.",
+      "Run an authorized evidence read from that client and inspect the result. Studio records connection authentication, which does not prove a successful project read.",
       "A saved snippet or a failed copy is not a connection, and it does not mean an agent process is running.",
     ],
     pasteHint:

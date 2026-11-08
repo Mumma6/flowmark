@@ -63,6 +63,9 @@
         "@flowmarkdev/core#build",
         "@flowmarkdev/node#build"
       ]
+    },
+    "@flowmark/server#typecheck": {
+      "dependsOn": ["build"]
     }
   }
 }

@@ -42,12 +42,14 @@ export function RunExpectations({
   id,
   source,
   replace = false,
+  page,
 }: {
   id: string
   source?: string
   replace?: boolean
+  page?: { readonly cursor?: string; readonly limit?: number }
 }) {
-  const query = useRunExpectations(id)
+  const query = useRunExpectations(id, page)
   const firstPage = query.data?.pages[0]
   const expectations =
     query.data?.pages.flatMap((page) => page.expectations) ?? []

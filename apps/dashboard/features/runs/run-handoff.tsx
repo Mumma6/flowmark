@@ -8,7 +8,10 @@ import {
   CardTitle,
 } from "@flowmark/ui"
 import { Option, Result } from "effect"
-import { studioRunSelection } from "./investigation-selection"
+import {
+  handoffRunSelection,
+  runSelectionQueryKey,
+} from "./investigation-selection"
 import { useMemo, useSyncExternalStore } from "react"
 import { useSearchParams } from "next/navigation"
 import type { RunEvent } from "../platform/api-types"
@@ -59,8 +62,9 @@ export function RunHandoff({
     () => readExplorerFilters(params),
     [filterQuery, params],
   )
+  const rawSelection = params.get(runSelectionQueryKey)
   const runSelection = current
-    ? studioRunSelection(current.id, runId)
+    ? handoffRunSelection(current.id, runId, rawSelection)
     : undefined
   const studioReturn =
     runSelection && origin
@@ -92,7 +96,10 @@ export function RunHandoff({
       },
       origin,
       deployment.kind === "enabled"
-        ? { mode: "connected", calls: connectedRunCalls(current.id, runId) }
+        ? {
+            mode: "connected",
+            calls: connectedRunCalls(current.id, runId, rawSelection),
+          }
         : { mode: "manual" },
     )
   }, [
@@ -106,6 +113,7 @@ export function RunHandoff({
     runPath,
     sourceFrom,
     deployment.kind,
+    rawSelection,
   ])
   const summary = investigationHandoff(events, runPath)
   if (Option.isNone(summary)) {
@@ -155,9 +163,9 @@ export function RunHandoff({
                       Structured run selection
                     </summary>
                     <p className="my-3 text-xs leading-6 text-muted-foreground">
-                      Version 1 identifies this run and its first event page. It
-                      contains no credentials and grants no access. Each read
-                      observes the current evidence.
+                      Version 1 identifies this run and its selected evidence
+                      page. It contains no credentials and grants no access.
+                      Each read observes the current evidence.
                     </p>
                     <pre className="mb-3 overflow-x-auto whitespace-pre-wrap break-all text-xs">
                       {JSON.stringify(selection, null, 2)}

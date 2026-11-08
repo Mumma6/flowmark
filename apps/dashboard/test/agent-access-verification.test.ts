@@ -10,10 +10,9 @@ const base = {
   connections: "ready" as const,
   grants: [],
   projectId,
-  runs: "unknown" as const,
 }
 
-it("verifies an empty project only after a recorded authorized read", () => {
+it("reports connection authentication without claiming a project evidence read", () => {
   expect(
     interpretAgentReadVerification({
       ...base,
@@ -23,9 +22,8 @@ it("verifies an empty project only after a recorded authorized read", () => {
           lastAuthenticatedAt: "2026-11-08T12:00:00.000Z",
         },
       ],
-      runs: "empty",
     }),
-  ).toEqual({ _tag: "Verified", runs: "none" })
+  ).toEqual({ _tag: "Authenticated" })
 })
 
 it("keeps a copied configuration and a failed copy unverified", () => {
@@ -65,7 +63,8 @@ it("separates a missing grant, a rejected read, and an unavailable service", () 
     })._tag,
   ).toBe("WrongProject")
   expect(
-    interpretAgentReadVerification({ ...base, runs: "unauthorized" })._tag,
+    interpretAgentReadVerification({ ...base, connections: "unauthorized" })
+      ._tag,
   ).toBe("Denied")
   expect(
     interpretAgentReadVerification({ ...base, connections: "unavailable" })
@@ -77,4 +76,30 @@ it("separates a missing grant, a rejected read, and an unavailable service", () 
   expect(
     interpretAgentReadVerification({ ...base, deployment: "disabled" })._tag,
   ).toBe("Disabled")
+})
+
+it("does not promote a multi-project grant timestamp into project-specific verification", () => {
+  const grants = [
+    {
+      projectIds: [projectId, "00000000-0000-4000-8000-000000000099"],
+      lastAuthenticatedAt: "2026-11-08T12:00:00.000Z",
+    },
+  ]
+  expect(interpretAgentReadVerification({ ...base, grants })).toEqual({
+    _tag: "Authenticated",
+  })
+  expect(
+    interpretAgentReadVerification({
+      ...base,
+      grants,
+      projectId: grants[0]!.projectIds[1],
+    }),
+  ).toEqual({ _tag: "Authenticated" })
+  expect(
+    interpretAgentReadVerification({
+      ...base,
+      grants,
+      connections: "unauthorized",
+    }),
+  ).toEqual({ _tag: "Denied" })
 })

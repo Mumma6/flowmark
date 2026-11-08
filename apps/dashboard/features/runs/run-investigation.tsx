@@ -58,21 +58,34 @@ import { ProgressStrip } from "./run-waterfall"
 
 type RunComparison = inferRouterOutputs<AppRouter>["run"]["compare"]
 
-export function RunInvestigation({
-  runId,
-  events,
-  comparison,
-  comparisonLoading = false,
-  comparisonError,
-  contextual = false,
-}: {
+type RunInvestigationProps = {
   runId: string
   events: readonly RunEvent[]
   comparison?: RunComparison
   comparisonLoading?: boolean
   comparisonError?: string
   contextual?: boolean
-}) {
+}
+
+export function RunInvestigation(props: RunInvestigationProps) {
+  const params = useSearchParams()
+  const { current } = useProject()
+  return (
+    <RunInvestigationContent
+      key={`${props.runId}:${current?.id ?? "pending"}:${params.get(runSelectionQueryKey) ?? ""}`}
+      {...props}
+    />
+  )
+}
+
+function RunInvestigationContent({
+  runId,
+  events,
+  comparison,
+  comparisonLoading = false,
+  comparisonError,
+  contextual = false,
+}: RunInvestigationProps) {
   const routeParams = useSearchParams()
   const { current } = useProject()
   const source = routeParams.has("from")
@@ -88,6 +101,9 @@ export function RunInvestigation({
   )
   const operationsPage = Option.getOrUndefined(
     evidencePageForSection(roundTrip, "operations"),
+  )
+  const expectationsPage = Option.getOrUndefined(
+    evidencePageForSection(roundTrip, "expectations"),
   )
   const relatedPage = Option.getOrUndefined(
     evidencePageForSection(roundTrip, "related"),
@@ -626,6 +642,7 @@ export function RunInvestigation({
               "Inspect the confirmations this application expected and any observed resolutions. A completed run can still be waiting for a confirmation.",
             content: (
               <RunExpectations
+                page={expectationsPage}
                 id={runId}
                 source={source}
                 replace={contextual}

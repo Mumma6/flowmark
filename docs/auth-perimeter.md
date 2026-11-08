@@ -331,3 +331,17 @@ Responses use `no-store` and `no-referrer`. Signing out does not revoke prior gr
 OAuth authorize/token admission has separate durable counters from account login
 and MCP reads. Revoke is exempt from those creation/read budgets. See
 [ADR 0008](./decisions/0008-connect-agent-protocol-contract.md) for limits.
+
+## Connection feedback in Studio
+
+The stored `lastAuthenticatedAt` belongs to a grant family, not to a project or
+successful tool result. `get_connection` and a request that later fails can update
+it. Studio labels this **Connection authenticated** and does not infer successful
+project evidence retrieval from it or from Studio's session-based run reads.
+
+Revocation feedback cancels older connection-list requests and reads fresh server
+state. A lost mutation response may still be confirmed if the grant is absent.
+If confirmation fails, the status remains unknown and **Refresh connections**
+only repeats the read. It never resends the mutation. Connection-detail loading,
+failures and missing authority have separate states; unavailable cached rows
+are not offered as current management targets.

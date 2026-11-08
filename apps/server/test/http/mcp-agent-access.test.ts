@@ -1,3 +1,8 @@
+import {
+  connectedFailureCalls,
+  connectedInsightCalls,
+  connectedRunCalls,
+} from "../../../dashboard/features/runs/connected-retrieval"
 import { handleAgentConsent } from "../../src/adapters/agent-consent"
 import { createHash, randomBytes, randomUUID } from "node:crypto"
 import assert from "node:assert/strict"
@@ -1108,6 +1113,85 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
           found.result?.structuredContent?.page as typeof studioRuns,
         ),
       ).toEqual(omitObservationClock(studioRuns))
+      const firstEvents = await studio.run.eventPage({ runId, limit: 1 })
+      assert.ok(firstEvents.nextCursor)
+      const handoffSelection = {
+        version: 1,
+        kind: "run",
+        projectId: project.projectId,
+        runId,
+        section: "events",
+        cursor: firstEvents.nextCursor,
+        limit: 1,
+      }
+      const [handoffCall] = connectedRunCalls(
+        project.projectId,
+        runId,
+        JSON.stringify(handoffSelection),
+      )
+      assert.ok(handoffCall)
+      const handoffRead = await callTool(
+        60,
+        handoffCall.tool,
+        handoffCall.input,
+      )
+      expect(handoffRead.result?.isError).toBeUndefined()
+      expect(handoffRead.result?.structuredContent?.page).toEqual(
+        await studio.run.eventPage({
+          runId,
+          cursor: firstEvents.nextCursor,
+          limit: 1,
+        }),
+      )
+      const failedRunId = randomUUID()
+      await connection.db.insert(workflowRuns).values({
+        id: failedRunId,
+        workflowId,
+        externalId: "synthetic-failure-handoff",
+        startedAt: new Date("2026-11-03T00:00:05.000Z"),
+      })
+      await connection.db.insert(workflowEvents).values([
+        {
+          eventId: randomUUID(),
+          runId: failedRunId,
+          type: "started",
+          occurredAt: new Date("2026-11-03T00:00:05.000Z"),
+        },
+        {
+          eventId: randomUUID(),
+          runId: failedRunId,
+          type: "failed",
+          error: { code: "HANDOFF_TIMEOUT", message: "Synthetic timeout" },
+          occurredAt: new Date("2026-11-03T00:00:06.000Z"),
+          durationMs: 1000,
+        },
+      ])
+      const failureCalls = connectedFailureCalls({
+        projectId: project.projectId,
+        workflow: "acceptance.investigation",
+        code: "HANDOFF_TIMEOUT",
+        ...windows,
+      })
+      expect(failureCalls).toHaveLength(2)
+      const failureRead = await callTool(
+        61,
+        failureCalls[1]!.tool,
+        failureCalls[1]!.input,
+      )
+      expect(failureRead.result?.isError).toBeUndefined()
+      const failureStudio = await studio.run.list({
+        workflow: "acceptance.investigation",
+        status: "Failed",
+        failCode: "HANDOFF_TIMEOUT",
+        startedAfter: windows.currentStartedAfter,
+        startedBefore: windows.currentStartedBefore,
+      })
+      expect(failureStudio.runs.map((run) => run.id)).toEqual([failedRunId])
+      expect(
+        omitObservationClock(
+          failureRead.result?.structuredContent?.page as typeof studioRuns,
+        ),
+      ).toEqual(omitObservationClock(failureStudio))
       const selected = await callTool(6, "get_run", {
         projectId: project.projectId,
         runId,
@@ -1206,11 +1290,13 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         path: ["status"] as string[],
         ...windows,
       }
-      const business = await callTool(9, "get_workflow_insights", {
+      const [businessCall] = connectedInsightCalls({
         projectId: project.projectId,
-        mode: "business",
-        ...businessQuery,
+        validDates: true,
+        query: businessQuery,
       })
+      assert.ok(businessCall)
+      const business = await callTool(9, businessCall.tool, businessCall.input)
       expect(business.result?.isError).toBeUndefined()
       expect(business.result?.structuredContent?.report).toEqual(
         await studio.project.businessInsights(businessQuery),

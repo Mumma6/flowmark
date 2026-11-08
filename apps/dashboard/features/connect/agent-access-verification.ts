@@ -10,10 +10,7 @@ export type AgentReadVerification =
   | { readonly _tag: "Copied" }
   | { readonly _tag: "CopyFailed" }
   | { readonly _tag: "Granted" }
-  | {
-      readonly _tag: "Verified"
-      readonly runs: "unknown" | "none" | "present"
-    }
+  | { readonly _tag: "Authenticated" }
   | { readonly _tag: "Denied" }
   | { readonly _tag: "WrongProject" }
   | { readonly _tag: "UnsupportedClient" }
@@ -32,19 +29,17 @@ const grantsForProject = (
   )
 
 /**
- * Copied text and a stored grant never become "access verified".
- * Verification requires a recorded delegated read for this project.
+ * The stored timestamp records authentication for a grant family, including
+ * get_connection and failed reads. It cannot verify project evidence retrieval.
  */
 export const interpretAgentReadVerification = (input: {
   readonly deployment: "disabled" | "enabled" | "unavailable"
   readonly clientSupported: boolean
   readonly configurationCopied: boolean
   readonly copyFailed: boolean
-  readonly connections: "pending" | "unavailable" | "ready"
+  readonly connections: "pending" | "unauthorized" | "unavailable" | "ready"
   readonly grants: readonly AgentGrantObservation[]
   readonly projectId: string | undefined
-  readonly runs:
-    "unknown" | "empty" | "present" | "unauthorized" | "unavailable"
 }): AgentReadVerification =>
   Match.value(input).pipe(
     Match.when({ clientSupported: false }, () => ({
@@ -59,9 +54,8 @@ export const interpretAgentReadVerification = (input: {
     Match.when({ connections: "unavailable" }, () => ({
       _tag: "Unavailable" as const,
     })),
-    Match.when({ runs: "unauthorized" }, () => ({ _tag: "Denied" as const })),
-    Match.when({ runs: "unavailable" }, () => ({
-      _tag: "Unavailable" as const,
+    Match.when({ connections: "unauthorized" }, () => ({
+      _tag: "Denied" as const,
     })),
     Match.orElse((value) => {
       if (!value.projectId || value.connections !== "ready") {
@@ -82,13 +76,6 @@ export const interpretAgentReadVerification = (input: {
       if (!authenticated) {
         return { _tag: "Granted" as const }
       }
-      return {
-        _tag: "Verified" as const,
-        runs: Match.value(value.runs).pipe(
-          Match.when("empty", () => "none" as const),
-          Match.when("present", () => "present" as const),
-          Match.orElse(() => "unknown" as const),
-        ),
-      }
+      return { _tag: "Authenticated" as const }
     }),
   )

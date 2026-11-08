@@ -177,3 +177,23 @@ export const interpretPeriodCohort = (input: {
     },
   })
 }
+
+/** Preserve the accepted section/page when copying a handoff; reject damaged links. */
+export const handoffRunSelection = (
+  projectId: string,
+  runId: string,
+  raw: string | null,
+) =>
+  Match.value(interpretRunSelection({ projectId, runId, raw })).pipe(
+    Match.tag("Absent", () =>
+      studioRunSelection(projectId, runId).pipe(
+        Result.mapError(() => unsupportedSelection),
+      ),
+    ),
+    Match.tag("Accepted", ({ selection }) => Result.succeed(selection)),
+    Match.tag("Rejected", ({ message }) => Result.fail(message)),
+    Match.tag("Pending", () =>
+      Result.fail("Select a project before copying this investigation."),
+    ),
+    Match.exhaustive,
+  )

@@ -127,20 +127,17 @@ function RemoteAccessStatus({
 }
 
 function verificationCopy(verification: AgentReadVerification) {
-  if (verification._tag === "Verified" && verification.runs === "none") {
-    return "Access verified — no runs recorded yet"
-  }
-  if (verification._tag === "Verified") {
-    return "Access verified"
+  if (verification._tag === "Authenticated") {
+    return "Connection authenticated. A successful read for this project is not verified here."
   }
   if (verification._tag === "Granted") {
-    return "Authorization granted. No authenticated read has been recorded."
+    return "Authorization granted. No authenticated request has been recorded."
   }
   if (verification._tag === "WrongProject") {
     return "This account has no agent grant for the current project. Approve it again or switch project."
   }
   if (verification._tag === "Denied") {
-    return "The read was rejected. Sign in with the account that owns the project and try again."
+    return "Your Studio session cannot read the connection list. Sign in again with the intended account."
   }
   if (verification._tag === "Unavailable") {
     return "The access check is temporarily unavailable. Retry shortly."
@@ -169,25 +166,26 @@ function AccessCheck({
   copied: boolean
   copyFailed: boolean
 }) {
-  const verified = verification._tag === "Verified"
+  const authenticated = verification._tag === "Authenticated"
   return (
     <Card>
       <CardHeader>
         <CardTitle>Access check</CardTitle>
         <CardDescription>
-          Copied configuration, an authorization grant, and an authenticated
-          read stay separate. None of them means an agent process is running.
+          Copied configuration, an authorization grant, and connection
+          authentication stay separate. To verify project evidence, run a read
+          from your client and inspect its result.
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-3 text-sm leading-6">
         <p>Configuration copied: {copied ? "Yes, on this page" : "No"}</p>
         {copyFailed ? <p>The last copy failed. Retry the copy.</p> : null}
-        <p>{verificationCopy(verification)}</p>
-        {verified ? (
-          <Badge variant="success" className="justify-self-start">
-            {verificationCopy(verification)}
+        {authenticated ? (
+          <Badge variant="outline" className="justify-self-start">
+            Connection authenticated
           </Badge>
         ) : null}
+        <p>{verificationCopy(verification)}</p>
       </CardContent>
     </Card>
   )
