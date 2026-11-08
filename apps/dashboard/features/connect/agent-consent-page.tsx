@@ -15,6 +15,7 @@ import { useState } from "react"
 import {
   readConsentView,
   submitConsentView,
+  consentRecoveryMessage,
   type ConsentView,
 } from "./consent-browser"
 import { runBrowserAuth } from "../auth/auth-browser-runtime"
@@ -94,8 +95,7 @@ function AgentConsentForm({
       {query.error ? (
         <Alert variant="destructive">
           <AlertDescription>
-            We could not open this authorization. Sign in with the intended
-            account, reload, or restart from your client.
+            {consentRecoveryMessage(query.error)}
           </AlertDescription>
         </Alert>
       ) : null}
@@ -204,7 +204,7 @@ function AgentConsentForm({
               Deny and return to client
             </Button>
             <Button asChild variant="ghost">
-              <Link href="/connect">Cancel</Link>
+              <Link href="/connect">Cancel without granting access</Link>
             </Button>
           </div>
           <p className="text-xs leading-6 text-muted-foreground">

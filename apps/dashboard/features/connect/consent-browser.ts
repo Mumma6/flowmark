@@ -49,6 +49,11 @@ const requestJson = Effect.fn("ConsentBrowser.request")(function* (
   })
 })
 
+export const consentRecoveryMessage = (error: unknown) =>
+  error instanceof ConsentHttpError
+    ? error.reason
+    : "We could not open this authorization. Sign in with the intended account, reload, or restart from your client."
+
 export const readConsentView = (oauthQuery: string, signal: AbortSignal) =>
   Effect.runPromise(
     requestJson(

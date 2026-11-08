@@ -10,7 +10,7 @@ const connectedGuide = (
   return {
     id,
     label,
-    summary: `${label} can use this environment's HTTP endpoint. Studio does not edit the client's files, and copying this text does not grant access.`,
+    summary: `Inspectable steps for ${label}. Vendor compatibility is not established; the tested path is the reference HTTP client. Studio does not edit the client's files, and copying this text does not grant access.`,
     steps: [
       `Register the MCP endpoint ${mcpUrl} in ${label}. Use OAuth; do not paste an ingestion key or a dashboard cookie.`,
       "Approve only the projects you select on the Studio consent screen.",

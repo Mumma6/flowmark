@@ -19,11 +19,13 @@ import {
 } from "@flowmark/ui"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Array as EffectArray, Match } from "effect"
-import { useState } from "react"
+import Link from "next/link"
+import { useRef, useState } from "react"
 import { useTRPC } from "../platform/api-trpc"
 import { useProject } from "../projects/project-context"
 import {
   coarsenLastAuthenticated,
+  connectionListRecovery,
   connectionProjectLabels,
   interpretOwnedConnection,
   interpretRevokeResult,
@@ -66,6 +68,8 @@ export function AgentConnections() {
   const [selected, setSelected] = useState<ListedConnection | null>(null)
   const [feedback, setFeedback] = useState<RevokeFeedback>({ _tag: "Idle" })
   const [confirming, setConfirming] = useState<ListedConnection | null>(null)
+  const detailRef = useRef<HTMLDivElement>(null)
+  const returnFocus = useRef<HTMLButtonElement | null>(null)
   const detail = useQuery({
     ...trpc.agentAccess.connection.queryOptions({
       authorizationCodeId: selected?.authorizationCodeId ?? "",
@@ -83,6 +87,7 @@ export function AgentConnections() {
     ]),
   )
   const connections = list.data ?? []
+  const listRecovery = list.isError ? connectionListRecovery(list.error) : null
   const owned = selected
     ? interpretOwnedConnection({
         listed: EffectArray.some(
@@ -154,20 +159,30 @@ export function AgentConnections() {
         {list.isPending ? (
           <p className="text-sm text-muted-foreground">Loading connections…</p>
         ) : null}
-        {list.isError ? (
+        {listRecovery ? (
           <Alert>
-            <AlertTitle>Connections are unavailable</AlertTitle>
+            <AlertTitle>
+              {listRecovery._tag === "StaleSession"
+                ? "Sign in again"
+                : "Connections are unavailable"}
+            </AlertTitle>
             <AlertDescription>
-              The list could not be read. Retry before revoking anything.
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                className="mt-3"
-                onClick={() => void list.refetch()}
-              >
-                Retry
-              </Button>
+              {listRecovery.message}
+              {listRecovery._tag === "StaleSession" ? (
+                <Button asChild size="sm" className="mt-3 min-h-10">
+                  <Link href="/sign-in">Sign in</Link>
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="mt-3 min-h-10"
+                  onClick={() => void list.refetch()}
+                >
+                  Retry
+                </Button>
+              )}
             </AlertDescription>
           </Alert>
         ) : null}
@@ -182,12 +197,12 @@ export function AgentConnections() {
           {connections.map((connection) => (
             <li
               key={`${connection.clientId}:${connection.authorizationCodeId}`}
-              className="grid gap-2 rounded-lg border border-border p-4"
+              className="grid min-w-0 gap-2 rounded-lg border border-border p-4"
             >
-              <p className="text-sm font-medium text-foreground">
+              <p className="text-sm font-medium break-words text-foreground">
                 {connection.clientName ?? "Unnamed client"}
               </p>
-              <p className="text-xs text-muted-foreground">
+              <p className="break-all text-xs text-muted-foreground">
                 Client identifier {connection.clientId}
               </p>
               <p className="text-sm text-muted-foreground">
@@ -204,14 +219,20 @@ export function AgentConnections() {
                   type="button"
                   size="sm"
                   variant="outline"
-                  onClick={() => setSelected(connection)}
+                  className="min-h-10"
+                  onClick={() => {
+                    setSelected(connection)
+                    queueMicrotask(() => detailRef.current?.focus())
+                  }}
                 >
                   Inspect
                 </Button>
                 <Button
                   type="button"
                   size="sm"
-                  onClick={() => {
+                  className="min-h-10"
+                  onClick={(event) => {
+                    returnFocus.current = event.currentTarget
                     setFeedback({ _tag: "Idle" })
                     setConfirming(connection)
                   }}
@@ -223,7 +244,11 @@ export function AgentConnections() {
           ))}
         </ul>
         {owned._tag === "Owned" && detail.data ? (
-          <div className="grid gap-1 text-sm leading-6 text-muted-foreground">
+          <div
+            ref={detailRef}
+            tabIndex={-1}
+            className="grid gap-1 text-sm leading-6 text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
             <p className="font-medium text-foreground">Connection detail</p>
             <p>
               {detail.data.clientName ?? "Unnamed client"} ·{" "}
@@ -263,6 +288,7 @@ export function AgentConnections() {
         onOpenChange={(open) => {
           if (!open && !revoke.isPending) {
             setConfirming(null)
+            returnFocus.current?.focus()
           }
         }}
       >

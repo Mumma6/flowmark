@@ -1,4 +1,4 @@
-import { Array as EffectArray, Match } from "effect"
+import { Array as EffectArray, Match, Result, Schema } from "effect"
 
 const months = [
   "Jan",
@@ -75,4 +75,30 @@ export const interpretRevokeResult = (input: {
     Match.when("unknown", () => ({ _tag: "Unknown" as const })),
     Match.when(false, () => ({ _tag: "Revoked" as const })),
     Match.orElse(() => ({ _tag: "StillActive" as const })),
+  )
+
+export const connectionListRecovery = (error: unknown) =>
+  Schema.decodeUnknownResult(
+    Schema.Struct({ data: Schema.Struct({ code: Schema.String }) }),
+  )(error).pipe(
+    Result.match({
+      onFailure: () =>
+        ({
+          _tag: "Unavailable" as const,
+          message:
+            "Connections could not be read. Retry before revoking anything.",
+        }) as const,
+      onSuccess: ({ data }) =>
+        data.code === "UNAUTHORIZED" || data.code === "FORBIDDEN"
+          ? ({
+              _tag: "StaleSession" as const,
+              message:
+                "This Studio session has ended. Sign in again before inspecting or revoking a connection.",
+            } as const)
+          : ({
+              _tag: "Unavailable" as const,
+              message:
+                "Connections could not be read. Retry before revoking anything.",
+            } as const),
+    }),
   )

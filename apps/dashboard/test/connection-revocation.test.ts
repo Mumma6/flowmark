@@ -1,6 +1,7 @@
 import { expect, it } from "vitest"
 import {
   coarsenLastAuthenticated,
+  connectionListRecovery,
   connectionProjectLabels,
   interpretOwnedConnection,
   interpretRevokeResult,
@@ -26,6 +27,16 @@ it("hides a connection the server will not detail for this account", () => {
   expect(connectionProjectLabels(["abc"], { abc: "Billing" })).toEqual([
     "Billing",
   ])
+})
+
+it("separates a stale Studio session from a temporarily unavailable list", () => {
+  expect(connectionListRecovery({ data: { code: "UNAUTHORIZED" } })._tag).toBe(
+    "StaleSession",
+  )
+  expect(connectionListRecovery({ data: { code: "FORBIDDEN" } })._tag).toBe(
+    "StaleSession",
+  )
+  expect(connectionListRecovery(new Error("network"))._tag).toBe("Unavailable")
 })
 
 it("acknowledges revoke only after the connection is gone", () => {

@@ -96,7 +96,8 @@ function RemoteAccessStatus({
           </p>
           <p className="text-sm">
             Register it in your client and approve projects in Studio. The
-            endpoint alone is not authorization.
+            endpoint alone is not authorization. Vendor client compatibility is
+            not established; the tested path is the reference HTTP client.
           </p>
         </AlertDescription>
       </Alert>

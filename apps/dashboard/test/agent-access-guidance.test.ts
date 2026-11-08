@@ -41,6 +41,8 @@ it("gives an enabled deployment its endpoint without writing client files", () =
     const blob = [guide.summary, ...guide.steps, guide.pasteHint].join("\n")
     expect(blob).toContain("https://api.example.test/mcp")
     expect(blob).toContain("does not write")
+    expect(blob).toContain("reference HTTP client")
+    expect(blob).toContain("Vendor compatibility is not established")
     expect(blob).not.toContain("FLOWMARK_API_KEY")
   }
 })
