@@ -11,6 +11,10 @@ export type RetrievalCall = {
   readonly input: Readonly<Record<string, unknown>>
 }
 
+/** Copied figures and a later tool read are different observations. */
+export const separateObservationNotice =
+  "Separate observations: figures in this text are the Studio read at copy time. A later Studio or tool read can see different evidence. Do not treat them as one frozen snapshot." as const
+
 /** A copied call is not a grant. An empty list means do not invent a wider query. */
 export const connectedRunCalls = (
   projectId: string,
@@ -50,17 +54,21 @@ export const connectedFailureCalls = (input: {
       onFailure: () => [],
       onSuccess: (toolInput) => [
         { tool: "get_workflow_insights", input: toolInput },
-        {
-          tool: "find_runs",
-          input: {
-            projectId: input.projectId,
-            startedAfter: input.currentStartedAfter,
-            startedBefore: input.currentStartedBefore,
-            workflow: input.workflow,
-            status: "Failed",
-            ...(input.code ? { failCode: input.code } : {}),
-          },
-        },
+        ...(input.code
+          ? [
+              {
+                tool: "find_runs" as const,
+                input: {
+                  projectId: input.projectId,
+                  startedAfter: input.currentStartedAfter,
+                  startedBefore: input.currentStartedBefore,
+                  workflow: input.workflow,
+                  status: "Failed" as const,
+                  failCode: input.code,
+                },
+              },
+            ]
+          : []),
       ],
     },
   )
@@ -163,11 +171,11 @@ export const retrievalInstructionLines = (
 ): readonly string[] =>
   calls.length === 0
     ? [
-        "Supported tool query: none. Do not replace this selection with a broader project, window, revision, or filter.",
+        "Supported tool query: none. This selection stays explicit. Do not replace it with a broader project, window, revision, or filter.",
         "",
       ]
     : [
-        "Supported tool queries (same population as Studio; copying does not authorize the agent):",
+        "Supported tool queries (same project, window, revision, and filters as this Studio selection; copying does not authorize the agent):",
         ...calls.flatMap((call) => [
           `Tool: ${call.tool}`,
           JSON.stringify(call.input),

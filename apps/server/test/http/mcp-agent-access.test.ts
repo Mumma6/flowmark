@@ -1192,6 +1192,18 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
           failureRead.result?.structuredContent?.page as typeof studioRuns,
         ),
       ).toEqual(omitObservationClock(failureStudio))
+      const failureInsights = await callTool(
+        62,
+        failureCalls[0]!.tool,
+        failureCalls[0]!.input,
+      )
+      expect(failureInsights.result?.isError).toBeUndefined()
+      expect(failureInsights.result?.structuredContent?.report).toEqual(
+        await studio.project.periodReport({
+          workflow: "acceptance.investigation",
+          ...windows,
+        }),
+      )
       const selected = await callTool(6, "get_run", {
         projectId: project.projectId,
         runId,

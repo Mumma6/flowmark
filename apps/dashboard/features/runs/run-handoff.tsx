@@ -66,6 +66,12 @@ export function RunHandoff({
   const runSelection = current
     ? handoffRunSelection(current.id, runId, rawSelection)
     : undefined
+  const selectionNote = runSelection
+    ? Result.match(runSelection, {
+        onFailure: (message) => message,
+        onSuccess: () => null,
+      })
+    : null
   const studioReturn =
     runSelection && origin
       ? Result.map(
@@ -93,6 +99,7 @@ export function RunHandoff({
         sourceFrom,
         filters,
         returnUrl,
+        selectionNote,
       },
       origin,
       deployment.kind === "enabled"
@@ -109,6 +116,7 @@ export function RunHandoff({
     filters,
     origin,
     returnUrl,
+    selectionNote,
     runId,
     runPath,
     sourceFrom,
@@ -151,10 +159,9 @@ export function RunHandoff({
           </div>
           {runSelection
             ? Result.match(runSelection, {
-                onFailure: () => (
+                onFailure: (message) => (
                   <p role="alert" className="text-sm text-destructive">
-                    This run cannot be represented by the supported selection
-                    format.
+                    {message}
                   </p>
                 ),
                 onSuccess: (selection) => (

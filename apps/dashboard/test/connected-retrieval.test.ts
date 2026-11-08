@@ -177,6 +177,18 @@ it("preserves a linked section, limit and cursor in the actual tool handoff", ()
   expect(connectedRunCalls(projectId, runId, "{damaged")).toEqual([])
 })
 
+it("does not turn an empty failure code into every failed run", () => {
+  const calls = connectedFailureCalls({
+    projectId,
+    workflow: "orders.import",
+    code: "",
+    ...windows,
+  })
+  expect(calls.map((call) => call.tool)).toEqual(["get_workflow_insights"])
+  expect(calls[0]?.input).not.toHaveProperty("failCode")
+  expect(JSON.stringify(calls)).not.toContain("find_runs")
+})
+
 it("does not partially replace an invalid failure selection with a broader call", () => {
   expect(
     connectedFailureCalls({

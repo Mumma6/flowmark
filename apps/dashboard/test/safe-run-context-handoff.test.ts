@@ -3,6 +3,11 @@ import { expect, it } from "vitest"
 import type { RunEvent } from "../features/platform/api-types"
 import { explorerDefaults } from "../features/runs/explorer-filters"
 import {
+  connectedFailureCalls,
+  connectedInsightCalls,
+  separateObservationNotice,
+} from "../features/runs/connected-retrieval"
+import {
   buildSafeFailureGroupHandoff,
   buildSafeInsightHandoff,
   buildSafeRunContextHandoff,
@@ -75,7 +80,33 @@ it("builds a safe preview without raw payloads or failure message text", () => {
   expect(preview.preview).not.toContain("hidden")
   expect(preview.preview).not.toContain("FLOWMARK_API_KEY")
   expect(preview.preview).toContain("unavailable Flowmark tools")
+  expect(preview.preview).toContain(separateObservationNotice)
   expect(preview.omissions.join("\n")).toContain("Failure message text")
+})
+
+it("keeps a rejected selection explicit without dropping the page filters", () => {
+  const preview = Option.getOrThrow(
+    buildSafeRunContextHandoff(
+      [event("started")],
+      {
+        projectId: "proj-1",
+        projectName: "Billing",
+        runPath: "https://studio.test/runs/run-1",
+        sourceFrom: "/?workflow=orders.import",
+        filters: { ...explorerDefaults, workflow: "orders.import" },
+        selectionNote:
+          "This link names a different project. It does not switch projects or widen the query.",
+      },
+      "https://studio.test",
+      { mode: "connected", calls: [] },
+    ),
+  )
+  expect(preview.preview).toContain("Selection not applied:")
+  expect(preview.preview).toContain("does not switch projects")
+  expect(preview.preview).toContain("orders.import")
+  expect(preview.preview).toContain("Supported tool query: none")
+  expect(preview.preview).toContain(separateObservationNotice)
+  expect(preview.preview).not.toContain("get_run")
 })
 
 it("builds failure group handoff with exact cohort bounds and no issue id", () => {
@@ -103,6 +134,36 @@ it("builds failure group handoff with exact cohort bounds and no issue id", () =
   expect(handoff.preview).toContain("UPSTREAM_TIMEOUT")
   expect(handoff.preview).toContain("startedAfter: 2026-10-01T00:00:00.000Z")
   expect(handoff.preview).not.toContain("cust-secret")
+  expect(handoff.preview).toContain(separateObservationNotice)
+})
+
+it("states that an empty failure code is not widened into find_runs", () => {
+  const input = {
+    projectId: "11111111-1111-4111-8111-111111111111",
+    projectName: "Billing",
+    sourcePath: "/issues?days=7",
+    currentStartedAfter: "2026-10-08T00:00:00.000Z",
+    currentStartedBefore: "2026-10-15T00:00:00.000Z",
+    previousStartedAfter: "2026-10-01T00:00:00.000Z",
+    previousStartedBefore: "2026-10-08T00:00:00.000Z",
+    workflow: "orders.import",
+    code: "",
+    currentCount: 2,
+    previousCount: 1,
+    countDelta: 1,
+    matchingRunsPath: "/runs?status=Failed&workflow=orders.import",
+    truncated: false,
+  }
+  const calls = connectedFailureCalls(input)
+  const handoff = buildSafeFailureGroupHandoff(input, "https://studio.test", {
+    mode: "connected",
+    calls,
+  })
+  expect(calls.map((call) => call.tool)).toEqual(["get_workflow_insights"])
+  expect(handoff.preview).toContain("No failure code was recorded")
+  expect(handoff.preview).toContain("wider than this group")
+  expect(handoff.preview).not.toContain("Tool: find_runs")
+  expect(handoff.preview).toContain("2026-10-08T00:00:00.000Z")
 })
 
 it("builds insight handoff without dimension values and notes unsupported windows", () => {
@@ -139,6 +200,55 @@ it("builds insight handoff without dimension values and notes unsupported window
   expect(handoff.preview).toContain("customerId (value omitted")
   expect(handoff.preview).not.toContain("cust-secret")
   expect(handoff.omissions.join("\n")).toContain("Declared dimension value")
+  expect(handoff.preview).toContain("2026-10-01T00:00:00.000Z")
+})
+
+it("keeps an incomplete business selection explicit when no tool call is issued", () => {
+  const query = {
+    workflow: "orders.import",
+    revision: "v2",
+    path: ["count"],
+    currentStartedAfter: "2026-10-01T00:00:00.000Z",
+    currentStartedBefore: "2026-10-08T00:00:00.000Z",
+    previousStartedAfter: "2026-09-24T00:00:00.000Z",
+    previousStartedBefore: "2026-10-01T00:00:00.000Z",
+    businessKey: "customerId",
+    numerator: ["accepted"],
+    releaseA: "2026.10",
+    releaseB: "2026.10",
+  }
+  const calls = connectedInsightCalls({
+    projectId: "11111111-1111-4111-8111-111111111111",
+    validDates: true,
+    query,
+  })
+  const handoff = buildSafeInsightHandoff(
+    {
+      projectId: "11111111-1111-4111-8111-111111111111",
+      projectName: "Billing",
+      sourcePath: "/insights?revision=v2",
+      workflow: "orders.import",
+      validDates: true,
+      revision: "v2",
+      fieldLabel: "Successful imports",
+      input: query,
+      releaseComparison: {
+        available: false,
+        reason: "Not enough release observations",
+        minimumRuns: 5,
+      },
+      limitations: [],
+    },
+    "https://studio.test",
+    { mode: "connected", calls },
+  )
+  expect(calls).toEqual([])
+  expect(handoff.preview).toContain("value was not supplied")
+  expect(handoff.preview).toContain("Ratio selection is one-sided")
+  expect(handoff.preview).toContain("same release twice")
+  expect(handoff.preview).toContain("Supported tool query: none")
+  expect(handoff.preview).not.toContain("value is only in the tool arguments")
+  expect(handoff.preview).toContain("Definition revision: v2")
 })
 
 it("returns none when the run has no events", () => {
