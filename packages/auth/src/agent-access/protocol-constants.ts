@@ -69,8 +69,19 @@ export const AGENT_ACCESS_QUERY_BOUNDS = {
 
 export const AGENT_ACCESS_DASHBOARD_BROWSER_PATHS = {
   existingAuthApiPrefix: "/api/auth",
-  oauthLoginPage: "/sign-in",
+  oauthLoginPage: "/connect/agent/sign-in",
   oauthConsentPage: "/connect/agent/consent",
+} as const
+
+/** TASK-005.5 policy; fixed counters use PostgreSQL time across all instances. */
+export const AGENT_ACCESS_EXECUTION_BOUNDS = {
+  maxRequestBytes: 64 * 1024,
+  toolTimeoutMs: 15_000,
+  statementTimeoutMs: 5_000,
+  toolCallsPerServicePerMinute: 3000,
+  toolCallsPerProjectPerMinute: 600,
+  toolCallsPerGrantPerMinute: 120,
+  discoveryPerServicePerMinute: 300,
 } as const
 
 /** Issuer paths the dashboard proxy forwards onto the API auth handler. */

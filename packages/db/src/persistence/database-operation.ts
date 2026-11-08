@@ -1,4 +1,8 @@
 export enum DatabaseOperation {
+  GetAgentConsentClient = "get-agent-consent-client",
+  BindAgentConsentCode = "bind-agent-consent-code",
+  McpAdmission = "mcp-admission",
+  GetAgentAccessGrantFamily = "get-agent-access-grant-family",
   InspectDataset = "inspect-dataset",
   ResetDataset = "reset-dataset",
   DatasetTransaction = "dataset-transaction",

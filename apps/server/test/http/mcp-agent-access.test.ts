@@ -1,3 +1,4 @@
+import { handleAgentConsent } from "../../src/adapters/agent-consent"
 import { createHash, randomBytes, randomUUID } from "node:crypto"
 import assert from "node:assert/strict"
 import { eq, like } from "drizzle-orm"
@@ -10,15 +11,27 @@ import {
   oauthConsent,
   oauthRefreshToken,
   verification,
+  workflows,
+  workflowRuns,
+  workflowEvents,
 } from "@flowmark/db"
 import {
   createOwnedProject,
   Database,
   submitAgentAccessConsent,
+  revokeAgentAccessConnection,
+  consumeMcpBudget,
 } from "@flowmark/db/persistence"
-import { Effect } from "effect"
+import { Effect, Result } from "effect"
+import {
+  periodCohortToolInput,
+  runSelectionToolInput,
+  studioRunSelection,
+} from "../../../dashboard/features/runs/investigation-selection"
+import { appRouter } from "../../src/adapters/trpc"
 import { LATEST_PROTOCOL_VERSION } from "@flowmark/mcp"
 import { POST as mcpPost } from "../../app/mcp/route"
+import { POST as ingestEvents } from "../../app/v1/events/route"
 import {
   handleMcpPost,
   resetMcpRouteCacheForTests,
@@ -145,6 +158,10 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         mcpRequest({ jsonrpc: "2.0", method: "initialize", id: 1 }),
       )
       expect(response.status).toBe(404)
+      const consent = await handleAgentConsent(
+        new Request(`${testOrigin}/v1/agent-consent`),
+      )
+      expect(consent.status).toBe(404)
       process.env.FLOWMARK_AGENT_ACCESS_ENABLED = previous
       resetMcpRouteCacheForTests()
     })
@@ -178,7 +195,6 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
       const { getAuth } = await import("../../src/auth.js")
       const redirectUri = "http://127.0.0.1:4312/callback"
       const clientId = `mcp-http-${randomUUID()}`
-      const verifier = randomBytes(32).toString("base64url")
       const auth = await Effect.runPromise(getAuth())
       const email = `${randomUUID()}@example.test`
       const password = `${randomUUID()}Aa1`
@@ -227,45 +243,50 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         resourceId: mcpResource,
         createdAt: new Date(),
       })
-      const authorize = await auth.handler(
-        new Request(
-          `${testOrigin}/api/auth/oauth2/authorize?${new URLSearchParams({
-            response_type: "code",
-            client_id: clientId,
-            redirect_uri: redirectUri,
-            scope: "openid profile email offline_access flowmark:read",
-            resource: mcpResource,
-            code_challenge: codeChallenge(verifier),
-            code_challenge_method: "S256",
-          })}`,
-          { headers: { cookie, origin: testOrigin } },
-        ),
-      )
-      const code = new URL(
-        authorize.headers.get("location") ?? "",
-      ).searchParams.get("code")
-      assert.ok(code)
-      const tokenResponse = await auth.handler(
-        new Request(`${testOrigin}/api/auth/oauth2/token`, {
-          method: "POST",
-          headers: {
-            origin: testOrigin,
-            "content-type": "application/x-www-form-urlencoded",
-          },
-          body: new URLSearchParams({
-            grant_type: "authorization_code",
-            client_id: clientId,
-            code,
-            redirect_uri: redirectUri,
-            code_verifier: verifier,
-            resource: mcpResource,
-          }).toString(),
-        }),
-      )
-      expect(tokenResponse.status).toBe(200)
-      const tokens = (await tokenResponse.json()) as {
-        access_token: string
+      const issueToken = async () => {
+        const verifier = randomBytes(32).toString("base64url")
+        const authorize = await auth.handler(
+          new Request(
+            `${testOrigin}/api/auth/oauth2/authorize?${new URLSearchParams({
+              response_type: "code",
+              client_id: clientId,
+              redirect_uri: redirectUri,
+              scope: "openid profile email offline_access flowmark:read",
+              resource: mcpResource,
+              code_challenge: codeChallenge(verifier),
+              code_challenge_method: "S256",
+            })}`,
+            { headers: { cookie, origin: testOrigin } },
+          ),
+        )
+        const code = new URL(
+          authorize.headers.get("location") ?? "",
+        ).searchParams.get("code")
+        assert.ok(code)
+        const tokenResponse = await auth.handler(
+          new Request(`${testOrigin}/api/auth/oauth2/token`, {
+            method: "POST",
+            headers: {
+              origin: testOrigin,
+              "content-type": "application/x-www-form-urlencoded",
+            },
+            body: new URLSearchParams({
+              grant_type: "authorization_code",
+              client_id: clientId,
+              code,
+              redirect_uri: redirectUri,
+              code_verifier: verifier,
+              resource: mcpResource,
+            }).toString(),
+          }),
+        )
+        expect(tokenResponse.status).toBe(200)
+        return (await tokenResponse.json()) as {
+          access_token: string
+          refresh_token: string
+        }
       }
+      const tokens = await issueToken()
       const consentId = randomUUID()
       await connection.db.insert(oauthConsent).values({
         id: consentId,
@@ -313,6 +334,32 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         }).pipe(Effect.provideService(Database, connection.db)),
       )
 
+      const workflowId = randomUUID()
+      const selectedRunId = randomUUID()
+      await connection.db
+        .insert(workflows)
+        .values({ id: workflowId, projectId, name: "selection.proof" })
+      await connection.db.insert(workflowRuns).values({
+        id: selectedRunId,
+        workflowId,
+        externalId: "synthetic-selection-proof",
+        startedAt: new Date("2026-11-02T00:00:00.000Z"),
+      })
+      await connection.db.insert(workflowEvents).values([
+        {
+          eventId: randomUUID(),
+          runId: selectedRunId,
+          type: "started",
+          occurredAt: new Date("2026-11-02T00:00:00.000Z"),
+        },
+        {
+          eventId: randomUUID(),
+          runId: selectedRunId,
+          type: "completed",
+          occurredAt: new Date("2026-11-02T00:00:01.000Z"),
+          durationMs: 1000,
+        },
+      ])
       const authHeaders = {
         authorization: `Bearer ${tokens.access_token}`,
       }
@@ -393,6 +440,79 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         "compare_run",
         "get_workflow_insights",
       ])
+      const selection = Result.getOrThrow(
+        studioRunSelection(projectId, selectedRunId),
+      )
+      const selectionInput = Result.getOrThrow(
+        runSelectionToolInput(JSON.parse(JSON.stringify(selection))),
+      )
+      const selectedRead = await readMcpJsonBody<{
+        result?: {
+          isError?: boolean
+          structuredContent?: { summary: unknown; page: unknown }
+        }
+      }>(
+        await handleMcpPost(
+          mcpRequest(
+            {
+              jsonrpc: "2.0",
+              id: 30,
+              method: "tools/call",
+              params: { name: "get_run", arguments: selectionInput },
+            },
+            sessionHeaders,
+          ),
+        ),
+      )
+      expect(selectedRead.result?.isError).toBeUndefined()
+      const studio = appRouter.createCaller({
+        request: new Request(`${testOrigin}/api/trpc`, {
+          headers: { cookie, "x-flowmark-project-id": projectId },
+        }),
+      })
+      expect(selectedRead.result?.structuredContent?.summary).toEqual(
+        await studio.run.investigationSummary({ id: selectedRunId }),
+      )
+      expect(selectedRead.result?.structuredContent?.page).toEqual(
+        await studio.run.eventPage({ runId: selectedRunId }),
+      )
+      const discovery = await readMcpJsonBody<{
+        result?: { isError?: boolean }
+      }>(
+        await handleMcpPost(
+          mcpRequest(
+            {
+              jsonrpc: "2.0",
+              id: 31,
+              method: "tools/call",
+              params: { name: "list_workflows", arguments: { projectId } },
+            },
+            sessionHeaders,
+          ),
+        ),
+      )
+      expect(discovery.result?.isError).toBeUndefined()
+      const found = await readMcpJsonBody<{ result?: { isError?: boolean } }>(
+        await handleMcpPost(
+          mcpRequest(
+            {
+              jsonrpc: "2.0",
+              id: 32,
+              method: "tools/call",
+              params: {
+                name: "find_runs",
+                arguments: {
+                  projectId,
+                  startedAfter: "2026-11-01T00:00:00.000Z",
+                  startedBefore: "2026-11-08T00:00:00.000Z",
+                },
+              },
+            },
+            sessionHeaders,
+          ),
+        ),
+      )
+      expect(found.result?.isError).toBeUndefined()
       const foreignRunId = randomUUID()
       const missingRun = await handleMcpPost(
         mcpRequest(
@@ -524,9 +644,949 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         result?: { isError?: boolean }
       }>(mixedInsights)
       expect(mixedInsightsBody.result?.isError).toBe(true)
+      const callConnection = async (headers: Record<string, string>) =>
+        readMcpJsonBody<{
+          result?: {
+            isError?: boolean
+            structuredContent?: { projects?: Array<{ id: string }> }
+          }
+        }>(
+          await handleMcpPost(
+            mcpRequest(
+              {
+                jsonrpc: "2.0",
+                id: 9,
+                method: "tools/call",
+                params: { name: "get_connection", arguments: {} },
+              },
+              headers,
+            ),
+          ),
+        )
+      await Promise.all(
+        Array.from({ length: 120 }, () =>
+          Effect.runPromise(
+            consumeMcpBudget(`grant:${authorizationCodeId}`, 120).pipe(
+              Effect.provideService(Database, connection.db),
+            ),
+          ),
+        ),
+      )
+      const exhausted = await callConnection(sessionHeaders)
+      expect(exhausted.result?.isError).toBe(true)
+      // Revocation must still succeed after the read budget is exhausted.
+      await Effect.runPromise(
+        revokeAgentAccessConnection({
+          userId: memberUser,
+          clientId,
+          authorizationCodeId,
+        }).pipe(Effect.provideService(Database, connection.db)),
+      )
+      expect((await callConnection(sessionHeaders)).result?.isError).toBe(true)
+
+      const reconnected = await issueToken()
+      const nextProject = await Effect.runPromise(
+        createOwnedProject(memberUser, {
+          workspace: "Reconnected workspace",
+          project: "Reconnected scope",
+        }).pipe(Effect.provideService(Database, connection.db)),
+      )
+      await Effect.runPromise(
+        submitAgentAccessConsent({
+          userId: memberUser,
+          oauthConsentId: consentId,
+          clientId,
+          redirectUri,
+          requestedScopes: [
+            "openid",
+            "profile",
+            "email",
+            "offline_access",
+            "flowmark:read",
+          ],
+          resourceUrl: mcpResource,
+          projectIds: [nextProject.projectId],
+        }).pipe(Effect.provideService(Database, connection.db)),
+      )
+      // A still-signed old JWT must never inherit the replacement family's projects.
+      expect((await callConnection(sessionHeaders)).result?.isError).toBe(true)
+      const newHeaders = { authorization: `Bearer ${reconnected.access_token}` }
+      const newSession = await handleMcpPost(
+        mcpRequest(
+          {
+            jsonrpc: "2.0",
+            id: 10,
+            method: "initialize",
+            params: {
+              protocolVersion,
+              capabilities: {},
+              clientInfo: { name: "reconnected", version: "0.1.0" },
+            },
+          },
+          newHeaders,
+        ),
+      )
+      expect(newSession.status).toBe(200)
+      const replacementHeaders = mcpSessionHeaders(newHeaders, newSession)
+      await handleMcpPost(
+        mcpRequest(
+          { jsonrpc: "2.0", method: "notifications/initialized" },
+          replacementHeaders,
+        ),
+      )
+      const replacement = await callConnection(replacementHeaders)
+      expect(replacement.result?.isError).toBeUndefined()
+      expect(
+        replacement.result?.structuredContent?.projects?.map(
+          (project) => project.id,
+        ),
+      ).toEqual([nextProject.projectId])
       await connection.db
         .delete(verification)
         .where(like(verification.value, `%"userId":"${session.user.id}"%`))
+    })
+    it("accepts six-tool reference investigation and denies adjacent authority", async () => {
+      const { getAuth } = await import("../../src/auth.js")
+      const redirectUri = "http://127.0.0.1:4313/callback"
+      const clientId = `mcp-accept-${randomUUID()}`
+      const auth = await Effect.runPromise(getAuth())
+      const email = `${randomUUID()}@example.test`
+      const password = `${randomUUID()}Aa1`
+      const signup = await auth.handler(
+        new Request(`${testOrigin}/api/auth/sign-up/email`, {
+          method: "POST",
+          headers: {
+            origin: testOrigin,
+            "content-type": "application/json",
+          },
+          body: JSON.stringify({ name: "MCP acceptance", email, password }),
+        }),
+      )
+      expect(signup.status).toBe(200)
+      const cookie = signup.headers
+        .getSetCookie()
+        .map((value) => value.split(";")[0])
+        .join("; ")
+      const session = await auth.api.getSession({ headers: { cookie } })
+      assert.ok(session?.user.id)
+      const bearerSession = await auth.api.getSession({
+        headers: { authorization: "Bearer not-a-session" },
+      })
+      expect(bearerSession).toBeNull()
+      await connection.db.insert(oauthClient).values({
+        id: randomUUID(),
+        clientId,
+        name: "MCP acceptance reference",
+        redirectUris: [redirectUri],
+        grantTypes: ["authorization_code", "refresh_token"],
+        responseTypes: ["code"],
+        tokenEndpointAuthMethod: "none",
+        applicationType: "native",
+        requirePKCE: true,
+        skipConsent: true,
+        disabled: false,
+        scopes: [
+          "openid",
+          "profile",
+          "email",
+          "offline_access",
+          "flowmark:read",
+        ],
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      await connection.db.insert(oauthClientResource).values({
+        id: randomUUID(),
+        clientId,
+        resourceId: mcpResource,
+        createdAt: new Date(),
+      })
+      const wrongResource = await auth.handler(
+        new Request(
+          `${testOrigin}/api/auth/oauth2/authorize?${new URLSearchParams({
+            response_type: "code",
+            client_id: clientId,
+            redirect_uri: redirectUri,
+            scope: "openid profile email offline_access flowmark:read",
+            resource: `${testOrigin}/not-mcp`,
+            code_challenge: codeChallenge(
+              randomBytes(32).toString("base64url"),
+            ),
+            code_challenge_method: "S256",
+          })}`,
+          { headers: { cookie, origin: testOrigin } },
+        ),
+      )
+      const wrongLocation = wrongResource.headers.get("location")
+      const wrongCode =
+        wrongLocation === null
+          ? null
+          : new URL(wrongLocation, testOrigin).searchParams.get("code")
+      expect(wrongCode).toBeNull()
+      const verifier = randomBytes(32).toString("base64url")
+      const authorize = await auth.handler(
+        new Request(
+          `${testOrigin}/api/auth/oauth2/authorize?${new URLSearchParams({
+            response_type: "code",
+            client_id: clientId,
+            redirect_uri: redirectUri,
+            scope: "openid profile email offline_access flowmark:read",
+            resource: mcpResource,
+            code_challenge: codeChallenge(verifier),
+            code_challenge_method: "S256",
+          })}`,
+          { headers: { cookie, origin: testOrigin } },
+        ),
+      )
+      const code = new URL(
+        authorize.headers.get("location") ?? "",
+      ).searchParams.get("code")
+      assert.ok(code)
+      const tokenResponse = await auth.handler(
+        new Request(`${testOrigin}/api/auth/oauth2/token`, {
+          method: "POST",
+          headers: {
+            origin: testOrigin,
+            "content-type": "application/x-www-form-urlencoded",
+          },
+          body: new URLSearchParams({
+            grant_type: "authorization_code",
+            client_id: clientId,
+            code,
+            redirect_uri: redirectUri,
+            code_verifier: verifier,
+            resource: mcpResource,
+          }).toString(),
+        }),
+      )
+      expect(tokenResponse.status).toBe(200)
+      const tokens = (await tokenResponse.json()) as { access_token: string }
+      const consentId = randomUUID()
+      await connection.db.insert(oauthConsent).values({
+        id: consentId,
+        clientId,
+        userId: session.user.id,
+        resources: [mcpResource],
+        scopes: [
+          "openid",
+          "profile",
+          "email",
+          "offline_access",
+          "flowmark:read",
+        ],
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      const [{ authorizationCodeId }] = await connection.db
+        .select({ authorizationCodeId: oauthRefreshToken.authorizationCodeId })
+        .from(oauthRefreshToken)
+        .where(eq(oauthRefreshToken.clientId, clientId))
+      assert.ok(authorizationCodeId)
+      const project = await Effect.runPromise(
+        createOwnedProject(session.user.id, {
+          workspace: "Acceptance workspace",
+          project: "Acceptance project",
+        }).pipe(Effect.provideService(Database, connection.db)),
+      )
+      const foreign = await Effect.runPromise(
+        createOwnedProject(session.user.id, {
+          workspace: "Foreign workspace",
+          project: "Outside the grant",
+        }).pipe(Effect.provideService(Database, connection.db)),
+      )
+      await Effect.runPromise(
+        submitAgentAccessConsent({
+          userId: session.user.id,
+          oauthConsentId: consentId,
+          clientId,
+          redirectUri,
+          requestedScopes: [
+            "openid",
+            "profile",
+            "email",
+            "offline_access",
+            "flowmark:read",
+          ],
+          resourceUrl: mcpResource,
+          projectIds: [project.projectId],
+        }).pipe(Effect.provideService(Database, connection.db)),
+      )
+      const workflowId = randomUUID()
+      const runId = randomUUID()
+      const bulkyRunId = randomUUID()
+      const oversizedRunId = randomUUID()
+      await connection.db.insert(workflows).values({
+        id: workflowId,
+        projectId: project.projectId,
+        name: "acceptance.investigation",
+      })
+      await connection.db.insert(workflowRuns).values([
+        {
+          id: runId,
+          workflowId,
+          externalId: "synthetic-acceptance",
+          startedAt: new Date("2026-11-03T00:00:00.000Z"),
+        },
+        {
+          id: bulkyRunId,
+          workflowId,
+          externalId: "synthetic-bulky",
+          startedAt: new Date("2026-11-03T00:00:02.000Z"),
+        },
+        {
+          id: oversizedRunId,
+          workflowId,
+          externalId: "synthetic-oversized",
+          startedAt: new Date("2026-11-03T00:00:03.000Z"),
+        },
+      ])
+      await connection.db.insert(workflowEvents).values([
+        {
+          eventId: randomUUID(),
+          runId,
+          type: "started",
+          occurredAt: new Date("2026-11-03T00:00:00.000Z"),
+        },
+        {
+          eventId: randomUUID(),
+          runId,
+          type: "completed",
+          occurredAt: new Date("2026-11-03T00:00:01.000Z"),
+          durationMs: 1000,
+        },
+        ...[0, 1, 2, 3].map((index) => ({
+          eventId: randomUUID(),
+          runId: bulkyRunId,
+          type: "step" as const,
+          step: `bulk-${index}`,
+          reason: "x".repeat(24_000),
+          occurredAt: new Date(Date.UTC(2026, 10, 3, 0, 0, 2, index)),
+        })),
+        {
+          eventId: randomUUID(),
+          runId: oversizedRunId,
+          type: "step",
+          step: "too-large",
+          reason: "y".repeat(80_000),
+          occurredAt: new Date("2026-11-03T00:00:03.000Z"),
+        },
+      ])
+      const authHeaders = { authorization: `Bearer ${tokens.access_token}` }
+      const initialize = await handleMcpPost(
+        mcpRequest(
+          {
+            jsonrpc: "2.0",
+            id: 1,
+            method: "initialize",
+            params: {
+              protocolVersion: "1999-01-01",
+              capabilities: {},
+              clientInfo: { name: "reference-acceptance", version: "0.1.0" },
+            },
+          },
+          authHeaders,
+        ),
+      )
+      expect(initialize.status).toBe(200)
+      const initializedBody = await readMcpJsonBody<{
+        result?: { protocolVersion?: string }
+      }>(initialize.clone())
+      expect(initializedBody.result?.protocolVersion).not.toBe("1999-01-01")
+      expect(initializedBody.result?.protocolVersion).toMatch(
+        /^\d{4}-\d{2}-\d{2}$/,
+      )
+      const sessionHeaders = mcpSessionHeaders(authHeaders, initialize)
+      expect(
+        (
+          await handleMcpPost(
+            mcpRequest(
+              { jsonrpc: "2.0", method: "notifications/initialized" },
+              sessionHeaders,
+            ),
+          )
+        ).status,
+      ).toBe(202)
+      const callTool = async (id: number, name: string, arguments_: unknown) =>
+        readMcpJsonBody<{
+          result?: {
+            isError?: boolean
+            content?: Array<{ text?: string }>
+            structuredContent?: Record<string, unknown>
+          }
+          error?: { message?: string }
+        }>(
+          await handleMcpPost(
+            mcpRequest(
+              {
+                jsonrpc: "2.0",
+                id,
+                method: "tools/call",
+                params: { name, arguments: arguments_ },
+              },
+              sessionHeaders,
+            ),
+          ),
+        )
+      const listed = await readMcpJsonBody<{
+        result?: {
+          tools?: Array<{
+            name: string
+            annotations?: { readOnlyHint?: boolean; destructiveHint?: boolean }
+          }>
+        }
+      }>(
+        await handleMcpPost(
+          mcpRequest(
+            { jsonrpc: "2.0", id: 2, method: "tools/list" },
+            sessionHeaders,
+          ),
+        ),
+      )
+      const toolNames = [...(listed.result?.tools ?? [])].sort((left, right) =>
+        left.name.localeCompare(right.name),
+      )
+      expect(toolNames.map((tool) => tool.name)).toEqual([
+        "compare_run",
+        "find_runs",
+        "get_connection",
+        "get_run",
+        "get_workflow_insights",
+        "list_workflows",
+      ])
+      expect(
+        toolNames.every(
+          (tool) =>
+            tool.annotations?.readOnlyHint === true &&
+            tool.annotations?.destructiveHint === false,
+        ),
+      ).toBe(true)
+      const studio = appRouter.createCaller({
+        request: new Request(`${testOrigin}/api/trpc`, {
+          headers: { cookie, "x-flowmark-project-id": project.projectId },
+        }),
+      })
+      const windows = {
+        currentStartedAfter: "2026-11-01T00:00:00.000Z",
+        currentStartedBefore: "2026-11-08T00:00:00.000Z",
+        previousStartedAfter: "2026-10-25T00:00:00.000Z",
+        previousStartedBefore: "2026-11-01T00:00:00.000Z",
+      }
+      const findInput = {
+        projectId: project.projectId,
+        workflow: "acceptance.investigation",
+        startedAfter: windows.currentStartedAfter,
+        startedBefore: windows.currentStartedBefore,
+      }
+      const connectionResult = await callTool(3, "get_connection", {})
+      expect(connectionResult.result?.isError).toBeUndefined()
+      expect(connectionResult.result?.structuredContent?.projects).toEqual([
+        expect.objectContaining({ id: project.projectId }),
+      ])
+      const workflowsResult = await callTool(4, "list_workflows", {
+        projectId: project.projectId,
+      })
+      expect(workflowsResult.result?.structuredContent?.discovery).toEqual(
+        await studio.workflow.discover({}),
+      )
+      const found = await callTool(5, "find_runs", findInput)
+      const studioRuns = await studio.run.list({
+        workflow: findInput.workflow,
+        startedAfter: findInput.startedAfter,
+        startedBefore: findInput.startedBefore,
+      })
+      const omitObservationClock = (page: typeof studioRuns) => {
+        const attention = page.attention
+        if (!attention) {
+          return page
+        }
+        const { asOf, ...rest } = attention
+        expect(asOf).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/)
+        return { ...page, attention: rest }
+      }
+      expect(
+        omitObservationClock(
+          found.result?.structuredContent?.page as typeof studioRuns,
+        ),
+      ).toEqual(omitObservationClock(studioRuns))
+      const selected = await callTool(6, "get_run", {
+        projectId: project.projectId,
+        runId,
+      })
+      expect(selected.result?.structuredContent?.summary).toEqual(
+        await studio.run.investigationSummary({ id: runId }),
+      )
+      expect(selected.result?.structuredContent?.page).toEqual(
+        await studio.run.eventPage({ runId }),
+      )
+      const compared = await callTool(7, "compare_run", {
+        projectId: project.projectId,
+        runId,
+      })
+      expect(compared.result?.structuredContent?.comparison).toEqual(
+        await studio.run.compare({ id: runId }),
+      )
+      const technical = await callTool(8, "get_workflow_insights", {
+        projectId: project.projectId,
+        mode: "technical",
+        workflow: "acceptance.investigation",
+        ...windows,
+      })
+      expect(technical.result?.structuredContent?.report).toEqual(
+        await studio.project.periodReport({
+          workflow: "acceptance.investigation",
+          ...windows,
+        }),
+      )
+      const periodSelection = {
+        version: 1 as const,
+        kind: "period" as const,
+        projectId: project.projectId,
+        workflow: "acceptance.investigation",
+        ...windows,
+      }
+      const fromSelection = await callTool(
+        14,
+        "get_workflow_insights",
+        Result.getOrThrow(periodCohortToolInput(periodSelection)),
+      )
+      expect(fromSelection.result?.isError).toBeUndefined()
+      expect(fromSelection.result?.structuredContent?.report).toEqual(
+        technical.result?.structuredContent?.report,
+      )
+      expect(
+        Result.isFailure(
+          periodCohortToolInput({
+            ...periodSelection,
+            definitionRevision: "r1",
+          }),
+        ),
+      ).toBe(true)
+      expect(
+        Result.isFailure(
+          periodCohortToolInput({
+            ...periodSelection,
+            environment: "production",
+          }),
+        ),
+      ).toBe(true)
+      const peer = await callTool(15, "compare_run", {
+        projectId: project.projectId,
+        runId,
+        peers: { days: 30 },
+      })
+      expect(peer.result?.isError).toBeUndefined()
+      expect(peer.result?.structuredContent?.comparison).toEqual(
+        await studio.run.compare({ id: runId, selection: { days: 30 } }),
+      )
+      const peerTooWide = await callTool(16, "compare_run", {
+        projectId: project.projectId,
+        runId,
+        peers: { days: 91 },
+      })
+      expect(peerTooWide.result?.isError).toBe(true)
+      await studio.resultDeclarations.create({
+        projectId: project.projectId,
+        workflow: "acceptance.investigation",
+        declaration: {
+          revision: "booked",
+          fields: [
+            {
+              path: ["status"],
+              label: "Status",
+              kind: "count",
+              unit: "rows",
+              aggregate: true,
+            },
+          ],
+        },
+      })
+      const businessQuery = {
+        workflow: "acceptance.investigation",
+        revision: "booked",
+        path: ["status"] as string[],
+        ...windows,
+      }
+      const business = await callTool(9, "get_workflow_insights", {
+        projectId: project.projectId,
+        mode: "business",
+        ...businessQuery,
+      })
+      expect(business.result?.isError).toBeUndefined()
+      expect(business.result?.structuredContent?.report).toEqual(
+        await studio.project.businessInsights(businessQuery),
+      )
+      const deniedProject = await callTool(10, "list_workflows", {
+        projectId: foreign.projectId,
+      })
+      expect(deniedProject.result?.isError).toBe(true)
+      expect(deniedProject.result?.content?.[0]?.text).toContain(
+        "not authorized",
+      )
+      const bulky = await callTool(11, "get_run", {
+        projectId: project.projectId,
+        runId: bulkyRunId,
+        section: "events",
+        limit: 4,
+      })
+      const bulkyPage = bulky.result?.structuredContent?.page as
+        { events?: unknown[]; nextCursor?: string | null } | undefined
+      expect(bulky.result?.isError).toBeUndefined()
+      expect(bulkyPage?.events?.length ?? 0).toBeGreaterThan(0)
+      expect(bulkyPage?.events?.length ?? 4).toBeLessThan(4)
+      expect(typeof bulkyPage?.nextCursor).toBe("string")
+      expect(bulkyPage).toEqual(
+        await studio.run.eventPage({
+          runId: bulkyRunId,
+          limit: bulkyPage?.events?.length,
+        }),
+      )
+      const oversized = await callTool(12, "get_run", {
+        projectId: project.projectId,
+        runId: oversizedRunId,
+        section: "events",
+        limit: 1,
+      })
+      expect(oversized.result?.isError).toBe(true)
+      expect(oversized.result?.content?.[0]?.text).toContain("response budget")
+      const oversizedRequest = await handleMcpPost(
+        new Request(`${testOrigin}/mcp`, {
+          method: "POST",
+          headers: {
+            accept: "application/json, text/event-stream",
+            "content-type": "application/json",
+            ...authHeaders,
+          },
+          body: JSON.stringify({ pad: "z".repeat(70_000) }),
+        }),
+      )
+      expect(oversizedRequest.status).toBe(413)
+      const ingestion = await ingestEvents(
+        new Request(`${testOrigin}/v1/events`, {
+          method: "POST",
+          headers: {
+            authorization: authHeaders.authorization,
+            "content-type": "application/json",
+          },
+          body: JSON.stringify({ events: [] }),
+        }),
+      )
+      expect(ingestion.status).toBe(401)
+      const tokenCaller = appRouter.createCaller({
+        request: new Request(`${testOrigin}/api/trpc`, {
+          headers: { authorization: authHeaders.authorization },
+        }),
+      })
+      await expect(
+        tokenCaller.project.create({ name: "Should not exist" }),
+      ).rejects.toMatchObject({ code: "UNAUTHORIZED" })
+      await expect(
+        tokenCaller.resultDeclarations.create({
+          projectId: project.projectId,
+          workflow: "acceptance.investigation",
+          declaration: {
+            revision: "v1",
+            fields: [
+              {
+                path: ["processed"],
+                label: "Imported",
+                kind: "count" as const,
+                unit: "rows",
+              },
+            ],
+          },
+        }),
+      ).rejects.toMatchObject({ code: "UNAUTHORIZED" })
+      const unknownTool = await callTool(13, "ingest_events", {})
+      expect(
+        unknownTool.result?.isError === true || unknownTool.error !== undefined,
+      ).toBe(true)
+      await Effect.runPromise(
+        revokeAgentAccessConnection({
+          userId: session.user.id,
+          clientId,
+          authorizationCodeId,
+        }).pipe(Effect.provideService(Database, connection.db)),
+      )
+      const revoked = await callTool(14, "get_connection", {})
+      expect(revoked.result?.isError).toBe(true)
+      expect(await studio.run.investigationSummary({ id: runId })).toEqual(
+        selected.result?.structuredContent?.summary,
+      )
+      await connection.db
+        .delete(verification)
+        .where(like(verification.value, `%"userId":"${session.user.id}"%`))
+    })
+
+    it("binds real signed provider consent to the selected account and projects before code exchange", async () => {
+      const { getAuth } = await import("../../src/auth.js")
+      const auth = await Effect.runPromise(getAuth())
+      const signup = async () => {
+        const response = await auth.handler(
+          new Request(`${testOrigin}/api/auth/sign-up/email`, {
+            method: "POST",
+            headers: { origin: testOrigin, "content-type": "application/json" },
+            body: JSON.stringify({
+              name: "Consent test",
+              email: `${randomUUID()}@example.test`,
+              password: `${randomUUID()}Aa1`,
+            }),
+          }),
+        )
+        expect(response.status).toBe(200)
+        const cookie = response.headers
+          .getSetCookie()
+          .map((value) => value.split(";")[0])
+          .join("; ")
+        const session = await auth.api.getSession({ headers: { cookie } })
+        assert.ok(session)
+        return { cookie, session }
+      }
+      const account = await signup()
+      const foreign = await signup()
+      const clientId = `consent-${randomUUID()}`
+      const redirectUri = "http://127.0.0.1:4312/callback"
+      const scopes = ["openid", "offline_access", "flowmark:read"]
+      await connection.db.insert(oauthClient).values({
+        id: randomUUID(),
+        clientId,
+        name: "Untrusted <script> client",
+        redirectUris: [redirectUri],
+        grantTypes: ["authorization_code", "refresh_token"],
+        responseTypes: ["code"],
+        tokenEndpointAuthMethod: "none",
+        applicationType: "native",
+        requirePKCE: true,
+        skipConsent: false,
+        disabled: false,
+        scopes,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      await connection.db.insert(oauthClientResource).values({
+        id: randomUUID(),
+        clientId,
+        resourceId: mcpResource,
+        createdAt: new Date(),
+      })
+      const createProject = (name: string) =>
+        Effect.runPromise(
+          createOwnedProject(account.session.user.id, {
+            workspace: name,
+            project: name,
+          }).pipe(Effect.provideService(Database, connection.db)),
+        )
+      const selected = await createProject("Selected consent project")
+      const excluded = await createProject("Excluded consent project")
+      const verifier = randomBytes(32).toString("base64url")
+      const authorization = await auth.handler(
+        new Request(
+          `${testOrigin}/api/auth/oauth2/authorize?${new URLSearchParams({
+            response_type: "code",
+            client_id: clientId,
+            redirect_uri: redirectUri,
+            scope: scopes.join(" "),
+            resource: mcpResource,
+            code_challenge: codeChallenge(verifier),
+            code_challenge_method: "S256",
+          })}`,
+          { headers: { cookie: account.cookie, origin: testOrigin } },
+        ),
+      )
+      const consentLocation = new URL(
+        authorization.headers.get("location") ?? "",
+        testOrigin,
+      )
+      expect(consentLocation.pathname).toBe("/connect/agent/consent")
+      const oauthQuery = consentLocation.search.slice(1)
+      const view = await handleAgentConsent(
+        new Request(
+          `${testOrigin}/v1/agent-consent?${new URLSearchParams({ oauth_query: oauthQuery })}`,
+          { headers: { cookie: account.cookie } },
+        ),
+      )
+      expect(view.status).toBe(200)
+      expect(view.headers.get("cache-control")).toBe("no-store")
+      const metadata = (await view.json()) as {
+        accountBinding: string
+        account: { id: string }
+        projects: Array<{ id: string }>
+      }
+      expect(metadata.account.id).toBe(account.session.user.id)
+      expect(metadata.projects.map((project) => project.id)).toContain(
+        selected.projectId,
+      )
+      const submit = (
+        cookie: string,
+        projectIds: string[],
+        accept = true,
+        query = oauthQuery,
+      ) =>
+        handleAgentConsent(
+          new Request(`${testOrigin}/v1/agent-consent`, {
+            method: "POST",
+            headers: {
+              cookie,
+              origin: testOrigin,
+              "content-type": "application/json",
+            },
+            body: JSON.stringify({
+              oauthQuery: query,
+              accountBinding: metadata.accountBinding,
+              accept,
+              projectIds,
+            }),
+          }),
+        )
+      expect((await submit(account.cookie, [])).status).toBe(400)
+      expect((await submit(foreign.cookie, [selected.projectId])).status).toBe(
+        400,
+      )
+      expect((await submit(account.cookie, [randomUUID()])).status).toBe(400)
+      expect(
+        (
+          await submit(
+            account.cookie,
+            [selected.projectId],
+            true,
+            oauthQuery.replace(clientId, "substituted"),
+          )
+        ).status,
+      ).toBe(400)
+      const denial = await submit(account.cookie, [], false)
+      expect(denial.status).toBe(200)
+      expect(
+        new URL(
+          ((await denial.json()) as { redirect: string }).redirect,
+        ).searchParams.get("error"),
+      ).toBe("access_denied")
+      const accepted = await submit(account.cookie, [selected.projectId])
+      expect(accepted.status).toBe(200)
+      const callback = new URL(
+        ((await accepted.json()) as { redirect: string }).redirect,
+      )
+      const code = callback.searchParams.get("code")
+      assert.ok(code)
+      const exchanged = await auth.handler(
+        new Request(`${testOrigin}/api/auth/oauth2/token`, {
+          method: "POST",
+          headers: {
+            origin: testOrigin,
+            "content-type": "application/x-www-form-urlencoded",
+          },
+          body: new URLSearchParams({
+            grant_type: "authorization_code",
+            client_id: clientId,
+            code,
+            redirect_uri: redirectUri,
+            code_verifier: verifier,
+            resource: mcpResource,
+          }).toString(),
+        }),
+      )
+      expect(exchanged.status).toBe(200)
+      const tokens = (await exchanged.json()) as { access_token: string }
+      const { readAgentAccessGrantFamily } =
+        await import("@flowmark/auth/agent-access")
+      const claims = JSON.parse(
+        Buffer.from(tokens.access_token.split(".")[1], "base64url").toString(),
+      ) as { flowmark_grant_family: string }
+      const family = await Effect.runPromise(
+        readAgentAccessGrantFamily(connection.db, {
+          subjectUserId: account.session.user.id,
+          clientId,
+          issuer: testOrigin,
+          resource: mcpResource,
+          authorizationCodeId: claims.flowmark_grant_family,
+        }),
+      )
+      const { getDelegatedReaderProject } =
+        await import("@flowmark/db/persistence")
+      const reader = (projectId: string) =>
+        Effect.runPromise(
+          getDelegatedReaderProject({
+            userId: account.session.user.id,
+            clientId,
+            authorizationCodeId: family.familyId,
+            projectId,
+          }).pipe(Effect.provideService(Database, connection.db)),
+        )
+      expect(await reader(selected.projectId)).toBe(selected.projectId)
+      expect(await reader(excluded.projectId)).toBeUndefined()
+      const nextAuthorization = await auth.handler(
+        new Request(
+          `${testOrigin}/api/auth/oauth2/authorize?${new URLSearchParams({ response_type: "code", client_id: clientId, redirect_uri: redirectUri, scope: scopes.join(" "), resource: mcpResource, code_challenge: codeChallenge(verifier), code_challenge_method: "S256", prompt: "consent" })}`,
+          { headers: { cookie: account.cookie, origin: testOrigin } },
+        ),
+      )
+      const nextQuery = new URL(
+        nextAuthorization.headers.get("location")!,
+        testOrigin,
+      ).search.slice(1)
+      const nextView = await handleAgentConsent(
+        new Request(
+          `${testOrigin}/v1/agent-consent?${new URLSearchParams({ oauth_query: nextQuery })}`,
+          { headers: { cookie: account.cookie } },
+        ),
+      )
+      expect(nextView.status).toBe(200)
+      const nextMetadata = (await nextView.json()) as { accountBinding: string }
+      const replacement = await handleAgentConsent(
+        new Request(`${testOrigin}/v1/agent-consent`, {
+          method: "POST",
+          headers: {
+            cookie: account.cookie,
+            origin: testOrigin,
+            "content-type": "application/json",
+          },
+          body: JSON.stringify({
+            oauthQuery: nextQuery,
+            accountBinding: nextMetadata.accountBinding,
+            accept: true,
+            projectIds: [excluded.projectId],
+          }),
+        }),
+      )
+      expect(replacement.status).toBe(200)
+      expect(await reader(selected.projectId)).toBeUndefined()
+      const nextCode = new URL(
+        ((await replacement.json()) as { redirect: string }).redirect,
+      ).searchParams.get("code")!
+      const nextExchange = await auth.handler(
+        new Request(`${testOrigin}/api/auth/oauth2/token`, {
+          method: "POST",
+          headers: {
+            origin: testOrigin,
+            "content-type": "application/x-www-form-urlencoded",
+          },
+          body: new URLSearchParams({
+            grant_type: "authorization_code",
+            client_id: clientId,
+            code: nextCode,
+            redirect_uri: redirectUri,
+            code_verifier: verifier,
+            resource: mcpResource,
+          }).toString(),
+        }),
+      )
+      expect(nextExchange.status).toBe(200)
+      const nextTokens = (await nextExchange.json()) as { access_token: string }
+      const nextClaims = JSON.parse(
+        Buffer.from(
+          nextTokens.access_token.split(".")[1],
+          "base64url",
+        ).toString(),
+      ) as { flowmark_grant_family: string }
+      const nextReader = (projectId: string) =>
+        Effect.runPromise(
+          getDelegatedReaderProject({
+            userId: account.session.user.id,
+            clientId,
+            authorizationCodeId: nextClaims.flowmark_grant_family,
+            projectId,
+          }).pipe(Effect.provideService(Database, connection.db)),
+        )
+      expect(await nextReader(excluded.projectId)).toBe(excluded.projectId)
+      expect(await nextReader(selected.projectId)).toBeUndefined()
     })
   },
 )

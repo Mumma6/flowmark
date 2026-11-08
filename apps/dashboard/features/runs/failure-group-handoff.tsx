@@ -1,7 +1,9 @@
 "use client"
 
 import { useMemo, useSyncExternalStore } from "react"
+import { useAgentAccessDeployment } from "../platform/runtime-config"
 import { useProject } from "../projects/project-context"
+import { connectedFailureCalls } from "./connected-retrieval"
 import { InvestigationContextHandoffCard } from "./investigation-context-handoff-card"
 import { buildSafeFailureGroupHandoff } from "./safe-run-context-handoff"
 
@@ -35,6 +37,7 @@ export function FailureGroupHandoff({
   truncated: boolean
 }) {
   const { current } = useProject()
+  const deployment = useAgentAccessDeployment()
   const origin = useSyncExternalStore(
     subscribe,
     () => window.location.origin,
@@ -62,6 +65,20 @@ export function FailureGroupHandoff({
         truncated,
       },
       origin,
+      deployment.kind === "enabled"
+        ? {
+            mode: "connected",
+            calls: connectedFailureCalls({
+              projectId: current.id,
+              workflow,
+              code,
+              currentStartedAfter,
+              currentStartedBefore,
+              previousStartedAfter,
+              previousStartedBefore,
+            }),
+          }
+        : { mode: "manual" },
     )
   }, [
     code,
@@ -78,6 +95,7 @@ export function FailureGroupHandoff({
     sourcePath,
     truncated,
     workflow,
+    deployment.kind,
   ])
   if (!handoff) {
     return null

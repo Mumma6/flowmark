@@ -8,6 +8,7 @@ type AccessClaims = {
   readonly client_id?: unknown
   readonly azp?: unknown
   readonly exp?: unknown
+  readonly flowmark_grant_family?: unknown
 }
 
 const nonEmptyString = (value: unknown) =>
@@ -23,6 +24,7 @@ const oauthClientIdFromClaims = (claims: AccessClaims) =>
 
 export type FlowmarkMcpAuthInfo = {
   readonly subjectUserId: string
+  readonly authorizationCodeId: string
   readonly clientId: string
   readonly resourceUrl: string
   readonly issuer: string
@@ -34,6 +36,7 @@ export const authInfoFromClaims = (
 ): FlowmarkMcpAuthInfo | undefined => {
   return Option.all({
     subjectUserId: nonEmptyString(claims.sub),
+    authorizationCodeId: nonEmptyString(claims.flowmark_grant_family),
     clientId: oauthClientIdFromClaims(claims),
   }).pipe(
     Option.map((identity) => ({

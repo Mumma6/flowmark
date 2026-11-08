@@ -38,11 +38,13 @@ export function CopyButton({
   label = "Copy",
   variant = "outline",
   onCopied,
+  onCopyFailed,
 }: {
   value: string
   label?: string
   variant?: "default" | "outline"
   onCopied?: () => void
+  onCopyFailed?: () => void
 }) {
   return (
     <Button
@@ -66,13 +68,15 @@ export function CopyButton({
               type: "success",
             })
           },
-          onFailure: () =>
+          onFailure: () => {
+            onCopyFailed?.()
             toast.add({
               id: "clipboard",
               title: clipboardCopyFailureTitle,
               description: clipboardCopyFailureDescription,
               type: "error",
-            }),
+            })
+          },
         })
       }}
     >

@@ -1,6 +1,7 @@
 import type { BetterAuthPlugin } from "better-auth"
 import { APIError, createAuthMiddleware } from "better-auth/api"
 import { Data, Effect, Exit } from "effect"
+import { AUTH_CLIENT_IP_HEADER } from "./client-identity.js"
 import type { createAuthRateLimitStorage } from "./rate-limit-storage.js"
 
 class AuthLimitStorageError extends Data.TaggedError("AuthLimitStorageError")<{
@@ -22,8 +23,48 @@ export function accountRateLimits(
     hooks: {
       before: [
         {
-          matcher: (ctx) => !!ctx.path && ctx.path in policies,
+          matcher: (ctx) =>
+            !!ctx.path &&
+            (ctx.path in policies ||
+              ctx.path === "/oauth2/authorize" ||
+              ctx.path === "/oauth2/token"),
           handler: createAuthMiddleware(async (ctx) => {
+            if (
+              ctx.path === "/oauth2/authorize" ||
+              ctx.path === "/oauth2/token"
+            ) {
+              const operation =
+                ctx.path === "/oauth2/authorize" ? "authorize" : "token"
+              const source =
+                ctx.headers?.get(AUTH_CLIENT_IP_HEADER) ??
+                "unattributed-service"
+              const consumed = await Effect.runPromiseExit(
+                Effect.tryPromise({
+                  try: () =>
+                    storage.consumeAgent(`agent-oauth:${operation}:${source}`, {
+                      window: 60,
+                      max: operation === "authorize" ? 60 : 120,
+                    }),
+                  catch: (cause) => new AuthLimitStorageError({ cause }),
+                }),
+              )
+              const decision = Exit.match(consumed, {
+                onSuccess: (value) => value,
+                onFailure: () => {
+                  throw new APIError("SERVICE_UNAVAILABLE", {
+                    message: "Authorization admission is unavailable.",
+                  })
+                },
+              })
+              if (!decision.allowed) {
+                throw new APIError(
+                  "TOO_MANY_REQUESTS",
+                  { message: "Authorization budget exhausted." },
+                  { "Retry-After": String(decision.retryAfter) },
+                )
+              }
+              return
+            }
             const policy = policies[ctx.path as keyof typeof policies]
             const email =
               typeof ctx.body?.email === "string"

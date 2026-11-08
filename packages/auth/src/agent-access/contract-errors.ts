@@ -4,4 +4,5 @@ export class AgentAccessContractError extends Data.TaggedError(
   "AgentAccessContractError",
 )<{
   readonly reason: string
+  readonly cause?: unknown
 }> {}

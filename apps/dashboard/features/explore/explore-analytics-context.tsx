@@ -54,9 +54,9 @@ export function ExploreAnalyticsContext({
   return (
     <section
       aria-labelledby="explore-analytics-title"
-      className="min-w-0 rounded-xl border border-border bg-card/40"
+      className="min-w-0 rounded-xl border border-highlight/30 bg-card shadow-sm"
     >
-      <div className="flex flex-wrap items-end justify-between gap-3 border-b border-border px-5 py-4 sm:px-6">
+      <div className="flex flex-wrap items-end justify-between gap-3 border-b border-highlight/20 bg-highlight/5 px-5 py-4 sm:px-6">
         <div>
           <h2 id="explore-analytics-title" className="text-xs font-medium">
             Reported outcomes and failures

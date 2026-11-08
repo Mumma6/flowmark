@@ -1,4 +1,33 @@
+import { Array as EffectArray } from "effect"
+
 export type AgentClientId = "codex" | "cursor" | "claude-code" | "custom"
+
+const connectedGuide = (
+  id: AgentClientId,
+  mcpUrl: string,
+): AgentClientGuide => {
+  const label = MatchLabel[id]
+  return {
+    id,
+    label,
+    summary: `Inspectable steps for ${label}. Vendor compatibility is not established; the tested path is the reference HTTP client. Studio does not edit the client's files, and copying this text does not grant access.`,
+    steps: [
+      `Register the MCP endpoint ${mcpUrl} in ${label}. Use OAuth; do not paste an ingestion key or a dashboard cookie.`,
+      "Approve only the projects you select on the Studio consent screen.",
+      "After that client completes an authorized read, return here. Access verified appears only from that read.",
+      "A saved snippet or a failed copy is not a connection, and it does not mean an agent process is running.",
+    ],
+    pasteHint:
+      "Copy the endpoint into the client yourself. Flowmark does not write a global client configuration.",
+  }
+}
+
+const MatchLabel: Record<AgentClientId, string> = {
+  codex: "Codex",
+  cursor: "Cursor",
+  "claude-code": "Claude Code",
+  custom: "Custom agent",
+}
 
 export type AgentClientGuide = {
   readonly id: AgentClientId
@@ -21,7 +50,12 @@ export type AgentExampleQuestion = {
   readonly prompt: string
 }
 
-export function agentClientGuides(): readonly AgentClientGuide[] {
+export function agentClientGuides(
+  mcpUrl?: string,
+): readonly AgentClientGuide[] {
+  if (mcpUrl) {
+    return EffectArray.map(agentClientOrder, (id) => connectedGuide(id, mcpUrl))
+  }
   return [
     {
       id: "codex",

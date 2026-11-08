@@ -28,6 +28,7 @@ export function RunRelatedRunsPanel({
   retryOf,
   correlationId,
   parentRunId,
+  page,
 }: {
   runId: string
   source?: string
@@ -35,6 +36,7 @@ export function RunRelatedRunsPanel({
   retryOf?: { workflow: string; runId: string } | null
   correlationId?: string | null
   parentRunId?: string | null
+  page?: { readonly cursor?: string; readonly limit?: number }
 }) {
   const trpc = useTRPC()
   const client = useTRPCClient()
@@ -42,11 +44,22 @@ export function RunRelatedRunsPanel({
   const pages = useInfiniteQuery({
     queryKey: [
       ...trpc.run.relatedPage.queryKey({ runId }),
-      { projectId: current?.id ?? null },
+      {
+        projectId: current?.id ?? null,
+        cursor: page?.cursor ?? null,
+        limit: page?.limit ?? null,
+      },
     ],
-    initialPageParam: undefined as string | undefined,
+    initialPageParam: page?.cursor,
     queryFn: ({ pageParam, signal }) =>
-      client.run.relatedPage.query({ runId, cursor: pageParam }, { signal }),
+      client.run.relatedPage.query(
+        {
+          runId,
+          ...(typeof pageParam === "string" ? { cursor: pageParam } : {}),
+          ...(page?.limit ? { limit: page.limit } : {}),
+        },
+        { signal },
+      ),
     getNextPageParam: (page) => page.nextCursor ?? undefined,
     enabled: Boolean(current),
   })

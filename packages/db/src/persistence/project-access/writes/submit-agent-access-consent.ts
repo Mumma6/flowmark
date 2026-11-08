@@ -1,5 +1,12 @@
 import { and, desc, eq, gt, isNull, or, sql } from "drizzle-orm"
-import { Array as EffectArray, Effect } from "effect"
+import {
+  Array as EffectArray,
+  Effect,
+  Option,
+  Order,
+  Result,
+  pipe,
+} from "effect"
 import {
   agentAccessGrantProjects,
   agentAccessOauthConsentIntents,
@@ -20,14 +27,14 @@ const scopeSetsEqual = (
   a: ReadonlyArray<string> | null | undefined,
   b: ReadonlyArray<string> | null | undefined,
 ) => {
-  const as = [...(a ?? [])].map((s) => s.trim()).filter((s) => s.length > 0)
-  const bs = [...(b ?? [])].map((s) => s.trim()).filter((s) => s.length > 0)
-  if (as.length !== bs.length) {
-    return false
-  }
-  const sortCopy = (xs: Array<string>) =>
-    [...xs].sort((x, y) => x.localeCompare(y))
-  return JSON.stringify(sortCopy(as)) === JSON.stringify(sortCopy(bs))
+  const normalize = (scopes: ReadonlyArray<string> | null | undefined) =>
+    pipe(
+      scopes ?? [],
+      EffectArray.map((scope) => scope.trim()),
+      EffectArray.filter((scope) => scope.length > 0),
+      EffectArray.sort(Order.String),
+    )
+  return JSON.stringify(normalize(a)) === JSON.stringify(normalize(b))
 }
 
 export const submitAgentAccessConsent = Effect.fn("submitAgentAccessConsent")(
@@ -60,16 +67,18 @@ export const submitAgentAccessConsent = Effect.fn("submitAgentAccessConsent")(
         new AgentAccessConsentRejected({ reason: "Duplicate project ids." }),
       )
     }
-    for (const projectId of uniqueProjects) {
-      const member = yield* getMemberProject(input.userId, projectId)
-      if (!member) {
-        return yield* Effect.fail(
-          new AgentAccessConsentRejected({
+    yield* Effect.forEach(
+      uniqueProjects,
+      Effect.fn(function* (projectId) {
+        const member = yield* getMemberProject(input.userId, projectId)
+        if (!member) {
+          return yield* new AgentAccessConsentRejected({
             reason: "One or more projects are not in this account.",
-          }),
-        )
-      }
-    }
+          })
+        }
+      }),
+      { discard: true },
+    )
     const db = yield* Database
     const [consent] = yield* runQuery(
       DatabaseOperation.SubmitAgentAccessConsent,
@@ -180,9 +189,12 @@ export const submitAgentAccessConsent = Effect.fn("submitAgentAccessConsent")(
           )
           .orderBy(desc(oauthRefreshToken.createdAt)),
     )
-    const authorizationCodeId = refreshRows.find(
-      (r) => r.authorizationCodeId,
-    )?.authorizationCodeId
+    const authorizationCodeId = pipe(
+      refreshRows,
+      EffectArray.findFirst((row) => Boolean(row.authorizationCodeId)),
+      Option.flatMap((row) => Option.fromNullishOr(row.authorizationCodeId)),
+      Option.getOrUndefined,
+    )
     if (!authorizationCodeId) {
       return yield* Effect.fail(
         new AgentAccessConsentRejected({
@@ -194,6 +206,54 @@ export const submitAgentAccessConsent = Effect.fn("submitAgentAccessConsent")(
     return yield* runQuery(DatabaseOperation.SubmitAgentAccessConsent, () =>
       db.transaction(async (tx) => {
         const now = new Date()
+        // Serialize consent/revoke against this family and recheck liveness in
+        // the transaction. Duplicate submissions may repeat, never widen, scope.
+        const active = await tx
+          .select({ id: oauthRefreshToken.id })
+          .from(oauthRefreshToken)
+          .where(
+            and(
+              eq(oauthRefreshToken.authorizationCodeId, authorizationCodeId),
+              eq(oauthRefreshToken.userId, input.userId),
+              eq(oauthRefreshToken.clientId, input.clientId),
+              isNull(oauthRefreshToken.revoked),
+              or(
+                isNull(oauthRefreshToken.expiresAt),
+                gt(oauthRefreshToken.expiresAt, now),
+              ),
+            ),
+          )
+          .for("update")
+        if (active.length === 0) {
+          return Result.fail(
+            new AgentAccessConsentRejected({
+              reason: "The delegated session is no longer active.",
+            }),
+          )
+        }
+        const bound = await tx
+          .select({ projectId: agentAccessGrantProjects.projectId })
+          .from(agentAccessGrantProjects)
+          .where(
+            eq(
+              agentAccessGrantProjects.authorizationCodeId,
+              authorizationCodeId,
+            ),
+          )
+        if (
+          bound.length > 0 &&
+          !scopeSetsEqual(
+            EffectArray.map(bound, (row) => row.projectId),
+            uniqueProjects,
+          )
+        ) {
+          return Result.fail(
+            new AgentAccessConsentRejected({
+              reason:
+                "Project scope is immutable for this authorization. Reconnect before changing projects.",
+            }),
+          )
+        }
         if (
           priorAuthorizationCodeId &&
           priorAuthorizationCodeId !== authorizationCodeId
@@ -228,7 +288,7 @@ export const submitAgentAccessConsent = Effect.fn("submitAgentAccessConsent")(
             ),
           )
         await tx.insert(agentAccessGrantProjects).values(
-          uniqueProjects.map((projectId) => ({
+          EffectArray.map(uniqueProjects, (projectId) => ({
             authorizationCodeId,
             projectId,
           })),
@@ -256,8 +316,8 @@ export const submitAgentAccessConsent = Effect.fn("submitAgentAccessConsent")(
               updatedAt: new Date(),
             },
           })
-        return authorizationCodeId
+        return Result.succeed(authorizationCodeId)
       }),
-    )
+    ).pipe(Effect.flatMap(Effect.fromResult))
   },
 )

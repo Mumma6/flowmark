@@ -7,7 +7,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@flowmark/ui"
-import { Option } from "effect"
+import { Option, Result } from "effect"
+import { studioRunSelection } from "./investigation-selection"
 import { useMemo, useSyncExternalStore } from "react"
 import { useSearchParams } from "next/navigation"
 import type { RunEvent } from "../platform/api-types"
@@ -24,6 +25,8 @@ import {
   investigationReturn,
   runInvestigationPath,
 } from "./investigation-navigation"
+import { useAgentAccessDeployment } from "../platform/runtime-config"
+import { connectedRunCalls } from "./connected-retrieval"
 import { InvestigationContextHandoffCard } from "./investigation-context-handoff-card"
 import { buildSafeRunContextHandoff } from "./safe-run-context-handoff"
 
@@ -40,6 +43,7 @@ export function RunHandoff({
 }) {
   const params = useSearchParams()
   const { current } = useProject()
+  const deployment = useAgentAccessDeployment()
   const source = params.has("from")
     ? investigationReturn(params.get("from")).href
     : undefined
@@ -55,6 +59,23 @@ export function RunHandoff({
     () => readExplorerFilters(params),
     [filterQuery, params],
   )
+  const runSelection = current
+    ? studioRunSelection(current.id, runId)
+    : undefined
+  const studioReturn =
+    runSelection && origin
+      ? Result.map(
+          runSelection,
+          (selection) =>
+            `${origin}${runInvestigationPath(runId, source, undefined, undefined, selection)}`,
+        )
+      : undefined
+  const returnUrl = studioReturn
+    ? Result.match(studioReturn, {
+        onFailure: () => null,
+        onSuccess: (href) => href,
+      })
+    : null
   const safeContext = useMemo(() => {
     if (!current?.id) {
       return Option.none()
@@ -67,10 +88,25 @@ export function RunHandoff({
         runPath,
         sourceFrom,
         filters,
+        returnUrl,
       },
       origin,
+      deployment.kind === "enabled"
+        ? { mode: "connected", calls: connectedRunCalls(current.id, runId) }
+        : { mode: "manual" },
     )
-  }, [current?.id, current?.name, events, filters, origin, runPath, sourceFrom])
+  }, [
+    current?.id,
+    current?.name,
+    events,
+    filters,
+    origin,
+    returnUrl,
+    runId,
+    runPath,
+    sourceFrom,
+    deployment.kind,
+  ])
   const summary = investigationHandoff(events, runPath)
   if (Option.isNone(summary)) {
     return null
@@ -105,6 +141,38 @@ export function RunHandoff({
               value={stringifyExport(buildTimelineExport(events))}
             />
           </div>
+          {runSelection
+            ? Result.match(runSelection, {
+                onFailure: () => (
+                  <p role="alert" className="text-sm text-destructive">
+                    This run cannot be represented by the supported selection
+                    format.
+                  </p>
+                ),
+                onSuccess: (selection) => (
+                  <details className="rounded-lg border border-border p-4">
+                    <summary className="cursor-pointer text-sm font-medium">
+                      Structured run selection
+                    </summary>
+                    <p className="my-3 text-xs leading-6 text-muted-foreground">
+                      Version 1 identifies this run and its first event page. It
+                      contains no credentials and grants no access. Each read
+                      observes the current evidence.
+                    </p>
+                    <pre className="mb-3 overflow-x-auto whitespace-pre-wrap break-all text-xs">
+                      {JSON.stringify(selection, null, 2)}
+                    </pre>
+                    <CopyButton
+                      label="Copy run selection"
+                      value={JSON.stringify(selection)}
+                    />
+                    {returnUrl ? (
+                      <CopyButton label="Copy Studio link" value={returnUrl} />
+                    ) : null}
+                  </details>
+                ),
+              })
+            : null}
           <p className="text-sm leading-6 text-muted-foreground">
             Full JSON exports include raw payloads. Prefer{" "}
             <strong className="font-medium text-foreground">

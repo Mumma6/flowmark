@@ -57,3 +57,4 @@ export {
 export type { WorkflowAttempt, WorkflowRetryReference } from "./attempts.js"
 
 export * from "./expectations.js"
+export * from "./investigation-selection.js"

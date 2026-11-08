@@ -6,7 +6,10 @@ import { Effect } from "effect"
 import { createDatabase } from "../../src/client.js"
 import type { FlowmarkDatabase } from "../../src/client.js"
 import { Database } from "../../src/persistence/database.js"
-import { AgentAccessConsentRejected } from "../../src/persistence/project-access/agent-access-errors.js"
+import {
+  AgentAccessConsentRejected,
+  AgentAccessNotFound,
+} from "../../src/persistence/project-access/agent-access-errors.js"
 import { getDelegatedReaderProject } from "../../src/persistence/project-access/queries/get-delegated-reader-project.js"
 import { revokeAgentAccessConnection } from "../../src/persistence/project-access/writes/revoke-agent-access-connection.js"
 import { submitAgentAccessConsent } from "../../src/persistence/project-access/writes/submit-agent-access-consent.js"
@@ -254,17 +257,27 @@ test(
         role: "owner",
       })
 
+      await assert.rejects(
+        () =>
+          exec(
+            submitAgentAccessConsent({
+              ...consentInput,
+              projectIds: [ownedA.projectId, ownedB.projectId],
+            }),
+          ),
+        (error) => error instanceof AgentAccessConsentRejected,
+      )
       const concurrent = await Promise.all([
         exec(
           submitAgentAccessConsent({
             ...consentInput,
-            projectIds: [ownedA.projectId, ownedB.projectId],
+            projectIds: [ownedA.projectId],
           }),
         ),
         exec(
           submitAgentAccessConsent({
             ...consentInput,
-            projectIds: [ownedA.projectId, ownedB.projectId],
+            projectIds: [ownedA.projectId],
           }),
         ),
       ])
@@ -280,7 +293,32 @@ test(
           projectId: ownedB.projectId,
         }),
       )
-      assert.equal(both, ownedB.projectId)
+      assert.equal(
+        both,
+        undefined,
+        "duplicate consent must not expand the original scope",
+      )
+
+      await assert.rejects(
+        () =>
+          exec(
+            revokeAgentAccessConnection({
+              userId: otherUserId,
+              clientId,
+              authorizationCodeId,
+            }),
+          ),
+        (error: unknown) => error instanceof AgentAccessNotFound,
+      )
+      const stillOwned = await exec(
+        getDelegatedReaderProject({
+          userId,
+          clientId,
+          authorizationCodeId,
+          projectId: ownedA.projectId,
+        }),
+      )
+      assert.equal(stillOwned, ownedA.projectId)
 
       await exec(
         revokeAgentAccessConnection({

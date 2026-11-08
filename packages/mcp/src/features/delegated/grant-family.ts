@@ -1,47 +1,35 @@
 import { readAgentAccessGrantFamily } from "@flowmark/auth/agent-access"
-import { createDatabase } from "@flowmark/db"
-import { Effect, Option } from "effect"
+import { ApiSettings, DatabaseLive } from "@flowmark/api"
+import { Database } from "@flowmark/db/persistence"
+import { Effect, Layer } from "effect"
 import type { FlowmarkMcpAuthInfo } from "../../auth/claims.js"
-import {
-  McpConfigurationError,
-  McpConnectionResolveError,
-} from "../../errors.js"
+import { McpConnectionResolveError } from "../../errors.js"
 
 export type McpGrantFamily = {
   readonly familyId: string
 }
 
+// The existing API layer owns acquisition, preview guards and scoped release.
+const database = DatabaseLive.pipe(Layer.provide(ApiSettings.layer))
+
 export const resolveMcpGrantFamily = Effect.fn("McpGrantFamily.resolve")(
   function* (identity: FlowmarkMcpAuthInfo) {
-    const configuredUrl = yield* Option.fromNullishOr(
-      process.env.DATABASE_URL,
-    ).pipe(
-      Option.filter((url) => url.length > 0),
-      Effect.fromOption(
-        () =>
-          new McpConfigurationError({
-            reason: "Workflow data is not configured.",
-          }),
-      ),
-    )
-    const { db } = createDatabase(configuredUrl)
-    return yield* readAgentAccessGrantFamily(db, {
+    const db = yield* Database
+    const family = yield* readAgentAccessGrantFamily(db, {
       subjectUserId: identity.subjectUserId,
       clientId: identity.clientId,
+      authorizationCodeId: identity.authorizationCodeId,
       issuer: identity.issuer,
       resource: identity.resourceUrl,
-    }).pipe(
-      Effect.catchTags({
-        AgentAccessContractError: (error) =>
-          Effect.fail(
-            new McpConnectionResolveError({
-              reason: error.reason,
-            }),
-          ),
-      }),
-      Effect.map(
-        (family) => ({ familyId: family.familyId }) satisfies McpGrantFamily,
-      ),
-    )
+    })
+    return { familyId: family.familyId } satisfies McpGrantFamily
   },
+  Effect.provide(database),
+  Effect.mapError(
+    (cause) =>
+      new McpConnectionResolveError({
+        reason: "The token's active grant family could not be resolved.",
+        cause,
+      }),
+  ),
 )

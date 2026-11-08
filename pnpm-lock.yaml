@@ -40,6 +40,9 @@ importers:
       "@flowmark/ui":
         specifier: workspace:*
         version: link:../../packages/ui
+      "@flowmarkdev/core":
+        specifier: workspace:*
+        version: link:../../packages/core
       "@tanstack/react-query":
         specifier: ^5.104.5
         version: 5.104.5(@types/react@19.3.0)(react@19.3.1)

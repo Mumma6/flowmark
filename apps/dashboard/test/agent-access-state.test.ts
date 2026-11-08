@@ -20,5 +20,6 @@ it("clears local copy markers and tracks successful targets separately", () => {
     handoffIntroCopied: false,
     exampleQuestionsCopied: {},
     clientGuidanceCopied: {},
+    copyFailed: false,
   })
 })

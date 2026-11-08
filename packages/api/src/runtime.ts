@@ -1,3 +1,5 @@
+import { AgentConsent } from "./features/project-access/use-cases/agent-consent.js"
+import { AgentConsentRepositoryLive } from "./features/project-access/adapters/agent-consent.js"
 import { ManageResultDeclarations } from "./features/result-declarations/use-cases/manage-result-declarations.js"
 import { ResultDeclarationsLive } from "./features/result-declarations/adapters/result-declarations.js"
 import { ResultDeclarationStore } from "@flowmark/db/persistence"
@@ -30,6 +32,7 @@ const persistence = Layer.mergeAll(
 ).pipe(Layer.provide(DatabaseLive))
 const databaseAdapters = Layer.mergeAll(
   ResultDeclarationsLive,
+  AgentConsentRepositoryLive,
   WorkflowRepositoryLive,
   ProjectCredentialsLive,
 ).pipe(Layer.provide(persistence))
@@ -42,6 +45,7 @@ const agentAccessAdapter = Layer.mergeAll(
 ).pipe(Layer.provide(persistence))
 
 export const ApiLive = Layer.mergeAll(
+  AgentConsent.layer,
   ManageResultDeclarations.layer,
   IngestWorkflowEvents.layer,
   GetProjectWorkflowData.layer,
@@ -60,6 +64,7 @@ export function runApi<A, E>(
     A,
     E,
     | AgentAccess
+    | AgentConsent
     | ManageResultDeclarations
     | IngestWorkflowEvents
     | GetProjectWorkflowData

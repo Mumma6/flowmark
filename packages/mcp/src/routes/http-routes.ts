@@ -1,6 +1,8 @@
 import { Effect, Option } from "effect"
 import { createFlowmarkMcpPostHandler } from "../http/post-handler.js"
 import { serveMcpProtectedResourceMetadata } from "../http/protected-resource-metadata.js"
+import { AGENT_ACCESS_EXECUTION_BOUNDS } from "@flowmark/auth/agent-access"
+import { consumeAdmission } from "../runtime/admission.js"
 import { McpAuthGateway } from "../ports/mcp-auth-gateway.js"
 import {
   agentAccessDisabledResponse,
@@ -58,11 +60,19 @@ const resolvePostHandler = Effect.fn("McpRoutes.resolvePostHandler")(
 export const createMcpHttpRoutes = (run: RunMcpEffect) => {
   const handleMcpPost = async (request: Request) => {
     if (!cachedPost) {
-      try {
-        cachedPost = await run(resolvePostHandler())
-      } catch {
-        cachedPost = () => Promise.resolve(discoveryUnavailable())
+      const resolved = await run(
+        resolvePostHandler().pipe(
+          Effect.map(Option.some),
+          Effect.catchTags({
+            AgentAccessRuntimeError: () => Effect.succeed(Option.none()),
+            McpDiscoveryError: () => Effect.succeed(Option.none()),
+          }),
+        ),
+      )
+      if (Option.isNone(resolved)) {
+        return discoveryUnavailable()
       }
+      cachedPost = resolved.value
     }
     if (request.method !== "POST") {
       return methodNotAllowed()
@@ -82,6 +92,25 @@ export const createMcpHttpRoutes = (run: RunMcpEffect) => {
     return Option.match(runtime, {
       onNone: () => agentAccessDisabledResponse(),
       onSome: async (resolved) => {
+        const admitted = await Effect.runPromise(
+          consumeAdmission(
+            "service:discovery",
+            AGENT_ACCESS_EXECUTION_BOUNDS.discoveryPerServicePerMinute,
+          ).pipe(
+            Effect.as(true),
+            Effect.catchTag("McpToolReadError", () => Effect.succeed(false)),
+          ),
+          { signal: request.signal },
+        )
+        if (!admitted) {
+          return Response.json(
+            { message: "Discovery admission is unavailable or exhausted." },
+            {
+              status: 503,
+              headers: { "cache-control": "no-store", "retry-after": "60" },
+            },
+          )
+        }
         const gateway = await run(
           Effect.gen(function* () {
             const auth = yield* McpAuthGateway

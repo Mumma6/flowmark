@@ -29,6 +29,12 @@ answers MCP HTTP with an explicit not-found response.
 Effect Schema. `PersistenceError` and the other tagged read failures stay in
 the error channel and become MCP tool errors only at the response boundary.
 
+Each token carries its own signed `flowmark_grant_family`. Reads check that
+exact family's active resource binding in PostgreSQL, so a revoked token cannot
+inherit a replacement connection. Tokens without this claim require fresh
+authorization. Grant reads use the API's scoped database layer, which closes
+connections on success, failure and interruption.
+
 ## HTTP
 
 `createMcpHttpRoutes` returns the `POST /mcp` handler and the protected-resource
@@ -48,3 +54,47 @@ pnpm --filter @flowmark/mcp build
 The protected HTTP flow is covered by `apps/server/test/http/mcp-agent-access.test.ts`,
 which runs only when `TEST_DATABASE_URL` is set. Root `pnpm test:integration`
 builds this package before those tests.
+
+## Admission and execution bounds
+
+Every tool call checks shared PostgreSQL admission: 3000/service, 120/grant and
+600/authorized project per minute. Discovery has a separate 300/service budget.
+Storage failure denies admission; revocation remains independent of read budgets.
+Request bodies and full UTF-8 tool results are capped at 64 KiB. Tool execution
+expires after 15 seconds, SQL statements after 5 seconds. Client interruption
+cancels active SQL before pool cleanup. Oversized pages are read again with a
+smaller limit and a new valid cursor. A single oversized record or more than
+1000 operation facts per compared run returns an explicit limitation.
+
+Studio exports a strict version-1 run selection from `@flowmarkdev/core`.
+`runSelectionToolInput` converts it to `get_run` arguments. It carries identifiers
+and paging only; the caller still needs its own active grant and membership.
+
+## Disabled mode and diagnostics
+
+Startup serves `POST /mcp` only when `FLOWMARK_AGENT_ACCESS_ENABLED=true` and
+the API, issuer, and dashboard origins resolve. Otherwise the route and consent
+bridge answer `404`. That is an unavailable deployment, not an empty connection.
+`GET /mcp` stays `405` with `Allow: POST`; this adapter does not offer an SSE
+transport. Unauthenticated calls answer `401` with a `WWW-Authenticate`
+challenge and no evidence.
+
+`initialize` follows the MCP SDK negotiation. A supported protocol revision is
+echoed. An unsupported revision is not accepted as the session version; the
+server selects a supported revision instead. This reference proof is the HTTP
+adapter in `apps/server/test/http/mcp-agent-access.test.ts`. It does not claim
+that Codex, Cursor, Claude, or any other vendor client is compatible.
+
+Safe diagnostics stay fixed labels. Admission storage failure returns
+`Read admission is unavailable.` and omits the driver cause. Request and
+serialized tool results stop at 64 KiB. A page that does not fit is read again
+at a smaller limit with that page's cursor. One record that still does not fit,
+or a comparison above 1000 operation facts, returns an explicit limitation.
+Tool execution expires after 15 seconds and SQL statements after 5 seconds.
+No diagnostic includes the access token, raw event payload, or database error
+text.
+
+A `flowmark:read` token is not an ingestion key and not a dashboard session.
+It cannot ingest events, create projects, or write result declarations. Project
+arguments outside the grant are rejected before the read is treated as success.
+Revocation is the persisted grant family, checked on the next authorized call.

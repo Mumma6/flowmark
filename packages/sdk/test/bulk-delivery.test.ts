@@ -35,22 +35,27 @@ function blockedClient(delivery: DeliveryOptions = {}) {
 }
 
 describe("bounded bulk delivery", () => {
-  it("coalesces 10,000 absolute snapshots and preserves the final progress, report, operation pair and terminal", async () => {
+  it("coalesces repeated absolute snapshots and preserves the final progress, report, operation pair and terminal", async () => {
+    const snapshots = 8
     const { client, events, release } = blockedClient({ progress: "latest" })
     const flow = client.workflow("bulk")
     const operation = flow.operation("import")
-    for (let completed = 1; completed <= 10_000; completed++) {
-      flow.progress({ completed, total: 10_000, unit: "records" })
-    }
+    // Replacement is per unsent slot. Queue capacity is covered separately.
+    pipe(
+      Array.range(1, snapshots),
+      Array.forEach((completed) =>
+        flow.progress({ completed, total: snapshots, unit: "records" }),
+      ),
+    )
     expect(client.deliveryHealth()).toMatchObject({
       pending: 3,
       pendingProgress: 1,
-      coalesced: 9999,
+      coalesced: snapshots - 1,
       dropped: 0,
       failed: 0,
     })
-    flow.report({ saved: 10_000 })
-    flow.done({ result: { saved: 10_000 } })
+    flow.report({ saved: snapshots })
+    flow.done({ result: { saved: snapshots } })
     operation.done()
     expect(client.deliveryHealth().pending).toBe(6)
     release()
@@ -63,12 +68,15 @@ describe("bounded bulk delivery", () => {
       "operation_completed",
       "completed",
     ])
-    expect(events[2]).toMatchObject({ completed: 10_000, total: 10_000 })
-    expect(events[5]).toMatchObject({ result: { saved: 10_000 } })
+    expect(events[2]).toMatchObject({
+      completed: snapshots,
+      total: snapshots,
+    })
+    expect(events[5]).toMatchObject({ result: { saved: snapshots } })
     expect(client.deliveryHealth()).toMatchObject({
       pending: 0,
       pendingProgress: 0,
-      coalesced: 9999,
+      coalesced: snapshots - 1,
       failed: 0,
     })
   })

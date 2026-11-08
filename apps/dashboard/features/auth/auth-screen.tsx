@@ -26,9 +26,11 @@ import { authenticate } from "./operations"
 export function AuthScreen({
   mode,
   localAccount,
+  returnTo,
 }: {
   mode: "sign-in" | "sign-up"
   localAccount?: { readonly email: string; readonly password: string }
+  returnTo?: string
 }) {
   const router = useRouter()
   const isSignUp = mode === "sign-up"
@@ -49,7 +51,9 @@ export function AuthScreen({
     Result.match(result, {
       onFailure: (failure) => setError(failure.reason),
       onSuccess: (href) => {
-        router.push(href)
+        router.push(
+          returnTo?.startsWith("/connect/agent/consent?") ? returnTo : href,
+        )
         router.refresh()
       },
     })

@@ -1,7 +1,6 @@
-import { and, eq, gt, isNull, or } from "drizzle-orm"
-import { Array as EffectArray, Effect, Option, Schema } from "effect"
+import { Effect, Schema } from "effect"
 import type { FlowmarkDatabase } from "@flowmark/db"
-import { oauthRefreshToken } from "@flowmark/db/schema"
+import { Database, getAgentAccessGrantFamily } from "@flowmark/db/persistence"
 import { AgentAccessContractError } from "./contract-errors.js"
 
 export const AgentAccessGrantFamilySchema = Schema.Struct({
@@ -14,30 +13,6 @@ export const AgentAccessGrantFamilySchema = Schema.Struct({
 
 export type AgentAccessGrantFamily = typeof AgentAccessGrantFamilySchema.Type
 
-const activeFamilyRows = (
-  db: FlowmarkDatabase,
-  input: { readonly subjectUserId: string; readonly clientId: string },
-) =>
-  db
-    .select({
-      familyId: oauthRefreshToken.authorizationCodeId,
-      subjectUserId: oauthRefreshToken.userId,
-      clientId: oauthRefreshToken.clientId,
-      resources: oauthRefreshToken.resources,
-    })
-    .from(oauthRefreshToken)
-    .where(
-      and(
-        eq(oauthRefreshToken.userId, input.subjectUserId),
-        eq(oauthRefreshToken.clientId, input.clientId),
-        isNull(oauthRefreshToken.revoked),
-        or(
-          isNull(oauthRefreshToken.expiresAt),
-          gt(oauthRefreshToken.expiresAt, new Date()),
-        ),
-      ),
-    )
-
 export const readAgentAccessGrantFamily = Effect.fn(
   "AgentAccess.readGrantFamily",
 )(function* (
@@ -45,36 +20,25 @@ export const readAgentAccessGrantFamily = Effect.fn(
   input: {
     readonly subjectUserId: string
     readonly clientId: string
+    readonly authorizationCodeId: string
     readonly issuer: string
     readonly resource: string
   },
 ) {
-  const rows = yield* Effect.tryPromise({
-    try: () => activeFamilyRows(db, input),
-    catch: () =>
-      new AgentAccessContractError({
-        reason: "Grant family could not be read.",
-      }),
-  })
-  const familyIds = EffectArray.dedupe(
-    EffectArray.getSomes(
-      EffectArray.map(rows, (row) =>
-        row.familyId ? Option.some(row.familyId) : Option.none(),
-      ),
+  const familyId = yield* getAgentAccessGrantFamily(input).pipe(
+    Effect.provideService(Database, db),
+    Effect.mapError(
+      (cause) =>
+        new AgentAccessContractError({
+          reason: "Grant family could not be read.",
+          cause,
+        }),
     ),
   )
-  const familyId = familyIds[0]
-  if (!familyId || familyIds.length !== 1) {
+  if (!familyId) {
     return yield* new AgentAccessContractError({
-      reason: "Grant family is missing or ambiguous.",
-    })
-  }
-  const bound = EffectArray.every(rows, (row) =>
-    EffectArray.contains(row.resources ?? [], input.resource),
-  )
-  if (!bound) {
-    return yield* new AgentAccessContractError({
-      reason: "Grant family resource does not match the MCP resource.",
+      reason:
+        "The token's grant family is missing, expired, revoked, or does not match the resource.",
     })
   }
   return {

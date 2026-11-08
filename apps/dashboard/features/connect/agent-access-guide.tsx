@@ -23,6 +23,9 @@ import { publicConfig } from "../platform/config-public"
 import type { AgentClientGuide } from "./agent-access-guidance"
 import type { RemoteAgentAccessDeployment } from "./agent-access-capability"
 import { useAgentAccess } from "./use-agent-access"
+import { useAgentReadVerification } from "./use-agent-read-verification"
+import { AgentConnections } from "./agent-connections"
+import type { AgentReadVerification } from "./agent-access-verification"
 
 function SetupCode({
   title,
@@ -30,12 +33,14 @@ function SetupCode({
   copyLabel,
   copied,
   onCopied,
+  onCopyFailed,
 }: {
   title: string
   value: string
   copyLabel: string
   copied?: boolean
   onCopied?: () => void
+  onCopyFailed?: () => void
 }) {
   return (
     <div className="grid gap-2">
@@ -51,7 +56,12 @@ function SetupCode({
             </Badge>
           ) : null}
         </div>
-        <CopyButton value={value} label={copyLabel} onCopied={onCopied} />
+        <CopyButton
+          value={value}
+          label={copyLabel}
+          onCopied={onCopied}
+          onCopyFailed={onCopyFailed}
+        />
       </div>
       <pre className="max-h-80 overflow-auto rounded-lg border border-border bg-muted p-4 text-xs leading-6 whitespace-pre-wrap text-foreground">
         {value}
@@ -78,17 +88,26 @@ function RemoteAccessStatus({
   if (deployment.kind === "enabled") {
     return (
       <Alert>
-        <AlertTitle>Remote read tools available</AlertTitle>
+        <AlertTitle>Remote read endpoint</AlertTitle>
         <AlertDescription className="grid gap-2">
           <p>
             MCP endpoint for this environment:{" "}
             <code className="text-foreground">{deployment.mcpUrl}</code>
           </p>
           <p className="text-sm">
-            Follow client-specific registration only after OAuth consent is
-            implemented for this deployment.
+            Register it in your client and approve projects in Studio. The
+            endpoint alone is not authorization. Vendor client compatibility is
+            not established; the tested path is the reference HTTP client.
           </p>
         </AlertDescription>
+      </Alert>
+    )
+  }
+  if (deployment.kind === "unavailable") {
+    return (
+      <Alert>
+        <AlertTitle>{deployment.headline}</AlertTitle>
+        <AlertDescription>{deployment.detail}</AlertDescription>
       </Alert>
     )
   }
@@ -107,14 +126,83 @@ function RemoteAccessStatus({
   )
 }
 
+function verificationCopy(verification: AgentReadVerification) {
+  if (verification._tag === "Verified" && verification.runs === "none") {
+    return "Access verified — no runs recorded yet"
+  }
+  if (verification._tag === "Verified") {
+    return "Access verified"
+  }
+  if (verification._tag === "Granted") {
+    return "Authorization granted. No authenticated read has been recorded."
+  }
+  if (verification._tag === "WrongProject") {
+    return "This account has no agent grant for the current project. Approve it again or switch project."
+  }
+  if (verification._tag === "Denied") {
+    return "The read was rejected. Sign in with the account that owns the project and try again."
+  }
+  if (verification._tag === "Unavailable") {
+    return "The access check is temporarily unavailable. Retry shortly."
+  }
+  if (verification._tag === "UnsupportedClient") {
+    return "This client is not one of the supported setup paths."
+  }
+  if (verification._tag === "CopyFailed") {
+    return "The last copy failed. Retry it. A failed copy is not access."
+  }
+  if (verification._tag === "Copied") {
+    return "Configuration was copied on this page. That does not grant access."
+  }
+  if (verification._tag === "Disabled") {
+    return "Remote read access is not enabled. Copied Studio text stays a manual handoff."
+  }
+  return "Access has not been checked yet."
+}
+
+function AccessCheck({
+  verification,
+  copied,
+  copyFailed,
+}: {
+  verification: AgentReadVerification
+  copied: boolean
+  copyFailed: boolean
+}) {
+  const verified = verification._tag === "Verified"
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Access check</CardTitle>
+        <CardDescription>
+          Copied configuration, an authorization grant, and an authenticated
+          read stay separate. None of them means an agent process is running.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="grid gap-3 text-sm leading-6">
+        <p>Configuration copied: {copied ? "Yes, on this page" : "No"}</p>
+        {copyFailed ? <p>The last copy failed. Retry the copy.</p> : null}
+        <p>{verificationCopy(verification)}</p>
+        {verified ? (
+          <Badge variant="success" className="justify-self-start">
+            {verificationCopy(verification)}
+          </Badge>
+        ) : null}
+      </CardContent>
+    </Card>
+  )
+}
+
 function ClientGuidancePanel({
   guide,
   copied,
   onCopied,
+  onCopyFailed,
 }: {
   guide: AgentClientGuide
   copied: boolean
   onCopied: () => void
+  onCopyFailed: () => void
 }) {
   return (
     <div className="grid gap-4">
@@ -130,6 +218,7 @@ function ClientGuidancePanel({
         copyLabel="Copy guidance"
         copied={copied}
         onCopied={onCopied}
+        onCopyFailed={onCopyFailed}
       />
       <p className="text-sm leading-6 text-muted-foreground">
         {guide.pasteHint}
@@ -147,9 +236,21 @@ export function AgentAccessGuide() {
     handoffIntro,
     transient,
     markCopied,
+    markCopyFailed,
     studioOrigin,
     deployment,
+    current,
   } = access
+  const verification = useAgentReadVerification({
+    deployment,
+    projectId: current?.id,
+    transient,
+    clientSupported: true,
+  })
+  const configurationCopied =
+    transient.handoffIntroCopied ||
+    Object.values(transient.exampleQuestionsCopied).some(Boolean) ||
+    Object.values(transient.clientGuidanceCopied).some(Boolean)
 
   return (
     <section
@@ -172,6 +273,12 @@ export function AgentAccessGuide() {
         </p>
       </div>
       <RemoteAccessStatus deployment={deployment} />
+      <AccessCheck
+        verification={verification}
+        copied={configurationCopied}
+        copyFailed={transient.copyFailed}
+      />
+      {deployment.kind === "enabled" ? <AgentConnections /> : null}
       <Card>
         <CardHeader>
           <CardTitle>Manual evidence handoff</CardTitle>
@@ -205,6 +312,7 @@ export function AgentAccessGuide() {
             copyLabel="Copy checklist"
             copied={transient.handoffIntroCopied}
             onCopied={() => markCopied({ kind: "handoff-intro" })}
+            onCopyFailed={markCopyFailed}
           />
           {studioOrigin ? (
             <p className="text-xs text-muted-foreground">
@@ -236,6 +344,7 @@ export function AgentAccessGuide() {
                   questionId: example.id,
                 })
               }
+              onCopyFailed={markCopyFailed}
             />
           ))}
         </CardContent>
@@ -244,9 +353,9 @@ export function AgentAccessGuide() {
         <CardHeader>
           <CardTitle>Choose your client</CardTitle>
           <CardDescription>
-            Four manual paths without remote MCP. Copy guidance into the surface
-            you already use; nothing here registers OAuth or stores a
-            connection.
+            {deployment.kind === "enabled"
+              ? "Use the endpoint for this environment. Copying it does not write your client configuration or grant access."
+              : "Four manual paths without remote MCP. Copy guidance into the surface you already use; nothing here registers OAuth or stores a connection."}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -270,6 +379,7 @@ export function AgentAccessGuide() {
                   onCopied={() =>
                     markCopied({ kind: "client", client: client.id })
                   }
+                  onCopyFailed={markCopyFailed}
                 />
               </TabsContent>
             ))}

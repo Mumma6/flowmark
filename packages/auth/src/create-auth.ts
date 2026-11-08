@@ -142,6 +142,9 @@ export function createFlowmarkAuth(options: {
       max: 300,
       customStorage: storage,
       customRules: {
+        "/oauth2/authorize": false,
+        "/oauth2/token": false,
+        "/oauth2/revoke": false,
         "/sign-in/email": sourceRule(60),
         "/sign-up/email": sourceRule(20),
         "/request-password-reset": sourceRule(30),

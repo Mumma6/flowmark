@@ -7,18 +7,35 @@ import { useProject } from "../projects/project-context"
 import { DataState } from "../shared/dashboard-components"
 import { formatDuration } from "../shared/format"
 
-export function RunOperationsPagePanel({ runId }: { runId: string }) {
+export function RunOperationsPagePanel({
+  runId,
+  page,
+}: {
+  runId: string
+  page?: { readonly cursor?: string; readonly limit?: number }
+}) {
   const trpc = useTRPC()
   const client = useTRPCClient()
   const { current } = useProject()
   const pages = useInfiniteQuery({
     queryKey: [
       ...trpc.run.operationsPage.queryKey({ runId }),
-      { projectId: current?.id ?? null },
+      {
+        projectId: current?.id ?? null,
+        cursor: page?.cursor ?? null,
+        limit: page?.limit ?? null,
+      },
     ],
-    initialPageParam: undefined as string | undefined,
+    initialPageParam: page?.cursor,
     queryFn: ({ pageParam, signal }) =>
-      client.run.operationsPage.query({ runId, cursor: pageParam }, { signal }),
+      client.run.operationsPage.query(
+        {
+          runId,
+          ...(typeof pageParam === "string" ? { cursor: pageParam } : {}),
+          ...(page?.limit ? { limit: page.limit } : {}),
+        },
+        { signal },
+      ),
     getNextPageParam: (page) => page.nextCursor ?? undefined,
     enabled: Boolean(current),
   })

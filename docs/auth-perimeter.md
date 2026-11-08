@@ -41,7 +41,11 @@ the local fixture use the same provider login implementation.
   refused. Authorization-code exchange, PKCE and refresh rotation stay in the
   provider. The server-owned grant family is that provider authorization-code
   id, with the subject, client, configured issuer and MCP resource. It carries
-  no project. A provider token is not a project grant: project reads still
+  no project. Access tokens carry that exact id in the provider-signed
+  `flowmark_grant_family` claim; refresh preserves it. MCP checks the claimed
+  family against active PostgreSQL state and never substitutes another active
+  family for the same user/client. Tokens without the claim require fresh
+  authorization. A provider token is not a project grant: project reads still
   require a later explicit grant intersected with current membership. Enabling
   the provider leaves signup, sign-in, password recovery, origin checks and
   account limits on the same handlers. `get-session` accepts the dashboard
@@ -49,7 +53,12 @@ the local fixture use the same provider login implementation.
   `POST /mcp` is not served by the auth handler. The API app serves it only when
   `FLOWMARK_AGENT_ACCESS_ENABLED=true` and origins resolve (`FLOWMARK_API_URL`,
   `BETTER_AUTH_URL`, `FLOWMARK_DASHBOARD_ORIGIN`). When disabled, the route
-  returns an honest `404` (no working remote read claim). Protected-resource
+  returns an honest `404` (no working remote read claim). `GET /mcp` is `405`.
+  An unsupported `initialize` protocol revision is negotiated to a supported
+  revision and is not stored as the session version. Admission failure uses the
+  fixed label `Read admission is unavailable.` Requests and tool results are
+  capped at 64 KiB. A read token is not an ingestion key or a dashboard
+  session, so it cannot ingest, manage accounts, or write declarations. Protected-resource
   metadata is on the API host (`/.well-known/oauth-protected-resource` and the
   path-aware `/mcp` suffix per RFC 9728). A mismatched issuer and auth base URL
   fails before the provider is composed. With `agentAccess` omitted, discovery
@@ -293,3 +302,32 @@ no secrets or raw source IPs were logged. No hosted quota exhaustion, external
 mail, SDK publication or auth package extraction was part of this rollout.
 The separately approved [v0.6.3 release](https://github.com/Mumma6/flowmark/releases/tag/v0.6.3)
 was published at the same verified SHA.
+
+## Browser agent consent
+
+The dedicated `/connect/agent/sign-in` route preserves the provider-signed query
+through login to `/connect/agent/consent`. The form displays the current account,
+stored client name/id, requested persistent read access and explicit project
+choices, initially empty. Client text is rendered as text; no remote logo is loaded.
+
+The same-origin `/api/agent-consent` proxy forwards to session-only
+`GET/POST /v1/agent-consent`. The server verifies the provider query signature,
+expiry, registered redirect, known scopes and exact resource before displaying
+metadata. A secret HMAC binds submission to the query and current user/session;
+account changes require reloading. Origin checks remain enforced on submission.
+
+The native provider owns consent and code issuance. Before returning the callback,
+Flowmark locks the actual unexpired provider authorization-code record and binds
+only submitted current memberships to that code's hash in
+`agent_access_grant_projects`. Token exchange retains the same family identifier.
+The canonical provider consent serializes authorization versions. A replacement
+revokes the prior family, invalidates its unexchanged code and updates the existing
+consent intent before returning the new callback. Old tokens cannot inherit the
+replacement projects. No plaintext tokens, new cookie authority or new schema
+are introduced. Denial
+returns the provider's denial callback; cancel leaves the request without consent.
+Responses use `no-store` and `no-referrer`. Signing out does not revoke prior grants.
+
+OAuth authorize/token admission has separate durable counters from account login
+and MCP reads. Revoke is exempt from those creation/read budgets. See
+[ADR 0008](./decisions/0008-connect-agent-protocol-contract.md) for limits.

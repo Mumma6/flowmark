@@ -23,6 +23,7 @@ const TokenResponse = Schema.Struct({
 })
 const JwtClaims = Schema.Struct({
   iss: Schema.String,
+  flowmark_grant_family: Schema.NonEmptyString,
   aud: Schema.Union([Schema.String, Schema.Array(Schema.String)]),
 })
 const OAuthError = Schema.Struct({
@@ -309,6 +310,7 @@ it(
               )
               const family = yield* readAgentAccessGrantFamily(database.db, {
                 subjectUserId: user.user.id,
+                authorizationCodeId: claims.flowmark_grant_family,
                 clientId,
                 issuer: local.issuerOrigin,
                 resource: `${local.apiOrigin}/mcp`,
@@ -341,6 +343,21 @@ it(
               )
               assert.equal(typeof rotated.refresh_token, "string")
               assert.equal(rotated.refresh_token === refreshToken, false)
+              const rotatedClaims = yield* Schema.decodeUnknownEffect(
+                JwtClaims,
+              )(
+                JSON.parse(
+                  Buffer.from(
+                    rotated.access_token.split(".")[1] ?? "",
+                    "base64url",
+                  ).toString("utf8"),
+                ),
+              )
+              assert.equal(
+                rotatedClaims.flowmark_grant_family,
+                claims.flowmark_grant_family,
+              )
+
               const wrongResource = yield* Effect.promise(() =>
                 auth.handler(
                   new Request(`${local.apiOrigin}/api/auth/oauth2/token`, {
