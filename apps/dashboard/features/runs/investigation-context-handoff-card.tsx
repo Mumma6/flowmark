@@ -10,6 +10,7 @@ import {
 } from "@flowmark/ui"
 import { Check } from "lucide-react"
 import { CopyButton } from "../shared/dashboard-components"
+import { separateObservationNotice } from "./connected-retrieval"
 import type { SafeRunContextHandoff } from "./safe-run-context-handoff"
 import { useRunHandoffCopyState } from "./use-run-handoff-copy-state"
 
@@ -36,6 +37,9 @@ export function InvestigationContextHandoffCard({
         {!compact ? <CardDescription>{description}</CardDescription> : null}
       </CardHeader>
       <CardContent className="grid gap-4">
+        <p className="text-sm leading-6 text-muted-foreground">
+          {separateObservationNotice}
+        </p>
         <div className="flex flex-wrap items-center gap-3">
           <CopyButton
             label="Copy investigation context"

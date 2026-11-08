@@ -6,6 +6,7 @@ import type {
 } from "../platform/api-types"
 import {
   retrievalInstructionLines,
+  separateObservationNotice,
   type RetrievalCall,
 } from "./connected-retrieval"
 import {
@@ -23,6 +24,7 @@ export type SafeRunContextInput = {
   readonly sourceFrom: string | null
   readonly filters: ExplorerFilters
   readonly returnUrl?: string | null
+  readonly selectionNote?: string | null
 }
 
 export type HandoffDelivery =
@@ -47,12 +49,14 @@ function handoffHeader(delivery: HandoffDelivery): readonly string[] {
     return [
       "Flowmark investigation context (connected retrieval)",
       "Recorded facts are separate from hypotheses. Do not treat a copied snippet as authorization, a saved chat, or proof of root cause.",
+      separateObservationNotice,
       ...retrievalInstructionLines(delivery.calls),
     ]
   }
   return [
     "Flowmark investigation context (manual handoff)",
     "Remote MCP read tools are not used on this deployment. Paste this text deliberately and open the evidence link — do not instruct an agent to call unavailable Flowmark tools.",
+    separateObservationNotice,
     "",
   ]
 }
@@ -214,6 +218,9 @@ export function buildSafeRunContextHandoff(
           `Workflow: ${first.workflow}`,
           `Run external ID: ${first.externalId}`,
           `Run evidence: ${input.runPath}`,
+          input.selectionNote
+            ? `Selection not applied: ${input.selectionNote}`
+            : null,
           input.returnUrl
             ? `Studio return (same signed-in project; the link grants no access): ${input.returnUrl}`
             : "Studio return: open the evidence link in the signed-in project",
@@ -226,7 +233,7 @@ export function buildSafeRunContextHandoff(
           `Failure code: ${failure?.error?.code ?? "Not recorded"}`,
           `Reported outcome label: ${terminal?.outcome ?? "Not recorded"}`,
           `Recorded events: ${events.length}`,
-        ],
+        ].filter((line): line is string => line !== null),
         selection.omissions,
         delivery,
       )
@@ -282,7 +289,10 @@ export function buildSafeFailureGroupHandoff(
       "- No issue assignment, resolution, or stored issue identifier exists in Flowmark",
       input.truncated
         ? "- The Issues table shows only the largest groups in this window"
-        : "- Exact cohort uses workflow, failure code, and the UTC window above — not a broader fallback query",
+        : null,
+      input.code
+        ? "- Exact cohort uses workflow, failure code, and the UTC window above — not a broader fallback query"
+        : "- No failure code was recorded. A failed-run query without that code would include every failure, so no find_runs call is included. The Studio link for this row lists every failed run in the window and is wider than this group.",
     ].filter((line): line is string => Boolean(line)),
     extraOmissions,
     delivery,
@@ -303,6 +313,65 @@ export type SafeInsightHandoffInput = {
   readonly limitations: readonly string[]
 }
 
+function insightDimensionLine(
+  query: SafeInsightHandoffInput["input"],
+  mode: HandoffDelivery["mode"],
+  issued: boolean,
+): string | null {
+  const key = query.businessKey
+  const value = query.businessValue
+  if (!key && !value) {
+    return null
+  }
+  if (key && !value) {
+    return `Declared dimension: ${key} (value was not supplied). The key stays in this handoff and was not dropped into a wider tool query.`
+  }
+  if (!key && value) {
+    return mode === "manual"
+      ? "Declared dimension value is present without its key. The value stays omitted and was not dropped into a wider summary."
+      : "Declared dimension value is present without its key. No business tool query was generated, and the value was not dropped into a wider query."
+  }
+  if (mode === "manual") {
+    return `Declared dimension: ${key} (value omitted from handoff)`
+  }
+  return issued
+    ? `Declared dimension: ${key} (value is only in the tool arguments, so the population stays exact)`
+    : `Declared dimension: ${key}. No business tool query was generated, so the value was not copied and the population was not widened.`
+}
+
+function insightRatioLine(
+  query: SafeInsightHandoffInput["input"],
+): string | null {
+  const numerator = (query.numerator?.length ?? 0) > 0
+  const denominator = (query.denominator?.length ?? 0) > 0
+  if (numerator && denominator) {
+    return "Ratio selection: numerator and denominator configured — only jointly valid finished runs count"
+  }
+  if (numerator || denominator) {
+    return "Ratio selection is one-sided. No business tool query was generated, and the present side was not dropped."
+  }
+  return null
+}
+
+function insightReleaseLine(input: SafeInsightHandoffInput): string | null {
+  const releaseA = input.input.releaseA
+  const releaseB = input.input.releaseB
+  if (!releaseA && !releaseB) {
+    return null
+  }
+  if (releaseA && releaseB && releaseA !== releaseB) {
+    return `Release comparison: A=${releaseA} · B=${releaseB} · ${
+      input.releaseComparison.available
+        ? "supported for this definition"
+        : input.releaseComparison.reason
+    }`
+  }
+  if (releaseA && releaseB) {
+    return "Release comparison names the same release twice. No business tool query was generated."
+  }
+  return `Release comparison is one-sided (A=${releaseA ?? "—"} · B=${releaseB ?? "—"}). No business tool query was generated, and the present release was not dropped.`
+}
+
 export function buildSafeInsightHandoff(
   input: SafeInsightHandoffInput,
   studioOrigin: string,
@@ -312,15 +381,23 @@ export function buildSafeInsightHandoff(
   if (input.input.businessValue && delivery.mode === "manual") {
     omissions.push("Declared dimension value from outcome selection")
   }
-  const ratioSelected =
-    (input.input.numerator?.length ?? 0) > 0 &&
-    (input.input.denominator?.length ?? 0) > 0
+  const issued = delivery.mode === "connected" && delivery.calls.length > 0
+  const dimensionLine = insightDimensionLine(input.input, delivery.mode, issued)
+  const ratioLine = insightRatioLine(input.input)
+  const releaseLine = insightReleaseLine(input)
   const lines = [
     `Project: ${input.projectName} (id: ${input.projectId})`,
     "Entry: Insights → reported business outcomes",
     `Source selection: Insights\n${studioOrigin}${input.sourcePath}`,
     !input.validDates
-      ? "Limitation: UTC interval invalid or longer than 31 days — business-insights cohort not supported."
+      ? [
+          "Limitation: UTC interval invalid or longer than 31 days — business-insights cohort not supported.",
+          "Rejected window (kept explicit; not replaced with a supported interval):",
+          `  current startedAfter: ${input.input.currentStartedAfter}`,
+          `  current startedBefore: ${input.input.currentStartedBefore}`,
+          `  previous startedAfter: ${input.input.previousStartedAfter}`,
+          `  previous startedBefore: ${input.input.previousStartedBefore}`,
+        ].join("\n")
       : [
           "Current window (half-open UTC, runs started):",
           `  startedAfter: ${input.input.currentStartedAfter}`,
@@ -333,21 +410,9 @@ export function buildSafeInsightHandoff(
     `Workflow: ${input.workflow}`,
     `Definition revision: ${input.revision || "not selected"}`,
     `Reported field: ${input.fieldLabel ?? "not selected"}`,
-    input.input.businessKey
-      ? delivery.mode === "connected"
-        ? `Declared dimension: ${input.input.businessKey} (value is only in the tool arguments, so the population stays exact)`
-        : `Declared dimension: ${input.input.businessKey} (value omitted from handoff)`
-      : null,
-    ratioSelected
-      ? "Ratio selection: numerator and denominator configured — only jointly valid finished runs count"
-      : null,
-    input.input.releaseA || input.input.releaseB
-      ? `Release comparison: A=${input.input.releaseA ?? "—"} · B=${input.input.releaseB ?? "—"} · ${
-          input.releaseComparison.available
-            ? "supported for this definition"
-            : input.releaseComparison.reason
-        }`
-      : null,
+    dimensionLine,
+    ratioLine,
+    releaseLine,
     input.currentWindow
       ? `Current window reported total (${input.fieldLabel ?? "field"}): ${
           input.currentWindow.total ?? "Unknown / no numeric observations"
