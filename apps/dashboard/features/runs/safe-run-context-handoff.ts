@@ -18,6 +18,7 @@ export type SafeRunContextInput = {
   readonly runPath: string
   readonly sourceFrom: string | null
   readonly filters: ExplorerFilters
+  readonly returnUrl?: string | null
 }
 
 export type SafeRunContextHandoff = {
@@ -195,6 +196,9 @@ export function buildSafeRunContextHandoff(
           `Workflow: ${first.workflow}`,
           `Run external ID: ${first.externalId}`,
           `Run evidence: ${input.runPath}`,
+          input.returnUrl
+            ? `Studio return (same signed-in project; the link grants no access): ${input.returnUrl}`
+            : "Studio return: open the evidence link in the signed-in project",
           `Execution status: ${state === "Running" ? "No final outcome recorded" : state}`,
           `Started (application timestamp): ${first.timestamp}`,
           `Environment: ${first.environment ?? "Not recorded"}`,
