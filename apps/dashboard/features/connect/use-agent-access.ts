@@ -2,7 +2,10 @@
 
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react"
 import { authClient } from "../auth/auth-client"
-import { useApiOrigin } from "../platform/runtime-config"
+import {
+  useApiOrigin,
+  useAgentAccessDeployment,
+} from "../platform/runtime-config"
 import { useProject } from "../projects/project-context"
 import {
   agentAccessIntroCopy,
@@ -10,10 +13,10 @@ import {
   agentExampleQuestions,
   manualEvidenceHandoffIntro,
 } from "./agent-access-guidance"
-import { remoteAgentAccessDeployment } from "./agent-access-capability"
 import {
   clearAgentAccessTransient,
   markAgentAccessCopied,
+  markAgentAccessCopyFailed,
   type AgentAccessTransient,
 } from "./agent-access-state"
 
@@ -37,12 +40,15 @@ export function useAgentAccess() {
     setTransient(clearAgentAccessTransient())
   }, [current?.id, email])
 
-  const deployment = useMemo(
-    () => remoteAgentAccessDeployment(apiOrigin),
-    [apiOrigin],
-  )
+  const deployment = useAgentAccessDeployment()
   const intro = useMemo(() => agentAccessIntroCopy(), [])
-  const clients = useMemo(() => agentClientGuides(), [])
+  const clients = useMemo(
+    () =>
+      agentClientGuides(
+        deployment.kind === "enabled" ? deployment.mcpUrl : undefined,
+      ),
+    [deployment],
+  )
   const examples = useMemo(
     () => agentExampleQuestions(current?.name ?? null),
     [current?.name],
@@ -56,6 +62,10 @@ export function useAgentAccess() {
     setTransient((state) => markAgentAccessCopied(state, target))
   }
 
+  const markCopyFailed = () => {
+    setTransient((state) => markAgentAccessCopyFailed(state))
+  }
+
   return {
     apiOrigin,
     studioOrigin,
@@ -67,5 +77,6 @@ export function useAgentAccess() {
     handoffIntro,
     transient,
     markCopied,
+    markCopyFailed,
   }
 }

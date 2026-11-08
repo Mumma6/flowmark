@@ -33,3 +33,14 @@ it("builds example questions and handoff copy for the active project", () => {
   expect(handoff).toContain("https://studio.example.test/explore")
   expect(handoff).not.toContain("FLOWMARK_API_KEY")
 })
+
+it("gives an enabled deployment its endpoint without writing client files", () => {
+  const guides = agentClientGuides("https://api.example.test/mcp")
+  expect(guides).toHaveLength(4)
+  for (const guide of guides) {
+    const blob = [guide.summary, ...guide.steps, guide.pasteHint].join("\n")
+    expect(blob).toContain("https://api.example.test/mcp")
+    expect(blob).toContain("does not write")
+    expect(blob).not.toContain("FLOWMARK_API_KEY")
+  }
+})

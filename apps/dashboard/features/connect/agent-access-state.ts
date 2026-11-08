@@ -6,6 +6,7 @@ export type AgentAccessTransient = {
   readonly handoffIntroCopied: boolean
   readonly exampleQuestionsCopied: Partial<Record<string, boolean>>
   readonly clientGuidanceCopied: Partial<Record<AgentClientId, boolean>>
+  readonly copyFailed: boolean
 }
 
 export function initialAgentAccessTransient(): AgentAccessTransient {
@@ -13,6 +14,7 @@ export function initialAgentAccessTransient(): AgentAccessTransient {
     handoffIntroCopied: false,
     exampleQuestionsCopied: {},
     clientGuidanceCopied: {},
+    copyFailed: false,
   }
 }
 
@@ -28,11 +30,12 @@ export function markAgentAccessCopied(
     | { readonly kind: "client"; readonly client: AgentClientId },
 ): AgentAccessTransient {
   if (target.kind === "handoff-intro") {
-    return { ...state, handoffIntroCopied: true }
+    return { ...state, handoffIntroCopied: true, copyFailed: false }
   }
   if (target.kind === "example-question") {
     return {
       ...state,
+      copyFailed: false,
       exampleQuestionsCopied: {
         ...state.exampleQuestionsCopied,
         [target.questionId]: true,
@@ -41,9 +44,16 @@ export function markAgentAccessCopied(
   }
   return {
     ...state,
+    copyFailed: false,
     clientGuidanceCopied: {
       ...state.clientGuidanceCopied,
       [target.client]: true,
     },
   }
+}
+
+export function markAgentAccessCopyFailed(
+  state: AgentAccessTransient,
+): AgentAccessTransient {
+  return { ...state, copyFailed: true }
 }
