@@ -24,6 +24,7 @@ import type { AgentClientGuide } from "./agent-access-guidance"
 import type { RemoteAgentAccessDeployment } from "./agent-access-capability"
 import { useAgentAccess } from "./use-agent-access"
 import { useAgentReadVerification } from "./use-agent-read-verification"
+import { AgentConnections } from "./agent-connections"
 import type { AgentReadVerification } from "./agent-access-verification"
 
 function SetupCode({
@@ -276,6 +277,7 @@ export function AgentAccessGuide() {
         copied={configurationCopied}
         copyFailed={transient.copyFailed}
       />
+      {deployment.kind === "enabled" ? <AgentConnections /> : null}
       <Card>
         <CardHeader>
           <CardTitle>Manual evidence handoff</CardTitle>
