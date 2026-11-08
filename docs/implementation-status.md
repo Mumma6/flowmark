@@ -34,6 +34,7 @@ and [ADR 0008](./decisions/0008-connect-agent-protocol-contract.md).
 | **005.3** | **Compact run and peer comparison MCP tools:** `get_run` returns a summary plus one bounded section page (`events`, `related`, `expectations`, or `operations`). `compare_run` reuses `GetProjectWorkflowData.compare` and `PeerSelection`. Recorded duration and operation status stay distinct from wall time and terminal run status. |
 | **005.4** | **Workflow insight MCP modes:** `get_workflow_insights` delegates `technical` to `periodReport` and `business` to `businessInsights`. Mixed mode fields and unsupported aggregate filters, including `environment`, fail closed. Coverage stays on the existing aggregate.                                                               |
 | **005.5** | Durable PostgreSQL service/grant/project admission, request/result budgets, driver cancellation and statement deadlines. Oversized pages regenerate valid cursors; oversized comparison fact sets fail explicitly.                                                                                                                       |
+| **005.6** | Reference HTTP client discovers and calls all six read-only tools over synthetic evidence, matching Studio use-case results. Disabled mode, unsupported protocol negotiation, wrong project/resource, revocation, response bounds and read-token denial of ingestion and account writes are covered. Vendor clients are not claimed.     |
 | **006.2** | Provider-backed browser consent with explicit account/project selection, signed-query verification and pre-exchange code-family binding. Local provider integration covers acceptance, denial and account/project tampering.                                                                                                             |
 
 ## Product 1.0 — items completed in the same sequence window
@@ -62,8 +63,8 @@ managed disposable PostgreSQL integration tests.
 
 ## Explicitly not done here
 
-- Full six-tool acceptance and vendor-client compatibility remain separate gates.
-  Source availability does not imply hosted agent access is activated.
+- Vendor-client compatibility remains a separate gate. The reference HTTP
+  client acceptance does not activate hosted agent access.
 - **Cancelled:** Product TASK-006.3 (first persisted evidence as a Studio gate) —
   do not treat persisted telemetry as an access prerequisite; see implementation order notes.
 

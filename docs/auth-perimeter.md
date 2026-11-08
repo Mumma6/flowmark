@@ -53,7 +53,12 @@ the local fixture use the same provider login implementation.
   `POST /mcp` is not served by the auth handler. The API app serves it only when
   `FLOWMARK_AGENT_ACCESS_ENABLED=true` and origins resolve (`FLOWMARK_API_URL`,
   `BETTER_AUTH_URL`, `FLOWMARK_DASHBOARD_ORIGIN`). When disabled, the route
-  returns an honest `404` (no working remote read claim). Protected-resource
+  returns an honest `404` (no working remote read claim). `GET /mcp` is `405`.
+  An unsupported `initialize` protocol revision is negotiated to a supported
+  revision and is not stored as the session version. Admission failure uses the
+  fixed label `Read admission is unavailable.` Requests and tool results are
+  capped at 64 KiB. A read token is not an ingestion key or a dashboard
+  session, so it cannot ingest, manage accounts, or write declarations. Protected-resource
   metadata is on the API host (`/.well-known/oauth-protected-resource` and the
   path-aware `/mcp` suffix per RFC 9728). A mismatched issuer and auth base URL
   fails before the provider is composed. With `agentAccess` omitted, discovery
