@@ -3,7 +3,9 @@
 import { useMemo, useSyncExternalStore } from "react"
 import { usePathname, useSearchParams } from "next/navigation"
 import type { RouterInputs, RouterOutputs } from "../platform/api-types"
+import { useAgentAccessDeployment } from "../platform/runtime-config"
 import { useProject } from "../projects/project-context"
+import { connectedInsightCalls } from "./connected-retrieval"
 import { InvestigationContextHandoffCard } from "./investigation-context-handoff-card"
 import { buildSafeInsightHandoff } from "./safe-run-context-handoff"
 
@@ -44,6 +46,7 @@ export function InsightInvestigationHandoff({
   insights: RouterOutputs["project"]["businessInsights"]
 }) {
   const { current } = useProject()
+  const deployment = useAgentAccessDeployment()
   const pathname = usePathname()
   const params = useSearchParams()
   const origin = useSyncExternalStore(
@@ -73,6 +76,16 @@ export function InsightInvestigationHandoff({
         limitations: insightHandoffLimitations(insights),
       },
       origin,
+      deployment.kind === "enabled"
+        ? {
+            mode: "connected",
+            calls: connectedInsightCalls({
+              projectId: current.id,
+              validDates,
+              query: input,
+            }),
+          }
+        : { mode: "manual" },
     )
   }, [
     current,
@@ -84,6 +97,7 @@ export function InsightInvestigationHandoff({
     sourcePath,
     validDates,
     workflow,
+    deployment.kind,
   ])
   if (!handoff) {
     return null
@@ -92,7 +106,11 @@ export function InsightInvestigationHandoff({
     <InvestigationContextHandoffCard
       handoff={handoff}
       title="Preview business outcome context"
-      description="Copy the exact Insights selection for manual agent investigation. Dimension values and raw payloads stay out of the handoff unless you paste full exports separately."
+      description={
+        deployment.kind === "enabled"
+          ? "Copy the business-insights tool arguments for an agent that already has read access. The text does not grant access."
+          : "Copy the exact Insights selection for manual agent investigation. Dimension values and raw payloads stay out of the handoff unless you paste full exports separately."
+      }
     />
   )
 }

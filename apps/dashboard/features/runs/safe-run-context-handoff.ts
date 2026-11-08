@@ -5,6 +5,10 @@ import type {
   RunEvent,
 } from "../platform/api-types"
 import {
+  retrievalInstructionLines,
+  type RetrievalCall,
+} from "./connected-retrieval"
+import {
   explorerDefaults,
   explorerFilterLabels,
   type ExplorerFilters,
@@ -21,7 +25,12 @@ export type SafeRunContextInput = {
   readonly returnUrl?: string | null
 }
 
+export type HandoffDelivery =
+  | { readonly mode: "manual" }
+  | { readonly mode: "connected"; readonly calls: readonly RetrievalCall[] }
+
 export type SafeRunContextHandoff = {
+  readonly mode: HandoffDelivery["mode"]
   readonly preview: string
   readonly omissions: readonly string[]
 }
@@ -33,7 +42,14 @@ const defaultOmissions = [
   "Ingestion credentials, API keys, and dashboard session cookies",
 ] as const
 
-function manualHandoffHeader(): readonly string[] {
+function handoffHeader(delivery: HandoffDelivery): readonly string[] {
+  if (delivery.mode === "connected") {
+    return [
+      "Flowmark investigation context (connected retrieval)",
+      "Recorded facts are separate from hypotheses. Do not treat a copied snippet as authorization, a saved chat, or proof of root cause.",
+      ...retrievalInstructionLines(delivery.calls),
+    ]
+  }
   return [
     "Flowmark investigation context (manual handoff)",
     "Remote MCP read tools are not used on this deployment. Paste this text deliberately and open the evidence link — do not instruct an agent to call unavailable Flowmark tools.",
@@ -44,12 +60,13 @@ function manualHandoffHeader(): readonly string[] {
 function finalizeHandoff(
   bodyLines: readonly string[],
   extraOmissions: readonly string[] = [],
+  delivery: HandoffDelivery = { mode: "manual" },
 ): SafeRunContextHandoff {
   const omissions = EffectArray.fromIterable(
     new Set([...defaultOmissions, ...extraOmissions]),
   )
   const preview = [
-    ...manualHandoffHeader(),
+    ...handoffHeader(delivery),
     ...bodyLines,
     "",
     "Intentionally omitted from this handoff:",
@@ -57,7 +74,7 @@ function finalizeHandoff(
     "",
     "Application-reported evidence. Business correctness and root cause are not verified by Flowmark.",
   ].join("\n")
-  return { preview, omissions }
+  return { mode: delivery.mode, preview, omissions }
 }
 
 function utcWindowDescription(filters: ExplorerFilters): string | null {
@@ -167,6 +184,7 @@ export function buildSafeRunContextHandoff(
   events: readonly RunEvent[],
   input: SafeRunContextInput,
   studioOrigin: string,
+  delivery: HandoffDelivery = { mode: "manual" },
 ): Option.Option<SafeRunContextHandoff> {
   return pipe(
     EffectArray.head(events),
@@ -210,6 +228,7 @@ export function buildSafeRunContextHandoff(
           `Recorded events: ${events.length}`,
         ],
         selection.omissions,
+        delivery,
       )
     }),
   )
@@ -235,6 +254,7 @@ export type SafeFailureGroupInput = {
 export function buildSafeFailureGroupHandoff(
   input: SafeFailureGroupInput,
   studioOrigin: string,
+  delivery: HandoffDelivery = { mode: "manual" },
 ): SafeRunContextHandoff {
   const extraOmissions = input.truncated
     ? ["Failure groups beyond the displayed Issues table"]
@@ -265,6 +285,7 @@ export function buildSafeFailureGroupHandoff(
         : "- Exact cohort uses workflow, failure code, and the UTC window above — not a broader fallback query",
     ].filter((line): line is string => Boolean(line)),
     extraOmissions,
+    delivery,
   )
 }
 
@@ -285,9 +306,10 @@ export type SafeInsightHandoffInput = {
 export function buildSafeInsightHandoff(
   input: SafeInsightHandoffInput,
   studioOrigin: string,
+  delivery: HandoffDelivery = { mode: "manual" },
 ): SafeRunContextHandoff {
   const omissions: string[] = []
-  if (input.input.businessValue) {
+  if (input.input.businessValue && delivery.mode === "manual") {
     omissions.push("Declared dimension value from outcome selection")
   }
   const ratioSelected =
@@ -312,7 +334,9 @@ export function buildSafeInsightHandoff(
     `Definition revision: ${input.revision || "not selected"}`,
     `Reported field: ${input.fieldLabel ?? "not selected"}`,
     input.input.businessKey
-      ? `Declared dimension: ${input.input.businessKey} (value omitted from handoff)`
+      ? delivery.mode === "connected"
+        ? `Declared dimension: ${input.input.businessKey} (value is only in the tool arguments, so the population stays exact)`
+        : `Declared dimension: ${input.input.businessKey} (value omitted from handoff)`
       : null,
     ratioSelected
       ? "Ratio selection: numerator and denominator configured — only jointly valid finished runs count"
@@ -336,5 +360,5 @@ export function buildSafeInsightHandoff(
     ...input.limitations.map((item) => `- ${item}`),
     "- Unsupported filters are not broadened — adjust the selection in Studio instead",
   ].filter((line): line is string => Boolean(line))
-  return finalizeHandoff(lines, omissions)
+  return finalizeHandoff(lines, omissions, delivery)
 }
