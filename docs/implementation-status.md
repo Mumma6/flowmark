@@ -42,15 +42,16 @@ and [ADR 0008](./decisions/0008-connect-agent-protocol-contract.md).
 These appear under “Completed” in the implementation order; they are part of the
 current public tree, not future Connect tasks.
 
-| Task / item     | Summary                                                                                                                                                                          |
-| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **SDK-001**     | Advanced workflow lifecycle shared in SDK docs and types.                                                                                                                        |
-| **003.1–003.6** | Studio shell, unified search, contextual run inspector, insights/issues in Explore, proxy failure recovery, responsive acceptance.                                               |
-| **006.1**       | Instrumentation prompt aligned with SDK release notes.                                                                                                                           |
-| **006.2**       | Working agent and manual setup surfaces in Connect.                                                                                                                              |
-| **011**         | Landing narrative for Product 1.0 positioning.                                                                                                                                   |
-| **006.4**       | Independent instrumented setup example implemented (PR **#119**); memory/runtime checks passed. Loopback/Studio acceptance remains pending.                                      |
-| **001.1**       | Strict version-1 run selection shared by Studio and MCP; real protocol reads match Studio summary/events. [ADR 0009](./decisions/0009-versioned-run-investigation-selection.md). |
+| Task / item     | Summary                                                                                                                                                                                                                                                                     |
+| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **SDK-001**     | Advanced workflow lifecycle shared in SDK docs and types.                                                                                                                                                                                                                   |
+| **003.1–003.6** | Studio shell, unified search, contextual run inspector, insights/issues in Explore, proxy failure recovery, responsive acceptance.                                                                                                                                          |
+| **006.1**       | Instrumentation prompt aligned with SDK release notes.                                                                                                                                                                                                                      |
+| **006.2**       | Working agent and manual setup surfaces in Connect.                                                                                                                                                                                                                         |
+| **011**         | Landing narrative for Product 1.0 positioning.                                                                                                                                                                                                                              |
+| **006.4**       | Independent instrumented setup example implemented (PR **#119**); memory/runtime checks passed. Loopback/Studio acceptance remains pending.                                                                                                                                 |
+| **001.1**       | Strict version-1 run selection shared by Studio and MCP; real protocol reads match Studio summary/events. [ADR 0009](./decisions/0009-versioned-run-investigation-selection.md).                                                                                            |
+| **001.3**       | One technical period cohort maps to the same period report and current-window run list in Studio and MCP. Revision, environment and peer windows outside 1–90 days stay rejected. A return link keeps the current project and filters. Separate reads are not one snapshot. |
 
 ## Verification status
 

@@ -37,3 +37,13 @@ live read, not a snapshot. Cohorts, period windows, revisions and peer compariso
 are explicitly unsupported in version 1; they are rejected rather than dropped.
 Existing manual evidence exports and analytics semantics remain unchanged. This
 is not a general query language, saved object or public read SDK.
+
+## Period cohort
+
+A separate `PeriodCohortSelectionSchema` (`kind: "period"`) carries one technical
+period: a workflow and two absolute UTC windows. `decodeRunInvestigationSelection`
+still rejects `kind: "cohort"` and extra fields such as revision or environment.
+`periodCohortToolInput` maps a valid period to `get_workflow_insights` mode
+`technical`. The previous window is part of the question. A return link preserves
+the current window as Explore filters; it does not switch projects or freeze the
+evidence. Two reads are separate observations.
