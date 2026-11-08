@@ -15,6 +15,7 @@ import {
   createOwnedProject,
   Database,
   submitAgentAccessConsent,
+  revokeAgentAccessConnection,
 } from "@flowmark/db/persistence"
 import { Effect } from "effect"
 import { LATEST_PROTOCOL_VERSION } from "@flowmark/mcp"
@@ -178,7 +179,6 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
       const { getAuth } = await import("../../src/auth.js")
       const redirectUri = "http://127.0.0.1:4312/callback"
       const clientId = `mcp-http-${randomUUID()}`
-      const verifier = randomBytes(32).toString("base64url")
       const auth = await Effect.runPromise(getAuth())
       const email = `${randomUUID()}@example.test`
       const password = `${randomUUID()}Aa1`
@@ -227,45 +227,50 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         resourceId: mcpResource,
         createdAt: new Date(),
       })
-      const authorize = await auth.handler(
-        new Request(
-          `${testOrigin}/api/auth/oauth2/authorize?${new URLSearchParams({
-            response_type: "code",
-            client_id: clientId,
-            redirect_uri: redirectUri,
-            scope: "openid profile email offline_access flowmark:read",
-            resource: mcpResource,
-            code_challenge: codeChallenge(verifier),
-            code_challenge_method: "S256",
-          })}`,
-          { headers: { cookie, origin: testOrigin } },
-        ),
-      )
-      const code = new URL(
-        authorize.headers.get("location") ?? "",
-      ).searchParams.get("code")
-      assert.ok(code)
-      const tokenResponse = await auth.handler(
-        new Request(`${testOrigin}/api/auth/oauth2/token`, {
-          method: "POST",
-          headers: {
-            origin: testOrigin,
-            "content-type": "application/x-www-form-urlencoded",
-          },
-          body: new URLSearchParams({
-            grant_type: "authorization_code",
-            client_id: clientId,
-            code,
-            redirect_uri: redirectUri,
-            code_verifier: verifier,
-            resource: mcpResource,
-          }).toString(),
-        }),
-      )
-      expect(tokenResponse.status).toBe(200)
-      const tokens = (await tokenResponse.json()) as {
-        access_token: string
+      const issueToken = async () => {
+        const verifier = randomBytes(32).toString("base64url")
+        const authorize = await auth.handler(
+          new Request(
+            `${testOrigin}/api/auth/oauth2/authorize?${new URLSearchParams({
+              response_type: "code",
+              client_id: clientId,
+              redirect_uri: redirectUri,
+              scope: "openid profile email offline_access flowmark:read",
+              resource: mcpResource,
+              code_challenge: codeChallenge(verifier),
+              code_challenge_method: "S256",
+            })}`,
+            { headers: { cookie, origin: testOrigin } },
+          ),
+        )
+        const code = new URL(
+          authorize.headers.get("location") ?? "",
+        ).searchParams.get("code")
+        assert.ok(code)
+        const tokenResponse = await auth.handler(
+          new Request(`${testOrigin}/api/auth/oauth2/token`, {
+            method: "POST",
+            headers: {
+              origin: testOrigin,
+              "content-type": "application/x-www-form-urlencoded",
+            },
+            body: new URLSearchParams({
+              grant_type: "authorization_code",
+              client_id: clientId,
+              code,
+              redirect_uri: redirectUri,
+              code_verifier: verifier,
+              resource: mcpResource,
+            }).toString(),
+          }),
+        )
+        expect(tokenResponse.status).toBe(200)
+        return (await tokenResponse.json()) as {
+          access_token: string
+          refresh_token: string
+        }
       }
+      const tokens = await issueToken()
       const consentId = randomUUID()
       await connection.db.insert(oauthConsent).values({
         id: consentId,
@@ -524,6 +529,91 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         result?: { isError?: boolean }
       }>(mixedInsights)
       expect(mixedInsightsBody.result?.isError).toBe(true)
+      const callConnection = async (headers: Record<string, string>) =>
+        readMcpJsonBody<{
+          result?: {
+            isError?: boolean
+            structuredContent?: { projects?: Array<{ id: string }> }
+          }
+        }>(
+          await handleMcpPost(
+            mcpRequest(
+              {
+                jsonrpc: "2.0",
+                id: 9,
+                method: "tools/call",
+                params: { name: "get_connection", arguments: {} },
+              },
+              headers,
+            ),
+          ),
+        )
+      await Effect.runPromise(
+        revokeAgentAccessConnection({
+          userId: memberUser,
+          clientId,
+          authorizationCodeId,
+        }).pipe(Effect.provideService(Database, connection.db)),
+      )
+      expect((await callConnection(sessionHeaders)).result?.isError).toBe(true)
+
+      const reconnected = await issueToken()
+      const nextProject = await Effect.runPromise(
+        createOwnedProject(memberUser, {
+          workspace: "Reconnected workspace",
+          project: "Reconnected scope",
+        }).pipe(Effect.provideService(Database, connection.db)),
+      )
+      await Effect.runPromise(
+        submitAgentAccessConsent({
+          userId: memberUser,
+          oauthConsentId: consentId,
+          clientId,
+          redirectUri,
+          requestedScopes: [
+            "openid",
+            "profile",
+            "email",
+            "offline_access",
+            "flowmark:read",
+          ],
+          resourceUrl: mcpResource,
+          projectIds: [nextProject.projectId],
+        }).pipe(Effect.provideService(Database, connection.db)),
+      )
+      // A still-signed old JWT must never inherit the replacement family's projects.
+      expect((await callConnection(sessionHeaders)).result?.isError).toBe(true)
+      const newHeaders = { authorization: `Bearer ${reconnected.access_token}` }
+      const newSession = await handleMcpPost(
+        mcpRequest(
+          {
+            jsonrpc: "2.0",
+            id: 10,
+            method: "initialize",
+            params: {
+              protocolVersion,
+              capabilities: {},
+              clientInfo: { name: "reconnected", version: "0.1.0" },
+            },
+          },
+          newHeaders,
+        ),
+      )
+      expect(newSession.status).toBe(200)
+      const replacementHeaders = mcpSessionHeaders(newHeaders, newSession)
+      await handleMcpPost(
+        mcpRequest(
+          { jsonrpc: "2.0", method: "notifications/initialized" },
+          replacementHeaders,
+        ),
+      )
+      const replacement = await callConnection(replacementHeaders)
+      expect(replacement.result?.isError).toBeUndefined()
+      expect(
+        replacement.result?.structuredContent?.projects?.map(
+          (project) => project.id,
+        ),
+      ).toEqual([nextProject.projectId])
       await connection.db
         .delete(verification)
         .where(like(verification.value, `%"userId":"${session.user.id}"%`))

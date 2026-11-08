@@ -1,5 +1,12 @@
 import { eq, sql } from "drizzle-orm"
-import { Effect } from "effect"
+import {
+  Array as EffectArray,
+  Effect,
+  HashMap,
+  Match,
+  Option,
+  pipe,
+} from "effect"
 import {
   BOUNDED_SECTION_DEFAULT_LIMIT,
   BOUNDED_SECTION_MAX_LIMIT,
@@ -79,9 +86,7 @@ export const getRunOperationsPage = Effect.fn("getRunOperationsPage")(
         SELECT
           e.operation_id AS "operationId",
           e.operation_name AS "operationName",
-          e.occurred_at AS "startedAt",
-          e.created_at AS "receivedAt",
-          e.id AS row_id
+          e.occurred_at AS "startedAt"
         FROM ${metricFactsSql(projectId, query.runId)} e
         JOIN workflow_runs r ON r.id = e.run_id
         JOIN workflows w ON w.id = r.workflow_id
@@ -96,14 +101,14 @@ export const getRunOperationsPage = Effect.fn("getRunOperationsPage")(
         ${decoded?.startedAt ?? null}::timestamptz IS NULL
         OR ("startedAt", "operationId") > (${decoded?.startedAt ?? null}::timestamptz, ${decoded?.operationId ?? null})
       )
-      ORDER BY "startedAt", "receivedAt", row_id
+      ORDER BY "startedAt", "operationId"
       LIMIT ${limit + 1}
     `),
     )
-    const pageStarted = Array.from(startedRows)
+    const pageStarted = EffectArray.fromIterable(startedRows)
     const hasMore = pageStarted.length > limit
     const slice = hasMore ? pageStarted.slice(0, limit) : pageStarted
-    const operationIds = slice.map((row) => row.operationId)
+    const operationIds = EffectArray.map(slice, (row) => row.operationId)
     const terminalRows =
       operationIds.length === 0
         ? []
@@ -120,32 +125,38 @@ export const getRunOperationsPage = Effect.fn("getRunOperationsPage")(
             WHERE w.project_id = ${projectId}
               AND r.id = ${query.runId}::uuid
               AND e.operation_id IN (${sql.join(
-                operationIds.map((id) => sql`${id}`),
+                EffectArray.map(operationIds, (id) => sql`${id}`),
                 sql`, `,
               )})
               AND e.type IN ('operation_completed', 'operation_failed')
           `),
           )
-    const terminalById = new Map<
-      string,
-      { durationMs: number | null; status: "completed" | "failed" }
-    >()
-    for (const row of terminalRows) {
-      terminalById.set(row.operationId, {
-        durationMs: row.durationMs,
-        status: row.type === "operation_failed" ? "failed" : "completed",
-      })
-    }
-    const operations = slice.map((row) => {
-      const terminal = terminalById.get(row.operationId)
-      return {
-        operationId: row.operationId,
-        name: row.operationName ?? "Operation",
-        startedAt: row.startedAt,
-        durationMs: terminal?.durationMs ?? null,
-        status: terminal?.status ?? ("open" as const),
-      }
-    })
+    const terminals = HashMap.fromIterable(
+      EffectArray.map(terminalRows, (row) => [row.operationId, row] as const),
+    )
+    const operations = pipe(
+      slice,
+      EffectArray.map((row) => {
+        const terminal = HashMap.get(terminals, row.operationId)
+        return {
+          operationId: row.operationId,
+          name: row.operationName ?? "Operation",
+          startedAt: row.startedAt,
+          durationMs: Option.match(terminal, {
+            onNone: () => null,
+            onSome: (item) => item.durationMs,
+          }),
+          status: Option.match(terminal, {
+            onNone: () => "open" as const,
+            onSome: (item) =>
+              Match.value(item.type).pipe(
+                Match.when("operation_failed", () => "failed" as const),
+                Match.orElse(() => "completed" as const),
+              ),
+          }),
+        }
+      }),
+    )
     const last = slice.at(-1)
     return {
       runId: query.runId,

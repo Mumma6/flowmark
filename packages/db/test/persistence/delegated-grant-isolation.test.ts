@@ -254,17 +254,27 @@ test(
         role: "owner",
       })
 
+      await assert.rejects(
+        () =>
+          exec(
+            submitAgentAccessConsent({
+              ...consentInput,
+              projectIds: [ownedA.projectId, ownedB.projectId],
+            }),
+          ),
+        (error) => error instanceof AgentAccessConsentRejected,
+      )
       const concurrent = await Promise.all([
         exec(
           submitAgentAccessConsent({
             ...consentInput,
-            projectIds: [ownedA.projectId, ownedB.projectId],
+            projectIds: [ownedA.projectId],
           }),
         ),
         exec(
           submitAgentAccessConsent({
             ...consentInput,
-            projectIds: [ownedA.projectId, ownedB.projectId],
+            projectIds: [ownedA.projectId],
           }),
         ),
       ])
@@ -280,7 +290,11 @@ test(
           projectId: ownedB.projectId,
         }),
       )
-      assert.equal(both, ownedB.projectId)
+      assert.equal(
+        both,
+        undefined,
+        "duplicate consent must not expand the original scope",
+      )
 
       await exec(
         revokeAgentAccessConnection({

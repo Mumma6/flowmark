@@ -1,5 +1,12 @@
 import { and, desc, eq, gt, inArray, isNull, or } from "drizzle-orm"
-import { Array as EffectArray, Effect } from "effect"
+import {
+  Array as EffectArray,
+  Effect,
+  HashMap,
+  Option,
+  Record,
+  pipe,
+} from "effect"
 import {
   agentAccessConnectionLastAuth,
   agentAccessGrantProjects,
@@ -25,16 +32,11 @@ const projectsByFamily = (
     readonly projectId: string
   }>,
 ) => {
-  const map = new Map<string, Array<string>>()
-  for (const row of rows) {
-    const list = map.get(row.authorizationCodeId)
-    if (list) {
-      list.push(row.projectId)
-    } else {
-      map.set(row.authorizationCodeId, [row.projectId])
-    }
-  }
-  return map
+  return pipe(
+    rows,
+    EffectArray.groupBy((row) => row.authorizationCodeId),
+    Record.map((group) => EffectArray.map(group, (row) => row.projectId)),
+  )
 }
 
 export const listAgentAccessConnections = Effect.fn(
@@ -68,31 +70,20 @@ export const listAgentAccessConnections = Effect.fn(
         )
         .orderBy(desc(oauthRefreshToken.createdAt)),
   )
-  const deduped: Array<{
-    readonly authorizationCodeId: string
-    readonly clientId: string
-    readonly clientName: string | null
-    readonly createdAt: Date | null
-  }> = []
-  const seen = new Set<string>()
-  for (const row of rows) {
-    const familyId = row.authorizationCodeId
-    const clientId = row.clientId
-    if (!familyId) {
-      continue
-    }
-    const key = `${familyId}:${clientId}`
-    if (seen.has(key)) {
-      continue
-    }
-    seen.add(key)
-    deduped.push({
-      authorizationCodeId: familyId,
-      clientId,
-      clientName: row.clientName,
-      createdAt: row.createdAt,
-    })
-  }
+  const deduped = pipe(
+    rows,
+    EffectArray.map((row) =>
+      Option.fromNullishOr(row.authorizationCodeId).pipe(
+        Option.map((authorizationCodeId) => ({ ...row, authorizationCodeId })),
+      ),
+    ),
+    EffectArray.getSomes,
+    EffectArray.dedupeWith(
+      (left, right) =>
+        left.authorizationCodeId === right.authorizationCodeId &&
+        left.clientId === right.clientId,
+    ),
+  )
   const familyIds = EffectArray.map(deduped, (d) => d.authorizationCodeId)
   const grantRows =
     familyIds.length === 0
@@ -130,11 +121,11 @@ export const listAgentAccessConnections = Effect.fn(
               ),
             ),
         )
-  const lastByFamily = new Map(
-    EffectArray.map(lastAuthRows, (r) => [
-      r.authorizationCodeId,
-      r.lastAt?.toISOString() ?? null,
-    ]),
+  const lastByFamily = HashMap.fromIterable(
+    EffectArray.map(
+      lastAuthRows,
+      (r) => [r.authorizationCodeId, r.lastAt?.toISOString() ?? null] as const,
+    ),
   )
   return EffectArray.map(deduped, (conn) => {
     const createdAt = conn.createdAt ?? new Date(0)
@@ -143,8 +134,11 @@ export const listAgentAccessConnections = Effect.fn(
       clientId: conn.clientId,
       clientName: conn.clientName,
       createdAt: createdAt.toISOString(),
-      projectIds: projectMap.get(conn.authorizationCodeId) ?? [],
-      lastAuthenticatedAt: lastByFamily.get(conn.authorizationCodeId) ?? null,
+      projectIds: projectMap[conn.authorizationCodeId] ?? [],
+      lastAuthenticatedAt: HashMap.get(
+        lastByFamily,
+        conn.authorizationCodeId,
+      ).pipe(Option.getOrNull),
     } satisfies AgentAccessConnectionSummary
   })
 })
