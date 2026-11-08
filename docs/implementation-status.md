@@ -38,6 +38,7 @@ and [ADR 0008](./decisions/0008-connect-agent-protocol-contract.md).
 | **006.2** | Provider-backed browser consent with explicit account/project selection, signed-query verification and pre-exchange code-family binding. Local provider integration covers acceptance, denial and account/project tampering.                                                                                                             |
 | **006.3** | Connect shows the deployment's protected-resource endpoint when it is enabled. Copied instructions, an authorization grant, and a recorded authenticated read stay separate. An empty project can read as verified only after that read.                                                                                                 |
 | **006.4** | The signed-in account can inspect and revoke its own agent connections. Confirmation follows a refetch of the stored grant. A foreign account cannot revoke the family. Last authenticated request is shown as a UTC day.                                                                                                                |
+| **006.5** | Connected recovery keeps a disabled manual guide, a stale session, a cancelled consent, and a lost revoke response distinct. Vendor client compatibility is not claimed; the reference HTTP client remains the tested path.                                                                                                              |
 
 ## Product 1.0 — items completed in the same sequence window
 

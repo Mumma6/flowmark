@@ -38,7 +38,7 @@ const readApiOrigin = Effect.fn("McpRuntime.readApiOrigin")(function* (
                   "FLOWMARK_API_URL is required when agent access is enabled.",
               }),
             )
-          : Effect.succeed("http://127.0.0.1:3003"),
+          : Effect.succeed("http://localhost:3003"),
       onSome: (explicit) =>
         Schema.decodeUnknownEffect(HttpOrigin)(explicit).pipe(
           Effect.mapError(
