@@ -56,6 +56,23 @@ export function RunHandoff({
     () => readExplorerFilters(params),
     [filterQuery, params],
   )
+  const runSelection = current
+    ? studioRunSelection(current.id, runId)
+    : undefined
+  const studioReturn =
+    runSelection && origin
+      ? Result.map(
+          runSelection,
+          (selection) =>
+            `${origin}${runInvestigationPath(runId, source, undefined, undefined, selection)}`,
+        )
+      : undefined
+  const returnUrl = studioReturn
+    ? Result.match(studioReturn, {
+        onFailure: () => null,
+        onSuccess: (href) => href,
+      })
+    : null
   const safeContext = useMemo(() => {
     if (!current?.id) {
       return Option.none()
@@ -68,13 +85,20 @@ export function RunHandoff({
         runPath,
         sourceFrom,
         filters,
+        returnUrl,
       },
       origin,
     )
-  }, [current?.id, current?.name, events, filters, origin, runPath, sourceFrom])
-  const runSelection = current
-    ? studioRunSelection(current.id, runId)
-    : undefined
+  }, [
+    current?.id,
+    current?.name,
+    events,
+    filters,
+    origin,
+    returnUrl,
+    runPath,
+    sourceFrom,
+  ])
   const summary = investigationHandoff(events, runPath)
   if (Option.isNone(summary)) {
     return null
@@ -134,6 +158,9 @@ export function RunHandoff({
                       label="Copy run selection"
                       value={JSON.stringify(selection)}
                     />
+                    {returnUrl ? (
+                      <CopyButton label="Copy Studio link" value={returnUrl} />
+                    ) : null}
                   </details>
                 ),
               })

@@ -19,7 +19,7 @@ import {
   RunSnapshot,
 } from "@flowmark/ui"
 import type { inferRouterOutputs } from "@trpc/server"
-import { Option } from "effect"
+import { Match, Option } from "effect"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { useState } from "react"
@@ -28,11 +28,17 @@ import { PageSections } from "../shared/page-sections"
 import { RunExpectations } from "../expectations/run-expectations"
 import { RunHandoff } from "./run-handoff"
 import {
+  evidencePageForSection,
+  interpretRunSelection,
+  runSelectionQueryKey,
+} from "./investigation-selection"
+import {
   investigationReturn,
   runInvestigationPath,
 } from "./investigation-navigation"
 import { JsonData } from "../shared/json-data"
 import type { RunEvent } from "../platform/api-types"
+import { useProject } from "../projects/project-context"
 import { formatTimestamp } from "../shared/format"
 import {
   buildRunExport,
@@ -68,9 +74,32 @@ export function RunInvestigation({
   contextual?: boolean
 }) {
   const routeParams = useSearchParams()
+  const { current } = useProject()
   const source = routeParams.has("from")
     ? investigationReturn(routeParams.get("from")).href
     : undefined
+  const roundTrip = interpretRunSelection({
+    raw: routeParams.get(runSelectionQueryKey),
+    projectId: current?.id,
+    runId,
+  })
+  const eventsPage = Option.getOrUndefined(
+    evidencePageForSection(roundTrip, "events"),
+  )
+  const operationsPage = Option.getOrUndefined(
+    evidencePageForSection(roundTrip, "operations"),
+  )
+  const relatedPage = Option.getOrUndefined(
+    evidencePageForSection(roundTrip, "related"),
+  )
+  const selectionTab =
+    roundTrip._tag === "Accepted"
+      ? Match.value(roundTrip.selection.section).pipe(
+          Match.when("related", () => "related"),
+          Match.when("expectations", () => "confirmations"),
+          Match.orElse(() => "timeline"),
+        )
+      : undefined
   const linkedEventId = events.find(
     (event) => event.id === routeParams.get("event"),
   )?.id
@@ -79,7 +108,17 @@ export function RunInvestigation({
   >(linkedEventId ? { id: linkedEventId, revision: 0 } : undefined)
   const [timelineView, setTimelineView] = useState<
     "timeline" | "waterfall" | "events"
-  >(linkedEventId ? "events" : "timeline")
+  >(
+    linkedEventId
+      ? "events"
+      : roundTrip._tag === "Accepted" &&
+          roundTrip.selection.section === "operations"
+        ? "waterfall"
+        : roundTrip._tag === "Accepted" &&
+            roundTrip.selection.section === "events"
+          ? "events"
+          : "timeline",
+  )
   const model = buildInvestigation(events)
   if (Option.isNone(model)) {
     return null
@@ -99,11 +138,17 @@ export function RunInvestigation({
   } = model.value
   return (
     <div className="grid min-w-0 gap-6">
+      {roundTrip._tag === "Rejected" ? (
+        <Alert>
+          <AlertTitle>Selection not applied</AlertTitle>
+          <AlertDescription>{roundTrip.message}</AlertDescription>
+        </Alert>
+      ) : null}
       <PageSections
         compact={contextual}
         history={contextual ? "replace" : "push"}
         label="Run investigation sections"
-        defaultValue={linkedEventId ? "timeline" : "summary"}
+        defaultValue={linkedEventId ? "timeline" : (selectionTab ?? "summary")}
         sections={[
           {
             value: "summary",
@@ -416,11 +461,15 @@ export function RunInvestigation({
                       }}
                     />
                     {timelineView === "waterfall" ? (
-                      <RunOperationsPagePanel runId={runId} />
+                      <RunOperationsPagePanel
+                        runId={runId}
+                        page={operationsPage}
+                      />
                     ) : timelineView === "events" ? (
                       <RunEventPagePanel
                         runId={runId}
                         initialEventId={evidenceSelection?.id}
+                        page={eventsPage}
                       />
                     ) : (
                       <RunEventTimeline events={events} />
@@ -563,6 +612,7 @@ export function RunInvestigation({
                       retryOf={first.retryOf}
                       correlationId={first.correlationId}
                       parentRunId={first.parentRunId}
+                      page={relatedPage}
                     />
                   </CardContent>
                 </Card>

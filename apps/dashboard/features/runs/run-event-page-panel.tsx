@@ -11,9 +11,11 @@ import { EventTable } from "./run-event-table"
 export function RunEventPagePanel({
   runId,
   initialEventId,
+  page,
 }: {
   runId: string
   initialEventId?: string
+  page?: { readonly cursor?: string; readonly limit?: number }
 }) {
   const trpc = useTRPC()
   const client = useTRPCClient()
@@ -21,11 +23,22 @@ export function RunEventPagePanel({
   const pages = useInfiniteQuery({
     queryKey: [
       ...trpc.run.eventPage.queryKey({ runId }),
-      { projectId: current?.id ?? null },
+      {
+        projectId: current?.id ?? null,
+        cursor: page?.cursor ?? null,
+        limit: page?.limit ?? null,
+      },
     ],
-    initialPageParam: undefined as string | undefined,
+    initialPageParam: page?.cursor,
     queryFn: ({ pageParam, signal }) =>
-      client.run.eventPage.query({ runId, cursor: pageParam }, { signal }),
+      client.run.eventPage.query(
+        {
+          runId,
+          ...(typeof pageParam === "string" ? { cursor: pageParam } : {}),
+          ...(page?.limit ? { limit: page.limit } : {}),
+        },
+        { signal },
+      ),
     getNextPageParam: (page) => page.nextCursor ?? undefined,
     enabled: Boolean(current),
   })

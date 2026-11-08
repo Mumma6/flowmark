@@ -1,5 +1,7 @@
+import type { RunInvestigationSelection } from "@flowmarkdev/core"
 import { Array as EffectArray, Match, Result, Schema } from "effect"
 import { explorerDefaults } from "./explorer-filters"
+import { runSelectionQueryKey } from "./investigation-selection"
 
 const InvestigationSource = Schema.String.check(
   Schema.isPattern(
@@ -59,6 +61,7 @@ export function runInvestigationPath(
   from?: string,
   view?: string,
   event?: string,
+  selection?: RunInvestigationSelection,
 ) {
   const params = new URLSearchParams()
   // Explore remains mounted behind a contextual run location and reads the
@@ -85,6 +88,9 @@ export function runInvestigationPath(
   }
   if (event) {
     params.set("event", event)
+  }
+  if (selection) {
+    params.set(runSelectionQueryKey, JSON.stringify(selection))
   }
   return `/runs/${encodeURIComponent(id)}${params.size ? `?${params}` : ""}`
 }
