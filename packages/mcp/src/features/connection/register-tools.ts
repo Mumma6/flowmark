@@ -1,4 +1,4 @@
-import { GetProjectWorkflowData, runApi } from "@flowmark/api"
+import { GetProjectWorkflowData } from "@flowmark/api"
 import {
   createMcpHandler,
   fromJsonSchema,
@@ -13,11 +13,7 @@ import { getRunForMcp } from "../workflows/get-run.js"
 import { getWorkflowInsightsForMcp } from "../workflows/get-workflow-insights.js"
 import { listWorkflowsForMcp } from "../workflows/list-workflows.js"
 import { McpWorkflowTools } from "../workflows/workflow-tools.js"
-import {
-  mcpToolError,
-  presentMcpTool,
-  type McpToolFailure,
-} from "../../tools/response.js"
+import { mcpToolError, type McpToolFailure } from "../../tools/response.js"
 import {
   connectionInputJsonSchema,
   compareRunInputJsonSchema,
@@ -26,6 +22,8 @@ import {
   listWorkflowsInputJsonSchema,
   workflowInsightsInputJsonSchema,
 } from "../../tools/tool-input-json-schema.js"
+import { runMcpTool } from "../../runtime/tool-runtime.js"
+import { readPagedTool } from "../../tools/paged-read.js"
 import { resolveMcpConnection } from "./resolve-connection.js"
 
 const toolResult = <A, E>(exit: Exit.Exit<A, E>) =>
@@ -35,6 +33,8 @@ const toolResult = <A, E>(exit: Exit.Exit<A, E>) =>
   })
 
 const runWorkflowTool = async <A extends Record<string, unknown>>(
+  identity: FlowmarkMcpAuthInfo,
+  input: unknown,
   use: (tools: {
     readonly listWorkflows: typeof listWorkflowsForMcp
     readonly findRuns: typeof findRunsForMcp
@@ -42,12 +42,15 @@ const runWorkflowTool = async <A extends Record<string, unknown>>(
     readonly compareRun: typeof compareRunForMcp
     readonly getWorkflowInsights: typeof getWorkflowInsightsForMcp
   }) => Effect.Effect<A, McpToolFailure, GetProjectWorkflowData>,
+  signal?: AbortSignal,
 ) =>
   toolResult(
-    await runApi(
-      presentMcpTool(
-        McpWorkflowTools.use(use).pipe(Effect.provide(McpWorkflowTools.layer)),
-      ),
+    await runMcpTool(
+      identity,
+      input,
+      true,
+      McpWorkflowTools.use(use).pipe(Effect.provide(McpWorkflowTools.layer)),
+      signal,
     ),
   )
 
@@ -64,8 +67,16 @@ const registerConnectionTool = (
       inputSchema: fromJsonSchema(connectionInputJsonSchema),
       annotations: { readOnlyHint: true, destructiveHint: false },
     },
-    async () =>
-      toolResult(await runApi(presentMcpTool(resolveMcpConnection(identity)))),
+    async (_input, extra) =>
+      toolResult(
+        await runMcpTool(
+          identity,
+          {},
+          false,
+          resolveMcpConnection(identity),
+          extra.mcpReq.signal,
+        ),
+      ),
   )
 }
 
@@ -82,8 +93,14 @@ const registerListWorkflowsTool = (
       inputSchema: fromJsonSchema(listWorkflowsInputJsonSchema),
       annotations: { readOnlyHint: true, destructiveHint: false },
     },
-    async (input: unknown) =>
-      runWorkflowTool((tools) => tools.listWorkflows(identity, input)),
+    async (input: unknown, extra) =>
+      runWorkflowTool(
+        identity,
+        input,
+        (tools) =>
+          readPagedTool(input, (page) => tools.listWorkflows(identity, page)),
+        extra.mcpReq.signal,
+      ),
   )
 }
 
@@ -100,8 +117,14 @@ const registerFindRunsTool = (
       inputSchema: fromJsonSchema(findRunsInputJsonSchema),
       annotations: { readOnlyHint: true, destructiveHint: false },
     },
-    async (input: unknown) =>
-      runWorkflowTool((tools) => tools.findRuns(identity, input)),
+    async (input: unknown, extra) =>
+      runWorkflowTool(
+        identity,
+        input,
+        (tools) =>
+          readPagedTool(input, (page) => tools.findRuns(identity, page)),
+        extra.mcpReq.signal,
+      ),
   )
 }
 
@@ -118,8 +141,13 @@ const registerGetRunTool = (
       inputSchema: fromJsonSchema(getRunInputJsonSchema),
       annotations: { readOnlyHint: true, destructiveHint: false },
     },
-    async (input: unknown) =>
-      runWorkflowTool((tools) => tools.getRun(identity, input)),
+    async (input: unknown, extra) =>
+      runWorkflowTool(
+        identity,
+        input,
+        (tools) => readPagedTool(input, (page) => tools.getRun(identity, page)),
+        extra.mcpReq.signal,
+      ),
   )
 }
 
@@ -136,8 +164,13 @@ const registerCompareRunTool = (
       inputSchema: fromJsonSchema(compareRunInputJsonSchema),
       annotations: { readOnlyHint: true, destructiveHint: false },
     },
-    async (input: unknown) =>
-      runWorkflowTool((tools) => tools.compareRun(identity, input)),
+    async (input: unknown, extra) =>
+      runWorkflowTool(
+        identity,
+        input,
+        (tools) => tools.compareRun(identity, input),
+        extra.mcpReq.signal,
+      ),
   )
 }
 
@@ -154,8 +187,13 @@ const registerWorkflowInsightsTool = (
       inputSchema: fromJsonSchema(workflowInsightsInputJsonSchema),
       annotations: { readOnlyHint: true, destructiveHint: false },
     },
-    async (input: unknown) =>
-      runWorkflowTool((tools) => tools.getWorkflowInsights(identity, input)),
+    async (input: unknown, extra) =>
+      runWorkflowTool(
+        identity,
+        input,
+        (tools) => tools.getWorkflowInsights(identity, input),
+        extra.mcpReq.signal,
+      ),
   )
 }
 

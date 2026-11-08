@@ -1,5 +1,12 @@
 export { AGENT_ACCESS_MCP_DEPENDENCY_PROPOSAL } from "./mcp-dependency-proposal.js"
 export {
+  verifyAgentConsentRequest,
+  agentConsentAccountBinding,
+  verifyAgentConsentAccountBinding,
+} from "./consent-request.js"
+export { hashOAuthToken } from "./grant-family-claims.js"
+export { AGENT_ACCESS_EXECUTION_BOUNDS } from "./protocol-constants.js"
+export {
   FLOWMARK_AGENT_ACCESS_PROVIDER,
   flowmarkAuthorizationServerMetadata,
   flowmarkOpenIdConfiguration,

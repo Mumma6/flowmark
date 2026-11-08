@@ -50,19 +50,17 @@ export const mcpToolError = (message: string) => ({
   content: [{ type: "text" as const, text: message }],
 })
 
-export const mcpToolResult = (structured: Record<string, unknown>) => {
-  const text = JSON.stringify(structured)
-  return Match.value(
-    text.length <= AGENT_ACCESS_QUERY_BOUNDS.maxSerializedResponseBytes,
-  ).pipe(
-    Match.when(false, responseTooLarge),
-    Match.when(true, () => ({
-      content: [{ type: "text" as const, text }],
-      structuredContent: structured,
-    })),
-    Match.exhaustive,
-  )
-}
+const formatToolResult = (structured: Record<string, unknown>) => ({
+  content: [{ type: "text" as const, text: JSON.stringify(structured) }],
+  structuredContent: structured,
+})
+
+export const mcpResultFits = (structured: Record<string, unknown>) =>
+  new TextEncoder().encode(JSON.stringify(formatToolResult(structured)))
+    .byteLength <= AGENT_ACCESS_QUERY_BOUNDS.maxSerializedResponseBytes
+
+export const mcpToolResult = (structured: Record<string, unknown>) =>
+  mcpResultFits(structured) ? formatToolResult(structured) : responseTooLarge()
 
 export type McpToolFailure =
   | InvalidInput

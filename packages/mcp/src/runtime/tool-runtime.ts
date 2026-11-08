@@ -1,0 +1,49 @@
+import { AGENT_ACCESS_EXECUTION_BOUNDS as bounds } from "@flowmark/auth/agent-access"
+import {
+  ApiLive,
+  type GetMcpAgentConnection,
+  type GetProjectWorkflowData,
+} from "@flowmark/api"
+import { DatabaseReadBudget } from "@flowmark/db/persistence"
+import { Effect } from "effect"
+import { McpToolReadError } from "../errors.js"
+import type { FlowmarkMcpAuthInfo } from "../auth/claims.js"
+import { presentMcpTool, type McpToolFailure } from "../tools/response.js"
+import { admitTool } from "./admission.js"
+
+/** Only the MCP request boundary owns its deadline, cancellation and SQL policy. */
+export const runMcpTool = <A extends Record<string, unknown>>(
+  identity: FlowmarkMcpAuthInfo,
+  input: unknown,
+  projectScoped: boolean,
+  operation: Effect.Effect<
+    A,
+    McpToolFailure,
+    GetProjectWorkflowData | GetMcpAgentConnection
+  >,
+  signal?: AbortSignal,
+) =>
+  Effect.runPromiseExit(
+    presentMcpTool(
+      admitTool(identity, input, projectScoped).pipe(
+        Effect.andThen(operation),
+        Effect.timeoutOrElse({
+          duration: bounds.toolTimeoutMs,
+          orElse: () =>
+            Effect.fail(
+              new McpToolReadError({
+                reason:
+                  "The read deadline was exceeded. Narrow the query or retry.",
+              }),
+            ),
+        }),
+      ),
+    ).pipe(
+      Effect.provide(ApiLive),
+      Effect.provideService(DatabaseReadBudget, {
+        statementTimeoutMs: bounds.statementTimeoutMs,
+        maxOperationFacts: 1000,
+      }),
+    ),
+    { signal },
+  )

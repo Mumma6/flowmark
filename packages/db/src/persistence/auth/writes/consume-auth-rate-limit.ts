@@ -12,7 +12,11 @@ export interface AuthLimitRule {
 
 /** One atomic fixed-window consume, using the database clock across instances. */
 export const consumeAuthRateLimit = Effect.fn("consumeAuthRateLimit")(
-  function* (key: string, rule: AuthLimitRule) {
+  function* (
+    key: string,
+    rule: AuthLimitRule,
+    operation: DatabaseOperation = DatabaseOperation.AuthRateLimit,
+  ) {
     const db = yield* Database
     // Inputs come from server-owned policy, never from request bodies.
     if (
@@ -26,7 +30,7 @@ export const consumeAuthRateLimit = Effect.fn("consumeAuthRateLimit")(
     ) {
       return yield* Effect.die(new Error("Invalid auth limit policy."))
     }
-    const rows = yield* runQuery(DatabaseOperation.AuthRateLimit, () =>
+    const rows = yield* runQuery(operation, () =>
       db.execute<{
         allowed: boolean
         retry_after: number

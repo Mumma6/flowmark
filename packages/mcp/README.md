@@ -54,3 +54,18 @@ pnpm --filter @flowmark/mcp build
 The protected HTTP flow is covered by `apps/server/test/http/mcp-agent-access.test.ts`,
 which runs only when `TEST_DATABASE_URL` is set. Root `pnpm test:integration`
 builds this package before those tests.
+
+## Admission and execution bounds
+
+Every tool call checks shared PostgreSQL admission: 3000/service, 120/grant and
+600/authorized project per minute. Discovery has a separate 300/service budget.
+Storage failure denies admission; revocation remains independent of read budgets.
+Request bodies and full UTF-8 tool results are capped at 64 KiB. Tool execution
+expires after 15 seconds, SQL statements after 5 seconds. Client interruption
+cancels active SQL before pool cleanup. Oversized pages are read again with a
+smaller limit and a new valid cursor. A single oversized record or more than
+1000 operation facts per compared run returns an explicit limitation.
+
+Studio exports a strict version-1 run selection from `@flowmarkdev/core`.
+`runSelectionToolInput` converts it to `get_run` arguments. It carries identifiers
+and paging only; the caller still needs its own active grant and membership.

@@ -1,3 +1,4 @@
+import { handleAgentConsent } from "../../src/adapters/agent-consent"
 import { createHash, randomBytes, randomUUID } from "node:crypto"
 import assert from "node:assert/strict"
 import { eq, like } from "drizzle-orm"
@@ -10,14 +11,23 @@ import {
   oauthConsent,
   oauthRefreshToken,
   verification,
+  workflows,
+  workflowRuns,
+  workflowEvents,
 } from "@flowmark/db"
 import {
   createOwnedProject,
   Database,
   submitAgentAccessConsent,
   revokeAgentAccessConnection,
+  consumeMcpBudget,
 } from "@flowmark/db/persistence"
-import { Effect } from "effect"
+import { Effect, Result } from "effect"
+import {
+  studioRunSelection,
+  runSelectionToolInput,
+} from "../../../dashboard/features/runs/investigation-selection"
+import { appRouter } from "../../src/adapters/trpc"
 import { LATEST_PROTOCOL_VERSION } from "@flowmark/mcp"
 import { POST as mcpPost } from "../../app/mcp/route"
 import {
@@ -146,6 +156,10 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         mcpRequest({ jsonrpc: "2.0", method: "initialize", id: 1 }),
       )
       expect(response.status).toBe(404)
+      const consent = await handleAgentConsent(
+        new Request(`${testOrigin}/v1/agent-consent`),
+      )
+      expect(consent.status).toBe(404)
       process.env.FLOWMARK_AGENT_ACCESS_ENABLED = previous
       resetMcpRouteCacheForTests()
     })
@@ -318,6 +332,32 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         }).pipe(Effect.provideService(Database, connection.db)),
       )
 
+      const workflowId = randomUUID()
+      const selectedRunId = randomUUID()
+      await connection.db
+        .insert(workflows)
+        .values({ id: workflowId, projectId, name: "selection.proof" })
+      await connection.db.insert(workflowRuns).values({
+        id: selectedRunId,
+        workflowId,
+        externalId: "synthetic-selection-proof",
+        startedAt: new Date("2026-11-02T00:00:00.000Z"),
+      })
+      await connection.db.insert(workflowEvents).values([
+        {
+          eventId: randomUUID(),
+          runId: selectedRunId,
+          type: "started",
+          occurredAt: new Date("2026-11-02T00:00:00.000Z"),
+        },
+        {
+          eventId: randomUUID(),
+          runId: selectedRunId,
+          type: "completed",
+          occurredAt: new Date("2026-11-02T00:00:01.000Z"),
+          durationMs: 1000,
+        },
+      ])
       const authHeaders = {
         authorization: `Bearer ${tokens.access_token}`,
       }
@@ -398,6 +438,79 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         "compare_run",
         "get_workflow_insights",
       ])
+      const selection = Result.getOrThrow(
+        studioRunSelection(projectId, selectedRunId),
+      )
+      const selectionInput = Result.getOrThrow(
+        runSelectionToolInput(JSON.parse(JSON.stringify(selection))),
+      )
+      const selectedRead = await readMcpJsonBody<{
+        result?: {
+          isError?: boolean
+          structuredContent?: { summary: unknown; page: unknown }
+        }
+      }>(
+        await handleMcpPost(
+          mcpRequest(
+            {
+              jsonrpc: "2.0",
+              id: 30,
+              method: "tools/call",
+              params: { name: "get_run", arguments: selectionInput },
+            },
+            sessionHeaders,
+          ),
+        ),
+      )
+      expect(selectedRead.result?.isError).toBeUndefined()
+      const studio = appRouter.createCaller({
+        request: new Request(`${testOrigin}/api/trpc`, {
+          headers: { cookie, "x-flowmark-project-id": projectId },
+        }),
+      })
+      expect(selectedRead.result?.structuredContent?.summary).toEqual(
+        await studio.run.investigationSummary({ id: selectedRunId }),
+      )
+      expect(selectedRead.result?.structuredContent?.page).toEqual(
+        await studio.run.eventPage({ runId: selectedRunId }),
+      )
+      const discovery = await readMcpJsonBody<{
+        result?: { isError?: boolean }
+      }>(
+        await handleMcpPost(
+          mcpRequest(
+            {
+              jsonrpc: "2.0",
+              id: 31,
+              method: "tools/call",
+              params: { name: "list_workflows", arguments: { projectId } },
+            },
+            sessionHeaders,
+          ),
+        ),
+      )
+      expect(discovery.result?.isError).toBeUndefined()
+      const found = await readMcpJsonBody<{ result?: { isError?: boolean } }>(
+        await handleMcpPost(
+          mcpRequest(
+            {
+              jsonrpc: "2.0",
+              id: 32,
+              method: "tools/call",
+              params: {
+                name: "find_runs",
+                arguments: {
+                  projectId,
+                  startedAfter: "2026-11-01T00:00:00.000Z",
+                  startedBefore: "2026-11-08T00:00:00.000Z",
+                },
+              },
+            },
+            sessionHeaders,
+          ),
+        ),
+      )
+      expect(found.result?.isError).toBeUndefined()
       const foreignRunId = randomUUID()
       const missingRun = await handleMcpPost(
         mcpRequest(
@@ -548,6 +661,18 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
             ),
           ),
         )
+      await Promise.all(
+        Array.from({ length: 120 }, () =>
+          Effect.runPromise(
+            consumeMcpBudget(`grant:${authorizationCodeId}`, 120).pipe(
+              Effect.provideService(Database, connection.db),
+            ),
+          ),
+        ),
+      )
+      const exhausted = await callConnection(sessionHeaders)
+      expect(exhausted.result?.isError).toBe(true)
+      // Revocation must still succeed after the read budget is exhausted.
       await Effect.runPromise(
         revokeAgentAccessConnection({
           userId: memberUser,
@@ -617,6 +742,277 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
       await connection.db
         .delete(verification)
         .where(like(verification.value, `%"userId":"${session.user.id}"%`))
+    })
+    it("binds real signed provider consent to the selected account and projects before code exchange", async () => {
+      const { getAuth } = await import("../../src/auth.js")
+      const auth = await Effect.runPromise(getAuth())
+      const signup = async () => {
+        const response = await auth.handler(
+          new Request(`${testOrigin}/api/auth/sign-up/email`, {
+            method: "POST",
+            headers: { origin: testOrigin, "content-type": "application/json" },
+            body: JSON.stringify({
+              name: "Consent test",
+              email: `${randomUUID()}@example.test`,
+              password: `${randomUUID()}Aa1`,
+            }),
+          }),
+        )
+        expect(response.status).toBe(200)
+        const cookie = response.headers
+          .getSetCookie()
+          .map((value) => value.split(";")[0])
+          .join("; ")
+        const session = await auth.api.getSession({ headers: { cookie } })
+        assert.ok(session)
+        return { cookie, session }
+      }
+      const account = await signup()
+      const foreign = await signup()
+      const clientId = `consent-${randomUUID()}`
+      const redirectUri = "http://127.0.0.1:4312/callback"
+      const scopes = ["openid", "offline_access", "flowmark:read"]
+      await connection.db.insert(oauthClient).values({
+        id: randomUUID(),
+        clientId,
+        name: "Untrusted <script> client",
+        redirectUris: [redirectUri],
+        grantTypes: ["authorization_code", "refresh_token"],
+        responseTypes: ["code"],
+        tokenEndpointAuthMethod: "none",
+        applicationType: "native",
+        requirePKCE: true,
+        skipConsent: false,
+        disabled: false,
+        scopes,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      await connection.db.insert(oauthClientResource).values({
+        id: randomUUID(),
+        clientId,
+        resourceId: mcpResource,
+        createdAt: new Date(),
+      })
+      const createProject = (name: string) =>
+        Effect.runPromise(
+          createOwnedProject(account.session.user.id, {
+            workspace: name,
+            project: name,
+          }).pipe(Effect.provideService(Database, connection.db)),
+        )
+      const selected = await createProject("Selected consent project")
+      const excluded = await createProject("Excluded consent project")
+      const verifier = randomBytes(32).toString("base64url")
+      const authorization = await auth.handler(
+        new Request(
+          `${testOrigin}/api/auth/oauth2/authorize?${new URLSearchParams({
+            response_type: "code",
+            client_id: clientId,
+            redirect_uri: redirectUri,
+            scope: scopes.join(" "),
+            resource: mcpResource,
+            code_challenge: codeChallenge(verifier),
+            code_challenge_method: "S256",
+          })}`,
+          { headers: { cookie: account.cookie, origin: testOrigin } },
+        ),
+      )
+      const consentLocation = new URL(
+        authorization.headers.get("location") ?? "",
+        testOrigin,
+      )
+      expect(consentLocation.pathname).toBe("/connect/agent/consent")
+      const oauthQuery = consentLocation.search.slice(1)
+      const view = await handleAgentConsent(
+        new Request(
+          `${testOrigin}/v1/agent-consent?${new URLSearchParams({ oauth_query: oauthQuery })}`,
+          { headers: { cookie: account.cookie } },
+        ),
+      )
+      expect(view.status).toBe(200)
+      expect(view.headers.get("cache-control")).toBe("no-store")
+      const metadata = (await view.json()) as {
+        accountBinding: string
+        account: { id: string }
+        projects: Array<{ id: string }>
+      }
+      expect(metadata.account.id).toBe(account.session.user.id)
+      expect(metadata.projects.map((project) => project.id)).toContain(
+        selected.projectId,
+      )
+      const submit = (
+        cookie: string,
+        projectIds: string[],
+        accept = true,
+        query = oauthQuery,
+      ) =>
+        handleAgentConsent(
+          new Request(`${testOrigin}/v1/agent-consent`, {
+            method: "POST",
+            headers: {
+              cookie,
+              origin: testOrigin,
+              "content-type": "application/json",
+            },
+            body: JSON.stringify({
+              oauthQuery: query,
+              accountBinding: metadata.accountBinding,
+              accept,
+              projectIds,
+            }),
+          }),
+        )
+      expect((await submit(account.cookie, [])).status).toBe(400)
+      expect((await submit(foreign.cookie, [selected.projectId])).status).toBe(
+        400,
+      )
+      expect((await submit(account.cookie, [randomUUID()])).status).toBe(400)
+      expect(
+        (
+          await submit(
+            account.cookie,
+            [selected.projectId],
+            true,
+            oauthQuery.replace(clientId, "substituted"),
+          )
+        ).status,
+      ).toBe(400)
+      const denial = await submit(account.cookie, [], false)
+      expect(denial.status).toBe(200)
+      expect(
+        new URL(
+          ((await denial.json()) as { redirect: string }).redirect,
+        ).searchParams.get("error"),
+      ).toBe("access_denied")
+      const accepted = await submit(account.cookie, [selected.projectId])
+      expect(accepted.status).toBe(200)
+      const callback = new URL(
+        ((await accepted.json()) as { redirect: string }).redirect,
+      )
+      const code = callback.searchParams.get("code")
+      assert.ok(code)
+      const exchanged = await auth.handler(
+        new Request(`${testOrigin}/api/auth/oauth2/token`, {
+          method: "POST",
+          headers: {
+            origin: testOrigin,
+            "content-type": "application/x-www-form-urlencoded",
+          },
+          body: new URLSearchParams({
+            grant_type: "authorization_code",
+            client_id: clientId,
+            code,
+            redirect_uri: redirectUri,
+            code_verifier: verifier,
+            resource: mcpResource,
+          }).toString(),
+        }),
+      )
+      expect(exchanged.status).toBe(200)
+      const tokens = (await exchanged.json()) as { access_token: string }
+      const { readAgentAccessGrantFamily } =
+        await import("@flowmark/auth/agent-access")
+      const claims = JSON.parse(
+        Buffer.from(tokens.access_token.split(".")[1], "base64url").toString(),
+      ) as { flowmark_grant_family: string }
+      const family = await Effect.runPromise(
+        readAgentAccessGrantFamily(connection.db, {
+          subjectUserId: account.session.user.id,
+          clientId,
+          issuer: testOrigin,
+          resource: mcpResource,
+          authorizationCodeId: claims.flowmark_grant_family,
+        }),
+      )
+      const { getDelegatedReaderProject } =
+        await import("@flowmark/db/persistence")
+      const reader = (projectId: string) =>
+        Effect.runPromise(
+          getDelegatedReaderProject({
+            userId: account.session.user.id,
+            clientId,
+            authorizationCodeId: family.familyId,
+            projectId,
+          }).pipe(Effect.provideService(Database, connection.db)),
+        )
+      expect(await reader(selected.projectId)).toBe(selected.projectId)
+      expect(await reader(excluded.projectId)).toBeUndefined()
+      const nextAuthorization = await auth.handler(
+        new Request(
+          `${testOrigin}/api/auth/oauth2/authorize?${new URLSearchParams({ response_type: "code", client_id: clientId, redirect_uri: redirectUri, scope: scopes.join(" "), resource: mcpResource, code_challenge: codeChallenge(verifier), code_challenge_method: "S256", prompt: "consent" })}`,
+          { headers: { cookie: account.cookie, origin: testOrigin } },
+        ),
+      )
+      const nextQuery = new URL(
+        nextAuthorization.headers.get("location")!,
+        testOrigin,
+      ).search.slice(1)
+      const nextView = await handleAgentConsent(
+        new Request(
+          `${testOrigin}/v1/agent-consent?${new URLSearchParams({ oauth_query: nextQuery })}`,
+          { headers: { cookie: account.cookie } },
+        ),
+      )
+      expect(nextView.status).toBe(200)
+      const nextMetadata = (await nextView.json()) as { accountBinding: string }
+      const replacement = await handleAgentConsent(
+        new Request(`${testOrigin}/v1/agent-consent`, {
+          method: "POST",
+          headers: {
+            cookie: account.cookie,
+            origin: testOrigin,
+            "content-type": "application/json",
+          },
+          body: JSON.stringify({
+            oauthQuery: nextQuery,
+            accountBinding: nextMetadata.accountBinding,
+            accept: true,
+            projectIds: [excluded.projectId],
+          }),
+        }),
+      )
+      expect(replacement.status).toBe(200)
+      expect(await reader(selected.projectId)).toBeUndefined()
+      const nextCode = new URL(
+        ((await replacement.json()) as { redirect: string }).redirect,
+      ).searchParams.get("code")!
+      const nextExchange = await auth.handler(
+        new Request(`${testOrigin}/api/auth/oauth2/token`, {
+          method: "POST",
+          headers: {
+            origin: testOrigin,
+            "content-type": "application/x-www-form-urlencoded",
+          },
+          body: new URLSearchParams({
+            grant_type: "authorization_code",
+            client_id: clientId,
+            code: nextCode,
+            redirect_uri: redirectUri,
+            code_verifier: verifier,
+            resource: mcpResource,
+          }).toString(),
+        }),
+      )
+      expect(nextExchange.status).toBe(200)
+      const nextTokens = (await nextExchange.json()) as { access_token: string }
+      const nextClaims = JSON.parse(
+        Buffer.from(
+          nextTokens.access_token.split(".")[1],
+          "base64url",
+        ).toString(),
+      ) as { flowmark_grant_family: string }
+      const nextReader = (projectId: string) =>
+        Effect.runPromise(
+          getDelegatedReaderProject({
+            userId: account.session.user.id,
+            clientId,
+            authorizationCodeId: nextClaims.flowmark_grant_family,
+            projectId,
+          }).pipe(Effect.provideService(Database, connection.db)),
+        )
+      expect(await nextReader(excluded.projectId)).toBe(excluded.projectId)
+      expect(await nextReader(selected.projectId)).toBeUndefined()
     })
   },
 )
