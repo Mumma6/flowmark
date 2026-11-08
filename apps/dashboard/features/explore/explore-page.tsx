@@ -7,6 +7,9 @@ import {
   Skeleton,
   StudioWorkspace,
   StudioProcessPane,
+  Alert,
+  AlertDescription,
+  AlertTitle,
 } from "@flowmark/ui"
 import { Array as EffectArray } from "effect"
 import {
@@ -25,6 +28,10 @@ import {
 import Link from "next/link"
 import { usePathname, useSearchParams } from "next/navigation"
 import { readInspectorRunId } from "../runs/investigation-navigation"
+import {
+  interpretPeriodCohort,
+  runSelectionQueryKey,
+} from "../runs/investigation-selection"
 import { RunInspector } from "../runs/run-inspector"
 import { publicConfig } from "../platform/config-public"
 import { useProject } from "../projects/project-context"
@@ -63,6 +70,16 @@ function ExploreWorkspace() {
     setFilters,
     setCursorStack,
   } = explorer
+  const { current } = useProject()
+  const periodSelection = interpretPeriodCohort({
+    raw: params.get(runSelectionQueryKey),
+    projectId: current?.id,
+    workflow: filters.workflow,
+    startedAfterExact: filters.startedAfterExact,
+    startedBeforeExclusive: filters.startedBeforeExclusive,
+    definitionRevision: filters.definitionRevision,
+    environment: filters.environment,
+  })
   const workflows = snapshot.data?.workflows ?? []
   const activeFilters = EffectArray.filter(
     EffectArray.fromIterable(Object.entries(filters)),
@@ -108,6 +125,12 @@ function ExploreWorkspace() {
           </Link>
         </Button>
       </div>
+      {periodSelection._tag === "Rejected" ? (
+        <Alert>
+          <AlertTitle>Period selection not applied</AlertTitle>
+          <AlertDescription>{periodSelection.message}</AlertDescription>
+        </Alert>
+      ) : null}
 
       <StudioWorkspace
         className="border-primary/30 shadow-lg [&>aside]:bg-background/70 [&>aside]:border-primary/20"

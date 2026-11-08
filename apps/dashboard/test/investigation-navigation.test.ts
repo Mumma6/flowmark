@@ -1,12 +1,15 @@
 import { Result } from "effect"
 import { expect, it } from "vitest"
+import { decodePeriodCohortSelection } from "@flowmarkdev/core"
 import {
   buildRunListInput,
   readExplorerFilters,
 } from "../features/runs/explorer-filters"
 import {
-  studioRunSelection,
+  interpretPeriodCohort,
   interpretRunSelection,
+  periodCohortReturnHref,
+  studioRunSelection,
 } from "../features/runs/investigation-selection"
 import {
   investigationReturn,
@@ -197,4 +200,63 @@ it("round-trips a supported selection and refuses a wider or foreign context", (
   expect(
     runInvestigationPath(runId, "/connect/agent/consent?continue=1"),
   ).toContain("from=%2Fconnect%2Fagent%2Fconsent%3Fcontinue%3D1")
+})
+
+it("returns a period cohort to the same workflow and absolute window", () => {
+  const projectId = "00000000-0000-4000-8000-000000000001"
+  const selection = Result.getOrThrow(
+    decodePeriodCohortSelection({
+      version: 1,
+      kind: "period",
+      projectId,
+      workflow: "acceptance.investigation",
+      currentStartedAfter: "2026-11-01T00:00:00.000Z",
+      currentStartedBefore: "2026-11-08T00:00:00.000Z",
+      previousStartedAfter: "2026-10-25T00:00:00.000Z",
+      previousStartedBefore: "2026-11-01T00:00:00.000Z",
+    }),
+  )
+  const href = periodCohortReturnHref(selection)
+  const params = new URL(href, "https://flowmark.test").searchParams
+  const filters = readExplorerFilters(params)
+  expect(buildRunListInput(filters, undefined, "cursor-page-2")).toMatchObject({
+    workflow: "acceptance.investigation",
+    startedAfter: "2026-11-01T00:00:00.000Z",
+    startedBeforeExclusive: "2026-11-08T00:00:00.000Z",
+    cursor: "cursor-page-2",
+  })
+  expect(
+    interpretPeriodCohort({
+      raw: params.get("selection"),
+      projectId,
+      workflow: filters.workflow,
+      startedAfterExact: filters.startedAfterExact,
+      startedBeforeExclusive: filters.startedBeforeExclusive,
+      definitionRevision: filters.definitionRevision,
+      environment: filters.environment,
+    })._tag,
+  ).toBe("Accepted")
+  expect(
+    interpretPeriodCohort({
+      raw: params.get("selection"),
+      projectId: "00000000-0000-4000-8000-000000000099",
+      workflow: filters.workflow,
+      startedAfterExact: filters.startedAfterExact,
+      startedBeforeExclusive: filters.startedBeforeExclusive,
+      definitionRevision: "",
+      environment: "",
+    })._tag,
+  ).toBe("Rejected")
+  expect(
+    interpretPeriodCohort({
+      raw: params.get("selection"),
+      projectId,
+      workflow: filters.workflow,
+      startedAfterExact: filters.startedAfterExact,
+      startedBeforeExclusive: filters.startedBeforeExclusive,
+      definitionRevision: "r1",
+      environment: "",
+    })._tag,
+  ).toBe("Rejected")
+  expect(runInvestigationPath("recorded-run", href)).toContain("from=")
 })

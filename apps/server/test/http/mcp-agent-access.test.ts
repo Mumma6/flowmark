@@ -24,8 +24,9 @@ import {
 } from "@flowmark/db/persistence"
 import { Effect, Result } from "effect"
 import {
-  studioRunSelection,
+  periodCohortToolInput,
   runSelectionToolInput,
+  studioRunSelection,
 } from "../../../dashboard/features/runs/investigation-selection"
 import { appRouter } from "../../src/adapters/trpc"
 import { LATEST_PROTOCOL_VERSION } from "@flowmark/mcp"
@@ -1136,6 +1137,53 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
           ...windows,
         }),
       )
+      const periodSelection = {
+        version: 1 as const,
+        kind: "period" as const,
+        projectId: project.projectId,
+        workflow: "acceptance.investigation",
+        ...windows,
+      }
+      const fromSelection = await callTool(
+        14,
+        "get_workflow_insights",
+        Result.getOrThrow(periodCohortToolInput(periodSelection)),
+      )
+      expect(fromSelection.result?.isError).toBeUndefined()
+      expect(fromSelection.result?.structuredContent?.report).toEqual(
+        technical.result?.structuredContent?.report,
+      )
+      expect(
+        Result.isFailure(
+          periodCohortToolInput({
+            ...periodSelection,
+            definitionRevision: "r1",
+          }),
+        ),
+      ).toBe(true)
+      expect(
+        Result.isFailure(
+          periodCohortToolInput({
+            ...periodSelection,
+            environment: "production",
+          }),
+        ),
+      ).toBe(true)
+      const peer = await callTool(15, "compare_run", {
+        projectId: project.projectId,
+        runId,
+        peers: { days: 30 },
+      })
+      expect(peer.result?.isError).toBeUndefined()
+      expect(peer.result?.structuredContent?.comparison).toEqual(
+        await studio.run.compare({ id: runId, selection: { days: 30 } }),
+      )
+      const peerTooWide = await callTool(16, "compare_run", {
+        projectId: project.projectId,
+        runId,
+        peers: { days: 91 },
+      })
+      expect(peerTooWide.result?.isError).toBe(true)
       await studio.resultDeclarations.create({
         projectId: project.projectId,
         workflow: "acceptance.investigation",

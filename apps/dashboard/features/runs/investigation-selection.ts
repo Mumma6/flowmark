@@ -1,5 +1,7 @@
 import {
+  decodePeriodCohortSelection,
   decodeRunInvestigationSelection,
+  type PeriodCohortSelection,
   type RunInvestigationSelection,
 } from "@flowmarkdev/core"
 import { Match, Option, Result } from "effect"
@@ -14,7 +16,7 @@ export const studioRunSelection = (projectId: string, runId: string) =>
     section: "events",
   })
 
-export { runSelectionToolInput } from "@flowmarkdev/core"
+export { periodCohortToolInput, runSelectionToolInput } from "@flowmarkdev/core"
 
 export const runSelectionQueryKey = "selection"
 
@@ -98,3 +100,80 @@ export const evidencePageForSection = (
         limit: roundTrip.selection.limit,
       })
     : Option.none()
+
+export const periodCohortReturnHref = (selection: PeriodCohortSelection) => {
+  const params = new URLSearchParams({
+    workflow: selection.workflow,
+    startedAfterExact: selection.currentStartedAfter,
+    startedBeforeExclusive: selection.currentStartedBefore,
+    [runSelectionQueryKey]: JSON.stringify(selection),
+  })
+  return `/?${params}`
+}
+
+const periodFilterConflict =
+  "This period selection does not match the filters on the page. Those filters stay in place."
+
+export type PeriodCohortRoundTrip =
+  | { readonly _tag: "Absent" }
+  | { readonly _tag: "Pending" }
+  | { readonly _tag: "Rejected"; readonly message: string }
+  | {
+      readonly _tag: "Accepted"
+      readonly selection: PeriodCohortSelection
+    }
+
+export const interpretPeriodCohort = (input: {
+  readonly raw: string | null
+  readonly projectId: string | undefined
+  readonly workflow: string
+  readonly startedAfterExact: string
+  readonly startedBeforeExclusive: string
+  readonly definitionRevision: string
+  readonly environment: string
+}): PeriodCohortRoundTrip => {
+  const raw = input.raw
+  if (raw === null || raw.trim() === "") {
+    return { _tag: "Absent" }
+  }
+  const parsed = Result.try({
+    try: () => JSON.parse(raw) as unknown,
+    catch: () => unsupportedSelection,
+  })
+  return Result.match(parsed, {
+    onFailure: () => ({
+      _tag: "Rejected" as const,
+      message: unsupportedSelection,
+    }),
+    onSuccess: (value) => {
+      if (Result.isSuccess(decodeRunInvestigationSelection(value))) {
+        return { _tag: "Absent" as const }
+      }
+      return decodePeriodCohortSelection(value).pipe(
+        Result.match({
+          onFailure: () => ({
+            _tag: "Rejected" as const,
+            message: unsupportedSelection,
+          }),
+          onSuccess: (selection) => {
+            if (!input.projectId) {
+              return { _tag: "Pending" as const }
+            }
+            if (!sameId(selection.projectId, input.projectId)) {
+              return { _tag: "Rejected" as const, message: otherProject }
+            }
+            const agrees =
+              input.workflow === selection.workflow &&
+              input.startedAfterExact === selection.currentStartedAfter &&
+              input.startedBeforeExclusive === selection.currentStartedBefore &&
+              input.definitionRevision === "" &&
+              input.environment === ""
+            return agrees
+              ? { _tag: "Accepted" as const, selection }
+              : { _tag: "Rejected" as const, message: periodFilterConflict }
+          },
+        }),
+      )
+    },
+  })
+}
