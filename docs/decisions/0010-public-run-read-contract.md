@@ -1,6 +1,6 @@
 # ADR 0010: First public run read
 
-- Status: proposed; requires maintainer acceptance before implementation
+- Status: accepted by maintainer on 2026-11-10; implementation pending
 - Date: 2026-11-10
 - Task: Product TASK-007.1
 - Baseline: `7b61f56` on `staging`
