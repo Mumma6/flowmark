@@ -60,3 +60,7 @@ The subpath is implemented in repository source; npm publication is separate.
 The same consumer also accepts a version-1 technical period selection, comparing
 current and previous windows with explicit coverage and empty-baseline guidance.
 See [the supported question and limits](../docs/sdk/public-period-read.md).
+
+The [public client guide](../apps/docs/content/docs/public-reads.mdx) documents
+local read-key creation, error recovery and packaging/version boundaries without
+requiring hosted credentials or private plans.

@@ -1,7 +1,8 @@
 import assert from "node:assert/strict"
 import { readFileSync, readdirSync } from "node:fs"
 import path from "node:path"
-import { fileURLToPath } from "node:url"
+import { URL, fileURLToPath } from "node:url"
+import process from "node:process"
 import { test } from "node:test"
 import ts from "typescript"
 
@@ -28,7 +29,9 @@ test("every internal link and heading anchor resolves", () => {
     for (const [, href] of withoutCode(content).matchAll(
       /\[[^\]]+\]\(([^)]+)\)/g,
     )) {
-      if (/^https?:/.test(href)) continue
+      if (/^https?:/.test(href)) {
+        continue
+      }
       const target = new URL(href, `https://docs.example${url}`)
       const targetDocument = documents.get(target.pathname)
       assert.ok(targetDocument, `${file}: missing link ${href}`)
@@ -79,7 +82,9 @@ test("SDK client and run methods all have linked API reference pages", () => {
   )
   assert.equal(interfaces.length, 2)
   for (const declaration of interfaces) {
-    for (const [, method] of declaration.matchAll(/^  (\w+)(?:<[^>]+>)?\(/gm)) {
+    for (const [, method] of declaration.matchAll(
+      /^ {2}(\w+)(?:<[^>]+>)?\(/gm,
+    )) {
       assert.ok(
         reference.includes(`\`${method}(`),
         `Missing API index link for ${method}`,
@@ -141,6 +146,7 @@ ${blocks("/docs/reference/create-flowmark")[1]
 function advancedExample() {
 ${blocks("/docs/reference/advanced")[0].replace(/^import .+$/gm, "")}
 }
+${blocks("/docs/public-reads")[0].replaceAll('"@flowmarkdev/node/read"', '"../src/reads/index.js"')}
 function proxyExample() {
 ${blocks("/docs/reference/proxy")[1]
   .replace(/^import .+$/gm, "")

@@ -66,3 +66,6 @@ or this period selection from a JSON file, using the same environment-only key
 and command. Period mode prints empty/baseline guidance; it rejects a cursor
 argument. No tRPC/router, database types or Effect runtime imports are needed by
 the consumer.
+
+See the [public documentation source](../../apps/docs/content/docs/public-reads.mdx)
+for a complete local setup, exported types, error codes and compatibility rules.
