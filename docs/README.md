@@ -40,6 +40,9 @@ Contributor guides that ship with the public repository:
   for the accepted Connect Your Agent MCP/OAuth dependency tranche. See
   [ADR 0008](./decisions/0008-connect-agent-protocol-contract.md) for the frozen
   protocol, grant, client and tool contract.
+- [Proposed public run read](./decisions/0010-public-run-read-contract.md):
+  first consumer, wire contract and implementation handoff; awaiting acceptance,
+  with no public endpoint or client implemented yet.
 
 SDK contracts used by the implementation live under `docs/sdk/`:
 
