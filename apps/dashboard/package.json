@@ -27,7 +27,8 @@
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "recharts": "3.8.0",
-    "@flowmarkdev/core": "workspace:*"
+    "@flowmarkdev/core": "workspace:*",
+    "@flowmark/evidence-view": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.18.6",

@@ -16,7 +16,8 @@
     "@flowmarkdev/node": "workspace:*",
     "next": "^16.4.2",
     "react": "^19.3.1",
-    "react-dom": "^19.3.1"
+    "react-dom": "^19.3.1",
+    "@flowmark/evidence-view": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.18.6",
