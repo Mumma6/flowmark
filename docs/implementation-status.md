@@ -64,6 +64,14 @@ consumer. [Public read guide](./sdk/public-run-read.md) records the auth and
 resource bounds. Hosted rollout and SDK publication are separate; source
 availability does not claim either has occurred.
 
+Product TASK-007.3 adds `POST /v1/read/period` and `client.readPeriod` for one
+accepted technical workflow-period comparison. The existing CLI consumes the
+same Studio/MCP selection, with query echo, full window populations, explicit
+coverage/omissions and a scoped Studio link. The shared SQL is filtered before
+aggregation; the public query fetches two aggregate rows without attribution
+lists. Peer/business modes, revisions and extra filters stay explicitly
+unsupported by this read. [Guide](./sdk/public-period-read.md).
+
 ## Verification status
 
 The implementation rows describe source availability, not blanket acceptance.

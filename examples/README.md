@@ -56,3 +56,7 @@ It reads one Studio selection JSON file and an optional continuation cursor;
 `FLOWMARK_API_URL` and `FLOWMARK_READ_KEY` are environment-only configuration.
 See [setup, limits and errors](../docs/sdk/public-run-read.md#run-the-repository-consumer).
 The subpath is implemented in repository source; npm publication is separate.
+
+The same consumer also accepts a version-1 technical period selection, comparing
+current and previous windows with explicit coverage and empty-baseline guidance.
+See [the supported question and limits](../docs/sdk/public-period-read.md).

@@ -1,3 +1,4 @@
+import { ReadPublicPeriod } from "./features/public-reads/use-cases/read-period.js"
 import { ReadPublicRun } from "./features/public-reads/use-cases/read-run.js"
 import { PublicReadAdmissionLive } from "./features/public-reads/adapters/public-read-admission.js"
 import { AgentConsent } from "./features/project-access/use-cases/agent-consent.js"
@@ -50,6 +51,7 @@ const agentAccessAdapter = Layer.mergeAll(
 
 export const ApiLive = Layer.mergeAll(
   ReadPublicRun.layer,
+  ReadPublicPeriod.layer,
   AgentConsent.layer,
   ManageResultDeclarations.layer,
   IngestWorkflowEvents.layer,
@@ -69,6 +71,7 @@ export function runApi<A, E>(
   operation: Effect.Effect<
     A,
     E,
+    | ReadPublicPeriod
     | ReadPublicRun
     | AgentAccess
     | AgentConsent

@@ -46,6 +46,7 @@ Contributor guides that ship with the public repository:
 
 SDK contracts used by the implementation live under `docs/sdk/`:
 
+- [Technical period comparison](./sdk/public-period-read): exact windows, coverage and the same server-side consumer.
 - [Public run read](./sdk/public-run-read): project read keys, metadata pages and the server-side TypeScript consumer.
 - [Results and reports](./sdk/result-contract)
 - [Run continuation](./sdk/run-continuation)

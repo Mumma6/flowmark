@@ -55,6 +55,7 @@ const input = {
 
 function repository(overrides: Partial<WorkflowRepositoryService> = {}) {
   return WorkflowRepository.of({
+    periodRead: () => Effect.die("Not used by this fixture"),
     runRead: () => Effect.die("Not used by this fixture"),
     expectations: () =>
       Effect.succeed({

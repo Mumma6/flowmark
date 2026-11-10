@@ -56,7 +56,13 @@ export const intelligenceWindowSql = (
   current: IntelligenceWindow,
   previous: IntelligenceWindow,
 ) => sql`
-  ${projectRunSummaries(projectId)},
+  ${projectRunSummaries(projectId, {
+    ...(workflow ? { workflow } : {}),
+    intervals: [
+      { after: current.startedAfter, before: current.startedBefore },
+      { after: previous.startedAfter, before: previous.startedBefore },
+    ],
+  })},
   periods AS (
     SELECT
       'current' AS period,

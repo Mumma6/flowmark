@@ -324,3 +324,44 @@ endpoint proof**. Existing source anchors are `investigation-selection.ts`,
 [ADR 0008's](0008-connect-agent-protocol-contract.md) independent MCP audience
 and existing bounded-read semantics. No runtime exports or endpoints are added
 by this ADR.
+
+## Additive technical-period consumer
+
+Product TASK-007.3 extends the same server-side consumer with the already accepted
+Studio/MCP `PeriodCohortSelectionSchema` from ADR 0009. Its question is: **“How did
+this workflow's reported failures and duration change between these periods?”**
+`POST /v1/read/period` and `client.readPeriod(selection, { signal })` accept that
+exact version-1 `kind: "period"` selection. Each half-open UTC window is at most
+31 days; the previous window must end before or at the current start. Workflow
+and project are mandatory. The existing `/v1/read/run` contract stays unchanged.
+
+The core-owned `PeriodReadInputSchema`, `PeriodReadWindowSchema` and
+`PeriodReadResponseSchema` export their corresponding ordinary DTO types. A
+response contains `version`, `mode: "technical"`, the exact `selection`,
+`observedAt`, `capabilities: ["technical_period_windows"]`, and
+`report: { workflow, current, previous }`. Each window includes its exact bounds,
+total/finished/completed/failed counts, success rate, median and p95 recorded
+duration. It uses the same SQL aggregate as Studio, with a project/workflow/window
+predicate before aggregation. It returns at most two aggregate rows and never
+loads attribution lists or raw event payloads into the application.
+
+Coverage includes `currentOpenRuns`, `previousOpenRuns`,
+`previousWindowHasRuns` and `durationObservationCounts: null` (the source does not
+expose duration observation counts). Empty populations have zero counts and null
+statistics. Counts remain reported evidence; missing terminals do not establish
+activity. No percentage/duration change is invented for an absent baseline.
+
+`continuation: null` means these are complete window aggregates, with no paging.
+`evidence.periodPath` preserves the shared selection and exact current-window
+Studio filters. `omissions` names `daily`, `operations`, `failure_groups`,
+`workflow_catalog` and `duration_observation_counts`; this small answer does not
+claim to return the whole Studio report. Large attribution sections do not
+truncate or change the selected population.
+
+The run and period reads share live read-key authorization, the same durable
+service/project/key counters, error envelope, byte/deadline bounds and client
+transport. No new credential audience, auth fallback, dependency or package is
+introduced. Peer/business modes, revisions (including unknown revisions),
+environment filters and continuation cursors are unsupported by this period
+read and produce `UNSUPPORTED_SELECTION`; malformed windows produce
+`INVALID_REQUEST`. Version errors retain `UNSUPPORTED_VERSION`.

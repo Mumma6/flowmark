@@ -3,6 +3,7 @@ import {
   createFlowmarkReadClient,
   FlowmarkReadError,
   type RunReadInput,
+  type PeriodReadInput,
 } from "@flowmarkdev/node/read"
 
 // A server-side consumer of the public Promise API. No tRPC, database or Effect
@@ -17,24 +18,44 @@ async function main() {
     )
   }
   // The client validates unknown runtime data; the type is only its TS input.
-  const selection = JSON.parse(await readFile(file, "utf8")) as RunReadInput
+  const selection = JSON.parse(await readFile(file, "utf8")) as
+    RunReadInput | PeriodReadInput
   const client = createFlowmarkReadClient({ apiBaseUrl, readKey })
   const controller = new AbortController()
   const cancel = () => controller.abort()
   process.once("SIGINT", cancel)
   try {
     const cursor = process.argv[3]
-    const response = await client.readRun(
-      cursor ? { ...selection, cursor } : selection,
-      { signal: controller.signal },
-    )
-    console.log(JSON.stringify(response, null, 2))
-    if (response.page.events.length === 0) {
-      console.log("No retained events on this page.")
+    if (selection.kind === "period" && cursor) {
+      throw new Error("Period aggregates do not accept a continuation cursor.")
     }
-    if (response.page.nextCursor) {
+    const response =
+      selection.kind === "period"
+        ? await client.readPeriod(selection, { signal: controller.signal })
+        : await client.readRun(cursor ? { ...selection, cursor } : selection, {
+            signal: controller.signal,
+          })
+    console.log(JSON.stringify(response, null, 2))
+    if ("page" in response) {
+      if (response.page.events.length === 0) {
+        console.log("No retained events on this page.")
+      }
+      if (response.page.nextCursor) {
+        console.log(
+          "More evidence is available. Pass page.nextCursor explicitly for the next read.",
+        )
+      }
+    } else {
+      if (response.report.current.totalRuns === 0) {
+        console.log("No reported runs started in the current window.")
+      }
+      if (!response.coverage.previousWindowHasRuns) {
+        console.log(
+          "The previous window has no reported runs; no baseline is available.",
+        )
+      }
       console.log(
-        "More evidence is available. Pass page.nextCursor explicitly for the next read.",
+        "Counts and recorded durations describe reported evidence, not causation or current activity.",
       )
     }
     if (process.env.FLOWMARK_STUDIO_URL) {
@@ -50,7 +71,10 @@ async function main() {
       }
       console.log(
         new URL(
-          response.evidence.runPath.slice(1),
+          ("page" in response
+            ? response.evidence.runPath
+            : response.evidence.periodPath
+          ).slice(1),
           `${studio.toString().replace(/\/$/, "")}/`,
         ).toString(),
       )
