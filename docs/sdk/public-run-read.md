@@ -94,3 +94,6 @@ link, poll, ingest evidence, seed data or execute application work.
 
 The same client and CLI also support [technical period comparison](./public-period-read.md)
 through `readPeriod`; the run endpoint continues to accept only run/events selections.
+
+See the [public documentation source](../../apps/docs/content/docs/public-reads.mdx)
+for a complete local setup, exported types, error codes and compatibility rules.

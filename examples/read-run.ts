@@ -27,7 +27,7 @@ async function main() {
   try {
     const cursor = process.argv[3]
     if (selection.kind === "period" && cursor) {
-      throw new Error("Period aggregates do not accept a continuation cursor.")
+      throw new FlowmarkReadError("UNSUPPORTED_SELECTION")
     }
     const response =
       selection.kind === "period"

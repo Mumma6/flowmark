@@ -11,18 +11,23 @@ and workflow queries. The dashboard is
 
 ## HTTP endpoints
 
-| Endpoint                        | Purpose                                                  |
-| ------------------------------- | -------------------------------------------------------- |
-| `GET /api/health`               | Database-independent API liveness check                  |
-| `GET /api/auth/*`               | Better Auth session lookup                               |
-| `POST /api/auth/*`              | Better Auth sign-in, sign-out, and callbacks             |
-| `POST /api/register`            | Create an account. The project and write key come later  |
-| `GET /api/trpc/{procedure}`     | Typed read queries used by the dashboard                 |
-| `POST /api/trpc/{procedure}`    | tRPC mutations for project, key, and declaration changes |
-| `OPTIONS /api/trpc/{procedure}` | Dashboard CORS preflight                                 |
-| `POST /v1/events`               | Private server-side workflow event ingestion             |
-| `POST /v1/browser-events`       | Public-key browser event ingestion                       |
-| `OPTIONS /v1/browser-events`    | Browser CORS preflight                                   |
+The [public read client](/docs/public-reads) documents the versioned run/period
+contract, source-package availability, local consumer, errors and self-host bounds.
+
+| Endpoint                        | Purpose                                                   |
+| ------------------------------- | --------------------------------------------------------- |
+| `GET /api/health`               | Database-independent API liveness check                   |
+| `GET /api/auth/*`               | Better Auth session lookup                                |
+| `POST /api/auth/*`              | Better Auth sign-in, sign-out, and callbacks              |
+| `POST /api/register`            | Create an account. The project and write key come later   |
+| `GET /api/trpc/{procedure}`     | Typed read queries used by the dashboard                  |
+| `POST /api/trpc/{procedure}`    | tRPC mutations for project, key, and declaration changes  |
+| `OPTIONS /api/trpc/{procedure}` | Dashboard CORS preflight                                  |
+| `POST /v1/read/run`             | Scoped run-event metadata using a secret project read key |
+| `POST /v1/read/period`          | Exact technical period windows using that read key        |
+| `POST /v1/events`               | Private server-side workflow event ingestion              |
+| `POST /v1/browser-events`       | Public-key browser event ingestion                        |
+| `OPTIONS /v1/browser-events`    | Browser CORS preflight                                    |
 
 The API application's root page (at your API origin; locally
 `http://localhost:3003`) includes expandable request

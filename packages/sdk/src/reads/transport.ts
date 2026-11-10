@@ -118,7 +118,11 @@ export const createReadTransport = (options: {
           ).pipe(
             Effect.mapError(() => new FlowmarkReadError("INVALID_REQUEST")),
           )
-          if (!key.startsWith("fm_read_") || key.length > 249) {
+          if (
+            typeof key !== "string" ||
+            !key.startsWith("fm_read_") ||
+            key.length > 249
+          ) {
             return yield* Effect.fail(new FlowmarkReadError("UNAUTHORIZED"))
           }
           const body = JSON.stringify(selection)
