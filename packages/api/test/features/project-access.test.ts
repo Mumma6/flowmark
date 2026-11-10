@@ -112,6 +112,50 @@ function provideOnboarding(credentials = projectCredentials()) {
 }
 
 describe("ManageProject", () => {
+  it("issues read keys only after membership and key-creation admission", async () => {
+    const createApiKey = vi.fn(() =>
+      Effect.succeed({
+        id: "read",
+        name: "CLI",
+        prefix: "fm_read_test",
+        secret: "fm_read_secret",
+      }),
+    )
+    const credentials = projectCredentials({ createApiKey })
+    const create = Effect.flatMap(ManageProject, (manage) =>
+      manage.createReadKey("user", "project-1", "CLI"),
+    )
+    await Effect.runPromise(create.pipe(Effect.provide(provide(credentials))))
+    expect(createApiKey).toHaveBeenCalledWith("project-1", {
+      name: "CLI",
+      permission: "read",
+    })
+    createApiKey.mockClear()
+    const denied = projectCredentials({
+      createApiKey,
+      memberProject: () => Effect.succeed(undefined),
+    })
+    expectLeft(
+      await Effect.runPromise(
+        Effect.result(create).pipe(Effect.provide(provide(denied))),
+      ),
+      { _tag: "Unauthorized" },
+    )
+    expect(createApiKey).not.toHaveBeenCalled()
+    const limited = projectCredentials({
+      createApiKey,
+      consumeCreationQuota: () =>
+        Effect.succeed({ allowed: false, retryAfter: 8 }),
+    })
+    expectLeft(
+      await Effect.runPromise(
+        Effect.result(create).pipe(Effect.provide(provide(limited))),
+      ),
+      { _tag: "ManagementRateLimited" },
+    )
+    expect(createApiKey).not.toHaveBeenCalled()
+  })
+
   it("denies creation and rotation before writes when the actor budget is exhausted, while allowing revocation", async () => {
     const createProject = vi.fn(projectCredentials().createProject)
     const createApiKey = vi.fn(projectCredentials().createApiKey)

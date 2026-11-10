@@ -283,3 +283,12 @@ Runnable loopback examples live in the repository under `packages/sdk/examples/`
 ## License
 
 MIT · [Mumma6/flowmark](https://github.com/Mumma6/flowmark)
+
+## Public run reads
+
+The source-only `@flowmarkdev/node/read` subpath provides
+`createFlowmarkReadClient`, `FlowmarkReadClient`, `FlowmarkReadError` and the public
+read DTO types. See the [run read guide](../../docs/sdk/public-run-read.md) for
+read-key issuance, self-hosted URLs, limits and the runnable CLI. This subpath
+requires a package publication containing this subpath; this change does not
+publish a release. Existing ingestion exports are unchanged.

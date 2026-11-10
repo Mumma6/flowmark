@@ -57,6 +57,13 @@ current public tree, not future Connect tasks.
 | **001.1**       | Strict version-1 run selection shared by Studio and MCP; real protocol reads match Studio summary/events. [ADR 0009](./decisions/0009-versioned-run-investigation-selection.md).                                                                                            |
 | **001.3**       | One technical period cohort maps to the same period report and current-window run list in Studio and MCP. Revision, environment and peer windows outside 1–90 days stay rejected. A return link keeps the current project and filters. Separate reads are not one snapshot. |
 
+Product TASK-007.2 adds the source implementation of `POST /v1/read/run`,
+`ReadPublicRun`, metadata-only scoped repository reads, read-key issuance in
+Settings and the ordinary `@flowmarkdev/node/read` Promise client/standalone
+consumer. [Public read guide](./sdk/public-run-read.md) records the auth and
+resource bounds. Hosted rollout and SDK publication are separate; source
+availability does not claim either has occurred.
+
 ## Verification status
 
 The implementation rows describe source availability, not blanket acceptance.

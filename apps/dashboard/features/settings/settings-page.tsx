@@ -25,7 +25,7 @@ const sections: ReadonlyArray<{
   readonly label: string
 }> = [
   { id: "projects", label: "Projects" },
-  { id: "keys", label: "Ingestion keys" },
+  { id: "keys", label: "API keys" },
   { id: "setup", label: "Setup help" },
   { id: "account", label: "Account" },
 ]
@@ -33,7 +33,7 @@ const sections: ReadonlyArray<{
 const sectionHelp: Record<SettingsSection, string> = {
   projects:
     "Create or select the project that owns the work you want to observe. Switch projects in the Studio header to inspect their runs.",
-  keys: "Give your application an ingestion key for the selected project. Ingestion keys are not agent read access — use Connect → Read evidence for manual investigation handoff.",
+  keys: "Create project write keys for ingestion or secret read keys for a server-side read client. Browser ingestion keys never grant reads. Use Connect for delegated agent access.",
   setup:
     "Follow coding-agent or manual SDK instructions to instrument your application, then verify evidence in Runs. For reading evidence with Codex, Cursor, Claude Code or a custom agent, open Connect and scroll to agent access.",
   account:
@@ -56,7 +56,7 @@ function SettingsPageInner() {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
-  const { projects } = useProject()
+  const { projects, current } = useProject()
   const section = parseSection(searchParams.get("section"))
   const setSection = (next: string) => {
     const params = new URLSearchParams(searchParams.toString())
@@ -97,7 +97,7 @@ function SettingsPageInner() {
           <ProjectSettings />
         </TabsContent>
         <TabsContent value="keys" className="mt-6">
-          <KeySettings />
+          <KeySettings key={current?.id ?? "no-project"} />
         </TabsContent>
         <TabsContent value="setup" className="mt-6">
           <ConnectSetupPanel compact />

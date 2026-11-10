@@ -27,7 +27,11 @@
       "types": "./dist/adapters/proxy.d.ts",
       "import": "./dist/adapters/proxy.js"
     },
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./read": {
+      "types": "./dist/reads/index.d.ts",
+      "import": "./dist/reads/index.js"
+    }
   },
   "files": [
     "dist",

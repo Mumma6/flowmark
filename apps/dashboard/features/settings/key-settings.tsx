@@ -33,6 +33,9 @@ export function KeySettings() {
     current,
     projects,
     keys,
+    readName,
+    setReadName,
+    createRead,
     writeName,
     setWriteName,
     browserName,
@@ -57,10 +60,10 @@ export function KeySettings() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Ingestion keys</CardTitle>
+          <CardTitle>API keys</CardTitle>
           <CardDescription>
-            Create a project first. Keys belong to a project and authenticate
-            the SDK — not your dashboard sign-in.
+            Create a project first. Keys belong to a project and authorize
+            ingestion or reads — not your dashboard sign-in.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -72,6 +75,7 @@ export function KeySettings() {
     )
   }
   const actionError =
+    createRead.error ??
     createWrite.error ??
     rotate.error ??
     revokeApi.error ??
@@ -83,7 +87,7 @@ export function KeySettings() {
     <div className="grid gap-6">
       <Card>
         <CardHeader>
-          <CardTitle>Server write keys</CardTitle>
+          <CardTitle>Server API keys</CardTitle>
           <CardDescription>
             For <code>{current.name}</code>. A write key authenticates the
             server SDK. It is not your dashboard sign-in. Emergency rotation
@@ -133,6 +137,38 @@ export function KeySettings() {
             <Button type="submit" disabled={createWrite.isPending}>
               Create write key
             </Button>
+          </form>
+          <form
+            className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end"
+            onSubmit={(event: FormEvent) => {
+              event.preventDefault()
+              createRead.mutate({ projectId: current.id, name: readName })
+            }}
+          >
+            <label className="grid gap-2 text-sm">
+              <span className="font-medium">Read key label</span>
+              <Input
+                value={readName}
+                onChange={(event) => setReadName(event.target.value)}
+                aria-describedby="read-key-help"
+                required
+                minLength={1}
+                maxLength={80}
+              />
+            </label>
+            <Button
+              type="submit"
+              disabled={createRead.isPending || !readName.trim()}
+            >
+              Create read key
+            </Button>
+            <p
+              id="read-key-help"
+              className="text-xs text-muted-foreground sm:col-span-2"
+            >
+              For server-side read clients. Keep this secret out of browsers.
+              Read keys cannot ingest events.
+            </p>
           </form>
           <Table>
             <TableHeader>

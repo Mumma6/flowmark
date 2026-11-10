@@ -1,3 +1,5 @@
+import type { PublicReadFailure } from "../../public-reads/errors.js"
+import type { RunReadInput, RunReadResponse } from "@flowmarkdev/core"
 import type {
   AppendDisposition,
   BusinessInsights,
@@ -40,6 +42,13 @@ import type {
 } from "../types.js"
 
 export interface WorkflowRepositoryService {
+  readonly runRead: (
+    projectId: string,
+    input: RunReadInput,
+  ) => Effect.Effect<
+    Pick<RunReadResponse, "summary" | "page">,
+    PublicReadFailure
+  >
   readonly expectations: (
     projectId: string,
     runId: string,

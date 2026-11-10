@@ -436,6 +436,15 @@ export const appRouter = t.router({
           ),
         ),
       ),
+    createReadKey: t.procedure
+      .input(ProjectIdName)
+      .mutation(({ ctx, input }) =>
+        sessionQuery(ctx.request, (userId) =>
+          Effect.flatMap(ManageProject, (manage) =>
+            manage.createReadKey(userId, input.projectId, input.name),
+          ),
+        ),
+      ),
     revokeApiKey: t.procedure
       .input(ProjectKey)
       .mutation(({ ctx, input }) =>

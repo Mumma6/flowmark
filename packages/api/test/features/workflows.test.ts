@@ -55,6 +55,7 @@ const input = {
 
 function repository(overrides: Partial<WorkflowRepositoryService> = {}) {
   return WorkflowRepository.of({
+    runRead: () => Effect.die("Not used by this fixture"),
     expectations: () =>
       Effect.succeed({
         asOf: new Date(0).toISOString(),
