@@ -43,7 +43,7 @@ export function AccountSettings({
         <CardTitle>Account</CardTitle>
         <CardDescription>
           Dashboard access uses your email and password. The SDK uses a project
-          write key from the Ingestion keys section.
+          write key from the API keys section.
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-6">

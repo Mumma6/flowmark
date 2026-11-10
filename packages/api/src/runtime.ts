@@ -1,3 +1,5 @@
+import { ReadPublicRun } from "./features/public-reads/use-cases/read-run.js"
+import { PublicReadAdmissionLive } from "./features/public-reads/adapters/public-read-admission.js"
 import { AgentConsent } from "./features/project-access/use-cases/agent-consent.js"
 import { AgentConsentRepositoryLive } from "./features/project-access/adapters/agent-consent.js"
 import { ManageResultDeclarations } from "./features/result-declarations/use-cases/manage-result-declarations.js"
@@ -36,6 +38,8 @@ const databaseAdapters = Layer.mergeAll(
   WorkflowRepositoryLive,
   ProjectCredentialsLive,
 ).pipe(Layer.provide(persistence))
+const readAdmission = PublicReadAdmissionLive.pipe(Layer.provide(persistence))
+
 const dependencies = AuthorizeProject.layer.pipe(
   Layer.provideMerge(databaseAdapters),
 )
@@ -45,6 +49,7 @@ const agentAccessAdapter = Layer.mergeAll(
 ).pipe(Layer.provide(persistence))
 
 export const ApiLive = Layer.mergeAll(
+  ReadPublicRun.layer,
   AgentConsent.layer,
   ManageResultDeclarations.layer,
   IngestWorkflowEvents.layer,
@@ -53,6 +58,7 @@ export const ApiLive = Layer.mergeAll(
   ManageProject.layer,
   Onboarding.layer,
 ).pipe(
+  Layer.provide(readAdmission),
   Layer.provideMerge(agentAccessAdapter),
   Layer.provide(dependencies),
   Layer.provide(ApiSettings.layer),
@@ -63,6 +69,7 @@ export function runApi<A, E>(
   operation: Effect.Effect<
     A,
     E,
+    | ReadPublicRun
     | AgentAccess
     | AgentConsent
     | ManageResultDeclarations

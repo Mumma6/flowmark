@@ -42,10 +42,11 @@ Contributor guides that ship with the public repository:
   protocol, grant, client and tool contract.
 - [Public run read contract](./decisions/0010-public-run-read-contract.md):
   accepted first consumer, wire contract and implementation handoff,
-  with no public endpoint or client implemented yet.
+  implemented in source; see the public run read guide for deployment/publication limits.
 
 SDK contracts used by the implementation live under `docs/sdk/`:
 
+- [Public run read](./sdk/public-run-read): project read keys, metadata pages and the server-side TypeScript consumer.
 - [Results and reports](./sdk/result-contract)
 - [Run continuation](./sdk/run-continuation)
 - [Business outcome reads](./sdk/business-insights)

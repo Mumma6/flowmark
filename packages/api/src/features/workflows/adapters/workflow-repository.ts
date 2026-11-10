@@ -1,3 +1,7 @@
+import {
+  PublicReadFailure,
+  publicStorageFailure,
+} from "../../public-reads/errors.js"
 import { Effect, Layer } from "effect"
 import { WorkflowStore } from "@flowmark/db/persistence"
 import {
@@ -15,6 +19,16 @@ export const WorkflowRepositoryLive = Layer.effect(
   Effect.gen(function* () {
     const store = yield* WorkflowStore
     return WorkflowRepository.of({
+      runRead: (projectId, input) =>
+        store.runRead(projectId, input).pipe(
+          Effect.catchTags({
+            MissingRunError: () =>
+              Effect.fail(new PublicReadFailure({ code: "RUN_NOT_FOUND" })),
+            InvalidRunReadCursor: () =>
+              Effect.fail(new PublicReadFailure({ code: "INVALID_CURSOR" })),
+            DatabaseError: (error) => Effect.fail(publicStorageFailure(error)),
+          }),
+        ),
       expectations: Effect.fn("WorkflowRepositoryLive.expectations")(
         (projectId, runId) => persist(store.expectations(projectId, runId)),
       ),

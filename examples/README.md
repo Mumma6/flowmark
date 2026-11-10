@@ -3,7 +3,7 @@
 Illustrative TypeScript excerpts for [`@flowmarkdev/node`](https://www.npmjs.com/package/@flowmarkdev/node).
 They show where Flowmark fits into application code that already does the work.
 
-These files are not applications, tests, or scripts. Helper functions such as
+Except for the runnable `read-run.ts` consumer below, these files are not applications, tests, or scripts. Helper functions such as
 `upsertCustomer()` are declared so the snippet can focus on instrumentation.
 Every Flowmark call matches the current SDK. `tsconfig.json` maps
 `@flowmarkdev/node` to the SDK in this repository so the editor can resolve
@@ -48,3 +48,11 @@ completed or failed.
 Browser delivery (`@flowmarkdev/node/browser`), the server proxy, and custom
 transports are client setup rather than workflow scenarios, so they are not
 included here.
+
+## Public read consumer
+
+`read-run.ts` is a runnable server-side consumer of `@flowmarkdev/node/read`.
+It reads one Studio selection JSON file and an optional continuation cursor;
+`FLOWMARK_API_URL` and `FLOWMARK_READ_KEY` are environment-only configuration.
+See [setup, limits and errors](../docs/sdk/public-run-read.md#run-the-repository-consumer).
+The subpath is implemented in repository source; npm publication is separate.

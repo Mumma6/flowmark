@@ -9,6 +9,14 @@ the local fixture use the same provider login implementation.
 
 ## Request paths
 
+- `POST /v1/read/run` accepts only a live stored project read key and an explicit
+  matching project/run selection. Write/browser/demo keys, cookie sessions,
+  delegated identity headers and MCP audience tokens are rejected. Service,
+  project and authenticated-key budgets use a distinct public-read namespace.
+  Session-only `project.createReadKey` checks project membership and the existing
+  key-creation quota; existing project-scoped revocation applies. See the
+  [public read guide](./sdk/public-run-read.md).
+
 - `/api/auth/*` calls the provider HTTP handler. Origin and CSRF checks stay
   enabled explicitly, including in tests. Provider callback validation remains
   authoritative.

@@ -1,3 +1,6 @@
+import { getRunRead } from "./queries/get-run-read.js"
+import { InvalidRunReadCursor } from "./public-read-errors.js"
+import type { RunReadInput, RunReadResponse } from "@flowmarkdev/core"
 import { getRunExpectations } from "./queries/get-run-expectations.js"
 import type { RunExpectations } from "@flowmarkdev/core"
 import type { PeerSelection } from "@flowmarkdev/core"
@@ -59,6 +62,13 @@ import type {
 } from "./types.js"
 
 export interface WorkflowStoreService {
+  readonly runRead: (
+    projectId: string,
+    input: RunReadInput,
+  ) => Effect.Effect<
+    Pick<RunReadResponse, "summary" | "page">,
+    DatabaseError | MissingRunError | InvalidRunReadCursor
+  >
   readonly expectations: (
     projectId: string,
     runId: string,
@@ -145,6 +155,7 @@ export class WorkflowStore extends Context.Service<WorkflowStore>()(
     make: Effect.gen(function* () {
       const provide = provideDatabase(yield* Database)
       return {
+        runRead: (projectId, input) => provide(getRunRead(projectId, input)),
         expectations: (projectId, runId) =>
           provide(getRunExpectations(projectId, runId)),
         businessInsights: (projectId, query) =>

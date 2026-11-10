@@ -21,6 +21,7 @@ export const expectedServerFiles = [
   "auth-perimeter",
   "durable-auth-limits",
   "storage-failure",
+  "public-run-read",
 ] as const
 
 const invalid = () =>

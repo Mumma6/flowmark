@@ -24,6 +24,7 @@ export function useKeySettings() {
   const email = session.data?.user.email ?? ""
   const { current, projects } = useProject()
   const keys = useProjectKeys()
+  const [readName, setReadName] = useState("Read key")
   const [writeName, setWriteName] = useState("Write key")
   const [browserName, setBrowserName] = useState("Browser key")
   const [origins, setOrigins] = useState("http://localhost:3000")
@@ -36,12 +37,6 @@ export function useKeySettings() {
   const previousEmail = useRef(email)
   const confirming = useRef(false)
   const returnFocus = useRef<HTMLButtonElement | null>(null)
-  useEffect(() => {
-    setSecret(null)
-    setSecretSource(null)
-    setNotice(null)
-    setAction(null)
-  }, [current?.id])
   useEffect(() => {
     if (previousEmail.current && email && previousEmail.current !== email) {
       setSecret(null)
@@ -57,6 +52,22 @@ export function useKeySettings() {
         setSecret(created)
         toast.add({
           title: "Ingestion key created",
+          type: "success",
+          description: "Copy the key from the form and store it securely.",
+        })
+        setSecretSource("created")
+        setNotice(null)
+        void queryClient.invalidateQueries()
+      },
+    }),
+  )
+  const createRead = useMutation(
+    trpc.project.createReadKey.mutationOptions({
+      retry: false,
+      onSuccess: (created) => {
+        setSecret(created)
+        toast.add({
+          title: "Read key created",
           type: "success",
           description: "Copy the key from the form and store it securely.",
         })
@@ -158,7 +169,7 @@ export function useKeySettings() {
         if (secret?.id === revoked.id) {
           setSecretSource(null)
         }
-        toast.add({ title: "Ingestion key revoked", type: "success" })
+        toast.add({ title: "Key revoked", type: "success" })
         setNotice(
           `Revoked ${revoked.name} (${revoked.prefix}…). Applications using it can no longer authenticate.`,
         )
@@ -172,6 +183,9 @@ export function useKeySettings() {
     current,
     projects,
     keys,
+    readName,
+    setReadName,
+    createRead,
     writeName,
     setWriteName,
     browserName,
