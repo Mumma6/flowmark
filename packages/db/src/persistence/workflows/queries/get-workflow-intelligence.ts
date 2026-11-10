@@ -1,3 +1,4 @@
+import { emptyInsightWindow } from "../insight-window.js"
 import { Effect } from "effect"
 import { Database } from "../../database.js"
 import { DatabaseOperation } from "../../database-operation.js"
@@ -33,21 +34,6 @@ type FailureCodeRow = {
   readonly count: number
   readonly runIds: ReadonlyArray<string> | null
 }
-
-const emptyWindow = (
-  startedAfter: string,
-  startedBefore: string,
-): InsightWindow => ({
-  startedAfter,
-  startedBefore,
-  totalRuns: 0,
-  finishedRuns: 0,
-  completedRuns: 0,
-  failedRuns: 0,
-  successRate: null,
-  medianDurationMs: null,
-  p95DurationMs: null,
-})
 
 const runIds = (value: ReadonlyArray<string> | null) =>
   (value ?? []).slice(0, 20)
@@ -94,10 +80,10 @@ export const getWorkflowIntelligence = Effect.fn("getWorkflowIntelligence")(
     const windowByPeriod = new Map(windows.map((row) => [row.period, row]))
     const currentWindow =
       windowByPeriod.get("current") ??
-      emptyWindow(current.startedAfter, current.startedBefore)
+      emptyInsightWindow(current.startedAfter, current.startedBefore)
     const previousWindow =
       windowByPeriod.get("previous") ??
-      emptyWindow(previous.startedAfter, previous.startedBefore)
+      emptyInsightWindow(previous.startedAfter, previous.startedBefore)
 
     const operationsByName = new Map<
       string,

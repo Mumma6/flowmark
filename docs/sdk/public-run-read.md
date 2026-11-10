@@ -69,7 +69,7 @@ not permission to read a project.
   at 15 seconds and each SQL statement at 5 seconds. An oversized response fails
   explicitly; request fewer events. Service/project/key admission is durable.
 
-Version 1 rejects unsupported sections, period queries and extra filters rather
+This run endpoint rejects unsupported sections, period queries and extra filters rather
 than dropping them. Errors have a stable code and optional retry delay; 429 also
 includes `Retry-After`. The full DTO, status mapping and compatibility policy are
 in [ADR 0010](../decisions/0010-public-run-read-contract.md).
@@ -91,3 +91,6 @@ or put it in the selection file. An optional second argument is the exact cursor
 returned by the previous read. The script prints empty-page guidance, accepts
 Ctrl+C cancellation and reports safe error codes. It does not fetch a return
 link, poll, ingest evidence, seed data or execute application work.
+
+The same client and CLI also support [technical period comparison](./public-period-read.md)
+through `readPeriod`; the run endpoint continues to accept only run/events selections.

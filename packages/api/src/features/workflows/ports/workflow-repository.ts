@@ -1,3 +1,4 @@
+import type { PeriodReadInput, PeriodReadResponse } from "@flowmarkdev/core"
 import type { PublicReadFailure } from "../../public-reads/errors.js"
 import type { RunReadInput, RunReadResponse } from "@flowmarkdev/core"
 import type {
@@ -42,6 +43,10 @@ import type {
 } from "../types.js"
 
 export interface WorkflowRepositoryService {
+  readonly periodRead: (
+    projectId: string,
+    input: PeriodReadInput,
+  ) => Effect.Effect<PeriodReadResponse["report"], PublicReadFailure>
   readonly runRead: (
     projectId: string,
     input: RunReadInput,

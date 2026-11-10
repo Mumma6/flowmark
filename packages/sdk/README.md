@@ -292,3 +292,8 @@ read DTO types. See the [run read guide](../../docs/sdk/public-run-read.md) for
 read-key issuance, self-hosted URLs, limits and the runnable CLI. This subpath
 requires a package publication containing this subpath; this change does not
 publish a release. Existing ingestion exports are unchanged.
+
+`client.readPeriod` supports the same explicit technical-period selection used
+by Studio/MCP. See [period comparisons](../../docs/sdk/public-period-read.md) for
+full-population counts, coverage and unsupported filters. Both read methods
+share the same scoped transport, auth/error boundary and runnable consumer.

@@ -4,12 +4,10 @@ import {
   runReadEvidencePath,
   type RunReadResponse,
 } from "@flowmarkdev/core"
-import { DEMO_READ_KEY } from "@flowmark/db/demo"
 import { Array, Clock, Context, Effect, Layer, Schema } from "effect"
-import { AuthorizeProject } from "../../project-access/use-cases/authorize-project.js"
+import { AuthorizePublicRead } from "./authorize-public-read.js"
 import { WorkflowRepository } from "../../workflows/ports/workflow-repository.js"
-import { PublicReadAdmission } from "../ports/public-read-admission.js"
-import { PublicReadFailure, publicStorageFailure } from "../errors.js"
+import { PublicReadFailure } from "../errors.js"
 
 export class ReadPublicRun extends Context.Service<
   ReadPublicRun,
@@ -23,31 +21,11 @@ export class ReadPublicRun extends Context.Service<
   static readonly layer = Layer.effect(
     this,
     Effect.gen(function* () {
-      const authorization = yield* AuthorizeProject
+      const authorization = yield* AuthorizePublicRead
       const repository = yield* WorkflowRepository
-      const admission = yield* PublicReadAdmission
       return ReadPublicRun.of({
         read: Effect.fn("ReadPublicRun.read")(function* (header, raw) {
-          yield* admission.consume("service", 3000)
-          if (
-            !header?.startsWith("Bearer fm_read_") ||
-            header.length > 256 ||
-            header === `Bearer ${DEMO_READ_KEY}`
-          ) {
-            return yield* new PublicReadFailure({ code: "UNAUTHORIZED" })
-          }
-          const projectId = yield* authorization.authorize(header, "read").pipe(
-            Effect.catchTags({
-              Unauthorized: () =>
-                Effect.fail(new PublicReadFailure({ code: "UNAUTHORIZED" })),
-              PersistenceError: (error) =>
-                Effect.fail(publicStorageFailure(error)),
-            }),
-          )
-          // Only authenticated keys allocate their own admission counter; storage
-          // hashes the whole namespace, including this secret, before persisting it.
-          yield* admission.consume(`key:${header.slice(7)}`, 120)
-          yield* admission.consume(`project:${projectId}`, 600)
+          const projectId = yield* authorization.authorize(header)
           if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
             return yield* new PublicReadFailure({ code: "INVALID_REQUEST" })
           }
@@ -101,5 +79,5 @@ export class ReadPublicRun extends Context.Service<
         }),
       })
     }),
-  )
+  ).pipe(Layer.provide(AuthorizePublicRead.layer))
 }

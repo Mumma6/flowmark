@@ -27,6 +27,7 @@ import {
   type RunReadInput,
 } from "../../../../packages/sdk/src/reads/index.js"
 import { POST } from "../../app/v1/read/run/route"
+import { POST as readPeriodPost } from "../../app/v1/read/period/route"
 
 describe.skipIf(!process.env.TEST_DATABASE_URL)(
   "public run read over HTTP, SDK and disposable PostgreSQL",
@@ -148,7 +149,11 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
           duplex: "half",
           signal: abort.signal,
         } as RequestInit)
-        void POST(request)
+        void (
+          incoming.url?.startsWith("/v1/read/period")
+            ? readPeriodPost(request)
+            : POST(request)
+        )
           .then(async (response) => {
             outgoing.writeHead(
               response.status,
@@ -314,6 +319,183 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
       }
     })
 
+    it("compares technical periods against Studio over a scoped population without loading large attribution sections", async () => {
+      const previous = randomUUID(),
+        failed = randomUUID(),
+        outside = randomUUID()
+      await connection.db.insert(workflowRuns).values([
+        {
+          id: previous,
+          workflowId,
+          externalId: "previous",
+          startedAt: new Date("2026-11-09T12:00:00Z"),
+        },
+        {
+          id: failed,
+          workflowId,
+          externalId: "failed",
+          startedAt: new Date("2026-11-10T12:00:00Z"),
+        },
+        {
+          id: outside,
+          workflowId,
+          externalId: "outside",
+          startedAt: new Date("2026-11-11T00:00:00Z"),
+        },
+      ])
+      await connection.db
+        .execute(sql`INSERT INTO workflow_events (event_id, run_id, type, occurred_at) VALUES
+        (${randomUUID()}::uuid, ${previous}::uuid, 'completed', '2026-11-09T12:01:00Z'),
+        (${randomUUID()}::uuid, ${failed}::uuid, 'failed', '2026-11-10T12:02:00Z'),
+        (${randomUUID()}::uuid, ${outside}::uuid, 'completed', '2026-11-11T00:01:00Z')`)
+      await connection.db
+        .execute(sql`INSERT INTO workflow_events (event_id, run_id, type, occurred_at, operation_name, duration_ms)
+        SELECT gen_random_uuid(), ${runId}::uuid, 'operation_completed', '2026-11-10T00:01:30Z'::timestamptz,
+          repeat('LARGE-ATTRIBUTION-', 100) || number, 1 FROM generate_series(1, 120) number`)
+      await connection.db
+        .update(workflows)
+        .set({ name: "public.read" })
+        .where(eq(workflows.id, otherWorkflow))
+      const period = {
+        version: 1,
+        kind: "period",
+        projectId,
+        workflow: "public.read",
+        currentStartedAfter: "2026-11-10T00:00:00.000Z",
+        currentStartedBefore: "2026-11-11T00:00:00.000Z",
+        previousStartedAfter: "2026-11-09T00:00:00.000Z",
+        previousStartedBefore: "2026-11-10T00:00:00.000Z",
+      } as const
+      const client = createFlowmarkReadClient({ apiBaseUrl: origin, readKey })
+      const result = await client.readPeriod(period)
+      const studio = await api(
+        Effect.flatMap(GetProjectWorkflowData, (data) =>
+          data.periodReport(
+            { _tag: "Key", header: `Bearer ${readKey}` },
+            period,
+          ),
+        ),
+      )
+      const canonical = (value: typeof studio.current) => ({
+        startedAfter: new Date(value.startedAfter).toISOString(),
+        startedBefore: new Date(value.startedBefore).toISOString(),
+        totalRuns: value.totalRuns,
+        finishedRuns: value.finishedRuns,
+        completedRuns: value.completedRuns,
+        failedRuns: value.failedRuns,
+        successRate: value.successRate,
+        medianDurationMs: value.medianDurationMs,
+        p95DurationMs: value.p95DurationMs,
+      })
+      expect(result.report.current).toEqual(canonical(studio.current))
+      expect(result.report.previous).toEqual(canonical(studio.previous))
+      expect(result.report.current).toMatchObject({
+        totalRuns: 3,
+        finishedRuns: 2,
+        failedRuns: 1,
+        completedRuns: 1,
+      })
+      expect(result.report.previous).toMatchObject({
+        totalRuns: 1,
+        finishedRuns: 1,
+        failedRuns: 0,
+      })
+      expect(result.coverage).toMatchObject({
+        currentOpenRuns: 1,
+        previousOpenRuns: 0,
+        previousWindowHasRuns: true,
+        durationObservationCounts: null,
+      })
+      expect(result.continuation).toBeNull()
+      expect(studio.operations.length).toBe(120)
+      expect(JSON.stringify(result)).not.toContain("LARGE-ATTRIBUTION")
+      expect(Buffer.byteLength(JSON.stringify(result))).toBeLessThan(8192)
+      const href = new URL(result.evidence.periodPath, "https://studio.example")
+      expect(JSON.parse(href.searchParams.get("selection")!)).toEqual(period)
+      expect(href.searchParams.get("startedBeforeExclusive")).toBe(
+        period.currentStartedBefore,
+      )
+      const empty = await client.readPeriod({ ...period, workflow: "missing" })
+      expect(empty.report.current.totalRuns).toBe(0)
+      expect(empty.report.current.successRate).toBeNull()
+      expect(empty.coverage.previousWindowHasRuns).toBe(false)
+
+      const dir = await mkdtemp(join(tmpdir(), "flowmark-period-cli-"))
+      try {
+        const file = join(dir, "selection.json")
+        await writeFile(file, JSON.stringify(period))
+        const { stdout } = await promisify(execFile)(
+          "pnpm",
+          [
+            "--filter",
+            "@flowmark/db",
+            "exec",
+            "tsx",
+            "--tsconfig",
+            "../../examples/tsconfig.json",
+            "../../examples/read-run.ts",
+            file,
+          ],
+          {
+            cwd: fileURLToPath(new URL("../../../../", import.meta.url)),
+            env: {
+              ...process.env,
+              FLOWMARK_API_URL: origin,
+              FLOWMARK_READ_KEY: readKey,
+            },
+          },
+        )
+        expect(stdout).toContain('"mode": "technical"')
+        expect(stdout).toContain('"failedRuns": 1')
+        expect(stdout).not.toContain(readKey)
+      } finally {
+        await rm(dir, { recursive: true, force: true })
+      }
+    })
+
+    it("denies unsupported period revisions, mixed filters and foreign scope over HTTP", async () => {
+      const period = {
+        version: 1,
+        kind: "period",
+        projectId,
+        workflow: "public.read",
+        currentStartedAfter: "2026-11-10T00:00:00.000Z",
+        currentStartedBefore: "2026-11-11T00:00:00.000Z",
+        previousStartedAfter: "2026-11-09T00:00:00.000Z",
+        previousStartedBefore: "2026-11-10T00:00:00.000Z",
+      }
+      const read = (value: unknown, key = readKey) =>
+        fetch(`${origin}/v1/read/period`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${key}`,
+          },
+          body: JSON.stringify(value),
+        })
+      expect((await read(period, writeKey)).status).toBe(401)
+      expect(
+        (await read({ ...period, projectId: foreignProject })).status,
+      ).toBe(403)
+      const unsupported = await read({
+        ...period,
+        revision: "unknown",
+        environment: "production",
+      })
+      expect(unsupported.status).toBe(400)
+      expect((await unsupported.json()).error.code).toBe(
+        "UNSUPPORTED_SELECTION",
+      )
+      expect(
+        (
+          await read({
+            ...period,
+            currentStartedBefore: "2027-01-01T00:00:00.000Z",
+          })
+        ).status,
+      ).toBe(400)
+    })
+
     it("enforces the durable key budget with Retry-After over HTTP", async () => {
       const key = createHash("sha256")
         .update(`flowmark:public-read:v1:key:${readKey}`)
@@ -353,6 +535,18 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         ),
       )
       expect((await raw(input)).status).toBe(401)
+      expect(
+        (
+          await fetch(`${origin}/v1/read/period`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${readKey}`,
+            },
+            body: "{}",
+          })
+        ).status,
+      ).toBe(401)
     })
   },
 )

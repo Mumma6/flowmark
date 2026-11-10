@@ -117,3 +117,5 @@ export { PublicReadFailure } from "./features/public-reads/errors.js"
 export { PublicReadAdmission } from "./features/public-reads/ports/public-read-admission.js"
 
 export { PUBLIC_READ_BOUNDS, type RunReadError } from "@flowmarkdev/core"
+
+export { ReadPublicPeriod } from "./features/public-reads/use-cases/read-period.js"

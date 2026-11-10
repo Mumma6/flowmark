@@ -1,3 +1,5 @@
+import { getPeriodRead } from "./queries/get-period-read.js"
+import type { PeriodReadInput, PeriodReadResponse } from "@flowmarkdev/core"
 import { getRunRead } from "./queries/get-run-read.js"
 import { InvalidRunReadCursor } from "./public-read-errors.js"
 import type { RunReadInput, RunReadResponse } from "@flowmarkdev/core"
@@ -62,6 +64,10 @@ import type {
 } from "./types.js"
 
 export interface WorkflowStoreService {
+  readonly periodRead: (
+    projectId: string,
+    input: PeriodReadInput,
+  ) => Effect.Effect<PeriodReadResponse["report"], DatabaseError>
   readonly runRead: (
     projectId: string,
     input: RunReadInput,
@@ -155,6 +161,8 @@ export class WorkflowStore extends Context.Service<WorkflowStore>()(
     make: Effect.gen(function* () {
       const provide = provideDatabase(yield* Database)
       return {
+        periodRead: (projectId, input) =>
+          provide(getPeriodRead(projectId, input)),
         runRead: (projectId, input) => provide(getRunRead(projectId, input)),
         expectations: (projectId, runId) =>
           provide(getRunExpectations(projectId, runId)),

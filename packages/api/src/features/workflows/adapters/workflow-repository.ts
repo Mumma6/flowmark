@@ -19,6 +19,10 @@ export const WorkflowRepositoryLive = Layer.effect(
   Effect.gen(function* () {
     const store = yield* WorkflowStore
     return WorkflowRepository.of({
+      periodRead: (projectId, input) =>
+        store
+          .periodRead(projectId, input)
+          .pipe(Effect.mapError(publicStorageFailure)),
       runRead: (projectId, input) =>
         store.runRead(projectId, input).pipe(
           Effect.catchTags({
