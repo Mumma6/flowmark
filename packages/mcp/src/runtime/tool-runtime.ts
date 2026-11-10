@@ -47,3 +47,28 @@ export const runMcpTool = <A extends Record<string, unknown>>(
     ),
     { signal },
   )
+
+/** Static UI resources share live grant admission/deadlines, with a separate build-time asset budget. */
+export const runMcpResourceRead = (
+  identity: FlowmarkMcpAuthInfo,
+  signal?: AbortSignal,
+) =>
+  Effect.runPromiseExit(
+    admitTool(identity, {}, false).pipe(
+      Effect.timeoutOrElse({
+        duration: bounds.toolTimeoutMs,
+        orElse: () =>
+          Effect.fail(
+            new McpToolReadError({
+              reason: "Resource admission deadline exceeded.",
+            }),
+          ),
+      }),
+      Effect.provide(ApiLive),
+      Effect.provideService(DatabaseReadBudget, {
+        statementTimeoutMs: bounds.statementTimeoutMs,
+        maxOperationFacts: 1000,
+      }),
+    ),
+    { signal },
+  )

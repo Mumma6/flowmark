@@ -98,3 +98,18 @@ A `flowmark:read` token is not an ingestion key and not a dashboard session.
 It cannot ingest events, create projects, or write result declarations. Project
 arguments outside the grant are rejected before the read is treated as success.
 Revocation is the persisted grant family, checked on the next authorized call.
+
+## Optional MCP App run view
+
+Compatible clients can render the read-only `get_run` events presentation through
+`ui://flowmark/run-evidence/v1.html`. UI capability negotiation only selects a
+presentation; it grants no authority. The existing six tools and their complete
+text/structured results remain available without UI support. Live connection and
+admission checks also protect static resource reads. No new public route, key or
+REST client is required. Agent access's disabled mode remains authoritative.
+
+The shared package documents [presentation and local synthetic verification](../evidence-view/README.md).
+[ADR 0011](../../docs/decisions/0011-mcp-app-evidence-boundary.md) records the
+approved protocol/dependency and host sandbox boundaries. This first view has no
+outgoing tool calls, evidence navigation, polling or external assets. It is not
+a business-safe projection of the underlying diagnostic tool result.

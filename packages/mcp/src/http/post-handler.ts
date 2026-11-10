@@ -3,6 +3,7 @@ import type { AuthorizationServerMetadata } from "@modelcontextprotocol/server"
 import { Effect, Option } from "effect"
 import { McpRequestBodyError, readMcpRequest } from "./request-body.js"
 import { authInfoFromClaims, toMcpAuthInfo } from "../auth/claims.js"
+import { readEvidenceCapability } from "../features/connection/evidence-resource.js"
 import { createFlowmarkMcpSdkHandler } from "../features/connection/register-tools.js"
 import type { ResolvedAgentAccessRuntime } from "../runtime/agent-access-runtime.js"
 
@@ -40,10 +41,15 @@ export const createFlowmarkMcpPostHandler = (input: {
               { message: "Access token is not a valid agent connection." },
               { status: 401, headers: { "cache-control": "no-store" } },
             ),
-          onSome: ({ identity, token: accessToken }) =>
-            mcpSdkHandler().fetch(request, {
+          onSome: async ({ identity, token: accessToken }) => {
+            const uiSupported = await Effect.runPromise(
+              readEvidenceCapability(request),
+              { signal: request.signal },
+            )
+            return mcpSdkHandler(uiSupported).fetch(request, {
               authInfo: toMcpAuthInfo(identity, claims, accessToken),
-            }),
+            })
+          },
         },
       )
     },

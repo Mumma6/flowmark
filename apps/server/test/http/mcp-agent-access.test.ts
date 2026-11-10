@@ -163,6 +163,15 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         mcpRequest({ jsonrpc: "2.0", method: "initialize", id: 1 }),
       )
       expect(response.status).toBe(404)
+      const disabledResource = await handleMcpPost(
+        mcpRequest({
+          jsonrpc: "2.0",
+          id: 2,
+          method: "resources/read",
+          params: { uri: "ui://flowmark/run-evidence/v1.html" },
+        }),
+      )
+      expect(disabledResource.status).toBe(404)
       const consent = await handleAgentConsent(
         new Request(`${testOrigin}/v1/agent-consent`),
       )
@@ -445,6 +454,70 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         "compare_run",
         "get_workflow_insights",
       ])
+      const resourceUri = "ui://flowmark/run-evidence/v1.html"
+      const uiMeta = {
+        "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+        "io.modelcontextprotocol/clientCapabilities": {
+          extensions: {
+            "io.modelcontextprotocol/ui": {
+              mimeTypes: ["text/html;profile=mcp-app"],
+            },
+          },
+        },
+        "io.modelcontextprotocol/clientInfo": {
+          name: "synthetic-view-test",
+          version: "1",
+        },
+      }
+      const appRequest = (
+        id: number,
+        method: string,
+        params: Record<string, unknown>,
+      ) =>
+        mcpRequest(
+          { jsonrpc: "2.0", id, method, params: { ...params, _meta: uiMeta } },
+          {
+            ...authHeaders,
+            "mcp-protocol-version": "2026-07-28",
+            "mcp-method": method,
+            ...(typeof params.uri === "string"
+              ? { "mcp-name": params.uri }
+              : {}),
+          },
+        )
+      const appTools = await readMcpJsonBody<{
+        result?: {
+          tools?: Array<{
+            name: string
+            _meta?: { ui?: { resourceUri?: string } }
+          }>
+        }
+      }>(await handleMcpPost(appRequest(40, "tools/list", {})))
+      expect(
+        appTools.result?.tools?.find((tool) => tool.name === "get_run")?._meta
+          ?.ui?.resourceUri,
+      ).toBe(resourceUri)
+      const readAppResource = () =>
+        handleMcpPost(appRequest(41, "resources/read", { uri: resourceUri }))
+      const resource = await readMcpJsonBody<{
+        result?: { contents?: Array<{ text?: string }> }
+      }>(await readAppResource())
+      expect(resource.result?.contents?.[0]?.text).toContain(
+        "Flowmark run evidence",
+      )
+      expect(resource.result?.contents?.[0]?.text).not.toContain(selectedRunId)
+      expect(
+        (
+          await handleMcpPost(
+            mcpRequest({
+              jsonrpc: "2.0",
+              id: 42,
+              method: "resources/read",
+              params: { uri: resourceUri },
+            }),
+          )
+        ).status,
+      ).toBe(401)
       const selection = Result.getOrThrow(
         studioRunSelection(projectId, selectedRunId),
       )
@@ -688,6 +761,12 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         }).pipe(Effect.provideService(Database, connection.db)),
       )
       expect((await callConnection(sessionHeaders)).result?.isError).toBe(true)
+      const revokedResource = await readMcpJsonBody<{
+        error?: unknown
+        result?: { contents?: unknown }
+      }>(await readAppResource())
+      expect(revokedResource.error).toBeDefined()
+      expect(revokedResource.result?.contents).toBeUndefined()
 
       const reconnected = await issueToken()
       const nextProject = await Effect.runPromise(
