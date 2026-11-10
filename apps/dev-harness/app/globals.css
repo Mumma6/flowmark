@@ -22,6 +22,43 @@
     --border: 160 8% 20%;
     --input: 160 8% 25%;
     --ring: 98 82% 78%;
+    --success: 152 42% 65%;
+    --warning: 40 80% 68%;
+    --info: 205 65% 72%;
+    --radius: 0.7rem;
+  }
+}
+
+@layer base {
+  [data-theme="light"] {
+    color-scheme: light;
+    --background: 140 5% 98%;
+    --foreground: 150 5% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 150 5% 10%;
+    --primary: 105 45% 26%;
+    --highlight: 253 48% 43%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 140 5% 94%;
+    --secondary-foreground: 150 5% 10%;
+    --destructive: 0 72% 45%;
+    --destructive-foreground: 0 0% 100%;
+    --muted: 140 5% 95%;
+    --muted-foreground: 140 3% 40%;
+    --accent: 100 35% 92%;
+    --accent-foreground: 105 45% 22%;
+    --border: 140 5% 88%;
+    --input: 140 5% 82%;
+    --ring: 105 45% 26%;
+    --chart-1: 105 45% 26%;
+    --chart-2: 197 35% 42%;
+    --chart-3: 0 72% 45%;
+    --chart-4: 157 18% 38%;
+    --chart-5: 40 70% 42%;
+    --success: 152 42% 30%;
+    --success-foreground: 152 42% 30%;
+    --warning: 35 80% 35%;
+    --info: 205 65% 35%;
     --radius: 0.7rem;
   }
 }

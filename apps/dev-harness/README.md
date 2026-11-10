@@ -96,3 +96,26 @@ pnpm --filter @flowmark/dev-harness lint
 pnpm --filter @flowmark/dev-harness typecheck
 pnpm --filter @flowmark/dev-harness build
 ```
+
+### Supplied evidence host
+
+Open `http://127.0.0.1:3004/evidence` while running `pnpm dev`.
+In Studio, open an authorized run’s Timeline → Table, expand **Portable evidence
+snapshot**, and choose **Copy supplied snapshot JSON**. Paste it into the host
+and choose **Render supplied evidence**. Both use `@flowmark/ui`’s `RunSnapshot`
+with the same props. The initial example is explicitly synthetic.
+
+This local-only host fetches no evidence, accepts no credentials, persists
+nothing, and does not establish current authorization or freshness. Studio
+exports only metadata from its first bounded event page: at most eight event
+references, canonical run status/duration and explicit coverage/omissions.
+Application payloads, external IDs and business results are withheld. The host
+rejects unknown fields, missing coverage notes, duplicate milestone IDs, more
+than eight milestones/four metrics, values over 8,192 characters and JSON over
+65,536 characters. It renders supplied strings as text, with no executable
+links/actions. Invalid input clears the rendered evidence on submission.
+
+Use the theme toggle and keyboard milestone buttons to inspect the same view
+at narrow widths. This is a supplied-data example; MCP App transport, host
+lifecycle/navigation and authenticated sharing have separate contracts.
+Never deploy or expose the development harness.
