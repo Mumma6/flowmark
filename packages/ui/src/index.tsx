@@ -116,3 +116,5 @@ export type {
 } from "./run-snapshot"
 
 export { Toaster, toast } from "./toast"
+
+export { Textarea } from "./textarea"

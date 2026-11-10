@@ -128,8 +128,8 @@ export function RunSnapshot({
             </div>
             <p className="mt-2 flex flex-wrap gap-x-3 gap-y-1 font-mono text-[10px] text-muted-foreground sm:text-xs">
               <span className="break-all">{externalId}</span>
-              {environment && <span>{environment}</span>}
-              {release && <span>Release {release}</span>}
+              {environment && <span className="break-all">{environment}</span>}
+              {release && <span className="break-all">Release {release}</span>}
               <span>{startedAt}</span>
             </p>
           </div>
@@ -167,13 +167,13 @@ export function RunSnapshot({
           </p>
           {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
         </div>
+        <p className="mt-4 text-xs leading-6 text-muted-foreground [overflow-wrap:anywhere]">
+          {evidenceNote}
+        </p>
         {milestones.length > 0 && (
           <div className="mt-5 border-t border-border pt-5">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
               <h3 className="text-xs font-medium">Recorded milestones</h3>
-              <p className="text-[10px] leading-5 text-muted-foreground">
-                {evidenceNote}
-              </p>
             </div>
             <div
               className={`grid grid-cols-1 gap-2 min-[360px]:grid-cols-2 ${milestones.length === 6 ? "lg:grid-cols-3" : "lg:grid-cols-4"}`}
@@ -192,7 +192,7 @@ export function RunSnapshot({
                     <span className="block break-words text-xs font-medium">
                       {item.label}
                     </span>
-                    <span className="mt-1.5 block font-mono text-[10px] font-normal text-muted-foreground">
+                    <span className="mt-1.5 block break-all font-mono text-[10px] font-normal text-muted-foreground">
                       {item.time}
                     </span>
                   </span>
@@ -207,7 +207,9 @@ export function RunSnapshot({
                   aria-atomic="true"
                   className="min-w-0 p-4 sm:p-5"
                 >
-                  <p className="text-[10px] text-primary">{selected.note}</p>
+                  <p className="text-[10px] text-primary [overflow-wrap:anywhere]">
+                    {selected.note}
+                  </p>
                   <h4 className="mt-3 break-words text-lg leading-snug font-medium tracking-tight sm:text-xl">
                     {selected.title}
                   </h4>
