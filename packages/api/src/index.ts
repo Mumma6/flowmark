@@ -127,3 +127,9 @@ export {
 } from "./features/project-access/ports/delegated-access-repository.js"
 /** Protocol adapters select the API read policy without importing persistence. */
 export { DatabaseReadBudget as ApiReadBudget } from "@flowmark/db/persistence"
+
+export {
+  ReferenceJourneyQuerySchema,
+  type ReferenceJourneyQuery,
+  type ReferenceJourneyPage,
+} from "@flowmarkdev/core"

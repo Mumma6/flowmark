@@ -1,3 +1,7 @@
+import {
+  ReferenceJourneyQuerySchema,
+  type ReferenceJourneyQuery,
+} from "@flowmarkdev/core"
 import type { PeerSelection } from "@flowmarkdev/core"
 import type { BusinessInsightsQuery } from "@flowmarkdev/core"
 import { Context, Effect, Layer, Match, Schema } from "effect"
@@ -189,6 +193,17 @@ export class GetProjectWorkflowData extends Context.Service<
       })
 
       return GetProjectWorkflowData.of({
+        referenceJourney: Effect.fn("GetProjectWorkflowData.referenceJourney")(
+          function* (reader: ProjectReader, input: ReferenceJourneyQuery) {
+            const projectId = yield* authorizeReader(reader)
+            const query = yield* Schema.decodeUnknownEffect(
+              ReferenceJourneyQuerySchema,
+            )(input, { onExcessProperty: "error" }).pipe(
+              Effect.mapError((cause) => new InvalidInput({ cause })),
+            )
+            return yield* repository.referenceJourney(projectId, query)
+          },
+        ),
         expectations: Effect.fn("GetProjectWorkflowData.expectations")(
           function* (reader, runId) {
             return yield* repository.expectations(

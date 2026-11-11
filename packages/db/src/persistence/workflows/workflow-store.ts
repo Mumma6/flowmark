@@ -1,3 +1,8 @@
+import type {
+  ReferenceJourneyQuery,
+  ReferenceJourneyPage,
+} from "@flowmarkdev/core"
+import { getReferenceJourney } from "./queries/get-reference-journey.js"
 import { getPeriodRead } from "./queries/get-period-read.js"
 import type { PeriodReadInput, PeriodReadResponse } from "@flowmarkdev/core"
 import { getRunRead } from "./queries/get-run-read.js"
@@ -65,6 +70,10 @@ import type {
 } from "./types.js"
 
 export interface WorkflowStoreService {
+  readonly referenceJourney: (
+    projectId: string,
+    query: ReferenceJourneyQuery,
+  ) => Effect.Effect<ReferenceJourneyPage, DatabaseError | InvalidResultQuery>
   readonly periodRead: (
     projectId: string,
     input: PeriodReadInput,
@@ -165,6 +174,8 @@ export class WorkflowStore extends Context.Service<WorkflowStore>()(
         yield* DatabaseCancellation,
       )
       return {
+        referenceJourney: (projectId, query) =>
+          provide(getReferenceJourney(projectId, query)),
         periodRead: (projectId, input) =>
           provide(getPeriodRead(projectId, input)),
         runRead: (projectId, input) => provide(getRunRead(projectId, input)),

@@ -1,3 +1,7 @@
+import type {
+  ReferenceJourneyQuery,
+  ReferenceJourneyPage,
+} from "@flowmarkdev/core"
 import type { PeriodReadInput, PeriodReadResponse } from "@flowmarkdev/core"
 import type { PublicReadFailure } from "../../public-reads/errors.js"
 import type { RunReadInput, RunReadResponse } from "@flowmarkdev/core"
@@ -113,6 +117,10 @@ export interface WorkflowRepositoryAnalytics {
 }
 
 export interface WorkflowRepositoryDiscovery {
+  readonly referenceJourney: (
+    projectId: string,
+    query: ReferenceJourneyQuery,
+  ) => Effect.Effect<ReferenceJourneyPage, PersistenceError | InvalidInput>
   readonly search: (
     projectId: string,
     query: string,

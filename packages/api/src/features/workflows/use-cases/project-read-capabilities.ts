@@ -1,4 +1,8 @@
 import type {
+  ReferenceJourneyQuery,
+  ReferenceJourneyPage,
+} from "@flowmarkdev/core"
+import type {
   RunExpectations,
   PeerSelection,
   BusinessInsightsQuery,
@@ -136,6 +140,13 @@ export interface ProjectReadAnalytics {
 }
 
 export interface ProjectReadDiscovery {
+  readonly referenceJourney: (
+    reader: ProjectReader,
+    query: ReferenceJourneyQuery,
+  ) => Effect.Effect<
+    ReferenceJourneyPage,
+    Unauthorized | PersistenceError | InvalidInput
+  >
   readonly search: (
     reader: ProjectReader,
     query: string,

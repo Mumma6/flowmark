@@ -19,6 +19,15 @@ export const WorkflowRepositoryLive = Layer.effect(
   Effect.gen(function* () {
     const store = yield* WorkflowStore
     return WorkflowRepository.of({
+      referenceJourney: Effect.fn("WorkflowRepositoryLive.referenceJourney")(
+        (projectId, query) =>
+          store.referenceJourney(projectId, query).pipe(
+            Effect.catchTags({
+              DatabaseError: toPersistenceError,
+              InvalidResultQuery: toInvalidInput,
+            }),
+          ),
+      ),
       periodRead: (projectId, input) =>
         store
           .periodRead(projectId, input)
