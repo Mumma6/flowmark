@@ -54,6 +54,7 @@ export enum DatabaseOperation {
   ReadPeerRuns = "read-peer-runs",
   ReadProjectMetrics = "read-project-metrics",
   ReadRecentRuns = "read-recent-runs",
+  ReadReferenceJourney = "read-reference-journey",
   ReadRelatedRuns = "read-related-runs",
   ReadRun = "read-run",
   ReadWorkflowSummaries = "read-workflow-summaries",

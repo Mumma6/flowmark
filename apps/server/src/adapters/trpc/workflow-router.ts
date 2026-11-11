@@ -1,9 +1,23 @@
+import { ReferenceJourneyQuerySchema } from "@flowmark/api"
 import { Effect, Schema } from "effect"
 import { GetProjectWorkflowData } from "@flowmark/api"
 import { t } from "./context"
 import { readQuery } from "./execution"
 
 export const workflowRouter = t.router({
+  journey: t.procedure
+    .input(
+      Schema.toStandardSchemaV1(ReferenceJourneyQuerySchema, {
+        parseOptions: { onExcessProperty: "error" },
+      }),
+    )
+    .query(({ ctx, input }) =>
+      readQuery(ctx.request, (reader) =>
+        GetProjectWorkflowData.use((queries) =>
+          queries.referenceJourney(reader, input),
+        ),
+      ),
+    ),
   list: t.procedure.query(({ ctx }) =>
     readQuery(ctx.request, (reader) =>
       Effect.flatMap(GetProjectWorkflowData, (queries) =>

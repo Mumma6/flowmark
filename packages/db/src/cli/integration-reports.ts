@@ -22,6 +22,7 @@ export const expectedServerFiles = [
   "durable-auth-limits",
   "storage-failure",
   "public-run-read",
+  "reference-journey",
 ] as const
 
 const invalid = () =>
