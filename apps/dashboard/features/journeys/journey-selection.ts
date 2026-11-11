@@ -6,6 +6,13 @@ import {
 import { Array, Match, Result, Schema } from "effect"
 
 export const journeyQueryKey = "journey"
+export const initialJourneyQuery = (
+  query: ReferenceJourneyQuery,
+): ReferenceJourneyQuery => ({
+  ...query,
+  cursor: undefined,
+  candidateCursor: undefined,
+})
 export const JourneySelectionSchema = Schema.Struct({
   projectId: Schema.String.check(Schema.isGUID()),
   stage: Schema.Literals(["configure", "evidence"]),

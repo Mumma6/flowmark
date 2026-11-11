@@ -10,7 +10,7 @@ import {
 import { Array, Option } from "effect"
 import { useEffect, useRef } from "react"
 import type { JourneyNode, JourneyRunReference } from "@flowmarkdev/core"
-import type { JourneySelection } from "./journey-selection"
+import { initialJourneyQuery, type JourneySelection } from "./journey-selection"
 import { useReferenceJourney } from "./queries"
 import { JourneyRunCard } from "./journey-run-card"
 import { DataState } from "../shared/dashboard-components"
@@ -25,7 +25,7 @@ export function JourneyEvidence({
   from: string
   onSelect: (selection: JourneySelection) => void
 }) {
-  const result = useReferenceJourney(selection)
+  const { result, restart } = useReferenceJourney(selection)
   const focusNextPage = useRef(false)
   useEffect(() => {
     if (!focusNextPage.current || result.isFetching) {
@@ -60,6 +60,26 @@ export function JourneyEvidence({
         error={result.error}
         retry={() => void result.refetch()}
       />
+      {result.isError || first?.state === "Ambiguous" ? (
+        <Button
+          variant="outline"
+          size="sm"
+          className="justify-self-start"
+          disabled={result.isFetching}
+          onClick={() => {
+            focusNextPage.current = true
+            void restart()
+            if (selection.query.cursor || selection.query.candidateCursor) {
+              onSelect({
+                ...selection,
+                query: initialJourneyQuery(selection.query),
+              })
+            }
+          }}
+        >
+          Restart from first page
+        </Button>
+      ) : null}
       {result.isError ? (
         <p className="text-xs text-muted-foreground">
           Evidence could not be read. This does not establish that business
@@ -135,12 +155,11 @@ export function JourneyEvidence({
                   </li>
                 ))}
               </ul>
-              {candidates.length >= 100 ? (
-                <p className="text-xs text-muted-foreground">
-                  Showing up to 100 candidate records from the latest loaded
-                  pages.
-                </p>
-              ) : null}
+              <p className="text-xs text-muted-foreground">
+                Showing up to 100 candidate records from the latest loaded
+                pages. Restart from the first page to return to earlier
+                candidates.
+              </p>
             </>
           ) : null}
           {first.state === "Selected" ? (
