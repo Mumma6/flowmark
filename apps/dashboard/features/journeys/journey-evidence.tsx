@@ -10,7 +10,7 @@ import {
 import { Array, Option } from "effect"
 import { useEffect, useRef } from "react"
 import type { JourneyNode, JourneyRunReference } from "@flowmarkdev/core"
-import type { JourneySelection } from "./journey-selection"
+import { initialJourneyQuery, type JourneySelection } from "./journey-selection"
 import { useReferenceJourney } from "./queries"
 import { JourneyRunCard } from "./journey-run-card"
 import { DataState } from "../shared/dashboard-components"
@@ -68,17 +68,12 @@ export function JourneyEvidence({
           disabled={result.isFetching}
           onClick={() => {
             focusNextPage.current = true
+            void restart()
             if (selection.query.cursor || selection.query.candidateCursor) {
               onSelect({
                 ...selection,
-                query: {
-                  ...selection.query,
-                  cursor: undefined,
-                  candidateCursor: undefined,
-                },
+                query: initialJourneyQuery(selection.query),
               })
-            } else {
-              void restart()
             }
           }}
         >

@@ -6,7 +6,10 @@ import type {
 } from "@flowmarkdev/core"
 import { Array, Effect, Option } from "effect"
 import { referenceJourneyQueryOptions } from "../features/journeys/journey-query"
-import type { JourneySelection } from "../features/journeys/journey-selection"
+import {
+  initialJourneyQuery,
+  type JourneySelection,
+} from "../features/journeys/journey-selection"
 
 it("retains a bounded candidate window, restarts from the true first page, and leaves another project's cache alone", async () => {
   const selection: JourneySelection = {
@@ -99,7 +102,29 @@ it("retains a bounded candidate window, restarts from the true first page, and l
     const refreshed = await observer.refetch()
     expect(refreshed.data?.pages[0]?.candidates[0]?.id).toBe(choices[50]!.id)
     // Refetch preserves the evicted window; only an exact reset actually restarts.
-    await cache.resetQueries({ queryKey: options.queryKey, exact: true })
+    const continued = {
+      ...selection,
+      query: { ...selection.query, candidateCursor: "50" },
+    }
+    const initialQuery = initialJourneyQuery(continued.query)
+    expect(initialQuery.candidateCursor).toBeUndefined()
+    expect(
+      initialJourneyQuery({
+        ...continued.query,
+        cursor: "stale",
+        anchorRunId: choices[50]!.id,
+      }),
+    ).toMatchObject({
+      anchorRunId: choices[50]!.id,
+      cursor: undefined,
+      candidateCursor: undefined,
+    })
+    const restartOptions = referenceJourneyQueryOptions(
+      ["workflow", "journey", initialQuery],
+      { ...continued, query: initialQuery },
+      read,
+    )
+    await cache.resetQueries({ queryKey: restartOptions.queryKey, exact: true })
     const restarted = await observer.refetch()
     expect(restarted.data?.pageParams).toEqual([{ kind: "initial" }])
     expect(restarted.data?.pages[0]?.candidates).toEqual(
