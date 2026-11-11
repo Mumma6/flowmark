@@ -1,4 +1,4 @@
-# SDK usage examples
+# Flowmark examples
 
 Illustrative TypeScript excerpts for [`@flowmarkdev/node`](https://www.npmjs.com/package/@flowmarkdev/node).
 They show where Flowmark fits into application code that already does the work.
@@ -64,3 +64,12 @@ See [the supported question and limits](../docs/sdk/public-period-read.md).
 The [public client guide](../apps/docs/content/docs/public-reads.mdx) documents
 local read-key creation, error recovery and packaging/version boundaries without
 requiring hosted credentials or private plans.
+
+## Portable evidence
+
+[Portable run evidence](./portable-evidence/README.md) contains a copyable synthetic
+snapshot, supplied-data harness setup, the approved MCP Apps reference-host patch,
+a real non-UI fallback verifier and a dated compatibility record. It reuses the
+shared run presentation without ingestion keys or autonomous fetching. This is a
+local repository example; hosted availability and named commercial-client support
+are separate verification questions.

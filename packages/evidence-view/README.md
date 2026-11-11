@@ -79,3 +79,8 @@ synthetic evidence again. These modes deny/fail/mismatch the next page while the
 first page remains valid. Stop only the fixture/host processes you started.
 Use ordinary authenticated MCP access to test real authorization separately;
 the synthetic fixture is not an authorization proof. Never deploy or expose it.
+
+The [public portable-evidence example](../../examples/portable-evidence/README.md)
+provides a copyable snapshot, exact reference-host setup/patch, non-UI verifier
+and dated compatibility record. The [public guide](../../apps/docs/content/docs/portable-evidence.mdx)
+describes source availability and disclosure limits.

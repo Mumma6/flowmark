@@ -1,0 +1,79 @@
+---
+title: Portable run evidence
+description: Reuse a bounded run snapshot, reproduce the local MCP App example, and understand verified host limits.
+---
+
+## Two ways to carry evidence
+
+A run's shared metadata presentation can be reused outside Studio:
+
+- **Supplied snapshot:** Studio exports bounded presentation JSON. A custom host
+  validates and renders that data without credentials or additional reads.
+- **MCP App:** a compatible host supplies an authorized `get_run` events result
+  and renders the linked view. Explicit refresh/next-page actions use that host's
+  existing MCP connection for the same project/run/events context.
+
+These are repository implementations. They do not prove that a hosted deployment
+has enabled agent access or that any particular AI product/version can render
+this view. A disabled deployment still has no working MCP connection. The shared
+presentation package is private workspace code, not a published embedding SDK.
+
+## Reproduce the supplied example
+
+The public repository includes a
+[synthetic sample and runnable setup](https://github.com/Mumma6/flowmark/tree/staging/examples/portable-evidence).
+Follow its commands to build and start the local-only harness at
+`http://127.0.0.1:3004/evidence`, paste `snapshot.json`, and choose
+**Render supplied evidence**. Select a milestone to inspect its event reference.
+This needs no database, ingestion key or external model call.
+
+For your own authorized selection, use Studio → Timeline → Table →
+**Portable evidence snapshot**. Export only evidence the recipient is allowed to
+receive. The supplied-data host accepts at most 65,536 characters, 8 unique
+milestones and 4 metrics. Missing coverage or unknown fields are rejected;
+invalid replacement JSON clears the previous view.
+
+A copied snapshot is historical supplied evidence. It neither authenticates its
+recipient nor proves current access. The example does not save, send or fetch
+data. It has no automatic refresh, independent query engine or analytics.
+
+## Reproduce the MCP App and fallback
+
+The same example documents the loopback synthetic MCP fixture, exact upstream
+Basic Host revision, required compatibility patch and setup commands. It includes
+a real MCP client check that declares no UI capability and verifies complete
+text/structured evidence plus continuation cursors across two pages.
+
+The MCP view renders one bounded events page, showing at most 8 event milestones.
+Other `get_run` sections keep their full structured/text result and explain that
+there is no visual projection. Protocol-compatible clients without negotiated UI support retain those
+complete results, references and cursors; the UI does not replace the MCP API.
+
+The frame receives no credentials. It delegates explicit reads through the host;
+each real read repeats live grant/project authorization and bounded admission.
+Page reductions for the response budget cannot enlarge later requests. Errors,
+invalid results, cancellation and closure clear evidence and read actions. Access
+may have expired, been revoked or changed: reconnect or select authorized evidence
+in the host to continue. A snapshot cannot detect unseen access changes.
+
+## Verified compatibility and limits
+
+Consult the dated
+[compatibility record](https://github.com/Mumma6/flowmark/blob/staging/examples/portable-evidence/COMPATIBILITY.md)
+for exact tested versions, environment, evidence scope and results. The observed
+MCP Apps host is the **patched official Basic Host v2.0.4**, using MCP peers 2.3.1
+and Flowmark's 2026-07-28 protocol profile. It is a local reference-host result.
+Codex, Cursor, Claude and other commercial client integrations are unverified by
+this example. General [MCP Apps support](https://modelcontextprotocol.io/extensions/apps/overview)
+does not establish Flowmark compatibility in a particular product.
+
+The view renders event metadata with explicit withheld fields and page omissions.
+It is not a redaction boundary: the authorized host can forward raw diagnostic
+fields to the sandbox even when they are not rendered. Use synthetic content for
+the reference-host smoke. Business results are application-reported, completion
+is not verified business success, and missing terminal telemetry does not prove
+that work is active or failed.
+
+See [local development](/docs/local-development),
+[the HTTP API](/docs/api) and [security/privacy](/docs/security-privacy) for the
+separate deployment, credential and evidence-disclosure boundaries.
