@@ -272,8 +272,9 @@ function ProjectCommandPalette() {
                 No processes, runs or exact references found in this project.
               </p>
             )}
-            {serverResults && (
+            {serverResults && current && (
               <ProjectSearchResults
+                projectId={current.id}
                 results={serverResults}
                 filters={filters}
                 returnTo={returnTo}

@@ -40,10 +40,19 @@ further Studio flows keep their existing roadmap owners.
 
 ## Responsibilities and dependency direction
 
+`features/journeys` owns the project-bound `journey` URL selection, explicit
+workflow/lookup mapping, bounded React Query pages and relationship presentation.
+Exact reference search and Explore lookup selections open this view. The existing
+inspector retains the journey URL and loaded pages; full-page return links retain
+the same reference mapping. Its project-scoped query cache never supplies another
+project's evidence. Parent context, retry attempts, terminal results and later
+confirmation evidence retain separate meanings. See
+[reference journeys](../../docs/reference-journeys.md) for the consumer contract.
+
 - `app/` owns Next route entries, layouts, metadata, global theme CSS and the
   three existing same-origin proxy routes. Pages compose feature views.
 - `features/overview`, `workflows`, `runs`, `insights`, `issues`, `expectations`,
-  `results`, `projects`, `settings`, `onboarding` and `search` own their views,
+  `results`, `projects`, `settings`, `onboarding`, `journeys` and `search` own their views,
   query/controller hooks and domain-specific projections. `features/auth` owns
   the browser authentication operations and screen. `features/period` owns
   the shared UTC period selection and evidence-navigation rules.

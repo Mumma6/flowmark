@@ -2,6 +2,7 @@ import type { RunInvestigationSelection } from "@flowmarkdev/core"
 import { Array as EffectArray, Match, Result, Schema } from "effect"
 import { explorerDefaults } from "../explorer/explorer-filters"
 import { runSelectionQueryKey } from "./investigation-selection"
+import { journeyQueryKey } from "../../journeys/journey-selection"
 
 const InvestigationSource = Schema.String.check(
   Schema.isPattern(
@@ -71,7 +72,10 @@ export function runInvestigationPath(
   if (source.startsWith("/?")) {
     const cohort = new URLSearchParams(source.slice(2))
     EffectArray.forEach(
-      EffectArray.fromIterable(Object.keys(explorerDefaults)),
+      [
+        ...EffectArray.fromIterable(Object.keys(explorerDefaults)),
+        journeyQueryKey,
+      ],
       (key) => {
         const value = cohort.get(key)
         if (value !== null) {

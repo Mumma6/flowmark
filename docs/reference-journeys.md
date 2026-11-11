@@ -2,7 +2,34 @@
 
 The internal `workflow.journey` tRPC query follows recorded parent and retry
 links for one exact business reference in the reader's authorized project.
-It returns compact run evidence; Studio journey presentation is a separate step.
+It returns compact run evidence for Studio's reference journey view.
+
+## Follow a journey in Studio
+
+Use Studio search to find an exact declared business reference, then open its
+reference result. Explore retains its run filters while the journey opens above
+the execution list. You can also choose **Follow this reference** from an exact
+lookup selection in Explore.
+
+Choose each linked process and its declared lookup field, then select
+**Follow linked evidence**. The starting namespace is fixed to the exact
+reference you opened; additional namespaces are explicit choices. When multiple
+starting executions match, Studio asks you to choose one.
+
+Each execution shows its recorded status and application-reported business
+outcome. Open **Reported results** or **Confirmations** in the existing inspector;
+closing it returns focus to the journey and keeps loaded pages and Explore
+filters. Retries are separate executions. A later confirmation remains separate
+from the execution's terminal result. Supporting parent/retry links can be opened
+without declaring their runs members of the selected reference.
+
+Use **More linked executions** or **More starting executions** to continue.
+Studio retains at most four 25-record pages; an ambiguous chooser shows the latest
+loaded pages once that limit is reached. Errors hide unavailable evidence and
+offer retry; they never stand in for missing business activity. **Edit reference
+mapping** restarts selection. Journey URLs are scoped to the current project and
+cannot select another project or grant access. Explore filters below the journey
+do not constrain its independently selected reference.
 
 ## Select the reference explicitly
 

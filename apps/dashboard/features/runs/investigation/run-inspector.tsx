@@ -22,6 +22,12 @@ export function RunInspector({ id }: { id: string }) {
   const { current } = useProject()
   const [projectId] = useState(current?.id)
   const [open, setOpen] = useState(true)
+  const [returnFocus] = useState(() =>
+    typeof document !== "undefined" &&
+    document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null,
+  )
   const title = useRef<HTMLHeadingElement>(null)
   const sameProject = Boolean(projectId && current?.id === projectId)
   const queries = useRunDetail(id, params, sameProject)
@@ -49,9 +55,11 @@ export function RunInspector({ id }: { id: string }) {
         closeLabel="Close run inspector"
         initialFocus={title}
         finalFocus={() =>
+          (returnFocus?.isConnected ? returnFocus : null) ??
           document.querySelector<HTMLElement>(
             `[data-run-id="${CSS.escape(id)}"]`,
           ) ??
+          document.getElementById("journey-title") ??
           document.getElementById("evidence-title") ??
           document.getElementById("studio-main")
         }
