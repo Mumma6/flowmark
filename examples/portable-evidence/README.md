@@ -76,8 +76,8 @@ REFERENCE_HOST_DIR="$(mktemp -d -t flowmark-reference-host)"
 git clone https://github.com/modelcontextprotocol/ext-apps.git "$REFERENCE_HOST_DIR"
 cd "$REFERENCE_HOST_DIR"
 git checkout --detach 7af9a75da720b8a81be0f9aff47b25f75e9530ad
-git apply --check "$FLOWMARK_EXAMPLE_ROOT/reference-host.patch"
-git apply "$FLOWMARK_EXAMPLE_ROOT/reference-host.patch"
+git apply --check --unidiff-zero "$FLOWMARK_EXAMPLE_ROOT/reference-host.patch"
+git apply --unidiff-zero "$FLOWMARK_EXAMPLE_ROOT/reference-host.patch"
 npm install --package-lock-only --ignore-scripts
 npm ci --ignore-scripts
 npm rebuild bun
