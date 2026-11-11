@@ -62,6 +62,11 @@ the local fixture use the same provider login implementation.
   `FLOWMARK_AGENT_ACCESS_ENABLED=true` and origins resolve (`FLOWMARK_API_URL`,
   `BETTER_AUTH_URL`, `FLOWMARK_DASHBOARD_ORIGIN`). When disabled, the route
   returns an honest `404` (no working remote read claim). `GET /mcp` is `405`.
+  MCP checks the request URL and Host against the configured API hostname before
+  reading a body or validating a token. A present Origin must exactly equal the
+  configured API or issuer origin, including scheme and port; native clients
+  may omit it. Forwarded headers are not authority for either check. Invalid
+  authority returns a fixed `403` response with `no-store`.
   An unsupported `initialize` protocol revision is negotiated to a supported
   revision and is not stored as the session version. Admission failure uses the
   fixed label `Read admission is unavailable.` Requests and tool results are
@@ -237,6 +242,10 @@ consumer; deploying recovery requires review of its environment/revision and
 separate inbox acceptance.
 
 ## Evidence
+
+The [composed agent security audit](./agent-access-security-audit.md) records
+the OAuth → live grant → MCP → scoped persistence checks, bounded reads and
+their remaining client/hosted verification limits.
 
 `apps/server/test/http/auth-perimeter.test.ts` uses real Better Auth and a
 disposable loopback PostgreSQL database. It covers verification-policy denial,

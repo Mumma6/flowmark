@@ -1,3 +1,4 @@
+import type { FlowmarkDatabase } from "../../../client.js"
 import { and, eq, sql } from "drizzle-orm"
 import { Effect } from "effect"
 import {
@@ -25,22 +26,47 @@ import {
 export const RUN_EVENT_PAGE_DEFAULT_LIMIT = 50
 export const RUN_EVENT_PAGE_MAX_LIMIT = 100
 
+/** Metadata-only ownership/cursor guard, also inspectable with EXPLAIN. */
+export const runEventPageGuardQuery = (
+  db: FlowmarkDatabase,
+  projectId: string,
+  runId: string,
+  cursor: ReturnType<typeof decodeRunEventPageCursor>,
+) =>
+  db
+    .select({ id: workflowRuns.id })
+    .from(workflowRuns)
+    .innerJoin(workflows, eq(workflowRuns.workflowId, workflows.id))
+    .where(
+      and(
+        runTimelineJoins(projectId, runId),
+        cursor
+          ? sql`EXISTS (
+          SELECT 1 FROM ${workflowEvents} cursor_event
+          WHERE cursor_event.run_id = ${workflowRuns.id}
+            AND cursor_event.event_id = ${cursor.eventId}::uuid
+            AND cursor_event.occurred_at = ${cursor.occurredAt}::timestamptz
+            AND cursor_event.created_at = ${cursor.receivedAt}::timestamptz
+        )`
+          : undefined,
+      ),
+    )
+    .limit(1)
+
 const assertRunInProject = Effect.fn("assertRunInProject")(function* (
   projectId: string,
   runId: string,
+  cursor: ReturnType<typeof decodeRunEventPageCursor>,
 ) {
   const db = yield* Database
   const rows = yield* runQuery(DatabaseOperation.ReadRun, () =>
-    db
-      .select({ id: workflowRuns.id })
-      .from(workflowRuns)
-      .innerJoin(workflows, eq(workflowRuns.workflowId, workflows.id))
-      .where(runTimelineJoins(projectId, runId))
-      .limit(1),
+    runEventPageGuardQuery(db, projectId, runId, cursor),
   )
   if (rows.length === 0) {
     return yield* new InvalidResultQuery({
-      message: "Run not found in this project.",
+      message: cursor
+        ? "Invalid run event page cursor for this run."
+        : "Run not found in this project.",
     })
   }
 })
@@ -54,13 +80,13 @@ export const getRunEventPage = Effect.fn("getRunEventPage")(function* (
   projectId: string,
   query: RunEventPageQuery,
 ) {
-  yield* assertRunInProject(projectId, query.runId)
   const decoded = decodeRunEventPageCursor(query.cursor)
   if (query.cursor && !decoded) {
     return yield* new InvalidResultQuery({
       message: "Invalid run event page cursor.",
     })
   }
+  yield* assertRunInProject(projectId, query.runId, decoded)
   const limit = Math.min(
     RUN_EVENT_PAGE_MAX_LIMIT,
     Math.max(1, query.limit ?? RUN_EVENT_PAGE_DEFAULT_LIMIT),

@@ -40,6 +40,11 @@ connections on success, failure and interruption.
 `createMcpHttpRoutes` returns the `POST /mcp` handler and the protected-resource
 metadata handler. The server runs those effects with its own layer. The POST
 handler validates the bearer token, then serves the streamable MCP session.
+Before reading a body or resolving a token, it validates the request URL and
+Host against the configured API hostname. A present Origin must exactly match
+the configured API or issuer origin, including scheme and port. Native clients
+may omit Origin. Forwarded headers cannot expand this allowlist; additional
+browser origins require a reviewed policy change.
 Clients start with the legacy `initialize` handshake. Follow-up requests send
 `mcp-session-id` and accept both `application/json` and `text/event-stream`.
 
@@ -54,6 +59,12 @@ pnpm --filter @flowmark/mcp build
 The protected HTTP flow is covered by `apps/server/test/http/mcp-agent-access.test.ts`,
 which runs only when `TEST_DATABASE_URL` is set. Root `pnpm test:integration`
 builds this package before those tests.
+
+The [composed security audit](../../docs/agent-access-security-audit.md) records
+cross-boundary coverage and its limits. Event page cursors retain their wire
+format but must identify a stored event in the selected run with matching
+occurrence and receipt timestamps. Foreign, forged or deleted-event cursors
+fail explicitly rather than silently shifting the evidence page.
 
 ## Admission and execution bounds
 

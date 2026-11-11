@@ -182,6 +182,38 @@ it(
                   ),
                 )
               }
+              const pkceVerifier = randomBytes(32).toString("base64url")
+              const pkceAuthorization = yield* authorize(pkceVerifier)
+              const pkceCode = new URL(
+                pkceAuthorization.headers.get("location") ?? "",
+              ).searchParams.get("code")
+              assert.ok(pkceCode)
+              const invalidVerifier = yield* Effect.promise(() =>
+                auth.handler(
+                  new Request(`${local.apiOrigin}/api/auth/oauth2/token`, {
+                    method: "POST",
+                    headers: {
+                      origin: local.issuerOrigin,
+                      "content-type": "application/x-www-form-urlencoded",
+                    },
+                    body: new URLSearchParams({
+                      grant_type: "authorization_code",
+                      client_id: clientId,
+                      code: pkceCode,
+                      redirect_uri: redirectUri,
+                      code_verifier: randomBytes(32).toString("base64url"),
+                      resource: `${local.apiOrigin}/mcp`,
+                    }).toString(),
+                  }),
+                ),
+              )
+              assert.equal(invalidVerifier.status, 400)
+              const invalidVerifierBody = yield* Effect.promise(() =>
+                invalidVerifier.text(),
+              )
+              assert.equal(invalidVerifierBody.includes("access_token"), false)
+              assert.equal(invalidVerifierBody.includes(pkceCode), false)
+
               const missingPkce = yield* Effect.promise(() =>
                 auth.handler(
                   new Request(
