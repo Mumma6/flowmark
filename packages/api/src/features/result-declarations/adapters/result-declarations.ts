@@ -8,6 +8,8 @@ export const ResultDeclarationsLive = Layer.effect(
   Effect.gen(function* () {
     const store = yield* ResultDeclarationStore
     return ResultDeclarations.of({
+      find: (projectId, workflow, revision) =>
+        persist(store.find(projectId, workflow, revision)),
       searchFields: (projectId, workflow) =>
         persist(store.searchFields(projectId, workflow)),
       setSearchFields: (projectId, workflow, fields) =>

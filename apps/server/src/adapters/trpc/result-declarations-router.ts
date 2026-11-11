@@ -9,6 +9,23 @@ import { UuidSchema } from "./schemas"
 import { sessionQuery } from "./execution"
 
 export const resultDeclarationsRouter = t.router({
+  // POST carries bounded metadata; this dry run performs no database writes.
+  previewImport: t.procedure
+    .input(
+      Schema.toStandardSchemaV1(
+        Schema.Struct({
+          projectId: UuidSchema,
+          definition: Schema.Unknown,
+        }),
+      ),
+    )
+    .mutation(({ ctx, input }) =>
+      sessionQuery(ctx.request, (userId) =>
+        Effect.flatMap(ManageResultDeclarations, (manage) =>
+          manage.previewImport(userId, input.projectId, input.definition),
+        ),
+      ),
+    ),
   searchFields: t.procedure
     .input(
       Schema.toStandardSchemaV1(

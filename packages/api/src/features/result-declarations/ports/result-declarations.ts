@@ -1,8 +1,13 @@
-import { Context, type Effect } from "effect"
+import { Context, type Effect, type Option } from "effect"
 import type { SearchFields, ResultDeclaration } from "@flowmarkdev/core"
 import type { PersistenceError } from "../../../errors.js"
 
 export interface ResultDeclarationsService {
+  readonly find: (
+    projectId: string,
+    workflow: string,
+    revision: string,
+  ) => Effect.Effect<Option.Option<ResultDeclaration>, PersistenceError>
   readonly searchFields: (
     projectId: string,
     workflow: string,
