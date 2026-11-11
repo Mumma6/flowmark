@@ -2,7 +2,7 @@ import { expect, it } from "vitest"
 import {
   ConsentHttpError,
   consentRecoveryMessage,
-} from "../features/connect/consent-browser"
+} from "../features/connect/consent/consent-browser"
 
 it("keeps a stale consent request distinct from a missing session", () => {
   const signedOut = new ConsentHttpError({

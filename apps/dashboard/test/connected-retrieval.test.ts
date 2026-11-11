@@ -5,9 +5,9 @@ import {
   connectedFailureCalls,
   connectedInsightCalls,
   connectedRunCalls,
-} from "../features/runs/connected-retrieval"
-import { explorerDefaults } from "../features/runs/explorer-filters"
-import { buildSafeRunContextHandoff } from "../features/runs/safe-run-context-handoff"
+} from "../features/runs/investigation/connected-retrieval"
+import { explorerDefaults } from "../features/runs/explorer/explorer-filters"
+import { buildSafeRunContextHandoff } from "../features/runs/handoff/safe-run-context-handoff"
 
 const projectId = "11111111-1111-4111-8111-111111111111"
 const runId = "22222222-2222-4222-8222-222222222222"

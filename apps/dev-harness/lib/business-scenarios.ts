@@ -1,3 +1,4 @@
+import { Effect } from "effect"
 import type { FlowmarkClient } from "@flowmarkdev/node"
 import {
   businessScenarios,
@@ -50,34 +51,38 @@ export async function runBusinessScenario(
         records: invoices.length,
       },
     })
-    let imported = 0
-    let skipped = 0
+    const skipped = invoices.filter((invoice) => invoice.issue).length
+    const imported = invoices.length - skipped
     flow.progress({ completed: 0, total: invoices.length, unit: "invoices" })
     await flow.operation("validate-and-save-invoices", async () => {
-      for (const [index, invoice] of invoices.entries()) {
-        await pause(140)
-        if (invoice.issue) {
-          skipped++
-          flow.step("invoice-rejected", {
-            properties: {
-              invoiceRef: invoice.reference,
-              reason: invoice.issue,
-            },
-          })
-          flow.error({
-            code: "INVALID_INVOICE",
-            message: `${invoice.reference}: ${invoice.issue}`,
-            handled: true,
-          })
-        } else {
-          imported++
-        }
-        flow.progress({
-          completed: index + 1,
-          total: invoices.length,
-          unit: "invoices",
-        })
-      }
+      await Effect.runPromise(
+        Effect.forEach(
+          invoices,
+          (invoice, index) =>
+            Effect.gen(function* () {
+              yield* Effect.sleep(140)
+              if (invoice.issue) {
+                flow.step("invoice-rejected", {
+                  properties: {
+                    invoiceRef: invoice.reference,
+                    reason: invoice.issue,
+                  },
+                })
+                flow.error({
+                  code: "INVALID_INVOICE",
+                  message: `${invoice.reference}: ${invoice.issue}`,
+                  handled: true,
+                })
+              }
+              flow.progress({
+                completed: index + 1,
+                total: invoices.length,
+                unit: "invoices",
+              })
+            }),
+          { concurrency: 1, discard: true },
+        ),
+      )
     })
     const result = { imported, skipped, total: invoices.length }
     flow.done({ result })
@@ -94,12 +99,18 @@ export async function runBusinessScenario(
 
   if (definition.area === "inventory") {
     const interrupted = scenario === "inventory-interrupted"
-    let updated = 0
     flow.step("supplier-sync-started", {
       properties: { supplier: "Studio Supply", pages: 3 },
     })
     flow.progress({ completed: 0, total: stockRows.length, unit: "products" })
-    for (const page of [1, 2, 3]) {
+    const syncPages = async (
+      pages: readonly number[],
+      updated: number,
+    ): Promise<Execution> => {
+      const [page, ...remaining] = pages
+      if (page === undefined) {
+        return complete(updated)
+      }
       const operation = flow.operation("fetch-supplier-page", {
         properties: { page, supplier: "Studio Supply" },
       })
@@ -138,24 +149,31 @@ export async function runBusinessScenario(
         },
         { properties: { page } },
       )
-      updated += stockRows.filter((item) => item.page === page).length
-      flow.step("supplier-page-saved", { properties: { page, updated } })
+      const nextUpdated =
+        updated + stockRows.filter((item) => item.page === page).length
+      flow.step("supplier-page-saved", {
+        properties: { page, updated: nextUpdated },
+      })
       flow.progress({
-        completed: updated,
+        completed: nextUpdated,
         total: stockRows.length,
         unit: "products",
       })
+      return syncPages(remaining, nextUpdated)
     }
-    const result = { updated, expected: stockRows.length }
-    flow.done({ result })
-    return {
-      ...base,
-      status: "completed",
-      result,
-      summary: "12 stock levels updated",
-      nextAction:
-        "All three supplier pages saved. Stock is ready for the next order.",
+    const complete = (updated: number): Execution => {
+      const result = { updated, expected: stockRows.length }
+      flow.done({ result })
+      return {
+        ...base,
+        status: "completed",
+        result,
+        summary: "12 stock levels updated",
+        nextAction:
+          "All three supplier pages saved. Stock is ready for the next order.",
+      }
     }
+    return syncPages([1, 2, 3], 0)
   }
 
   flow.step("order-loaded", {

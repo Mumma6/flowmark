@@ -1,7 +1,7 @@
 import { Result } from "effect"
 import { decodeSuppliedSnapshot } from "../../dev-harness/app/evidence/supplied-snapshot"
 import { describe, expect, it } from "vitest"
-import { buildSuppliedRunSnapshot } from "../features/runs/supplied-run-snapshot"
+import { buildSuppliedRunSnapshot } from "../features/runs/investigation/supplied-run-snapshot"
 import type { RouterOutputs } from "../features/platform/api-types"
 
 type Summary = RouterOutputs["run"]["investigationSummary"]

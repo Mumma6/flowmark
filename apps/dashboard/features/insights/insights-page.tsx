@@ -33,7 +33,7 @@ import { PeriodControls } from "../period/period-controls"
 import { recordedChanges } from "../period/period-presentation"
 import { RecordedChangesSection } from "../reporting/recorded-changes-section"
 import { usePeriodSelection } from "../period/use-period-selection"
-import { BusinessOutcomes } from "../results/business-outcomes"
+import { BusinessOutcomes } from "../results/outcomes/business-outcomes"
 
 export function InsightsPage() {
   const { days, workflow, period, report, replace, workflowNames } =

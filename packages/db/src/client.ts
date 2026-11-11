@@ -16,6 +16,7 @@ export function createDatabase(
 ): {
   db: FlowmarkDatabase
   close: () => Promise<void>
+  cancel: () => void
 } {
   const client = postgres(connectionString, {
     prepare: options.prepare ?? false,
@@ -24,11 +25,14 @@ export function createDatabase(
       : {}),
   })
   const prepared = options.prepare ? preparedClient(client) : client
-  const scoped = options.signal
-    ? cancellableClient(prepared, options.signal)
-    : prepared
+  const cancellation = new AbortController()
+  const signal = options.signal
+    ? AbortSignal.any([options.signal, cancellation.signal])
+    : cancellation.signal
+  const scoped = cancellableClient(prepared, signal)
   return {
     db: drizzle(scoped, { schema }),
     close: () => client.end(),
+    cancel: () => cancellation.abort(),
   }
 }

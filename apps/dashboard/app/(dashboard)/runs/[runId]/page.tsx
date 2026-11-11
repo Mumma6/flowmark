@@ -1,4 +1,4 @@
-import { RunDetail } from "../../../../features/runs/run-detail"
+import { RunDetail } from "../../../../features/runs/investigation/run-detail"
 
 export default async function RunPage({
   params,

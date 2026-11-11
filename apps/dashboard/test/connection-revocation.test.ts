@@ -8,7 +8,7 @@ import {
   interpretOwnedConnection,
   interpretRevokeResult,
   revokeAndConfirmConnection,
-} from "../features/connect/connection-revocation"
+} from "../features/connect/connections/connection-revocation"
 
 it("coarsens the last authenticated request to a UTC day", () => {
   expect(coarsenLastAuthenticated(null)).toBe(

@@ -1,3 +1,4 @@
+import { ApiLive } from "@flowmark/api"
 import { Effect, Option } from "effect"
 import { createFlowmarkMcpPostHandler } from "../http/post-handler.js"
 import { serveMcpProtectedResourceMetadata } from "../http/protected-resource-metadata.js"
@@ -97,8 +98,9 @@ export const createMcpHttpRoutes = (run: RunMcpEffect) => {
             "service:discovery",
             AGENT_ACCESS_EXECUTION_BOUNDS.discoveryPerServicePerMinute,
           ).pipe(
+            Effect.provide(ApiLive),
             Effect.as(true),
-            Effect.catchTag("McpToolReadError", () => Effect.succeed(false)),
+            Effect.catchCause(() => Effect.succeed(false)),
           ),
           { signal: request.signal },
         )

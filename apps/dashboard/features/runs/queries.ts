@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query"
 import { useTRPC, useTRPCClient } from "../platform/api-trpc"
 import { useProject } from "../projects/project-context"
-import { peerSelection } from "./peer-selection"
+import { peerSelection } from "./investigation/peer-selection"
 
 export function useRunDetail(
   id: string,

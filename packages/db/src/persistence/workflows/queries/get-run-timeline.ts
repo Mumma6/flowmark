@@ -15,40 +15,7 @@ import {
   runTimelineSelection,
 } from "./run-timeline-mapping.js"
 
-export type RunTimelineEvent = {
-  expectation?: import("@flowmarkdev/core").ExpectationEvent | null
-  expectationObservedAt?: string | null
-  id: string
-  type: string
-  step: string | null
-  operationId: string | null
-  attempt?: import("@flowmarkdev/core").WorkflowAttempt | null
-  retryOf?: import("@flowmarkdev/core").WorkflowRetryReference | null
-  operationName: string | null
-  durationMs: number | null
-  completed: number | null
-  total: number | null
-  unit: string | null
-  reason: string | null
-  properties: import("@flowmarkdev/core").WorkflowProperties | null
-  error:
-    | import("@flowmarkdev/core").WorkflowError
-    | import("@flowmarkdev/core").WorkflowFailure
-    | null
-  outcome?: string | null
-  result: import("@flowmarkdev/core").WorkflowResult | null
-  timestamp: string
-  isLatestReport?: boolean
-  receiptOrder?: number
-  receivedAt: string
-  workflow: string
-  externalId: string
-  environment: string | null
-  release: string | null
-  correlationId: string | null
-  parentRunId: string | null
-  readonly boundedPreviewOmissions?: ReadonlyArray<string>
-}
+export type { RunTimelineEvent } from "../models/runs.js"
 
 export const getRunTimeline = Effect.fn("getRunTimeline")(function* (
   projectId: string,

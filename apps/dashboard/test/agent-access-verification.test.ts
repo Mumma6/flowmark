@@ -1,5 +1,5 @@
 import { expect, it } from "vitest"
-import { interpretAgentReadVerification } from "../features/connect/agent-access-verification"
+import { interpretAgentReadVerification } from "../features/connect/access/agent-access-verification"
 
 const projectId = "00000000-0000-4000-8000-000000000001"
 const base = {

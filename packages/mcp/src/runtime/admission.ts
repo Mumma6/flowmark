@@ -1,22 +1,20 @@
 import { AGENT_ACCESS_EXECUTION_BOUNDS as bounds } from "@flowmark/auth/agent-access"
-import { ApiSettings, DatabaseLive, Unauthorized } from "@flowmark/api"
-import { consumeMcpBudget } from "@flowmark/db/persistence"
-import { Array, Effect, Layer, Match, Schema } from "effect"
+import { AuthorizeAgentRead, Unauthorized } from "@flowmark/api"
+import { Array, Effect, Match, Schema } from "effect"
 import type { FlowmarkMcpAuthInfo } from "../auth/claims.js"
 import { McpToolReadError } from "../errors.js"
 import { resolveMcpConnection } from "../features/connection/resolve-connection.js"
 
-const database = DatabaseLive.pipe(Layer.provide(ApiSettings.layer))
 export const consumeAdmission = Effect.fn("Mcp.consumeAdmission")(
   function* (scope: string, maximum: number) {
-    const decision = yield* consumeMcpBudget(scope, maximum)
+    const access = yield* AuthorizeAgentRead
+    const decision = yield* access.consumeBudget(scope, maximum)
     if (!decision.allowed) {
       return yield* new McpToolReadError({
         reason: `Read budget exhausted. Retry after ${decision.retryAfter ?? 60} seconds.`,
       })
     }
   },
-  Effect.provide(database),
   Effect.timeoutOrElse({
     duration: bounds.statementTimeoutMs,
     orElse: () =>

@@ -4,7 +4,7 @@ import {
   buildTimelineExport,
   stringifyExport,
   type ExportableRunEvent,
-} from "../features/runs/run-export"
+} from "../features/runs/handoff/run-export"
 
 const base = {
   step: null,

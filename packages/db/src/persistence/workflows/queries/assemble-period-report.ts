@@ -1,3 +1,4 @@
+import { Array as EffectArray, Option, Order, Record, pipe } from "effect"
 import type {
   FailureGroup,
   PeriodCounts,
@@ -37,7 +38,7 @@ const emptyCounts: PeriodCounts = {
 
 function counts(row: WorkflowPeriodRow | undefined): PeriodCounts {
   if (!row) {
-    return emptyCounts
+    return { ...emptyCounts }
   }
   return {
     totalRuns: row.totalRuns,
@@ -53,29 +54,36 @@ function counts(row: WorkflowPeriodRow | undefined): PeriodCounts {
 export function assembleWorkflowPeriods(
   rows: readonly WorkflowPeriodRow[],
 ): readonly WorkflowPeriodComparison[] {
-  const byName = new Map<
-    string,
-    { current?: WorkflowPeriodRow; previous?: WorkflowPeriodRow }
-  >()
-  for (const row of rows) {
-    if (row.period !== "current" && row.period !== "previous") {
-      continue
-    }
-    const entry = byName.get(row.name) ?? {}
-    entry[row.period] = row
-    byName.set(row.name, entry)
-  }
-  return [...byName.entries()]
-    .map(([name, periods]) => ({
+  return pipe(
+    rows,
+    EffectArray.filter(
+      (row) => row.period === "current" || row.period === "previous",
+    ),
+    EffectArray.groupBy((row) => row.name),
+    Record.toEntries,
+    EffectArray.map(([name, periods]) => ({
       name,
-      current: counts(periods.current),
-      previous: counts(periods.previous),
-    }))
-    .sort(
-      (left, right) =>
-        right.current.totalRuns - left.current.totalRuns ||
-        left.name.localeCompare(right.name),
-    )
+      current: counts(
+        Option.getOrUndefined(
+          EffectArray.findLast(periods, (row) => row.period === "current"),
+        ),
+      ),
+      previous: counts(
+        Option.getOrUndefined(
+          EffectArray.findLast(periods, (row) => row.period === "previous"),
+        ),
+      ),
+    })),
+    EffectArray.sort(
+      Order.make<WorkflowPeriodComparison>((left, right) =>
+        Order.Number(
+          right.current.totalRuns - left.current.totalRuns ||
+            left.name.localeCompare(right.name),
+          0,
+        ),
+      ),
+    ),
+  )
 }
 
 function timestamp(value: string | Date | null): string | null {

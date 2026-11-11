@@ -17,7 +17,7 @@ import { PageSections } from "../shared/page-sections"
 import { Refresh } from "../shared/refresh"
 import { ExpectationAttention } from "../expectations/expectation-attention"
 import { useSnapshot } from "../projects/queries"
-import { RunsTable } from "../runs/runs-table"
+import { RunsTable } from "../runs/explorer/runs-table"
 import {
   AttentionSummary,
   OverviewMetrics,

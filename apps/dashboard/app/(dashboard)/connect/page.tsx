@@ -1,1 +1,1 @@
-export { ConnectPage as default } from "../../../features/connect/connect-setup"
+export { ConnectPage as default } from "../../../features/connect/setup/connect-setup"

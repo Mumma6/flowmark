@@ -1,3 +1,4 @@
+import type { AuthorizeAgentRead } from "@flowmark/api"
 import { GetProjectWorkflowData } from "@flowmark/api"
 import { Effect } from "effect"
 import type { FlowmarkMcpAuthInfo } from "../../auth/claims.js"
@@ -17,7 +18,7 @@ export const compareRunForMcp: (
 ) => Effect.Effect<
   McpCompareRunResult,
   McpToolFailure,
-  GetProjectWorkflowData
+  GetProjectWorkflowData | AuthorizeAgentRead
 > = Effect.fn("McpCompareRun.execute")(function* (
   identity: FlowmarkMcpAuthInfo,
   rawInput: unknown,

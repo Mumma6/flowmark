@@ -2,8 +2,9 @@
 
 This document describes the implemented system. Product 1.0 evolves it toward a
 shared process-intelligence platform: Studio, external APIs, MCP and portable
-views will reuse authorized use cases and evidence semantics. Unified Studio,
-delegated agent access and saved investigations remain planned. The product
+views will reuse authorized use cases and evidence semantics. Studio runs in
+`apps/dashboard`; delegated agent access and public reads have source
+implementations. Saved investigations remain planned. The product
 identity changes without renaming packages, replacing the workflow/run model or
 changing the current deployment topology.
 
@@ -35,6 +36,8 @@ Flowmark is software you deploy; it is not a separate hosted enterprise product
 or SSO platform. The server application is a replaceable HTTP/framework shell;
 API use cases, ports, and persistence adapters live in the separate
 `@flowmark/api` package.
+
+Module placement and future refactoring follow [Effect and module organization](./code-organization.md).
 
 ## Core domain package
 
@@ -242,6 +245,12 @@ dashboard server proxy  -> @flowmark/auth/client-identity
 `@flowmark/mcp` is private and unpublished. It owns the MCP HTTP adapter and
 the six read-only investigation tools. SQL and OAuth provider composition stay
 outside that package.
+
+The server's `adapters/mcp/mcp-host-configuration.ts` composes origin configuration
+without acquiring auth. `agent-access-runtime.ts` uses that adapter directly;
+`mcp-layers.ts` combines it with the auth-backed discovery gateway. This keeps
+auth initialization independent of the gateway that later calls auth. Origin
+validation remains lazy, and disabled agent access does not require auth setup.
 
 `@flowmark/auth` is private and unpublished. Server auth routes call its
 factory. The dashboard proxy signs client identity through

@@ -4,18 +4,19 @@ import { decodePeriodCohortSelection } from "@flowmarkdev/core"
 import {
   buildRunListInput,
   readExplorerFilters,
-} from "../features/runs/explorer-filters"
+} from "../features/runs/explorer/explorer-filters"
 import {
+  initialTimelineView,
   interpretPeriodCohort,
   interpretRunSelection,
   periodCohortReturnHref,
   studioRunSelection,
-} from "../features/runs/investigation-selection"
+} from "../features/runs/investigation/investigation-selection"
 import {
   investigationReturn,
   runInvestigationPath,
   readInspectorRunId,
-} from "../features/runs/investigation-navigation"
+} from "../features/runs/investigation/investigation-navigation"
 
 it("returns to the exact search cohort after opening a run and switching sections", () => {
   const source =
@@ -259,4 +260,14 @@ it("returns a period cohort to the same workflow and absolute window", () => {
     })._tag,
   ).toBe("Rejected")
   expect(runInvestigationPath("recorded-run", href)).toContain("from=")
+})
+
+it("a directly linked event opens event evidence even without accepted round-trip selection", () => {
+  const absent = interpretRunSelection({
+    raw: null,
+    projectId: "test",
+    runId: "test",
+  })
+  expect(initialTimelineView(undefined, absent)).toBe("timeline")
+  expect(initialTimelineView("recorded-event", absent)).toBe("events")
 })

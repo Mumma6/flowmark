@@ -12,7 +12,7 @@ import {
   workflowRuns,
   workflows,
 } from "../../../schema/index.js"
-import type { RunTimelineEvent } from "./get-run-timeline.js"
+import type { RunTimelineEvent } from "../models/runs.js"
 
 export type RunTimelineRow = {
   id: string

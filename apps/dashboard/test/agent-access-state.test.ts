@@ -2,7 +2,7 @@ import { expect, it } from "vitest"
 import {
   clearAgentAccessTransient,
   markAgentAccessCopied,
-} from "../features/connect/agent-access-state"
+} from "../features/connect/access/agent-access-state"
 
 it("clears local copy markers and tracks successful targets separately", () => {
   let state = markAgentAccessCopied(clearAgentAccessTransient(), {

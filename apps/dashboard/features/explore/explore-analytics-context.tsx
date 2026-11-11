@@ -17,7 +17,7 @@ import {
   recordedChanges,
 } from "../period/period-presentation"
 import { usePeriodSelection } from "../period/use-period-selection"
-import { BusinessOutcomes } from "../results/business-outcomes"
+import { BusinessOutcomes } from "../results/outcomes/business-outcomes"
 import { RecordedChangesSection } from "../reporting/recorded-changes-section"
 import { DataState, ViewLink } from "../shared/dashboard-components"
 import { PageSections } from "../shared/page-sections"

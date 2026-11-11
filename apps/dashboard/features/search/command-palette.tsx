@@ -26,8 +26,11 @@ import {
 import { useRouter, useSearchParams } from "next/navigation"
 import { useEffect, useState, useSyncExternalStore } from "react"
 import { publicConfig } from "../platform/config-public"
-import { explorerDefaults, readExplorerFilters } from "../runs/explorer-filters"
-import { readInspectorRunId } from "../runs/investigation-navigation"
+import {
+  explorerDefaults,
+  readExplorerFilters,
+} from "../runs/explorer/explorer-filters"
+import { readInspectorRunId } from "../runs/investigation/investigation-navigation"
 import { useProject } from "../projects/project-context"
 import {
   commandPages,

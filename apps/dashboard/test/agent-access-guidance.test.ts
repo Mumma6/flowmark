@@ -3,7 +3,7 @@ import {
   agentClientGuides,
   agentExampleQuestions,
   manualEvidenceHandoffIntro,
-} from "../features/connect/agent-access-guidance"
+} from "../features/connect/access/agent-access-guidance"
 
 it("covers four manual client paths without ingestion secrets", () => {
   const guides = agentClientGuides()

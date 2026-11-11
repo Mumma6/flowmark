@@ -6,12 +6,14 @@
   "exports": {
     ".": "./src/index.tsx",
     "./utils": "./src/utils.ts",
-    "./run-snapshot": "./src/run-snapshot.tsx"
+    "./run-snapshot": "./src/run-snapshot.tsx",
+    "./mermaid": "./src/mermaid.tsx"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "lint": "eslint src",
-    "typecheck": "tsc -p tsconfig.json"
+    "lint": "eslint src test",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
@@ -23,10 +25,12 @@
     "react": "^19.3.1",
     "recharts": "3.8.0",
     "shiki": "^4.5.0",
-    "tailwind-merge": "^3.3.1"
+    "tailwind-merge": "^3.3.1",
+    "mermaid": "^12.2.0"
   },
   "devDependencies": {
     "@types/react": "^19.1.13",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
   }
 }

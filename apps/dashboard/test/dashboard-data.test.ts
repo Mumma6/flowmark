@@ -1,19 +1,16 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { shareWidthClass } from "../features/reporting/share-width"
 import { defaultIntelligenceQuery } from "../features/period/period"
-import { filterRuns, type RunFilters } from "../features/runs/run-filters"
+import {
+  filterRuns,
+  type RunFilters,
+} from "../features/runs/explorer/run-filters"
 import { workflowFamily } from "../features/workflows/workflow-family"
-import { type DayInsight, type Run } from "../features/platform/api-types"
+import { type Run } from "../features/platform/api-types"
 import { groupBy, paginate } from "../features/shared/collections"
 import { formatDuration } from "../features/shared/format"
-import {
-  durationInRange,
-  percentChange,
-  percentile,
-  summarizeDays,
-  weekOverWeek,
-} from "../features/reporting/statistics"
-import { getRunDurationMs } from "../features/runs/run-presentation"
+
+import { getRunDurationMs } from "../features/runs/models/run-presentation"
 
 afterEach(() => {
   vi.useRealTimers()
@@ -157,53 +154,10 @@ describe("bounded tables and grouping", () => {
   })
 })
 
-describe("insight math", () => {
-  it("computes median and p95 without inventing empty-set values", () => {
-    expect(percentile([], 0.5)).toBeNull()
-    expect(percentile([10], 0.5)).toBe(10)
-    expect(percentile([10, 20, 30, 40, 50], 0.5)).toBe(30)
-    expect(percentile([10, 20, 30, 40, 50], 0.95)).toBe(48)
-  })
-
-  it("summarizes a week and compares it to the prior week", () => {
-    const daily: DayInsight[] = Array.from({ length: 14 }, (_, index) => ({
-      date: `2026-10-${String(index + 1).padStart(2, "0")}`,
-      count: index < 7 ? 2 : 4,
-      completed: index < 7 ? 1 : 4,
-      failed: index < 7 ? 1 : 0,
-      successRate: index < 7 ? 50 : 100,
-      medianDurationMs: 100,
-      p95DurationMs: 200,
-    }))
-    expect(summarizeDays(daily.slice(0, 7))).toEqual({
-      count: 14,
-      failed: 7,
-      successRate: 50,
-    })
-    const trend = weekOverWeek(daily)
-    expect(trend.previous.count).toBe(14)
-    expect(trend.current.count).toBe(28)
-    expect(trend.current.successRate).toBe(100)
-    expect(percentChange(trend.current.count, trend.previous.count)).toBe(100)
-    expect(percentChange(trend.current.failed, trend.previous.failed)).toBe(
-      -100,
-    )
+describe("insight presentation", () => {
+  it("keeps bounded visual share bins", () => {
     expect(shareWidthClass(44)).toBe("w-[40%]")
     expect(shareWidthClass(96)).toBe("w-full")
-  })
-
-  it("reads duration from runs inside a date window", () => {
-    const windowed = durationInRange(
-      [
-        { ...runs[0]!, startedAt: "2026-10-10T10:00:00.000Z", durationMs: 100 },
-        { ...runs[1]!, startedAt: "2026-10-12T10:00:00.000Z", durationMs: 300 },
-        { ...runs[2]!, startedAt: "2026-10-20T10:00:00.000Z", durationMs: 900 },
-      ],
-      "2026-10-10",
-      "2026-10-12",
-    )
-    expect(windowed.median).toBe(200)
-    expect(windowed.p95).toBe(290)
   })
 
   it("builds adjacent UTC intelligence windows", () => {

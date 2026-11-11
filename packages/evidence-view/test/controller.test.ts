@@ -74,3 +74,49 @@ describe("SDK view lifecycle", () => {
     expect(listeners.size).toBe(0)
   })
 })
+
+it.each(["dispose", "close", "teardown"] as const)(
+  "does not attach observers or render after %s while connect is pending",
+  async (ending) => {
+    vi.useFakeTimers()
+    const app = new App(
+      { name: "test", version: "1" },
+      {},
+      { autoResize: false },
+    )
+    let finish!: () => void
+    vi.spyOn(app, "connect").mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          finish = resolve
+        }),
+    )
+    const resize = vi
+      .spyOn(app, "setupSizeChangedNotifications")
+      .mockReturnValue(vi.fn())
+    const transport = new PostMessageTransport({} as Window, {} as Window)
+    vi.spyOn(transport, "close").mockResolvedValue(undefined)
+    const render = vi.fn(),
+      theme = vi.fn()
+    const controller = connectEvidenceView(app, transport, render, theme)
+    const connected = Effect.runPromise(controller.connect)
+    await vi.waitFor(() => expect(finish).toBeTypeOf("function"))
+    if (ending === "dispose") {
+      controller.dispose()
+    } else if (ending === "close") {
+      app.onclose?.()
+    } else {
+      await Reflect.apply(app.onteardown!, app, [{}, {}])
+    }
+    const count = render.mock.calls.length
+    finish()
+    await connected
+    app.ontoolinput?.({ arguments: args })
+    app.ontoolresult?.(result)
+    app.onhostcontextchanged?.({ theme: "dark" })
+    expect(render).toHaveBeenCalledTimes(count)
+    expect(theme).not.toHaveBeenCalled()
+    expect(resize).not.toHaveBeenCalled()
+    await vi.runAllTimersAsync()
+  },
+)
