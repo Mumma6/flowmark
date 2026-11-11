@@ -332,7 +332,7 @@ test(
           userId,
           clientId,
           authorizationCodeId,
-          projectId: ownedB.projectId,
+          projectId: ownedA.projectId,
         }),
       )
       assert.equal(afterRevoke, undefined)

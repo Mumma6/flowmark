@@ -1,4 +1,4 @@
-import { expect, it } from "vitest"
+import { expect, it, vi } from "vitest"
 import { Effect } from "effect"
 import { readMcpRequest } from "../src/http/request-body.js"
 import { mcpResultFits, mcpToolResult } from "../src/tools/response.js"
@@ -52,4 +52,29 @@ it("never increases an explicitly requested one-record page", async () => {
   )
   expect("reason" in error && error.reason).toContain("One evidence record")
   expect(calls).toBe(1)
+})
+
+it("cancels the incoming body reader when its request is interrupted", async () => {
+  const cancel = vi.fn()
+  const stream = new ReadableStream<Uint8Array>({
+    start(controller) {
+      controller.enqueue(new TextEncoder().encode("{"))
+    },
+    cancel,
+  })
+  const controller = new AbortController()
+  const request = new Request("http://localhost/mcp", {
+    method: "POST",
+    body: stream,
+    signal: controller.signal,
+    duplex: "half",
+  } as RequestInit)
+  const reading = Effect.runPromise(readMcpRequest(request), {
+    signal: controller.signal,
+  })
+  await vi.waitFor(() => expect(request.body?.locked).toBe(true))
+  const rejected = expect(reading).rejects.toBeDefined()
+  controller.abort()
+  await rejected
+  expect(cancel).toHaveBeenCalledOnce()
 })

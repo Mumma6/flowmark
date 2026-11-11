@@ -1,6 +1,7 @@
 import { createMcpProtectedRequestHandler } from "@better-auth/mcp"
 import type { AuthorizationServerMetadata } from "@modelcontextprotocol/server"
 import { Effect, Option } from "effect"
+import { assertMcpRequestAuthority } from "./request-authority.js"
 import { McpRequestBodyError, readMcpRequest } from "./request-body.js"
 import { authInfoFromClaims, toMcpAuthInfo } from "../auth/claims.js"
 import { readEvidenceCapability } from "../features/connection/evidence-resource.js"
@@ -56,12 +57,21 @@ export const createFlowmarkMcpPostHandler = (input: {
   )
   return (request: Request) =>
     Effect.runPromise(
-      readMcpRequest(request).pipe(
+      assertMcpRequestAuthority(request, input.runtime).pipe(
+        Effect.andThen(readMcpRequest(request)),
         Effect.timeoutOrElse({
           duration: 15000,
           orElse: () => Effect.fail(new McpRequestBodyError({ status: 408 })),
         }),
         Effect.flatMap((bounded) => Effect.promise(() => handle(bounded))),
+        Effect.catchTag("McpRequestAuthorityError", () =>
+          Effect.succeed(
+            Response.json(
+              { message: "MCP request origin or host is not allowed." },
+              { status: 403, headers: { "cache-control": "no-store" } },
+            ),
+          ),
+        ),
         Effect.catchTag("McpRequestBodyError", (error) =>
           Effect.succeed(
             Response.json(
