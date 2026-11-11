@@ -110,6 +110,11 @@ REST client is required. Agent access's disabled mode remains authoritative.
 
 The shared package documents [presentation and local synthetic verification](../evidence-view/README.md).
 [ADR 0011](../../docs/decisions/0011-mcp-app-evidence-boundary.md) records the
-approved protocol/dependency and host sandbox boundaries. This first view has no
-outgoing tool calls, evidence navigation, polling or external assets. It is not
-a business-safe projection of the underlying diagnostic tool result.
+approved protocol/dependency and host sandbox boundaries. Explicit refresh and
+next-events-page actions invoke the same scoped `get_run` through the host and
+repeat live admission/authorization. Negotiated clients see `get_run` as both
+model- and app-visible. There is no polling, automatic retry or direct network
+access. Failures clear evidence/actions and require a fresh host selection.
+Authorization failures carry an additive `io.flowmark/evidence` metadata hint
+without exposing causes or asserting whether access expired or was revoked.
+The metadata-only view is not a business-safe redaction of the diagnostic result.

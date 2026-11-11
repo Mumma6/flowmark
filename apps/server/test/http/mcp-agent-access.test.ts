@@ -1486,6 +1486,17 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
       )
       const revoked = await callTool(14, "get_connection", {})
       expect(revoked.result?.isError).toBe(true)
+      const revokedPage = await callTool(15, "get_run", {
+        projectId: project.projectId,
+        runId,
+        section: "events",
+        limit: 1,
+      })
+      expect(revokedPage.result).toMatchObject({
+        isError: true,
+        _meta: { "io.flowmark/evidence": { state: "access-unavailable" } },
+      })
+      expect(revokedPage.result?.structuredContent).toBeUndefined()
       expect(await studio.run.investigationSummary({ id: runId })).toEqual(
         selected.result?.structuredContent?.summary,
       )

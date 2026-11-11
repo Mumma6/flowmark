@@ -104,6 +104,9 @@ describe("MCP App resource boundary", () => {
       expect(listed.result.tools[0]._meta?.ui?.resourceUri).toBe(
         supported ? evidenceResourceUri : undefined,
       )
+      expect(listed.result.tools[0]._meta?.ui?.visibility).toEqual(
+        supported ? ["model", "app"] : undefined,
+      )
       expect(listed.result.tools).toHaveLength(1)
       const result = await (
         await handler.fetch(

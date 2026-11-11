@@ -22,6 +22,12 @@ const instant = reference.check(
   Schema.makeFilter((value) => Number.isFinite(Date.parse(value))),
 )
 const input = Schema.Struct({
+  limit: Schema.optional(
+    count.check(
+      Schema.isGreaterThanOrEqualTo(1),
+      Schema.isLessThanOrEqualTo(100),
+    ),
+  ),
   projectId: reference,
   runId: reference,
   section: Schema.optional(Schema.String),
@@ -60,7 +66,7 @@ const evidence = Schema.Struct({
 })
 
 /** Only completed results bound to the supplied invocation can become a view. */
-export const projectToolEvidence = (
+export const decodeToolEvidence = (
   argumentsValue: unknown,
   resultValue: unknown,
 ) =>
@@ -91,7 +97,7 @@ export const projectToolEvidence = (
     const envelope = yield* Schema.decodeUnknownResult(
       Schema.Struct({
         isError: Schema.optional(Schema.Boolean),
-        structuredContent: Schema.Unknown,
+        structuredContent: Schema.optional(Schema.Unknown),
       }),
     )(resultValue).pipe(
       Result.mapError(
@@ -133,6 +139,8 @@ export const projectToolEvidence = (
       )
     }
     if (
+      (args.limit !== undefined && value.page.limit > args.limit) ||
+      (args.cursor !== undefined && args.cursor === value.page.nextCursor) ||
       value.page.events.length > value.page.limit ||
       value.page.totalEvents < value.page.events.length
     ) {
@@ -165,5 +173,29 @@ export const projectToolEvidence = (
         }),
       )
     }
-    return projected
+    return {
+      snapshot: projected,
+      // Carry only validated read references; discard the rest of the RPC envelope.
+      invocation: {
+        projectId: args.projectId,
+        runId: args.runId,
+        section: "events" as const,
+        limit: value.page.limit,
+        ...(args.cursor === undefined ? {} : { cursor: args.cursor }),
+      },
+      nextCursor: value.page.nextCursor,
+    }
   })
+
+export type ToolEvidence = Result.Result.Success<
+  ReturnType<typeof decodeToolEvidence>
+>
+export type EvidenceInvocation = ToolEvidence["invocation"]
+
+export const projectToolEvidence = (
+  argumentsValue: unknown,
+  resultValue: unknown,
+) =>
+  decodeToolEvidence(argumentsValue, resultValue).pipe(
+    Result.map((value) => value.snapshot),
+  )

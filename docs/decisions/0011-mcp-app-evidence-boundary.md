@@ -223,3 +223,54 @@ The generated asset is 1,002,291 bytes at this verification stage (build cap 1 M
 Navigation and additional lifecycle features remain a separate task. Hosted
 Preview, deployed-host interoperability and Codex/Cursor/Claude App support were
 not tested or claimed.
+
+## TASK-008.3 navigation extension
+
+The maintainer's instruction to implement the next planned task includes the
+previously deferred navigation/lifecycle scope. The dependency, host, sandbox,
+loopback-only synthetic testing and hosted-operation boundaries above still apply.
+No additional dependency, tool, credential or read authority is introduced.
+
+For negotiated UI clients, `get_run` is now both model- and app-visible. The view
+may explicitly refresh the displayed events page or replace it with its next
+page through `App.callServerTool`. Each call uses the validated project, run,
+events section, effective page limit and existing cursor. Response-budget page
+reductions remain valid and cannot enlarge subsequent reads. No automatic fetch,
+polling, retry, resource fetch, chat message or model-context update is added.
+Other tools and unsupported clients retain their existing behavior and complete
+structured/text results.
+
+A scoped Effect session owns state, queued host events and cancellable read
+fibers behind an `EvidenceReader` service. Replacement, invalid data, read failure,
+cancellation and closure invalidate pending results and remove actionable read
+references. A closed or superseded read cannot restore old evidence. The view
+stores neither credentials nor persistent evidence. It cannot detect an unseen
+server revocation: all displayed evidence is explicitly historical, and only a
+new server read checks current access.
+
+An additive `_meta["io.flowmark/evidence"].state = "access-unavailable"` hint on
+live connection/project authorization failures lets the view distinguish an
+unverifiable connection from other failed reads without matching error text or
+exposing private causes. It does not claim whether expiry, revocation, changed
+membership or an unavailable admission dependency caused the denial. Transport
+failures also clear evidence and direct the user back to the host. The server,
+not this presentation hint, remains the authority. Continuing after a failure
+requires a fresh supplied invocation/result from the host.
+
+Navigation verification on 11 November 2026 used the same approved patched
+reference-host revision and synthetic loopback fixture. Keyboard activation
+advanced to the continuation page; refresh preserved that page's cursor, and
+its last-page control disabled correctly. Both host themes rendered. At a
+390 px browser viewport the view's 335 px frame had equal client/scroll width.
+The access-unavailable fixture removed the snapshot and controls while retaining
+the host's text result; teardown removed the frame. The independent supplied-data
+harness rendered its synthetic example, rejected invalid replacement JSON and
+recovered from a new supplied example. Studio projection and read parity passed
+its unit tests and the real server integration suite. No real telemetry was used.
+
+The final resource measured 1,028,545 bytes under the existing 1 MiB cap. Local
+root checks and the managed disposable integration suite passed (143 server
+cases plus the database/auth tooling and 9 demo cases); only that run's temporary
+containers/network were removed. Browser screenshots were kept locally. Named
+commercial-host support and hosted rollout remain unverified; TASK-008.4 owns
+the next portable-host/example acceptance work.

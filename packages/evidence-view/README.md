@@ -16,7 +16,11 @@ MCP App. It observes supplied evidence; it never executes application work.
 gets the UI association. Other clients continue with text/structured evidence.
 The static resource is read through the authenticated MCP endpoint; each read
 checks the live connection and admission budget. The view receives data through
-the host channel and has no API client, credentials, storage or outgoing actions.
+the host channel and has no API client, credentials or persistent storage.
+Explicit refresh and next-events-page actions use the host's `get_run` connection
+for the same validated project/run/events context. There is no polling or retry.
+A supplied-data host without server-tool capability still renders the snapshot
+with disabled read controls.
 Only the events section has a visual projection. Other sections retain their
 full fallback rather than being interpreted as empty event pages.
 
@@ -40,7 +44,17 @@ The selected web host uses a separate-origin proxy and a nested iframe. Treat
 host context as presentation input only; arbitrary CSS variables/URLs are ignored.
 Results must match the supplied invocation and valid bounded page coverage.
 Invalid replacements, errors, cancellation, connection closure and teardown
-clear evidence. Cleanup releases the SDK transport and resize observer.
+clear evidence and actionable read references. Pending host reads are scoped,
+abort on replacement/cancellation/closure, and cannot restore superseded results.
+Access failures explain that authority may have expired, been revoked or changed;
+the view does not guess which. Reconnect or select authorized evidence in the host
+to resume. Cleanup releases the SDK transport and resize observer.
+
+`src/controller.ts` adapts SDK messages to the Effect queue and supplies the
+`EvidenceReader` service. `src/session.ts` owns per-view `Ref` state and scoped
+read fibers. `src/tool-result.ts` validates completed results before retaining
+only metadata and bounded navigation references; `src/lifecycle.ts` owns the
+presentation states and typed read failures.
 
 ## Local synthetic reference-host smoke
 
@@ -49,12 +63,19 @@ approved versions, source revision, temporary host adaptations and evidence.
 Start the fixture from the repository root only for local development:
 
 ```bash
-pnpm --filter @flowmark/mcp exec tsx scripts/synthetic-evidence-host.ts
+pnpm --filter @flowmark/db exec tsx ../mcp/scripts/synthetic-evidence-host.ts
 ```
 
+This uses the existing repository `tsx` tooling; it performs no database operation.
 It binds `127.0.0.1:8099`, has no credentials/database and serves fixed synthetic
 evidence plus the real resource adapter. It is never mounted by the application.
 Point the approved reference host at `http://127.0.0.1:8099/mcp`, call `get_run`
-with its displayed synthetic defaults, then inspect milestones, theme and close.
+with its displayed synthetic defaults, then inspect refresh, next page,
+milestones, theme and close. The next page replaces the previous page and ends
+pagination; refresh rereads the displayed page. To exercise failed navigation,
+start a new owned fixture process with `FLOWMARK_SYNTHETIC_EVIDENCE_MODE` set to
+`access-unavailable`, `unavailable` or `scope-mismatch`, reload the host and select
+synthetic evidence again. These modes deny/fail/mismatch the next page while the
+first page remains valid. Stop only the fixture/host processes you started.
 Use ordinary authenticated MCP access to test real authorization separately;
 the synthetic fixture is not an authorization proof. Never deploy or expose it.

@@ -1,50 +1,248 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { App, PostMessageTransport } from "@modelcontextprotocol/ext-apps"
+import * as Array from "effect/Array"
 import * as Effect from "effect/Effect"
-import { connectEvidenceView } from "../src/controller.js"
-import { args, result } from "./fixtures.js"
+import * as Fiber from "effect/Fiber"
+import { runEvidenceView } from "../src/controller.js"
+import type { EvidenceAction } from "../src/lifecycle.js"
+import { args, result, structured } from "./fixtures.js"
 
-afterEach(() => {
+const fibers: Fiber.Fiber<unknown>[] = []
+afterEach(async () => {
+  await Effect.runPromise(Effect.forEach(fibers.splice(0), Fiber.interrupt))
   vi.restoreAllMocks()
   vi.unstubAllGlobals()
-  vi.useRealTimers()
 })
-describe("SDK view lifecycle", () => {
-  it("clears evidence on replacement/error/cancellation/teardown and releases observers", async () => {
-    vi.useFakeTimers()
-    const app = new App(
-      { name: "test", version: "1" },
-      {},
-      { autoResize: false },
+const setup = async (tools = true, pendingConnect?: Promise<void>) => {
+  const app = new App({ name: "test", version: "1" }, {}, { autoResize: false })
+  vi.spyOn(app, "connect").mockImplementation(
+    () => pendingConnect ?? Promise.resolve(),
+  )
+  vi.spyOn(app, "getHostCapabilities").mockReturnValue(
+    tools ? { serverTools: {} } : {},
+  )
+  const resize = vi.fn()
+  vi.spyOn(app, "setupSizeChangedNotifications").mockReturnValue(resize)
+  const transport = new PostMessageTransport({} as Window, {} as Window)
+  const close = vi.spyOn(transport, "close").mockResolvedValue(undefined)
+  const read = vi.spyOn(app, "callServerTool").mockResolvedValue(result)
+  const render = vi.fn(),
+    theme = vi.fn(),
+    actions = vi.fn<(action: EvidenceAction) => void>()
+  const fiber = Effect.runFork(
+    runEvidenceView(app, transport, render, theme, (navigate) =>
+      actions.mockImplementation(navigate),
+    ),
+  )
+  fibers.push(fiber)
+  await vi.waitFor(() => expect(app.connect).toHaveBeenCalledOnce())
+  const supply = async () => {
+    app.ontoolinput?.({ arguments: args })
+    app.ontoolresult?.(result)
+    await vi.waitFor(() =>
+      expect(render.mock.lastCall?.[0].kind).toBe("snapshot"),
     )
-    vi.spyOn(app, "connect").mockResolvedValue(undefined)
-    const resize = vi.fn()
-    vi.spyOn(app, "setupSizeChangedNotifications").mockReturnValue(resize)
-    const transport = new PostMessageTransport({} as Window, {} as Window)
-    const close = vi.spyOn(transport, "close").mockResolvedValue(undefined)
-    const render = vi.fn(),
-      theme = vi.fn()
-    const controller = connectEvidenceView(app, transport, render, theme)
-    await Effect.runPromise(controller.connect)
-    app.ontoolinput?.({ arguments: args })
-    app.ontoolresult?.(result)
-    expect(render.mock.lastCall?.[0].kind).toBe("snapshot")
-    app.ontoolresult?.({ isError: true, content: [] })
-    expect(render.mock.lastCall?.[0].kind).toBe("message")
-    app.ontoolinput?.({ arguments: args })
-    app.ontoolresult?.(result)
-    app.ontoolcancelled?.({ reason: "cancelled" })
-    expect(render.mock.lastCall?.[0].message).toContain("cancelled")
-    app.onhostcontextchanged?.({ theme: "dark" })
-    expect(theme).toHaveBeenLastCalledWith("dark")
-    await Reflect.apply(app.onteardown!, app, [{}, {}])
-    expect(resize).toHaveBeenCalledTimes(1)
-    await vi.runAllTimersAsync()
-    expect(close).toHaveBeenCalledOnce()
-    const count = render.mock.calls.length
-    app.ontoolresult?.(result)
-    expect(render).toHaveBeenCalledTimes(count)
-    controller.dispose()
+  }
+  return { app, resize, close, read, render, theme, actions, fiber, supply }
+}
+
+describe("SDK view lifecycle", () => {
+  it("clears evidence and actions on errors/cancellation, then releases observers and transport on teardown", async () => {
+    const view = await setup()
+    await view.supply()
+    view.app.ontoolresult?.({ isError: true, content: [] })
+    await vi.waitFor(() =>
+      expect(view.render.mock.lastCall?.[0].kind).toBe("message"),
+    )
+    view.actions("refresh")
+    expect(view.read).not.toHaveBeenCalled()
+    await view.supply()
+    view.app.ontoolcancelled?.({ reason: "cancelled" })
+    await vi.waitFor(() =>
+      expect(view.render.mock.lastCall?.[0].message).toContain("cancelled"),
+    )
+    view.app.onhostcontextchanged?.({ theme: "dark" })
+    await vi.waitFor(() => expect(view.theme).toHaveBeenLastCalledWith("dark"))
+    await Reflect.apply(view.app.onteardown!, view.app, [{}, {}])
+    await vi.waitFor(() => expect(view.close).toHaveBeenCalledOnce())
+    expect(view.resize).toHaveBeenCalledOnce()
+    const count = view.render.mock.calls.length
+    view.app.ontoolresult?.(result)
+    view.actions("next")
+    await new Promise((resolve) => setTimeout(resolve, 5))
+    expect(view.render).toHaveBeenCalledTimes(count)
+    expect(view.read).not.toHaveBeenCalled()
+  })
+  it("navigates only the same scoped run, refreshes the displayed page and prevents duplicate reads", async () => {
+    const view = await setup()
+    await view.supply()
+    let finish!: (value: Awaited<ReturnType<App["callServerTool"]>>) => void
+    view.read.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve
+        }),
+    )
+    view.actions("next")
+    view.actions("next")
+    await vi.waitFor(() => expect(view.read).toHaveBeenCalledOnce())
+    expect(view.read.mock.calls[0]?.[0]).toEqual({
+      name: "get_run",
+      arguments: { ...args, limit: 50, cursor: "next" },
+    })
+    expect(view.render.mock.lastCall?.[0].busy).toBe(true)
+    finish({
+      ...result,
+      structuredContent: {
+        ...structured,
+        page: {
+          ...structured.page,
+          nextCursor: null,
+          events: [
+            {
+              id: "second",
+              type: "completed",
+              timestamp: "2026-11-10T09:00:02Z",
+            },
+          ],
+        },
+      },
+    })
+    await vi.waitFor(() =>
+      expect(view.render.mock.lastCall?.[0].evidence?.nextCursor).toBe(null),
+    )
+    expect(
+      view.render.mock.lastCall?.[0].evidence.snapshot.evidenceNote,
+    ).toContain("continuation")
+    view.actions("next")
+    view.actions("refresh")
+    await vi.waitFor(() => expect(view.read).toHaveBeenCalledTimes(2))
+    expect(view.read.mock.calls[1]?.[0]).toEqual(view.read.mock.calls[0]?.[0])
+  })
+  it.each(["input", "result", "cancel", "close"] as const)(
+    "aborts an in-flight read on %s and ignores its late result",
+    async (ending) => {
+      const view = await setup()
+      await view.supply()
+      let signal: AbortSignal | undefined
+      let finish!: (value: Awaited<ReturnType<App["callServerTool"]>>) => void
+      view.read.mockImplementationOnce((_params, options) => {
+        signal = options?.signal
+        return new Promise((resolve) => {
+          finish = resolve
+        })
+      })
+      view.actions("refresh")
+      await vi.waitFor(() => expect(view.read).toHaveBeenCalledOnce())
+      if (ending === "input") {
+        view.app.ontoolinput?.({ arguments: { ...args, runId: "replacement" } })
+      }
+      if (ending === "result") {
+        view.app.ontoolresult?.({
+          ...result,
+          structuredContent: {
+            ...structured,
+            summary: { ...structured.summary, workflow: "replacement" },
+          },
+        })
+      }
+      if (ending === "cancel") {
+        view.app.ontoolcancelled?.({ reason: "cancelled" })
+      }
+      if (ending === "close") {
+        view.app.onclose?.()
+      }
+      await vi.waitFor(() => expect(signal?.aborted).toBe(true))
+      const state = view.render.mock.lastCall?.[0]
+      finish(result)
+      await new Promise((resolve) => setTimeout(resolve, 5))
+      expect(view.render.mock.lastCall?.[0]).toEqual(state)
+      expect(state.kind).toBe(ending === "result" ? "snapshot" : "message")
+      if (ending === "result") {
+        expect(state.evidence.snapshot.workflow).toBe("replacement")
+      }
+    },
+  )
+  it("clears inaccessible authority without retrying cached references", async () => {
+    const view = await setup()
+    await view.supply()
+    view.read.mockResolvedValueOnce({
+      isError: true,
+      content: [{ type: "text", text: "Not authorized" }],
+      _meta: { "io.flowmark/evidence": { state: "access-unavailable" } },
+    })
+    view.actions("refresh")
+    await vi.waitFor(() =>
+      expect(view.render.mock.lastCall?.[0].status).toBe("access-unavailable"),
+    )
+    view.actions("refresh")
+    view.actions("next")
+    await new Promise((resolve) => setTimeout(resolve, 5))
+    expect(view.read).toHaveBeenCalledOnce()
+    expect(view.render.mock.lastCall?.[0].message).toContain("expired")
+    await view.supply()
+    expect(view.render.mock.lastCall?.[0].kind).toBe("snapshot")
+  })
+  it("clears failed transport reads and rejects cross-project results", async () => {
+    const view = await setup()
+    await view.supply()
+    view.read.mockRejectedValueOnce(new Error("PRIVATE_ERROR"))
+    view.actions("refresh")
+    await vi.waitFor(() =>
+      expect(view.render.mock.lastCall?.[0].status).toBe("unavailable"),
+    )
+    expect(JSON.stringify(view.render.mock.lastCall)).not.toContain(
+      "PRIVATE_ERROR",
+    )
+    await view.supply()
+    view.read.mockResolvedValueOnce({
+      ...result,
+      structuredContent: { ...structured, projectId: "foreign" },
+    })
+    view.actions("next")
+    await vi.waitFor(() =>
+      expect(view.render.mock.lastCall?.[0].message).toContain("references"),
+    )
+    expect(view.render.mock.lastCall?.[0].kind).toBe("message")
+  })
+  it("keeps supplied-data hosts usable without attempting outgoing reads", async () => {
+    const view = await setup(false)
+    await view.supply()
+    expect(view.render.mock.lastCall?.[0].canRead).toBe(false)
+    view.actions("refresh")
+    view.actions("next")
+    await new Promise((resolve) => setTimeout(resolve, 5))
+    expect(view.read).not.toHaveBeenCalled()
+  })
+  it("does not attach observers or render late results when closed during connect", async () => {
+    let finish!: () => void
+    const view = await setup(
+      true,
+      new Promise<void>((resolve) => {
+        finish = resolve
+      }),
+    )
+    view.app.onclose?.()
+    await vi.waitFor(() => expect(view.close).toHaveBeenCalledOnce())
+    const count = view.render.mock.calls.length
+    finish()
+    view.app.ontoolinput?.({ arguments: args })
+    view.app.ontoolresult?.(result)
+    await new Promise((resolve) => setTimeout(resolve, 5))
+    expect(view.render).toHaveBeenCalledTimes(count)
+    expect(view.resize).not.toHaveBeenCalled()
+  })
+  it("fails closed on a host-message burst instead of dropping scope boundaries", async () => {
+    const view = await setup()
+    await view.supply()
+    Array.forEach(Array.range(0, 100), () =>
+      view.app.ontoolinput?.({ arguments: args }),
+    )
+    await vi.waitFor(() => expect(view.close).toHaveBeenCalledOnce())
+    expect(view.render.mock.lastCall?.[0].kind).toBe("message")
+    expect(view.render.mock.lastCall?.[0].message).toContain("Too many")
+    view.actions("next")
+    expect(view.read).not.toHaveBeenCalled()
   })
   it("uses the actual SDK transport to reject messages from other windows and removes its listener", async () => {
     const listeners = new Set<(event: MessageEvent) => void>()
@@ -74,49 +272,3 @@ describe("SDK view lifecycle", () => {
     expect(listeners.size).toBe(0)
   })
 })
-
-it.each(["dispose", "close", "teardown"] as const)(
-  "does not attach observers or render after %s while connect is pending",
-  async (ending) => {
-    vi.useFakeTimers()
-    const app = new App(
-      { name: "test", version: "1" },
-      {},
-      { autoResize: false },
-    )
-    let finish!: () => void
-    vi.spyOn(app, "connect").mockImplementation(
-      () =>
-        new Promise<void>((resolve) => {
-          finish = resolve
-        }),
-    )
-    const resize = vi
-      .spyOn(app, "setupSizeChangedNotifications")
-      .mockReturnValue(vi.fn())
-    const transport = new PostMessageTransport({} as Window, {} as Window)
-    vi.spyOn(transport, "close").mockResolvedValue(undefined)
-    const render = vi.fn(),
-      theme = vi.fn()
-    const controller = connectEvidenceView(app, transport, render, theme)
-    const connected = Effect.runPromise(controller.connect)
-    await vi.waitFor(() => expect(finish).toBeTypeOf("function"))
-    if (ending === "dispose") {
-      controller.dispose()
-    } else if (ending === "close") {
-      app.onclose?.()
-    } else {
-      await Reflect.apply(app.onteardown!, app, [{}, {}])
-    }
-    const count = render.mock.calls.length
-    finish()
-    await connected
-    app.ontoolinput?.({ arguments: args })
-    app.ontoolresult?.(result)
-    app.onhostcontextchanged?.({ theme: "dark" })
-    expect(render).toHaveBeenCalledTimes(count)
-    expect(theme).not.toHaveBeenCalled()
-    expect(resize).not.toHaveBeenCalled()
-    await vi.runAllTimersAsync()
-  },
-)
