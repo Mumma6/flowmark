@@ -1,3 +1,4 @@
+import type { AuthorizeAgentRead } from "@flowmark/api"
 import { GetProjectWorkflowData } from "@flowmark/api"
 import {
   createMcpHandler,
@@ -45,7 +46,11 @@ const runWorkflowTool = async <A extends Record<string, unknown>>(
     readonly getRun: typeof getRunForMcp
     readonly compareRun: typeof compareRunForMcp
     readonly getWorkflowInsights: typeof getWorkflowInsightsForMcp
-  }) => Effect.Effect<A, McpToolFailure, GetProjectWorkflowData>,
+  }) => Effect.Effect<
+    A,
+    McpToolFailure,
+    GetProjectWorkflowData | AuthorizeAgentRead
+  >,
   signal?: AbortSignal,
 ) =>
   toolResult(

@@ -119,3 +119,11 @@ export { PublicReadAdmission } from "./features/public-reads/ports/public-read-a
 export { PUBLIC_READ_BOUNDS, type RunReadError } from "@flowmarkdev/core"
 
 export { ReadPublicPeriod } from "./features/public-reads/use-cases/read-period.js"
+
+export { AuthorizeAgentRead } from "./features/project-access/use-cases/authorize-agent-read.js"
+export {
+  DelegatedAccessRepository,
+  type GrantFamilySelection,
+} from "./features/project-access/ports/delegated-access-repository.js"
+/** Protocol adapters select the API read policy without importing persistence. */
+export { DatabaseReadBudget as ApiReadBudget } from "@flowmark/db/persistence"

@@ -3,7 +3,7 @@ import { exploreAnalyticsQueryKey } from "../features/explore/explore-analytics-
 import {
   buildRunListInput,
   readExplorerFilters,
-} from "../features/runs/explorer-filters"
+} from "../features/runs/explorer/explorer-filters"
 
 describe("Studio Explore compatibility", () => {
   it("keeps analytics tab state separate from explorer cohort filters", () => {

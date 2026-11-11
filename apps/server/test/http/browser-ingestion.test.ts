@@ -17,7 +17,7 @@ import {
 import { DEMO_BROWSER_KEY } from "@flowmark/db/demo"
 import { POST, OPTIONS } from "../../app/v1/browser-events/route"
 import { POST as serverIngestion } from "../../app/v1/events/route"
-import { appRouter } from "../../src/adapters/trpc"
+import { appRouter } from "../../src/adapters/trpc/router"
 
 describe.skipIf(!process.env.TEST_DATABASE_URL)(
   "direct browser ingestion",

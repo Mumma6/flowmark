@@ -2,12 +2,12 @@ import { expect, it } from "vitest"
 import {
   connectSetupStages,
   markSetupCopied,
-} from "../features/connect/connect-setup-state"
+} from "../features/connect/setup/connect-setup-state"
 import {
   instrumentationGuideUrl,
   serverEnvironmentSnippet,
   setupRecoveryCopy,
-} from "../features/connect/setup-instructions"
+} from "../features/connect/setup/setup-instructions"
 
 it("keeps copied, configured, and observed setup stages separate", () => {
   const copiedOnly = connectSetupStages({

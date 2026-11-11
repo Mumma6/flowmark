@@ -12,7 +12,7 @@ import {
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { Suspense } from "react"
 import { PageHeading } from "../shared/dashboard-components"
-import { ConnectSetupPanel } from "../connect/connect-setup"
+import { ConnectSetupPanel } from "../connect/setup/connect-setup"
 import { useProject } from "../projects/project-context"
 import { AccountSettings } from "./account-settings"
 import { KeySettings } from "./key-settings"

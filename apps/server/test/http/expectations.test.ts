@@ -26,7 +26,7 @@ import {
 } from "./signup-sessions"
 import { POST } from "../../app/v1/events/route"
 import { POST as browserPOST } from "../../app/v1/browser-events/route"
-import { appRouter } from "../../src/adapters/trpc"
+import { appRouter } from "../../src/adapters/trpc/router"
 import { createFlowmark } from "../../../../packages/sdk/src/index.js"
 
 const clock = vi.hoisted(() => ({ value: "2026-10-31T12:00:00.000Z" }))

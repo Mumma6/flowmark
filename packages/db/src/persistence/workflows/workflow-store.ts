@@ -16,6 +16,7 @@ import {
   MissingRunError,
   InvalidResultQuery,
   provideDatabase,
+  DatabaseCancellation,
 } from "../database.js"
 import { getProjectSnapshot } from "./queries/get-project-snapshot.js"
 import { getWorkflowSummaries } from "./queries/get-workflow-summaries.js"
@@ -159,7 +160,10 @@ export class WorkflowStore extends Context.Service<WorkflowStore>()(
   "@flowmark/db/WorkflowStore",
   {
     make: Effect.gen(function* () {
-      const provide = provideDatabase(yield* Database)
+      const provide = provideDatabase(
+        yield* Database,
+        yield* DatabaseCancellation,
+      )
       return {
         periodRead: (projectId, input) =>
           provide(getPeriodRead(projectId, input)),

@@ -7,7 +7,7 @@ import { createFlowmarkAuth } from "@flowmark/auth"
 import { seedLocalAuthUser } from "@flowmark/auth/seed"
 import { LOCAL_DEV_EMAIL, LOCAL_DEV_PASSWORD } from "@flowmark/db/demo"
 import { getAuth } from "../../src/auth"
-import { appRouter } from "../../src/adapters/trpc"
+import { appRouter } from "../../src/adapters/trpc/router"
 import { POST as register } from "../../app/api/register/route"
 import { revokeSessionsForEmails } from "./signup-sessions"
 

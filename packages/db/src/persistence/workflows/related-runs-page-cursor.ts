@@ -1,31 +1,26 @@
+import { Option, Result } from "effect"
+import { decodePageCursor, encodePageCursor } from "./page-cursor.js"
+
 export type RelatedRunsPageCursor = {
   readonly startedAt: string
   readonly id: string
 }
 
-export function encodeRelatedRunsPageCursor(row: {
-  readonly startedAt: string
-  readonly id: string
-}): string {
-  return `${row.startedAt}|${row.id}`
-}
+export const encodeRelatedRunsPageCursor = (
+  row: RelatedRunsPageCursor,
+): string => encodePageCursor(row.startedAt, row.id)
 
-export function decodeRelatedRunsPageCursor(
+/** Keep this historical nullable API; queries reject a supplied invalid cursor. */
+export const decodeRelatedRunsPageCursor = (
   cursor: string | undefined,
-): RelatedRunsPageCursor | null {
-  if (!cursor) {
-    return null
-  }
-  const parts = cursor.split("|")
-  if (parts.length !== 2) {
-    return null
-  }
-  const [startedAt, id] = parts
-  if (!startedAt || !id) {
-    return null
-  }
-  if (Number.isNaN(Date.parse(startedAt))) {
-    return null
-  }
-  return { startedAt, id }
-}
+): RelatedRunsPageCursor | null =>
+  decodePageCursor(cursor).pipe(
+    Result.match({
+      onFailure: () => null,
+      onSuccess: (value) =>
+        value.pipe(
+          Option.map(({ timestamp, id }) => ({ startedAt: timestamp, id: id })),
+          Option.getOrNull,
+        ),
+    }),
+  )

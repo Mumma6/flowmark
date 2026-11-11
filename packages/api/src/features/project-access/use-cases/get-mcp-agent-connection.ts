@@ -1,6 +1,5 @@
-import { AgentAccessStore } from "@flowmark/db/persistence"
+import { DelegatedAccessRepository } from "../ports/delegated-access-repository.js"
 import { Context, Effect, Layer, Schema } from "effect"
-import { persist } from "../../../adapters/persistence-error.js"
 import { Unauthorized, type PersistenceError } from "../../../errors.js"
 
 export const McpAgentConnectionProjectSchema = Schema.Struct({
@@ -53,21 +52,19 @@ export class GetMcpAgentConnection extends Context.Service<
 export const GetMcpAgentConnectionLive = Layer.effect(
   GetMcpAgentConnection,
   Effect.gen(function* () {
-    const store = yield* AgentAccessStore
+    const repository = yield* DelegatedAccessRepository
     return GetMcpAgentConnection.of({
       resolve: Effect.fn("GetMcpAgentConnection.resolve")(function* (input) {
-        const row = yield* persist(store.getMcpConnection(input))
+        const row = yield* repository.connection(input)
         if (!row) {
           return yield* Effect.fail(new Unauthorized({ permission: "read" }))
         }
-        yield* persist(
-          store.recordLastAuthenticated({
-            userId: input.userId,
-            clientId: input.clientId,
-            authorizationCodeId: input.authorizationCodeId,
-            at: input.authenticatedAt,
-          }),
-        )
+        yield* repository.recordAuthenticated({
+          userId: input.userId,
+          clientId: input.clientId,
+          authorizationCodeId: input.authorizationCodeId,
+          at: input.authenticatedAt,
+        })
         return {
           authorizationCodeId: row.authorizationCodeId,
           clientId: row.clientId,

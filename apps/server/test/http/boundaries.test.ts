@@ -4,7 +4,7 @@ import { InvalidInput } from "@flowmark/api"
 import { readJsonBody } from "../../src/adapters/request-body"
 import { POST } from "../../app/v1/events/route"
 import { GET as health } from "../../app/api/health/route"
-import { appRouter } from "../../src/adapters/trpc"
+import { appRouter } from "../../src/adapters/trpc/router"
 
 afterEach(() => {
   vi.unstubAllEnvs()

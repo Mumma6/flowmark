@@ -1,5 +1,5 @@
 import { expect, it } from "vitest"
-import { remoteAgentAccessFromProbe } from "../features/connect/agent-access-capability"
+import { remoteAgentAccessFromProbe } from "../features/connect/access/agent-access-capability"
 
 it("reports remote agent access as disabled without advertising an MCP command", () => {
   const deployment = remoteAgentAccessFromProbe({

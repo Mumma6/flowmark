@@ -89,6 +89,7 @@ export function connectEvidenceView(
     clear()
     stopResize()
     message("The host connection closed. No evidence is displayed.")
+    active = false
   }
   app.onteardown = () => {
     clear()

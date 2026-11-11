@@ -1,3 +1,4 @@
+import { runTransaction } from "../../run-transaction.js"
 import { validExpectationProjectionSql } from "../sql/expectations.js"
 import { sql } from "drizzle-orm"
 import { Effect } from "effect"
@@ -150,16 +151,16 @@ export const getRunExpectationsPage = Effect.fn("getRunExpectationsPage")(
     )
     const db = yield* Database
     const clock = yield* ExpectationObservationClock
-    return yield* runQuery(DatabaseOperation.ReadExpectations, () =>
-      db.transaction(
-        (tx) =>
-          Effect.runPromise(
-            Effect.gen(function* () {
-              const asOf = (yield* clock.now(tx)).toISOString()
-              const [countRow] = yield* runQuery(
-                DatabaseOperation.ReadExpectations,
-                () =>
-                  tx.execute<{ count: number }>(sql`
+    return yield* runTransaction(
+      DatabaseOperation.ReadExpectations,
+      (use) => db.transaction(use, { isolationLevel: "repeatable read" }),
+      (tx) =>
+        Effect.gen(function* () {
+          const asOf = (yield* clock.now(tx)).toISOString()
+          const [countRow] = yield* runQuery(
+            DatabaseOperation.ReadExpectations,
+            () =>
+              tx.execute<{ count: number }>(sql`
       SELECT count(*)::int AS count
       FROM workflow_expectations x
       JOIN workflow_runs r ON r.id = x.run_id
@@ -168,18 +169,16 @@ export const getRunExpectationsPage = Effect.fn("getRunExpectationsPage")(
         AND r.id = ${query.runId}
         AND ${validExpectationProjectionSql}
     `),
-              )
-              const cursorFilter =
-                decoded === null
-                  ? sql`true`
-                  : sql`(COALESCE(x.declared_at, 'epoch'::timestamptz), x.expectation_id) > (
+          )
+          const cursorFilter =
+            decoded === null
+              ? sql`true`
+              : sql`(COALESCE(x.declared_at, 'epoch'::timestamptz), x.expectation_id) > (
                       COALESCE(${decoded.declaredAt === "" ? null : decoded.declaredAt}::timestamptz, 'epoch'::timestamptz),
                       ${decoded.expectationId}
                     )`
-              const rows = yield* runQuery(
-                DatabaseOperation.ReadExpectations,
-                () =>
-                  tx.execute<Row>(sql`
+          const rows = yield* runQuery(DatabaseOperation.ReadExpectations, () =>
+            tx.execute<Row>(sql`
       SELECT w.name as workflow, r.external_id as "externalId", x.expectation_id as "expectationId",
         x.declared_at::text as "declaredAt", x.deadline_at::text as "deadlineAt", x.settled_at::text as "settledAt", x.settlement_type as "settlementType",
         (s.receipt_order < d.receipt_order) as "outOfOrder", d.event_id as "declarationId", d.expectation as declaration, s.event_id as "settlementId", s.expectation as settlement
@@ -190,48 +189,43 @@ export const getRunExpectationsPage = Effect.fn("getRunExpectationsPage")(
       ORDER BY x.declared_at NULLS LAST, x.expectation_id
       LIMIT ${limit + 1}
     `),
-              )
-              const [integrity] = yield* runQuery(
-                DatabaseOperation.ReadExpectations,
-                () =>
-                  tx.execute<{ count: number }>(sql`
+          )
+          const [integrity] = yield* runQuery(
+            DatabaseOperation.ReadExpectations,
+            () =>
+              tx.execute<{ count: number }>(sql`
       SELECT count(DISTINCT e.expectation->>'expectationId')::int as count FROM workflow_events e
       JOIN workflow_runs r ON r.id = e.run_id JOIN workflows w ON w.id = r.workflow_id
       WHERE w.project_id = ${projectId} AND r.id = ${query.runId} AND e.expectation IS NOT NULL
         AND NOT EXISTS (SELECT 1 FROM workflow_expectations x WHERE x.run_id = r.id AND x.expectation_id = e.expectation->>'expectationId' AND ${validExpectationProjectionSql})
     `),
-              )
-              const pageRows = Array.from(rows)
-              const hasMore = pageRows.length > limit
-              const slice = hasMore ? pageRows.slice(0, limit) : pageRows
-              const records = slice.map((row) =>
-                withBoundedEvidence(mapRecord(row, asOf)),
-              )
-              const expectations = records.filter(
-                (r) => r.state !== "unmatched",
-              )
-              const unmatched = records.filter((r) => r.state === "unmatched")
-              const last = slice.at(-1)
-              return {
-                runId: query.runId,
-                asOf,
-                expectations,
-                unmatched,
-                nextCursor:
-                  hasMore && last
-                    ? encodeExpectationsPageCursor({
-                        declaredAt: last.declaredAt,
-                        expectationId: last.expectationId,
-                      })
-                    : null,
-                limit,
-                totalRecords: countRow?.count ?? 0,
-                unavailableCount: integrity?.count ?? 0,
-              } satisfies RunExpectationsPage
-            }),
-          ),
-        { isolationLevel: "repeatable read" },
-      ),
+          )
+          const pageRows = Array.from(rows)
+          const hasMore = pageRows.length > limit
+          const slice = hasMore ? pageRows.slice(0, limit) : pageRows
+          const records = slice.map((row) =>
+            withBoundedEvidence(mapRecord(row, asOf)),
+          )
+          const expectations = records.filter((r) => r.state !== "unmatched")
+          const unmatched = records.filter((r) => r.state === "unmatched")
+          const last = slice.at(-1)
+          return {
+            runId: query.runId,
+            asOf,
+            expectations,
+            unmatched,
+            nextCursor:
+              hasMore && last
+                ? encodeExpectationsPageCursor({
+                    declaredAt: last.declaredAt,
+                    expectationId: last.expectationId,
+                  })
+                : null,
+            limit,
+            totalRecords: countRow?.count ?? 0,
+            unavailableCount: integrity?.count ?? 0,
+          } satisfies RunExpectationsPage
+        }),
     )
   },
 )

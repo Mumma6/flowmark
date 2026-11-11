@@ -1,3 +1,4 @@
+import { runTransaction } from "../../run-transaction.js"
 import { ExpectationObservationClock } from "../observation-clock.js"
 import { validateResultSelection } from "./validate-result-query.js"
 import { Effect } from "effect"
@@ -108,40 +109,33 @@ export const listRuns = Effect.fn("listRuns")(function* (
         "Expectation discovery requires a valid window of at most 90 days and page size 1–100.",
     })
   }
-  const { rows, countRow, asOf } = yield* runQuery(
+  const { rows, countRow, asOf } = yield* runTransaction(
     DatabaseOperation.ListRuns,
-    () =>
-      db.transaction(
-        (tx) =>
-          Effect.runPromise(
-            Effect.gen(function* () {
-              const now = yield* clock.now(tx)
-              const asOf = now.toISOString()
-              const scoped = {
-                ...filter,
-                ...(query.expectationState
-                  ? { startedAfter: start, startedBefore: end }
-                  : {}),
-                asOf,
-              }
-              const rows = yield* runQuery(DatabaseOperation.ListRuns, () =>
-                tx.execute<ListedRun>(listRunsSql(projectId, scoped)),
-              )
-              const [countRow] = yield* runQuery(
-                DatabaseOperation.ListRuns,
-                () =>
-                  tx.execute<{
-                    count: number
-                    totalRuns: number
-                    overdueRuns: number
-                    overdueExpectations: number
-                  }>(listRunsCountSql(projectId, scoped)),
-              )
-              return { rows, countRow, asOf, bounded }
-            }),
-          ),
-        { isolationLevel: "repeatable read" },
-      ),
+    (use) => db.transaction(use, { isolationLevel: "repeatable read" }),
+    (tx) =>
+      Effect.gen(function* () {
+        const now = yield* clock.now(tx)
+        const asOf = now.toISOString()
+        const scoped = {
+          ...filter,
+          ...(query.expectationState
+            ? { startedAfter: start, startedBefore: end }
+            : {}),
+          asOf,
+        }
+        const rows = yield* runQuery(DatabaseOperation.ListRuns, () =>
+          tx.execute<ListedRun>(listRunsSql(projectId, scoped)),
+        )
+        const [countRow] = yield* runQuery(DatabaseOperation.ListRuns, () =>
+          tx.execute<{
+            count: number
+            totalRuns: number
+            overdueRuns: number
+            overdueExpectations: number
+          }>(listRunsCountSql(projectId, scoped)),
+        )
+        return { rows, countRow, asOf, bounded }
+      }),
   )
   const page = Array.from(rows)
   const hasMore = page.length > limit

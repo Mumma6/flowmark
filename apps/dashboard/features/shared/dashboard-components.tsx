@@ -22,7 +22,7 @@ import { ArrowRight, RefreshCw } from "lucide-react"
 import Link from "next/link"
 import { useMemo, type ReactNode } from "react"
 import { presentQueryError } from "../platform/api-transport-errors"
-import { runStatusLabel, type RunStatus } from "../runs/run-presentation"
+import { runStatusLabel, type RunStatus } from "../runs/models/run-presentation"
 import {
   clipboardCopyFailureDescription,
   clipboardCopyFailureTitle,

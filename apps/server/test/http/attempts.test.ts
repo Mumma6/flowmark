@@ -11,7 +11,7 @@ import {
 import { hashApiKey } from "@flowmark/db/persistence"
 import { createFlowmark } from "../../../../packages/sdk/src/index.js"
 import { POST } from "../../app/v1/events/route"
-import { appRouter } from "../../src/adapters/trpc"
+import { appRouter } from "../../src/adapters/trpc/router"
 
 describe.skipIf(!process.env.TEST_DATABASE_URL)(
   "explicit attempts through SDK/HTTP/storage",

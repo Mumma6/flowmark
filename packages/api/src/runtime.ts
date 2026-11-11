@@ -1,3 +1,5 @@
+import { AuthorizeAgentRead } from "./features/project-access/use-cases/authorize-agent-read.js"
+import { DelegatedAccessRepositoryLive } from "./features/project-access/adapters/delegated-access-repository.js"
 import { ReadPublicPeriod } from "./features/public-reads/use-cases/read-period.js"
 import { ReadPublicRun } from "./features/public-reads/use-cases/read-run.js"
 import { PublicReadAdmissionLive } from "./features/public-reads/adapters/public-read-admission.js"
@@ -47,7 +49,11 @@ const dependencies = AuthorizeProject.layer.pipe(
 const agentAccessAdapter = Layer.mergeAll(
   AgentAccessLive,
   GetMcpAgentConnectionLive,
-).pipe(Layer.provide(persistence))
+  AuthorizeAgentRead.layer,
+).pipe(
+  Layer.provide(DelegatedAccessRepositoryLive.pipe(Layer.provide(persistence))),
+  Layer.provide(persistence),
+)
 
 export const ApiLive = Layer.mergeAll(
   ReadPublicRun.layer,
@@ -71,6 +77,7 @@ export function runApi<A, E>(
   operation: Effect.Effect<
     A,
     E,
+    | AuthorizeAgentRead
     | ReadPublicPeriod
     | ReadPublicRun
     | AgentAccess

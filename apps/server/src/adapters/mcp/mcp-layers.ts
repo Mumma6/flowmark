@@ -1,28 +1,14 @@
 import { flowmarkAuthorizationServerMetadata } from "@flowmark/auth/agent-access"
 import {
-  AgentAccessRuntimeError,
   McpAuthGateway,
   McpDiscoveryError,
-  McpHostConfiguration,
   type AuthorizationServerMetadata,
 } from "@flowmark/mcp"
 import { Effect, Layer, Schema } from "effect"
 import { getAuth } from "../../auth"
-import { serverOrigins } from "../../server-env"
+import { McpHostConfigurationLive } from "./mcp-host-configuration"
 
 const DiscoveryDocument = Schema.Record(Schema.String, Schema.Unknown)
-
-export const McpHostConfigurationLive = Layer.succeed(
-  McpHostConfiguration,
-  McpHostConfiguration.of({
-    readAuthIssuerOrigin: serverOrigins().pipe(
-      Effect.map(({ baseURL }) => baseURL),
-      Effect.mapError(
-        (error) => new AgentAccessRuntimeError({ reason: error.reason }),
-      ),
-    ),
-  }),
-)
 
 export const McpAuthGatewayLive = Layer.succeed(
   McpAuthGateway,

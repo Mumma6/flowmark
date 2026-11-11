@@ -26,7 +26,6 @@
     "@better-auth/mcp": "1.7.17",
     "@flowmark/api": "workspace:*",
     "@flowmark/auth": "workspace:*",
-    "@flowmark/db": "workspace:*",
     "@modelcontextprotocol/server": "2.3.1",
     "effect": "4.1.0",
     "@flowmark/evidence-view": "workspace:*",

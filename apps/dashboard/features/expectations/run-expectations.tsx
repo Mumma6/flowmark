@@ -18,7 +18,7 @@ import { DataState } from "../shared/dashboard-components"
 import { JsonData } from "../shared/json-data"
 import { formatTimestamp } from "../shared/format"
 import { useRunExpectations } from "./queries"
-import { runInvestigationPath } from "../runs/investigation-navigation"
+import { runInvestigationPath } from "../runs/investigation/investigation-navigation"
 
 type Record =
   inferRouterOutputs<AppRouter>["run"]["expectationsPage"]["expectations"][number]

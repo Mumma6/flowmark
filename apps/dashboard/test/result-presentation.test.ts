@@ -4,7 +4,7 @@ import {
   declaredResults,
   resultPath,
   type ResultDeclaration,
-} from "../features/results/result-presentation"
+} from "../features/results/presentation/result-presentation"
 
 const declaration: ResultDeclaration = {
   revision: "v1",

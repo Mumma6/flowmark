@@ -27,12 +27,12 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { usePathname, useSearchParams } from "next/navigation"
-import { readInspectorRunId } from "../runs/investigation-navigation"
+import { readInspectorRunId } from "../runs/investigation/investigation-navigation"
 import {
   interpretPeriodCohort,
   runSelectionQueryKey,
-} from "../runs/investigation-selection"
-import { RunInspector } from "../runs/run-inspector"
+} from "../runs/investigation/investigation-selection"
+import { RunInspector } from "../runs/investigation/run-inspector"
 import { publicConfig } from "../platform/config-public"
 import { useProject } from "../projects/project-context"
 import { useSnapshot } from "../projects/queries"
@@ -40,8 +40,8 @@ import {
   explorerDefaults,
   explorerFilterLabels,
   type ExplorerFilters,
-} from "../runs/explorer-filters"
-import { useRunExplorer } from "../runs/use-run-explorer"
+} from "../runs/explorer/explorer-filters"
+import { useRunExplorer } from "../runs/explorer/use-run-explorer"
 import { DataState, FilterSelect } from "../shared/dashboard-components"
 import { ExploreAnalyticsContext } from "./explore-analytics-context"
 import { exploreAnalyticsQueryKey } from "./explore-analytics-query"

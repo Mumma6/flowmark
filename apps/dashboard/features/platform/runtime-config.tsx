@@ -4,7 +4,7 @@ import { createContext, useContext, type ReactNode } from "react"
 import {
   remoteAgentAccessFromProbe,
   type RemoteAgentAccessDeployment,
-} from "../connect/agent-access-capability"
+} from "../connect/access/agent-access-capability"
 
 // Only the validated API URL crosses the server/client boundary. Hosted
 // credentials and protection bypasses remain exclusively in server config.

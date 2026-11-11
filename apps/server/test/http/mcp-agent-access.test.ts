@@ -2,7 +2,7 @@ import {
   connectedFailureCalls,
   connectedInsightCalls,
   connectedRunCalls,
-} from "../../../dashboard/features/runs/connected-retrieval"
+} from "../../../dashboard/features/runs/investigation/connected-retrieval"
 import { handleAgentConsent } from "../../src/adapters/agent-consent"
 import { createHash, randomBytes, randomUUID } from "node:crypto"
 import assert from "node:assert/strict"
@@ -32,8 +32,8 @@ import {
   periodCohortToolInput,
   runSelectionToolInput,
   studioRunSelection,
-} from "../../../dashboard/features/runs/investigation-selection"
-import { appRouter } from "../../src/adapters/trpc"
+} from "../../../dashboard/features/runs/investigation/investigation-selection"
+import { appRouter } from "../../src/adapters/trpc/router"
 import { LATEST_PROTOCOL_VERSION } from "@flowmark/mcp"
 import { POST as mcpPost } from "../../app/mcp/route"
 import { POST as ingestEvents } from "../../app/v1/events/route"

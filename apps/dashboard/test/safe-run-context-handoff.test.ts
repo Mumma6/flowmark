@@ -1,18 +1,18 @@
 import { Option } from "effect"
 import { expect, it } from "vitest"
 import type { RunEvent } from "../features/platform/api-types"
-import { explorerDefaults } from "../features/runs/explorer-filters"
+import { explorerDefaults } from "../features/runs/explorer/explorer-filters"
 import {
   connectedFailureCalls,
   connectedInsightCalls,
   separateObservationNotice,
-} from "../features/runs/connected-retrieval"
+} from "../features/runs/investigation/connected-retrieval"
 import {
   buildSafeFailureGroupHandoff,
   buildSafeInsightHandoff,
   buildSafeRunContextHandoff,
   summarizeSourceSelection,
-} from "../features/runs/safe-run-context-handoff"
+} from "../features/runs/handoff/safe-run-context-handoff"
 
 const event = (
   type: RunEvent["type"],

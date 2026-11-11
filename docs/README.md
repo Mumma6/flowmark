@@ -28,6 +28,8 @@ Contributor guides that ship with the public repository:
   independent main changes such as hotfixes, not after ordinary releases.
 - [Architecture](./architecture): service boundaries, persistence, local auth,
   and current system constraints.
+- [Effect and module organization](./code-organization): pure models, service ownership,
+  error/lifetime boundaries and the staged Studio folder target.
 - [Implementation status](./implementation-status): public mirror of shipped
   Connect Your Agent and related Product 1.0 items through Agent TASK-005.4.
 - [Authentication boundaries](./auth-perimeter): provider login, registration,

@@ -17,7 +17,7 @@ import {
 import { Result } from "effect"
 import { useEffect, useState, type FormEvent } from "react"
 import { runBrowserAuth } from "../auth/auth-browser-runtime"
-import { EmailVerificationPanel } from "../auth/email-verification-panel"
+import { EmailVerificationPanel } from "../auth/verification/email-verification-panel"
 import { authClient } from "../auth/auth-client"
 import { changeAccountPassword, updateAccountName } from "../auth/operations"
 

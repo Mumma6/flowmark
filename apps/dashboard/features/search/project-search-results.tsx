@@ -3,8 +3,8 @@
 import { CommandGroup, CommandItem } from "@flowmark/ui"
 import { ArrowUpRight, GitBranch, Tag, Workflow } from "lucide-react"
 import type { RouterOutputs } from "../platform/api-types"
-import type { ExplorerFilters } from "../runs/explorer-filters"
-import { runStatusLabel } from "../runs/run-presentation"
+import type { ExplorerFilters } from "../runs/explorer/explorer-filters"
+import { runStatusLabel } from "../runs/models/run-presentation"
 import {
   distinctSearchReferences,
   referenceExploreHref,

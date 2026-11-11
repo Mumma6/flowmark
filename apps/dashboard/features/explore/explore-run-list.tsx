@@ -9,11 +9,11 @@ import { formatDuration, formatTimestamp } from "../shared/format"
 import {
   readInspectorRunId,
   runInvestigationPath,
-} from "../runs/investigation-navigation"
+} from "../runs/investigation/investigation-navigation"
 import {
   getRunResultHighlights,
   runStatusLabel,
-} from "../runs/run-presentation"
+} from "../runs/models/run-presentation"
 
 export function ExploreRunList({ runs }: { runs: readonly Run[] }) {
   const pathname = usePathname()

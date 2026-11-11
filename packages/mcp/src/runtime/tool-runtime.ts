@@ -1,10 +1,11 @@
 import { AGENT_ACCESS_EXECUTION_BOUNDS as bounds } from "@flowmark/auth/agent-access"
 import {
   ApiLive,
+  ApiReadBudget,
   type GetMcpAgentConnection,
+  type AuthorizeAgentRead,
   type GetProjectWorkflowData,
 } from "@flowmark/api"
-import { DatabaseReadBudget } from "@flowmark/db/persistence"
 import { Effect } from "effect"
 import { McpToolReadError } from "../errors.js"
 import type { FlowmarkMcpAuthInfo } from "../auth/claims.js"
@@ -19,7 +20,7 @@ export const runMcpTool = <A extends Record<string, unknown>>(
   operation: Effect.Effect<
     A,
     McpToolFailure,
-    GetProjectWorkflowData | GetMcpAgentConnection
+    GetProjectWorkflowData | GetMcpAgentConnection | AuthorizeAgentRead
   >,
   signal?: AbortSignal,
 ) =>
@@ -40,7 +41,7 @@ export const runMcpTool = <A extends Record<string, unknown>>(
       ),
     ).pipe(
       Effect.provide(ApiLive),
-      Effect.provideService(DatabaseReadBudget, {
+      Effect.provideService(ApiReadBudget, {
         statementTimeoutMs: bounds.statementTimeoutMs,
         maxOperationFacts: 1000,
       }),
@@ -65,7 +66,7 @@ export const runMcpResourceRead = (
           ),
       }),
       Effect.provide(ApiLive),
-      Effect.provideService(DatabaseReadBudget, {
+      Effect.provideService(ApiReadBudget, {
         statementTimeoutMs: bounds.statementTimeoutMs,
         maxOperationFacts: 1000,
       }),
