@@ -6,7 +6,7 @@ import {
   fromJsonSchema,
   McpServer,
 } from "@modelcontextprotocol/server"
-import { Effect } from "effect"
+import { Effect, Match, Schema } from "effect"
 import {
   registerEvidenceResource,
   registerRunEvidenceTool,
@@ -47,6 +47,14 @@ const sample = {
     ],
   },
 }
+const mode = Schema.decodeUnknownSync(
+  Schema.Literals([
+    "pages",
+    "access-unavailable",
+    "unavailable",
+    "scope-mismatch",
+  ]),
+)(process.env.FLOWMARK_SYNTHETIC_EVIDENCE_MODE ?? "pages")
 const handler = (supported: boolean) =>
   createMcpHandler(
     () => {
@@ -66,6 +74,8 @@ const handler = (supported: boolean) =>
               projectId: { type: "string", default: projectId },
               runId: { type: "string", default: runId },
               section: { type: "string", default: "events" },
+              cursor: { type: "string" },
+              limit: { type: "integer", minimum: 1, maximum: 100 },
             },
             required: ["projectId", "runId"],
             additionalProperties: false,
@@ -73,16 +83,67 @@ const handler = (supported: boolean) =>
           annotations: { readOnlyHint: true, destructiveHint: false },
         },
         async (args) => {
-          const value = args as { projectId?: string; runId?: string }
+          const value = args as {
+            projectId?: string
+            runId?: string
+            cursor?: string
+            limit?: number
+          }
           if (value.projectId !== projectId || value.runId !== runId) {
             return {
               isError: true,
               content: [{ type: "text", text: "Unknown synthetic selection." }],
             }
           }
+          if (value.cursor && mode !== "pages" && mode !== "scope-mismatch") {
+            return {
+              isError: true,
+              content: [
+                {
+                  type: "text",
+                  text: "Synthetic read denied or unavailable; no existing data.",
+                },
+              ],
+              ...(mode === "access-unavailable"
+                ? {
+                    _meta: {
+                      "io.flowmark/evidence": { state: "access-unavailable" },
+                    },
+                  }
+                : {}),
+            }
+          }
+          const supplied = {
+            ...sample,
+            projectId:
+              value.cursor && mode === "scope-mismatch"
+                ? "foreign-project"
+                : projectId,
+            page: {
+              ...sample.page,
+              totalEvents: 4,
+              limit: value.limit ?? 50,
+              nextCursor: value.cursor ? null : "synthetic-next-page",
+              events: Match.value(Boolean(value.cursor)).pipe(
+                Match.when(true, () => [
+                  {
+                    id: "synthetic-result",
+                    type: "checkpoint",
+                    timestamp: "2026-11-10T09:00:01Z",
+                  },
+                  {
+                    id: "synthetic-completed",
+                    type: "completed",
+                    timestamp: "2026-11-10T09:00:02Z",
+                  },
+                ]),
+                Match.orElse(() => sample.page.events),
+              ),
+            },
+          }
           return {
-            content: [{ type: "text", text: JSON.stringify(sample) }],
-            structuredContent: sample,
+            content: [{ type: "text", text: JSON.stringify(supplied) }],
+            structuredContent: supplied,
           }
         },
         supported,
@@ -145,7 +206,7 @@ const server = createServer(async (incoming, outgoing) => {
   }
 })
 server.listen(8099, "127.0.0.1", () =>
-  console.log("Synthetic MCP fixture: http://127.0.0.1:8099/mcp"),
+  console.log(`Synthetic MCP fixture (${mode}): http://127.0.0.1:8099/mcp`),
 )
 const shutdown = () => {
   server.close()

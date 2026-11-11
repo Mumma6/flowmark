@@ -5,6 +5,7 @@
   "type": "module",
   "exports": {
     ".": "./src/index.tsx",
+    "./button": "./src/button.tsx",
     "./utils": "./src/utils.ts",
     "./run-snapshot": "./src/run-snapshot.tsx",
     "./mermaid": "./src/mermaid.tsx"

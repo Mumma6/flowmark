@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import * as Result from "effect/Result"
-import { projectToolEvidence } from "../src/tool-result.js"
+import { decodeToolEvidence, projectToolEvidence } from "../src/tool-result.js"
 import { buildSuppliedRunSnapshot } from "../src/projection.js"
 
 import { args, structured, result } from "./fixtures.js"
@@ -75,7 +75,7 @@ describe("MCP supplied evidence boundary", () => {
   it("renders hostile strings as supplied text data and preserves continuation coverage", () => {
     const snapshot = Result.getOrThrow(
       projectToolEvidence(
-        { ...args, cursor: "next" },
+        { ...args, cursor: "previous" },
         {
           ...result,
           structuredContent: {
@@ -91,4 +91,20 @@ describe("MCP supplied evidence boundary", () => {
     expect(snapshot.workflow).toContain("<img")
     expect(snapshot.evidenceNote).toContain("continuation")
   })
+})
+
+it("rejects widened page limits and non-advancing cursors before enabling navigation", () => {
+  expect(
+    Result.isFailure(projectToolEvidence({ ...args, limit: 10 }, result)),
+  ).toBe(true)
+  expect(
+    Result.isFailure(projectToolEvidence({ ...args, cursor: "next" }, result)),
+  ).toBe(true)
+})
+
+it("keeps response-budget reductions instead of widening the next request", () => {
+  const page = Result.getOrThrow(
+    decodeToolEvidence({ ...args, limit: 100 }, result),
+  )
+  expect(page.invocation.limit).toBe(50)
 })

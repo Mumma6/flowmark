@@ -25,7 +25,7 @@ export const supportsEvidenceView = (
   true
 
 export const evidenceToolMetadata = {
-  ui: { resourceUri: evidenceResourceUri, visibility: ["model"] },
+  ui: { resourceUri: evidenceResourceUri, visibility: ["model", "app"] },
 }
 
 export function registerEvidenceResource(

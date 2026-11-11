@@ -499,3 +499,22 @@ no new migration or compact-fact framework.
 
 See the [business outcome metric contract](sdk/business-insights.md) for cohort,
 coverage, weighted denominator, evidence and comparison rules.
+
+### Portable run evidence lifecycle
+
+`@flowmark/evidence-view` renders the same supplied run projection as Studio and
+the local harness. Its SDK adapter (`src/controller.ts`) owns the host channel,
+theme and observer lifecycle. `src/session.ts` owns an Effect `Ref` per view,
+serializes host events and uses scoped read fibers through `EvidenceReader`.
+`src/tool-result.ts` validates invocation/result scope, byte bounds, page coverage
+and cursors before retaining only the metadata projection and read references.
+
+In a compatible MCP Apps host, explicit refresh and next-page controls call only
+`get_run` for the displayed project/run/events context. Reads reenter the existing
+live grant, project, budget and deadline checks. The view never fetches directly,
+stores credentials, polls or retries automatically. Failed reads, invalid
+replacements, cancellation and teardown clear evidence and actions; interrupted
+or superseded results cannot restore them. Expired or revoked access cannot be
+inferred from a cached snapshot: access failures ask the user to reconnect or
+select authorized evidence in the host. Complete structured/text results remain
+available there, and supplied-data hosts work without outgoing actions.
