@@ -24,7 +24,7 @@ export const createDefinitionImportFixture = Effect.fn(
         body: JSON.stringify({
           name: "Definition fixture",
           email: `definitions-${randomUUID()}@example.test`,
-          password: `Fixture-Aa1-${randomUUID()}`,
+          password: randomUUID(),
         }),
       }),
     ),
