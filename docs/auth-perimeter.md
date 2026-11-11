@@ -116,6 +116,15 @@ Authentication responses through the proxy and registration alias use
 label and exclude raw messages/arguments, which can contain callback URLs,
 attacker-controlled headers, database errors or tokens.
 
+Explicit disconnect also removes the matching Flowmark resource from the
+provider's cached consent in the same transaction. Otherwise a client reconnect
+could skip project selection and obtain a token with no usable project grant.
+Unrelated resource permissions and revoked consent-intent history are retained.
+Account-wide delegated revocation applies the same invalidation; ordinary
+accepted-consent supersession preserves the new permission. The
+[Codex CLI evidence record](./agent-clients/codex-cli.md) covers the observed
+client behavior and verification limits.
+
 ## Durable limits
 
 Better Auth's native HTTP limiter uses a supported `customStorage.consume`

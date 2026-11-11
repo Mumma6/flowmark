@@ -3,6 +3,7 @@ import type { ExtractTablesWithRelations } from "drizzle-orm"
 import type { PgTransaction } from "drizzle-orm/pg-core"
 import type { PostgresJsQueryResultHKT } from "drizzle-orm/postgres-js"
 import type * as schema from "../../../schema/index.js"
+import { invalidateAgentConsentResourcesInTransaction } from "./invalidate-agent-consent-resources-in-transaction.js"
 import {
   agentAccessConnectionLastAuth,
   agentAccessGrantProjects,
@@ -79,6 +80,7 @@ export async function revokeGrantFamilyInTransaction(
       ),
     )
   if (input.markConsentIntentsRevoked) {
+    await invalidateAgentConsentResourcesInTransaction(tx, input)
     await tx
       .update(agentAccessOauthConsentIntents)
       .set({ state: "revoked", updatedAt: input.now })
@@ -153,6 +155,7 @@ export async function revokeAllDelegatedGrantFamiliesForUserInTransaction(
         inArray(agentAccessConnectionLastAuth.authorizationCodeId, familyIds),
       )
   }
+  await invalidateAgentConsentResourcesInTransaction(tx, input)
   await tx
     .update(agentAccessOauthConsentIntents)
     .set({ state: "revoked", updatedAt: input.now })

@@ -320,6 +320,12 @@ test(
       )
       assert.equal(stillOwned, ownedA.projectId)
 
+      const unrelatedResource = "https://unrelated.example.test/resource"
+      await db
+        .update(oauthConsent)
+        .set({ resources: [resourceIdentifier, unrelatedResource] })
+        .where(eq(oauthConsent.id, consentId))
+
       await exec(
         revokeAgentAccessConnection({
           userId,
@@ -336,6 +342,24 @@ test(
         }),
       )
       assert.equal(afterRevoke, undefined)
+      const [retainedConsent] = await db
+        .select()
+        .from(oauthConsent)
+        .where(eq(oauthConsent.id, consentId))
+      assert.deepEqual(
+        retainedConsent?.resources,
+        [unrelatedResource],
+        "disconnect invalidates only the revoked resource's cached provider consent",
+      )
+      const [retainedIntent] = await db
+        .select()
+        .from(agentAccessOauthConsentIntents)
+        .where(eq(agentAccessOauthConsentIntents.oauthConsentId, consentId))
+      assert.equal(
+        retainedIntent?.state,
+        "revoked",
+        "revocation history remains available",
+      )
     } finally {
       await db
         .delete(agentAccessOauthConsentIntents)

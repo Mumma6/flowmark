@@ -886,6 +886,17 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
       expect(revokedResource.result?.contents).toBeUndefined()
 
       const reconnected = await issueToken()
+      // This skipConsent fixture binds grants manually. Model fresh provider
+      // resource consent here; the signed-consent test below exercises the UI bridge.
+      const [disconnectedConsent] = await connection.db
+        .select()
+        .from(oauthConsent)
+        .where(eq(oauthConsent.id, consentId))
+      expect(disconnectedConsent?.resources).toEqual([])
+      await connection.db
+        .update(oauthConsent)
+        .set({ resources: [mcpResource] })
+        .where(eq(oauthConsent.id, consentId))
       const nextProject = await Effect.runPromise(
         createOwnedProject(memberUser, {
           workspace: "Reconnected workspace",
@@ -2219,6 +2230,24 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         )
       expect(await nextReader(excluded.projectId)).toBe(excluded.projectId)
       expect(await nextReader(selected.projectId)).toBeUndefined()
+      await Effect.runPromise(
+        revokeAgentAccessConnection({
+          userId: account.session.user.id,
+          clientId,
+          authorizationCodeId: nextClaims.flowmark_grant_family,
+        }).pipe(Effect.provideService(Database, connection.db)),
+      )
+      // Ordinary clients do not necessarily send prompt=consent when reconnecting.
+      const reconnect = await auth.handler(
+        new Request(
+          `${testOrigin}/api/auth/oauth2/authorize?${new URLSearchParams({ response_type: "code", client_id: clientId, redirect_uri: redirectUri, scope: scopes.join(" "), resource: mcpResource, code_challenge: codeChallenge(randomBytes(32).toString("base64url")), code_challenge_method: "S256" })}`,
+          { headers: { cookie: account.cookie, origin: testOrigin } },
+        ),
+      )
+      expect(
+        new URL(reconnect.headers.get("location")!, testOrigin).pathname,
+      ).toBe("/connect/agent/consent")
+      expect(await nextReader(excluded.projectId)).toBeUndefined()
     })
   },
 )
