@@ -1713,6 +1713,17 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         ),
       )
       await expect(
+        tokenCaller.resultDeclarations.previewImport({
+          projectId: project.projectId,
+          definition: {
+            version: 1,
+            source: "booking-app",
+            workflow: "booking.create",
+            searchFields: [{ key: "bookingRef", role: "lookup" }],
+          },
+        }),
+      ).rejects.toMatchObject({ code: "UNAUTHORIZED" })
+      await expect(
         tokenCaller.resultDeclarations.create({
           projectId: project.projectId,
           workflow: "acceptance.investigation",

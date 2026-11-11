@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "source": "booking-app",
+  "workflow": "booking.create",
+  "result": {
+    "revision": "booking-v1",
+    "fields": [
+      {
+        "path": ["submitted"],
+        "label": "Submitted bookings",
+        "kind": "count",
+        "aggregate": true
+      }
+    ]
+  },
+  "searchFields": [{ "key": "bookingRef", "role": "lookup" }]
+}
