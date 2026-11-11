@@ -33,6 +33,8 @@ import {
   runSelectionQueryKey,
 } from "../runs/investigation/investigation-selection"
 import { RunInspector } from "../runs/investigation/run-inspector"
+import { ReferenceJourney } from "../journeys/reference-journey"
+import { startJourneyHref } from "../journeys/journey-selection"
 import { publicConfig } from "../platform/config-public"
 import { useProject } from "../projects/project-context"
 import { useSnapshot } from "../projects/queries"
@@ -130,6 +132,30 @@ function ExploreWorkspace() {
           <AlertTitle>Period selection not applied</AlertTitle>
           <AlertDescription>{periodSelection.message}</AlertDescription>
         </Alert>
+      ) : null}
+
+      <ReferenceJourney />
+      {current &&
+      explorer.selectedField?.role === "lookup" &&
+      filters.workflow !== "all" &&
+      filters.businessKey &&
+      filters.businessValue ? (
+        <Button asChild variant="outline" className="justify-self-start">
+          <Link
+            href={startJourneyHref(
+              current.id,
+              {
+                workflow: filters.workflow,
+                key: filters.businessKey,
+                value: filters.businessValue,
+              },
+              exploreFrom,
+            )}
+            scroll={false}
+          >
+            Follow this reference
+          </Link>
+        </Button>
       ) : null}
 
       <StudioWorkspace
