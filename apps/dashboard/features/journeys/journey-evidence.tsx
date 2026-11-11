@@ -25,7 +25,7 @@ export function JourneyEvidence({
   from: string
   onSelect: (selection: JourneySelection) => void
 }) {
-  const result = useReferenceJourney(selection)
+  const { result, restart } = useReferenceJourney(selection)
   const focusNextPage = useRef(false)
   useEffect(() => {
     if (!focusNextPage.current || result.isFetching) {
@@ -60,6 +60,31 @@ export function JourneyEvidence({
         error={result.error}
         retry={() => void result.refetch()}
       />
+      {result.isError || first?.state === "Ambiguous" ? (
+        <Button
+          variant="outline"
+          size="sm"
+          className="justify-self-start"
+          disabled={result.isFetching}
+          onClick={() => {
+            focusNextPage.current = true
+            if (selection.query.cursor || selection.query.candidateCursor) {
+              onSelect({
+                ...selection,
+                query: {
+                  ...selection.query,
+                  cursor: undefined,
+                  candidateCursor: undefined,
+                },
+              })
+            } else {
+              void restart()
+            }
+          }}
+        >
+          Restart from first page
+        </Button>
+      ) : null}
       {result.isError ? (
         <p className="text-xs text-muted-foreground">
           Evidence could not be read. This does not establish that business
@@ -135,12 +160,11 @@ export function JourneyEvidence({
                   </li>
                 ))}
               </ul>
-              {candidates.length >= 100 ? (
-                <p className="text-xs text-muted-foreground">
-                  Showing up to 100 candidate records from the latest loaded
-                  pages.
-                </p>
-              ) : null}
+              <p className="text-xs text-muted-foreground">
+                Showing up to 100 candidate records from the latest loaded
+                pages. Restart from the first page to return to earlier
+                candidates.
+              </p>
             </>
           ) : null}
           {first.state === "Selected" ? (

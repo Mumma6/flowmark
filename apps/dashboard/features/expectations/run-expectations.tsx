@@ -1,6 +1,5 @@
 "use client"
 
-import type { AppRouter } from "@flowmark/server/trpc"
 import {
   Alert,
   AlertDescription,
@@ -12,32 +11,16 @@ import {
   CardHeader,
   CardTitle,
 } from "@flowmark/ui"
-import type { inferRouterOutputs } from "@trpc/server"
 import Link from "next/link"
 import { DataState } from "../shared/dashboard-components"
 import { JsonData } from "../shared/json-data"
 import { formatTimestamp } from "../shared/format"
 import { useRunExpectations } from "./queries"
 import { runInvestigationPath } from "../runs/investigation/investigation-navigation"
+import { expectationLabel } from "./expectation-presentation"
 
-type Record =
-  inferRouterOutputs<AppRouter>["run"]["expectationsPage"]["expectations"][number]
-export function expectationLabel(
-  record: Pick<Record, "state" | "cancelledAfterDeadline">,
-) {
-  if (record.cancelledAfterDeadline) {
-    return "Cancelled after deadline"
-  }
-  const labels = {
-    pending: "Pending confirmation",
-    overdue: "Overdue — no resolution observed",
-    "met-on-time": "Observed on time",
-    "met-late": "Observed late",
-    cancelled: "Cancelled",
-    unmatched: "Settlement recorded; declaration unavailable",
-  }
-  return labels[record.state]
-}
+export { expectationLabel } from "./expectation-presentation"
+
 export function RunExpectations({
   id,
   source,

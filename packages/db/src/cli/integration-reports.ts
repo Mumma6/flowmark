@@ -23,6 +23,7 @@ export const expectedServerFiles = [
   "storage-failure",
   "public-run-read",
   "reference-journey",
+  "reference-journey-edge-cases",
 ] as const
 
 const invalid = () =>

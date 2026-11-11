@@ -25,8 +25,11 @@ without declaring their runs members of the selected reference.
 
 Use **More linked executions** or **More starting executions** to continue.
 Studio retains at most four 25-record pages; an ambiguous chooser shows the latest
-loaded pages once that limit is reached. Errors hide unavailable evidence and
-offer retry; they never stand in for missing business activity. **Edit reference
+loaded pages once that limit is reached. **Refresh** rereads that retained window;
+**Restart from first page** resets only this project's selected journey and
+reopens the earlier choices. It is also available after a failed continuation.
+Errors hide unavailable evidence and offer retry; they never stand in for missing
+business activity. **Edit reference
 mapping** restarts selection. Journey URLs are scoped to the current project and
 cannot select another project or grant access. Explore filters below the journey
 do not constrain its independently selected reference.
@@ -81,6 +84,15 @@ Completed execution and application-reported business outcome remain separate.
 Meridian downstream evidence is sampled: these results are not a conversion
 funnel or proof that absent work did not happen. Existing run expectation reads
 remain available independently; this query does not reinterpret their deadlines.
+
+For example, a completed booking may report `requested: 4`, `confirmed: 3` and
+`pending: 1`. A later confirmation is a separate observation; it does not change
+those terminal counts or silently turn the original outcome into “confirmed”.
+Confirmation timing uses Flowmark's stored observation times and fixed deadline,
+not an application's historical event timestamp. “Observed late” can include
+delivery delay. Cancellation is explicit, while “overdue” only means no resolution
+has been observed by the read's stated observation time. None of these states
+proves what happened at an external provider.
 
 ## Bounds and continuation
 
