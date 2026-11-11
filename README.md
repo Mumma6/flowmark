@@ -27,7 +27,10 @@ Flowmark Studio is the investigation workspace, and Flowmark Everywhere is the
 direction for agents, custom tools and portable interfaces. These are dimensions
 of one product. Studio is the current dashboard. The API serves six read-only
 MCP investigation tools when that deployment enables agent access. Saved
-investigations and a portable agent UI are not built.
+investigations are not built. The shared run view works in a supplied-data host
+and one patched MCP Apps reference host; the [portable evidence example](./examples/portable-evidence/README.md)
+records exact compatibility and local setup. Commercial-client support and hosted
+MCP availability must be verified separately.
 
 ## Getting started
 

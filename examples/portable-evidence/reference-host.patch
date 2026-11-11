@@ -1,0 +1,40 @@
+diff --git a/examples/basic-host/package.json b/examples/basic-host/package.json
+index d791309..1ac15dd 100644
+--- a/examples/basic-host/package.json
++++ b/examples/basic-host/package.json
+@@ -14 +14,2 @@
+-    "@modelcontextprotocol/client": "2.0.0",
++    "@modelcontextprotocol/client": "2.3.1",
++    "@modelcontextprotocol/core": "2.3.1",
+diff --git a/examples/basic-host/serve.ts b/examples/basic-host/serve.ts
+index bc3fbff..2dc6c3d 100644
+--- a/examples/basic-host/serve.ts
++++ b/examples/basic-host/serve.ts
+@@ -135 +135 @@ sandboxApp.use((_req, res) => {
+-hostApp.listen(HOST_PORT, (err) => {
++hostApp.listen(HOST_PORT, "127.0.0.1", (err) => {
+@@ -143 +143 @@ hostApp.listen(HOST_PORT, (err) => {
+-sandboxApp.listen(SANDBOX_PORT, (err) => {
++sandboxApp.listen(SANDBOX_PORT, "127.0.0.1", (err) => {
+diff --git a/examples/basic-host/src/implementation.ts b/examples/basic-host/src/implementation.ts
+index 5f680ff..b2190ff 100644
+--- a/examples/basic-host/src/implementation.ts
++++ b/examples/basic-host/src/implementation.ts
+@@ -55 +55 @@ async function connectWithFallback(serverUrl: URL): Promise<Client> {
+-    const client = new Client(IMPLEMENTATION);
++    const client = new Client(IMPLEMENTATION, { versionNegotiation: { mode: { pin: "2026-07-28" } }, capabilities: { extensions: { "io.modelcontextprotocol/ui": { mimeTypes: [RESOURCE_MIME_TYPE] } } } });
+@@ -65 +65 @@ async function connectWithFallback(serverUrl: URL): Promise<Client> {
+-    const client = new Client(IMPLEMENTATION);
++    const client = new Client(IMPLEMENTATION, { versionNegotiation: { mode: { pin: "2026-07-28" } }, capabilities: { extensions: { "io.modelcontextprotocol/ui": { mimeTypes: [RESOURCE_MIME_TYPE] } } } });
+diff --git a/package.json b/package.json
+index b70c284..9066eff 100644
+--- a/package.json
++++ b/package.json
+@@ -82,2 +82,2 @@
+-    "@modelcontextprotocol/client": "2.0.0",
+-    "@modelcontextprotocol/core": "2.0.0",
++    "@modelcontextprotocol/client": "2.3.1",
++    "@modelcontextprotocol/core": "2.3.1",
+@@ -85 +85 @@
+-    "@modelcontextprotocol/server": "2.0.0",
++    "@modelcontextprotocol/server": "2.3.1",

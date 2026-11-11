@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs"
 import { Result } from "effect"
 import { describe, expect, it } from "vitest"
 import {
@@ -7,6 +8,18 @@ import {
 
 const decode = (value: unknown) => decodeSuppliedSnapshot(JSON.stringify(value))
 describe("supplied snapshot trust boundary", () => {
+  it("renders the public supplied-data sample through the actual harness boundary", () => {
+    const supplied = readFileSync(
+      new URL(
+        "../../../examples/portable-evidence/snapshot.json",
+        import.meta.url,
+      ),
+      "utf8",
+    )
+    expect(Result.getOrThrow(decodeSuppliedSnapshot(supplied))).toEqual(
+      exampleSnapshot,
+    )
+  })
   it("round trips supplied meaning and references without a network or credential boundary", () => {
     expect(Result.getOrThrow(decode(exampleSnapshot))).toEqual(exampleSnapshot)
   })
