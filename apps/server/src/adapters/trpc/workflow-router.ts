@@ -5,6 +5,24 @@ import { t } from "./context"
 import { readQuery } from "./execution"
 
 export const workflowRouter = t.router({
+  linkedComparison: t.procedure
+    .input(Schema.toStandardSchemaV1(Schema.Unknown))
+    .query(({ ctx, input }) =>
+      readQuery(ctx.request, (reader) =>
+        GetProjectWorkflowData.use((queries) =>
+          queries.linkedComparison(reader, input),
+        ),
+      ),
+    ),
+  linkedEvidence: t.procedure
+    .input(Schema.toStandardSchemaV1(Schema.Unknown))
+    .query(({ ctx, input }) =>
+      readQuery(ctx.request, (reader) =>
+        GetProjectWorkflowData.use((queries) =>
+          queries.linkedEvidence(reader, input),
+        ),
+      ),
+    ),
   journey: t.procedure
     .input(
       Schema.toStandardSchemaV1(ReferenceJourneyQuerySchema, {

@@ -303,6 +303,33 @@ export const projectMembers = pgTable(
   ],
 )
 
+/** Owner-private live questions; no captured telemetry or access grants. */
+export const savedInvestigations = pgTable(
+  "saved_investigations",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    ownerId: text("owner_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    selection: jsonb("selection").$type<unknown>().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    index("saved_investigations_owner_project_created_idx").on(
+      table.ownerId,
+      table.projectId,
+      table.createdAt,
+      table.id,
+    ),
+  ],
+)
+
 /** Immutable workflow-owned presentation revisions; no runtime execution config. */
 export const workflowResultDeclarations = pgTable(
   "workflow_result_declarations",
@@ -314,6 +341,7 @@ export const workflowResultDeclarations = pgTable(
     workflow: text("workflow").notNull(),
     revision: text("revision").notNull(),
     declaration: jsonb("declaration").$type<ResultDeclaration>().notNull(),
+    source: text("source"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
@@ -336,11 +364,49 @@ export const workflowSearchFields = pgTable(
       .references(() => projects.id),
     workflow: text("workflow").notNull(),
     fields: jsonb("fields").$type<SearchFields>().notNull(),
+    sources: jsonb("sources")
+      .$type<Readonly<Record<string, string>>>()
+      .notNull()
+      .default({}),
   },
   (table) => [
     uniqueIndex("workflow_search_fields_scope_uidx").on(
       table.projectId,
       table.workflow,
+    ),
+  ],
+)
+
+/** Successful reviewed imports only; duplicate delivery never repeats a write. */
+export const workflowDefinitionImports = pgTable(
+  "workflow_definition_imports",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    workflow: text("workflow").notNull(),
+    source: text("source").notNull(),
+    manifestFingerprint: text("manifest_fingerprint").notNull(),
+    baseFingerprint: text("base_fingerprint").notNull(),
+    actorId: text("actor_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    resultRevision: text("result_revision"),
+    addedSearchKeys: jsonb("added_search_keys")
+      .$type<ReadonlyArray<string>>()
+      .notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    uniqueIndex("workflow_definition_imports_review_uidx").on(
+      table.projectId,
+      table.workflow,
+      table.source,
+      table.manifestFingerprint,
+      table.baseFingerprint,
     ),
   ],
 )

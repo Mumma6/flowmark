@@ -37,6 +37,7 @@ import { ReferenceJourney } from "../journeys/reference-journey"
 import { startJourneyHref } from "../journeys/journey-selection"
 import { publicConfig } from "../platform/config-public"
 import { useProject } from "../projects/project-context"
+import { SaveInvestigation } from "../investigations/save-investigation"
 import { useSnapshot } from "../projects/queries"
 import {
   explorerDefaults,
@@ -134,6 +135,9 @@ function ExploreWorkspace() {
         </Alert>
       ) : null}
 
+      {periodSelection._tag === "Accepted" && (
+        <SaveInvestigation selection={periodSelection.selection} />
+      )}
       <ReferenceJourney />
       {current &&
       explorer.selectedField?.role === "lookup" &&

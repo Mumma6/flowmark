@@ -97,6 +97,9 @@ const mcpSessionHeaders = (
   }
 }
 
+// Real provider/crypto scenarios need a finite budget under parallel fixture load.
+vi.setConfig({ testTimeout: 15000 })
+
 describe.skipIf(!process.env.TEST_DATABASE_URL)(
   "protected MCP HTTP adapter",
   () => {
@@ -1720,6 +1723,21 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
             source: "booking-app",
             workflow: "booking.create",
             searchFields: [{ key: "bookingRef", role: "lookup" }],
+          },
+        }),
+      ).rejects.toMatchObject({ code: "UNAUTHORIZED" })
+      await expect(
+        tokenCaller.resultDeclarations.applyImport({
+          projectId: project.projectId,
+          command: {
+            definition: {
+              version: 1,
+              source: "denied",
+              workflow: "booking.create",
+              searchFields: [],
+            },
+            manifestFingerprint: "0".repeat(64),
+            baseFingerprint: "0".repeat(64),
           },
         }),
       ).rejects.toMatchObject({ code: "UNAUTHORIZED" })

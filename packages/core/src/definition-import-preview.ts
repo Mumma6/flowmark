@@ -108,3 +108,37 @@ export const previewDefinitionImport = (
 }
 
 export type DefinitionImportPreview = ReturnType<typeof previewDefinitionImport>
+
+/** The canonical review payload shared by preview and transactional apply. */
+export const definitionImportReviewContent = (
+  projectId: string,
+  input: DefinitionImport,
+  snapshot: DefinitionImportSnapshot,
+) => {
+  const identity = {
+    version: input.version,
+    projectId,
+    source: input.source,
+    workflow: input.workflow,
+  }
+  return {
+    identity,
+    manifest: {
+      ...identity,
+      result: input.result ? canonicalResultDeclaration(input.result) : null,
+      searchFields:
+        input.searchFields === undefined
+          ? null
+          : canonicalSearchFields(input.searchFields),
+    },
+    base: {
+      ...identity,
+      requestedRevision: input.result?.revision ?? null,
+      result: Option.match(snapshot.result, {
+        onNone: () => null,
+        onSome: canonicalResultDeclaration,
+      }),
+      searchFields: canonicalSearchFields(snapshot.searchFields),
+    },
+  }
+}

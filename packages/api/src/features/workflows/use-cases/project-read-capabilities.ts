@@ -1,6 +1,8 @@
 import type {
   ReferenceJourneyQuery,
   ReferenceJourneyPage,
+  LinkedComparison,
+  LinkedEvidencePage,
 } from "@flowmarkdev/core"
 import type {
   RunExpectations,
@@ -119,6 +121,20 @@ export interface ProjectReadRuns {
 }
 
 export interface ProjectReadAnalytics {
+  readonly linkedComparison: (
+    reader: ProjectReader,
+    input: unknown,
+  ) => Effect.Effect<
+    LinkedComparison,
+    Unauthorized | PersistenceError | InvalidInput
+  >
+  readonly linkedEvidence: (
+    reader: ProjectReader,
+    input: unknown,
+  ) => Effect.Effect<
+    LinkedEvidencePage,
+    Unauthorized | PersistenceError | InvalidInput
+  >
   readonly businessInsights: (
     reader: ProjectReader,
     query: BusinessInsightsQuery,

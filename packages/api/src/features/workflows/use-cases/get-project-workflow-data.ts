@@ -1,5 +1,7 @@
 import {
   ReferenceJourneyQuerySchema,
+  LinkedComparisonQuerySchema,
+  LinkedEvidenceQuerySchema,
   type ReferenceJourneyQuery,
 } from "@flowmarkdev/core"
 import type { PeerSelection } from "@flowmarkdev/core"
@@ -193,6 +195,30 @@ export class GetProjectWorkflowData extends Context.Service<
       })
 
       return GetProjectWorkflowData.of({
+        linkedComparison: Effect.fn("GetProjectWorkflowData.linkedComparison")(
+          function* (reader, input) {
+            const projectId = yield* authorizeReader(reader)
+            const query = yield* Schema.decodeUnknownEffect(
+              LinkedComparisonQuerySchema,
+              { onExcessProperty: "error" },
+            )(input).pipe(
+              Effect.mapError((cause) => new InvalidInput({ cause })),
+            )
+            return yield* repository.linkedComparison(projectId, query)
+          },
+        ),
+        linkedEvidence: Effect.fn("GetProjectWorkflowData.linkedEvidence")(
+          function* (reader, input) {
+            const projectId = yield* authorizeReader(reader)
+            const query = yield* Schema.decodeUnknownEffect(
+              LinkedEvidenceQuerySchema,
+              { onExcessProperty: "error" },
+            )(input).pipe(
+              Effect.mapError((cause) => new InvalidInput({ cause })),
+            )
+            return yield* repository.linkedEvidence(projectId, query)
+          },
+        ),
         referenceJourney: Effect.fn("GetProjectWorkflowData.referenceJourney")(
           function* (reader: ProjectReader, input: ReferenceJourneyQuery) {
             const projectId = yield* authorizeReader(reader)

@@ -155,6 +155,20 @@
       "when": 1793998552430,
       "tag": "0021_wandering_slipstream",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1794473514015,
+      "tag": "0022_code_owned_definitions",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1794479955256,
+      "tag": "0023_private_live_investigations",
+      "breakpoints": true
     }
   ]
 }

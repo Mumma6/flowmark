@@ -57,6 +57,7 @@ export interface WorkflowMeaningQuery {
 }
 
 export interface DiscoveredRevision {
+  readonly source?: string | null
   readonly revision: string
   readonly declaration: unknown
   readonly truncated: boolean
@@ -64,6 +65,7 @@ export interface DiscoveredRevision {
 }
 
 export interface WorkflowMeaningPage {
+  readonly searchSources?: Readonly<Record<string, string>>
   readonly workflow: string
   readonly revisions: ReadonlyArray<DiscoveredRevision>
   readonly searchFields: SearchFields

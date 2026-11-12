@@ -5,6 +5,8 @@ import { getResultDeclaration } from "./queries/get-result-declaration.js"
 import { createResultDeclaration } from "./writes/create-result-declaration.js"
 import { getSearchFields } from "./queries/get-search-fields.js"
 import { setSearchFields } from "./writes/set-search-fields.js"
+import { applyDefinitionImport } from "./writes/apply-definition-import.js"
+import type { DefinitionImportApply } from "@flowmarkdev/core"
 import type { SearchFields, ResultDeclaration } from "@flowmarkdev/core"
 export class ResultDeclarationStore extends Context.Service<ResultDeclarationStore>()(
   "@flowmark/db/ResultDeclarationStore",
@@ -15,6 +17,11 @@ export class ResultDeclarationStore extends Context.Service<ResultDeclarationSto
         yield* DatabaseCancellation,
       )
       return {
+        apply: (
+          userId: string,
+          projectId: string,
+          input: DefinitionImportApply,
+        ) => provide(applyDefinitionImport(userId, projectId, input)),
         find: (projectId: string, workflow: string, revision: string) =>
           provide(getResultDeclaration(projectId, workflow, revision)),
         searchFields: (projectId: string, workflow: string) =>

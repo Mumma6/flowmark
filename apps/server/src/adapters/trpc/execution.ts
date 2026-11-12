@@ -2,6 +2,7 @@ import { TRPCError } from "@trpc/server"
 import { Effect, Exit, Match, Option, Schema } from "effect"
 import {
   AgentAccess,
+  ManageInvestigations,
   ManageResultDeclarations,
   ConfigurationError,
   GetProjectWorkflowData,
@@ -59,6 +60,7 @@ async function executeQuery<A>(
     | ConfigurationError
     | InvalidInput
     | ManagementRateLimited,
+    | ManageInvestigations
     | AgentAccess
     | GetProjectWorkflowData
     | ManageProject
@@ -190,19 +192,26 @@ export function sessionQuery<A>(
   ) => Effect.Effect<
     A,
     Unauthorized | PersistenceError | InvalidInput | ManagementRateLimited,
-    ManageProject | ManageResultDeclarations | AgentAccess
+    | ManageInvestigations
+    | ManageProject
+    | ManageResultDeclarations
+    | AgentAccess
   >,
 ) {
   return executeQuery(
     request,
-    sessionUserId(request).pipe(
-      Effect.flatMap(
-        Option.match({
-          onNone: () => Effect.fail(new Unauthorized({ permission: "read" })),
-          onSome: (userId) => forUser(userId),
-        }),
-      ),
-    ),
+    request.headers.has("x-flowmark-grant-client-id") ||
+      request.headers.has("x-flowmark-grant-authorization-code-id")
+      ? Effect.fail(new Unauthorized({ permission: "write" }))
+      : sessionUserId(request).pipe(
+          Effect.flatMap(
+            Option.match({
+              onNone: () =>
+                Effect.fail(new Unauthorized({ permission: "read" })),
+              onSome: (userId) => forUser(userId),
+            }),
+          ),
+        ),
   )
 }
 

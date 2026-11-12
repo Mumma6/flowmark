@@ -2,6 +2,7 @@ import { Option } from "effect"
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import type { ReactNode } from "react"
+import { InvestigationOwner } from "../../features/investigations/investigation-owner"
 import { StudioShell } from "../../features/shell/studio-shell"
 import {
   getDashboardAccess,
@@ -25,12 +26,14 @@ export default async function DashboardLayout({
     redirect(`/onboarding?step=${state.step}`)
   }
   return (
-    <StudioShell
-      email={access.session.user.email}
-      apiOrigin={access.apiOrigin}
-      agentAccess={await getRemoteAgentAccess(access.apiOrigin)}
-    >
-      {children}
-    </StudioShell>
+    <InvestigationOwner userId={access.session.user.id}>
+      <StudioShell
+        email={access.session.user.email}
+        apiOrigin={access.apiOrigin}
+        agentAccess={await getRemoteAgentAccess(access.apiOrigin)}
+      >
+        {children}
+      </StudioShell>
+    </InvestigationOwner>
   )
 }

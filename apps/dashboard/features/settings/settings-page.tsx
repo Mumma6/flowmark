@@ -17,8 +17,9 @@ import { useProject } from "../projects/project-context"
 import { AccountSettings } from "./account-settings"
 import { KeySettings } from "./key-settings"
 import { ProjectSettings } from "./project-settings"
+import { DefinitionImportPanel } from "../results/definitions/definition-import-panel"
 
-type SettingsSection = "projects" | "keys" | "setup" | "account"
+type SettingsSection = "projects" | "keys" | "setup" | "account" | "definitions"
 
 const sections: ReadonlyArray<{
   readonly id: SettingsSection
@@ -27,10 +28,13 @@ const sections: ReadonlyArray<{
   { id: "projects", label: "Projects" },
   { id: "keys", label: "API keys" },
   { id: "setup", label: "Setup help" },
+  { id: "definitions", label: "Process metadata" },
   { id: "account", label: "Account" },
 ]
 
 const sectionHelp: Record<SettingsSection, string> = {
+  definitions:
+    "Review and apply optional result labels and searchable references from your application code. This changes metadata, never application execution.",
   projects:
     "Create or select the project that owns the work you want to observe. Switch projects in the Studio header to inspect their runs.",
   keys: "Create project write keys for ingestion or secret read keys for a server-side read client. Browser ingestion keys never grant reads. Use Connect for delegated agent access.",
@@ -45,6 +49,7 @@ function parseSection(value: string | null): SettingsSection {
     value === "projects" ||
     value === "keys" ||
     value === "setup" ||
+    value === "definitions" ||
     value === "account"
   ) {
     return value
@@ -109,6 +114,9 @@ function SettingsPageInner() {
               searchParams.has("error")
             }
           />
+        </TabsContent>
+        <TabsContent value="definitions" className="mt-6">
+          <DefinitionImportPanel />
         </TabsContent>
       </Tabs>
     </div>

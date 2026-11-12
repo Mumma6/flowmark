@@ -4,6 +4,7 @@ import type { FlowmarkDatabase } from "../client.js"
 import type { DatabaseOperation } from "./database-operation.js"
 
 type Transaction = Parameters<Parameters<FlowmarkDatabase["transaction"]>[0]>[0]
+export type DatabaseTransaction = Transaction
 
 const transactionFailure = Symbol("Flowmark.TransactionFailure")
 type TransactionFailure<E> = { readonly [transactionFailure]: Cause.Cause<E> }

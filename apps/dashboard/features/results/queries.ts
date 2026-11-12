@@ -17,6 +17,13 @@ export function useResultDeclarations(
     ),
   )
 }
+
+export function useWorkflowMeaning(workflow: string, enabled = true) {
+  const trpc = useTRPC()
+  return useQuery(
+    trpc.workflow.meaning.queryOptions({ workflow, limit: 1 }, { enabled }),
+  )
+}
 export function useWorkflowSearchFields(
   projectId: string,
   workflow: string,
@@ -41,6 +48,12 @@ export function useCreateDeclaration(onSaved: () => void) {
         void cache.invalidateQueries({
           queryKey: trpc.resultDeclarations.list.queryKey(),
         })
+        void cache.invalidateQueries({
+          queryKey: trpc.workflow.meaning.queryKey(),
+        })
+        void cache.invalidateQueries({
+          queryKey: trpc.workflow.discover.queryKey(),
+        })
       },
     }),
   )
@@ -57,6 +70,12 @@ export function useSaveSearchFields(onSaved: () => void) {
           queryKey: trpc.resultDeclarations.searchFields.queryKey(),
         })
         void cache.invalidateQueries({ queryKey: trpc.run.list.queryKey() })
+        void cache.invalidateQueries({
+          queryKey: trpc.workflow.meaning.queryKey(),
+        })
+        void cache.invalidateQueries({
+          queryKey: trpc.workflow.discover.queryKey(),
+        })
       },
     }),
   )

@@ -93,6 +93,15 @@ export {
 } from "@flowmarkdev/core"
 
 export type { AppendDisposition } from "@flowmarkdev/core"
+export type {
+  LinkedComparison,
+  LinkedComparisonQuery,
+  LinkedEvidenceRow,
+  LinkedEvidencePage,
+  LinkedEvidenceQuery,
+  WorkflowEvent,
+  WorkflowResult,
+} from "@flowmarkdev/core"
 
 export {
   BusinessTimestampSchema,
@@ -132,4 +141,11 @@ export {
   ReferenceJourneyQuerySchema,
   type ReferenceJourneyQuery,
   type ReferenceJourneyPage,
+} from "@flowmarkdev/core"
+
+export { ManageInvestigations } from "./features/investigations/use-cases/manage-investigations.js"
+export type {
+  SavedSelection,
+  SavedInvestigation,
+  SavedInvestigationPage,
 } from "@flowmarkdev/core"
