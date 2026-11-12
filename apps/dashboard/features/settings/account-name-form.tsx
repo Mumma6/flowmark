@@ -57,7 +57,10 @@ export function AccountNameForm({
         </Alert>
       ) : null}
       {saved ? (
-        <p className="text-sm text-muted-foreground sm:col-span-2" role="status">
+        <p
+          className="text-sm text-muted-foreground sm:col-span-2"
+          role="status"
+        >
           {saved}
         </p>
       ) : null}

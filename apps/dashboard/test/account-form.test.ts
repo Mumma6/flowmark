@@ -1,6 +1,9 @@
 import { Effect, Layer, Result } from "effect"
 import { expect, it } from "vitest"
-import { normalizeAccountName, validatePasswordChange } from "../features/settings/account-form"
+import {
+  normalizeAccountName,
+  validatePasswordChange,
+} from "../features/settings/account-form"
 import {
   BrowserAuth,
   changeAccountPassword,
