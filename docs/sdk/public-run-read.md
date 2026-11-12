@@ -1,7 +1,7 @@
 # Read a selected run
 
-The source implementation adds `@flowmarkdev/node/read`. It requires an npm
-release containing this subpath; publication is a separate release step.
+`@flowmarkdev/node/read` requires SDK **0.3.0 or later**. Package publication
+and the accepting API deployment are separate release steps.
 The endpoint is `POST /v1/read/run` on the configured API deployment. Source
 availability does not imply that a hosted environment has been updated.
 

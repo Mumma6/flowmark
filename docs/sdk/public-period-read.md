@@ -1,8 +1,8 @@
 # Compare two reported periods
 
-The source implementation adds `client.readPeriod` to the existing
-`@flowmarkdev/node/read` client and `POST /v1/read/period` to the API. Package
-publication and hosted rollout remain separate operations.
+SDK **0.3.0** adds `client.readPeriod` through `@flowmarkdev/node/read`, backed
+by `POST /v1/read/period`. Package publication and the accepting API rollout
+remain separate operations.
 
 This answers one technical question: how a workflow's reported failure counts
 and recorded duration changed between two explicit periods. It reuses the same
