@@ -5,6 +5,7 @@ import { LOCAL_DEV_AUTH_SECRET } from "@flowmark/db/demo"
 import { account, session, user, verification } from "@flowmark/db/schema"
 import type { FlowmarkDatabase } from "@flowmark/db"
 import { accountRateLimits } from "./account-rate-limits.js"
+import { accountLifecycle } from "./account-lifecycle.js"
 import {
   AUTH_CLIENT_IP_HEADER,
   normalizeAuthClientIdentity,
@@ -123,7 +124,7 @@ export function createFlowmarkAuth(options: {
         overrides: { "reset-password:": "hashed" },
       },
     },
-    user: { changeEmail: { enabled: false } },
+    user: { changeEmail: { enabled: false }, deleteUser: { enabled: false } },
     emailVerification: email?.emailVerification,
     emailAndPassword: {
       enabled: true,
@@ -165,6 +166,7 @@ export function createFlowmarkAuth(options: {
     },
     plugins: [
       accountRateLimits(storage),
+      accountLifecycle(options.db),
       ...(agentAccess ? flowmarkAgentAccessPlugins(agentAccess) : []),
     ] as BetterAuthOptions["plugins"],
     // Keep the same provider CSRF/origin checks in tests and deployed requests.

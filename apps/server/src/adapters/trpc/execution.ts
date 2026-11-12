@@ -2,6 +2,8 @@ import { TRPCError } from "@trpc/server"
 import { Effect, Exit, Match, Option, Schema } from "effect"
 import {
   AgentAccess,
+  ManageDataLifecycle,
+  ManageAccountLifecycle,
   ManageInvestigations,
   ManageResultDeclarations,
   ConfigurationError,
@@ -61,6 +63,8 @@ async function executeQuery<A>(
     | InvalidInput
     | ManagementRateLimited,
     | ManageInvestigations
+    | ManageAccountLifecycle
+    | ManageDataLifecycle
     | AgentAccess
     | GetProjectWorkflowData
     | ManageProject
@@ -193,6 +197,8 @@ export function sessionQuery<A>(
     A,
     Unauthorized | PersistenceError | InvalidInput | ManagementRateLimited,
     | ManageInvestigations
+    | ManageAccountLifecycle
+    | ManageDataLifecycle
     | ManageProject
     | ManageResultDeclarations
     | AgentAccess
@@ -259,4 +265,15 @@ export function sessionAgentAccessQuery<A>(
       ),
     ),
   )
+}
+
+export function accountCleanupQuery<A>(
+  request: Request,
+  operation: Effect.Effect<
+    A,
+    Unauthorized | PersistenceError | InvalidInput | ManagementRateLimited,
+    ManageAccountLifecycle
+  >,
+) {
+  return executeQuery(request, operation)
 }

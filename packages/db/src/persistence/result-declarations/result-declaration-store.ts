@@ -1,3 +1,4 @@
+import { withActiveProject } from "../data-lifecycle/with-active-project.js"
 import { Context, Effect, Layer } from "effect"
 import { DatabaseCancellation, Database, provideDatabase } from "../database.js"
 import { getResultDeclarations } from "./queries/get-result-declarations.js"
@@ -21,23 +22,56 @@ export class ResultDeclarationStore extends Context.Service<ResultDeclarationSto
           userId: string,
           projectId: string,
           input: DefinitionImportApply,
-        ) => provide(applyDefinitionImport(userId, projectId, input)),
+        ) =>
+          provide(
+            withActiveProject(
+              projectId,
+              applyDefinitionImport(userId, projectId, input),
+              "current",
+            ),
+          ),
         find: (projectId: string, workflow: string, revision: string) =>
-          provide(getResultDeclaration(projectId, workflow, revision)),
+          provide(
+            withActiveProject(
+              projectId,
+              getResultDeclaration(projectId, workflow, revision),
+            ),
+          ),
         searchFields: (projectId: string, workflow: string) =>
-          provide(getSearchFields(projectId, workflow)),
+          provide(
+            withActiveProject(projectId, getSearchFields(projectId, workflow)),
+          ),
         setSearchFields: (
           projectId: string,
           workflow: string,
           fields: SearchFields,
-        ) => provide(setSearchFields(projectId, workflow, fields)),
+        ) =>
+          provide(
+            withActiveProject(
+              projectId,
+              setSearchFields(projectId, workflow, fields),
+              "current",
+            ),
+          ),
         list: (projectId: string, workflow: string) =>
-          provide(getResultDeclarations(projectId, workflow)),
+          provide(
+            withActiveProject(
+              projectId,
+              getResultDeclarations(projectId, workflow),
+            ),
+          ),
         create: (
           projectId: string,
           workflow: string,
           declaration: ResultDeclaration,
-        ) => provide(createResultDeclaration(projectId, workflow, declaration)),
+        ) =>
+          provide(
+            withActiveProject(
+              projectId,
+              createResultDeclaration(projectId, workflow, declaration),
+              "current",
+            ),
+          ),
       }
     }),
   },

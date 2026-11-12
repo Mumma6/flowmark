@@ -1,3 +1,9 @@
+import { AccountLifecycleStore } from "@flowmark/db/persistence"
+import { AccountLifecycleLive } from "./features/data-lifecycle/adapters/account-lifecycle.js"
+import { ManageAccountLifecycle } from "./features/data-lifecycle/use-cases/manage-account-lifecycle.js"
+import { ManageDataLifecycle } from "./features/data-lifecycle/use-cases/manage-data-lifecycle.js"
+import { DataLifecycleLive } from "./features/data-lifecycle/adapters/data-lifecycle.js"
+import { DataLifecycleStore } from "@flowmark/db/persistence"
 import { ManageInvestigations } from "./features/investigations/use-cases/manage-investigations.js"
 import { InvestigationsLive } from "./features/investigations/adapters/investigations.js"
 import { InvestigationStore } from "@flowmark/db/persistence"
@@ -33,6 +39,8 @@ import { GetMcpAgentConnectionLive } from "./features/project-access/use-cases/g
 import { GetMcpAgentConnection } from "./features/project-access/use-cases/get-mcp-agent-connection.js"
 
 const persistence = Layer.mergeAll(
+  AccountLifecycleStore.layer,
+  DataLifecycleStore.layer,
   InvestigationStore.layer,
   ResultDeclarationStore.layer,
   WorkflowStore.layer,
@@ -40,6 +48,8 @@ const persistence = Layer.mergeAll(
   AgentAccessStore.layer,
 ).pipe(Layer.provide(DatabaseLive))
 const databaseAdapters = Layer.mergeAll(
+  AccountLifecycleLive,
+  DataLifecycleLive,
   InvestigationsLive,
   ResultDeclarationsLive,
   AgentConsentRepositoryLive,
@@ -61,6 +71,8 @@ const agentAccessAdapter = Layer.mergeAll(
 )
 
 export const ApiLive = Layer.mergeAll(
+  ManageAccountLifecycle.layer,
+  ManageDataLifecycle.layer,
   ManageInvestigations.layer,
   ReadPublicRun.layer,
   ReadPublicPeriod.layer,
@@ -83,6 +95,8 @@ export function runApi<A, E>(
   operation: Effect.Effect<
     A,
     E,
+    | ManageAccountLifecycle
+    | ManageDataLifecycle
     | ManageInvestigations
     | AuthorizeAgentRead
     | ReadPublicPeriod

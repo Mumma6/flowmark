@@ -58,7 +58,7 @@ test("disabled agent access keeps ordinary auth and hides discovery", () =>
       const context = yield* Effect.promise(() => auth.$context)
       assert.deepEqual(
         EffectArray.map(context.options.plugins ?? [], (plugin) => plugin.id),
-        ["flowmark-account-rate-limits"],
+        ["flowmark-account-rate-limits", "flowmark-account-lifecycle"],
       )
       assert.equal(context.options.advanced?.disableCSRFCheck, false)
       assert.equal(context.options.advanced?.disableOriginCheck, false)
@@ -102,6 +102,7 @@ test("enabled discovery uses canonical local and self-host values", () =>
             ),
             [
               "flowmark-account-rate-limits",
+              "flowmark-account-lifecycle",
               ...FLOWMARK_AGENT_ACCESS_PROVIDER.pluginIdsWhenEnabled,
             ],
           )

@@ -1,4 +1,5 @@
-import { desc, eq } from "drizzle-orm"
+import { activeProjectOwners } from "../../account-lifecycle/active-account.js"
+import { and, desc, eq, sql } from "drizzle-orm"
 import { Effect } from "effect"
 import { projectMembers, projects } from "../../../schema/index.js"
 import { Database } from "../../database.js"
@@ -19,7 +20,12 @@ export const listProjectsForUser = Effect.fn("listProjectsForUser")(function* (
       })
       .from(projectMembers)
       .innerJoin(projects, eq(projects.id, projectMembers.projectId))
-      .where(eq(projectMembers.userId, userId))
+      .where(
+        and(
+          eq(projectMembers.userId, userId),
+          activeProjectOwners(sql`${projects.id}`),
+        ),
+      )
       .orderBy(desc(projects.createdAt)),
   )
   return rows.map((row): ProjectSummary => ({

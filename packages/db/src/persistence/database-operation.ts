@@ -1,4 +1,6 @@
 export enum DatabaseOperation {
+  DataLifecycle = "data-lifecycle",
+  ProjectReadFence = "project-read-fence",
   GetAgentConsentClient = "get-agent-consent-client",
   BindAgentConsentCode = "bind-agent-consent-code",
   McpAdmission = "mcp-admission",

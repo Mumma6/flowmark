@@ -1,4 +1,6 @@
 import { sql } from "drizzle-orm"
+export { dataLifecycleOperations } from "./data-lifecycle.js"
+export { accountLifecycleOperations } from "./account-lifecycle.js"
 import type { WorkflowAttempt, WorkflowRetryReference } from "@flowmarkdev/core"
 import {
   type AnyPgColumn,
@@ -83,6 +85,9 @@ export const projects = pgTable(
       .notNull()
       .references(() => workspaces.id),
     name: text("name").notNull(),
+    lifecycleOperationId: uuid("lifecycle_operation_id"),
+    credentialEpoch: integer("credential_epoch").notNull().default(0),
+    newRunAfter: timestamp("new_run_after", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
@@ -247,6 +252,7 @@ export const workflowMetricFacts = pgTable(
 )
 
 export const projectApiKeys = pgTable("project_api_keys", {
+  credentialEpoch: integer("credential_epoch").notNull().default(0),
   id: uuid("id").defaultRandom().primaryKey(),
   projectId: uuid("project_id")
     .notNull()
@@ -261,6 +267,7 @@ export const projectApiKeys = pgTable("project_api_keys", {
 })
 
 export const projectBrowserKeys = pgTable("project_browser_keys", {
+  credentialEpoch: integer("credential_epoch").notNull().default(0),
   id: uuid("id").defaultRandom().primaryKey(),
   projectId: uuid("project_id")
     .notNull()

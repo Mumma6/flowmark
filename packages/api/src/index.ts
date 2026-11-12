@@ -149,3 +149,13 @@ export type {
   SavedInvestigation,
   SavedInvestigationPage,
 } from "@flowmarkdev/core"
+
+export { ManageDataLifecycle } from "./features/data-lifecycle/use-cases/manage-data-lifecycle.js"
+export { LifecycleReauthentication } from "./features/data-lifecycle/ports/data-lifecycle.js"
+export {
+  ErasureScopeSchema,
+  type ErasureScope,
+  type ErasureOperation,
+} from "./features/data-lifecycle/contracts.js"
+
+export { ManageAccountLifecycle } from "./features/data-lifecycle/use-cases/manage-account-lifecycle.js"

@@ -169,6 +169,27 @@
       "when": 1794479955256,
       "tag": "0023_private_live_investigations",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1794492610059,
+      "tag": "0024_sturdy_ultimates",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1794493985690,
+      "tag": "0025_hesitant_amazoness",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1794496231069,
+      "tag": "0026_shallow_william_stryker",
+      "breakpoints": true
     }
   ]
 }

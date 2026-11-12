@@ -1,4 +1,6 @@
 import { investigationsRouter } from "./investigations-router"
+import { dataLifecycleRouter } from "./data-lifecycle-router"
+import { accountLifecycleRouter } from "./account-lifecycle-router"
 import { t } from "./context"
 import { healthRouter } from "./health-router"
 import { projectRouter } from "./project-router"
@@ -10,6 +12,8 @@ import { searchRouter } from "./search-router"
 import { runRouter } from "./run-router"
 
 export const appRouter = t.router({
+  dataLifecycle: dataLifecycleRouter,
+  accountLifecycle: accountLifecycleRouter,
   investigations: investigationsRouter,
   health: healthRouter,
   project: projectRouter,
