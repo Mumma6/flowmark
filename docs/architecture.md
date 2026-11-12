@@ -2,8 +2,9 @@
 
 This document describes the implemented system. Product 1.0 evolves it toward a
 shared process-intelligence platform: Studio, external APIs, MCP and portable
-views will reuse authorized use cases and evidence semantics. Unified Studio,
-delegated agent access and saved investigations remain planned. The product
+views will reuse authorized use cases and evidence semantics. Studio runs in
+`apps/dashboard`; delegated agent access and public reads have source
+implementations. Saved investigations remain planned. The product
 identity changes without renaming packages, replacing the workflow/run model or
 changing the current deployment topology.
 
@@ -35,6 +36,8 @@ Flowmark is software you deploy; it is not a separate hosted enterprise product
 or SSO platform. The server application is a replaceable HTTP/framework shell;
 API use cases, ports, and persistence adapters live in the separate
 `@flowmark/api` package.
+
+Module placement and future refactoring follow [Effect and module organization](./code-organization.md).
 
 ## Core domain package
 
@@ -242,6 +245,12 @@ dashboard server proxy  -> @flowmark/auth/client-identity
 `@flowmark/mcp` is private and unpublished. It owns the MCP HTTP adapter and
 the six read-only investigation tools. SQL and OAuth provider composition stay
 outside that package.
+
+The server's `adapters/mcp/mcp-host-configuration.ts` composes origin configuration
+without acquiring auth. `agent-access-runtime.ts` uses that adapter directly;
+`mcp-layers.ts` combines it with the auth-backed discovery gateway. This keeps
+auth initialization independent of the gateway that later calls auth. Origin
+validation remains lazy, and disabled agent access does not require auth setup.
 
 `@flowmark/auth` is private and unpublished. Server auth routes call its
 factory. The dashboard proxy signs client identity through
@@ -490,3 +499,22 @@ no new migration or compact-fact framework.
 
 See the [business outcome metric contract](sdk/business-insights.md) for cohort,
 coverage, weighted denominator, evidence and comparison rules.
+
+### Portable run evidence lifecycle
+
+`@flowmark/evidence-view` renders the same supplied run projection as Studio and
+the local harness. Its SDK adapter (`src/controller.ts`) owns the host channel,
+theme and observer lifecycle. `src/session.ts` owns an Effect `Ref` per view,
+serializes host events and uses scoped read fibers through `EvidenceReader`.
+`src/tool-result.ts` validates invocation/result scope, byte bounds, page coverage
+and cursors before retaining only the metadata projection and read references.
+
+In a compatible MCP Apps host, explicit refresh and next-page controls call only
+`get_run` for the displayed project/run/events context. Reads reenter the existing
+live grant, project, budget and deadline checks. The view never fetches directly,
+stores credentials, polls or retries automatically. Failed reads, invalid
+replacements, cancellation and teardown clear evidence and actions; interrupted
+or superseded results cannot restore them. Expired or revoked access cannot be
+inferred from a cached snapshot: access failures ask the user to reconnect or
+select authorized evidence in the host. Complete structured/text results remain
+available there, and supplied-data hosts work without outgoing actions.

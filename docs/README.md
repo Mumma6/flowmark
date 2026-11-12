@@ -28,6 +28,8 @@ Contributor guides that ship with the public repository:
   independent main changes such as hotfixes, not after ordinary releases.
 - [Architecture](./architecture): service boundaries, persistence, local auth,
   and current system constraints.
+- [Effect and module organization](./code-organization): pure models, service ownership,
+  error/lifetime boundaries and the staged Studio folder target.
 - [Implementation status](./implementation-status): public mirror of shipped
   Connect Your Agent and related Product 1.0 items through Agent TASK-005.4.
 - [Authentication boundaries](./auth-perimeter): provider login, registration,
@@ -40,9 +42,14 @@ Contributor guides that ship with the public repository:
   for the accepted Connect Your Agent MCP/OAuth dependency tranche. See
   [ADR 0008](./decisions/0008-connect-agent-protocol-contract.md) for the frozen
   protocol, grant, client and tool contract.
+- [Public run read contract](./decisions/0010-public-run-read-contract.md):
+  accepted first consumer, wire contract and implementation handoff,
+  implemented in source; see the public run read guide for deployment/publication limits.
 
 SDK contracts used by the implementation live under `docs/sdk/`:
 
+- [Technical period comparison](./sdk/public-period-read): exact windows, coverage and the same server-side consumer.
+- [Public run read](./sdk/public-run-read): project read keys, metadata pages and the server-side TypeScript consumer.
 - [Results and reports](./sdk/result-contract)
 - [Run continuation](./sdk/run-continuation)
 - [Business outcome reads](./sdk/business-insights)

@@ -1,4 +1,4 @@
-import { ProjectRuns } from "../../../../features/runs/runs-page"
+import { ProjectRuns } from "../../../../features/runs/explorer/runs-page"
 
 export default async function WorkflowPage({
   params,

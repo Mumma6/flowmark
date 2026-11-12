@@ -1,3 +1,4 @@
+import type { AuthorizeAgentRead } from "@flowmark/api"
 import { GetProjectWorkflowData } from "@flowmark/api"
 import { Effect, Match } from "effect"
 import type { FlowmarkMcpAuthInfo } from "../../auth/claims.js"
@@ -49,7 +50,7 @@ export const getWorkflowInsightsForMcp: (
 ) => Effect.Effect<
   McpWorkflowInsightsResult,
   McpToolFailure,
-  GetProjectWorkflowData
+  GetProjectWorkflowData | AuthorizeAgentRead
 > = Effect.fn("McpWorkflowInsights.execute")(function* (
   identity: FlowmarkMcpAuthInfo,
   rawInput: unknown,

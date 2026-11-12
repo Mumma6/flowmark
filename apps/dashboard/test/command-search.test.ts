@@ -17,8 +17,8 @@ import {
   buildRunListInput,
   explorerDefaults,
   readExplorerFilters,
-} from "../features/runs/explorer-filters"
-import { investigationReturn } from "../features/runs/investigation-navigation"
+} from "../features/runs/explorer/explorer-filters"
+import { investigationReturn } from "../features/runs/investigation/investigation-navigation"
 
 const requestFor = (href: string) =>
   buildRunListInput(

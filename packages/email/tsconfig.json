@@ -5,7 +5,8 @@
     "outDir": "dist",
     "rootDir": "src",
     "noEmit": false,
-    "types": ["node"]
+    "types": ["node"],
+    "noUncheckedIndexedAccess": true
   },
   "include": ["src/**/*.ts"]
 }

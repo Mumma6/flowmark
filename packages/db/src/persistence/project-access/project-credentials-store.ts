@@ -1,5 +1,11 @@
+import { consumePublicReadBudget } from "./writes/consume-public-read-budget.js"
 import { Context, Effect, Layer } from "effect"
-import { Database, DatabaseError, provideDatabase } from "../database.js"
+import {
+  DatabaseCancellation,
+  Database,
+  DatabaseError,
+  provideDatabase,
+} from "../database.js"
 import { browserOriginAllowed } from "./queries/allow-browser-origin.js"
 import { authenticateBrowserKey } from "./queries/authenticate-browser-key.js"
 import { authenticateKey } from "./queries/authenticate-key.js"
@@ -46,6 +52,13 @@ export type {
 } from "./types.js"
 
 export interface ProjectCredentialsStoreService {
+  readonly consumePublicReadBudget: (
+    scope: string,
+    maximum: number,
+  ) => Effect.Effect<
+    { readonly allowed: boolean; readonly retryAfter: number | null },
+    DatabaseError
+  >
   readonly consumeCreationQuota: (
     userId: string,
     kind: "project" | "key",
@@ -164,8 +177,13 @@ export class ProjectCredentialsStore extends Context.Service<ProjectCredentialsS
   "@flowmark/db/ProjectCredentialsStore",
   {
     make: Effect.gen(function* () {
-      const provide = provideDatabase(yield* Database)
+      const provide = provideDatabase(
+        yield* Database,
+        yield* DatabaseCancellation,
+      )
       return {
+        consumePublicReadBudget: (scope, maximum) =>
+          provide(consumePublicReadBudget(scope, maximum)),
         consumeCreationQuota: (userId, kind) =>
           provide(consumeCreationQuota(userId, kind)),
         authenticate: (key, permission) =>

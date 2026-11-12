@@ -17,6 +17,8 @@
     "local-development",
     "preview-branch",
     "api",
+    "public-reads",
+    "portable-evidence",
     "security-privacy",
     "troubleshooting"
   ]

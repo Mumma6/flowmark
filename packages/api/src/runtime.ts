@@ -1,3 +1,11 @@
+import { ManageInvestigations } from "./features/investigations/use-cases/manage-investigations.js"
+import { InvestigationsLive } from "./features/investigations/adapters/investigations.js"
+import { InvestigationStore } from "@flowmark/db/persistence"
+import { AuthorizeAgentRead } from "./features/project-access/use-cases/authorize-agent-read.js"
+import { DelegatedAccessRepositoryLive } from "./features/project-access/adapters/delegated-access-repository.js"
+import { ReadPublicPeriod } from "./features/public-reads/use-cases/read-period.js"
+import { ReadPublicRun } from "./features/public-reads/use-cases/read-run.js"
+import { PublicReadAdmissionLive } from "./features/public-reads/adapters/public-read-admission.js"
 import { AgentConsent } from "./features/project-access/use-cases/agent-consent.js"
 import { AgentConsentRepositoryLive } from "./features/project-access/adapters/agent-consent.js"
 import { ManageResultDeclarations } from "./features/result-declarations/use-cases/manage-result-declarations.js"
@@ -25,26 +33,37 @@ import { GetMcpAgentConnectionLive } from "./features/project-access/use-cases/g
 import { GetMcpAgentConnection } from "./features/project-access/use-cases/get-mcp-agent-connection.js"
 
 const persistence = Layer.mergeAll(
+  InvestigationStore.layer,
   ResultDeclarationStore.layer,
   WorkflowStore.layer,
   ProjectCredentialsStore.layer,
   AgentAccessStore.layer,
 ).pipe(Layer.provide(DatabaseLive))
 const databaseAdapters = Layer.mergeAll(
+  InvestigationsLive,
   ResultDeclarationsLive,
   AgentConsentRepositoryLive,
   WorkflowRepositoryLive,
   ProjectCredentialsLive,
 ).pipe(Layer.provide(persistence))
+const readAdmission = PublicReadAdmissionLive.pipe(Layer.provide(persistence))
+
 const dependencies = AuthorizeProject.layer.pipe(
   Layer.provideMerge(databaseAdapters),
 )
 const agentAccessAdapter = Layer.mergeAll(
   AgentAccessLive,
   GetMcpAgentConnectionLive,
-).pipe(Layer.provide(persistence))
+  AuthorizeAgentRead.layer,
+).pipe(
+  Layer.provide(DelegatedAccessRepositoryLive.pipe(Layer.provide(persistence))),
+  Layer.provide(persistence),
+)
 
 export const ApiLive = Layer.mergeAll(
+  ManageInvestigations.layer,
+  ReadPublicRun.layer,
+  ReadPublicPeriod.layer,
   AgentConsent.layer,
   ManageResultDeclarations.layer,
   IngestWorkflowEvents.layer,
@@ -53,6 +72,7 @@ export const ApiLive = Layer.mergeAll(
   ManageProject.layer,
   Onboarding.layer,
 ).pipe(
+  Layer.provide(readAdmission),
   Layer.provideMerge(agentAccessAdapter),
   Layer.provide(dependencies),
   Layer.provide(ApiSettings.layer),
@@ -63,6 +83,10 @@ export function runApi<A, E>(
   operation: Effect.Effect<
     A,
     E,
+    | ManageInvestigations
+    | AuthorizeAgentRead
+    | ReadPublicPeriod
+    | ReadPublicRun
     | AgentAccess
     | AgentConsent
     | ManageResultDeclarations

@@ -1,4 +1,5 @@
 export * from "./database-operation.js"
+export * from "./result-declarations/definition-import-error.js"
 export * from "./database.js"
 export * from "./project-access/agent-access-errors.js"
 export * from "./project-access/agent-access-store.js"
@@ -68,3 +69,12 @@ export { ExpectationObservationClock } from "./workflows/observation-clock.js"
 export { rebuildExpectations } from "./workflows/writes/rebuild-expectations.js"
 
 export { backfillRunFacts } from "./workflows/writes/backfill-run-facts.js"
+
+export * from "./workflows/queries/get-run-read.js"
+export * from "./workflows/public-read-errors.js"
+export * from "./project-access/writes/consume-public-read-budget.js"
+
+export * from "./workflows/queries/get-reference-journey.js"
+
+export * from "./investigations/investigation-store.js"
+export * from "./investigations/investigation-error.js"

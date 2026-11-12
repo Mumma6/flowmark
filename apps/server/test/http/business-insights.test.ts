@@ -10,7 +10,7 @@ import {
 } from "@flowmark/db"
 import { hashApiKey } from "@flowmark/db/persistence"
 import { POST } from "../../app/v1/events/route"
-import { appRouter } from "../../src/adapters/trpc"
+import { appRouter } from "../../src/adapters/trpc/router"
 
 const fields = [
   {

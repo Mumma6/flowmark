@@ -24,16 +24,25 @@ export const Database = Context.Service<FlowmarkDatabase>(
   "@flowmark/db/Database",
 )
 
+/** Connection-owned cancellation, captured by stores alongside their database. */
+export const DatabaseCancellation = Context.Reference<() => void>(
+  "@flowmark/db/DatabaseCancellation",
+  { defaultValue: () => () => undefined },
+)
+
 /** Optional request-owned SQL deadline; ordinary API traffic retains its policy. */
 export const DatabaseReadBudget = Context.Reference<{
   readonly statementTimeoutMs?: number
   readonly maxOperationFacts?: number
 }>("@flowmark/db/ReadBudget", { defaultValue: () => ({}) })
 export const provideDatabase =
-  (db: FlowmarkDatabase) =>
+  (db: FlowmarkDatabase, cancel: () => void = () => undefined) =>
   <A, E>(
     operation: Effect.Effect<A, E, FlowmarkDatabase>,
   ): Effect.Effect<A, E> =>
-    operation.pipe(Effect.provideService(Database, db))
+    operation.pipe(
+      Effect.provideService(Database, db),
+      Effect.provideService(DatabaseCancellation, cancel),
+    )
 export const databaseLayer = (db: FlowmarkDatabase) =>
   Layer.succeed(Database, db)

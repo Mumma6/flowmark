@@ -4,8 +4,8 @@ import {
   explorerDefaults,
   exploreHref,
   type ExplorerFilters,
-} from "../runs/explorer-filters"
-import { runInvestigationPath } from "../runs/investigation-navigation"
+} from "../runs/explorer/explorer-filters"
+import { runInvestigationPath } from "../runs/investigation/investigation-navigation"
 
 export { exploreHref }
 

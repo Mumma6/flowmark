@@ -1,12 +1,13 @@
-import type { RunExpectations } from "@flowmarkdev/core"
-import type { PeerSelection } from "@flowmarkdev/core"
-import type { BusinessInsightsQuery, BusinessInsights } from "@flowmarkdev/core"
-import { Context, Effect, Layer, Match, Schema } from "effect"
 import {
-  InvalidInput,
-  type PersistenceError,
-  type Unauthorized,
-} from "../../../errors.js"
+  ReferenceJourneyQuerySchema,
+  LinkedComparisonQuerySchema,
+  LinkedEvidenceQuerySchema,
+  type ReferenceJourneyQuery,
+} from "@flowmarkdev/core"
+import type { PeerSelection } from "@flowmarkdev/core"
+import type { BusinessInsightsQuery } from "@flowmarkdev/core"
+import { Context, Effect, Layer, Match, Schema } from "effect"
+import { InvalidInput } from "../../../errors.js"
 import { AgentAccess } from "../../project-access/ports/agent-access.js"
 import { AuthorizeProject } from "../../project-access/use-cases/authorize-project.js"
 import {
@@ -17,159 +18,22 @@ import { WorkflowRepository } from "../ports/workflow-repository.js"
 import type {
   IntelligenceQuery,
   ListRunsQuery,
-  ListedRunsPage,
-  PeriodReport,
-  ProjectSnapshot,
-  RelatedRuns,
-  RunComparison,
-  RunEventPage,
   RunEventPageQuery,
-  RunInvestigationSummary,
-  RelatedRunsPage,
   RelatedRunsPageQuery,
-  RunExpectationsPage,
   RunExpectationsPageQuery,
-  RunOperationsPage,
   RunOperationsPageQuery,
-  WorkflowDiscoveryPage,
   WorkflowDiscoveryQuery,
-  WorkflowMeaningPage,
   WorkflowMeaningQuery,
-  RunTimelineEvent,
-  WorkflowIntelligence,
   ProjectSearch,
 } from "../types.js"
-
-export type ProjectReader =
-  | { readonly _tag: "Key"; readonly header: string | null }
-  | {
-      readonly _tag: "User"
-      readonly userId: string
-      readonly projectId?: string
-    }
-  | {
-      readonly _tag: "DelegatedUser"
-      readonly userId: string
-      readonly clientId: string
-      readonly authorizationCodeId: string
-      readonly projectId: string
-    }
-
-export interface GetProjectWorkflowDataService {
-  readonly expectations: (
-    reader: ProjectReader,
-    runId: string,
-  ) => Effect.Effect<RunExpectations, Unauthorized | PersistenceError>
-  readonly businessInsights: (
-    reader: ProjectReader,
-    query: BusinessInsightsQuery,
-  ) => Effect.Effect<
-    BusinessInsights,
-    Unauthorized | PersistenceError | InvalidInput
-  >
-  readonly snapshot: (
-    reader: ProjectReader,
-  ) => Effect.Effect<ProjectSnapshot, Unauthorized | PersistenceError>
-  readonly workflows: (
-    reader: ProjectReader,
-  ) => Effect.Effect<
-    ProjectSnapshot["workflows"],
-    Unauthorized | PersistenceError
-  >
-  readonly listRuns: (
-    reader: ProjectReader,
-    query: ListRunsQuery,
-  ) => Effect.Effect<
-    ListedRunsPage,
-    Unauthorized | PersistenceError | InvalidInput
-  >
-  readonly search: (
-    reader: ProjectReader,
-    query: string,
-  ) => Effect.Effect<
-    ProjectSearch,
-    Unauthorized | PersistenceError | InvalidInput
-  >
-  readonly timeline: (
-    reader: ProjectReader,
-    runId: string,
-  ) => Effect.Effect<
-    ReadonlyArray<RunTimelineEvent>,
-    Unauthorized | PersistenceError
-  >
-  readonly runEventPage: (
-    reader: ProjectReader,
-    query: RunEventPageQuery,
-  ) => Effect.Effect<
-    RunEventPage,
-    Unauthorized | PersistenceError | InvalidInput
-  >
-  readonly runInvestigationSummary: (
-    reader: ProjectReader,
-    runId: string,
-  ) => Effect.Effect<
-    RunInvestigationSummary,
-    Unauthorized | PersistenceError | InvalidInput
-  >
-  readonly relatedRunsPage: (
-    reader: ProjectReader,
-    query: RelatedRunsPageQuery,
-  ) => Effect.Effect<
-    RelatedRunsPage,
-    Unauthorized | PersistenceError | InvalidInput
-  >
-  readonly expectationsPage: (
-    reader: ProjectReader,
-    query: RunExpectationsPageQuery,
-  ) => Effect.Effect<
-    RunExpectationsPage,
-    Unauthorized | PersistenceError | InvalidInput
-  >
-  readonly operationsPage: (
-    reader: ProjectReader,
-    query: RunOperationsPageQuery,
-  ) => Effect.Effect<
-    RunOperationsPage,
-    Unauthorized | PersistenceError | InvalidInput
-  >
-  readonly discoverWorkflows: (
-    reader: ProjectReader,
-    query: WorkflowDiscoveryQuery,
-  ) => Effect.Effect<
-    WorkflowDiscoveryPage,
-    Unauthorized | PersistenceError | InvalidInput
-  >
-  readonly discoverWorkflowMeaning: (
-    reader: ProjectReader,
-    query: WorkflowMeaningQuery,
-  ) => Effect.Effect<
-    WorkflowMeaningPage,
-    Unauthorized | PersistenceError | InvalidInput
-  >
-  readonly related: (
-    reader: ProjectReader,
-    runId: string,
-  ) => Effect.Effect<RelatedRuns, Unauthorized | PersistenceError>
-  readonly compare: (
-    reader: ProjectReader,
-    runId: string,
-    selection?: PeerSelection,
-  ) => Effect.Effect<
-    RunComparison,
-    Unauthorized | PersistenceError | InvalidInput
-  >
-  readonly intelligence: (
-    reader: ProjectReader,
-    query: IntelligenceQuery,
-  ) => Effect.Effect<WorkflowIntelligence, Unauthorized | PersistenceError>
-  readonly periodReport: (
-    reader: ProjectReader,
-    query: IntelligenceQuery,
-  ) => Effect.Effect<
-    PeriodReport,
-    Unauthorized | PersistenceError | InvalidInput
-  >
-}
+import type { ProjectReader } from "../models/project-reader.js"
+import type {
+  ProjectReadRuns,
+  ProjectReadAnalytics,
+  ProjectReadDiscovery,
+} from "./project-read-capabilities.ts"
+export interface GetProjectWorkflowDataService
+  extends ProjectReadRuns, ProjectReadAnalytics, ProjectReadDiscovery {}
 export class GetProjectWorkflowData extends Context.Service<
   GetProjectWorkflowData,
   GetProjectWorkflowDataService
@@ -331,6 +195,41 @@ export class GetProjectWorkflowData extends Context.Service<
       })
 
       return GetProjectWorkflowData.of({
+        linkedComparison: Effect.fn("GetProjectWorkflowData.linkedComparison")(
+          function* (reader, input) {
+            const projectId = yield* authorizeReader(reader)
+            const query = yield* Schema.decodeUnknownEffect(
+              LinkedComparisonQuerySchema,
+              { onExcessProperty: "error" },
+            )(input).pipe(
+              Effect.mapError((cause) => new InvalidInput({ cause })),
+            )
+            return yield* repository.linkedComparison(projectId, query)
+          },
+        ),
+        linkedEvidence: Effect.fn("GetProjectWorkflowData.linkedEvidence")(
+          function* (reader, input) {
+            const projectId = yield* authorizeReader(reader)
+            const query = yield* Schema.decodeUnknownEffect(
+              LinkedEvidenceQuerySchema,
+              { onExcessProperty: "error" },
+            )(input).pipe(
+              Effect.mapError((cause) => new InvalidInput({ cause })),
+            )
+            return yield* repository.linkedEvidence(projectId, query)
+          },
+        ),
+        referenceJourney: Effect.fn("GetProjectWorkflowData.referenceJourney")(
+          function* (reader: ProjectReader, input: ReferenceJourneyQuery) {
+            const projectId = yield* authorizeReader(reader)
+            const query = yield* Schema.decodeUnknownEffect(
+              ReferenceJourneyQuerySchema,
+            )(input, { onExcessProperty: "error" }).pipe(
+              Effect.mapError((cause) => new InvalidInput({ cause })),
+            )
+            return yield* repository.referenceJourney(projectId, query)
+          },
+        ),
         expectations: Effect.fn("GetProjectWorkflowData.expectations")(
           function* (reader, runId) {
             return yield* repository.expectations(
@@ -360,3 +259,5 @@ export class GetProjectWorkflowData extends Context.Service<
     }),
   )
 }
+
+export type { ProjectReader } from "../models/project-reader.js"

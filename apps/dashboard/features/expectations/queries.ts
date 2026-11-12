@@ -5,19 +5,26 @@ import { useMemo } from "react"
 import { useTRPC, useTRPCClient } from "../platform/api-trpc"
 import { useProject } from "../projects/project-context"
 
-export function useRunExpectations(id: string) {
+export function useRunExpectations(
+  id: string,
+  page?: { readonly cursor?: string; readonly limit?: number },
+) {
   const trpc = useTRPC()
   const client = useTRPCClient()
   const { current } = useProject()
   return useInfiniteQuery({
     queryKey: [
       ...trpc.run.expectationsPage.queryKey({ runId: id }),
-      { projectId: current?.id ?? null },
+      {
+        projectId: current?.id ?? null,
+        cursor: page?.cursor ?? null,
+        limit: page?.limit ?? null,
+      },
     ],
-    initialPageParam: undefined as string | undefined,
+    initialPageParam: page?.cursor,
     queryFn: ({ pageParam, signal }) =>
       client.run.expectationsPage.query(
-        { runId: id, cursor: pageParam },
+        { runId: id, cursor: pageParam, limit: page?.limit },
         { signal },
       ),
     getNextPageParam: (page) => page.nextCursor ?? undefined,

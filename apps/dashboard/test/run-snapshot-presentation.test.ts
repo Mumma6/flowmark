@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import type { RunEvent } from "../features/platform/api-types"
-import { buildRunSnapshot } from "../features/runs/run-snapshot-presentation"
+import { buildRunSnapshot } from "../features/runs/models/run-snapshot-presentation"
 
 function event(
   id: string,
@@ -125,4 +125,23 @@ describe("shared run snapshot projection", () => {
     ])
     expect(snapshot.milestones[1]?.progress?.completed).toBe(600)
   })
+})
+
+it("projects frozen snapshot inputs with explicit outcome first and zero-valued evidence intact", () => {
+  const start = Object.freeze(event("start", "started"))
+  const done = Object.freeze(
+    event("done", "completed", {
+      outcome: "partial",
+      result: Object.freeze({ processed: 0 }),
+    }),
+  )
+  const input = Object.freeze([start, done])
+  const output = buildRunSnapshot(input)!
+  expect(output.metrics.map((item) => item.label)).toEqual([
+    "Business outcome",
+    "Processed",
+    "Recorded events",
+  ])
+  expect(output.metrics[1]?.value).toBe("0")
+  expect(input[1]?.result).toEqual({ processed: 0 })
 })

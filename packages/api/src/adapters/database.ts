@@ -1,23 +1,21 @@
-import { Effect, Layer, Redacted } from "effect"
+import { Context, Effect, Layer, Redacted } from "effect"
 import { createDatabase } from "@flowmark/db"
 import {
   Database,
+  DatabaseCancellation,
   DatabaseError,
   DatabaseOperation,
   DatabaseReadBudget,
 } from "@flowmark/db/persistence"
 import { ApiSettings } from "../config.js"
-export const DatabaseLive = Layer.effect(
-  Database,
+export const DatabaseLive = Layer.effectContext(
   Effect.gen(function* () {
     const settings = yield* ApiSettings
     const budget = yield* DatabaseReadBudget
-    const cancellation = yield* Effect.sync(() => new AbortController())
     const connection = yield* Effect.acquireRelease(
       Effect.try({
         try: () =>
           createDatabase(Redacted.value(settings.databaseUrl), {
-            signal: cancellation.signal,
             statementTimeoutMs: budget.statementTimeoutMs,
           }),
         catch: (cause) =>
@@ -31,7 +29,9 @@ export const DatabaseLive = Layer.effect(
         }).pipe(Effect.orDie),
     )
     // Abort pending driver queries before closing the pool (finalizers run LIFO).
-    yield* Effect.addFinalizer(() => Effect.sync(() => cancellation.abort()))
-    return connection.db
+    yield* Effect.addFinalizer(() => Effect.sync(connection.cancel))
+    return Context.make(Database, connection.db).pipe(
+      Context.add(DatabaseCancellation, connection.cancel),
+    )
   }),
 )

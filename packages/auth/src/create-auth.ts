@@ -97,6 +97,9 @@ export function createFlowmarkAuth(options: {
       log: (level) =>
         console[level]("[Flowmark auth] Provider diagnostic", { level }),
     },
+    // Let our HTTP boundary sanitize unexpected failures. Better Call's default
+    // fallback otherwise logs the raw error outside the provider logger above.
+    onAPIError: { throw: true },
     baseURL,
     trustedOrigins: [
       ...(options.trustedOrigins ?? []),

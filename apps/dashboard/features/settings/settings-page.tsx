@@ -12,28 +12,32 @@ import {
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { Suspense } from "react"
 import { PageHeading } from "../shared/dashboard-components"
-import { ConnectSetupPanel } from "../connect/connect-setup"
+import { ConnectSetupPanel } from "../connect/setup/connect-setup"
 import { useProject } from "../projects/project-context"
 import { AccountSettings } from "./account-settings"
 import { KeySettings } from "./key-settings"
 import { ProjectSettings } from "./project-settings"
+import { DefinitionImportPanel } from "../results/definitions/definition-import-panel"
 
-type SettingsSection = "projects" | "keys" | "setup" | "account"
+type SettingsSection = "projects" | "keys" | "setup" | "account" | "definitions"
 
 const sections: ReadonlyArray<{
   readonly id: SettingsSection
   readonly label: string
 }> = [
   { id: "projects", label: "Projects" },
-  { id: "keys", label: "Ingestion keys" },
+  { id: "keys", label: "API keys" },
   { id: "setup", label: "Setup help" },
+  { id: "definitions", label: "Process metadata" },
   { id: "account", label: "Account" },
 ]
 
 const sectionHelp: Record<SettingsSection, string> = {
+  definitions:
+    "Review and apply optional result labels and searchable references from your application code. This changes metadata, never application execution.",
   projects:
     "Create or select the project that owns the work you want to observe. Switch projects in the Studio header to inspect their runs.",
-  keys: "Give your application an ingestion key for the selected project. Ingestion keys are not agent read access — use Connect → Read evidence for manual investigation handoff.",
+  keys: "Create project write keys for ingestion or secret read keys for a server-side read client. Browser ingestion keys never grant reads. Use Connect for delegated agent access.",
   setup:
     "Follow coding-agent or manual SDK instructions to instrument your application, then verify evidence in Runs. For reading evidence with Codex, Cursor, Claude Code or a custom agent, open Connect and scroll to agent access.",
   account:
@@ -45,6 +49,7 @@ function parseSection(value: string | null): SettingsSection {
     value === "projects" ||
     value === "keys" ||
     value === "setup" ||
+    value === "definitions" ||
     value === "account"
   ) {
     return value
@@ -56,7 +61,7 @@ function SettingsPageInner() {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
-  const { projects } = useProject()
+  const { projects, current } = useProject()
   const section = parseSection(searchParams.get("section"))
   const setSection = (next: string) => {
     const params = new URLSearchParams(searchParams.toString())
@@ -97,7 +102,7 @@ function SettingsPageInner() {
           <ProjectSettings />
         </TabsContent>
         <TabsContent value="keys" className="mt-6">
-          <KeySettings />
+          <KeySettings key={current?.id ?? "no-project"} />
         </TabsContent>
         <TabsContent value="setup" className="mt-6">
           <ConnectSetupPanel compact />
@@ -109,6 +114,9 @@ function SettingsPageInner() {
               searchParams.has("error")
             }
           />
+        </TabsContent>
+        <TabsContent value="definitions" className="mt-6">
+          <DefinitionImportPanel />
         </TabsContent>
       </Tabs>
     </div>

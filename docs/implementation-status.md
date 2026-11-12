@@ -37,8 +37,8 @@ and [ADR 0008](./decisions/0008-connect-agent-protocol-contract.md).
 | **005.5** | Durable PostgreSQL service/grant/project admission, request/result budgets, driver cancellation and statement deadlines. Oversized pages regenerate valid cursors; oversized comparison fact sets fail explicitly.                                                                                                                       |
 | **005.6** | Reference HTTP client discovers and calls all six read-only tools over synthetic evidence, matching Studio use-case results. Disabled mode, unsupported protocol negotiation, wrong project/resource, revocation, response bounds and read-token denial of ingestion and account writes are covered. Vendor clients are not claimed.     |
 | **006.2** | Provider-backed browser consent with explicit account/project selection, signed-query verification and pre-exchange code-family binding. Local provider integration covers acceptance, denial and account/project tampering.                                                                                                             |
-| **006.3** | Connect shows the deployment's protected-resource endpoint when it is enabled. Copied instructions, an authorization grant, and a recorded authenticated read stay separate. An empty project can read as verified only after that read.                                                                                                 |
-| **006.4** | The signed-in account can inspect and revoke its own agent connections. Confirmation follows a refetch of the stored grant. A foreign account cannot revoke the family. Last authenticated request is shown as a UTC day.                                                                                                                |
+| **006.3** | Connect shows the deployment's protected-resource endpoint when it is enabled. Copied instructions, an authorization grant, and grant-wide authentication stay separate. Connection authentication does not claim a successful evidence read for the current project.                                                                    |
+| **006.4** | The signed-in account can inspect and revoke its own agent connections. Confirmation follows a fresh server read after cancelling older polls. A lost confirmation can be refreshed without resending revoke. A foreign account cannot revoke the family. Last authenticated request is shown as a UTC day.                              |
 | **006.5** | Connected recovery keeps a disabled manual guide, a stale session, a cancelled consent, and a lost revoke response distinct. Vendor client compatibility is not claimed; the reference HTTP client remains the tested path.                                                                                                              |
 
 ## Product 1.0 — items completed in the same sequence window
@@ -56,6 +56,21 @@ current public tree, not future Connect tasks.
 | **006.4**       | Independent instrumented setup example implemented (PR **#119**); memory/runtime checks passed. Loopback/Studio acceptance remains pending.                                                                                                                                 |
 | **001.1**       | Strict version-1 run selection shared by Studio and MCP; real protocol reads match Studio summary/events. [ADR 0009](./decisions/0009-versioned-run-investigation-selection.md).                                                                                            |
 | **001.3**       | One technical period cohort maps to the same period report and current-window run list in Studio and MCP. Revision, environment and peer windows outside 1–90 days stay rejected. A return link keeps the current project and filters. Separate reads are not one snapshot. |
+
+Product TASK-007.2 adds the source implementation of `POST /v1/read/run`,
+`ReadPublicRun`, metadata-only scoped repository reads, read-key issuance in
+Settings and the ordinary `@flowmarkdev/node/read` Promise client/standalone
+consumer. [Public read guide](./sdk/public-run-read.md) records the auth and
+resource bounds. Hosted rollout and SDK publication are separate; source
+availability does not claim either has occurred.
+
+Product TASK-007.3 adds `POST /v1/read/period` and `client.readPeriod` for one
+accepted technical workflow-period comparison. The existing CLI consumes the
+same Studio/MCP selection, with query echo, full window populations, explicit
+coverage/omissions and a scoped Studio link. The shared SQL is filtered before
+aggregation; the public query fetches two aggregate rows without attribution
+lists. Peer/business modes, revisions and extra filters stay explicitly
+unsupported by this read. [Guide](./sdk/public-period-read.md).
 
 ## Verification status
 

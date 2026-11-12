@@ -1,103 +1,20 @@
 "use client"
-
-import {
-  Alert,
-  AlertDescription,
-  AlertTitle,
-  Button,
-  CodeBlock,
-  CodeBlockActions,
-  CodeBlockContent,
-  CodeBlockCopyButton,
-  CodeBlockHeader,
-  CodeBlockTitle,
-  FlowmarkMark,
-} from "@flowmark/ui"
-import {
-  ArrowLeft,
-  ArrowRight,
-  ArrowUpRight,
-  Check,
-  CheckCheck,
-  Code2,
-  KeyRound,
-  Radio,
-  Workflow,
-} from "lucide-react"
+import { Alert, AlertDescription, Button, FlowmarkMark } from "@flowmark/ui"
+import { ArrowLeft, ArrowRight, ArrowUpRight, Check } from "lucide-react"
 import { useEffect, useRef } from "react"
 import Link from "next/link"
 import { DataState } from "../shared/dashboard-components"
-import { SetupPathTabs } from "../connect/setup-path-tabs"
-import { setupRecoveryCopy } from "../connect/setup-instructions"
 import { publicConfig } from "../platform/config-public"
 import { RuntimeConfigProvider } from "../platform/runtime-config"
-import { CreateProjectForm, SecretAlert } from "../projects/create-project-form"
 import { ProjectProvider, useProject } from "../projects/project-context"
 import { steps } from "./steps"
 import { useOnboarding } from "./use-onboarding"
-
-const guidance = {
-  project: {
-    icon: Workflow,
-    description:
-      "Give your application a home. A project keeps its evidence, access and ingestion keys together.",
-    note: "One application, one context.",
-    detail:
-      "You can create more projects later. Start with the application and environment you want to understand first.",
-  },
-  key: {
-    icon: KeyRound,
-    description:
-      "Save the credential your application uses to send evidence. Your Studio account and your write key have different jobs.",
-    note: "Your key stays on your server.",
-    detail:
-      "Store it in your application's server environment. Keep it out of browser bundles, Git, agent prompts and chat messages.",
-  },
-  install: {
-    icon: Code2,
-    description:
-      "Add the TypeScript SDK to the application you already own. Keep your runtime, framework and business logic.",
-    note: "Built around your application.",
-    detail:
-      "Use the Node client for workers and servers, or the Next.js adapter for request-lifecycle delivery. The API URL is the origin, without /v1/events.",
-  },
-  instrument: {
-    icon: Workflow,
-    description:
-      "Choose one process worth understanding. Use your coding agent to add meaningful context and reported outcomes.",
-    note: "Give the agent guidance, not secrets.",
-    detail:
-      "These instructions work with Codex, Cursor, Claude Code or your coding agent. Copying a prompt does not connect or authorize an agent.",
-  },
-  run: {
-    icon: Radio,
-    description:
-      "Run your application normally, then follow the execution evidence into Studio.",
-    note: "Completion is one piece of evidence.",
-    detail:
-      "Reported results and expected confirmations tell you more. A completed execution does not prove every record succeeded.",
-  },
-} as const
-
-function SetupCode({ title, value }: { title: string; value: string }) {
-  return (
-    <CodeBlock className="min-w-0 border-border bg-background/70">
-      <CodeBlockHeader className="px-4">
-        <CodeBlockTitle>{title}</CodeBlockTitle>
-        <CodeBlockActions>
-          <CodeBlockCopyButton value={value} className="h-8 text-[10px]" />
-        </CodeBlockActions>
-      </CodeBlockHeader>
-      <CodeBlockContent
-        tabIndex={0}
-        className="max-h-80 overflow-auto whitespace-pre-wrap break-words p-4 text-[11px] leading-7"
-      >
-        {value}
-      </CodeBlockContent>
-    </CodeBlock>
-  )
-}
-
+import { guidance } from "./onboarding-guidance"
+import { KeyStep } from "./step-views/key-step"
+import { InstallStep } from "./step-views/install-step"
+import { InstrumentStep } from "./step-views/instrument-step"
+import { RunStep } from "./step-views/run-step"
+import { ProjectStep } from "./step-views/project-step"
 function OnboardingContent({
   email,
   initialStep,
@@ -281,131 +198,31 @@ function OnboardingContent({
               {!projectState.pending &&
               !projectState.error &&
               currentStep.id === "project" ? (
-                projects.length > 0 ? (
-                  <div className="flex items-start gap-3 rounded-lg border border-primary/15 bg-primary/5 p-4">
-                    <CheckCheck
-                      aria-hidden="true"
-                      className="mt-0.5 size-4 shrink-0 text-primary"
-                    />
-                    <div>
-                      <p className="text-sm font-medium">
-                        {current?.name ?? "Selecting your project…"}
-                      </p>
-                      <p className="mt-2 text-xs leading-6 text-muted-foreground">
-                        Your project is ready. Continue to configure your
-                        application.
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  <CreateProjectForm onCreated={setCreatedSecret} />
-                )
+                <ProjectStep
+                  current={current}
+                  projects={projects}
+                  setCreatedSecret={setCreatedSecret}
+                />
               ) : null}
               {currentStep.id === "key" ? (
-                <>
-                  <DataState
-                    pending={keys.isPending}
-                    error={keys.error}
-                    retry={() => void keys.refetch()}
-                  />
-                  {createdSecret ? (
-                    <SecretAlert
-                      secret={createdSecret}
-                      label="Your new project write key is"
-                    />
-                  ) : !keys.isPending && !keys.error && hasWriteKey ? (
-                    <Alert>
-                      <AlertTitle>Write key created</AlertTitle>
-                      <AlertDescription>
-                        The full value is shown only once. Use the key you
-                        saved, or create another in Studio Settings after setup.
-                      </AlertDescription>
-                    </Alert>
-                  ) : !keys.isPending && !keys.error ? (
-                    <Alert variant="destructive">
-                      <AlertDescription>
-                        Go back and create a project before continuing.
-                      </AlertDescription>
-                    </Alert>
-                  ) : null}
-                </>
+                <KeyStep
+                  keys={keys}
+                  createdSecret={createdSecret}
+                  hasWriteKey={hasWriteKey}
+                />
               ) : null}
               {currentStep.id === "install" ? (
-                <div className="grid gap-5">
-                  <SetupCode title="Terminal" value="npm i @flowmarkdev/node" />
-                  <SetupCode
-                    title="Server environment"
-                    value={`FLOWMARK_API_KEY=<write key>\nFLOWMARK_API_URL=${origin}`}
-                  />
-                </div>
+                <InstallStep origin={origin} />
               ) : null}
               {currentStep.id === "instrument" ? (
-                <div className="grid gap-4">
-                  <SetupPathTabs
-                    origin={origin}
-                    agentPrompt={snippet}
-                    onCopied={() => undefined}
-                  />
-                  <Alert>
-                    <AlertTitle>Need a write key?</AlertTitle>
-                    <AlertDescription className="grid gap-3">
-                      <p>
-                        {
-                          setupRecoveryCopy(origin, current?.name ?? null)
-                            .lostKey
-                        }
-                      </p>
-                      <Button
-                        asChild
-                        size="sm"
-                        variant="outline"
-                        className="justify-self-start"
-                      >
-                        <Link href="/settings?section=keys">
-                          Open ingestion keys
-                        </Link>
-                      </Button>
-                    </AlertDescription>
-                  </Alert>
-                </div>
+                <InstrumentStep
+                  current={current}
+                  origin={origin}
+                  snippet={snippet}
+                />
               ) : null}
               {currentStep.id === "run" ? (
-                <div className="grid gap-4">
-                  <DataState
-                    pending={snapshot.isPending}
-                    error={snapshot.error}
-                    retry={() => void snapshot.refetch()}
-                  />
-                  {!snapshot.isPending && !snapshot.error ? (
-                    <div
-                      className={`rounded-xl border p-5 sm:p-6 ${hasRuns ? "border-primary/25 bg-primary/5" : "border-border bg-background/40"}`}
-                    >
-                      <span className="mb-4 grid size-10 place-items-center rounded-full border border-border">
-                        {hasRuns ? (
-                          <Check
-                            aria-hidden="true"
-                            className="size-4 text-primary"
-                          />
-                        ) : (
-                          <Radio
-                            aria-hidden="true"
-                            className="size-4 text-muted-foreground"
-                          />
-                        )}
-                      </span>
-                      <h3 className="text-base font-medium">
-                        {hasRuns
-                          ? "Your application is reporting evidence."
-                          : "Ready for your first execution."}
-                      </h3>
-                      <p className="mt-3 text-xs leading-7 text-muted-foreground">
-                        {hasRuns
-                          ? `${snapshot.data?.metrics.totalRuns.toLocaleString()} runs recorded in this project. Open Studio to explore the supporting evidence.`
-                          : "Run the process in your application. Evidence appears after the API receives it. You can finish setup now and return when it arrives."}
-                      </p>
-                    </div>
-                  ) : null}
-                </div>
+                <RunStep snapshot={snapshot} hasRuns={hasRuns} />
               ) : null}
               <div className="border-l border-primary/25 pl-4">
                 <p className="text-[11px] font-medium">

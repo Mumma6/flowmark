@@ -1,15 +1,19 @@
+import { decodeRunEventPageCursor } from "../../src/persistence/workflows/run-event-page-cursor.js"
 import assert from "node:assert/strict"
 import { randomUUID } from "node:crypto"
 import { test } from "node:test"
 import { eq, sql } from "drizzle-orm"
-import { Effect, Result } from "effect"
+import { Array as EffectArray, Effect, Result } from "effect"
 import { createDatabase } from "../../src/client.js"
 import { Database, InvalidResultQuery } from "../../src/persistence/database.js"
 import { getBusinessInsights } from "../../src/persistence/workflows/queries/get-business-insights.js"
 import { getPeriodReport } from "../../src/persistence/workflows/queries/get-period-report.js"
 import { getRelatedRunsPage } from "../../src/persistence/workflows/queries/get-related-runs-page.js"
 import { getRunComparison } from "../../src/persistence/workflows/queries/get-run-comparison.js"
-import { getRunEventPage } from "../../src/persistence/workflows/queries/get-run-event-page.js"
+import {
+  getRunEventPage,
+  runEventPageGuardQuery,
+} from "../../src/persistence/workflows/queries/get-run-event-page.js"
 import { getRunExpectationsPage } from "../../src/persistence/workflows/queries/get-run-expectations-page.js"
 import { getRunOperationsPage } from "../../src/persistence/workflows/queries/get-run-operations-page.js"
 import { getRunTimeline } from "../../src/persistence/workflows/queries/get-run-timeline.js"
@@ -295,6 +299,48 @@ test(
         await run(getRunEventPage(project, { runId: dense, limit: 50 })),
       )
       assert.ok(first.nextCursor)
+      const boundCursor = decodeRunEventPageCursor(first.nextCursor)
+      assert.ok(boundCursor)
+      const guardPlan = await db.execute<{
+        "QUERY PLAN": Array<{ Plan: { "Actual Rows": number } }>
+      }>(
+        sql`EXPLAIN (ANALYZE, FORMAT JSON) ${runEventPageGuardQuery(db, project, dense, boundCursor)}`,
+      )
+      assert.equal(guardPlan[0]?.["QUERY PLAN"][0]?.Plan["Actual Rows"], 1)
+      assert.ok(
+        /"Index Name":"workflow_events_[^"]+"/u.test(JSON.stringify(guardPlan)),
+        `cursor guard must use indexed event metadata: ${JSON.stringify(guardPlan)}`,
+      )
+      console.info(
+        "Run cursor guard: indexed event metadata lookup; one matching row.",
+      )
+      const wrongRunCursor = await run(
+        getRunEventPage(project, { runId: rawRun, cursor: first.nextCursor }),
+      )
+      const forgedCursor = await run(
+        getRunEventPage(project, {
+          runId: dense,
+          cursor: first.nextCursor.replace(boundCursor.eventId, randomUUID()),
+        }),
+      )
+      const forgedTime = await run(
+        getRunEventPage(project, {
+          runId: dense,
+          cursor: `${boundCursor.occurredAt}|2000-01-01T00:00:00Z|${boundCursor.eventId}`,
+        }),
+      )
+      EffectArray.forEach(
+        [wrongRunCursor, forgedCursor, forgedTime],
+        (result) =>
+          Result.match(result, {
+            onSuccess: () =>
+              assert.fail(
+                "A foreign or forged cursor must not change the selected page",
+              ),
+            onFailure: (error) =>
+              assert.ok(error instanceof InvalidResultQuery),
+          }),
+      )
       const lateId = randomUUID()
       const earlyId = randomUUID()
       await db.execute(sql`

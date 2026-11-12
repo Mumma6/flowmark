@@ -22,5 +22,11 @@ describe("run event page cursor", () => {
   it("rejects malformed cursors", () => {
     assert.equal(decodeRunEventPageCursor("bad"), null)
     assert.equal(decodeRunEventPageCursor("a|b"), null)
+    assert.equal(
+      decodeRunEventPageCursor(
+        "2026-01-02T10:00:00Z|2026-01-02T10:00:00Z|not-a-uuid",
+      ),
+      null,
+    )
   })
 })

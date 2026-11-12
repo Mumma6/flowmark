@@ -5,6 +5,7 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "./utils"
 
 import { Button } from "./button"
+import { useClipboardFeedback } from "./hooks/use-clipboard-feedback"
 import { CheckIcon, CopyIcon } from "lucide-react"
 
 const codeBlockVariants = cva(
@@ -90,17 +91,7 @@ function CodeBlockCopyButton({
   onClick,
   ...props
 }: React.ComponentProps<typeof Button> & { value: string }) {
-  const [copied, setCopied] = React.useState(false)
-  const [copyFailed, setCopyFailed] = React.useState(false)
-
-  React.useEffect(() => {
-    if (!copied) {
-      return
-    }
-
-    const timeout = setTimeout(() => setCopied(false), 2000)
-    return () => clearTimeout(timeout)
-  }, [copied])
+  const { copied, copyFailed, copy } = useClipboardFeedback()
 
   return (
     <>
@@ -115,16 +106,9 @@ function CodeBlockCopyButton({
         className={cn("hover:bg-white/5", className)}
         onClick={(event) => {
           onClick?.(event)
-          Promise.resolve()
-            .then(() => navigator.clipboard.writeText(value))
-            .then(() => {
-              setCopyFailed(false)
-              setCopied(true)
-            })
-            .catch(() => {
-              setCopied(false)
-              setCopyFailed(true)
-            })
+          if (!event.defaultPrevented) {
+            copy(value)
+          }
         }}
         {...props}
       >

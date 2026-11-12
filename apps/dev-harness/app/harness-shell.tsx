@@ -47,6 +47,9 @@ export function HarnessShell({
                 SDK diagnostics
               </Link>
             </Button>
+            <Button asChild variant="ghost" size="sm">
+              <Link href="/evidence">Supplied evidence</Link>
+            </Button>
             <Button asChild variant="outline" size="sm">
               <a href="http://localhost:3001">Open dashboard ↗</a>
             </Button>

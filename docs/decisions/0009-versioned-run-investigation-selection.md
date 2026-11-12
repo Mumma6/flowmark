@@ -47,3 +47,9 @@ still rejects `kind: "cohort"` and extra fields such as revision or environment.
 `technical`. The previous window is part of the question. A return link preserves
 the current window as Explore filters; it does not switch projects or freeze the
 evidence. Two reads are separate observations.
+
+Studio handoffs preserve an accepted linked section, cursor and page limit in
+both tool arguments and return URLs. Expectations use the same bounded paging
+contract as events, operations and related runs. A damaged or foreign selection
+produces no connected call. Changing the run/project/selection resets local
+inspector state through React identity, including browser back/forward.

@@ -27,21 +27,24 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { usePathname, useSearchParams } from "next/navigation"
-import { readInspectorRunId } from "../runs/investigation-navigation"
+import { readInspectorRunId } from "../runs/investigation/investigation-navigation"
 import {
   interpretPeriodCohort,
   runSelectionQueryKey,
-} from "../runs/investigation-selection"
-import { RunInspector } from "../runs/run-inspector"
+} from "../runs/investigation/investigation-selection"
+import { RunInspector } from "../runs/investigation/run-inspector"
+import { ReferenceJourney } from "../journeys/reference-journey"
+import { startJourneyHref } from "../journeys/journey-selection"
 import { publicConfig } from "../platform/config-public"
 import { useProject } from "../projects/project-context"
+import { SaveInvestigation } from "../investigations/save-investigation"
 import { useSnapshot } from "../projects/queries"
 import {
   explorerDefaults,
   explorerFilterLabels,
   type ExplorerFilters,
-} from "../runs/explorer-filters"
-import { useRunExplorer } from "../runs/use-run-explorer"
+} from "../runs/explorer/explorer-filters"
+import { useRunExplorer } from "../runs/explorer/use-run-explorer"
 import { DataState, FilterSelect } from "../shared/dashboard-components"
 import { ExploreAnalyticsContext } from "./explore-analytics-context"
 import { exploreAnalyticsQueryKey } from "./explore-analytics-query"
@@ -130,6 +133,33 @@ function ExploreWorkspace() {
           <AlertTitle>Period selection not applied</AlertTitle>
           <AlertDescription>{periodSelection.message}</AlertDescription>
         </Alert>
+      ) : null}
+
+      {periodSelection._tag === "Accepted" && (
+        <SaveInvestigation selection={periodSelection.selection} />
+      )}
+      <ReferenceJourney />
+      {current &&
+      explorer.selectedField?.role === "lookup" &&
+      filters.workflow !== "all" &&
+      filters.businessKey &&
+      filters.businessValue ? (
+        <Button asChild variant="outline" className="justify-self-start">
+          <Link
+            href={startJourneyHref(
+              current.id,
+              {
+                workflow: filters.workflow,
+                key: filters.businessKey,
+                value: filters.businessValue,
+              },
+              exploreFrom,
+            )}
+            scroll={false}
+          >
+            Follow this reference
+          </Link>
+        </Button>
       ) : null}
 
       <StudioWorkspace

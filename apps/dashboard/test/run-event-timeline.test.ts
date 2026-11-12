@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest"
 import {
   getRunTimelineKind,
   runTimelineDetail,
-} from "../features/runs/timeline-presentation"
+} from "../features/runs/timeline/timeline-presentation"
 import type { RunEvent } from "../features/platform/api-types"
 
 function event(

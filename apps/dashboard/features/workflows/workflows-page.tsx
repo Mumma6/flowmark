@@ -9,6 +9,7 @@ import { PageSections } from "../shared/page-sections"
 import { Refresh } from "../shared/refresh"
 import { useSnapshot } from "../projects/queries"
 import { WorkflowDirectory } from "./workflow-directory"
+import { DeclaredWorkflows } from "./declared-workflows"
 
 export function ProjectWorkflows() {
   const { data, isPending, error, isFetching, refetch } = useSnapshot()
@@ -35,7 +36,14 @@ export function ProjectWorkflows() {
             description:
               "Search by workflow name or sort by volume. Open a workflow to find its individual runs, reported results and configuration.",
             keepMounted: true,
-            content: data && <WorkflowDirectory workflows={data.workflows} />,
+            content: data && (
+              <div className="grid min-w-0 gap-5">
+                <WorkflowDirectory workflows={data.workflows} />
+                <DeclaredWorkflows
+                  recorded={data.workflows.map((workflow) => workflow.name)}
+                />
+              </div>
+            ),
           },
           {
             value: "navigate",

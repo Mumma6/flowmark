@@ -1,6 +1,6 @@
 import { Effect, Option, Result, Schema } from "effect"
 import "server-only"
-import { remoteAgentAccessFromProbe } from "../connect/agent-access-capability"
+import { remoteAgentAccessFromProbe } from "../connect/access/agent-access-capability"
 import { DashboardApi } from "./api-server-client"
 
 const ResourceMetadata = Schema.Struct({

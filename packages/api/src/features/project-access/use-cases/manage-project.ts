@@ -83,6 +83,14 @@ export interface ManageProjectService {
     CreatedSecret,
     InvalidInput | ManagementRateLimited | Unauthorized | PersistenceError
   >
+  readonly createReadKey: (
+    userId: string,
+    projectId: string,
+    name: string,
+  ) => Effect.Effect<
+    CreatedSecret,
+    InvalidInput | ManagementRateLimited | Unauthorized | PersistenceError
+  >
   readonly revokeApiKey: (
     userId: string,
     projectId: string,
@@ -211,6 +219,20 @@ export class ManageProject extends Context.Service<
         },
       )
 
+      const createReadKey = Effect.fn("ManageProject.createReadKey")(function* (
+        userId: string,
+        projectId: string,
+        rawName: string,
+      ) {
+        const name = yield* requireName(rawName, "Key name")
+        yield* requireMember(userId, projectId)
+        yield* requireCreationQuota(userId, "key")
+        return yield* credentials.createApiKey(projectId, {
+          name,
+          permission: "read",
+        })
+      })
+
       const revokeApiKey = Effect.fn("ManageProject.revokeApiKey")(function* (
         userId: string,
         projectId: string,
@@ -274,6 +296,7 @@ export class ManageProject extends Context.Service<
         rename,
         keys,
         createWriteKey,
+        createReadKey,
         revokeApiKey,
         createBrowserKey,
         revokeBrowserKey,

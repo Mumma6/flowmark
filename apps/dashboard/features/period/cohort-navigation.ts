@@ -1,4 +1,7 @@
-import { exploreHref, readExplorerFilters } from "../runs/explorer-filters"
+import {
+  exploreHref,
+  readExplorerFilters,
+} from "../runs/explorer/explorer-filters"
 
 /** Same run.list cohort as `/runs?…`, opened on the mounted Explore surface. */
 export function exploreCohortHref(runListHref: string) {

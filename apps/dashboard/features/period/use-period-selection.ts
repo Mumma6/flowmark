@@ -7,7 +7,7 @@ import { useTRPC } from "../platform/api-trpc"
 import { useProject } from "../projects/project-context"
 import { periodDays, periodWindow, type PeriodDays } from "./period"
 
-export function usePeriodSelection() {
+export function usePeriodSelection(enabled = true) {
   const params = useSearchParams()
   const router = useRouter()
   const pathname = usePathname()
@@ -30,7 +30,7 @@ export function usePeriodSelection() {
   }, [days, workflow])
   const report = useQuery({
     ...trpc.project.periodReport.queryOptions(selection.input),
-    enabled: Boolean(current),
+    enabled: Boolean(current) && enabled,
   })
   const replace = (nextDays: PeriodDays, nextWorkflow?: string) => {
     const query = new URLSearchParams(params.toString())

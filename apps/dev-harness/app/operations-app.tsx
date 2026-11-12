@@ -1,7 +1,7 @@
 "use client"
 
 import { useRef, useState } from "react"
-import { Schema } from "effect"
+import { Effect, Schema } from "effect"
 import {
   Alert,
   AlertDescription,
@@ -110,9 +110,13 @@ export function OperationsApp() {
       if (id) {
         await requestScenario(id)
       } else {
-        for (const scenario of businessScenarios) {
-          await requestScenario(scenario.id)
-        }
+        await Effect.runPromise(
+          Effect.forEach(
+            businessScenarios,
+            (scenario) => Effect.promise(() => requestScenario(scenario.id)),
+            { concurrency: 1, discard: true },
+          ),
+        )
         setBatchComplete(true)
       }
     } catch (cause) {

@@ -12,7 +12,7 @@ import {
   revokeSessionsForEmails,
 } from "./signup-sessions"
 import { POST as ingest } from "../../app/v1/events/route"
-import { appRouter } from "../../src/adapters/trpc"
+import { appRouter } from "../../src/adapters/trpc/router"
 
 const origin = "http://localhost:3001"
 

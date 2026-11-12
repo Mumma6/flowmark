@@ -1,9 +1,9 @@
-# SDK usage examples
+# Flowmark examples
 
 Illustrative TypeScript excerpts for [`@flowmarkdev/node`](https://www.npmjs.com/package/@flowmarkdev/node).
 They show where Flowmark fits into application code that already does the work.
 
-These files are not applications, tests, or scripts. Helper functions such as
+Except for the runnable `read-run.ts` consumer below, these files are not applications, tests, or scripts. Helper functions such as
 `upsertCustomer()` are declared so the snippet can focus on instrumentation.
 Every Flowmark call matches the current SDK. `tsconfig.json` maps
 `@flowmarkdev/node` to the SDK in this repository so the editor can resolve
@@ -16,6 +16,12 @@ Runnable loopback scripts live separately in `packages/sdk/examples/`.
 [`SETUP-DEMO.md`](./SETUP-DEMO.md) documents a **memory-first** runnable demo
 for `booking-process.ts` (optional loopback delivery for Studio verification).
 Run it with `pnpm --filter @flowmarkdev/node test booking-setup-demo`.
+
+For optional metadata kept beside code, preview/apply
+[`booking-definition.json`](./booking-definition.json) in **Settings → Process
+metadata** and use [`code-owned-booking.ts`](./code-owned-booking.ts) to explicitly
+report its revision. See the [import guide](../docs/definition-imports.md).
+Starting a workflow never imports a definition.
 
 ## Scenarios
 
@@ -48,3 +54,28 @@ completed or failed.
 Browser delivery (`@flowmarkdev/node/browser`), the server proxy, and custom
 transports are client setup rather than workflow scenarios, so they are not
 included here.
+
+## Public read consumer
+
+`read-run.ts` is a runnable server-side consumer of `@flowmarkdev/node/read`.
+It reads one Studio selection JSON file and an optional continuation cursor;
+`FLOWMARK_API_URL` and `FLOWMARK_READ_KEY` are environment-only configuration.
+See [setup, limits and errors](../docs/sdk/public-run-read.md#run-the-repository-consumer).
+The subpath is implemented in repository source; npm publication is separate.
+
+The same consumer also accepts a version-1 technical period selection, comparing
+current and previous windows with explicit coverage and empty-baseline guidance.
+See [the supported question and limits](../docs/sdk/public-period-read.md).
+
+The [public client guide](../apps/docs/content/docs/public-reads.mdx) documents
+local read-key creation, error recovery and packaging/version boundaries without
+requiring hosted credentials or private plans.
+
+## Portable evidence
+
+[Portable run evidence](./portable-evidence/README.md) contains a copyable synthetic
+snapshot, supplied-data harness setup, the approved MCP Apps reference-host patch,
+a real non-UI fallback verifier and a dated compatibility record. It reuses the
+shared run presentation without ingestion keys or autonomous fetching. This is a
+local repository example; hosted availability and named commercial-client support
+are separate verification questions.

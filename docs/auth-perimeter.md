@@ -9,6 +9,14 @@ the local fixture use the same provider login implementation.
 
 ## Request paths
 
+- `POST /v1/read/run` accepts only a live stored project read key and an explicit
+  matching project/run selection. Write/browser/demo keys, cookie sessions,
+  delegated identity headers and MCP audience tokens are rejected. Service,
+  project and authenticated-key budgets use a distinct public-read namespace.
+  Session-only `project.createReadKey` checks project membership and the existing
+  key-creation quota; existing project-scoped revocation applies. See the
+  [public read guide](./sdk/public-run-read.md).
+
 - `/api/auth/*` calls the provider HTTP handler. Origin and CSRF checks stay
   enabled explicitly, including in tests. Provider callback validation remains
   authoritative.
@@ -54,6 +62,11 @@ the local fixture use the same provider login implementation.
   `FLOWMARK_AGENT_ACCESS_ENABLED=true` and origins resolve (`FLOWMARK_API_URL`,
   `BETTER_AUTH_URL`, `FLOWMARK_DASHBOARD_ORIGIN`). When disabled, the route
   returns an honest `404` (no working remote read claim). `GET /mcp` is `405`.
+  MCP checks the request URL and Host against the configured API hostname before
+  reading a body or validating a token. A present Origin must exactly equal the
+  configured API or issuer origin, including scheme and port; native clients
+  may omit it. Forwarded headers are not authority for either check. Invalid
+  authority returns a fixed `403` response with `no-store`.
   An unsupported `initialize` protocol revision is negotiated to a supported
   revision and is not stored as the session version. Admission failure uses the
   fixed label `Read admission is unavailable.` Requests and tool results are
@@ -102,6 +115,15 @@ Authentication responses through the proxy and registration alias use
 `Cache-Control: no-store`. Provider diagnostics retain severity with a fixed
 label and exclude raw messages/arguments, which can contain callback URLs,
 attacker-controlled headers, database errors or tokens.
+
+Explicit disconnect also removes the matching Flowmark resource from the
+provider's cached consent in the same transaction. Otherwise a client reconnect
+could skip project selection and obtain a token with no usable project grant.
+Unrelated resource permissions and revoked consent-intent history are retained.
+Account-wide delegated revocation applies the same invalidation; ordinary
+accepted-consent supersession preserves the new permission. The
+[Codex CLI evidence record](./agent-clients/codex-cli.md) covers the observed
+client behavior and verification limits.
 
 ## Durable limits
 
@@ -230,6 +252,10 @@ separate inbox acceptance.
 
 ## Evidence
 
+The [composed agent security audit](./agent-access-security-audit.md) records
+the OAuth → live grant → MCP → scoped persistence checks, bounded reads and
+their remaining client/hosted verification limits.
+
 `apps/server/test/http/auth-perimeter.test.ts` uses real Better Auth and a
 disposable loopback PostgreSQL database. It covers verification-policy denial,
 production-shaped demo misconfiguration, malicious origins/callbacks, the shared
@@ -331,3 +357,17 @@ Responses use `no-store` and `no-referrer`. Signing out does not revoke prior gr
 OAuth authorize/token admission has separate durable counters from account login
 and MCP reads. Revoke is exempt from those creation/read budgets. See
 [ADR 0008](./decisions/0008-connect-agent-protocol-contract.md) for limits.
+
+## Connection feedback in Studio
+
+The stored `lastAuthenticatedAt` belongs to a grant family, not to a project or
+successful tool result. `get_connection` and a request that later fails can update
+it. Studio labels this **Connection authenticated** and does not infer successful
+project evidence retrieval from it or from Studio's session-based run reads.
+
+Revocation feedback cancels older connection-list requests and reads fresh server
+state. A lost mutation response may still be confirmed if the grant is absent.
+If confirmation fails, the status remains unknown and **Refresh connections**
+only repeats the read. It never resends the mutation. Connection-detail loading,
+failures and missing authority have separate states; unavailable cached rows
+are not offered as current management targets.

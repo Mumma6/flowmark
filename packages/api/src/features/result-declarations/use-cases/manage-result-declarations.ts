@@ -1,6 +1,9 @@
-import { Context, Effect, Layer, Schema } from "effect"
+import { Context, Effect, Layer, Option, Schema } from "effect"
 import {
   ResultDeclarationSchema,
+  DefinitionImportSchema,
+  DefinitionImportApplySchema,
+  type DefinitionImportReceipt,
   SearchFieldsSchema,
   type ResultDeclaration,
   type SearchFields,
@@ -12,8 +15,25 @@ import {
 } from "../../../errors.js"
 import { AuthorizeProject } from "../../project-access/use-cases/authorize-project.js"
 import { ResultDeclarations } from "../ports/result-declarations.js"
+import { importPreview, type ImportPreview } from "../rules/import-preview.js"
 
 export interface ManageResultDeclarationsService {
+  readonly applyImport: (
+    userId: string,
+    projectId: string,
+    input: unknown,
+  ) => Effect.Effect<
+    DefinitionImportReceipt,
+    InvalidInput | Unauthorized | PersistenceError
+  >
+  readonly previewImport: (
+    userId: string,
+    projectId: string,
+    input: unknown,
+  ) => Effect.Effect<
+    ImportPreview,
+    InvalidInput | Unauthorized | PersistenceError
+  >
   readonly searchFields: (
     userId: string,
     projectId: string,
@@ -51,6 +71,42 @@ const make = Effect.gen(function* () {
   const authorization = yield* AuthorizeProject
   const declarations = yield* ResultDeclarations
   return {
+    applyImport: Effect.fn("ManageResultDeclarations.applyImport")(function* (
+      userId: string,
+      projectId: string,
+      input: unknown,
+    ) {
+      const authorized = yield* authorization.authorizeUser(userId, projectId)
+      const command = yield* Schema.decodeUnknownEffect(
+        DefinitionImportApplySchema,
+        { onExcessProperty: "error" },
+      )(input).pipe(Effect.mapError((cause) => new InvalidInput({ cause })))
+      return yield* declarations.apply(userId, authorized, command)
+    }),
+    previewImport: Effect.fn("ManageResultDeclarations.previewImport")(
+      function* (userId: string, projectId: string, input: unknown) {
+        const authorized = yield* authorization.authorizeUser(userId, projectId)
+        const definition = yield* Schema.decodeUnknownEffect(
+          DefinitionImportSchema,
+          {
+            onExcessProperty: "error",
+          },
+        )(input).pipe(Effect.mapError((cause) => new InvalidInput({ cause })))
+        const searchFields = yield* declarations.searchFields(
+          authorized,
+          definition.workflow,
+        )
+        const result = yield* Option.match(
+          Option.fromUndefinedOr(definition.result),
+          {
+            onNone: () => Effect.succeed(Option.none<ResultDeclaration>()),
+            onSome: ({ revision }) =>
+              declarations.find(authorized, definition.workflow, revision),
+          },
+        )
+        return importPreview(authorized, definition, { result, searchFields })
+      },
+    ),
     searchFields: Effect.fn("ManageResultDeclarations.searchFields")(function* (
       userId: string,
       projectId: string,

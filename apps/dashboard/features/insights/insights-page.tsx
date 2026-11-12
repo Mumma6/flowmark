@@ -16,6 +16,8 @@ import {
 } from "@flowmark/ui"
 import { RefreshCw } from "lucide-react"
 import Link from "next/link"
+import { useSearchParams } from "next/navigation"
+import { LinkedProcessComparison } from "./linked/linked-process-comparison"
 import {
   DataState,
   PageHeading,
@@ -33,11 +35,12 @@ import { PeriodControls } from "../period/period-controls"
 import { recordedChanges } from "../period/period-presentation"
 import { RecordedChangesSection } from "../reporting/recorded-changes-section"
 import { usePeriodSelection } from "../period/use-period-selection"
-import { BusinessOutcomes } from "../results/business-outcomes"
+import { BusinessOutcomes } from "../results/outcomes/business-outcomes"
 
 export function InsightsPage() {
+  const linked = useSearchParams().get("view") === "linked"
   const { days, workflow, period, report, replace, workflowNames } =
-    usePeriodSelection()
+    usePeriodSelection(!linked)
   const comparison = `previous ${days} days`
   const currentWindow = {
     startedAfter: period.currentStartedAfter,
@@ -55,6 +58,18 @@ export function InsightsPage() {
         operations: report.data.operations,
       })
     : []
+  if (linked) {
+    return (
+      <div className="grid min-w-0 gap-7">
+        <PageHeading
+          title="Insights"
+          description="Compare reported results across explicitly linked processes."
+        />
+        <InsightsNavigation linked />
+        <LinkedProcessComparison />
+      </div>
+    )
+  }
   return (
     <div className="grid min-w-0 gap-7">
       <PageHeading
@@ -71,6 +86,7 @@ export function InsightsPage() {
           Refresh
         </Button>
       </PageHeading>
+      <InsightsNavigation linked={false} />
       <PeriodControls
         days={days}
         workflow={workflow}
@@ -319,4 +335,25 @@ function WorkflowBreakdown({
 
 function signed(value: number) {
   return `${value > 0 ? "+" : ""}${value.toLocaleString()} vs previous`
+}
+
+function InsightsNavigation({ linked }: { linked: boolean }) {
+  return (
+    <nav aria-label="Insight types" className="flex flex-wrap gap-4 text-sm">
+      <Link
+        href="/insights"
+        aria-current={!linked ? "page" : undefined}
+        className="min-h-9 py-2 text-primary hover:underline"
+      >
+        Workflow performance
+      </Link>
+      <Link
+        href="/insights?view=linked"
+        aria-current={linked ? "page" : undefined}
+        className="min-h-9 py-2 text-primary hover:underline"
+      >
+        Linked process comparison
+      </Link>
+    </nav>
+  )
 }

@@ -3,8 +3,9 @@
 import { CommandGroup, CommandItem } from "@flowmark/ui"
 import { ArrowUpRight, GitBranch, Tag, Workflow } from "lucide-react"
 import type { RouterOutputs } from "../platform/api-types"
-import type { ExplorerFilters } from "../runs/explorer-filters"
-import { runStatusLabel } from "../runs/run-presentation"
+import type { ExplorerFilters } from "../runs/explorer/explorer-filters"
+import { startJourneyHref } from "../journeys/journey-selection"
+import { runStatusLabel } from "../runs/models/run-presentation"
 import {
   distinctSearchReferences,
   referenceExploreHref,
@@ -17,11 +18,13 @@ export function ProjectSearchResults({
   filters,
   returnTo,
   go,
+  projectId,
 }: {
   results: RouterOutputs["search"]["project"]
   filters: ExplorerFilters
   returnTo: string
   go: (href: string) => void
+  projectId: string
 }) {
   const references = distinctSearchReferences(results.references)
   return (
@@ -63,7 +66,15 @@ export function ProjectSearchResults({
               ])}
               value={`reference:${JSON.stringify([reference.workflow, reference.key, reference.value])}`}
               className="gap-3 px-3 py-3"
-              onSelect={() => go(referenceExploreHref(reference, filters))}
+              onSelect={() =>
+                go(
+                  startJourneyHref(
+                    projectId,
+                    reference,
+                    referenceExploreHref(reference, filters),
+                  ),
+                )
+              }
             >
               <Tag aria-hidden="true" className="text-primary" />
               <span className="min-w-0 flex-1">
@@ -71,7 +82,7 @@ export function ProjectSearchResults({
                   {reference.key} = {reference.value}
                 </span>
                 <span className="mt-1 block truncate text-[11px] text-muted-foreground">
-                  {reference.workflow} · Explore matching runs
+                  {reference.workflow} · Follow reference journey
                 </span>
               </span>
               <ArrowUpRight

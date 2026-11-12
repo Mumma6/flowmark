@@ -1,31 +1,13 @@
 import * as React from "react"
 
+import { useAsyncResource } from "./use-async-resource"
 import { loadHighlighter } from "../highlighter"
 
 export function useHighlightedCode(value: string, language: string) {
   // A trailing newline would render as an extra empty line.
   const code = value.endsWith("\n") ? value.slice(0, -1) : value
-  const [loaded, setLoaded] = React.useState<{
-    language: string
-    highlighter: Awaited<ReturnType<typeof loadHighlighter>>
-  } | null>(null)
-  const highlighter = loaded?.language === language ? loaded.highlighter : null
-
-  React.useEffect(() => {
-    let cancelled = false
-
-    loadHighlighter(language)
-      .then((next) => {
-        if (!cancelled) {
-          setLoaded({ language, highlighter: next })
-        }
-      })
-      .catch(() => {})
-
-    return () => {
-      cancelled = true
-    }
-  }, [language])
+  const resource = useAsyncResource(language, loadHighlighter)
+  const highlighter = resource?.kind === "ready" ? resource.value : null
 
   // The complete lines, highlighted. While the code streams, only the new
   // lines are tokenized, starting from the grammar state of the last one.

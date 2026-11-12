@@ -5,8 +5,9 @@ import {
   decodeResultPath,
   parseResultPath,
   readExplorerFilters,
-} from "../features/runs/explorer-filters"
-import { peerSelection } from "../features/runs/peer-selection"
+} from "../features/runs/explorer/explorer-filters"
+import { selectRunFilterGroup } from "../features/runs/explorer/filter-group"
+import { peerSelection } from "../features/runs/investigation/peer-selection"
 
 const input = (query: string, workflow?: string) =>
   buildRunListInput(readExplorerFilters(new URLSearchParams(query)), workflow)
@@ -120,4 +121,15 @@ it("retains a typed schema failure instead of hiding malformed result paths", ()
       throw new Error("Invalid path unexpectedly accepted")
     },
   })
+})
+
+it.each([
+  ["", "execution"],
+  ["environment=local", "technical"],
+  ["definitionRevision=v1&environment=local", "results"],
+  ["businessValue=0&outcome=partial", "business"],
+])("selects the relevant filter panel for %s", (query, expected) => {
+  expect(
+    selectRunFilterGroup(readExplorerFilters(new URLSearchParams(query))),
+  ).toBe(expected)
 })

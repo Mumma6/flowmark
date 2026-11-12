@@ -1,30 +1,37 @@
-import { afterEach, expect, it, vi } from "vitest"
+import { expect, it } from "vitest"
+import { AuthorizeAgentRead, PersistenceError } from "@flowmark/api"
 import { Effect } from "effect"
-
-vi.mock("@flowmark/db/persistence", async (original) => {
-  const actual = await original<typeof import("@flowmark/db/persistence")>()
-  return {
-    ...actual,
-    consumeMcpBudget: () =>
-      Effect.fail(
-        new actual.DatabaseError({
-          operation: actual.DatabaseOperation.McpAdmission,
-          cause: new Error("synthetic storage failure"),
-        }),
-      ),
-  }
-})
-
 import { consumeAdmission } from "../src/runtime/admission.js"
 
-afterEach(() => vi.unstubAllEnvs())
-it("fails closed when durable admission storage is unavailable", async () => {
-  // The mocked operation never connects; this configures only the lazy driver boundary.
-  vi.stubEnv("DATABASE_URL", "postgres://test:test@127.0.0.1:1/test")
-  vi.stubEnv("VERCEL_ENV", "")
+it("fails closed when the injected API admission is unavailable", async () => {
   const error = await Effect.runPromise(
-    consumeAdmission("synthetic-service", 10).pipe(Effect.flip),
+    consumeAdmission("synthetic-service", 10).pipe(
+      Effect.provideService(AuthorizeAgentRead, {
+        grantFamily: () => Effect.succeed({ familyId: "unused" }),
+        consumeBudget: () =>
+          Effect.fail(
+            new PersistenceError({
+              operation: "mcp-admission",
+              cause: new Error("synthetic storage failure"),
+            }),
+          ),
+      }),
+      Effect.flip,
+    ),
   )
   expect(error.reason).toBe("Read admission is unavailable.")
   expect(error.reason).not.toContain("synthetic storage failure")
+})
+
+it("retains the retry interval on admission exhaustion", async () => {
+  const error = await Effect.runPromise(
+    consumeAdmission("grant:family", 10).pipe(
+      Effect.provideService(AuthorizeAgentRead, {
+        grantFamily: () => Effect.succeed({ familyId: "unused" }),
+        consumeBudget: () => Effect.succeed({ allowed: false, retryAfter: 23 }),
+      }),
+      Effect.flip,
+    ),
+  )
+  expect(error.reason).toBe("Read budget exhausted. Retry after 23 seconds.")
 })

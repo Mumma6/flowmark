@@ -5,9 +5,9 @@ import {
   connectedFailureCalls,
   connectedInsightCalls,
   connectedRunCalls,
-} from "../features/runs/connected-retrieval"
-import { explorerDefaults } from "../features/runs/explorer-filters"
-import { buildSafeRunContextHandoff } from "../features/runs/safe-run-context-handoff"
+} from "../features/runs/investigation/connected-retrieval"
+import { explorerDefaults } from "../features/runs/explorer/explorer-filters"
+import { buildSafeRunContextHandoff } from "../features/runs/handoff/safe-run-context-handoff"
 
 const projectId = "11111111-1111-4111-8111-111111111111"
 const runId = "22222222-2222-4222-8222-222222222222"
@@ -141,4 +141,62 @@ it("keeps a selected dimension value inside the business tool arguments", () => 
     revision: "booked",
   })
   expect(calls[0]?.input).not.toHaveProperty("environment")
+})
+
+it("preserves a linked section, limit and cursor in the actual tool handoff", () => {
+  const selection = {
+    version: 1,
+    kind: "run",
+    projectId,
+    runId,
+    section: "expectations",
+    cursor: "next-page",
+    limit: 7,
+  }
+  expect(
+    connectedRunCalls(projectId, runId, JSON.stringify(selection)),
+  ).toEqual([
+    {
+      tool: "get_run",
+      input: {
+        projectId,
+        runId,
+        section: "expectations",
+        cursor: "next-page",
+        limit: 7,
+      },
+    },
+  ])
+  expect(
+    connectedRunCalls(
+      projectId,
+      runId,
+      JSON.stringify({ ...selection, projectId: runId }),
+    ),
+  ).toEqual([])
+  expect(connectedRunCalls(projectId, runId, "{damaged")).toEqual([])
+})
+
+it("does not turn an empty failure code into every failed run", () => {
+  const calls = connectedFailureCalls({
+    projectId,
+    workflow: "orders.import",
+    code: "",
+    ...windows,
+  })
+  expect(calls.map((call) => call.tool)).toEqual(["get_workflow_insights"])
+  expect(calls[0]?.input).not.toHaveProperty("failCode")
+  expect(JSON.stringify(calls)).not.toContain("find_runs")
+})
+
+it("does not partially replace an invalid failure selection with a broader call", () => {
+  expect(
+    connectedFailureCalls({
+      projectId,
+      workflow: "orders.import",
+      code: "TIMEOUT",
+      ...windows,
+      previousStartedBefore: "invalid",
+    }),
+  ).toEqual([])
 })

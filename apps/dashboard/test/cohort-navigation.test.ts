@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest"
 import {
   buildRunListInput,
   readExplorerFilters,
-} from "../features/runs/explorer-filters"
+} from "../features/runs/explorer/explorer-filters"
 import {
   exploreCohortHref,
   mapRecordedChangeHrefs,

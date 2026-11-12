@@ -1,7 +1,7 @@
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch"
 import { Effect, Result } from "effect"
 import { serverOrigins } from "../server-env"
-import { appRouter } from "./trpc"
+import { appRouter } from "./trpc/router"
 
 function withCors(
   request: Request,

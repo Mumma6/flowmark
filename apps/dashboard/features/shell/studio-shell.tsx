@@ -18,6 +18,7 @@ import {
   Code2,
   Compass,
   History,
+  Bookmark,
   LayoutGrid,
   LineChart,
   Link2,
@@ -33,7 +34,7 @@ import { runBrowserAuth } from "../auth/auth-browser-runtime"
 import { signOut } from "../auth/operations"
 import { publicConfig } from "../platform/config-public"
 import { RuntimeConfigProvider } from "../platform/runtime-config"
-import type { RemoteAgentAccessDeployment } from "../connect/agent-access-capability"
+import type { RemoteAgentAccessDeployment } from "../connect/access/agent-access-capability"
 import { ProjectProvider } from "../projects/project-context"
 import { ProjectSwitcher } from "../projects/project-switcher"
 import { CommandPalette } from "../search/command-palette"
@@ -47,6 +48,7 @@ const navigation = [
 ] as const
 
 const utilities = [
+  { href: "/investigations", label: "Your investigations", icon: Bookmark },
   { href: "/runs", label: "Execution history", icon: History },
   { href: "/overview", label: "Project overview", icon: LayoutGrid },
   { href: "/connect", label: "Connect", icon: Link2 },

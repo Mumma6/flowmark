@@ -93,6 +93,15 @@ export {
 } from "@flowmarkdev/core"
 
 export type { AppendDisposition } from "@flowmarkdev/core"
+export type {
+  LinkedComparison,
+  LinkedComparisonQuery,
+  LinkedEvidenceRow,
+  LinkedEvidencePage,
+  LinkedEvidenceQuery,
+  WorkflowEvent,
+  WorkflowResult,
+} from "@flowmarkdev/core"
 
 export {
   BusinessTimestampSchema,
@@ -111,3 +120,32 @@ export { ExpectationSourceForbidden } from "./errors.js"
 export { ResultDeclarationsLive } from "./features/result-declarations/adapters/result-declarations.js"
 
 export { AgentConsent } from "./features/project-access/use-cases/agent-consent.js"
+
+export { ReadPublicRun } from "./features/public-reads/use-cases/read-run.js"
+export { PublicReadFailure } from "./features/public-reads/errors.js"
+export { PublicReadAdmission } from "./features/public-reads/ports/public-read-admission.js"
+
+export { PUBLIC_READ_BOUNDS, type RunReadError } from "@flowmarkdev/core"
+
+export { ReadPublicPeriod } from "./features/public-reads/use-cases/read-period.js"
+
+export { AuthorizeAgentRead } from "./features/project-access/use-cases/authorize-agent-read.js"
+export {
+  DelegatedAccessRepository,
+  type GrantFamilySelection,
+} from "./features/project-access/ports/delegated-access-repository.js"
+/** Protocol adapters select the API read policy without importing persistence. */
+export { DatabaseReadBudget as ApiReadBudget } from "@flowmark/db/persistence"
+
+export {
+  ReferenceJourneyQuerySchema,
+  type ReferenceJourneyQuery,
+  type ReferenceJourneyPage,
+} from "@flowmarkdev/core"
+
+export { ManageInvestigations } from "./features/investigations/use-cases/manage-investigations.js"
+export type {
+  SavedSelection,
+  SavedInvestigation,
+  SavedInvestigationPage,
+} from "@flowmarkdev/core"

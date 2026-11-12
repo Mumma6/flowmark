@@ -1,6 +1,6 @@
 {
   "name": "@flowmarkdev/node",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Workflow observability for processes your Node.js and Next.js apps already run",
   "license": "MIT",
   "type": "module",
@@ -27,7 +27,11 @@
       "types": "./dist/adapters/proxy.d.ts",
       "import": "./dist/adapters/proxy.js"
     },
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./read": {
+      "types": "./dist/reads/index.d.ts",
+      "import": "./dist/reads/index.js"
+    }
   },
   "files": [
     "dist",

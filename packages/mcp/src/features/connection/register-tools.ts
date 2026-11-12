@@ -1,9 +1,14 @@
+import type { AuthorizeAgentRead } from "@flowmark/api"
 import { GetProjectWorkflowData } from "@flowmark/api"
 import {
   createMcpHandler,
   fromJsonSchema,
   McpServer,
 } from "@modelcontextprotocol/server"
+import {
+  registerRunEvidenceTool,
+  registerEvidenceResource,
+} from "./evidence-resource.js"
 import { Effect, Exit } from "effect"
 import type { FlowmarkMcpAuthInfo } from "../../auth/claims.js"
 import type { ResolvedAgentAccessRuntime } from "../../runtime/agent-access-runtime.js"
@@ -22,7 +27,7 @@ import {
   listWorkflowsInputJsonSchema,
   workflowInsightsInputJsonSchema,
 } from "../../tools/tool-input-json-schema.js"
-import { runMcpTool } from "../../runtime/tool-runtime.js"
+import { runMcpResourceRead, runMcpTool } from "../../runtime/tool-runtime.js"
 import { readPagedTool } from "../../tools/paged-read.js"
 import { resolveMcpConnection } from "./resolve-connection.js"
 
@@ -41,7 +46,11 @@ const runWorkflowTool = async <A extends Record<string, unknown>>(
     readonly getRun: typeof getRunForMcp
     readonly compareRun: typeof compareRunForMcp
     readonly getWorkflowInsights: typeof getWorkflowInsightsForMcp
-  }) => Effect.Effect<A, McpToolFailure, GetProjectWorkflowData>,
+  }) => Effect.Effect<
+    A,
+    McpToolFailure,
+    GetProjectWorkflowData | AuthorizeAgentRead
+  >,
   signal?: AbortSignal,
 ) =>
   toolResult(
@@ -131,9 +140,10 @@ const registerFindRunsTool = (
 const registerGetRunTool = (
   server: McpServer,
   identity: FlowmarkMcpAuthInfo,
+  uiSupported: boolean,
 ) => {
-  server.registerTool(
-    "get_run",
+  return registerRunEvidenceTool(
+    server,
     {
       title: "Get run",
       description:
@@ -148,6 +158,7 @@ const registerGetRunTool = (
         (tools) => readPagedTool(input, (page) => tools.getRun(identity, page)),
         extra.mcpReq.signal,
       ),
+    uiSupported,
   )
 }
 
@@ -200,11 +211,21 @@ const registerWorkflowInsightsTool = (
 export const registerFlowmarkTools = (
   server: McpServer,
   identity: FlowmarkMcpAuthInfo,
+  uiSupported = false,
 ) => {
   registerConnectionTool(server, identity)
   registerListWorkflowsTool(server, identity)
   registerFindRunsTool(server, identity)
-  registerGetRunTool(server, identity)
+  registerGetRunTool(server, identity, uiSupported)
+  registerEvidenceResource(server, async (signal) => {
+    const admitted = await runMcpResourceRead(identity, signal)
+    Exit.match(admitted, {
+      onSuccess: () => undefined,
+      onFailure: () => {
+        throw new Error("Evidence resource access denied or unavailable.")
+      },
+    })
+  })
   registerCompareRunTool(server, identity)
   registerWorkflowInsightsTool(server, identity)
 }
@@ -212,23 +233,26 @@ export const registerFlowmarkTools = (
 export const createFlowmarkMcpSdkHandler = (
   runtime: ResolvedAgentAccessRuntime,
 ) => {
-  let cached: ReturnType<typeof createMcpHandler> | undefined
-  return () => {
-    if (!cached) {
-      cached = createMcpHandler(async (ctx) => {
-        const identity = ctx.authInfo?.extra as FlowmarkMcpAuthInfo | undefined
-        if (!identity) {
-          throw new Error("Agent access context is missing.")
-        }
-        const server = new McpServer(
-          { name: "flowmark", version: "0.1.0" },
-          { capabilities: { tools: {} } },
-        )
-        registerFlowmarkTools(server, identity)
-        return server
-      })
+  const handlers = new Map<boolean, ReturnType<typeof createMcpHandler>>()
+  return (uiSupported = false) => {
+    const cached = handlers.get(uiSupported)
+    if (cached) {
+      return cached
     }
+    const handler = createMcpHandler(async (ctx) => {
+      const identity = ctx.authInfo?.extra as FlowmarkMcpAuthInfo | undefined
+      if (!identity) {
+        throw new Error("Agent access context is missing.")
+      }
+      const server = new McpServer(
+        { name: "flowmark", version: "0.1.0" },
+        { capabilities: { tools: {}, resources: {} } },
+      )
+      registerFlowmarkTools(server, identity, uiSupported)
+      return server
+    })
+    handlers.set(uiSupported, handler)
     void runtime
-    return cached
+    return handler
   }
 }

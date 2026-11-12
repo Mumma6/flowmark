@@ -43,3 +43,15 @@ shared hosted data.
 
 Synthetic properties include `synthetic: true` so runs are easy to distinguish
 from real application traffic.
+
+## Optional metadata preview
+
+[`booking-definition.json`](./booking-definition.json) describes the existing
+`bookingRef` lookup and `submitted` result count. The
+[import preview guide](../docs/definition-imports.md) shows the session-authorized
+dry run. It does not save configuration or change this example's instrumentation.
+
+`pnpm test:integration` also verifies this unchanged example over a disposable
+loopback HTTP listener and PostgreSQL, then reads its evidence through the real
+session-authorized Studio handlers and investigation/confirmation projections.
+This automated check does not require signing into a browser or use local demo data.

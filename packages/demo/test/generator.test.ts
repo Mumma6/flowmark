@@ -3,6 +3,7 @@ import { test } from "node:test"
 import { Array, Schema } from "effect"
 import { EventEnvelopeSchema } from "@flowmarkdev/core"
 import { generate, summarize } from "../src/generator/generate.js"
+import { canonical, digest } from "../src/generator/identity.js"
 import { workflowNames } from "../src/scenarios/catalog.js"
 
 const config = {
@@ -185,5 +186,28 @@ test("reported counts reconcile and unknown fields remain absent", () => {
   assert.ok(
     rejectionRate(byPhase("data-quality")) >
       rejectionRate(byPhase("baseline")) * 5,
+  )
+})
+
+// Recorded before scenario extraction; covers every event, identifier and sampled draw.
+test("scenario extraction preserves the complete canonical datasets", () => {
+  const fixtures = [
+    {
+      config: {
+        reference: "2026-11-03T12:00:00.000Z",
+        seed: "meridian-health-2026-v1",
+      },
+      hash: "6b9092d1004c48be27374a7949aa9f71487c8726040e749860653d05c42620dd",
+    },
+    {
+      config: {
+        reference: "2027-02-15T00:00:00.000Z",
+        seed: "second-seed",
+      },
+      hash: "84c5e3d62e5741d44c28bd9aa0fad553c50fe77e16b7cf5ad1e48470d58ecc95",
+    },
+  ]
+  fixtures.forEach(({ config, hash }) =>
+    assert.equal(digest(canonical(generate(config))), hash),
   )
 })

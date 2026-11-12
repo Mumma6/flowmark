@@ -25,9 +25,11 @@ describe("API request resource scope", () => {
         "postgresql://127.0.0.1:1/unused",
       )
       const close = vi.fn(connection.close)
-      const create = vi
-        .spyOn(database, "createDatabase")
-        .mockReturnValue({ db: connection.db, close })
+      const create = vi.spyOn(database, "createDatabase").mockReturnValue({
+        db: connection.db,
+        close,
+        cancel: connection.cancel,
+      })
       const layer = DatabaseLive.pipe(Layer.provide(settings))
       const operation = Effect.flatMap(Database, () =>
         Match.value(outcome).pipe(
@@ -76,6 +78,7 @@ describe("API request resource scope", () => {
     const cause = new Error("close failed")
     vi.spyOn(database, "createDatabase").mockReturnValue({
       db: connection.db,
+      cancel: connection.cancel,
       close: () => Promise.reject(cause),
     })
     const result = await Effect.runPromise(

@@ -283,3 +283,17 @@ Runnable loopback examples live in the repository under `packages/sdk/examples/`
 ## License
 
 MIT · [Mumma6/flowmark](https://github.com/Mumma6/flowmark)
+
+## Public run reads
+
+SDK **0.3.0** adds the `@flowmarkdev/node/read` subpath, providing
+`createFlowmarkReadClient`, `FlowmarkReadClient`, `FlowmarkReadError` and the public
+read DTO types. See the [run read guide](../../docs/sdk/public-run-read.md) for
+read-key issuance, self-hosted URLs, limits and the runnable CLI. Both the SDK
+publication and the accepting API deployment must be complete before using these
+reads. Existing ingestion exports are unchanged.
+
+`client.readPeriod` supports the same explicit technical-period selection used
+by Studio/MCP. See [period comparisons](../../docs/sdk/public-period-read.md) for
+full-population counts, coverage and unsupported filters. Both read methods
+share the same scoped transport, auth/error boundary and runnable consumer.

@@ -1,0 +1,186 @@
+---
+title: Public read client
+description: Run and period reads, local consumer setup, compatibility and explicit errors.
+---
+
+## Availability and credentials
+
+The repository implements `POST /v1/read/run`, `POST /v1/read/period` and the
+ordinary TypeScript/Promise client at `@flowmarkdev/node/read` in SDK 0.3.0 or later. Use a package
+release that contains this subpath, or the repository consumer below. A source
+change does not publish npm packages or prove a hosted deployment is updated.
+The ingestion client and `/browser` entry remain separate.
+
+Create a **read key** in Studio → Settings → API keys for your selected project.
+Its secret appears once. The public reads accept that live stored read key;
+write/browser/demo keys, cookies and MCP OAuth tokens do not authenticate them.
+This includes the public demo read credential in a local checkout: create a
+real read key instead. Revoke it in Settings to deny subsequent reads.
+
+Keep the key in server-side environment/secret storage. Never put it in a
+selection, URL, browser bundle, `NEXT_PUBLIC_*` variable, command argument or
+committed file. Run these clients in a server process or CLI. The same-origin
+browser ingestion proxy does not grant reads.
+
+## Run the consumer locally
+
+Follow [local development](/docs/local-development) for repository setup with
+the pinned pnpm version and Compose. From a fresh checkout:
+
+```sh
+pnpm install
+pnpm dev:setup
+pnpm infra doctor
+pnpm infra up
+pnpm db:setup
+pnpm dev --ui=stream
+```
+
+`db:setup` is the deliberate first local database setup. Reuse existing env files
+and data; do not reset an existing database. Ordinary dev startup never migrates
+or seeds. Keep one build/watch session per checkout. The dev command builds
+the local libraries before starting their watchers; do not run separate builds
+or checks beside it.
+
+Open Studio on `http://localhost:3001`, sign in, select a project, and create its
+read key. In a run's handoff, open **Structured run selection** and use **Copy run selection**
+to obtain the versioned JSON with internal project/run UUIDs. Save just that JSON
+object, without a prompt or credentials, as `selection.json`. Choose the Events
+section first: this public run read supports `section: "events"` only. The JSON
+below shows its shape; replace both placeholder UUIDs with the selected values.
+
+```json
+{
+  "version": 1,
+  "kind": "run",
+  "projectId": "00000000-0000-4000-8000-000000000001",
+  "runId": "00000000-0000-4000-8000-000000000002",
+  "section": "events",
+  "limit": 50
+}
+```
+
+In a second terminal at the repository root, set the local origins and enter the
+new read key through a secret prompt. This example uses Bash; the key is not a
+literal in shell history. The selection file contains no credential.
+
+```bash
+export FLOWMARK_API_URL=http://127.0.0.1:3003
+export FLOWMARK_STUDIO_URL=http://localhost:3001
+read -r -s -p 'Local project read key: ' FLOWMARK_READ_KEY
+printf '\n'
+export FLOWMARK_READ_KEY
+pnpm --filter @flowmark/db exec tsx --tsconfig ../../examples/tsconfig.json ../../examples/read-run.ts /absolute/path/selection.json
+```
+
+The command resolves the client from repository source. It requires no hosted
+key, private plan or npm publication. It prints one page and a Studio link. Pass
+the exact returned `page.nextCursor` as the second argument for an explicit next
+page. Ctrl+C cancels; a failed read exits nonzero and prints a safe code. It does
+not retry, poll, ingest, execute or schedule application work.
+
+For a period comparison, save a shared `kind: "period"` selection instead. It
+contains `projectId`, `workflow`, `currentStartedAfter`, `currentStartedBefore`,
+`previousStartedAfter` and `previousStartedBefore`, plus `version: 1`. Use absolute
+canonical UTC millisecond timestamps. Each half-open start-time window is at most
+31 days and the previous window ends at or before the current start. The same
+command prints both windows and absent-baseline guidance; a period cursor is
+unsupported. No environment, revision, peer or business filters are accepted.
+
+## Methods and types
+
+Both methods accept an optional `{ signal: AbortSignal }` and reject with
+`FlowmarkReadError`. They share the same transport, live read-key checks,
+durable service/project/key budgets and errors. Consumers import no tRPC router,
+database types or Effect runtime.
+
+```ts
+import {
+  createFlowmarkReadClient,
+  FlowmarkReadError,
+} from "@flowmarkdev/node/read"
+import type { RunReadInput, PeriodReadInput } from "@flowmarkdev/node/read"
+
+async function inspectRun(selection: RunReadInput, signal?: AbortSignal) {
+  const apiBaseUrl = process.env.FLOWMARK_API_URL
+  const readKey = process.env.FLOWMARK_READ_KEY
+  if (!apiBaseUrl || !readKey)
+    throw new Error("Configure the server read client")
+  const client = createFlowmarkReadClient({ apiBaseUrl, readKey })
+  try {
+    return await client.readRun(selection, { signal })
+  } catch (error) {
+    if (error instanceof FlowmarkReadError) {
+      console.error(error.code, error.status, error.retryAfterSeconds)
+    }
+    throw error // A denied/unknown read never becomes empty evidence.
+  }
+}
+
+async function comparePeriods(selection: PeriodReadInput) {
+  const apiBaseUrl = process.env.FLOWMARK_API_URL
+  const readKey = process.env.FLOWMARK_READ_KEY
+  if (!apiBaseUrl || !readKey)
+    throw new Error("Configure the server read client")
+  return createFlowmarkReadClient({ apiBaseUrl, readKey }).readPeriod(selection)
+}
+```
+
+The subpath exports `createFlowmarkReadClient`, `FlowmarkReadClient`,
+`FlowmarkReadError` and these DTO types: `RunReadInput`, `RunReadResponse`,
+`RunReadError`, `PeriodReadInput`, `PeriodReadResponse`, `PeriodReadWindow`.
+The error's `code` is a string; preserve unfamiliar future codes as explicit
+failures. `status` is null when no HTTP response was received. The SDK omits
+server/proxy diagnostic messages from its error text.
+
+## Errors and recovery
+
+The wire envelope is `{ version: 1, error: { code, message, retryAfterSeconds } }`.
+HTTP 429 also includes `Retry-After`; the client exposes the envelope's delay.
+The SDK never automatically retries or removes a filter, scope or cursor.
+
+| HTTP      | Code                                            | Recovery                                                                                     |
+| --------- | ----------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| 400       | `INVALID_REQUEST`                               | Correct malformed data, IDs, limits or windows.                                              |
+| 400       | `UNSUPPORTED_VERSION`                           | Use the implemented version; do not silently downgrade.                                      |
+| 400       | `UNSUPPORTED_SELECTION`                         | Choose an implemented kind/section; do not drop filters.                                     |
+| 400       | `INVALID_CURSOR`                                | Explicitly restart the same run after checking the cursor/retention.                         |
+| 401       | `UNAUTHORIZED`                                  | Configure a live project read key; no session or write-key fallback.                         |
+| 403       | `PROJECT_FORBIDDEN`                             | Select a project authorized by that key.                                                     |
+| 404       | `RUN_NOT_FOUND`                                 | Check the run within the authorized project; foreign and missing runs are indistinguishable. |
+| 405 / 415 | `METHOD_NOT_ALLOWED` / `UNSUPPORTED_MEDIA_TYPE` | Use POST with JSON.                                                                          |
+| 413 / 422 | `REQUEST_TOO_LARGE` / `EVIDENCE_TOO_LARGE`      | Explicitly narrow the request/page; no truncated success.                                    |
+| 429       | `RATE_LIMITED`                                  | Wait the supplied delay before an explicit retry of the same question.                       |
+| 503 / 504 | `READ_UNAVAILABLE` / `READ_TIMEOUT`             | Evidence is unknown; explicitly retry the same selection or choose a narrower question.      |
+
+Local failures use `ABORTED`, `NETWORK_ERROR`, `READ_TIMEOUT` or
+`INVALID_RESPONSE`. Local input validation can also reject with `INVALID_REQUEST`,
+`UNAUTHORIZED` or `REQUEST_TOO_LARGE` before sending HTTP. Malformed, oversized
+or mismatched success responses, and non-JSON proxy errors, fail validation.
+They never yield an empty run/page/report.
+
+## Compatibility and evidence boundaries
+
+- Explicit HTTPS API origin/base path; HTTP is allowed only on loopback. A
+  self-hosted path prefix is preserved. URL credentials, query and fragment are
+  rejected. Redirects are disabled, so a redirect cannot forward a read key.
+  Cookies are omitted. API and Studio origins may differ.
+- URL major and body `version` remain 1. Requests reject unknown fields/modes;
+  responses may add fields that clients ignore. Incompatible authority, type,
+  nullability, meaning or cursor changes require a reviewed major version.
+- Run pages default to 50 and allow 1–100 events. Cursors retain database
+  microseconds, are scoped to the authorized run and confer no authority.
+  Deleted anchors return an error. Late arrivals before a cursor need a new
+  traversal; paging is not a frozen export.
+- Requests are at most 8 KiB, responses 64 KiB, each request/client lifetime
+  15 seconds and SQL statements 5 seconds. Service/project/key budgets are
+  3000/600/120 requests per minute across both methods.
+- An existing run with no retained events returns an empty page. Empty period
+  populations have zero counts and null statistics. Those valid empty states
+  differ from missing runs, denied authority and unavailable evidence.
+- `omissions` names intentionally absent payloads or report sections. Period
+  `continuation: null` means a complete aggregate of its selected windows, not
+  a sample page. Missing duration-observation counts remain null.
+- `Running` is the last reported status, not proof of current activity.
+  Completion is not verified business correctness. Comparisons describe
+  application-reported evidence and do not establish causation.

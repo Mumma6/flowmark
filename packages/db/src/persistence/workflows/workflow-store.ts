@@ -1,3 +1,21 @@
+import type {
+  ReferenceJourneyQuery,
+  ReferenceJourneyPage,
+} from "@flowmarkdev/core"
+import { getReferenceJourney } from "./queries/get-reference-journey.js"
+import { getLinkedComparison } from "./queries/get-linked-comparison.js"
+import { getLinkedEvidence } from "./queries/get-linked-evidence.js"
+import type {
+  LinkedComparisonQuery,
+  LinkedComparison,
+  LinkedEvidenceQuery,
+  LinkedEvidencePage,
+} from "@flowmarkdev/core"
+import { getPeriodRead } from "./queries/get-period-read.js"
+import type { PeriodReadInput, PeriodReadResponse } from "@flowmarkdev/core"
+import { getRunRead } from "./queries/get-run-read.js"
+import { InvalidRunReadCursor } from "./public-read-errors.js"
+import type { RunReadInput, RunReadResponse } from "@flowmarkdev/core"
 import { getRunExpectations } from "./queries/get-run-expectations.js"
 import type { RunExpectations } from "@flowmarkdev/core"
 import type { PeerSelection } from "@flowmarkdev/core"
@@ -11,6 +29,7 @@ import {
   MissingRunError,
   InvalidResultQuery,
   provideDatabase,
+  DatabaseCancellation,
 } from "../database.js"
 import { getProjectSnapshot } from "./queries/get-project-snapshot.js"
 import { getWorkflowSummaries } from "./queries/get-workflow-summaries.js"
@@ -59,6 +78,29 @@ import type {
 } from "./types.js"
 
 export interface WorkflowStoreService {
+  readonly linkedComparison: (
+    projectId: string,
+    query: LinkedComparisonQuery,
+  ) => Effect.Effect<LinkedComparison, DatabaseError | InvalidResultQuery>
+  readonly linkedEvidence: (
+    projectId: string,
+    query: LinkedEvidenceQuery,
+  ) => Effect.Effect<LinkedEvidencePage, DatabaseError | InvalidResultQuery>
+  readonly referenceJourney: (
+    projectId: string,
+    query: ReferenceJourneyQuery,
+  ) => Effect.Effect<ReferenceJourneyPage, DatabaseError | InvalidResultQuery>
+  readonly periodRead: (
+    projectId: string,
+    input: PeriodReadInput,
+  ) => Effect.Effect<PeriodReadResponse["report"], DatabaseError>
+  readonly runRead: (
+    projectId: string,
+    input: RunReadInput,
+  ) => Effect.Effect<
+    Pick<RunReadResponse, "summary" | "page">,
+    DatabaseError | MissingRunError | InvalidRunReadCursor
+  >
   readonly expectations: (
     projectId: string,
     runId: string,
@@ -143,8 +185,20 @@ export class WorkflowStore extends Context.Service<WorkflowStore>()(
   "@flowmark/db/WorkflowStore",
   {
     make: Effect.gen(function* () {
-      const provide = provideDatabase(yield* Database)
+      const provide = provideDatabase(
+        yield* Database,
+        yield* DatabaseCancellation,
+      )
       return {
+        linkedComparison: (projectId, query) =>
+          provide(getLinkedComparison(projectId, query)),
+        linkedEvidence: (projectId, query) =>
+          provide(getLinkedEvidence(projectId, query)),
+        referenceJourney: (projectId, query) =>
+          provide(getReferenceJourney(projectId, query)),
+        periodRead: (projectId, input) =>
+          provide(getPeriodRead(projectId, input)),
+        runRead: (projectId, input) => provide(getRunRead(projectId, input)),
         expectations: (projectId, runId) =>
           provide(getRunExpectations(projectId, runId)),
         businessInsights: (projectId, query) =>

@@ -45,7 +45,10 @@ const invalidInputMessage = (cause: unknown) =>
 const parsedInstant = (value: string) =>
   Option.liftPredicate(Date.parse(value), Number.isFinite)
 
-export const mcpToolError = (message: string) => ({
+export const mcpToolError = (message: string, accessUnavailable = false) => ({
+  ...(accessUnavailable
+    ? { _meta: { "io.flowmark/evidence": { state: "access-unavailable" } } }
+    : {}),
   isError: true as const,
   content: [{ type: "text" as const, text: message }],
 })
@@ -71,7 +74,8 @@ export type McpToolFailure =
   | McpConnectionResolveError
   | McpConfigurationError
 
-const toolError = (message: string) => Effect.succeed(mcpToolError(message))
+const toolError = (message: string, accessUnavailable = false) =>
+  Effect.succeed(mcpToolError(message, accessUnavailable))
 
 export const presentMcpTool = <A extends Record<string, unknown>, R>(
   effect: Effect.Effect<A, McpToolFailure, R>,
@@ -83,11 +87,12 @@ export const presentMcpTool = <A extends Record<string, unknown>, R>(
       Unauthorized: () =>
         toolError(
           "This project is not authorized for the current agent connection.",
+          true,
         ),
       AgentAccessContractError: (error) => toolError(error.reason),
       McpToolInputError: (error) => toolError(error.reason),
       McpToolReadError: (error) => toolError(error.reason),
-      McpConnectionResolveError: (error) => toolError(error.reason),
+      McpConnectionResolveError: (error) => toolError(error.reason, true),
       McpConfigurationError: (error) => toolError(error.reason),
     }),
   )

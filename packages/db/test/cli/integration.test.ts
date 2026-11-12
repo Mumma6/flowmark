@@ -35,6 +35,28 @@ const failure = async <A>(
     onSuccess: () => assert.fail("expected a refusal"),
   })
 
+const waitUntil = Effect.fn("test.waitUntil")((ready: () => boolean) =>
+  Effect.whileLoop({
+    while: () => !ready(),
+    body: () => Effect.sleep("10 millis"),
+    step: () => {},
+  }).pipe(Effect.timeout("5 seconds")),
+)
+
+// Opening a file makes it visible before writeFileSync finishes writing. Publish
+// readiness atomically so the test cannot interpret an empty PID as Number("") = 0.
+const interruptibleChild = `
+const fs = require("node:fs");
+const file = process.argv[1];
+process.on("SIGTERM", () => {
+  fs.writeFileSync(file + ".stopped", String(process.pid));
+  process.exit(0);
+});
+fs.writeFileSync(file + ".ready", String(process.pid));
+fs.renameSync(file + ".ready", file);
+setInterval(() => {}, 1000);
+`
+
 test("reports require executed database cases and reject skips, missing cases, or failures", async () => {
   const tap =
     expectedDatabaseCases
@@ -151,13 +173,10 @@ test("command failures preserve the original exit code and redact saved output",
 
 test("interruption terminates the owned child process before resource cleanup finishes", async (t) => {
   const directory = mkdtempSync(join(tmpdir(), "flowmark-interrupt-test-"))
-  t.after(() => rmSync(directory, { recursive: true, force: true }))
   const pidFile = join(directory, "pid")
   const controller = new AbortController()
-  const script =
-    'const fs = require("node:fs"); process.on("SIGTERM", () => { fs.writeFileSync(process.argv[1] + ".stopped", String(process.pid)); process.exit(0) }); fs.writeFileSync(process.argv[1], String(process.pid)); setInterval(() => {}, 1000)'
   const running = Effect.runPromise(
-    integrationCommand(process.execPath, ["-e", script, pidFile], {
+    integrationCommand(process.execPath, ["-e", interruptibleChild, pidFile], {
       cwd: directory,
       env: process.env,
       detached: true,
@@ -165,30 +184,30 @@ test("interruption terminates the owned child process before resource cleanup fi
     { signal: controller.signal },
   )
   const rejected = assert.rejects(running)
-  for (let attempt = 0; attempt < 100 && !existsSync(pidFile); attempt++) {
-    await new Promise((resolve) => setTimeout(resolve, 10))
-  }
-  assert.ok(existsSync(pidFile))
-  const pid = Number(readFileSync(pidFile, "utf8"))
+  t.after(async () => {
+    controller.abort()
+    await rejected
+    rmSync(directory, { recursive: true, force: true })
+  })
+  await Effect.runPromise(waitUntil(() => existsSync(pidFile)))
+  const pid = readFileSync(pidFile, "utf8")
+  assert.match(pid, /^[1-9]\d*$/)
   controller.abort()
   await rejected
   // Linux may retain an exited orphan's zombie PID until init reaps it.
-  assert.equal(readFileSync(pidFile + ".stopped", "utf8"), String(pid))
+  assert.equal(readFileSync(pidFile + ".stopped", "utf8"), pid)
 })
 
 test("interruption also stops descendants after their process-group leader has exited", async (t) => {
   const directory = mkdtempSync(join(tmpdir(), "flowmark-descendants-test-"))
-  t.after(() => rmSync(directory, { recursive: true, force: true }))
   const pidFile = join(directory, "pid")
   const controller = new AbortController()
-  const script =
-    'const fs = require("node:fs"); process.on("SIGTERM", () => { fs.writeFileSync(process.argv[1] + ".stopped", String(process.pid)); process.exit(0) }); fs.writeFileSync(process.argv[1], String(process.pid)); setInterval(() => {}, 1000)'
   const running = Effect.runPromise(
     integrationCommand(
       process.execPath,
       [
         "-e",
-        `require("node:child_process").spawn(process.execPath, ["-e", ${JSON.stringify(script)}, process.argv[1]], {stdio:"inherit"}); setTimeout(() => process.exit(0), 20)`,
+        `const fs = require("node:fs"); process.on("exit", () => { fs.writeFileSync(process.argv[1] + ".leader-ready", String(process.pid)); fs.renameSync(process.argv[1] + ".leader-ready", process.argv[1] + ".leader") }); require("node:child_process").spawn(process.execPath, ["-e", ${JSON.stringify(interruptibleChild)}, process.argv[1]], {stdio:"inherit"}); process.exit(0)`,
         pidFile,
       ],
       {
@@ -200,18 +219,39 @@ test("interruption also stops descendants after their process-group leader has e
     { signal: controller.signal },
   )
   const rejected = assert.rejects(running)
-  for (let attempt = 0; attempt < 100 && !existsSync(pidFile); attempt++) {
-    await new Promise((resolve) => setTimeout(resolve, 10))
-  }
-  assert.ok(existsSync(pidFile))
-  const pid = Number(readFileSync(pidFile, "utf8"))
-  await new Promise((resolve) => setTimeout(resolve, 100))
+  t.after(async () => {
+    controller.abort()
+    await rejected
+    rmSync(directory, { recursive: true, force: true })
+  })
+  await Effect.runPromise(
+    waitUntil(() => existsSync(pidFile) && existsSync(pidFile + ".leader")),
+  )
+  const leader = readFileSync(pidFile + ".leader", "utf8")
+  assert.match(leader, /^[1-9]\d*$/)
+  // Prove the group leader has actually exited/reaped before interrupting its
+  // still-running descendant. A fixed delay cannot establish this under CI load.
+  await Effect.runPromise(
+    waitUntil(() =>
+      Result.try(() => process.kill(Number(leader), 0)).pipe(
+        Result.match({
+          onSuccess: () => false,
+          onFailure: (error) => {
+            assert.equal((error as NodeJS.ErrnoException).code, "ESRCH")
+            return true
+          },
+        }),
+      ),
+    ),
+  )
+  const pid = readFileSync(pidFile, "utf8")
+  assert.match(pid, /^[1-9]\d*$/)
   controller.abort()
   await rejected
   // Linux may retain an exited orphan's zombie PID until init reaps it.
   // Acknowledged termination plus closed inherited pipes proves the owned
   // descendant stopped without depending on the host's reaping schedule.
-  assert.equal(readFileSync(pidFile + ".stopped", "utf8"), String(pid))
+  assert.equal(readFileSync(pidFile + ".stopped", "utf8"), pid)
 })
 
 test("cleanup uses full IDs and the test profile, and accepts Docker's missing-network response", async (t) => {

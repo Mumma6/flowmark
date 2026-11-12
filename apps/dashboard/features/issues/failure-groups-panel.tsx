@@ -13,8 +13,8 @@ import {
 import Link from "next/link"
 import { formatTimestamp } from "../shared/format"
 import { failedRunsPath } from "../period/period-presentation"
-import { FailureGroupHandoff } from "../runs/failure-group-handoff"
-import { runInvestigationPath } from "../runs/investigation-navigation"
+import { FailureGroupHandoff } from "../runs/handoff/failure-group-handoff"
+import { runInvestigationPath } from "../runs/investigation/investigation-navigation"
 
 export type FailureGroupRow = {
   readonly workflow: string

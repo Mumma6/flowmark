@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest"
 import {
   businessEvidencePath,
   selectBusinessOutcomes,
-} from "../features/results/business-outcomes-model"
-import type { ResultDeclaration } from "../features/results/result-presentation"
+} from "../features/results/outcomes/business-outcomes-model"
+import type { ResultDeclaration } from "../features/results/presentation/result-presentation"
 import type { RouterOutputs } from "../features/platform/api-types"
 
 const declarations: ResultDeclaration[] = [

@@ -1,5 +1,5 @@
 import { Suspense } from "react"
-import { AgentConsentPage } from "../../../../features/connect/agent-consent-page"
+import { AgentConsentPage } from "../../../../features/connect/consent/agent-consent-page"
 export const metadata = {
   title: "Authorize agent | Flowmark",
   referrer: "no-referrer" as const,
