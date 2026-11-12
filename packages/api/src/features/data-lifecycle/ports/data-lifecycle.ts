@@ -53,7 +53,7 @@ export class LifecycleReauthentication extends Context.Service<
         readonly sessionId: string
         readonly verifiedAt: number
       },
-      Unauthorized | PersistenceError
+      Unauthorized | InvalidInput | PersistenceError
     >
   }
 >()("@flowmark/api/LifecycleReauthentication") {}

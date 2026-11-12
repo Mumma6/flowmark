@@ -21,7 +21,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
       const files = pipe(
         readdirSync(directory),
         Array.filter(
-          (name) => /^00\d\d_.*\.sql$/.test(name) && name.slice(0, 4) <= "0025",
+          (name) => /^00\d\d_.*\.sql$/.test(name) && name.slice(0, 4) <= "0026",
         ),
         Array.sort(Order.String),
       )
@@ -56,6 +56,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         )
       const projectId = randomUUID()
       const workspaceId = randomUUID()
+      const userId = randomUUID()
       try {
         await connection.db.execute(sql`CREATE SCHEMA ${schema}`)
         await Effect.runPromise(
@@ -69,6 +70,9 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         )
         await connection.db.execute(
           sql`INSERT INTO ${schema}.project_api_keys (project_id, key_hash, permission) VALUES (${projectId}::uuid, 'synthetic-legacy-hash', 'write')`,
+        )
+        await connection.db.execute(
+          sql`INSERT INTO ${schema}."user" (id, name, email, email_verified, created_at, updated_at) VALUES (${userId}, 'Legacy synthetic user', ${`${userId}@example.test`}, true, now(), now())`,
         )
         await Effect.runPromise(
           Effect.forEach(upgrade, migrate, { discard: true }),
@@ -93,6 +97,10 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
           sql`SELECT column_default AS version FROM information_schema.columns WHERE table_schema = ${namespace} AND table_name = 'data_lifecycle_operations' AND column_name = 'contract_version'`,
         )
         expect(version.version).toBe("1")
+        const [user] = await connection.db.execute<{ pending: string | null }>(
+          sql`SELECT lifecycle_operation_id AS pending FROM ${schema}."user" WHERE id = ${userId}`,
+        )
+        expect(user.pending).toBeNull()
         // No foreign keys, types or trigger functions reference the live public schema.
         const [foreign] = await connection.db.execute<{ count: number }>(
           sql`SELECT count(*)::int AS count FROM pg_constraint c JOIN pg_class child ON child.oid = c.conrelid JOIN pg_namespace n ON n.oid = child.relnamespace JOIN pg_class parent ON parent.oid = c.confrelid JOIN pg_namespace pn ON pn.oid = parent.relnamespace WHERE c.contype = 'f' AND n.nspname = ${namespace} AND pn.nspname <> ${namespace}`,

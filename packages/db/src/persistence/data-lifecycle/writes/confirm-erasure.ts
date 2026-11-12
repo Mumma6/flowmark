@@ -40,7 +40,7 @@ export const confirmErasure = Effect.fn("confirmErasure")(function* (
             .for("update"),
         )
         if (operation && operation.contractVersion !== 1) {
-          return yield* new LifecycleRejected({ reason: "Unavailable" })
+          return yield* new LifecycleRejected({ reason: "UnsupportedVersion" })
         }
         if (!operation) {
           return yield* new LifecycleRejected({ reason: "Unauthorized" })

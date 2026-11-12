@@ -1,3 +1,4 @@
+import { lockActiveProjectOwners } from "../account-lifecycle/active-account.js"
 import { and, eq, isNull } from "drizzle-orm"
 import { Effect } from "effect"
 import { projects } from "../../schema/index.js"
@@ -26,6 +27,7 @@ export const withActiveProject = Effect.fn("withActiveProject")(function* <
       }),
     (tx) =>
       Effect.gen(function* () {
+        yield* lockActiveProjectOwners(tx, projectId)
         const rows = yield* runQuery(DatabaseOperation.ProjectReadFence, () =>
           tx
             .select({ id: projects.id })

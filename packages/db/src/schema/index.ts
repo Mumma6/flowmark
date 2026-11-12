@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm"
 export { dataLifecycleOperations } from "./data-lifecycle.js"
+export { accountLifecycleOperations } from "./account-lifecycle.js"
 import type { WorkflowAttempt, WorkflowRetryReference } from "@flowmarkdev/core"
 import {
   type AnyPgColumn,

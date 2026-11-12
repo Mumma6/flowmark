@@ -1,5 +1,4 @@
-import { TRPCError } from "@trpc/server"
-import { serverOrigins } from "../../server-env"
+import { lifecycleMutation as mutation } from "./lifecycle-origin"
 import { Effect, Redacted, Schema } from "effect"
 import {
   ErasureScopeSchema,
@@ -20,16 +19,6 @@ const Target = Schema.Struct({ projectId: UuidSchema })
 const Operation = Schema.Struct({
   projectId: UuidSchema,
   operationId: UuidSchema,
-})
-const mutation = t.procedure.use(async ({ ctx, next }) => {
-  const { dashboardOrigin } = await Effect.runPromise(serverOrigins())
-  if (ctx.request.headers.get("origin") !== dashboardOrigin) {
-    throw new TRPCError({
-      code: "FORBIDDEN",
-      message: "A trusted Studio origin is required.",
-    })
-  }
-  return next()
 })
 export const dataLifecycleRouter = t.router({
   preview: mutation

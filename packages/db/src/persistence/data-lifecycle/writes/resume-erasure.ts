@@ -48,7 +48,7 @@ export const resumeErasure = Effect.fn("resumeErasure")(function* (
           return yield* new LifecycleRejected({ reason: "Unauthorized" })
         }
         if (known.contractVersion !== 1) {
-          return yield* new LifecycleRejected({ reason: "Unavailable" })
+          return yield* new LifecycleRejected({ reason: "UnsupportedVersion" })
         }
         if (known.state === "live_data_deleted") {
           return known
@@ -90,9 +90,15 @@ export const resumeErasure = Effect.fn("resumeErasure")(function* (
               .where(eq(workspaces.id, project.workspaceId))
               .for("update"),
           )
-          yield* lifecycleQuery(() =>
-            tx.delete(projects).where(eq(projects.id, projectId)),
+          const deleted = yield* lifecycleQuery(() =>
+            tx
+              .delete(projects)
+              .where(eq(projects.id, projectId))
+              .returning({ id: projects.id }),
           )
+          if (deleted.length !== 1) {
+            return yield* new LifecycleRejected({ reason: "Unavailable" })
+          }
           yield* lifecycleQuery(() =>
             tx
               .delete(workspaces)

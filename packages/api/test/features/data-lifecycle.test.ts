@@ -74,6 +74,7 @@ describe("lifecycle trust boundary", () => {
   it.each([
     { ...identity, userId: "foreign" },
     { ...identity, sessionId: "" },
+    { ...identity, verifiedAt: Number.NaN },
     { ...identity, verifiedAt: Date.now() - 600_000 },
     { ...identity, verifiedAt: Date.now() + 600_000 },
   ])(

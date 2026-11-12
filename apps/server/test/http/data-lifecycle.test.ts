@@ -144,7 +144,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
           confirmation: "Booking setup",
           password: "wrong password",
         }),
-      ).rejects.toThrow("Sign in")
+      ).rejects.toThrow("Current password")
       const [project] = await connection.db
         .select()
         .from(projects)
@@ -308,60 +308,48 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         .from(workflowRuns)
         .innerJoin(workflows, eq(workflows.id, workflowRuns.workflowId))
         .where(eq(workflows.projectId, value.projectId))
-      await connection.db
-        .insert(workflowResultDeclarations)
-        .values({
+      await connection.db.insert(workflowResultDeclarations).values({
+        projectId: value.projectId,
+        workflow: "booking.rich",
+        revision: "v1",
+        declaration: { revision: "v1", fields: [] },
+      })
+      await connection.db.insert(workflowSearchFields).values({
+        projectId: value.projectId,
+        workflow: "booking.rich",
+        fields: [],
+      })
+      await connection.db.insert(workflowDefinitionImports).values({
+        projectId: value.projectId,
+        actorId: value.userId,
+        workflow: "booking.rich",
+        source: "synthetic",
+        manifestFingerprint: "synthetic-manifest",
+        baseFingerprint: "synthetic-base",
+        addedSearchKeys: [],
+      })
+      await connection.db.insert(savedInvestigations).values({
+        projectId: value.projectId,
+        ownerId: value.userId,
+        title: "Synthetic selection",
+        selection: {
+          version: 1,
+          kind: "run",
           projectId: value.projectId,
-          workflow: "booking.rich",
-          revision: "v1",
-          declaration: { revision: "v1", fields: [] },
-        })
-      await connection.db
-        .insert(workflowSearchFields)
-        .values({
-          projectId: value.projectId,
-          workflow: "booking.rich",
-          fields: [],
-        })
-      await connection.db
-        .insert(workflowDefinitionImports)
-        .values({
-          projectId: value.projectId,
-          actorId: value.userId,
-          workflow: "booking.rich",
-          source: "synthetic",
-          manifestFingerprint: "synthetic-manifest",
-          baseFingerprint: "synthetic-base",
-          addedSearchKeys: [],
-        })
-      await connection.db
-        .insert(savedInvestigations)
-        .values({
-          projectId: value.projectId,
-          ownerId: value.userId,
-          title: "Synthetic selection",
-          selection: {
-            version: 1,
-            kind: "run",
-            projectId: value.projectId,
-            runId: ownedRuns[0].id,
-            section: "events",
-            limit: 7,
-          },
-        })
-      await connection.db
-        .insert(agentAccessGrantProjects)
-        .values({
-          projectId: value.projectId,
-          authorizationCodeId: randomUUID(),
-        })
-      await connection.db
-        .insert(projectBrowserKeys)
-        .values({
-          projectId: value.projectId,
-          keyHash: hashApiKey(randomUUID()),
-          allowedOrigins: ["http://localhost:3001"],
-        })
+          runId: ownedRuns[0].id,
+          section: "events",
+          limit: 7,
+        },
+      })
+      await connection.db.insert(agentAccessGrantProjects).values({
+        projectId: value.projectId,
+        authorizationCodeId: randomUUID(),
+      })
+      await connection.db.insert(projectBrowserKeys).values({
+        projectId: value.projectId,
+        keyHash: hashApiKey(randomUUID()),
+        allowedOrigins: ["http://localhost:3001"],
+      })
       const preview = await caller(value).dataLifecycle.preview({
         projectId: value.projectId,
         scope: { kind: "project" },

@@ -1,7 +1,8 @@
 import { isAPIError } from "better-auth/api"
-import { Effect, Redacted } from "effect"
+import { Effect, Match, Redacted } from "effect"
 import {
   LifecycleReauthentication,
+  InvalidInput,
   PersistenceError,
   Unauthorized,
 } from "@flowmark/api"
@@ -36,9 +37,26 @@ export const lifecycleReauthentication = (
           body: { password: Redacted.value(password) },
         }),
       catch: (cause) =>
-        isAPIError(cause) && [400, 401, 403].includes(cause.statusCode)
-          ? new Unauthorized({ permission: "write" })
-          : new PersistenceError({ operation: "lifecycle-reauth", cause }),
+        Match.value(cause).pipe(
+          Match.when(
+            (failure: unknown) =>
+              isAPIError(failure) && failure.statusCode === 400,
+            () =>
+              new InvalidInput({ cause: "Current password was not accepted." }),
+          ),
+          Match.when(
+            (failure: unknown) =>
+              isAPIError(failure) && [401, 403].includes(failure.statusCode),
+            () => new Unauthorized({ permission: "write" }),
+          ),
+          Match.orElse(
+            (failure) =>
+              new PersistenceError({
+                operation: "lifecycle-reauth",
+                cause: failure,
+              }),
+          ),
+        ),
     })
     return {
       userId: identity.user.id,

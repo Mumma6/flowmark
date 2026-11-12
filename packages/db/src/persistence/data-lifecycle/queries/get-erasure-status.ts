@@ -1,3 +1,4 @@
+import { LifecycleRejected } from "../types.js"
 import { and, desc, eq, gt, or, sql } from "drizzle-orm"
 import { Effect } from "effect"
 import { dataLifecycleOperations } from "../../../schema/data-lifecycle.js"
@@ -30,5 +31,8 @@ export const getErasureStatus = Effect.fn("getErasureStatus")(function* (
       .orderBy(desc(dataLifecycleOperations.createdAt))
       .limit(1),
   )
+  if (operation && operation.contractVersion !== 1) {
+    return yield* new LifecycleRejected({ reason: "UnsupportedVersion" })
+  }
   return operation ?? null
 })

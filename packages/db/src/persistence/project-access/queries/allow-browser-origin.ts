@@ -1,3 +1,4 @@
+import { activeProjectOwners } from "../../account-lifecycle/active-account.js"
 import { and, eq, isNull, sql } from "drizzle-orm"
 import { Effect } from "effect"
 import { projectBrowserKeys, projects } from "../../../schema/index.js"
@@ -16,6 +17,7 @@ export const browserOriginAllowed = Effect.fn("browserOriginAllowed")(
         .where(
           and(
             isNull(projects.lifecycleOperationId),
+            activeProjectOwners(sql`${projects.id}`),
             eq(projectBrowserKeys.credentialEpoch, projects.credentialEpoch),
             sql`${projectBrowserKeys.allowedOrigins} @> ${JSON.stringify([origin])}::jsonb`,
           ),

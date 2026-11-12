@@ -1,4 +1,5 @@
-import { and, eq, gt, isNull, or } from "drizzle-orm"
+import { activeProjectOwners } from "../../account-lifecycle/active-account.js"
+import { sql, and, eq, gt, isNull, or } from "drizzle-orm"
 import { Effect } from "effect"
 import {
   agentAccessGrantProjects,
@@ -47,6 +48,7 @@ export const getDelegatedReaderProject = Effect.fn("getDelegatedReaderProject")(
             and(
               eq(oauthRefreshToken.userId, input.userId),
               isNull(projects.lifecycleOperationId),
+              activeProjectOwners(sql`${projects.id}`),
               eq(oauthRefreshToken.clientId, input.clientId),
               isNull(oauthRefreshToken.revoked),
               or(

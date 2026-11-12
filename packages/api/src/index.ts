@@ -157,3 +157,5 @@ export {
   type ErasureScope,
   type ErasureOperation,
 } from "./features/data-lifecycle/contracts.js"
+
+export { ManageAccountLifecycle } from "./features/data-lifecycle/use-cases/manage-account-lifecycle.js"

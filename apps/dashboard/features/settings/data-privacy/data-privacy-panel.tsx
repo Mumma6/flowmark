@@ -16,6 +16,7 @@ import {
 } from "@flowmark/ui"
 import { Array, pipe } from "effect"
 import { useState, type FormEvent } from "react"
+import Link from "next/link"
 import { useProject } from "../../projects/project-context"
 import { useDataErasure } from "./use-data-erasure"
 
@@ -359,7 +360,13 @@ export function DataPrivacyPanel() {
           available.
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="grid gap-5">
+        <Link
+          href="/data-privacy"
+          className="text-sm text-primary underline underline-offset-4"
+        >
+          Account deletion and cleanup recovery
+        </Link>
         {current ? (
           <ProjectErasure
             key={current.id}

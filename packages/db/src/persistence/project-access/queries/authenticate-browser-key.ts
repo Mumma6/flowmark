@@ -1,4 +1,5 @@
-import { and, eq, isNull } from "drizzle-orm"
+import { activeProjectOwners } from "../../account-lifecycle/active-account.js"
+import { sql, and, eq, isNull } from "drizzle-orm"
 import { Effect } from "effect"
 import { projectBrowserKeys, projects } from "../../../schema/index.js"
 import { Database, hashApiKey } from "../../database.js"
@@ -22,6 +23,7 @@ export const authenticateBrowserKey = Effect.fn("authenticateBrowserKey")(
             eq(projectBrowserKeys.keyHash, hashApiKey(key)),
             eq(projectBrowserKeys.credentialEpoch, projects.credentialEpoch),
             isNull(projects.lifecycleOperationId),
+            activeProjectOwners(sql`${projects.id}`),
           ),
         )
         .limit(1),

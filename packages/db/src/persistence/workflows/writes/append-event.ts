@@ -1,3 +1,4 @@
+import { lockActiveProjectOwners } from "../../account-lifecycle/active-account.js"
 import { runTransaction } from "../../run-transaction.js"
 import { ExpectationObservationClock } from "../observation-clock.js"
 import { isExpectationEvent } from "@flowmarkdev/core"
@@ -84,6 +85,7 @@ export const appendEvent = Effect.fn("appendEvent")(function* (
     (use) => eventTransaction(db, fixtureTransaction, use),
     (tx) =>
       Effect.gen(function* () {
+        yield* lockActiveProjectOwners(tx, projectId)
         const [project] = yield* runQuery(DatabaseOperation.AppendEvent, () =>
           tx
             .select()

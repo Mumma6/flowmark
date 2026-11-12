@@ -12,4 +12,5 @@ export class LifecycleRejected extends Data.TaggedError("LifecycleRejected")<{
     | "StalePreview"
     | "Unavailable"
     | "ConfirmationRequired"
+    | "UnsupportedVersion"
 }> {}

@@ -1,9 +1,7 @@
+import { verifyLifecycleIdentity } from "../verify-lifecycle-identity.js"
 import { Context, Effect, Layer, type Redacted } from "effect"
-import { ManagementRateLimited, Unauthorized } from "../../../errors.js"
-import {
-  DataLifecycle,
-  LifecycleReauthentication,
-} from "../ports/data-lifecycle.js"
+import { ManagementRateLimited } from "../../../errors.js"
+import { DataLifecycle } from "../ports/data-lifecycle.js"
 
 export class ManageDataLifecycle extends Context.Service<ManageDataLifecycle>()(
   "@flowmark/api/ManageDataLifecycle",
@@ -20,17 +18,7 @@ export class ManageDataLifecycle extends Context.Service<ManageDataLifecycle>()(
         if (!(yield* lifecycle.reauthenticationBudget(userId))) {
           return yield* new ManagementRateLimited({ retryAfter: 900 })
         }
-        const identity = yield* (yield* LifecycleReauthentication).verify(
-          password,
-        )
-        if (
-          identity.userId !== userId ||
-          !identity.sessionId ||
-          identity.verifiedAt > Date.now() ||
-          Date.now() - identity.verifiedAt > 300_000
-        ) {
-          return yield* new Unauthorized({ permission: "write" })
-        }
+        yield* verifyLifecycleIdentity(userId, password)
         return yield* lifecycle.confirm(
           userId,
           projectId,

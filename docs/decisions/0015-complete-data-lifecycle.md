@@ -134,8 +134,10 @@ clear cyclic expectation references in bounded steps, and explicitly drain
 high-cardinality children before deleting their parents. Account cleanup
 uses this primitive, invalidates normal sessions/recovery at fencing and exposes
 only a random, hashed-at-rest, status/resume capability bound to that operation;
-it cannot read evidence, change scope or create resources. Capability expires
-after 24 hours; authenticated operator recovery remains possible without email
+it cannot read evidence, change scope or create resources. The UI prepares and saves this capability at preview, before any access is
+disabled; it is admitted only after confirmation, including lost-response
+recovery through the standalone privacy page. Capability expires
+after 24 hours from confirmation; authenticated operator recovery remains possible without email
 matching. Finish credentials, tokens, verification and user deletion last.
 Provider HTTP, callback and server deletion entry points must all use or reject
 in favor of this coordinator. A completion notice is optional and is never a
@@ -151,6 +153,7 @@ rules, not assertions that all physical expiry jobs already exist.
 | Current table/object                                    | Authority/lifetime                      | Erasure and safe export treatment                                                                                                                                                           |
 | ------------------------------------------------------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `data_lifecycle_operations` (TASK-007 addition)         | immutable requester/target + cleanup    | Versioned scope/progress; live owner only, terminal redaction and thirty-day expiry; unfinished work stays fenced; excluded from telemetry/project exports                                  |
+| `account_lifecycle_operations` (TASK-008 addition)      | immutable user + cleanup                | Versioned parent progress and hashed 24-hour recovery capability; no profile FK; no email/payload; thirty-day terminal expiry; unfinished work stays fenced; excluded from exports          |
 | `workspaces`                                            | grouping                                | Delete only if empty under lock; project export includes grouping name only                                                                                                                 |
 | `projects`                                              | explicit sole owner / P                 | Delete last; export own metadata                                                                                                                                                            |
 | `workflows`                                             | project / P                             | Retain on telemetry erase; delete with project; export definitions                                                                                                                          |
@@ -190,7 +193,14 @@ rules, not assertions that all physical expiry jobs already exist.
 
 No persisted SQL views/materialized views exist at this baseline. API/Studio
 summaries, comparisons and timelines are queries over the owned rows, not extra
-retention stores. New schema objects must extend this inventory before rollout.
+retention stores. `flowmark_guard_project_lifecycle` and `flowmark_guard_account_lifecycle`
+serialize admission with project/account fences. They retain leaf-first cleanup
+and original projection triggers. Account erasure may null only its import-receipt
+actor reference in another fenced project, with all other fields unchanged.
+Revocation may also remove its own subject/client grant bindings in an
+independently fenced project; it cannot create bindings or change project data.
+
+New schema objects must extend this inventory before rollout.
 
 ## Operational copies, expiry and restore
 

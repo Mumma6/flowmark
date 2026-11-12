@@ -1,4 +1,5 @@
-import { and, eq, isNull } from "drizzle-orm"
+import { activeProjectOwners } from "../../account-lifecycle/active-account.js"
+import { sql, and, eq, isNull } from "drizzle-orm"
 import { Effect } from "effect"
 import { projectMembers, projects } from "../../../schema/index.js"
 import { Database } from "../../database.js"
@@ -18,6 +19,7 @@ export const getProjectForUser = Effect.fn("getProjectForUser")(function* (
         and(
           eq(projectMembers.userId, userId),
           isNull(projects.lifecycleOperationId),
+          activeProjectOwners(sql`${projects.id}`),
         ),
       )
       .limit(1),

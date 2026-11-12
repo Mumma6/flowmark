@@ -11,6 +11,8 @@ import { DataLifecycle } from "../ports/data-lifecycle.js"
 import type { ErasureOperation } from "../contracts.js"
 
 const messages = {
+  UnsupportedVersion:
+    "Cleanup requires a compatible server version. Contact the operator; access remains locked.",
   SharedProject:
     "Deletion is unavailable for shared projects until ownership and transfer are supported.",
   StalePreview:
