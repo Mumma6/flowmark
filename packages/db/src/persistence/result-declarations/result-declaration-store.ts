@@ -1,6 +1,7 @@
 import { Context, Effect, Layer } from "effect"
 import { DatabaseCancellation, Database, provideDatabase } from "../database.js"
 import { getResultDeclarations } from "./queries/get-result-declarations.js"
+import { getResultDeclaration } from "./queries/get-result-declaration.js"
 import { createResultDeclaration } from "./writes/create-result-declaration.js"
 import { getSearchFields } from "./queries/get-search-fields.js"
 import { setSearchFields } from "./writes/set-search-fields.js"
@@ -14,6 +15,8 @@ export class ResultDeclarationStore extends Context.Service<ResultDeclarationSto
         yield* DatabaseCancellation,
       )
       return {
+        find: (projectId: string, workflow: string, revision: string) =>
+          provide(getResultDeclaration(projectId, workflow, revision)),
         searchFields: (projectId: string, workflow: string) =>
           provide(getSearchFields(projectId, workflow)),
         setSearchFields: (
