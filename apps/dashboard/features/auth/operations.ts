@@ -1,4 +1,9 @@
 import { Context, Data, Effect } from "effect"
+import {
+  AccountFormError,
+  normalizeAccountName,
+  validatePasswordChange,
+} from "../settings/account-form"
 
 export class DashboardAuthError extends Data.TaggedError("DashboardAuthError")<{
   readonly operation: string
@@ -47,18 +52,31 @@ export const authenticate = Effect.fn("Dashboard.authenticate")(function* (
   return mode === "sign-up" ? "/settings?section=projects" : "/"
 })
 
+const formFailure = (error: AccountFormError) =>
+  new DashboardAuthError({
+    operation: error.form === "name" ? "updateName" : "changePassword",
+    reason: error.message,
+  })
+
 export const updateAccountName = Effect.fn("Dashboard.updateAccountName")(
   function* (name: string) {
+    const validName = yield* normalizeAccountName(name).pipe(
+      Effect.mapError(formFailure),
+    )
     const auth = yield* BrowserAuth
-    yield* auth.updateName(name)
+    yield* auth.updateName(validName)
+    return validName
   },
 )
 
 export const changeAccountPassword = Effect.fn(
   "Dashboard.changeAccountPassword",
 )(function* (input: PasswordInput) {
+  const passwords = yield* validatePasswordChange(input).pipe(
+    Effect.mapError(formFailure),
+  )
   const auth = yield* BrowserAuth
-  yield* auth.changePassword(input)
+  yield* auth.changePassword(passwords)
 })
 
 export const signOut = Effect.fn("Dashboard.signOut")(function* () {
