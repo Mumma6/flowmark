@@ -1,6 +1,6 @@
 # ADR 0012: Explicit metadata preview and revision ownership
 
-- Status: proposed for maintainer review; read-only preview implemented
+- Status: accepted by maintainer on 2026-11-12; read-only preview implemented
 - Date: 2026-11-11
 - Task: Product TASK-002.1
 - Baseline: `84536d7` on `staging` (PR #175 merged)
@@ -14,7 +14,11 @@ application's code. No new SDK runtime model, dependency, schema framework or
 application execution responsibility is needed. See the
 [worked request and exact response contract](../definition-imports.md).
 
-## Ownership and conflict contract for review
+## Accepted ownership and conflict contract
+
+The maintainer approved this contract on 12 November 2026 with “Approve the
+contract.” This accepts the semantics for the next implementation task; it does
+not authorize hosted operations, merge or deployment.
 
 1. Each newly created result revision has one immutable provenance: Studio or
    an explicit code `source`. A source is a provenance name, never a credential.
@@ -61,7 +65,7 @@ transactional freshness guarantee.
 
 ## Required follow-up before enabling writes
 
-After maintainer acceptance of this contract, Product TASK-002.2 must persist
+Product TASK-002.2 must persist
 provenance and audit receipts with the metadata, enforce the Studio guards
 above, and reauthorize and reread under a transaction. Compare both manifest
 and base fingerprints with the reviewed request, reject stale/conflicting
@@ -72,6 +76,6 @@ An error must not leave partial declarations or provenance behind.
 
 This ADR does not assert that ownership storage or write guards already exist.
 No migration, hosted operation or write-enabled import is part of TASK-002.1.
-Its ownership/synchronization acceptance remains pending maintainer review;
-merging the read-only implementation is not an implicit approval of hosted
-operations. Record an explicit decision here before implementing TASK-002.2.
+The ownership/synchronization contract is accepted; write-enabled implementation
+remains separate. Merging the read-only implementation is not an implicit
+approval of hosted operations.

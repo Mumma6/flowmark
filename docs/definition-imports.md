@@ -8,7 +8,7 @@ reuses existing result/search declarations; it adds no execution behavior.
 This increment provides **preview only**. It does not save definitions, claim
 ownership, enable a lookup or change displayed results. Saving a reviewed import
 and exposing it in Studio are separate increments. The ownership and future
-apply contract is proposed in [ADR 0012](decisions/0012-explicit-definition-imports.md).
+apply contract is accepted in [ADR 0012](decisions/0012-explicit-definition-imports.md).
 
 ## Explicit request
 
