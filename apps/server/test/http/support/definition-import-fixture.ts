@@ -13,6 +13,7 @@ export const createDefinitionImportFixture = Effect.fn(
   "test.createDefinitionImportFixture",
 )(function* (db: FlowmarkDatabase) {
   const auth = yield* getAuth()
+  const password = randomUUID()
   const registered = yield* Effect.promise(() =>
     auth.handler(
       new Request("http://localhost:3001/api/auth/sign-up/email", {
@@ -24,7 +25,7 @@ export const createDefinitionImportFixture = Effect.fn(
         body: JSON.stringify({
           name: "Definition fixture",
           email: `definitions-${randomUUID()}@example.test`,
-          password: randomUUID(),
+          password,
         }),
       }),
     ),
@@ -70,6 +71,7 @@ export const createDefinitionImportFixture = Effect.fn(
   )
   return {
     cookie,
+    password,
     userId: session.user.id,
     projectId: primary.projectId,
     foreignProjectId: foreign.projectId,

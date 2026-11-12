@@ -1,3 +1,4 @@
+import { withActiveProject } from "../data-lifecycle/with-active-project.js"
 import type {
   ReferenceJourneyQuery,
   ReferenceJourneyPage,
@@ -27,6 +28,7 @@ import {
   Database,
   DatabaseError,
   MissingRunError,
+  IngestionRejected,
   InvalidResultQuery,
   provideDatabase,
   DatabaseCancellation,
@@ -113,7 +115,11 @@ export interface WorkflowStoreService {
     projectId: string,
     eventId: string,
     event: WorkflowEvent,
-  ) => Effect.Effect<AppendDisposition, DatabaseError | MissingRunError>
+    credential?: { readonly kind: "api" | "browser"; readonly keyHash: string },
+  ) => Effect.Effect<
+    AppendDisposition,
+    DatabaseError | MissingRunError | IngestionRejected
+  >
   readonly snapshot: (
     projectId: string,
   ) => Effect.Effect<ProjectSnapshot, DatabaseError>
@@ -191,48 +197,121 @@ export class WorkflowStore extends Context.Service<WorkflowStore>()(
       )
       return {
         linkedComparison: (projectId, query) =>
-          provide(getLinkedComparison(projectId, query)),
+          provide(
+            withActiveProject(projectId, getLinkedComparison(projectId, query)),
+          ),
         linkedEvidence: (projectId, query) =>
-          provide(getLinkedEvidence(projectId, query)),
+          provide(
+            withActiveProject(projectId, getLinkedEvidence(projectId, query)),
+          ),
         referenceJourney: (projectId, query) =>
-          provide(getReferenceJourney(projectId, query)),
+          provide(
+            withActiveProject(projectId, getReferenceJourney(projectId, query)),
+          ),
         periodRead: (projectId, input) =>
-          provide(getPeriodRead(projectId, input)),
-        runRead: (projectId, input) => provide(getRunRead(projectId, input)),
+          provide(
+            withActiveProject(projectId, getPeriodRead(projectId, input)),
+          ),
+        runRead: (projectId, input) =>
+          provide(withActiveProject(projectId, getRunRead(projectId, input))),
         expectations: (projectId, runId) =>
-          provide(getRunExpectations(projectId, runId)),
+          provide(
+            withActiveProject(projectId, getRunExpectations(projectId, runId)),
+          ),
         businessInsights: (projectId, query) =>
-          provide(getBusinessInsights(projectId, query)),
-        append: (projectId, eventId, event) =>
-          provide(appendEvent(projectId, eventId, event)),
-        snapshot: (projectId) => provide(getProjectSnapshot(projectId)),
-        workflows: (projectId) => provide(getWorkflowSummaries(projectId)),
-        listRuns: (projectId, query) => provide(listRuns(projectId, query)),
-        search: (projectId, query) => provide(searchProject(projectId, query)),
+          provide(
+            withActiveProject(projectId, getBusinessInsights(projectId, query)),
+          ),
+        append: (
+          projectId,
+          eventId,
+          event,
+          credential?: {
+            readonly kind: "api" | "browser"
+            readonly keyHash: string
+          },
+        ) => provide(appendEvent(projectId, eventId, event, credential)),
+        snapshot: (projectId) =>
+          provide(withActiveProject(projectId, getProjectSnapshot(projectId))),
+        workflows: (projectId) =>
+          provide(
+            withActiveProject(projectId, getWorkflowSummaries(projectId)),
+          ),
+        listRuns: (projectId, query) =>
+          provide(withActiveProject(projectId, listRuns(projectId, query))),
+        search: (projectId, query) =>
+          provide(
+            withActiveProject(projectId, searchProject(projectId, query)),
+          ),
         timeline: (projectId, runId) =>
-          provide(getRunTimeline(projectId, runId)),
+          provide(
+            withActiveProject(projectId, getRunTimeline(projectId, runId)),
+          ),
         runEventPage: (projectId, query) =>
-          provide(getRunEventPage(projectId, query)),
+          provide(
+            withActiveProject(projectId, getRunEventPage(projectId, query)),
+          ),
         runInvestigationSummary: (projectId, runId) =>
-          provide(getRunInvestigationSummary(projectId, runId)),
+          provide(
+            withActiveProject(
+              projectId,
+              getRunInvestigationSummary(projectId, runId),
+            ),
+          ),
         relatedRunsPage: (projectId, query) =>
-          provide(getRelatedRunsPage(projectId, query)),
+          provide(
+            withActiveProject(projectId, getRelatedRunsPage(projectId, query)),
+          ),
         expectationsPage: (projectId, query) =>
-          provide(getRunExpectationsPage(projectId, query)),
+          provide(
+            withActiveProject(
+              projectId,
+              getRunExpectationsPage(projectId, query),
+            ),
+          ),
         operationsPage: (projectId, query) =>
-          provide(getRunOperationsPage(projectId, query)),
+          provide(
+            withActiveProject(
+              projectId,
+              getRunOperationsPage(projectId, query),
+            ),
+          ),
         discoverWorkflows: (projectId, query) =>
-          provide(getWorkflowDiscoveryPage(projectId, query)),
+          provide(
+            withActiveProject(
+              projectId,
+              getWorkflowDiscoveryPage(projectId, query),
+            ),
+          ),
         discoverWorkflowMeaning: (projectId, query) =>
-          provide(getWorkflowMeaningPage(projectId, query)),
+          provide(
+            withActiveProject(
+              projectId,
+              getWorkflowMeaningPage(projectId, query),
+            ),
+          ),
         related: (projectId, runId) =>
-          provide(getRelatedRuns(projectId, runId)),
+          provide(
+            withActiveProject(projectId, getRelatedRuns(projectId, runId)),
+          ),
         compare: (projectId, runId, selection) =>
-          provide(getRunComparison(projectId, runId, selection)),
+          provide(
+            withActiveProject(
+              projectId,
+              getRunComparison(projectId, runId, selection),
+            ),
+          ),
         intelligence: (projectId, query) =>
-          provide(getWorkflowIntelligence(projectId, query)),
+          provide(
+            withActiveProject(
+              projectId,
+              getWorkflowIntelligence(projectId, query),
+            ),
+          ),
         periodReport: (projectId, query) =>
-          provide(getPeriodReport(projectId, query)),
+          provide(
+            withActiveProject(projectId, getPeriodReport(projectId, query)),
+          ),
       } satisfies WorkflowStoreService
     }),
   },

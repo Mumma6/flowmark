@@ -36,6 +36,8 @@ Contributor guides that ship with the public repository:
   proxy protections, and remaining durable-limit work.
 - [Historical facts](./historical-facts): compact run projections and backfill
   limits.
+- [Data lifecycle](./data-lifecycle): complete telemetry erasure, project deletion,
+  key invalidation, resumable cleanup and backup limitations.
 - [Design system](./design-system): dashboard and landing presentation rules.
 - [Architecture decisions](./decisions/0001-turborepo): accepted decisions and
   their consequences. See [ADR 0007](./decisions/0007-connect-agent-mcp-dependencies.md)

@@ -13,9 +13,12 @@ import {
   workflowEvents,
   workflowRuns,
   workflows,
+  projects,
+  projectApiKeys,
+  projectBrowserKeys,
   type StoredWorkflowError,
 } from "../../../schema/index.js"
-import { Database, MissingRunError } from "../../database.js"
+import { Database, IngestionRejected, MissingRunError } from "../../database.js"
 import { DatabaseOperation } from "../../database-operation.js"
 import { runQuery } from "../../run-query.js"
 import {
@@ -71,6 +74,7 @@ export const appendEvent = Effect.fn("appendEvent")(function* (
   projectId: string,
   eventId: string,
   event: WorkflowEvent,
+  credential?: { readonly kind: "api" | "browser"; readonly keyHash: string },
 ) {
   const db = yield* Database
   const fixtureTransaction = yield* FixtureEventTransaction
@@ -80,6 +84,39 @@ export const appendEvent = Effect.fn("appendEvent")(function* (
     (use) => eventTransaction(db, fixtureTransaction, use),
     (tx) =>
       Effect.gen(function* () {
+        const [project] = yield* runQuery(DatabaseOperation.AppendEvent, () =>
+          tx
+            .select()
+            .from(projects)
+            .where(eq(projects.id, projectId))
+            .for("share"),
+        )
+        if (!project || project.lifecycleOperationId) {
+          return yield* new IngestionRejected({ reason: "ProjectUnavailable" })
+        }
+        if (credential) {
+          const table =
+            credential.kind === "api" ? projectApiKeys : projectBrowserKeys
+          const keys = yield* runQuery(DatabaseOperation.AppendEvent, () =>
+            tx
+              .select({ id: table.id })
+              .from(table)
+              .where(
+                and(
+                  eq(table.projectId, projectId),
+                  eq(table.keyHash, credential.keyHash),
+                  eq(table.credentialEpoch, project.credentialEpoch),
+                  credential.kind === "api"
+                    ? eq(projectApiKeys.permission, "write")
+                    : undefined,
+                ),
+              )
+              .limit(1),
+          )
+          if (!keys.length) {
+            return yield* new IngestionRejected({ reason: "CredentialRevoked" })
+          }
+        }
         // Reserve envelope identity before creating rows; a rejected start leaves no phantom run.
         // A fixture already owns one atomic transaction and rejects every conflict.
         // Unique event IDs still arbitrate concurrent envelopes. Per-event xact locks
@@ -138,21 +175,44 @@ export const appendEvent = Effect.fn("appendEvent")(function* (
               ),
         )
         if (event.type === "started") {
-          yield* runQuery(DatabaseOperation.AppendEvent, () =>
-            tx
-              .insert(workflowRuns)
-              .values({
-                workflowId: definition.id,
-                externalId: event.runId,
-                startedAt: new Date(event.timestamp),
-                correlationId: event.correlationId ?? null,
-                parentRunId: event.parentRunId ?? null,
-                retryOf: event.retryOf ?? null,
-              })
-              .onConflictDoNothing({
-                target: [workflowRuns.workflowId, workflowRuns.externalId],
-              }),
+          const [retained] = yield* runQuery(
+            DatabaseOperation.AppendEvent,
+            () =>
+              tx
+                .select({ id: workflowRuns.id })
+                .from(workflowRuns)
+                .where(
+                  and(
+                    eq(workflowRuns.workflowId, definition.id),
+                    eq(workflowRuns.externalId, event.runId),
+                  ),
+                )
+                .limit(1),
           )
+          if (
+            !retained &&
+            project.newRunAfter &&
+            new Date(event.timestamp) <= project.newRunAfter
+          ) {
+            return yield* new IngestionRejected({ reason: "HistoricalStart" })
+          }
+          if (!retained) {
+            yield* runQuery(DatabaseOperation.AppendEvent, () =>
+              tx
+                .insert(workflowRuns)
+                .values({
+                  workflowId: definition.id,
+                  externalId: event.runId,
+                  startedAt: new Date(event.timestamp),
+                  correlationId: event.correlationId ?? null,
+                  parentRunId: event.parentRunId ?? null,
+                  retryOf: event.retryOf ?? null,
+                })
+                .onConflictDoNothing({
+                  target: [workflowRuns.workflowId, workflowRuns.externalId],
+                }),
+            )
+          }
         }
         const [run] = yield* runQuery(DatabaseOperation.AppendEvent, () =>
           tx

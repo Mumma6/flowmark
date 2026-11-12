@@ -16,6 +16,11 @@ export class MissingRunError extends Data.TaggedError("MissingRunError")<{
   readonly runId: string
 }> {}
 
+export class IngestionRejected extends Data.TaggedError("IngestionRejected")<{
+  readonly reason:
+    "ProjectUnavailable" | "CredentialRevoked" | "HistoricalStart"
+}> {}
+
 export const hashApiKey = (key: string) =>
   createHash("sha256").update(key).digest("hex")
 

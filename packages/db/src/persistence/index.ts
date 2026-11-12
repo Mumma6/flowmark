@@ -78,3 +78,7 @@ export * from "./workflows/queries/get-reference-journey.js"
 
 export * from "./investigations/investigation-store.js"
 export * from "./investigations/investigation-error.js"
+export * from "./data-lifecycle/data-lifecycle-store.js"
+export * from "./data-lifecycle/types.js"
+export { runQuery } from "./run-query.js"
+export { runTransaction } from "./run-transaction.js"

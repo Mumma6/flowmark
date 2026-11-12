@@ -1,3 +1,4 @@
+import { withActiveProject } from "../data-lifecycle/with-active-project.js"
 import { Context, Effect, Layer } from "effect"
 import { Database, DatabaseCancellation, provideDatabase } from "../database.js"
 import { saveInvestigation } from "./writes/save-investigation.js"
@@ -14,13 +15,17 @@ export class InvestigationStore extends Context.Service<InvestigationStore>()(
       )
       return {
         save: (...args: Parameters<typeof saveInvestigation>) =>
-          provide(saveInvestigation(...args)),
+          provide(
+            withActiveProject(args[1], saveInvestigation(...args), "current"),
+          ),
         get: (...args: Parameters<typeof getSavedInvestigation>) =>
-          provide(getSavedInvestigation(...args)),
+          provide(withActiveProject(args[1], getSavedInvestigation(...args))),
         list: (...args: Parameters<typeof listSavedInvestigations>) =>
-          provide(listSavedInvestigations(...args)),
+          provide(withActiveProject(args[1], listSavedInvestigations(...args))),
         delete: (...args: Parameters<typeof deleteInvestigation>) =>
-          provide(deleteInvestigation(...args)),
+          provide(
+            withActiveProject(args[1], deleteInvestigation(...args), "current"),
+          ),
       }
     }),
   },

@@ -18,8 +18,10 @@ import { AccountSettings } from "./account-settings"
 import { KeySettings } from "./key-settings"
 import { ProjectSettings } from "./project-settings"
 import { DefinitionImportPanel } from "../results/definitions/definition-import-panel"
+import { DataPrivacyPanel } from "./data-privacy/data-privacy-panel"
 
-type SettingsSection = "projects" | "keys" | "setup" | "account" | "definitions"
+type SettingsSection =
+  "projects" | "keys" | "setup" | "account" | "definitions" | "privacy"
 
 const sections: ReadonlyArray<{
   readonly id: SettingsSection
@@ -30,9 +32,12 @@ const sections: ReadonlyArray<{
   { id: "setup", label: "Setup help" },
   { id: "definitions", label: "Process metadata" },
   { id: "account", label: "Account" },
+  { id: "privacy", label: "Data & privacy" },
 ]
 
 const sectionHelp: Record<SettingsSection, string> = {
+  privacy:
+    "Review the exact scope before permanently erasing telemetry or deleting a project.",
   definitions:
     "Review and apply optional result labels and searchable references from your application code. This changes metadata, never application execution.",
   projects:
@@ -47,6 +52,7 @@ const sectionHelp: Record<SettingsSection, string> = {
 function parseSection(value: string | null): SettingsSection {
   if (
     value === "projects" ||
+    value === "privacy" ||
     value === "keys" ||
     value === "setup" ||
     value === "definitions" ||
@@ -117,6 +123,9 @@ function SettingsPageInner() {
         </TabsContent>
         <TabsContent value="definitions" className="mt-6">
           <DefinitionImportPanel />
+        </TabsContent>
+        <TabsContent value="privacy" className="mt-6">
+          <DataPrivacyPanel />
         </TabsContent>
       </Tabs>
     </div>

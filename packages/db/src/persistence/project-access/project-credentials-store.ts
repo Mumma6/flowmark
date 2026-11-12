@@ -1,3 +1,4 @@
+import { withActiveProject } from "../data-lifecycle/with-active-project.js"
 import { consumePublicReadBudget } from "./writes/consume-public-read-budget.js"
 import { Context, Effect, Layer } from "effect"
 import {
@@ -208,19 +209,57 @@ export class ProjectCredentialsStore extends Context.Service<ProjectCredentialsS
         createProject: (userId, workspaceId, name) =>
           provide(createProject(userId, workspaceId, name)),
         renameProject: (projectId, name) =>
-          provide(renameProject(projectId, name)),
-        listApiKeys: (projectId) => provide(listApiKeys(projectId)),
-        listBrowserKeys: (projectId) => provide(listBrowserKeys(projectId)),
+          provide(
+            withActiveProject(
+              projectId,
+              renameProject(projectId, name),
+              "current",
+            ),
+          ),
+        listApiKeys: (projectId) =>
+          provide(withActiveProject(projectId, listApiKeys(projectId))),
+        listBrowserKeys: (projectId) =>
+          provide(withActiveProject(projectId, listBrowserKeys(projectId))),
         createApiKey: (projectId, input) =>
-          provide(createApiKey(projectId, input)),
+          provide(
+            withActiveProject(
+              projectId,
+              createApiKey(projectId, input),
+              "current",
+            ),
+          ),
         revokeApiKey: (projectId, keyId) =>
-          provide(revokeApiKey(projectId, keyId)),
+          provide(
+            withActiveProject(
+              projectId,
+              revokeApiKey(projectId, keyId),
+              "current",
+            ),
+          ),
         rotateWriteKey: (projectId, keyId) =>
-          provide(rotateWriteKey(projectId, keyId)),
+          provide(
+            withActiveProject(
+              projectId,
+              rotateWriteKey(projectId, keyId),
+              "current",
+            ),
+          ),
         createBrowserKey: (projectId, input) =>
-          provide(createBrowserKey(projectId, input)),
+          provide(
+            withActiveProject(
+              projectId,
+              createBrowserKey(projectId, input),
+              "current",
+            ),
+          ),
         revokeBrowserKey: (projectId, keyId) =>
-          provide(revokeBrowserKey(projectId, keyId)),
+          provide(
+            withActiveProject(
+              projectId,
+              revokeBrowserKey(projectId, keyId),
+              "current",
+            ),
+          ),
       } satisfies ProjectCredentialsStoreService
     }),
   },

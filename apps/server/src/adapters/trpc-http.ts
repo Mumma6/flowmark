@@ -9,6 +9,7 @@ function withCors(
   dashboardOrigin: string,
 ) {
   const headers = new Headers(response.headers)
+  headers.set("cache-control", "no-store")
 
   if (request.headers.get("origin") === dashboardOrigin) {
     headers.set("Access-Control-Allow-Origin", dashboardOrigin)

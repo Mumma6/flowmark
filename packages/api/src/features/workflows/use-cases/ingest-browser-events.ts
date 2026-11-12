@@ -109,6 +109,7 @@ export class IngestBrowserWorkflowEvents extends Context.Service<
           credential.projectId,
           canonical.eventId,
           canonical.event,
+          { kind: "browser", key: Redacted.make(key) },
         )
       })
       return IngestBrowserWorkflowEvents.of({

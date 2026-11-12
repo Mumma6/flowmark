@@ -1,9 +1,10 @@
+import { InvalidInput } from "../../../errors.js"
 import {
   PublicReadFailure,
   publicStorageFailure,
 } from "../../public-reads/errors.js"
-import { Effect, Layer } from "effect"
-import { WorkflowStore } from "@flowmark/db/persistence"
+import { Effect, Layer, Option, Redacted } from "effect"
+import { WorkflowStore, hashApiKey } from "@flowmark/db/persistence"
 import {
   persist,
   toInvalidInput,
@@ -69,13 +70,35 @@ export const WorkflowRepositoryLive = Layer.effect(
           ),
       ),
       append: Effect.fn("WorkflowRepositoryLive.append")(
-        (projectId, eventId, event) =>
-          store.append(projectId, eventId, event).pipe(
-            Effect.catchTags({
-              DatabaseError: toPersistenceError,
-              MissingRunError: toRunNotFound,
-            }),
-          ),
+        (projectId, eventId, event, credential) =>
+          store
+            .append(
+              projectId,
+              eventId,
+              event,
+              Option.fromUndefinedOr(credential).pipe(
+                Option.map(({ kind, key }) => ({
+                  kind,
+                  keyHash: hashApiKey(Redacted.value(key)),
+                })),
+                Option.getOrUndefined,
+              ),
+            )
+            .pipe(
+              Effect.catchTags({
+                DatabaseError: toPersistenceError,
+                MissingRunError: toRunNotFound,
+                IngestionRejected: (error) =>
+                  Effect.fail(
+                    new InvalidInput({
+                      cause:
+                        error.reason === "HistoricalStart"
+                          ? "New run starts must be later than the project erasure boundary."
+                          : "Project or ingestion credential is no longer available.",
+                    }),
+                  ),
+              }),
+            ),
       ),
       snapshot: Effect.fn("WorkflowRepositoryLive.snapshot")((projectId) =>
         persist(store.snapshot(projectId)),

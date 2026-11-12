@@ -1,0 +1,1 @@
+ALTER TABLE "data_lifecycle_operations" ADD COLUMN "contract_version" integer DEFAULT 1 NOT NULL;

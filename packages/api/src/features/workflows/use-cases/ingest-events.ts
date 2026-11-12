@@ -1,6 +1,6 @@
 import { isExpectationEvent } from "@flowmarkdev/core"
 import { ExpectationSourceForbidden } from "../../../errors.js"
-import { Context, Effect, Layer, Schema } from "effect"
+import { Context, Effect, Layer, Redacted, Schema } from "effect"
 import { type AppendDisposition, EventEnvelopeSchema } from "@flowmarkdev/core"
 import {
   InvalidInput,
@@ -51,7 +51,10 @@ export class IngestWorkflowEvents extends Context.Service<
         if (isExpectationEvent(event) && !expectationProtocol) {
           return yield* new ExpectationSourceForbidden()
         }
-        return yield* repository.append(projectId, eventId, event)
+        return yield* repository.append(projectId, eventId, event, {
+          kind: "api",
+          key: Redacted.make(header?.slice(7) ?? ""),
+        })
       })
 
       return IngestWorkflowEvents.of({ ingest })

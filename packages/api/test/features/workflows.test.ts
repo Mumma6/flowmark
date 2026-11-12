@@ -451,6 +451,7 @@ describe("API Effect services", () => {
       "project-from-key",
       input.eventId,
       input.event,
+      { kind: "api", key: expect.anything() },
     )
   })
 

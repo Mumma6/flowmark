@@ -2,6 +2,7 @@ import { TRPCError } from "@trpc/server"
 import { Effect, Exit, Match, Option, Schema } from "effect"
 import {
   AgentAccess,
+  ManageDataLifecycle,
   ManageInvestigations,
   ManageResultDeclarations,
   ConfigurationError,
@@ -61,6 +62,7 @@ async function executeQuery<A>(
     | InvalidInput
     | ManagementRateLimited,
     | ManageInvestigations
+    | ManageDataLifecycle
     | AgentAccess
     | GetProjectWorkflowData
     | ManageProject
@@ -193,6 +195,7 @@ export function sessionQuery<A>(
     A,
     Unauthorized | PersistenceError | InvalidInput | ManagementRateLimited,
     | ManageInvestigations
+    | ManageDataLifecycle
     | ManageProject
     | ManageResultDeclarations
     | AgentAccess

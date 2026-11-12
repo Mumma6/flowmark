@@ -4,6 +4,7 @@ import {
   agentAccessGrantProjects,
   oauthRefreshToken,
   projectMembers,
+  projects,
 } from "../../../schema/index.js"
 import { Database } from "../../database.js"
 import { DatabaseOperation } from "../../database-operation.js"
@@ -25,6 +26,10 @@ export const getDelegatedReaderProject = Effect.fn("getDelegatedReaderProject")(
           .select({ projectId: agentAccessGrantProjects.projectId })
           .from(agentAccessGrantProjects)
           .innerJoin(
+            projects,
+            eq(projects.id, agentAccessGrantProjects.projectId),
+          )
+          .innerJoin(
             oauthRefreshToken,
             eq(
               oauthRefreshToken.authorizationCodeId,
@@ -41,6 +46,7 @@ export const getDelegatedReaderProject = Effect.fn("getDelegatedReaderProject")(
           .where(
             and(
               eq(oauthRefreshToken.userId, input.userId),
+              isNull(projects.lifecycleOperationId),
               eq(oauthRefreshToken.clientId, input.clientId),
               isNull(oauthRefreshToken.revoked),
               or(
