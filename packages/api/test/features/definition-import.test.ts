@@ -46,6 +46,7 @@ const fixture = () => {
         Layer.succeed(
           ResultDeclarations,
           ResultDeclarations.of({
+            apply: () => Effect.die("Preview must not apply definitions"),
             find,
             searchFields,
             create,

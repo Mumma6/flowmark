@@ -19,6 +19,20 @@ export const WorkflowRepositoryLive = Layer.effect(
   Effect.gen(function* () {
     const store = yield* WorkflowStore
     return WorkflowRepository.of({
+      linkedComparison: (projectId, query) =>
+        store.linkedComparison(projectId, query).pipe(
+          Effect.catchTags({
+            DatabaseError: toPersistenceError,
+            InvalidResultQuery: toInvalidInput,
+          }),
+        ),
+      linkedEvidence: (projectId, query) =>
+        store.linkedEvidence(projectId, query).pipe(
+          Effect.catchTags({
+            DatabaseError: toPersistenceError,
+            InvalidResultQuery: toInvalidInput,
+          }),
+        ),
       referenceJourney: Effect.fn("WorkflowRepositoryLive.referenceJourney")(
         (projectId, query) =>
           store.referenceJourney(projectId, query).pipe(

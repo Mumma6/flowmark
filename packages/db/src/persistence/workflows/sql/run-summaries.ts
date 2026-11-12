@@ -6,10 +6,10 @@ import type {
   ResultSelection,
 } from "@flowmarkdev/core"
 import { resultPredicate } from "./result-filters.js"
-import { sql } from "drizzle-orm"
+import { sql, type SQL } from "drizzle-orm"
 
 type BusinessFilter = {
-  runId?: string
+  runId?: string | SQL
   workflow?: string
   businessKey?: string
   businessValue?: string
@@ -73,7 +73,7 @@ export const projectRunSummaries = (
       HAVING facts.run_id IS NULL
     ) f
     WHERE w.project_id = ${projectId} AND ${businessPredicate(projectId, business)}
-      AND (${business?.runId ?? null}::uuid IS NULL OR r.id = ${business?.runId ?? null}::uuid)
+      AND (${business?.runId === undefined} OR r.id = ${business?.runId ?? null}::uuid)
       AND (${business?.workflow ?? null}::text IS NULL OR w.name = ${business?.workflow ?? null})
       AND (${business?.startedAfter ?? null}::timestamptz IS NULL OR r.started_at >= ${business?.startedAfter ?? null}::timestamptz)
       AND (${business?.startedBeforeExclusive ?? null}::timestamptz IS NULL OR r.started_at < ${business?.startedBeforeExclusive ?? null}::timestamptz)

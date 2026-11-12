@@ -4,7 +4,7 @@ import { Effect, Match, Result, Schema } from "effect"
 import { Database, InvalidResultQuery } from "../../database.js"
 import { DatabaseOperation } from "../../database-operation.js"
 import { runQuery } from "../../run-query.js"
-import { getSearchFields } from "../../result-declarations/queries/get-search-fields.js"
+import { getSearchFieldConfiguration } from "../../result-declarations/queries/get-search-fields.js"
 import { boundJsonPreview } from "../bounded-record-preview.js"
 import {
   BOUNDED_RECORD_PREVIEW_MAX_BYTES,
@@ -87,12 +87,14 @@ export const getWorkflowMeaningPage = Effect.fn("getWorkflowMeaningPage")(
           id: string
           revision: string
           declaration: unknown
+          source: string | null
           createdAt: Date | string
         }>(sql`
           SELECT
             id,
             revision,
             declaration,
+            source,
             created_at AS "createdAt"
           FROM workflow_result_declarations
           WHERE project_id = ${projectId}::uuid
@@ -109,7 +111,11 @@ export const getWorkflowMeaningPage = Effect.fn("getWorkflowMeaningPage")(
           LIMIT ${limit + 1}
         `),
     )
-    const storedFields = yield* getSearchFields(projectId, query.workflow)
+    const configuration = yield* getSearchFieldConfiguration(
+      projectId,
+      query.workflow,
+    )
+    const storedFields = configuration.fields
     const searchFields = yield* Result.match(
       Schema.decodeUnknownResult(SearchFieldsSchema)(storedFields),
       {
@@ -135,6 +141,7 @@ export const getWorkflowMeaningPage = Effect.fn("getWorkflowMeaningPage")(
         id: row.id,
         createdAt: createdAtText(row.createdAt),
         revision: row.revision,
+        source: row.source,
         declaration: preview.value,
         truncated: preview.truncated,
         omissions: preview.omissions,
@@ -148,14 +155,16 @@ export const getWorkflowMeaningPage = Effect.fn("getWorkflowMeaningPage")(
     return {
       workflow: query.workflow,
       revisions: decoded.map(
-        ({ revision: name, declaration, truncated, omissions }) => ({
+        ({ revision: name, source, declaration, truncated, omissions }) => ({
           revision: name,
+          source,
           declaration,
           truncated,
           omissions,
         }),
       ),
       searchFields,
+      searchSources: configuration.sources,
       lookupKeys: keysFor(searchFields, "lookup"),
       dimensionKeys: keysFor(searchFields, "dimension"),
       nextCursor:

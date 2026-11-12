@@ -12,7 +12,16 @@ import {
 } from "@flowmark/ui"
 import { useId, useState } from "react"
 import { useProject } from "../../projects/project-context"
-import { useSaveSearchFields, useWorkflowSearchFields } from "../queries"
+import {
+  useSaveSearchFields,
+  useWorkflowSearchFields,
+  useWorkflowMeaning,
+} from "../queries"
+import {
+  searchFieldSource,
+  searchFieldOwnerLabel,
+} from "../definitions/metadata-source"
+import { Option } from "effect"
 
 export function WorkflowSearchFields({ workflow }: { workflow: string }) {
   const { current } = useProject()
@@ -29,6 +38,7 @@ export function WorkflowSearchFields({ workflow }: { workflow: string }) {
     setKey("")
     setValues("")
   })
+  const meaning = useWorkflowMeaning(workflow, Boolean(current))
   const blocked =
     !current || fields.isPending || Boolean(fields.error) || save.isPending
   return (
@@ -52,6 +62,15 @@ export function WorkflowSearchFields({ workflow }: { workflow: string }) {
             </Button>
           </p>
         )}
+        {meaning.error && (
+          <p role="alert" className="text-sm">
+            Could not load field ownership. Disable controls are unavailable
+            until ownership is known.{" "}
+            <Button variant="outline" onClick={() => void meaning.refetch()}>
+              Retry ownership
+            </Button>
+          </p>
+        )}
         {fields.data?.length === 0 && (
           <p className="text-sm text-muted-foreground">
             No business fields enabled.
@@ -72,7 +91,14 @@ export function WorkflowSearchFields({ workflow }: { workflow: string }) {
               <Button
                 variant="outline"
                 size="sm"
-                disabled={blocked}
+                disabled={
+                  blocked ||
+                  meaning.isPending ||
+                  Boolean(meaning.error) ||
+                  Option.isSome(
+                    searchFieldSource(meaning.data?.searchSources, field.key),
+                  )
+                }
                 onClick={() =>
                   current &&
                   save.mutate({
@@ -84,7 +110,14 @@ export function WorkflowSearchFields({ workflow }: { workflow: string }) {
                   })
                 }
               >
-                Disable {field.key}
+                {Option.isSome(
+                  searchFieldSource(meaning.data?.searchSources, field.key),
+                )
+                  ? searchFieldOwnerLabel(
+                      meaning.data?.searchSources,
+                      field.key,
+                    )
+                  : `Disable ${field.key}`}
               </Button>
             </li>
           ))}

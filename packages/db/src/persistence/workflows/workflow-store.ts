@@ -3,6 +3,14 @@ import type {
   ReferenceJourneyPage,
 } from "@flowmarkdev/core"
 import { getReferenceJourney } from "./queries/get-reference-journey.js"
+import { getLinkedComparison } from "./queries/get-linked-comparison.js"
+import { getLinkedEvidence } from "./queries/get-linked-evidence.js"
+import type {
+  LinkedComparisonQuery,
+  LinkedComparison,
+  LinkedEvidenceQuery,
+  LinkedEvidencePage,
+} from "@flowmarkdev/core"
 import { getPeriodRead } from "./queries/get-period-read.js"
 import type { PeriodReadInput, PeriodReadResponse } from "@flowmarkdev/core"
 import { getRunRead } from "./queries/get-run-read.js"
@@ -70,6 +78,14 @@ import type {
 } from "./types.js"
 
 export interface WorkflowStoreService {
+  readonly linkedComparison: (
+    projectId: string,
+    query: LinkedComparisonQuery,
+  ) => Effect.Effect<LinkedComparison, DatabaseError | InvalidResultQuery>
+  readonly linkedEvidence: (
+    projectId: string,
+    query: LinkedEvidenceQuery,
+  ) => Effect.Effect<LinkedEvidencePage, DatabaseError | InvalidResultQuery>
   readonly referenceJourney: (
     projectId: string,
     query: ReferenceJourneyQuery,
@@ -174,6 +190,10 @@ export class WorkflowStore extends Context.Service<WorkflowStore>()(
         yield* DatabaseCancellation,
       )
       return {
+        linkedComparison: (projectId, query) =>
+          provide(getLinkedComparison(projectId, query)),
+        linkedEvidence: (projectId, query) =>
+          provide(getLinkedEvidence(projectId, query)),
         referenceJourney: (projectId, query) =>
           provide(getReferenceJourney(projectId, query)),
         periodRead: (projectId, input) =>

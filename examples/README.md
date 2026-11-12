@@ -17,6 +17,12 @@ Runnable loopback scripts live separately in `packages/sdk/examples/`.
 for `booking-process.ts` (optional loopback delivery for Studio verification).
 Run it with `pnpm --filter @flowmarkdev/node test booking-setup-demo`.
 
+For optional metadata kept beside code, preview/apply
+[`booking-definition.json`](./booking-definition.json) in **Settings → Process
+metadata** and use [`code-owned-booking.ts`](./code-owned-booking.ts) to explicitly
+report its revision. See the [import guide](../docs/definition-imports.md).
+Starting a workflow never imports a definition.
+
 ## Scenarios
 
 | Example                      | Situation                        | SDK concepts                                                              |

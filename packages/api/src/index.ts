@@ -93,6 +93,15 @@ export {
 } from "@flowmarkdev/core"
 
 export type { AppendDisposition } from "@flowmarkdev/core"
+export type {
+  LinkedComparison,
+  LinkedComparisonQuery,
+  LinkedEvidenceRow,
+  LinkedEvidencePage,
+  LinkedEvidenceQuery,
+  WorkflowEvent,
+  WorkflowResult,
+} from "@flowmarkdev/core"
 
 export {
   BusinessTimestampSchema,

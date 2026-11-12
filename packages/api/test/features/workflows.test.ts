@@ -55,6 +55,8 @@ const input = {
 
 function repository(overrides: Partial<WorkflowRepositoryService> = {}) {
   return WorkflowRepository.of({
+    linkedComparison: () => Effect.die("Not used by this fixture"),
+    linkedEvidence: () => Effect.die("Not used by this fixture"),
     referenceJourney: () => Effect.die("Not used by this fixture"),
     periodRead: () => Effect.die("Not used by this fixture"),
     runRead: () => Effect.die("Not used by this fixture"),

@@ -37,6 +37,7 @@ import { useSnapshot } from "../../projects/queries"
 import { BusinessOutcomes } from "../../results/outcomes/business-outcomes"
 import { ResultDeclarationEditor } from "../../results/declarations/result-declaration-editor"
 import { WorkflowSearchFields } from "../../results/declarations/workflow-search-fields"
+import { DefinitionImportPanel } from "../../results/definitions/definition-import-panel"
 import { RunExplorer } from "./run-explorer"
 import { workflowOutliers } from "./run-filters"
 
@@ -292,6 +293,7 @@ export function ProjectRuns({
                     "Choose which application-reported fields appear as results and which references users can search. These settings describe existing telemetry.",
                   content: (
                     <>
+                      <DefinitionImportPanel workflow={workflow} />
                       <WorkflowSearchFields
                         key={`search:${workflow}`}
                         workflow={workflow}

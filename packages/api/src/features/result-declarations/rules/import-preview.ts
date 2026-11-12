@@ -1,8 +1,6 @@
 import { createHash } from "node:crypto"
-import { Option } from "effect"
 import {
-  canonicalResultDeclaration,
-  canonicalSearchFields,
+  definitionImportReviewContent,
   previewDefinitionImport,
   type DefinitionImport,
   type DefinitionImportSnapshot,
@@ -17,31 +15,11 @@ export const importPreview = (
   input: DefinitionImport,
   snapshot: DefinitionImportSnapshot,
 ) => {
-  const identity = {
-    version: input.version,
-    projectId,
-    source: input.source,
-    workflow: input.workflow,
-  }
+  const content = definitionImportReviewContent(projectId, input, snapshot)
   return {
-    ...identity,
-    manifestFingerprint: fingerprint({
-      ...identity,
-      result: input.result ? canonicalResultDeclaration(input.result) : null,
-      searchFields:
-        input.searchFields === undefined
-          ? null
-          : canonicalSearchFields(input.searchFields),
-    }),
-    baseFingerprint: fingerprint({
-      ...identity,
-      requestedRevision: input.result?.revision ?? null,
-      result: Option.match(snapshot.result, {
-        onNone: () => null,
-        onSome: canonicalResultDeclaration,
-      }),
-      searchFields: canonicalSearchFields(snapshot.searchFields),
-    }),
+    ...content.identity,
+    manifestFingerprint: fingerprint(content.manifest),
+    baseFingerprint: fingerprint(content.base),
     ...previewDefinitionImport(input, snapshot),
   }
 }

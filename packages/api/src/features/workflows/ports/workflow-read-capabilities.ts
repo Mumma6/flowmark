@@ -2,6 +2,12 @@ import type {
   ReferenceJourneyQuery,
   ReferenceJourneyPage,
 } from "@flowmarkdev/core"
+import type {
+  LinkedComparisonQuery,
+  LinkedComparison,
+  LinkedEvidenceQuery,
+  LinkedEvidencePage,
+} from "@flowmarkdev/core"
 import type { PeriodReadInput, PeriodReadResponse } from "@flowmarkdev/core"
 import type { PublicReadFailure } from "../../public-reads/errors.js"
 import type { RunReadInput, RunReadResponse } from "@flowmarkdev/core"
@@ -98,6 +104,14 @@ export interface WorkflowRepositoryRuns {
 }
 
 export interface WorkflowRepositoryAnalytics {
+  readonly linkedComparison: (
+    projectId: string,
+    query: LinkedComparisonQuery,
+  ) => Effect.Effect<LinkedComparison, PersistenceError | InvalidInput>
+  readonly linkedEvidence: (
+    projectId: string,
+    query: LinkedEvidenceQuery,
+  ) => Effect.Effect<LinkedEvidencePage, PersistenceError | InvalidInput>
   readonly periodRead: (
     projectId: string,
     input: PeriodReadInput,

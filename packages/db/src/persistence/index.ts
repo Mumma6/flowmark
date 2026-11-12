@@ -1,4 +1,5 @@
 export * from "./database-operation.js"
+export * from "./result-declarations/definition-import-error.js"
 export * from "./database.js"
 export * from "./project-access/agent-access-errors.js"
 export * from "./project-access/agent-access-store.js"
