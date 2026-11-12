@@ -34,3 +34,8 @@ export {
   type AgentAccessResolvedOrigins,
   type AgentAccessRouteMap,
 } from "./agent-access/index.js"
+
+export {
+  AccountSessionError,
+  type SessionRevocation,
+} from "./sessions/account-sessions.js"

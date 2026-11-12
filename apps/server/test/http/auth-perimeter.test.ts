@@ -202,10 +202,17 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
             .set({ expiresAt: new Date(Date.now() - 1000) })
             .where(eq(session.token, token))
         } else {
-          const revoked = await auth.handler(
+          // Token-bearing HTTP management is closed; private provider server
+          // APIs still own revocation and protected reads must observe it.
+          const blocked = await auth.handler(
             request("/api/auth/revoke-session", { token }, { cookie }),
           )
-          expect(revoked.status).toBe(200)
+          expect(blocked.status).toBe(403)
+          const revoked = await auth.api.revokeSession({
+            headers: { cookie, origin: "http://localhost:3001" },
+            body: { token },
+          })
+          expect(revoked.status).toBe(true)
         }
         await expect(caller(cookie).project.list()).rejects.toMatchObject({
           code: "UNAUTHORIZED",
