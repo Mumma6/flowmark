@@ -1,5 +1,7 @@
 "use client"
 
+import { SaveInvestigation } from "../../investigations/save-investigation"
+
 import {
   Card,
   CardContent,
@@ -129,6 +131,9 @@ export function RunHandoff({
   }
   return (
     <div className="grid gap-6">
+      {runSelection && Result.isSuccess(runSelection) && (
+        <SaveInvestigation selection={runSelection.success} />
+      )}
       {Option.isSome(safeContext) ? (
         <InvestigationContextHandoffCard handoff={safeContext.value} />
       ) : null}

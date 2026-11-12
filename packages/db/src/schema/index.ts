@@ -303,6 +303,33 @@ export const projectMembers = pgTable(
   ],
 )
 
+/** Owner-private live questions; no captured telemetry or access grants. */
+export const savedInvestigations = pgTable(
+  "saved_investigations",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    ownerId: text("owner_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    selection: jsonb("selection").$type<unknown>().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    index("saved_investigations_owner_project_created_idx").on(
+      table.ownerId,
+      table.projectId,
+      table.createdAt,
+      table.id,
+    ),
+  ],
+)
+
 /** Immutable workflow-owned presentation revisions; no runtime execution config. */
 export const workflowResultDeclarations = pgTable(
   "workflow_result_declarations",

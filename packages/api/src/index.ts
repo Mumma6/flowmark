@@ -142,3 +142,10 @@ export {
   type ReferenceJourneyQuery,
   type ReferenceJourneyPage,
 } from "@flowmarkdev/core"
+
+export { ManageInvestigations } from "./features/investigations/use-cases/manage-investigations.js"
+export type {
+  SavedSelection,
+  SavedInvestigation,
+  SavedInvestigationPage,
+} from "@flowmarkdev/core"

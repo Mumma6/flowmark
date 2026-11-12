@@ -1,3 +1,6 @@
+import { ManageInvestigations } from "./features/investigations/use-cases/manage-investigations.js"
+import { InvestigationsLive } from "./features/investigations/adapters/investigations.js"
+import { InvestigationStore } from "@flowmark/db/persistence"
 import { AuthorizeAgentRead } from "./features/project-access/use-cases/authorize-agent-read.js"
 import { DelegatedAccessRepositoryLive } from "./features/project-access/adapters/delegated-access-repository.js"
 import { ReadPublicPeriod } from "./features/public-reads/use-cases/read-period.js"
@@ -30,12 +33,14 @@ import { GetMcpAgentConnectionLive } from "./features/project-access/use-cases/g
 import { GetMcpAgentConnection } from "./features/project-access/use-cases/get-mcp-agent-connection.js"
 
 const persistence = Layer.mergeAll(
+  InvestigationStore.layer,
   ResultDeclarationStore.layer,
   WorkflowStore.layer,
   ProjectCredentialsStore.layer,
   AgentAccessStore.layer,
 ).pipe(Layer.provide(DatabaseLive))
 const databaseAdapters = Layer.mergeAll(
+  InvestigationsLive,
   ResultDeclarationsLive,
   AgentConsentRepositoryLive,
   WorkflowRepositoryLive,
@@ -56,6 +61,7 @@ const agentAccessAdapter = Layer.mergeAll(
 )
 
 export const ApiLive = Layer.mergeAll(
+  ManageInvestigations.layer,
   ReadPublicRun.layer,
   ReadPublicPeriod.layer,
   AgentConsent.layer,
@@ -77,6 +83,7 @@ export function runApi<A, E>(
   operation: Effect.Effect<
     A,
     E,
+    | ManageInvestigations
     | AuthorizeAgentRead
     | ReadPublicPeriod
     | ReadPublicRun

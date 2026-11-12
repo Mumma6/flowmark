@@ -391,6 +391,13 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
       await connection.db.transaction(async (tx) => {
         await tx.execute(sql`CREATE SCHEMA ${schema}`)
         await tx.execute(sql`SET LOCAL search_path TO ${schema}, public`)
+        // Keep upgrade DDL off the live auth/project parents used by parallel tests.
+        await tx.execute(sql`CREATE TABLE "user" (id text PRIMARY KEY)`)
+        await tx.execute(sql`CREATE TABLE projects (id uuid PRIMARY KEY)`)
+        await tx.execute(
+          sql`INSERT INTO projects VALUES (${fixture.projectId}::uuid)`,
+        )
+
         await tx.execute(
           sql`CREATE TABLE workflow_result_declarations (LIKE public.workflow_result_declarations INCLUDING ALL)`,
         )
@@ -413,7 +420,12 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         await Effect.runPromise(
           Effect.forEach(
             migration.split("--> statement-breakpoint"),
-            (statement) => Effect.promise(() => tx.execute(sql.raw(statement))),
+            (statement) =>
+              Effect.promise(() =>
+                tx.execute(
+                  sql.raw(statement.replaceAll('"public".', `"${name}".`)),
+                ),
+              ),
           ),
         )
         const results = await tx.execute<{

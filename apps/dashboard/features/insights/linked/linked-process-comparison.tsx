@@ -8,6 +8,7 @@ import type {
   LinkedComparisonSelection,
   LinkedCoverage,
 } from "@flowmarkdev/core"
+import { SaveInvestigation } from "../../investigations/save-investigation"
 import { useProject } from "../../projects/project-context"
 import { DataState } from "../../shared/dashboard-components"
 import { LinkedComparisonForm } from "./linked-comparison-form"
@@ -124,6 +125,7 @@ function Comparison({
       />
       {selection && (
         <>
+          <SaveInvestigation selection={selection} />
           <div className="flex flex-wrap items-center gap-3">
             <Button
               variant="outline"

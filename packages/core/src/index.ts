@@ -67,3 +67,5 @@ export * from "./reference-journey.js"
 export * from "./definition-import.js"
 export * from "./definition-import-preview.js"
 export * from "./linked-comparison.js"
+
+export * from "./saved-investigations.js"

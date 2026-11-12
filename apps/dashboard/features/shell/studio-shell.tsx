@@ -18,6 +18,7 @@ import {
   Code2,
   Compass,
   History,
+  Bookmark,
   LayoutGrid,
   LineChart,
   Link2,
@@ -47,6 +48,7 @@ const navigation = [
 ] as const
 
 const utilities = [
+  { href: "/investigations", label: "Your investigations", icon: Bookmark },
   { href: "/runs", label: "Execution history", icon: History },
   { href: "/overview", label: "Project overview", icon: LayoutGrid },
   { href: "/connect", label: "Connect", icon: Link2 },
