@@ -1,3 +1,4 @@
+import { exportLiveQuestion } from "../../investigations/rules/export-evidence.js"
 import { visibleSharedInvestigations } from "./visible-shared-investigations.js"
 import { Array, Context, Effect, Layer, Option, Schema } from "effect"
 import {
@@ -48,6 +49,29 @@ export class ManageSharedInvestigations extends Context.Service<ManageSharedInve
           Effect.flatMap(() => repository.withAccess(projectId, write, run)),
           Effect.provideService(CurrentProjectReader, reader),
         )
+      const get = Effect.fn("SharedInvestigations.get")(function* (
+        reader: ProjectReader,
+        projectId: string,
+        raw: unknown,
+      ) {
+        const id = yield* decode(Id, raw)
+        return yield* use(reader, projectId, false, (access) =>
+          visibleSharedInvestigations(
+            projectId,
+            access,
+            reader._tag === "User",
+          ).pipe(
+            Effect.flatMap(({ rows }) =>
+              Array.findFirst(rows, (row) => row.id === id).pipe(
+                Option.match({
+                  onSome: Effect.succeed,
+                  onNone: () => Effect.fail(unavailable()),
+                }),
+              ),
+            ),
+          ),
+        )
+      })
       return {
         create: Effect.fn("SharedInvestigations.create")(function* (
           reader: ProjectReader,
@@ -77,29 +101,15 @@ export class ManageSharedInvestigations extends Context.Service<ManageSharedInve
             }),
           )
         }),
-        get: Effect.fn("SharedInvestigations.get")(function* (
+        export: Effect.fn("SharedInvestigations.export")(function* (
           reader: ProjectReader,
           projectId: string,
           raw: unknown,
         ) {
-          const id = yield* decode(Id, raw)
-          return yield* use(reader, projectId, false, (access) =>
-            visibleSharedInvestigations(
-              projectId,
-              access,
-              reader._tag === "User",
-            ).pipe(
-              Effect.flatMap(({ rows }) =>
-                Array.findFirst(rows, (row) => row.id === id).pipe(
-                  Option.match({
-                    onSome: Effect.succeed,
-                    onNone: () => Effect.fail(unavailable()),
-                  }),
-                ),
-              ),
-            ),
-          )
+          const value = yield* get(reader, projectId, raw)
+          return yield* exportLiveQuestion("project", value)
         }),
+        get,
         list: Effect.fn("SharedInvestigations.list")(function* (
           reader: ProjectReader,
           projectId: string,

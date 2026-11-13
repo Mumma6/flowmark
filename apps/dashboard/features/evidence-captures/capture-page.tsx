@@ -1,4 +1,5 @@
 "use client"
+import { ExportEvidence } from "../investigations/export-evidence"
 import { Button } from "@flowmark/ui"
 import { useQuery } from "@tanstack/react-query"
 import { Schema } from "effect"
@@ -132,6 +133,10 @@ function AuthorizedCapture({
         references={data.references}
         revision={value.evidence.projection.publicationRevision}
         observedAt={value.evidence.projection.observedAt}
+      />
+      <ExportEvidence
+        captured
+        load={() => client.evidenceCaptures.export.query({ projectId, id })}
       />
       <p className="text-sm">
         For current evidence, open the source separately. Your permissions will

@@ -1,3 +1,4 @@
+import { exportLiveQuestion } from "../rules/export-evidence.js"
 import { Array, Context, Effect, Layer, Option, Result, Schema } from "effect"
 import {
   SaveInvestigationSchema,
@@ -109,6 +110,32 @@ export class ManageInvestigations extends Context.Service<ManageInvestigations>(
             Option.map((row) => projectStored(authorized, row)),
             Option.getOrNull,
           )
+        }),
+        export: Effect.fn("ManageInvestigations.export")(function* (
+          userId: string,
+          projectId: string,
+          raw: unknown,
+        ) {
+          const authorized = yield* auth.authorizeDiagnosticUser(
+            userId,
+            projectId,
+          )
+          const id = yield* decode(Id, raw)
+          const row = yield* repository.get(
+            userId,
+            authorized,
+            id,
+            "diagnostic",
+          )
+          const saved = Option.map(row, (value) =>
+            projectStored(authorized, value),
+          ).pipe(Option.getOrNull)
+          if (!saved || !saved.selection) {
+            return yield* new InvalidInput({
+              cause: "This private investigation is unavailable for export.",
+            })
+          }
+          return yield* exportLiveQuestion("private", saved)
         }),
         delete: Effect.fn("ManageInvestigations.delete")(function* (
           userId: string,

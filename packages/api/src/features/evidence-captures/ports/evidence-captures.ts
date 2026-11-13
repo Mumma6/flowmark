@@ -47,6 +47,10 @@ export interface CaptureAccess {
   readonly create: (
     capture: CapturedRunEvidence,
   ) => Effect.Effect<{ readonly id: string }, CaptureFailure>
+  readonly purgeExpired: () => Effect.Effect<
+    { readonly deleted: number; readonly hasMore: boolean },
+    CaptureFailure
+  >
   readonly delete: (
     id: string,
   ) => Effect.Effect<{ readonly deleted: true }, CaptureFailure>

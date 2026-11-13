@@ -1,4 +1,5 @@
 "use client"
+import { ExportEvidence } from "../investigations/export-evidence"
 import { Alert, AlertDescription, Button } from "@flowmark/ui"
 import { useQuery, useMutation } from "@tanstack/react-query"
 import { Result, Schema } from "effect"
@@ -129,6 +130,9 @@ function AuthorizedSharedQuestion({
         {question.data.createdAt}. Opening recomputes from retained evidence
         with your current permissions. This is not a captured result.
       </p>
+      <ExportEvidence
+        load={() => client.sharedInvestigations.export.query({ projectId, id })}
+      />
       <Button disabled={open.isPending} onClick={() => open.mutate()}>
         {open.isPending ? "Checking access…" : "Open live evidence"}
       </Button>

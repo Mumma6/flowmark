@@ -1,3 +1,4 @@
+import { exportCapturedObservation } from "../../investigations/rules/export-evidence.js"
 import { Array, Context, Effect, Layer, Option, Schema } from "effect"
 import {
   CaptureRunSchema,
@@ -58,6 +59,32 @@ export class ManageEvidenceCaptures extends Context.Service<ManageEvidenceCaptur
           }
           return yield* repository.withAccess(projectId, write, run)
         }).pipe(Effect.provideService(CurrentProjectReader, reader))
+      const get = Effect.fn("EvidenceCaptures.get")(function* (
+        reader: ProjectReader,
+        requestedProjectId: string,
+        raw: unknown,
+      ) {
+        const projectId = requestedProjectId.toLowerCase()
+        const id = (yield* decode(Id, raw)).toLowerCase()
+        return yield* use(reader, projectId, false, (access) =>
+          Effect.gen(function* () {
+            const records = yield* access.records()
+            const row = Option.getOrUndefined(
+              Array.findFirst(records, (row) => row.id === id),
+            )
+            if (!row) {
+              return yield* unavailable()
+            }
+            const read = yield* readCapture(
+              projectId,
+              access,
+              row,
+              reader._tag === "User",
+            )
+            return read ?? (yield* unavailable())
+          }),
+        )
+      })
       return {
         capabilities: Effect.fn("EvidenceCaptures.capabilities")(function* (
           reader: ProjectReader,
@@ -65,10 +92,19 @@ export class ManageEvidenceCaptures extends Context.Service<ManageEvidenceCaptur
         ) {
           const projectId = requestedProjectId.toLowerCase()
           yield* authorize(reader, projectId)
-          return {
-            enabled: yield* admission.local(),
-            canCreate: reader._tag === "User",
+          const enabled = yield* admission.local()
+          if (!enabled) {
+            return { enabled: false, canCreate: false, canPurge: false }
           }
+          return yield* repository
+            .withAccess(projectId, false, (access) =>
+              Effect.succeed({
+                enabled: true,
+                canCreate: reader._tag === "User",
+                canPurge: reader._tag === "User" && access.role === "owner",
+              }),
+            )
+            .pipe(Effect.provideService(CurrentProjectReader, reader))
         }),
         create: Effect.fn("EvidenceCaptures.create")(function* (
           reader: ProjectReader,
@@ -86,32 +122,18 @@ export class ManageEvidenceCaptures extends Context.Service<ManageEvidenceCaptur
             ),
           )
         }),
-        get: Effect.fn("EvidenceCaptures.get")(function* (
+        export: Effect.fn("EvidenceCaptures.export")(function* (
           reader: ProjectReader,
-          requestedProjectId: string,
+          projectId: string,
           raw: unknown,
         ) {
-          const projectId = requestedProjectId.toLowerCase()
-          const id = (yield* decode(Id, raw)).toLowerCase()
-          return yield* use(reader, projectId, false, (access) =>
-            Effect.gen(function* () {
-              const records = yield* access.records()
-              const row = Option.getOrUndefined(
-                Array.findFirst(records, (row) => row.id === id),
-              )
-              if (!row) {
-                return yield* unavailable()
-              }
-              const read = yield* readCapture(
-                projectId,
-                access,
-                row,
-                reader._tag === "User",
-              )
-              return read ?? (yield* unavailable())
-            }),
-          )
+          const value = yield* get(reader, projectId, raw)
+          if (!value.available) {
+            return yield* unavailable()
+          }
+          return yield* exportCapturedObservation(value)
         }),
+        get,
         list: Effect.fn("EvidenceCaptures.list")(function* (
           reader: ProjectReader,
           requestedProjectId: string,
@@ -175,6 +197,20 @@ export class ManageEvidenceCaptures extends Context.Service<ManageEvidenceCaptur
                 ),
               }
             }),
+          )
+        }),
+        purgeExpired: Effect.fn("EvidenceCaptures.purgeExpired")(function* (
+          reader: ProjectReader,
+          requestedProjectId: string,
+        ) {
+          if (reader._tag !== "User") {
+            return yield* new Unauthorized({ permission: "write" })
+          }
+          return yield* use(
+            reader,
+            requestedProjectId.toLowerCase(),
+            true,
+            (access) => access.purgeExpired(),
           )
         }),
         delete: Effect.fn("EvidenceCaptures.delete")(function* (

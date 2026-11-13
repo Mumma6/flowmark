@@ -24,6 +24,22 @@ export const evidenceCapturesRouter = t.router({
         ),
       ),
     ),
+  purgeExpired: studioMutation
+    .input(input(Schema.Struct(scope)))
+    .mutation(({ ctx, input }) =>
+      sessionQuery(ctx.request, (userId) =>
+        native(
+          ctx.request,
+          userId,
+          ManageEvidenceCaptures.use((service) =>
+            service.purgeExpired(
+              { _tag: "User", userId, projectId: input.projectId },
+              input.projectId,
+            ),
+          ),
+        ),
+      ),
+    ),
   create: studioMutation
     .input(input(Schema.Struct({ ...scope, command: CaptureRunSchema })))
     .mutation(({ ctx, input }) =>
@@ -49,6 +65,15 @@ export const evidenceCapturesRouter = t.router({
       readQuery(ctx.request, (reader) =>
         ManageEvidenceCaptures.use((service) =>
           service.list(reader, input.projectId, input.query),
+        ),
+      ),
+    ),
+  export: t.procedure
+    .input(input(Schema.Struct({ ...scope, id: UuidSchema })))
+    .query(({ ctx, input }) =>
+      readQuery(ctx.request, (reader) =>
+        ManageEvidenceCaptures.use((service) =>
+          service.export(reader, input.projectId, input.id),
         ),
       ),
     ),

@@ -45,6 +45,15 @@ export const sharedInvestigationsRouter = t.router({
         ),
       ),
     ),
+  export: t.procedure
+    .input(input(Schema.Struct({ ...scope, id: UuidSchema })))
+    .query(({ ctx, input }) =>
+      readQuery(ctx.request, (reader) =>
+        ManageSharedInvestigations.use((service) =>
+          service.export(reader, input.projectId, input.id),
+        ),
+      ),
+    ),
   get: t.procedure
     .input(input(Schema.Struct({ ...scope, id: UuidSchema })))
     .query(({ ctx, input }) =>
