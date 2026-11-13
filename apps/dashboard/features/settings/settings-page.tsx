@@ -10,6 +10,7 @@ import {
   TabsTrigger,
 } from "@flowmark/ui"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import Link from "next/link"
 import { Suspense } from "react"
 import { PageHeading } from "../shared/dashboard-components"
 import { ConnectSetupPanel } from "../connect/setup/connect-setup"
@@ -34,12 +35,12 @@ const sections: ReadonlyArray<{
   readonly id: SettingsSection
   readonly label: string
 }> = [
-  { id: "projects", label: "Projects" },
-  { id: "keys", label: "API keys" },
-  { id: "setup", label: "Setup help" },
-  { id: "definitions", label: "Process metadata" },
   { id: "account", label: "Account" },
   { id: "security", label: "Security" },
+  { id: "projects", label: "Projects" },
+  { id: "keys", label: "Project API keys" },
+  { id: "setup", label: "Setup help" },
+  { id: "definitions", label: "Process metadata" },
   { id: "privacy", label: "Data & privacy" },
 ]
 
@@ -113,6 +114,14 @@ function SettingsPageInner() {
         </TabsList>
         <p className="mt-4 max-w-3xl text-base leading-7 text-muted-foreground">
           {sectionHelp[section]}
+        </p>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Account and Security apply across your projects. Keys, process
+          metadata and telemetry controls use the selected project.{" "}
+          <Link href="/account/help" className="text-primary underline">
+            Account and setup help
+          </Link>{" "}
+          is available before project setup.
         </p>
         <TabsContent value="projects" className="mt-6">
           <ProjectSettings />

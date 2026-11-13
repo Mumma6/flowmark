@@ -100,6 +100,12 @@ function OnboardingContent({
           >
             Account data &amp; privacy
           </Link>
+          <Link
+            href="/account/help"
+            className="text-xs text-muted-foreground underline underline-offset-4"
+          >
+            Setup help
+          </Link>
           {reviewMode ? (
             <Link
               href="/"

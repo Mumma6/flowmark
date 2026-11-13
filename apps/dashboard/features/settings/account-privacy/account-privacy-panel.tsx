@@ -19,6 +19,7 @@ import {
   cleanupRecoveryCode,
   parseCleanupRecoveryCode,
 } from "./cleanup-recovery"
+import { AccountNavigation } from "../account-navigation"
 import { useAccountErasure } from "./use-account-erasure"
 
 export function AccountPrivacyPanel({
@@ -35,6 +36,7 @@ export function AccountPrivacyPanel({
   const operation = cleanup.operation
   return (
     <main className="mx-auto grid w-full max-w-3xl min-w-0 gap-6 px-4 py-8 sm:px-6 sm:py-12">
+      {signedIn ? <AccountNavigation current="privacy" /> : null}
       <div className="flex flex-wrap justify-between gap-3">
         <Link
           href="/settings?section=privacy"
