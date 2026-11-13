@@ -41,6 +41,13 @@ Module placement and future refactoring follow [Effect and module organization](
 
 ## Core domain package
 
+The private [Rust Evidence Engine](./evidence-engine.md) owns deterministic
+operation occurrence summaries and in-memory percentiles. Persistence retrieves
+ordered comparison evidence; API use cases coordinate the engine's Effect service
+and assemble existing read contracts. Rust has no database or framework knowledge,
+and persistence does not depend on the engine or API runtime. Public core/SDK
+contracts remain independent of WASM.
+
 `@flowmarkdev/core` is the framework-independent contract package shared by the
 SDK, API, and persistence layers. Its source is grouped into workflow
 identifiers, bounded JSON context/results, telemetry types/schemas, failure

@@ -1,4 +1,5 @@
 import { Context, type Effect } from "effect"
+import type { EvidenceEngineError } from "@flowmark/evidence-engine"
 import type {
   ResultDeclaration,
   SearchFields,
@@ -12,7 +13,7 @@ import type {
   StoredRun,
   ListRunsQuery,
   ListedRunsPage,
-  RunComparison,
+  RunComparisonEvidence,
 } from "../../workflows/types.js"
 import type {
   PersistenceError,
@@ -20,7 +21,7 @@ import type {
   Unauthorized,
 } from "../../../errors.js"
 export type BusinessEvidenceError =
-  PersistenceError | InvalidInput | Unauthorized
+  PersistenceError | InvalidInput | Unauthorized | EvidenceEngineError
 export interface PublicationChoices {
   readonly declarations: readonly {
     readonly workflow: string
@@ -68,10 +69,10 @@ export interface EvidenceAccess {
   readonly insights: (
     query: BusinessInsightsQuery,
   ) => Effect.Effect<BusinessInsights, BusinessEvidenceError>
-  readonly compare: (
+  readonly comparisonEvidence: (
     id: string,
     days: number,
-  ) => Effect.Effect<RunComparison, BusinessEvidenceError>
+  ) => Effect.Effect<RunComparisonEvidence, BusinessEvidenceError>
 }
 export class BusinessEvidenceRepository extends Context.Service<
   BusinessEvidenceRepository,

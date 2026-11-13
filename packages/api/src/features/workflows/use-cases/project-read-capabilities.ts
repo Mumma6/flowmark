@@ -11,6 +11,7 @@ import type {
   BusinessInsights,
 } from "@flowmarkdev/core"
 import type { Effect } from "effect"
+import type { EvidenceEngineError } from "@flowmark/evidence-engine"
 import type {
   InvalidInput,
   PersistenceError,
@@ -116,7 +117,7 @@ export interface ProjectReadRuns {
     selection?: PeerSelection,
   ) => Effect.Effect<
     RunComparison,
-    Unauthorized | PersistenceError | InvalidInput
+    Unauthorized | PersistenceError | InvalidInput | EvidenceEngineError
   >
 }
 

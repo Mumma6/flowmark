@@ -1,4 +1,6 @@
 import { CurrentProjectReader } from "../models/current-project-reader.js"
+import { EvidenceEngine } from "@flowmark/evidence-engine"
+import { calculateRunComparison } from "./calculate-run-comparison.js"
 import {
   ReferenceJourneyQuerySchema,
   LinkedComparisonQuerySchema,
@@ -45,6 +47,7 @@ export class GetProjectWorkflowData extends Context.Service<
       const authorization = yield* AuthorizeProject
       const repository = yield* WorkflowRepository
       const agentAccess = yield* AgentAccess
+      const engine = yield* EvidenceEngine
 
       const authorizeReader = Effect.fn(
         "GetProjectWorkflowData.authorizeReader",
@@ -199,9 +202,12 @@ export class GetProjectWorkflowData extends Context.Service<
         selection: PeerSelection = {},
       ) {
         const projectId = yield* authorizeReader(reader)
-        return yield* repository
-          .compare(projectId, runId, selection)
+        const evidence = yield* repository
+          .comparisonEvidence(projectId, runId, selection)
           .pipe(Effect.provideService(CurrentProjectReader, reader))
+        return yield* calculateRunComparison(evidence).pipe(
+          Effect.provideService(EvidenceEngine, engine),
+        )
       })
       const intelligence = Effect.fn("GetProjectWorkflowData.intelligence")(
         function* (reader: ProjectReader, query: IntelligenceQuery) {

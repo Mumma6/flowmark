@@ -65,7 +65,8 @@ export const BusinessEvidenceRepositoryLive = Layer.effect(
                 run: (id) => persist(access.run(id)),
                 journey: (q) => persist(access.journey(q)),
                 insights: (q) => persist(access.insights(q)),
-                compare: (id, days) => persist(access.compare(id, days)),
+                comparisonEvidence: (id, days) =>
+                  persist(access.comparisonEvidence(id, days)),
               } satisfies EvidenceAccess),
             ),
           ),

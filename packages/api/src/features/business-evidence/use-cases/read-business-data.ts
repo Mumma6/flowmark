@@ -1,4 +1,5 @@
 import { Array, Effect, Match } from "effect"
+import { calculateRunComparison } from "../../workflows/use-cases/calculate-run-comparison.js"
 import type {
   BusinessEvidenceQuery,
   BusinessPublication,
@@ -242,7 +243,9 @@ export const readBusinessData = Effect.fn("readBusinessData")(function* (
     ),
     Match.when({ kind: "compare" }, ({ runId, days }) =>
       Effect.gen(function* () {
-        const comparison = yield* access.compare(runId, days ?? 30)
+        const comparison = yield* calculateRunComparison(
+          yield* access.comparisonEvidence(runId, days ?? 30),
+        )
         return {
           kind: "compare" as const,
           current: comparison.current

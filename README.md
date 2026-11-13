@@ -198,6 +198,7 @@ infrastructure follows the
 
 - [Development](./docs/development.md)
 - [Architecture](./docs/architecture.md)
+- [Rust Evidence Engine](./docs/evidence-engine.md)
 - [Documentation index](./docs/README.md)
 - [Decisions](./docs/decisions/)
 

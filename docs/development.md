@@ -1,5 +1,10 @@
 # Development guide
 
+Rust/WASM contributor setup, ownership and verification are documented in the
+[Evidence Engine guide](./evidence-engine.md). `pnpm check` includes native Rust
+checks, Node/WASM fixtures and production artifact verification. Tool bootstrap
+uses an ignored checkout-local cache and leaves shell profiles unchanged.
+
 ## Requirements
 
 - Node.js 20.19 or newer (Node 24 LTS recommended)

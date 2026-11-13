@@ -193,14 +193,12 @@ function repository(overrides: Partial<WorkflowRepositoryService> = {}) {
         },
       }),
     related: () => Effect.succeed({ parentMatches: [], related: [] }),
-    compare: () =>
+    comparisonEvidence: () =>
       Effect.succeed({
         current: null,
         peers: [],
-        peerSuccessRate: null,
-        peerMedianDurationMs: null,
-        peerP95DurationMs: null,
-        operations: [],
+        currentOperations: [],
+        peerOperations: [],
       }),
     intelligence: () =>
       Effect.succeed({
@@ -359,6 +357,7 @@ function dependencies(
         Layer.succeed(WorkflowRepository, store),
         Layer.succeed(ProjectCredentials, credentials),
         Layer.succeed(AgentAccess, access),
+        EvidenceEngine.layer,
       ),
     ),
     Layer.provide(
@@ -1258,3 +1257,4 @@ describe("API Effect services", () => {
     })
   })
 })
+import { EvidenceEngine } from "@flowmark/evidence-engine"

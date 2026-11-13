@@ -8,6 +8,11 @@ review of every workspace manifest, root script, database CLI and Actions workfl
 
 ## Root interface
 
+The [Evidence Engine](./evidence-engine.md) adds `pnpm rust:setup`, `rust:format`,
+`rust:check` and `rust:build` for the pinned Rust toolchain, native verification
+and WASM bindings. `pnpm evidence:verify-build` verifies the actual server build,
+embedded WASM bytes and isolated traced bindings. These commands do not deploy.
+
 | Command                                                                        | Behavior and reason to retain                                                                                                                                                             |
 | ------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `pnpm dev:setup`                                                               | Copies missing public app env templates without overwriting configuration or printing credentials. No database writes.                                                                    |
@@ -27,7 +32,7 @@ review of every workspace manifest, root script, database CLI and Actions workfl
 | `pnpm lint`                                                                    | Workspace ESLint checks.                                                                                                                                                                  |
 | `pnpm typecheck`                                                               | Workspace type checks with dependency builds.                                                                                                                                             |
 | `pnpm format` / `pnpm format:check`                                            | Prettier write/check; different intentional effects.                                                                                                                                      |
-| `pnpm check`                                                                   | Format, lint, typecheck and unit-test acceptance gate used by CI. Stop dev watchers first.                                                                                                |
+| `pnpm check`                                                                   | Native Rust checks, format, lint, typecheck, unit tests and production WASM artifact verification used by CI. Stop dev watchers first.                                                    |
 | `pnpm db:migrate`                                                              | Shared guarded migration entrypoint for hosted wrappers and the managed integration runner. Daily local work uses the explicitly local command above.                                     |
 | `pnpm db:migrate:preview` / `pnpm db:migrate:staging` / `pnpm db:migrate:prod` | Distinct hosted approval/branch/host guards, history preflight, migration and history verification. See [rollout](./migrations.md); never folded into local setup.                        |
 | `pnpm neon:env-pull`                                                           | Pulls ignored operator connection files. Use `-- --preview` or `-- --staging` for those branches; default is Production. Does not provision resources or rewrite app env.                 |

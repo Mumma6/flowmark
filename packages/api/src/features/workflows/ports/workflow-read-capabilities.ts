@@ -26,7 +26,7 @@ import type {
   PeriodReport,
   ProjectSnapshot,
   RelatedRuns,
-  RunComparison,
+  RunComparisonEvidence,
   RunEventPage,
   RunEventPageQuery,
   RunInvestigationSummary,
@@ -96,11 +96,11 @@ export interface WorkflowRepositoryRuns {
     projectId: string,
     runId: string,
   ) => Effect.Effect<RelatedRuns, PersistenceError>
-  readonly compare: (
+  readonly comparisonEvidence: (
     projectId: string,
     runId: string,
     selection?: PeerSelection,
-  ) => Effect.Effect<RunComparison, PersistenceError | InvalidInput>
+  ) => Effect.Effect<RunComparisonEvidence, PersistenceError | InvalidInput>
 }
 
 export interface WorkflowRepositoryAnalytics {

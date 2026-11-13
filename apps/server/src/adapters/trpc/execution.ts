@@ -18,6 +18,7 @@ import {
   ManagementRateLimited,
   Onboarding,
   PersistenceError,
+  EvidenceEngineError,
   logFailure,
   runApi,
   Unauthorized,
@@ -63,6 +64,7 @@ async function executeQuery<A>(
     A,
     | Unauthorized
     | PersistenceError
+    | EvidenceEngineError
     | ConfigurationError
     | InvalidInput
     | ManagementRateLimited,
@@ -145,7 +147,11 @@ export function readQuery<A>(
     reader: ProjectReader,
   ) => Effect.Effect<
     A,
-    Unauthorized | PersistenceError | InvalidInput | ManagementRateLimited,
+    | Unauthorized
+    | PersistenceError
+    | EvidenceEngineError
+    | InvalidInput
+    | ManagementRateLimited,
     | GetProjectWorkflowData
     | GetBusinessEvidence
     | ManageSharedInvestigations
@@ -206,7 +212,11 @@ export function sessionQuery<A>(
     userId: string,
   ) => Effect.Effect<
     A,
-    Unauthorized | PersistenceError | InvalidInput | ManagementRateLimited,
+    | Unauthorized
+    | PersistenceError
+    | EvidenceEngineError
+    | InvalidInput
+    | ManagementRateLimited,
     | ManageSharedInvestigations
     | ManageEvidenceCaptures
     | GetBusinessEvidence

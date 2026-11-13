@@ -110,18 +110,36 @@ if (command === "build") {
   ])
   const output = path.join(root, "packages/evidence-engine/wasm")
   run("wasm-bindgen", [
-    path.join(
+    path.resolve(
       root,
-      "target/wasm32-unknown-unknown/release/flowmark_evidence.wasm",
+      env.CARGO_TARGET_DIR ?? "target",
+      "wasm32-unknown-unknown/release/flowmark_evidence.wasm",
     ),
     "--target",
-    "nodejs",
+    "web",
     "--out-dir",
     output,
   ])
   writeFileSync(
     path.join(output, "package.json"),
-    JSON.stringify({ type: "commonjs" }) + "\n",
+    JSON.stringify({ type: "module" }) + "\n",
   )
-  console.info("Built Node-compatible evidence bindings and WASM assets.")
+  const binary = readFileSync(path.join(output, "flowmark_evidence_bg.wasm"))
+  writeFileSync(
+    path.join(output, "engine.js"),
+    [
+      'import { Buffer } from "node:buffer"',
+      'import { initSync, summarize_operations_json, percentile_json } from "./flowmark_evidence.js"',
+      `initSync({ module: Buffer.from(${JSON.stringify(binary.toString("base64"))}, "base64") })`,
+      "export { summarize_operations_json, percentile_json }",
+      "",
+    ].join("\n"),
+  )
+  writeFileSync(
+    path.join(output, "engine.d.ts"),
+    'export { summarize_operations_json, percentile_json } from "./flowmark_evidence.js"\n',
+  )
+  console.info(
+    `Built ESM bindings with ${binary.length} embedded WASM bytes; no runtime file reads.`,
+  )
 }

@@ -133,3 +133,17 @@ pub fn summarize_operations<'a>(
         })
         .collect()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::percentile;
+    #[test]
+    fn percentile_edges() {
+        assert_eq!(percentile(&[], 0.5), Ok(None));
+        assert_eq!(percentile(&[7.0], 0.95), Ok(Some(7.0)));
+        assert_eq!(percentile(&[4.0, 1.0, 3.0, 2.0], 0.5), Ok(Some(2.5)));
+        assert_eq!(percentile(&[0.0, 10.0], 0.95), Ok(Some(9.5)));
+        assert_eq!(percentile(&[3.0, 1.0], 0.0), Ok(Some(1.0)));
+        assert_eq!(percentile(&[3.0, 1.0], 1.0), Ok(Some(3.0)));
+    }
+}
