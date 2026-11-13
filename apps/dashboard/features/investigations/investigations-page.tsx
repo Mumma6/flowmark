@@ -1,4 +1,6 @@
 "use client"
+import { CapturePage } from "../evidence-captures/capture-page"
+import { CaptureList } from "../evidence-captures/capture-list"
 import { SharedQuestionPage } from "../shared-investigations/shared-question-page"
 import { SharedInvestigationList } from "../shared-investigations/shared-list"
 import { ShareSavedQuestion } from "../shared-investigations/share-saved-question"
@@ -23,6 +25,10 @@ export function InvestigationsPage() {
   const { current } = useProject()
   const userId = useInvestigationOwner()
   const params = useSearchParams()
+  const capture = params.get("capture")
+  if (capture !== null) {
+    return <CapturePage projectId={params.get("project")} id={capture} />
+  }
   const shared = params.get("shared")
   if (shared !== null) {
     return <SharedQuestionPage projectId={params.get("project")} id={shared} />
@@ -39,6 +45,10 @@ export function InvestigationsPage() {
       </div>
       {current && userId ? (
         <>
+          <CaptureList
+            key={`captures:${userId}:${current.id}`}
+            projectId={current.id}
+          />
           <SharedInvestigationList
             key={`shared:${userId}:${current.id}`}
             projectId={current.id}

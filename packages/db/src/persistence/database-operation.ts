@@ -1,4 +1,5 @@
 export enum DatabaseOperation {
+  EvidenceCaptures = "evidence-captures",
   SharedInvestigations = "shared-investigations",
   BusinessEvidence = "business-evidence",
   ProjectSharing = "project-sharing",

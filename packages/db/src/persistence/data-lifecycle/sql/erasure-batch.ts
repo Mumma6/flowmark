@@ -34,7 +34,7 @@ export const erasureBatchSql = (
     sql`DELETE FROM workflow_events WHERE id IN (SELECT id FROM workflow_events WHERE run_id IN (${selection}) LIMIT 1000) RETURNING id`,
     sql`DELETE FROM workflow_metric_facts WHERE event_id IN (SELECT event_id FROM workflow_metric_facts WHERE run_id IN (${selection}) LIMIT 1000) RETURNING event_id`,
     sql`DELETE FROM workflow_run_facts WHERE run_id IN (SELECT run_id FROM workflow_run_facts WHERE run_id IN (${selection}) LIMIT 100) RETURNING run_id`,
-    sql`DELETE FROM workflow_runs WHERE id IN (${selection} LIMIT 100) RETURNING id`,
+    sql`WITH captures AS (DELETE FROM evidence_captures WHERE id IN (SELECT id FROM evidence_captures WHERE source_run_id IN (${selection}) LIMIT 25) RETURNING id), runs AS (DELETE FROM workflow_runs WHERE id IN (${selection} LIMIT 75) AND NOT EXISTS (SELECT 1 FROM evidence_captures c WHERE c.source_run_id=workflow_runs.id) RETURNING id) SELECT id,false AS "deletedRun" FROM captures UNION ALL SELECT id,true AS "deletedRun" FROM runs`,
   ]
   return Array.get(telemetry, phase).pipe(
     Option.orElse(() =>

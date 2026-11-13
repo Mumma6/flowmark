@@ -11,9 +11,11 @@ export const drainOwnedInvestigations = (
     "userId" in scope
       ? sql`owner_id=${scope.userId}`
       : sql`project_id=${scope.projectId}::uuid`
-  return sql`WITH shared AS (
+  return sql`WITH captures AS (
+ DELETE FROM evidence_captures WHERE id IN (SELECT id FROM evidence_captures WHERE ${shared} LIMIT 25) RETURNING id
+ ), shared AS (
     DELETE FROM shared_investigations WHERE id IN (SELECT id FROM shared_investigations WHERE ${shared} LIMIT 25) RETURNING id
   ), personal AS (
-    DELETE FROM saved_investigations WHERE id IN (SELECT id FROM saved_investigations WHERE ${personal} LIMIT 75) RETURNING id
-  ) SELECT id FROM shared UNION ALL SELECT id FROM personal`
+    DELETE FROM saved_investigations WHERE id IN (SELECT id FROM saved_investigations WHERE ${personal} LIMIT 50) RETURNING id
+  ) SELECT id FROM captures UNION ALL SELECT id FROM shared UNION ALL SELECT id FROM personal`
 }

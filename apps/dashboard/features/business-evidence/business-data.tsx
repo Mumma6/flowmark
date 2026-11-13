@@ -1,5 +1,6 @@
 "use client"
 import { Button, Card, CardContent, CardHeader, CardTitle } from "@flowmark/ui"
+import { CaptureRun } from "../evidence-captures/capture-run"
 import { BusinessRunView } from "@flowmark/ui/business-run"
 import type { BusinessEvidence, BusinessEvidenceQuery } from "@flowmarkdev/core"
 import { BusinessJourneyForm, BusinessInsightForm } from "./question-forms"
@@ -132,6 +133,11 @@ export function BusinessData({
             references={data.references}
             revision={value.projection.publicationRevision}
             observedAt={value.projection.observedAt}
+          />
+          <CaptureRun
+            key={`${projectId}:${data.summary.id}`}
+            projectId={projectId}
+            runId={data.summary.id}
           />
           <div className="flex flex-wrap gap-2">
             <SaveInvestigation

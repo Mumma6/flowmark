@@ -1,32 +1,19 @@
-import { Effect, Schema } from "effect"
+import { Schema } from "effect"
 import {
   ManageSharedInvestigations,
   ShareInvestigationSchema,
   SharedInvestigationListSchema,
-  Unauthorized,
 } from "@flowmark/api"
 import { t } from "./context"
 import { UuidSchema } from "./schemas"
 import { readQuery, sessionQuery } from "./execution"
 import { studioMutation } from "./studio-origin"
-import { sharingIdentity } from "./project-sharing-boundary"
+import { native } from "./native-saved-object"
 const input = <S extends Schema.ConstraintDecoder<unknown>>(schema: S) =>
   Schema.toStandardSchemaV1(schema, {
     parseOptions: { onExcessProperty: "error" },
   })
 const scope = { projectId: UuidSchema }
-const native = <A, E, R>(
-  request: Request,
-  userId: string,
-  use: Effect.Effect<A, E, R>,
-) =>
-  Effect.gen(function* () {
-    const actor = yield* sharingIdentity(request).current
-    if (actor.userId !== userId) {
-      return yield* new Unauthorized({ permission: "write" })
-    }
-    return yield* use
-  })
 export const sharedInvestigationsRouter = t.router({
   create: studioMutation
     .input(

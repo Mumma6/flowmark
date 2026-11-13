@@ -108,3 +108,6 @@ export { BusinessEvidenceStore } from "./business-evidence/business-evidence-sto
 export { EvidenceAccessRejected } from "./business-evidence/types.js"
 export { SharedInvestigationStore } from "./shared-investigations/shared-investigation-store.js"
 export { SharedInvestigationRejected } from "./shared-investigations/types.js"
+
+export { EvidenceCaptureStore } from "./evidence-captures/evidence-capture-store.js"
+export { EvidenceCaptureRejected } from "./evidence-captures/types.js"

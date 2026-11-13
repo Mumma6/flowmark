@@ -1,12 +1,11 @@
 import { visibleSharedInvestigations } from "./visible-shared-investigations.js"
-import { Array, Context, Effect, Layer, Match, Option, Schema } from "effect"
+import { Array, Context, Effect, Layer, Option, Schema } from "effect"
 import {
   ShareInvestigationSchema,
   SharedInvestigationListSchema,
 } from "@flowmarkdev/core"
 import { InvalidInput, Unauthorized } from "../../../errors.js"
-import { AuthorizeProject } from "../../project-access/use-cases/authorize-project.js"
-import { AgentAccess } from "../../project-access/ports/agent-access.js"
+import { savedEvidenceAuthorization } from "../../project-access/use-cases/authorize-saved-evidence.js"
 import type { ProjectReader } from "../../workflows/models/project-reader.js"
 import { CurrentProjectReader } from "../../workflows/models/current-project-reader.js"
 import {
@@ -37,41 +36,8 @@ export class ManageSharedInvestigations extends Context.Service<ManageSharedInve
   "@flowmark/api/ManageSharedInvestigations",
   {
     make: Effect.gen(function* () {
-      const auth = yield* AuthorizeProject,
-        repository = yield* SharedInvestigations,
-        agent = yield* AgentAccess
-      const authorize = Effect.fn("SharedInvestigations.authorize")(function* (
-        reader: ProjectReader,
-        projectId: string,
-      ) {
-        return yield* Match.value(reader).pipe(
-          Match.tag("Key", () =>
-            Effect.fail(new Unauthorized({ permission: "read" })),
-          ),
-          Match.tag("User", (reader) =>
-            reader.projectId !== undefined &&
-            reader.projectId.toLowerCase() !== projectId.toLowerCase()
-              ? Effect.fail(new Unauthorized({ permission: "read" }))
-              : auth.authorizeUser(reader.userId, projectId),
-          ),
-          Match.tag("DelegatedUser", (reader) =>
-            Effect.gen(function* () {
-              if (reader.projectId.toLowerCase() !== projectId.toLowerCase()) {
-                return yield* new Unauthorized({ permission: "read" })
-              }
-              yield* auth.authorizeDelegatedReader(reader)
-              yield* agent.recordLastAuthenticated({
-                userId: reader.userId,
-                clientId: reader.clientId,
-                authorizationCodeId: reader.authorizationCodeId,
-                at: new Date(),
-              })
-              return projectId
-            }),
-          ),
-          Match.exhaustive,
-        )
-      })
+      const repository = yield* SharedInvestigations
+      const authorize = yield* savedEvidenceAuthorization
       const use = <A>(
         reader: ProjectReader,
         projectId: string,
