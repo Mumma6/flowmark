@@ -1,3 +1,4 @@
+import { purgeExpiredCaptures } from "./writes/purge-expired-captures.js"
 import { sql } from "drizzle-orm"
 import { Context, Effect, Layer } from "effect"
 import { Database, DatabaseCancellation, provideDatabase } from "../database.js"
@@ -64,6 +65,12 @@ const accessEvidenceCaptures = Effect.fn("accessEvidenceCaptures")(function* (
       write && subject.kind === "user"
         ? provide(insertCapture(projectId, subject.userId, capture))
         : Effect.fail(new EvidenceCaptureRejected({ reason: "Unauthorized" })),
+    purgeExpired: Effect.fn("EvidenceCaptureStore.purgeExpired")(function* () {
+      if (!write || subject.kind !== "user" || member.role !== "owner") {
+        return yield* new EvidenceCaptureRejected({ reason: "Unauthorized" })
+      }
+      return yield* provide(purgeExpiredCaptures(projectId))
+    }),
     delete: (id: string) =>
       write && subject.kind === "user"
         ? provide(

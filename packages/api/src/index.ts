@@ -205,3 +205,5 @@ export type {
   EvidenceCaptureRead,
   EvidenceCaptureSummary,
 } from "@flowmarkdev/core"
+
+export type { SavedEvidenceExport } from "@flowmarkdev/core"

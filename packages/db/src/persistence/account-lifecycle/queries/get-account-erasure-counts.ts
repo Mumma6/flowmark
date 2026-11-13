@@ -29,7 +29,9 @@ export const getAccountErasureCounts = Effect.fn("getAccountErasureCounts")(
       (SELECT jsonb_agg(client_id ORDER BY client_id) FROM clients),
       (SELECT jsonb_agg(family ORDER BY family) FROM (SELECT DISTINCT authorization_code_id AS family FROM oauth_refresh_token WHERE user_id = ${userId} OR client_id IN (SELECT client_id FROM clients)) families),
       (SELECT coalesce(max(receipt_order),0)::text FROM workflow_events WHERE run_id IN (SELECT id FROM population)),
-      (SELECT jsonb_agg(jsonb_build_array(c.id,c.creator_id,c.project_id,c.source_run_id,c.publication_revision,c.captured_at,c.expires_at) ORDER BY c.id) FROM evidence_captures c WHERE c.creator_id=${userId} OR c.project_id IN (SELECT id FROM owned)))::text) AS revision FROM counts`),
+      (SELECT jsonb_agg(jsonb_build_array(c.id,c.creator_id,c.project_id,c.source_run_id,c.publication_revision,c.captured_at,c.expires_at) ORDER BY c.id) FROM evidence_captures c WHERE c.creator_id=${userId} OR c.project_id IN (SELECT id FROM owned)),
+      (SELECT jsonb_agg(jsonb_build_array(s.id,s.creator_id,s.project_id,s.created_at) ORDER BY s.id) FROM shared_investigations s WHERE s.creator_id=${userId} OR s.project_id IN (SELECT id FROM owned)),
+      (SELECT jsonb_agg(to_jsonb(s) ORDER BY s.id) FROM saved_investigations s WHERE s.owner_id=${userId} OR s.project_id IN (SELECT id FROM owned)))::text) AS revision FROM counts`),
     )
     return row
   },

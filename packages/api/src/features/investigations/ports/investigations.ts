@@ -26,6 +26,7 @@ export interface InvestigationsService {
     userId: string,
     projectId: string,
     id: string,
+    depth?: "business" | "diagnostic",
   ) => Effect.Effect<Option.Option<StoredInvestigation>, Failure>
   readonly list: (
     userId: string,

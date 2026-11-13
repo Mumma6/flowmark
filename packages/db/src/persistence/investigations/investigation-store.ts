@@ -28,14 +28,23 @@ export class InvestigationStore extends Context.Service<InvestigationStore>()(
               userId: args[0],
             }),
           ),
-        get: (...args: Parameters<typeof getSavedInvestigation>) =>
+        get: (
+          userId: string,
+          projectId: string,
+          id: string,
+          depth: "business" | "diagnostic" = "business",
+        ) =>
           provide(
-            withActiveProject(args[1], getSavedInvestigation(...args)),
+            withActiveProject(
+              projectId,
+              getSavedInvestigation(userId, projectId, id),
+              depth === "diagnostic" ? "current" : "snapshot",
+            ),
           ).pipe(
-            Effect.provideService(ProjectReadDepth, "business"),
+            Effect.provideService(ProjectReadDepth, depth),
             Effect.provideService(ProjectReadSubject, {
               kind: "user",
-              userId: args[0],
+              userId,
             }),
           ),
         list: (...args: Parameters<typeof listSavedInvestigations>) =>

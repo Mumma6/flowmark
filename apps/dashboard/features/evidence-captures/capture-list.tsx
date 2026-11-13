@@ -1,4 +1,5 @@
 "use client"
+import { PurgeExpiredCaptures } from "./purge-expired-captures"
 import { Button } from "@flowmark/ui"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
@@ -39,10 +40,17 @@ export function CaptureList({ projectId }: { readonly projectId: string }) {
     <EnabledCaptures
       key={`${identity.data?.session.id}:${projectId}`}
       projectId={projectId}
+      canPurge={capabilities.data.canPurge}
     />
   )
 }
-function EnabledCaptures({ projectId }: { readonly projectId: string }) {
+function EnabledCaptures({
+  projectId,
+  canPurge,
+}: {
+  readonly projectId: string
+  readonly canPurge: boolean
+}) {
   const client = useTRPCClient(),
     identity = authClient.useSession()
   const [cursors, setCursors] = useState<readonly (string | null)[]>([null])
@@ -71,6 +79,7 @@ function EnabledCaptures({ projectId }: { readonly projectId: string }) {
         Saved observations expire within 24 hours and depend on current access
         and source availability.
       </p>
+      {canPurge ? <PurgeExpiredCaptures projectId={projectId} /> : null}
       <Button
         variant="outline"
         className="justify-self-start"

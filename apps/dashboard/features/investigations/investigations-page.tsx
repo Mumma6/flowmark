@@ -1,6 +1,7 @@
 "use client"
 import { CapturePage } from "../evidence-captures/capture-page"
 import { CaptureList } from "../evidence-captures/capture-list"
+import { ExportEvidence } from "./export-evidence"
 import { SharedQuestionPage } from "../shared-investigations/shared-question-page"
 import { SharedInvestigationList } from "../shared-investigations/shared-list"
 import { ShareSavedQuestion } from "../shared-investigations/share-saved-question"
@@ -167,6 +168,7 @@ function InvestigationEntry({
   userId: string
   projectId: string
 }) {
+  const { current } = useProject()
   const client = useTRPCClient()
   const cache = useQueryClient()
   const router = useRouter()
@@ -236,6 +238,13 @@ function InvestigationEntry({
           Delete saved investigation
         </Button>
       </div>
+      {item.supported && current?.role !== "business" ? (
+        <ExportEvidence
+          load={() =>
+            client.investigations.export.query({ projectId, id: item.id })
+          }
+        />
+      ) : null}
       {item.supported ? (
         <ShareSavedQuestion projectId={projectId} id={item.id} />
       ) : null}

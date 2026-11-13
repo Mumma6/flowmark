@@ -21,7 +21,8 @@ export const getErasureCounts = Effect.fn("getErasureCounts")(function* (
       (SELECT count(*) FROM workflow_search_fields WHERE project_id = ${projectId}::uuid) +
       (SELECT count(*) FROM workflow_definition_imports WHERE project_id = ${projectId}::uuid) +
       (SELECT count(*) FROM saved_investigations WHERE project_id = ${projectId}::uuid) +
-      (SELECT count(*) FROM captures) AS total)
+      (SELECT count(*) FROM captures) +
+      (SELECT count(*) FROM shared_investigations WHERE project_id=${projectId}::uuid) AS total)
     SELECT (SELECT count(*)::int FROM selected) AS runs, evidence.events,
       (SELECT count(*)::int FROM project_api_keys WHERE project_id = ${projectId}::uuid) AS "apiKeys",
       (SELECT count(*)::int FROM project_browser_keys WHERE project_id = ${projectId}::uuid) AS "browserKeys",
@@ -35,7 +36,8 @@ export const getErasureCounts = Effect.fn("getErasureCounts")(function* (
         (SELECT jsonb_agg(to_jsonb(f) ORDER BY f.workflow) FROM workflow_search_fields f WHERE project_id = ${projectId}::uuid),
         (SELECT jsonb_agg(to_jsonb(i) ORDER BY i.id) FROM workflow_definition_imports i WHERE project_id = ${projectId}::uuid),
         (SELECT jsonb_agg(to_jsonb(s) ORDER BY s.id) FROM saved_investigations s WHERE project_id = ${projectId}::uuid),
-        (SELECT jsonb_agg(to_jsonb(c) ORDER BY c.id) FROM captures c))::text) AS revision
+        (SELECT jsonb_agg(to_jsonb(c) ORDER BY c.id) FROM captures c),
+        (SELECT jsonb_agg(jsonb_build_array(s.id,s.creator_id,s.created_at) ORDER BY s.id) FROM shared_investigations s WHERE project_id=${projectId}::uuid))::text) AS revision
     FROM evidence CROSS JOIN configuration`),
   )
   return row

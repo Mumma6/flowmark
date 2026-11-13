@@ -1,3 +1,4 @@
+import { captureSourceDeadline } from "../sql/lifetime.js"
 import { sql } from "drizzle-orm"
 import { Effect } from "effect"
 import { Database } from "../../database.js"
@@ -30,7 +31,7 @@ export const captureSource = Effect.fn("captureSource")(function* (
         expiresAt: string
       }
     >(
-      sql`${projectRunSummaries(projectId, { runId })}, observed AS MATERIALIZED (SELECT date_trunc('milliseconds',clock_timestamp()) AS at) SELECT s.id,s.workflow,s.status,s.outcome,s."startedAt"::text AS "startedAt",s."durationMs",s."definitionRevision",o.at::text AS "capturedAt",date_trunc('milliseconds',LEAST(o.at+interval '24 hours',r.started_at+interval '30 days',r.created_at+interval '30 days'))::text AS "expiresAt" FROM runs s JOIN workflow_runs r ON r.id=s.id CROSS JOIN observed o`,
+      sql`${projectRunSummaries(projectId, { runId })}, observed AS MATERIALIZED (SELECT date_trunc('milliseconds',clock_timestamp()) AS at) SELECT s.id,s.workflow,s.status,s.outcome,s."startedAt"::text AS "startedAt",s."durationMs",s."definitionRevision",o.at::text AS "capturedAt",date_trunc('milliseconds',LEAST(o.at+interval '24 hours',${captureSourceDeadline}))::text AS "expiresAt" FROM runs s JOIN workflow_runs r ON r.id=s.id CROSS JOIN observed o`,
     ),
   )
   if (

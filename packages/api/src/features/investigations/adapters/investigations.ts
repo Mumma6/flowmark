@@ -50,8 +50,8 @@ export const InvestigationsLive = Layer.effect(
     return Investigations.of({
       save: (userId, projectId, input) =>
         translate(store.save(userId, projectId, input)),
-      get: (userId, projectId, id) =>
-        translate(store.get(userId, projectId, id)),
+      get: (userId, projectId, id, depth) =>
+        translate(store.get(userId, projectId, id, depth)),
       list: (userId, projectId, input) =>
         translate(store.list(userId, projectId, input)),
       delete: (userId, projectId, id) =>

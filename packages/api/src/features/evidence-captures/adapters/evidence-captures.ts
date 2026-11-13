@@ -77,6 +77,7 @@ export const EvidenceCapturesLive = Layer.effect(
                 values: (id, paths, keys) =>
                   persist(access.values(id, paths, keys)),
                 create: (capture) => persist(access.create(capture)),
+                purgeExpired: () => persist(access.purgeExpired()),
                 delete: (id) => persist(access.delete(id)),
               } satisfies CaptureAccess),
             ),
