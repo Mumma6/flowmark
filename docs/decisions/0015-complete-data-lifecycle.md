@@ -275,3 +275,16 @@ does not claim GDPR compliance or that technical deletion resolves every legal
 request. TASK-007 owns project implementation, TASK-008 account/provider guards,
 TASK-009 export delivery, collaboration tasks future shared-owner policy, and
 existing infrastructure cleanup/recovery tasks scheduling and restore drills.
+
+### Shared live questions (ADR 0019)
+
+Migration 0029 adds `shared_investigations`: intentional title/selection metadata,
+not copied telemetry. Immutable creator/project ownership and a membership FK
+remove a creator's copies on leave/removal without reviving them on rejoin.
+Project/account cleanup drains these rows alongside private questions in the
+existing saved-question phase (at most 25 shared and 75 private rows per batch),
+preserving persisted phase numbers. Creator account cleanup can delete only its
+own shared rows inside another fenced project. Source run erasure does not erase
+a live question; reopening still reads retained evidence and may be unavailable.
+Project/account deletion does erase the owned question metadata. No captured
+result or additional retention store is introduced by this increment.

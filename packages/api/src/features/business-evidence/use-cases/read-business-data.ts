@@ -5,10 +5,8 @@ import type {
 } from "@flowmarkdev/core"
 import { InvalidInput } from "../../../errors.js"
 import type { EvidenceAccess } from "../ports/business-evidence.js"
-import {
-  assertPublishedReference,
-  publicationMeaning,
-} from "../rules/publication.js"
+import { publicationMeaning } from "../rules/publication.js"
+import { validateBusinessSelection } from "../rules/selection.js"
 import {
   projectBusinessFields,
   projectBusinessReferences,
@@ -25,26 +23,15 @@ export const readBusinessData = Effect.fn("readBusinessData")(function* (
   publication: BusinessPublication,
   input: BusinessEvidenceQuery,
 ) {
-  const meaning = yield* Effect.cached(
-    access
-      .choices()
-      .pipe(Effect.map((choices) => publicationMeaning(publication, choices))),
-  )
-  const assertReference = (workflow: string | undefined, key: string) =>
-    meaning.pipe(
-      Effect.flatMap((value) =>
-        assertPublishedReference(
-          { results: [], references: value.references },
-          workflow,
-          key,
-        ),
-      ),
-    )
+  const meaning = yield* access
+    .choices()
+    .pipe(Effect.map((choices) => publicationMeaning(publication, choices)))
+  yield* validateBusinessSelection(input, meaning)
   return yield* Match.value(input).pipe(
     Match.when({ kind: "overview" }, ({ workflow, revision }) =>
       Effect.gen(function* () {
         const workflows = yield* access.workflows(workflow)
-        const published = yield* meaning
+        const published = meaning
         return {
           kind: "overview" as const,
           workflows: Array.map(Array.take(workflows, 100), (w) => ({
@@ -72,9 +59,6 @@ export const readBusinessData = Effect.fn("readBusinessData")(function* (
     ),
     Match.when({ kind: "runs" }, ({ query }) =>
       Effect.gen(function* () {
-        if (query.businessKey !== undefined) {
-          yield* assertReference(query.workflow, query.businessKey)
-        }
         const { cursor, ...selection } = query
         const fingerprint = queryFingerprint({ kind: "runs", ...selection })
         const inner = yield* decodeBusinessCursor(
@@ -115,7 +99,7 @@ export const readBusinessData = Effect.fn("readBusinessData")(function* (
             cause: "Run not found in this project.",
           })
         }
-        const published = yield* meaning
+        const published = meaning
         return {
           kind: "run" as const,
           summary: projectBusinessSummary(run),
@@ -130,10 +114,6 @@ export const readBusinessData = Effect.fn("readBusinessData")(function* (
     ),
     Match.when({ kind: "journey" }, ({ query }) =>
       Effect.gen(function* () {
-        yield* assertReference(query.workflow, query.key)
-        yield* Effect.forEach(query.namespaces, (n) =>
-          assertReference(n.workflow, n.key),
-        )
         const { cursor, candidateCursor, ...selection } = query
         const fingerprint = queryFingerprint({ kind: "journey", ...selection })
         const inner = yield* decodeBusinessCursor(
@@ -200,42 +180,6 @@ export const readBusinessData = Effect.fn("readBusinessData")(function* (
     ),
     Match.when({ kind: "insights" }, ({ query }) =>
       Effect.gen(function* () {
-        if (query.releaseA !== undefined || query.releaseB !== undefined) {
-          return yield* new InvalidInput({
-            cause: "Release filters are withheld from business evidence.",
-          })
-        }
-        if (query.businessKey !== undefined) {
-          yield* assertReference(query.workflow, query.businessKey)
-        }
-        const published = yield* meaning
-        yield* Effect.forEach(
-          [
-            query.path,
-            ...(query.numerator ? [query.numerator] : []),
-            ...(query.denominator ? [query.denominator] : []),
-          ],
-          (path) =>
-            Array.some(
-              published.results,
-              (e) =>
-                e.workflow === query.workflow &&
-                e.revision === query.revision &&
-                Array.some(
-                  e.fields,
-                  (f) =>
-                    JSON.stringify(f.path) === JSON.stringify(path) &&
-                    f.aggregate,
-                ),
-            )
-              ? Effect.void
-              : Effect.fail(
-                  new InvalidInput({
-                    cause:
-                      "This result selector is withheld from business evidence.",
-                  }),
-                ),
-        )
         const report = yield* access.insights(query)
         // Construct the supported aggregate DTO; no diagnostic extensions flow through.
         return {

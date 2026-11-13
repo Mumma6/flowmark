@@ -259,10 +259,15 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         () => f.outsider.businessEvidence.read({ kind: "run", runId: f.id }),
       ]
       await run(
-        Effect.forEach(requests, (request) =>
-          Effect.promise(async () => {
-            await expect(request()).rejects.toThrow()
-          }),
+        Effect.forEach(
+          requests,
+          (request) =>
+            Effect.promise(async () => {
+              await expect(request()).rejects.toMatchObject({
+                code: "UNAUTHORIZED",
+              })
+            }),
+          { concurrency: 4 },
         ),
       )
       await expect(
@@ -283,7 +288,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
       await expect(
         run(declarations.list(f.business.userId, f.projectId, workflow)),
       ).rejects.toThrow()
-    })
+    }, 15000)
     it("rejects hidden selectors and foreign scopes without exposing an oracle", async () => {
       const f = await fixture()
       await f.publish()

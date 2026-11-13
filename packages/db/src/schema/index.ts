@@ -6,6 +6,7 @@ import {
   type AnyPgColumn,
   boolean,
   check,
+  foreignKey,
   index,
   bigint,
   bigserial,
@@ -428,6 +429,49 @@ export const savedInvestigations = pgTable(
       table.projectId,
       table.createdAt,
       table.id,
+    ),
+  ],
+)
+
+/** Immutable project-shared questions; never captured results or grants. */
+export const sharedInvestigations = pgTable(
+  "shared_investigations",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    creatorId: text("creator_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    selection: jsonb("selection").$type<unknown>().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    foreignKey({
+      name: "shared_investigation_creator_membership_fk",
+      columns: [table.creatorId, table.projectId],
+      foreignColumns: [projectMembers.userId, projectMembers.projectId],
+    }).onDelete("cascade"),
+    index("shared_investigations_creator_project_idx").on(
+      table.creatorId,
+      table.projectId,
+    ),
+    index("shared_investigations_project_created_idx").on(
+      table.projectId,
+      table.createdAt,
+      table.id,
+    ),
+    check(
+      "shared_investigation_title_check",
+      sql`length(${table.title}) BETWEEN 1 AND 120 AND length(btrim(${table.title})) > 0`,
+    ),
+    check(
+      "shared_investigation_selection_size_check",
+      sql`octet_length(${table.selection}::text) <= 16384`,
     ),
   ],
 )
