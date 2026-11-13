@@ -79,6 +79,12 @@
       ],
       "outputs": ["dist/**", "wasm/**"],
       "passThroughEnv": ["CARGO_HOME", "RUSTUP_HOME", "CARGO_TARGET_DIR"]
+    },
+    "@flowmark/evidence-engine#typecheck": {
+      "dependsOn": ["build"]
+    },
+    "@flowmark/evidence-engine#test": {
+      "dependsOn": ["build"]
     }
   }
 }
