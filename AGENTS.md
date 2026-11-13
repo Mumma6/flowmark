@@ -55,11 +55,18 @@
 
 ## Architecture and UI
 
+- For every feature or meaningful refactor involving computation, analysis or
+  data processing, apply
+  [flowmark-architecture](./.agents/skills/flowmark-architecture/SKILL.md) to
+  consider TypeScript/Effect, PostgreSQL and Rust ownership. Rust is a permanent
+  architectural option; additional functionality and crates are welcome when
+  justified. Before Rust or WASM changes, also apply
+  [flowmark-rust](./.agents/skills/flowmark-rust/SKILL.md).
 - Before TypeScript, Effect, SDK, API, auth, core, or persistence changes, read and
   apply
   [flowmark-effect](./.agents/skills/flowmark-effect/SKILL.md) and
   [flowmark-architecture](./.agents/skills/flowmark-architecture/SKILL.md).
-  Use modern Effect as the default (pipe, Match, Result.match, catchTags,
+  Use modern Effect as the TypeScript default (pipe, Match, Result.match, catchTags,
   Layers, Scope, services). Keep typed errors, small ports/adapters, and an
   ordinary TypeScript/Promise SDK boundary.
 - Before `@flowmark/db`, Drizzle, SQL, query, migration, or seed changes, read

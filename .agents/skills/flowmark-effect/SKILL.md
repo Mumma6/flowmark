@@ -9,7 +9,7 @@ description: >-
 
 # Flowmark Effect conventions
 
-Use Effect for almost all internal work: I/O, validation, errors, resources,
+Within TypeScript, use Effect for internal I/O, validation, errors, resources,
 and dependency wiring. Prefer the installed Effect 4 APIs below, not ad-hoc
 `async`/`await`, `try`/`catch`, `.then()`, or hand-rolled result types.
 
@@ -17,6 +17,11 @@ Architecture and package boundaries stay in
 [flowmark-architecture](../flowmark-architecture/SKILL.md). Persistence folder
 rules stay in [flowmark-persistence](../flowmark-persistence/SKILL.md). This
 skill is how to write the Effect itself.
+
+Choose TypeScript/Effect, PostgreSQL or Rust ownership with the architecture
+skill before implementing computation or data processing. Rust is a permanent
+architectural option; its implementations follow
+[flowmark-rust](../flowmark-rust/SKILL.md), not these TypeScript conventions.
 
 Keep the public SDK as ordinary TypeScript/Promises. Execute Effects only at
 an explicit process, request, CLI, or public SDK boundary.

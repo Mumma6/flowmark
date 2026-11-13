@@ -8,9 +8,11 @@ review of every workspace manifest, root script, database CLI and Actions workfl
 
 ## Root interface
 
-The [Evidence Engine](./evidence-engine.md) adds `pnpm rust:setup`, `rust:format`,
-`rust:check` and `rust:build` for the pinned Rust toolchain, native verification
-and WASM bindings. `pnpm evidence:verify-build` verifies the actual server build,
+Rust workspace tooling includes `pnpm rust:setup`, `rust:format` and `rust:check`
+for the pinned toolchain and native verification. The current Evidence Engine's
+`pnpm rust:build` generates its WASM bindings; additional crates should join the
+workspace with appropriate build and verification steps. See the
+[Rust guide](./evidence-engine.md). `pnpm evidence:verify-build` verifies the actual server build,
 embedded WASM bytes and isolated traced bindings. These commands do not deploy.
 
 | Command                                                                        | Behavior and reason to retain                                                                                                                                                             |

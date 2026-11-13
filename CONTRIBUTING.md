@@ -24,6 +24,15 @@ authentication, persistence, and dashboard fit together. Sign-in configuration
 lives in the private `@flowmark/auth` package. Request boundaries are in
 [Authentication request boundaries](./docs/auth-perimeter.md).
 
+TypeScript + Effect remains the primary application platform; PostgreSQL and Rust
+are established owners for appropriate data-local work and cohesive computation.
+For computation, analysis or data-processing changes, evaluate the owner using the
+[architecture guidance](./docs/architecture.md#typescript-postgresql-and-rust).
+Rust contributions may extend the Evidence Engine or introduce another justified
+crate. Learning and functional craftsmanship are valid benefits; keep integration
+cost and maintainability explicit. The [Rust/WASM guide](./docs/evidence-engine.md)
+documents the shared toolchain and the current engine's build and tests.
+
 Customer-facing SDK documentation is built from `apps/docs` and published at
 [docs.flowmark.dev](https://docs.flowmark.dev). Change that site when the
 public product docs need updates; this file is for repository contributors.

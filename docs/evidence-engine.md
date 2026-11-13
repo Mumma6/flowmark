@@ -1,8 +1,15 @@
 # Rust Evidence Engine
 
-Flowmark uses Rust for deterministic operation-evidence summarization. It is a
-production calculation and an intentional exploration of functional Rust,
-WebAssembly and a small, explicit language boundary. It needs no hosted service,
+Rust is a permanent, first-class part of Flowmark's architecture. The Evidence
+Engine is its first production integration and currently owns deterministic
+operation-evidence summarization. Future Rust functionality and crates may serve
+other cohesive responsibilities; this engine does not define the language's scope.
+
+[Language and responsibility ownership](./architecture.md#typescript-postgresql-and-rust)
+weighs TypeScript/Effect, PostgreSQL and Rust by cohesion, integration cost and
+maintainability. Learning, functional programming, polyglot design and craftsmanship
+are valid reasons to choose Rust without a performance bottleneck. The current
+engine uses WASM inside the existing backend and needs no hosted service,
 database or additional runtime process.
 
 ## Ownership
@@ -18,7 +25,7 @@ database or additional runtime process.
   existing diagnostic/business comparison contracts. Runtime composition supplies
   the engine layer. Public core and SDK packages have no WASM dependency.
 
-Rust is the sole production implementation of occurrence summarization and the
+This crate is the sole production implementation of occurrence summarization and the
 in-memory percentile calculation. PostgreSQL continues to own cohort filtering,
 historical aggregate percentiles, coverage classification and weighted ratios.
 The two percentile contexts are intentional; no raw cohort export is introduced.
@@ -99,13 +106,20 @@ binary as well when changing bindings or runtime requirements. `pnpm check`
 includes Rust checks and artifact verification, so existing PR CI exercises the
 integration without hosted credentials. No deployment is performed.
 
-## Adding a calculation
+## Adding Rust functionality
 
-Start with a concrete API caller and an explicit input/output contract. Add a
-pure domain module and tests, extend the narrow WASM boundary, then expose a typed
-service method. Keep I/O and authorization outside Rust. Preserve precision,
-nullability and ordering in shared fixtures. Migrate the complete calculation
-and remove its old production implementation. A SQL-backed rule needs a separate
-decision covering filtering, aggregation and evidence drilldown parity.
+Choose the responsibility and owner first. Extend this engine when the work
+belongs to evidence computation; another cohesive responsibility may merit its
+own module or crate in the Cargo workspace. Keep pure domain logic independent
+of runtime integration, favor idiomatic functional Rust and define explicit
+input/output/error contracts with independent tests.
+
+For an engine calculation, add a pure module and tests, extend the narrow WASM
+boundary and expose the typed service method. Keep its I/O and authorization in
+the TypeScript/Effect application layer. Preserve precision, nullability and
+ordering in shared fixtures. Migrating a rule removes its old production
+implementation; migrating a SQL-backed rule also addresses filtering, aggregation
+and evidence drilldown parity. Future Rust integrations should choose their
+boundary deliberately rather than copy this WASM mechanism automatically.
 
 Follow the repository's `flowmark-rust` skill for implementation conventions.

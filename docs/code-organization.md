@@ -7,8 +7,15 @@ it does not describe all existing code as already conforming. Preserve Product
 
 ## Ownership before mechanics
 
-Domain rules and shared wire schemas belong in `@flowmarkdev/core` when multiple
-layers actually consume them. API use cases own authorization and application
+For new features and meaningful refactors involving computation, analysis or
+data processing, choose among TypeScript/Effect, PostgreSQL and Rust using
+[architecture ownership](./architecture.md#typescript-postgresql-and-rust).
+Rust is a permanent option beyond the current engine; learning, functional
+programming and craftsmanship count alongside cohesion and integration cost.
+Give each rule one owner and an independently testable contract.
+
+Shared TypeScript domain rules and wire schemas belong in `@flowmarkdev/core`
+when multiple layers actually consume them. API use cases own authorization and application
 policy; API ports describe needed capabilities. DB stores, queries, SQL and
 transactions own persistence. Auth owns provider integration and signed identity.
 MCP and server routes translate protocols and compose API capabilities. Studio
@@ -22,12 +29,19 @@ re-export DB implementation types as API ports, or move every DTO into core.
 
 ## Pure functions and services
 
-Keep deterministic transformations synchronous. Compose with Effect collection
-modules, `pipe`/`flow`, `Option`, `Result` and `Match`; use immutable grouping and
+Keep deterministic transformations pure. In TypeScript, compose with Effect
+collection modules, `pipe`/`flow`, `Option`, `Result` and `Match`; use immutable grouping and
 folds instead of mutating accumulation. An `Array.forEach` callback that updates
 a Map or pushes results is still imperative accumulation. Prefer exhaustive
 matching for closed variants; simple narrowing guards and ordinary JSX branching
 remain useful. Avoid `Effect.gen` around a calculation that needs no effects.
+
+Rust uses its own idiomatic functional patterns: immutable inputs, enums,
+`Option`/`Result`, pattern matching and iterator composition. Keep pure modules
+independent of serialization and runtime adapters. TypeScript/Effect owns the
+current engine's orchestration and loading boundary; its calculations do not
+need Effect services inside Rust. Future crates follow their own cohesive
+responsibilities, with no duplicated business rules or runtime dependency cycles.
 
 Group related pure utilities in a domain-named module, with named exports. A
 module can provide excellent discoverability without a runtime service. Add a
@@ -87,10 +101,14 @@ resource-owning changes. Do not replace the existing transaction system casually
 Choose folders by behavior and change ownership, then introduce a technical
 subdirectory only where it improves navigation. Keep small features flat. Split
 when independent concerns have independent callers/tests, not at a line threshold.
-Do not produce one-file folders or barrel forests just for symmetry. Kebab-case
-files name domain behavior; tests stay under package/app `test/`, mirroring the
+Do not produce one-file folders or barrel forests just for symmetry. TypeScript
+files use kebab-case domain names; its tests stay under package/app `test/`, mirroring the
 feature structure when useful. Avoid creating re-export shims for private file
 moves; update imports together. Preserve published package entry points.
+
+Rust crates live in the Cargo workspace, with responsibility-named modules,
+independent native tests and boundary tests for their consumers. The first
+crate's file layout is an example, not a mandatory template for future crates.
 
 API retains `features/<domain>/{use-cases,ports,adapters}`. Add domain/model/schema
 modules within the relevant feature as needed. Persistence retains stores with

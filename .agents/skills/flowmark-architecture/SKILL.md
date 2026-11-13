@@ -1,14 +1,51 @@
 ---
 name: flowmark-architecture
-description: "Use when adding or refactoring Flowmark SDK, API, core, or persistence code; apply Effect-first functional programming, ports and adapters, typed errors, and the repository's file organization."
+description: "Choose responsibility and language ownership for Flowmark computation, analysis and data processing, and guide SDK, API, core, persistence and Rust architecture. Use for new features or meaningful refactors involving these concerns; apply TypeScript/Effect, PostgreSQL and Rust boundaries, explicit contracts and functional design."
 ---
 
 # Flowmark Architecture
 
-Apply this skill when implementing or refactoring Flowmark's internal SDK, API,
-core, or persistence architecture. For Effect API style (pipe, Match,
+Apply this skill when implementing or refactoring Flowmark's application,
+persistence or Rust architecture, including choosing the owner of computations.
+For TypeScript Effect API style (pipe, Match,
 Result.match, catchTags, Layers, Scope, services), also apply
 [flowmark-effect](../flowmark-effect/SKILL.md).
+
+## Choose the responsibility and language owner
+
+For every future feature or meaningful refactoring involving computation,
+analysis or data processing, consider TypeScript/Effect, PostgreSQL and Rust
+before choosing the implementation owner.
+
+- **TypeScript + Effect** remains the primary application platform: orchestration,
+  API use cases, Services/Layers, authentication, permissions, persistence
+  integration, SDK, MCP and Studio. Pure TypeScript rules remain appropriate.
+- **PostgreSQL** owns data-local selection, joins, filtering, transactions and
+  aggregations where keeping work with the stored population preserves efficient
+  reads and aggregate/drilldown parity.
+- **Rust** is a permanent, first-class option for pure deterministic computation,
+  evidence processing/analysis, algorithms, graph operations, event transformations,
+  statistics, performance-sensitive components and other cohesive responsibilities
+  with meaningful benefits. The Evidence Engine is its first integration, not its
+  scope limit. Future tasks may add Rust functionality, modules or crates.
+
+Rust does not require a performance problem to justify its use. Learning,
+functional programming, polyglot design and engineering craftsmanship are valid
+project benefits. Do not select it automatically: weigh cohesion, ownership,
+integration cost and maintainability, and state the reason for the chosen owner.
+
+Prefer independently testable modules, clear language boundaries and explicit
+input/output/error contracts. Give each business rule one production owner;
+avoid duplicated implementations, circular dependencies and unnecessary coupling
+between runtimes. Keep application orchestration and composition in their owning
+TypeScript/Effect layer; a pure Rust module does not acquire an Effect runtime.
+WASM is the current integration mechanism, not a requirement for every future
+Rust responsibility.
+
+Rust implementations favor pure functions, immutable inputs, enums, `Option` and
+`Result`, exhaustive pattern matching and iterator composition. Apply
+[flowmark-rust](../flowmark-rust/SKILL.md) for idiomatic implementation and boundary
+verification; do not impose TypeScript/Effect syntax or service patterns on Rust.
 
 ## Architectural goals
 
@@ -17,7 +54,7 @@ Infrastructure resource programs follow
 Pulumi's declarative dependency graph owns those resources; do not wrap it in
 application Effect layers or replace it with imperative provider calls.
 
-- Use Effect as the default internal model for asynchronous and dependencyful
+- Use Effect as the default TypeScript model for asynchronous and dependencyful
   workflows. Keep effects lazy and compose them before executing them at
   process, request, or public SDK boundaries.
 - Use functional programming: pure functions and immutable data by default;
@@ -41,8 +78,10 @@ apps/server auth routes ──> @flowmark/auth ──> @flowmark/db
 dashboard server proxy  ──> @flowmark/auth/client-identity
 ```
 
-- `core/` owns domain types, pure rules, and Effect Schema definitions. It must
-  not depend on SDK, API, framework, or persistence implementations.
+- `core/` owns shared TypeScript domain types, pure TypeScript rules, and Effect
+  Schema definitions. Rust-owned algorithms live in their cohesive crates rather
+  than being duplicated in core. Core must not depend on SDK, API, framework,
+  persistence implementations or WASM initialization.
 - `@flowmark/auth` owns Better Auth configuration, local session provisioning,
   signed proxy identity, and auth-specific limit policy. It may depend on
   `@flowmark/db`. The database package must not depend on `@flowmark/auth`.
@@ -85,6 +124,9 @@ dashboard server proxy  ──> @flowmark/auth/client-identity
 
 ## Effect and failure handling
 
+These Effect conventions apply to TypeScript and its runtime boundaries. Rust
+uses the native error and ownership conventions in the Rust skill.
+
 - Write effectful logic as `Effect.Effect<A, E, R>`; do not implement a Promise
   workflow and wrap it in `Effect.tryPromise` afterward.
 - Use `Effect.tryPromise` only at genuine Promise-based library boundaries,
@@ -100,15 +142,16 @@ dashboard server proxy  ──> @flowmark/auth/client-identity
 - Do not suppress errors or return success-shaped fallbacks. Map failures to
   HTTP/tRPC responses only at the protocol boundary and retain diagnostic
   causes.
-- Keep pure transformations synchronous, using Effect collection, Option, Result,
+- Keep pure TypeScript transformations synchronous, using Effect collection, Option, Result,
   Match and Schema operators under [flowmark-effect](../flowmark-effect/SKILL.md).
   Do not wrap pure calculations in an Effect runtime or service.
 
 ## File and folder organization
 
 Prefer small, specific files grouped by architectural responsibility. Follow
-existing package conventions; adapt these examples rather than creating empty
-layers:
+existing package conventions. The feature folders, TypeScript filenames and
+test layout below describe TypeScript packages; Rust follows its own crate/module
+conventions in the Rust skill. Adapt these examples rather than creating empty layers:
 
 ```text
 src/
@@ -194,6 +237,8 @@ test/
 ## Verification checklist
 
 1. Read neighboring files and reuse the established Effect and naming patterns.
+   For computation, analysis or data processing, record the language/owner choice
+   above and apply the Rust skill when relevant.
 2. Test use cases through injected service implementations without real
    framework/network/database dependencies.
 3. Test adapter translations and resource cleanup at their boundaries.

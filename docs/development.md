@@ -1,6 +1,10 @@
 # Development guide
 
-Rust/WASM contributor setup, ownership and verification are documented in the
+Rust is a permanent architectural option alongside the primary TypeScript/Effect
+platform and PostgreSQL. Choose ownership for computation and data-processing
+changes using [architecture](./architecture.md#typescript-postgresql-and-rust);
+additional Rust modules and crates are welcome when cohesive and maintainable.
+Rust contributor setup and the current WASM integration are documented in the
 [Evidence Engine guide](./evidence-engine.md). `pnpm check` includes native Rust
 checks, Node/WASM fixtures and production artifact verification. Tool bootstrap
 uses an ignored checkout-local cache and leaves shell profiles unchanged.

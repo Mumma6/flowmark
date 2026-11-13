@@ -172,6 +172,13 @@ you control.
 
 ## Local development
 
+TypeScript + Effect is the primary application platform. PostgreSQL owns
+data-local persistence and analytics. Rust is a permanent architectural option
+for cohesive computation, analysis, algorithms and data processing; the
+[Evidence Engine](./docs/evidence-engine.md) is its first production integration.
+Future Rust modules and crates can build on the same explicit ownership and
+contract boundaries. See [architecture](./docs/architecture.md#typescript-postgresql-and-rust).
+
 Node.js 20.19 or newer, pnpm 10.18.1, and Docker Compose.
 
 ```sh
