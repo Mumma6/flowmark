@@ -21,6 +21,7 @@ export const createProjectInvitation = Effect.fn("createProjectInvitation")(
     projectId: string,
     email: string,
     tokenHash: string,
+    role: "viewer" | "business" = "viewer",
   ) {
     const db = yield* Database
     // Lookup only discovers lock IDs. Authority and recipient identity are rechecked below.
@@ -82,6 +83,7 @@ export const createProjectInvitation = Effect.fn("createProjectInvitation")(
                 recipientUserId: recipient?.id ?? null,
                 email,
                 tokenHash,
+                role,
                 expiresAt: new Date(Date.now() + 72 * 3600000),
               })
               .returning(),

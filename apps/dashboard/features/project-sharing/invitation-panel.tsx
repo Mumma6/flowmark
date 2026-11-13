@@ -25,7 +25,7 @@ type Review = {
   projectName: string
   inviterName: string
   expiresAt: string
-  role: "viewer"
+  role: "viewer" | "business"
   action: "review" | "accept" | "decline"
 }
 function InvitationControls({
@@ -80,11 +80,15 @@ function InvitationControls({
         <>
           <h2 className="text-lg font-semibold">Join {review.projectName}?</h2>
           <p className="text-sm">
-            {review.inviterName} invited you as a read-only viewer. This grants
-            full diagnostic reads for this project, including reported
-            properties, errors and diagnostic downloads. It does not include
-            other projects, key management, metadata changes or project
-            deletion.
+            {review.inviterName} invited you as{" "}
+            {review.role === "business"
+              ? "a business reader"
+              : "a diagnostic viewer"}
+            .
+            {review.role === "business"
+              ? " You can see project-wide workflow activity, status, outcome codes and timing, plus only owner-published result and reference values. Raw diagnostics and external run IDs are withheld. A customer filter does not restrict your access to that customer."
+              : " This grants full diagnostic reads, including properties, errors and downloads."}
+            Neither role grants management or access to other projects.
           </p>
           <p className="text-sm text-muted-foreground">
             Expires{" "}
@@ -96,7 +100,8 @@ function InvitationControls({
           </p>
           <div className="flex flex-wrap gap-3">
             <Button disabled={mutation.isPending} onClick={() => act("accept")}>
-              Accept diagnostic read access
+              Accept {review.role === "business" ? "business" : "diagnostic"}{" "}
+              read access
             </Button>
             <Button
               variant="outline"

@@ -82,12 +82,12 @@ export interface ProjectCredentialsStoreService {
   ) => Effect.Effect<boolean, DatabaseError>
   readonly projectForUser: (
     userId: string,
-    role?: "owner",
+    role?: "owner" | "diagnostic",
   ) => Effect.Effect<string | undefined, DatabaseError>
   readonly memberProject: (
     userId: string,
     projectId: string,
-    role?: "owner",
+    role?: "owner" | "diagnostic",
   ) => Effect.Effect<string | undefined, DatabaseError>
   readonly delegatedReaderProject: (input: {
     readonly userId: string
@@ -204,8 +204,11 @@ export class ProjectCredentialsStore extends Context.Service<ProjectCredentialsS
         consumeBrowserQuota: (keyId) => provide(consumeBrowserQuota(keyId)),
         projectForUser: (userId, role) =>
           provide(getProjectForUser(userId, role)),
-        memberProject: (userId: string, projectId: string, role?: "owner") =>
-          provide(getMemberProject(userId, projectId, role)),
+        memberProject: (
+          userId: string,
+          projectId: string,
+          role?: "owner" | "diagnostic",
+        ) => provide(getMemberProject(userId, projectId, role)),
         delegatedReaderProject: (input) =>
           provide(getDelegatedReaderProject(input)),
         listProjects: (userId) => provide(listProjectsForUser(userId)),

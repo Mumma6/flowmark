@@ -67,6 +67,7 @@ export const sharingNotifications =
         yield* email
           .send({
             kind: "project-invitation",
+            role: message.role,
             to: message.email,
             messageId: message.id,
             projectName: message.projectName,

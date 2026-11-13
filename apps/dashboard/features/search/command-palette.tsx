@@ -79,7 +79,9 @@ function useDebouncedQuery(value: string, delay: number) {
 export function CommandPalette() {
   const { current } = useProject()
   // A project change discards open results and pending debounced text together.
-  return <ProjectCommandPalette key={current?.id ?? "no-project"} />
+  return current && current.role !== "business" ? (
+    <ProjectCommandPalette key={current.id} />
+  ) : null
 }
 
 function ProjectCommandPalette() {

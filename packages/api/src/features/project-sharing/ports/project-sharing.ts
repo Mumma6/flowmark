@@ -12,6 +12,7 @@ export type InvitationDispatch = {
   readonly id: string
   readonly email: string
   readonly projectName: string
+  readonly role?: "viewer" | "business"
   readonly inviterName: string
 }
 export class ProjectSharingRepository extends Context.Service<
@@ -26,6 +27,7 @@ export class ProjectSharingRepository extends Context.Service<
       projectId: string,
       email: string,
       tokenHash: string,
+      role?: "viewer" | "business",
     ) => Effect.Effect<Option.Option<InvitationDispatch>, SharingError>
     readonly delivery: (
       id: string,

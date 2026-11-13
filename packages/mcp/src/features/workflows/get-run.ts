@@ -1,6 +1,10 @@
+import {
+  businessToolEvidence,
+  type McpBusinessResult,
+} from "./business-evidence.js"
 import type { AuthorizeAgentRead } from "@flowmark/api"
-import { GetProjectWorkflowData } from "@flowmark/api"
-import { Effect, Match } from "effect"
+import { GetBusinessEvidence, GetProjectWorkflowData } from "@flowmark/api"
+import { Effect, Match, Option } from "effect"
 import type { FlowmarkMcpAuthInfo } from "../../auth/claims.js"
 import { McpToolReadError } from "../../errors.js"
 import { decodeGetRunInput } from "../../tools/schemas.js"
@@ -23,9 +27,9 @@ export const getRunForMcp: (
   identity: FlowmarkMcpAuthInfo,
   rawInput: unknown,
 ) => Effect.Effect<
-  McpGetRunResult,
+  McpGetRunResult | McpBusinessResult,
   McpToolFailure,
-  GetProjectWorkflowData | AuthorizeAgentRead
+  GetProjectWorkflowData | GetBusinessEvidence | AuthorizeAgentRead
 > = Effect.fn("McpGetRun.execute")(function* (
   identity: FlowmarkMcpAuthInfo,
   rawInput: unknown,
@@ -33,6 +37,17 @@ export const getRunForMcp: (
   const input = yield* decodeGetRunInput(rawInput)
   const family = yield* resolveMcpGrantFamily(identity)
   const reader = mcpDelegatedReader(identity, family.familyId, input.projectId)
+  const business = yield* businessToolEvidence(reader, "get_run", () => ({
+    kind: "run",
+    runId: input.runId,
+    ...(input.section !== undefined && input.section !== "events"
+      ? { unsupportedSection: input.section }
+      : {}),
+    ...(input.cursor !== undefined ? { unsupportedCursor: input.cursor } : {}),
+  }))
+  if (Option.isSome(business)) {
+    return business.value
+  }
   const queries = yield* GetProjectWorkflowData
   const summary = yield* queries
     .runInvestigationSummary(reader, input.runId)

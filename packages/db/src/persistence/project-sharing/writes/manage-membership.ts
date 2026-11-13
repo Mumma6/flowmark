@@ -33,7 +33,7 @@ export const removeProjectViewer = Effect.fn("removeProjectViewer")(function* (
               ),
             ),
         )
-        if (!member || member.role !== "viewer") {
+        if (!member || member.role === "owner") {
           return yield* new SharingRejected({ reason: "Unauthorized" })
         }
         const [target] = yield* sharingQuery(() =>

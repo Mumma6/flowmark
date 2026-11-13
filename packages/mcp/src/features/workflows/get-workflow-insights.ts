@@ -1,6 +1,10 @@
+import {
+  businessToolEvidence,
+  type McpBusinessResult,
+} from "./business-evidence.js"
 import type { AuthorizeAgentRead } from "@flowmark/api"
-import { GetProjectWorkflowData } from "@flowmark/api"
-import { Effect, Match } from "effect"
+import { GetBusinessEvidence, GetProjectWorkflowData } from "@flowmark/api"
+import { Effect, Match, Option } from "effect"
 import type { FlowmarkMcpAuthInfo } from "../../auth/claims.js"
 import { McpToolReadError } from "../../errors.js"
 import {
@@ -48,9 +52,9 @@ export const getWorkflowInsightsForMcp: (
   identity: FlowmarkMcpAuthInfo,
   rawInput: unknown,
 ) => Effect.Effect<
-  McpWorkflowInsightsResult,
+  McpWorkflowInsightsResult | McpBusinessResult,
   McpToolFailure,
-  GetProjectWorkflowData | AuthorizeAgentRead
+  GetProjectWorkflowData | GetBusinessEvidence | AuthorizeAgentRead
 > = Effect.fn("McpWorkflowInsights.execute")(function* (
   identity: FlowmarkMcpAuthInfo,
   rawInput: unknown,
@@ -58,6 +62,17 @@ export const getWorkflowInsightsForMcp: (
   const input = yield* decodeWorkflowInsightsInput(rawInput)
   const family = yield* resolveMcpGrantFamily(identity)
   const reader = mcpDelegatedReader(identity, family.familyId, input.projectId)
+  const business = yield* businessToolEvidence(
+    reader,
+    "get_workflow_insights",
+    () =>
+      input.mode === "business"
+        ? { kind: "insights", query: input.query }
+        : { kind: "withheld-technical" },
+  )
+  if (Option.isSome(business)) {
+    return business.value
+  }
   const queries = yield* GetProjectWorkflowData
   const report = yield* Match.value(input).pipe(
     Match.when({ mode: "technical" }, ({ query }) =>

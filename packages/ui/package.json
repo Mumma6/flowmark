@@ -8,7 +8,8 @@
     "./button": "./src/button.tsx",
     "./utils": "./src/utils.ts",
     "./run-snapshot": "./src/run-snapshot.tsx",
-    "./mermaid": "./src/mermaid.tsx"
+    "./mermaid": "./src/mermaid.tsx",
+    "./business-run": "./src/business-run.tsx"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",

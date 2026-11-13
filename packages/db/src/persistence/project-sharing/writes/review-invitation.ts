@@ -93,7 +93,7 @@ export const reviewProjectInvitation = Effect.fn("reviewProjectInvitation")(
               tx.insert(projectMembers).values({
                 userId,
                 projectId: invitation.projectId,
-                role: "viewer",
+                role: invitation.role,
               }),
             )
           }
@@ -116,7 +116,7 @@ export const reviewProjectInvitation = Effect.fn("reviewProjectInvitation")(
           projectName: project.name,
           inviterName: owner.name,
           expiresAt: invitation.expiresAt.toISOString(),
-          role: "viewer" as const,
+          role: invitation.role,
           action,
         }
       }),

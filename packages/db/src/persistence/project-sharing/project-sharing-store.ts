@@ -28,7 +28,11 @@ export class ProjectSharingStore extends Context.Service<ProjectSharingStore>()(
           projectId: string,
           email: string,
           hash: string,
-        ) => provide(createProjectInvitation(userId, projectId, email, hash)),
+          role: "viewer" | "business" = "viewer",
+        ) =>
+          provide(
+            createProjectInvitation(userId, projectId, email, hash, role),
+          ),
         delivery: (id: string, hash: string, value: "submitted" | "failed") =>
           provide(markInvitationDelivery(id, hash, value)),
         review: (

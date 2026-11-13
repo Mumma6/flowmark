@@ -1,5 +1,9 @@
+import {
+  businessToolEvidence,
+  type McpBusinessResult,
+} from "./business-evidence.js"
 import type { AuthorizeAgentRead } from "@flowmark/api"
-import { GetProjectWorkflowData } from "@flowmark/api"
+import { GetBusinessEvidence, GetProjectWorkflowData } from "@flowmark/api"
 import { Effect, Option } from "effect"
 import type { FlowmarkMcpAuthInfo } from "../../auth/claims.js"
 import { McpToolReadError } from "../../errors.js"
@@ -16,9 +20,9 @@ export const listWorkflowsForMcp: (
   identity: FlowmarkMcpAuthInfo,
   rawInput: unknown,
 ) => Effect.Effect<
-  McpListWorkflowsResult,
+  McpListWorkflowsResult | McpBusinessResult,
   McpToolFailure,
-  GetProjectWorkflowData | AuthorizeAgentRead
+  GetProjectWorkflowData | GetBusinessEvidence | AuthorizeAgentRead
 > = Effect.fn("McpListWorkflows.execute")(function* (
   identity: FlowmarkMcpAuthInfo,
   rawInput: unknown,
@@ -26,6 +30,21 @@ export const listWorkflowsForMcp: (
   const input = yield* decodeListWorkflowsInput(rawInput)
   const family = yield* resolveMcpGrantFamily(identity)
   const reader = mcpDelegatedReader(identity, family.familyId, input.projectId)
+  const business = yield* businessToolEvidence(
+    reader,
+    "list_workflows",
+    () => ({
+      kind: "overview",
+      workflow: input.workflow,
+      revision: input.revision,
+      ...(input.cursor !== undefined || input.meaningCursor !== undefined
+        ? { unsupportedCursor: true }
+        : {}),
+    }),
+  )
+  if (Option.isSome(business)) {
+    return business.value
+  }
   const queries = yield* GetProjectWorkflowData
   const discovery = yield* queries
     .discoverWorkflows(reader, {

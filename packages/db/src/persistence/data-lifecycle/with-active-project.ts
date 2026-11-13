@@ -3,7 +3,7 @@ import {
   assertProjectReadSubject,
 } from "../project-access/read-subject.js"
 import { lockActiveProjectOwners } from "../account-lifecycle/active-account.js"
-import { and, eq, isNull } from "drizzle-orm"
+import { and, eq, isNull, sql } from "drizzle-orm"
 import { Effect } from "effect"
 import { projects } from "../../schema/index.js"
 import type { FlowmarkDatabase } from "../../client.js"
@@ -20,6 +20,7 @@ export const withActiveProject = Effect.fn("withActiveProject")(function* <
   projectId: string,
   use: Effect.Effect<A, E, FlowmarkDatabase>,
   consistency: "snapshot" | "current" = "snapshot",
+  lock: "share" | "update" = "share",
 ) {
   const db = yield* Database
   const subject = yield* ProjectReadSubject
@@ -32,6 +33,14 @@ export const withActiveProject = Effect.fn("withActiveProject")(function* <
       }),
     (tx) =>
       Effect.gen(function* () {
+        if (lock === "update") {
+          yield* runQuery(DatabaseOperation.ProjectReadFence, () =>
+            tx.execute(sql`SET LOCAL statement_timeout = '5s'`),
+          )
+          yield* runQuery(DatabaseOperation.ProjectReadFence, () =>
+            tx.execute(sql`SET LOCAL lock_timeout = '3s'`),
+          )
+        }
         yield* lockActiveProjectOwners(
           tx,
           projectId,
@@ -47,7 +56,7 @@ export const withActiveProject = Effect.fn("withActiveProject")(function* <
                 isNull(projects.lifecycleOperationId),
               ),
             )
-            .for("share"),
+            .for(lock),
         )
         if (!rows.length) {
           return yield* new DatabaseError({

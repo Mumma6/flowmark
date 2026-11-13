@@ -104,3 +104,5 @@ export { ProjectReadSubject } from "./project-access/read-subject.js"
 
 export { ProjectSharingStore } from "./project-sharing/project-sharing-store.js"
 export { SharingRejected } from "./project-sharing/types.js"
+export { BusinessEvidenceStore } from "./business-evidence/business-evidence-store.js"
+export { EvidenceAccessRejected } from "./business-evidence/types.js"

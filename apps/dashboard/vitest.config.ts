@@ -2,6 +2,7 @@ import { createRequire } from "node:module"
 import { defineConfig } from "vitest/config"
 
 export default defineConfig({
+  esbuild: { jsx: "automatic" },
   resolve: {
     alias: {
       // Next implements this marker at build time. Unit tests execute the

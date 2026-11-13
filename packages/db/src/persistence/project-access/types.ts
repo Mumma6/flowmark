@@ -1,5 +1,5 @@
 export interface ProjectSummary {
-  readonly role?: "owner" | "viewer"
+  readonly role?: "owner" | "viewer" | "business"
   readonly id: string
   readonly name: string
   readonly createdAt: string
