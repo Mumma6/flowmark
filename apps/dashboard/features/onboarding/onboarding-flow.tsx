@@ -83,6 +83,12 @@ function OnboardingContent({
             </span>
           </div>
           <Link
+            href="/account"
+            className="text-xs text-muted-foreground underline underline-offset-4"
+          >
+            Account
+          </Link>
+          <Link
             href="/account/security"
             className="text-xs text-muted-foreground underline underline-offset-4"
           >

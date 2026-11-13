@@ -4,6 +4,8 @@ import { Array, Cause, Data, Effect, Exit } from "effect"
 import { LOCAL_DEV_AUTH_SECRET } from "@flowmark/db/demo"
 import { account, session, user, verification } from "@flowmark/db/schema"
 import type { FlowmarkDatabase } from "@flowmark/db"
+import { emailChangeBoundary } from "./email-change/provider-boundary.js"
+import { createAccountEmailChanges } from "./email-change/create-email-changes.js"
 import { createAccountSessions } from "./sessions/account-sessions.js"
 import { accountRateLimits } from "./account-rate-limits.js"
 import { accountLifecycle } from "./account-lifecycle.js"
@@ -71,6 +73,7 @@ export function createFlowmarkAuth(options: {
   }
 }): ReturnType<typeof betterAuth> & {
   readonly accountSessions: ReturnType<typeof createAccountSessions>
+  readonly accountEmailChanges: ReturnType<typeof createAccountEmailChanges>
 } {
   const storage = createAuthRateLimitStorage(options.db, options.secret)
   const sourceRule = (max: number) => (request: Request) =>
@@ -170,6 +173,7 @@ export function createFlowmarkAuth(options: {
     plugins: [
       accountRateLimits(storage),
       accountLifecycle(options.db),
+      emailChangeBoundary(),
       ...(agentAccess ? flowmarkAgentAccessPlugins(agentAccess) : []),
     ] as BetterAuthOptions["plugins"],
     // Keep the same provider CSRF/origin checks in tests and deployed requests.
@@ -209,6 +213,9 @@ export function createFlowmarkAuth(options: {
           headers: { "cache-control": "no-store" },
         },
       )
+    }
+    if (path.startsWith("/email-change/")) {
+      return accountEmailChanges.handle(request, path)
     }
     const startedAt = Date.now()
     const isRecoveryRequest = new URL(request.url).pathname
@@ -311,10 +318,54 @@ export function createFlowmarkAuth(options: {
       },
     })
   }
+  const accountEmailChanges = createAccountEmailChanges(options.db, {
+    auth,
+    baseURL,
+    trustedOrigins: [
+      new URL(baseURL).origin,
+      ...(options.trustedOrigins ?? []),
+      process.env.FLOWMARK_DASHBOARD_ORIGIN ?? "http://localhost:3001",
+    ],
+    delivery: options.emailDelivery,
+    consume: storage.consume,
+    scoped: (database, callbacks) =>
+      betterAuth<BetterAuthOptions>({
+        ...configuration,
+        database: drizzleAdapter(database, {
+          provider: "pg",
+          schema: {
+            user,
+            session,
+            account,
+            verification,
+            ...flowmarkAgentAccessSchema,
+          },
+        }),
+        plugins: [
+          accountRateLimits(storage),
+          accountLifecycle(database),
+          emailChangeBoundary(true),
+        ] as BetterAuthOptions["plugins"],
+        user: {
+          ...configuration.user,
+          changeEmail: {
+            enabled: true,
+            updateEmailWithoutVerification: false,
+            sendChangeEmailConfirmation: callbacks.old,
+          },
+        },
+        emailVerification: {
+          ...email?.emailVerification,
+          sendVerificationEmail: callbacks.next,
+        },
+        advanced: { ...configuration.advanced, backgroundTasks: undefined },
+      }),
+  })
   return {
     ...auth,
     handler,
     fetch: handler,
+    accountEmailChanges,
     accountSessions: createAccountSessions(auth, storage.consume),
   }
 }

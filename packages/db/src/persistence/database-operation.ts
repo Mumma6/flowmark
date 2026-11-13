@@ -1,4 +1,5 @@
 export enum DatabaseOperation {
+  AccountEmailChange = "account-email-change",
   DataLifecycle = "data-lifecycle",
   ProjectReadFence = "project-read-fence",
   GetAgentConsentClient = "get-agent-consent-client",

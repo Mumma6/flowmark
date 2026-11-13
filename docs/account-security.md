@@ -39,5 +39,6 @@ An expired or insufficiently fresh provider session requires signing in again.
 Use **Sign out and sign in again** when the session list requires fresh login;
 this clears the old cookie before opening sign-in, avoiding an authenticated
 redirect back to Studio.
-Revocation does not bypass account-deletion fences. Email changes and broader
-account-settings organization are separate work.
+Revocation does not bypass account-deletion fences. [Verified email changes](account-email-changes.md)
+require both inboxes and sign out browser sessions and delegated agent grants on
+completion. Broader account-settings organization remains separate work.

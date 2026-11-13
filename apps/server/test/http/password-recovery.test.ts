@@ -216,7 +216,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         newEmail: `${randomUUID()}@example.test`,
       })
       change.headers.set("cookie", f.cookie)
-      expect((await f.auth.handler(change)).status).toBe(400)
+      expect((await f.auth.handler(change)).status).toBe(403)
       expect(
         (await f.auth.handler(request("/sign-in/email", f.credentials))).status,
       ).toBe(200)
