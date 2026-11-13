@@ -1,7 +1,11 @@
 # Account security and browser sessions
 
 Open **Settings → Security**, or `/account/security`. The standalone page is
-available before project creation or onboarding completion. Existing Account
+available before project creation or onboarding completion. Account, Security,
+Data & privacy and Setup help share navigation on the standalone pages.
+`/account/help` explains application setup and resumes the existing guide without
+requiring a project first. Appearance uses the same local preference as Studio.
+Existing Account
 settings and password deep links remain available.
 
 Active sessions show an approximate device label, sign-in time, update time and
