@@ -1,6 +1,7 @@
 import { sql, type SQL } from "drizzle-orm"
 import { Array, Match, Option } from "effect"
 import type { LifecycleOperation } from "../types.js"
+import { drainOwnedInvestigations } from "../../investigations/sql/drain-owned-investigations.js"
 import { selectedRuns } from "./selection.js"
 
 /** Phase numbers are persisted. Never reorder without migrating unfinished jobs. */
@@ -41,6 +42,9 @@ export const erasureBatchSql = (
         Match.when("project", () =>
           Array.get(projectChildren, phase - telemetry.length).pipe(
             Option.map((child) => {
+              if (child === "saved_investigations") {
+                return drainOwnedInvestigations({ projectId })
+              }
               const table = sql.identifier(child)
               return sql`DELETE FROM ${table} WHERE ctid IN (SELECT ctid FROM ${table} WHERE project_id = ${projectId}::uuid LIMIT 100) RETURNING project_id`
             }),

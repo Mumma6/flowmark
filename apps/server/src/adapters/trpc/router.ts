@@ -1,3 +1,4 @@
+import { sharedInvestigationsRouter } from "./shared-investigations-router"
 import { businessEvidenceRouter } from "./business-evidence-router"
 import { projectSharingRouter } from "./project-sharing-router"
 import { accountSessionsRouter } from "./account-sessions-router"
@@ -15,6 +16,7 @@ import { searchRouter } from "./search-router"
 import { runRouter } from "./run-router"
 
 export const appRouter = t.router({
+  sharedInvestigations: sharedInvestigationsRouter,
   businessEvidence: businessEvidenceRouter,
   projectSharing: projectSharingRouter,
   accountSessions: accountSessionsRouter,

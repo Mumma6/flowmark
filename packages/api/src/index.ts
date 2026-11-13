@@ -185,3 +185,15 @@ export type {
   BusinessPublication,
   BusinessMeaning,
 } from "@flowmarkdev/core"
+
+export { ManageSharedInvestigations } from "./features/shared-investigations/use-cases/manage-shared-investigations.js"
+export {
+  ShareInvestigationSchema,
+  SharedInvestigationSelectionSchema,
+  SharedInvestigationListSchema,
+} from "@flowmarkdev/core"
+export type {
+  SharedInvestigationSelection,
+  SharedInvestigation,
+  SharedInvestigationSummary,
+} from "@flowmarkdev/core"

@@ -1,3 +1,6 @@
+import { SharedInvestigationStore } from "@flowmark/db/persistence"
+import { SharedInvestigationsLive } from "./features/shared-investigations/adapters/shared-investigations.js"
+import { ManageSharedInvestigations } from "./features/shared-investigations/use-cases/manage-shared-investigations.js"
 import { BusinessEvidenceStore } from "@flowmark/db/persistence"
 import { BusinessEvidenceRepositoryLive } from "./features/business-evidence/adapters/business-evidence.js"
 import { GetBusinessEvidence } from "./features/business-evidence/use-cases/business-evidence.js"
@@ -45,6 +48,7 @@ import { GetMcpAgentConnectionLive } from "./features/project-access/use-cases/g
 import { GetMcpAgentConnection } from "./features/project-access/use-cases/get-mcp-agent-connection.js"
 
 const persistence = Layer.mergeAll(
+  SharedInvestigationStore.layer,
   BusinessEvidenceStore.layer,
   ProjectSharingStore.layer,
   AccountLifecycleStore.layer,
@@ -56,6 +60,7 @@ const persistence = Layer.mergeAll(
   AgentAccessStore.layer,
 ).pipe(Layer.provide(DatabaseLive))
 const databaseAdapters = Layer.mergeAll(
+  SharedInvestigationsLive,
   BusinessEvidenceRepositoryLive,
   ProjectSharingRepositoryLive,
   AccountLifecycleLive,
@@ -81,6 +86,7 @@ const agentAccessAdapter = Layer.mergeAll(
 )
 
 export const ApiLive = Layer.mergeAll(
+  ManageSharedInvestigations.layer,
   GetBusinessEvidence.layer,
   ManageProjectSharing.layer,
   ManageAccountLifecycle.layer,
@@ -107,6 +113,7 @@ export function runApi<A, E>(
   operation: Effect.Effect<
     A,
     E,
+    | ManageSharedInvestigations
     | GetBusinessEvidence
     | ManageProjectSharing
     | ManageAccountLifecycle

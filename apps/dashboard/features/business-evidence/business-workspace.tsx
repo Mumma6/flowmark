@@ -6,6 +6,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useState } from "react"
 import { useBusinessEvidence } from "./use-business-evidence"
 import { BusinessData } from "./business-data"
+import { ShareQuestion } from "../shared-investigations/share-question"
 import { readBusinessLocation } from "./business-location"
 export function BusinessWorkspace({
   projectId,
@@ -135,6 +136,12 @@ export function BusinessWorkspace({
           </p>
         ) : null}
       </header>
+      <ShareQuestion
+        key={JSON.stringify(selection)}
+        projectId={projectId}
+        selection={{ version: 1, depth: "business", query: selection }}
+        initialTitle="Published business question"
+      />
       <BusinessData
         value={value}
         selection={selection}

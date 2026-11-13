@@ -50,3 +50,7 @@ publication. Existing invitations keep diagnostic access. Deploy the complete
 projection-aware application stack before using business invitations. Older
 binaries are unsafe with business memberships; use a forward fix or reviewed
 recovery instead of rolling back permission enforcement.
+
+Members can also [share live investigation questions](shared-investigations.md)
+with already-authorized colleagues. This does not invite anyone or grant a new
+evidence depth. Removing a creator's membership deletes their shared copies.

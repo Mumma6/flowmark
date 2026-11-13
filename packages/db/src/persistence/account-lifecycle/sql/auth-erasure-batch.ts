@@ -1,4 +1,5 @@
 import { sql } from "drizzle-orm"
+import { drainOwnedInvestigations } from "../../investigations/sql/drain-owned-investigations.js"
 
 /** Persisted phase order: drain high-cardinality leaves before their FK parents. */
 export const authErasureBatches = (userId: string, operationId: string) => {
@@ -18,7 +19,7 @@ export const authErasureBatches = (userId: string, operationId: string) => {
     sql`DELETE FROM verification WHERE id IN (SELECT id FROM verification WHERE value = ${userId} OR identifier = (SELECT email FROM "user" WHERE id = ${userId}) OR CASE WHEN pg_input_is_valid(value, 'jsonb') THEN value::jsonb->>'userId' = ${userId} ELSE false END LIMIT 100) RETURNING id`,
     sql`DELETE FROM session WHERE id IN (SELECT id FROM session WHERE user_id = ${userId} LIMIT 100) RETURNING id`,
     sql`DELETE FROM account WHERE id IN (SELECT id FROM account WHERE user_id = ${userId} LIMIT 100) RETURNING id`,
-    sql`DELETE FROM saved_investigations WHERE id IN (SELECT id FROM saved_investigations WHERE owner_id = ${userId} LIMIT 100) RETURNING id`,
+    drainOwnedInvestigations({ userId }),
     sql`UPDATE workflow_definition_imports SET actor_id = NULL WHERE id IN (SELECT id FROM workflow_definition_imports WHERE actor_id = ${userId} LIMIT 100) RETURNING id`,
     sql`DELETE FROM data_lifecycle_operations WHERE id IN (SELECT id FROM data_lifecycle_operations WHERE actor_id = ${userId} LIMIT 100) RETURNING id`,
     sql`DELETE FROM account_lifecycle_operations WHERE id IN (SELECT id FROM account_lifecycle_operations WHERE user_id = ${userId} AND id <> ${operationId}::uuid LIMIT 100) RETURNING id`,
