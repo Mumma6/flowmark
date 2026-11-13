@@ -17,6 +17,10 @@ Runnable loopback scripts live separately in `packages/sdk/examples/`.
 for `booking-process.ts` (optional loopback delivery for Studio verification).
 Run it with `pnpm --filter @flowmarkdev/node test booking-setup-demo`.
 
+The [explicit trace-reference recipe](../packages/sdk/examples/trace-context/README.md)
+links operation evidence to an application's existing tracing context through
+selected properties. Its memory-only synthetic proof needs no tracing provider.
+
 For optional metadata kept beside code, preview/apply
 [`booking-definition.json`](./booking-definition.json) in **Settings → Process
 metadata** and use [`code-owned-booking.ts`](./code-owned-booking.ts) to explicitly
