@@ -34,68 +34,78 @@ const pathValue = (input: unknown, path: readonly string[]) =>
       ),
     ),
   )
+export const projectBusinessField = (
+  revision: string,
+  field: BusinessMeaning["results"][number]["fields"][number],
+  value: unknown,
+): PublishedResultField => {
+  const base = {
+    revision,
+    path: field.path,
+    label: field.label,
+    unit: field.unit ?? null,
+    kind: field.kind,
+  }
+  if (value === undefined || value === null) {
+    return { ...base, state: "missing" as const, value: null }
+  }
+  return Match.value(field.kind).pipe(
+    Match.when("count", () =>
+      count(value)
+        ? { ...base, state: "available" as const, value }
+        : { ...base, state: "wrong-type" as const, value: null },
+    ),
+    Match.when("category", () =>
+      typeof value !== "string"
+        ? { ...base, state: "wrong-type" as const, value: null }
+        : Array.contains(field.values ?? [], value)
+          ? { ...base, state: "available" as const, value }
+          : {
+              ...base,
+              state: "unknown-category" as const,
+              value: null,
+            },
+    ),
+    Match.when("reasons", () => {
+      if (!reasonCounts(value)) {
+        return { ...base, state: "wrong-type" as const, value: null }
+      }
+      if (
+        !Array.every(Record.keys(value), (key) =>
+          Array.contains(field.values ?? [], key),
+        )
+      ) {
+        return {
+          ...base,
+          state: "unknown-category" as const,
+          value: null,
+        }
+      }
+      return {
+        ...base,
+        state: "available" as const,
+        value: Array.map(Record.toEntries(value), ([key, n]) => ({
+          value: key,
+          count: n,
+        })),
+      }
+    }),
+    Match.exhaustive,
+  )
+}
 export const projectBusinessFields = (
   run: { workflow: string; definitionRevision: string | null; result: unknown },
   meaning: BusinessMeaning,
 ): readonly PublishedResultField[] =>
   Array.flatMap(meaning.results, (entry) =>
     entry.workflow === run.workflow && entry.revision === run.definitionRevision
-      ? Array.map(entry.fields, (field) => {
-          const value = Option.getOrUndefined(pathValue(run.result, field.path))
-          const base = {
-            revision: entry.revision,
-            path: field.path,
-            label: field.label,
-            unit: field.unit ?? null,
-            kind: field.kind,
-          }
-          if (value === undefined || value === null) {
-            return { ...base, state: "missing" as const, value: null }
-          }
-          return Match.value(field.kind).pipe(
-            Match.when("count", () =>
-              count(value)
-                ? { ...base, state: "available" as const, value }
-                : { ...base, state: "wrong-type" as const, value: null },
-            ),
-            Match.when("category", () =>
-              typeof value !== "string"
-                ? { ...base, state: "wrong-type" as const, value: null }
-                : Array.contains(field.values ?? [], value)
-                  ? { ...base, state: "available" as const, value }
-                  : {
-                      ...base,
-                      state: "unknown-category" as const,
-                      value: null,
-                    },
-            ),
-            Match.when("reasons", () => {
-              if (!reasonCounts(value)) {
-                return { ...base, state: "wrong-type" as const, value: null }
-              }
-              if (
-                !Array.every(Record.keys(value), (key) =>
-                  Array.contains(field.values ?? [], key),
-                )
-              ) {
-                return {
-                  ...base,
-                  state: "unknown-category" as const,
-                  value: null,
-                }
-              }
-              return {
-                ...base,
-                state: "available" as const,
-                value: Array.map(Record.toEntries(value), ([key, n]) => ({
-                  value: key,
-                  count: n,
-                })),
-              }
-            }),
-            Match.exhaustive,
-          )
-        })
+      ? Array.map(entry.fields, (field) =>
+          projectBusinessField(
+            entry.revision,
+            field,
+            Option.getOrUndefined(pathValue(run.result, field.path)),
+          ),
+        )
       : [],
   )
 export const projectBusinessReferences = (

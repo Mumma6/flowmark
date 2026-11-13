@@ -158,3 +158,29 @@ confirmations and the operations view use `run.relatedPage`,
 `run.expectationsPage` and `run.operationsPage`. Peer, period and business
 arithmetic stay on the existing aggregate reads. Compact facts remain preferred;
 a run with no fact row still resolves through the raw-event fallback.
+
+## Captured business observations
+
+Studio can capture one run's **published business evidence** in verified local
+Compose development. Captures contain no raw events, operations, errors,
+unpublished result/property siblings, environment or release. Owners use the
+same projection. The server accepts only a run ID and title, projects inside the
+source/project authorization transaction, and persists at most 64 KiB including
+provenance. Each creator/project may retain 20 captures; each project 100.
+Expired copies count until deleted. Lists contain at most 25 entries per page.
+
+A capture is an application-reported past observation, not a live result or a
+verified business outcome. Its deadline is the earliest of 24 hours after
+capture, 30 days after source start, and 30 days after source receipt. Every read
+checks current project/creator membership, active accounts, delegated grant when
+applicable, source lifetime, publication revision and stored schema. A publication
+revision change permanently invalidates the old capture. Unavailable titles and
+payloads are withheld; creators and owners retain minimal cleanup metadata.
+Deleting a capture removes only that copy. Creator membership removal and
+source/account/project erasure remove dependent copies.
+
+Hosted capture remains disabled pending bounded physical expiry cleanup and its
+reviewed operating cadence (ADR 0019). Read-time denial does not claim physical
+purge at a deadline. This feature installs no scheduler, public link, export
+artifact, new MCP tool or portable capture view. Source and account cleanup reuse
+existing persisted phase numbers; foreign keys are a final integrity safeguard.

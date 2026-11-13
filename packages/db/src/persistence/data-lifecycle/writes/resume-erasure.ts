@@ -1,5 +1,5 @@
 import { and, eq, sql } from "drizzle-orm"
-import { Effect } from "effect"
+import { Array, Effect } from "effect"
 import { dataLifecycleOperations } from "../../../schema/data-lifecycle.js"
 import { projects, workspaces } from "../../../schema/index.js"
 import { Database } from "../../database.js"
@@ -126,7 +126,9 @@ export const resumeErasure = Effect.fn("resumeErasure")(function* (
             (phase === EVENT_ERASURE_PHASE ? affected.length : 0),
           deletedRuns:
             operation.deletedRuns +
-            (phase === RUN_ERASURE_PHASE ? affected.length : 0),
+            (phase === RUN_ERASURE_PHASE
+              ? Array.filter(affected, (row) => row.deletedRun === true).length
+              : 0),
           failureCode: null,
           ...(done
             ? {

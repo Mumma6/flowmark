@@ -11,6 +11,7 @@ import {
   GetProjectWorkflowData,
   GetBusinessEvidence,
   ManageSharedInvestigations,
+  ManageEvidenceCaptures,
   type ProjectReader,
   InvalidInput,
   ManageProject,
@@ -66,6 +67,7 @@ async function executeQuery<A>(
     | InvalidInput
     | ManagementRateLimited,
     | ManageSharedInvestigations
+    | ManageEvidenceCaptures
     | GetBusinessEvidence
     | ManageProjectSharing
     | ManageInvestigations
@@ -144,7 +146,10 @@ export function readQuery<A>(
   ) => Effect.Effect<
     A,
     Unauthorized | PersistenceError | InvalidInput | ManagementRateLimited,
-    GetProjectWorkflowData | GetBusinessEvidence | ManageSharedInvestigations
+    | GetProjectWorkflowData
+    | GetBusinessEvidence
+    | ManageSharedInvestigations
+    | ManageEvidenceCaptures
   >,
 ) {
   const projectId = requestedProjectId(request)
@@ -203,6 +208,7 @@ export function sessionQuery<A>(
     A,
     Unauthorized | PersistenceError | InvalidInput | ManagementRateLimited,
     | ManageSharedInvestigations
+    | ManageEvidenceCaptures
     | GetBusinessEvidence
     | ManageProjectSharing
     | ManageInvestigations

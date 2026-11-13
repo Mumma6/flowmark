@@ -197,3 +197,11 @@ export type {
   SharedInvestigation,
   SharedInvestigationSummary,
 } from "@flowmarkdev/core"
+
+export { ManageEvidenceCaptures } from "./features/evidence-captures/use-cases/manage-evidence-captures.js"
+export { CaptureRunSchema, CapturedRunEvidenceSchema } from "@flowmarkdev/core"
+export type {
+  CapturedRunEvidence,
+  EvidenceCaptureRead,
+  EvidenceCaptureSummary,
+} from "@flowmarkdev/core"

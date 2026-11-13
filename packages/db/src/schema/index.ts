@@ -476,6 +476,57 @@ export const sharedInvestigations = pgTable(
   ],
 )
 
+/** Short-lived projected observations; no raw diagnostics. */
+export const evidenceCaptures = pgTable(
+  "evidence_captures",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    creatorId: text("creator_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    sourceRunId: uuid("source_run_id")
+      .notNull()
+      .references((): AnyPgColumn => workflowRuns.id, { onDelete: "cascade" }),
+    publicationRevision: integer("publication_revision").notNull(),
+    capturedAt: timestamp("captured_at", { withTimezone: true }).notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    payload: jsonb("payload").$type<unknown>().notNull(),
+  },
+  (table) => [
+    foreignKey({
+      name: "evidence_capture_creator_membership_fk",
+      columns: [table.creatorId, table.projectId],
+      foreignColumns: [projectMembers.userId, projectMembers.projectId],
+    }).onDelete("cascade"),
+    index("evidence_captures_project_created_idx").on(
+      table.projectId,
+      table.capturedAt,
+      table.id,
+    ),
+    index("evidence_captures_creator_project_idx").on(
+      table.creatorId,
+      table.projectId,
+    ),
+    index("evidence_captures_source_idx").on(table.sourceRunId),
+    index("evidence_captures_expiry_idx").on(table.expiresAt, table.id),
+    check(
+      "evidence_capture_size_check",
+      sql`octet_length(${table.payload}::text)<=65536`,
+    ),
+    check(
+      "evidence_capture_lifetime_check",
+      sql`${table.expiresAt}>${table.capturedAt} AND ${table.expiresAt}<=${table.capturedAt}+interval '24 hours'`,
+    ),
+    check(
+      "evidence_capture_revision_check",
+      sql`${table.publicationRevision}>=0`,
+    ),
+  ],
+)
+
 /** Immutable workflow-owned presentation revisions; no runtime execution config. */
 export const workflowResultDeclarations = pgTable(
   "workflow_result_declarations",
