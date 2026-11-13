@@ -1,6 +1,6 @@
 # ADR 0019 — Authenticated investigations and bounded evidence captures
 
-- Status: Proposed — maintainer acceptance required before implementation
+- Status: Accepted for local implementation (maintainer approval, 2026-11-13)
 - Date: 2026-11-13
 - Task: Product TASK-005.3; consumers TASK-005.4–005.6
 - Inspected baseline: staging `13130b0`, including ADR 0018 / business evidence
@@ -12,7 +12,7 @@ capture one bounded business run observation for later inspection. Neither an
 object ID nor a URL grants membership, a delegated grant, diagnostic depth or
 longer evidence retention. Existing private selections remain private and live.
 
-This proposal defines application behavior, not a new telemetry archive, public
+This decision defines application behavior, not a new telemetry archive, public
 share service, infrastructure dependency or authority model.
 
 ## Shared live questions
@@ -195,7 +195,7 @@ Backup/restore suppression and external-copy limits remain governed by ADR 0015.
 
 ## Acceptance
 
-Maintainer acceptance is required for these disclosure, role, storage and lifetime
-choices. Acceptance authorizes local implementation and disposable synthetic tests
-in TASK-005.4–005.6 only. It authorizes no real sharing/capture, hosted migration,
+The maintainer accepted these disclosure, role, storage and lifetime choices on
+2026-11-13 with “Approve the contract.” Acceptance authorizes local implementation
+and disposable synthetic tests in TASK-005.4–005.6 only. It authorizes no real sharing/capture, hosted migration,
 retention cleanup, restore, dependency adoption, upload, merge or deployment.
