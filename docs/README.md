@@ -34,6 +34,8 @@ Contributor guides that ship with the public repository:
   Connect Your Agent and related Product 1.0 items through Agent TASK-005.4.
 - [Authentication boundaries](./auth-perimeter): provider login, registration,
   proxy protections, and remaining durable-limit work.
+- [Account security](./account-security): active browser sessions, password-confirmed
+  session sign-out and account controls before onboarding.
 - [Historical facts](./historical-facts): compact run projections and backfill
   limits.
 - [Data lifecycle](./data-lifecycle): complete telemetry erasure, project deletion,

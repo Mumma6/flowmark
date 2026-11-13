@@ -1,9 +1,10 @@
 import { drizzleAdapter } from "@better-auth/drizzle-adapter"
 import { betterAuth, type BetterAuthOptions } from "better-auth"
-import { Cause, Data, Effect, Exit } from "effect"
+import { Array, Cause, Data, Effect, Exit } from "effect"
 import { LOCAL_DEV_AUTH_SECRET } from "@flowmark/db/demo"
 import { account, session, user, verification } from "@flowmark/db/schema"
 import type { FlowmarkDatabase } from "@flowmark/db"
+import { createAccountSessions } from "./sessions/account-sessions.js"
 import { accountRateLimits } from "./account-rate-limits.js"
 import { accountLifecycle } from "./account-lifecycle.js"
 import {
@@ -68,7 +69,9 @@ export function createFlowmarkAuth(options: {
     readonly issuerOrigin: string
     readonly apiOrigin: string
   }
-}): ReturnType<typeof betterAuth> {
+}): ReturnType<typeof betterAuth> & {
+  readonly accountSessions: ReturnType<typeof createAccountSessions>
+} {
   const storage = createAuthRateLimitStorage(options.db, options.secret)
   const sourceRule = (max: number) => (request: Request) =>
     request.headers.has(AUTH_CLIENT_IP_HEADER)
@@ -183,6 +186,30 @@ export function createFlowmarkAuth(options: {
   const auth = betterAuth(configuration)
   // Explicit provider HTTP boundary: normalize trust before the native limiter.
   const handler = async (request: Request) => {
+    // Native listing returns bearer tokens, and native revoke bypasses our
+    // password confirmation. Keep these server APIs behind the safe Studio seam.
+    const path = new URL(request.url).pathname
+      .replace(/^\/api\/auth/, "")
+      .replace(/\/$/, "")
+    if (
+      Array.contains(
+        [
+          "/list-sessions",
+          "/revoke-session",
+          "/revoke-other-sessions",
+          "/revoke-sessions",
+        ],
+        path,
+      )
+    ) {
+      return Response.json(
+        { message: "Use Account security to manage sessions." },
+        {
+          status: 403,
+          headers: { "cache-control": "no-store" },
+        },
+      )
+    }
     const startedAt = Date.now()
     const isRecoveryRequest = new URL(request.url).pathname
       .replace(/\/$/, "")
@@ -284,5 +311,10 @@ export function createFlowmarkAuth(options: {
       },
     })
   }
-  return { ...auth, handler, fetch: handler }
+  return {
+    ...auth,
+    handler,
+    fetch: handler,
+    accountSessions: createAccountSessions(auth, storage.consume),
+  }
 }

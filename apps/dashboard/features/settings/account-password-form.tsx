@@ -1,12 +1,14 @@
 "use client"
 
 import { Alert, AlertDescription, Button, Input } from "@flowmark/ui"
+import { useQueryClient } from "@tanstack/react-query"
 import { Result } from "effect"
 import { useState, type FormEvent } from "react"
 import { runBrowserAuth } from "../auth/auth-browser-runtime"
 import { changeAccountPassword } from "../auth/operations"
 
 export function AccountPasswordForm() {
+  const cache = useQueryClient()
   const [currentPassword, setCurrentPassword] = useState("")
   const [newPassword, setNewPassword] = useState("")
   const [pending, setPending] = useState(false)
@@ -27,6 +29,9 @@ export function AccountPasswordForm() {
     Result.match(result, {
       onFailure: (failure) => setError(failure.reason),
       onSuccess: () => {
+        void cache.invalidateQueries({
+          queryKey: ["account-sessions"],
+        })
         setCurrentPassword("")
         setNewPassword("")
         setSaved("Password updated. Your other sessions have been signed out.")

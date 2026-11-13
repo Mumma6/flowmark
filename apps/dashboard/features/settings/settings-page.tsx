@@ -14,6 +14,7 @@ import { Suspense } from "react"
 import { PageHeading } from "../shared/dashboard-components"
 import { ConnectSetupPanel } from "../connect/setup/connect-setup"
 import { useProject } from "../projects/project-context"
+import { AccountSecurity } from "./account-security"
 import { AccountSettings } from "./account-settings"
 import { KeySettings } from "./key-settings"
 import { ProjectSettings } from "./project-settings"
@@ -21,7 +22,13 @@ import { DefinitionImportPanel } from "../results/definitions/definition-import-
 import { DataPrivacyPanel } from "./data-privacy/data-privacy-panel"
 
 type SettingsSection =
-  "projects" | "keys" | "setup" | "account" | "definitions" | "privacy"
+  | "projects"
+  | "keys"
+  | "setup"
+  | "account"
+  | "security"
+  | "definitions"
+  | "privacy"
 
 const sections: ReadonlyArray<{
   readonly id: SettingsSection
@@ -32,10 +39,12 @@ const sections: ReadonlyArray<{
   { id: "setup", label: "Setup help" },
   { id: "definitions", label: "Process metadata" },
   { id: "account", label: "Account" },
+  { id: "security", label: "Security" },
   { id: "privacy", label: "Data & privacy" },
 ]
 
 const sectionHelp: Record<SettingsSection, string> = {
+  security: "Manage your password and sign out other browser sessions.",
   privacy:
     "Review the exact scope before permanently erasing telemetry or deleting a project.",
   definitions:
@@ -56,7 +65,8 @@ function parseSection(value: string | null): SettingsSection {
     value === "keys" ||
     value === "setup" ||
     value === "definitions" ||
-    value === "account"
+    value === "account" ||
+    value === "security"
   ) {
     return value
   }
@@ -120,6 +130,9 @@ function SettingsPageInner() {
               searchParams.has("error")
             }
           />
+        </TabsContent>
+        <TabsContent value="security" className="mt-6">
+          <AccountSecurity />
         </TabsContent>
         <TabsContent value="definitions" className="mt-6">
           <DefinitionImportPanel />
