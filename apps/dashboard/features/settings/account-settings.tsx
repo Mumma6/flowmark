@@ -11,6 +11,7 @@ import {
 } from "@flowmark/ui"
 import { EmailVerificationPanel } from "../auth/verification/email-verification-panel"
 import { authClient } from "../auth/auth-client"
+import { EmailChangePanel } from "./email-change/email-change-panel"
 import { AccountNameForm } from "./account-name-form"
 import { AccountPasswordForm } from "./account-password-form"
 
@@ -48,9 +49,14 @@ export function AccountSettings({
           refresh={() => session.refetch()}
         />
         <Separator />
-        <AccountNameForm sessionName={sessionName} />
+        <EmailChangePanel />
         <Separator />
-        <AccountPasswordForm />
+        <AccountNameForm
+          key={session.data?.user.id ?? "name"}
+          sessionName={sessionName}
+        />
+        <Separator />
+        <AccountPasswordForm key={session.data?.user.id ?? "password"} />
       </CardContent>
     </Card>
   )

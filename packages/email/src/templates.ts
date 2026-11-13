@@ -44,6 +44,11 @@ export const renderEmail = Effect.fn("Email.render")(function* (
       body: "A password reset was requested for your Flowmark account.",
       action: "Reset password",
     })),
+    Match.when({ kind: "confirm-email-change" }, ({ newEmail }) => ({
+      subject: "Approve your Flowmark email change",
+      body: `A change to ${newEmail} was requested. Approve it here, then verify the new address. Your current email remains unchanged until both steps complete.`,
+      action: "Approve email change",
+    })),
     Match.when({ kind: "change-email" }, () => ({
       subject: "Confirm your new Flowmark email",
       body: "Confirm this address to change the email on your Flowmark account.",

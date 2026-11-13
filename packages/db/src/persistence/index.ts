@@ -90,3 +90,12 @@ export {
 } from "./account-lifecycle/types.js"
 export { isAccountActive } from "./account-lifecycle/active-account.js"
 export { renewCleanupCapability } from "./account-lifecycle/writes/renew-cleanup-capability.js"
+
+export { AccountEmailChangeStore } from "./account-email-change/account-email-change-store.js"
+export {
+  EmailChangeRejected,
+  type EmailChangeData,
+  type EmailChangeRecord,
+  type EmailChangeTransaction,
+  type EmailChangeResult,
+} from "./account-email-change/types.js"

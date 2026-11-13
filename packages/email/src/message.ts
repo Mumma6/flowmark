@@ -32,6 +32,11 @@ export const EmailMessage = Schema.Union([
   Schema.Struct({ ...link, kind: Schema.Literal("reset-password") }),
   Schema.Struct({ ...link, kind: Schema.Literal("change-email") }),
   Schema.Struct({
+    ...link,
+    kind: Schema.Literal("confirm-email-change"),
+    newEmail: Mailbox,
+  }),
+  Schema.Struct({
     ...common,
     kind: Schema.Literal("security-notice"),
     event: Schema.Literals(["password-changed", "email-changed"]),
