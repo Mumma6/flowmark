@@ -1,6 +1,6 @@
 # ADR 0018 — Explicit business evidence projections
 
-- Status: Proposed; maintainer approval required before changing permissions
+- Status: Accepted for local implementation (maintainer approval, 2026-11-13)
 - Date: 2026-11-13
 - Tasks: Product TASK-010.1–010.4
 - Baseline: staging `1941c46`, including accepted ADR 0017 / project sharing

@@ -1,4 +1,7 @@
-import { ProjectReadSubject } from "../project-access/read-subject.js"
+import {
+  ProjectReadSubject,
+  ProjectReadDepth,
+} from "../project-access/read-subject.js"
 import { withActiveProject } from "../data-lifecycle/with-active-project.js"
 import { Context, Effect, Layer } from "effect"
 import { Database, DatabaseCancellation, provideDatabase } from "../database.js"
@@ -19,6 +22,7 @@ export class InvestigationStore extends Context.Service<InvestigationStore>()(
           provide(
             withActiveProject(args[1], saveInvestigation(...args), "current"),
           ).pipe(
+            Effect.provideService(ProjectReadDepth, "business"),
             Effect.provideService(ProjectReadSubject, {
               kind: "user",
               userId: args[0],
@@ -28,6 +32,7 @@ export class InvestigationStore extends Context.Service<InvestigationStore>()(
           provide(
             withActiveProject(args[1], getSavedInvestigation(...args)),
           ).pipe(
+            Effect.provideService(ProjectReadDepth, "business"),
             Effect.provideService(ProjectReadSubject, {
               kind: "user",
               userId: args[0],
@@ -37,6 +42,7 @@ export class InvestigationStore extends Context.Service<InvestigationStore>()(
           provide(
             withActiveProject(args[1], listSavedInvestigations(...args)),
           ).pipe(
+            Effect.provideService(ProjectReadDepth, "business"),
             Effect.provideService(ProjectReadSubject, {
               kind: "user",
               userId: args[0],
@@ -46,6 +52,7 @@ export class InvestigationStore extends Context.Service<InvestigationStore>()(
           provide(
             withActiveProject(args[1], deleteInvestigation(...args), "current"),
           ).pipe(
+            Effect.provideService(ProjectReadDepth, "business"),
             Effect.provideService(ProjectReadSubject, {
               kind: "user",
               userId: args[0],

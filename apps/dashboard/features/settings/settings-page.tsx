@@ -1,5 +1,7 @@
 "use client"
 
+import { PublicationSettings } from "../business-evidence/publication-settings"
+
 import { ProjectSharingPanel } from "../project-sharing/project-sharing-panel"
 
 import {
@@ -134,7 +136,10 @@ function SettingsPageInner() {
           <ProjectSettings />
         </TabsContent>
         <TabsContent value="access" className="mt-6">
-          <ProjectSharingPanel />
+          <div className="grid gap-6">
+            <ProjectSharingPanel />
+            <PublicationSettings />
+          </div>
         </TabsContent>
         <TabsContent value="keys" className="mt-6">
           <KeySettings key={current?.id ?? "no-project"} />

@@ -121,7 +121,10 @@ const make = Effect.gen(function* () {
       projectId: string,
       workflow: string,
     ) {
-      const authorized = yield* authorization.authorizeUser(userId, projectId)
+      const authorized = yield* authorization.authorizeDiagnosticUser(
+        userId,
+        projectId,
+      )
       return yield* declarations.searchFields(userId, authorized, workflow)
     }),
     setSearchFields: Effect.fn("ManageResultDeclarations.setSearchFields")(
@@ -151,7 +154,10 @@ const make = Effect.gen(function* () {
       projectId: string,
       workflow: string,
     ) {
-      const authorized = yield* authorization.authorizeUser(userId, projectId)
+      const authorized = yield* authorization.authorizeDiagnosticUser(
+        userId,
+        projectId,
+      )
       return yield* declarations.list(userId, authorized, workflow)
     }),
     create: Effect.fn("ManageResultDeclarations.create")(function* (

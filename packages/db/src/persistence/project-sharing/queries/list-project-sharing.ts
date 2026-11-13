@@ -47,6 +47,7 @@ export const listProjectSharing = Effect.fn("listProjectSharing")(function* (
                   email: projectInvitations.email,
                   expiresAt: projectInvitations.expiresAt,
                   delivery: projectInvitations.delivery,
+                  role: projectInvitations.role,
                 })
                 .from(projectInvitations)
                 .where(

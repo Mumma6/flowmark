@@ -28,9 +28,9 @@ export const renderEmail = Effect.fn("Email.render")(function* (
   const copy = Match.value(message).pipe(
     Match.when(
       { kind: "project-invitation" },
-      ({ projectName, inviterName }) => ({
+      ({ projectName, inviterName, role }) => ({
         subject: "Invitation to a Flowmark project",
-        body: `${inviterName || "A project owner"} invited you to read ${projectName}. This includes all diagnostic evidence in that project, including properties and error details. It does not grant key management or access to other projects. Sign in with this mailbox and verify it before reviewing and accepting.`,
+        body: `${inviterName || "A project owner"} invited you to read ${projectName}. ${role === "business" ? "This grants project-wide activity metadata and only owner-published business result/reference fields. Raw diagnostic evidence is withheld. A customer filter is not a customer access restriction." : "This includes all diagnostic evidence in that project, including properties and error details."} It does not grant key management or access to other projects. Sign in with this mailbox and verify it before reviewing and accepting.`,
         action: "Review project invitation",
       }),
     ),

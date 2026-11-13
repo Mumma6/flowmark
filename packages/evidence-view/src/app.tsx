@@ -1,5 +1,6 @@
 import { App, PostMessageTransport } from "@modelcontextprotocol/ext-apps"
 import { Button } from "@flowmark/ui/button"
+import { BusinessRunView } from "@flowmark/ui/business-run"
 import { RunSnapshot } from "@flowmark/ui/run-snapshot"
 import * as Effect from "effect/Effect"
 import * as Fiber from "effect/Fiber"
@@ -55,19 +56,21 @@ function EvidenceApp() {
             >
               Refresh this page
             </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={
-                !state.canRead ||
-                state.busy ||
-                !navigate ||
-                state.evidence.nextCursor === null
-              }
-              onClick={() => navigate?.("next")}
-            >
-              Next events page
-            </Button>
+            {state.evidence.kind === "diagnostic" ? (
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={
+                  !state.canRead ||
+                  state.busy ||
+                  !navigate ||
+                  state.evidence.nextCursor === null
+                }
+                onClick={() => navigate?.("next")}
+              >
+                Next events page
+              </Button>
+            ) : null}
           </div>
           <p
             role="status"
@@ -79,10 +82,14 @@ function EvidenceApp() {
                 ? "Reads stay in this project and run. Refresh rereads the displayed page; next page replaces it."
                 : "This host supplies evidence only. Use its complete structured/text result for further reads."}
           </p>
-          <RunSnapshot
-            key={JSON.stringify(state.evidence.snapshot)}
-            {...state.evidence.snapshot}
-          />
+          {state.evidence.kind === "business" ? (
+            <BusinessRunView {...state.evidence.business} />
+          ) : (
+            <RunSnapshot
+              key={JSON.stringify(state.evidence.snapshot)}
+              {...state.evidence.snapshot}
+            />
+          )}
         </section>
       ) : (
         <p role="status" className="text-sm leading-6">

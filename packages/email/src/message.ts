@@ -30,6 +30,7 @@ export const EmailMessage = Schema.Union([
   Schema.Struct({
     ...common,
     kind: Schema.Literal("project-invitation"),
+    role: Schema.optional(Schema.Literals(["viewer", "business"])),
     actionUrl: Schema.String.check(Schema.isMaxLength(4096)),
     projectName: Schema.String.check(
       Schema.isMinLength(1),

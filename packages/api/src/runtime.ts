@@ -1,3 +1,6 @@
+import { BusinessEvidenceStore } from "@flowmark/db/persistence"
+import { BusinessEvidenceRepositoryLive } from "./features/business-evidence/adapters/business-evidence.js"
+import { GetBusinessEvidence } from "./features/business-evidence/use-cases/business-evidence.js"
 import { ProjectSharingStore } from "@flowmark/db/persistence"
 import { ProjectSharingRepositoryLive } from "./features/project-sharing/adapters/project-sharing.js"
 import { ManageProjectSharing } from "./features/project-sharing/use-cases/manage-project-sharing.js"
@@ -42,6 +45,7 @@ import { GetMcpAgentConnectionLive } from "./features/project-access/use-cases/g
 import { GetMcpAgentConnection } from "./features/project-access/use-cases/get-mcp-agent-connection.js"
 
 const persistence = Layer.mergeAll(
+  BusinessEvidenceStore.layer,
   ProjectSharingStore.layer,
   AccountLifecycleStore.layer,
   DataLifecycleStore.layer,
@@ -52,6 +56,7 @@ const persistence = Layer.mergeAll(
   AgentAccessStore.layer,
 ).pipe(Layer.provide(DatabaseLive))
 const databaseAdapters = Layer.mergeAll(
+  BusinessEvidenceRepositoryLive,
   ProjectSharingRepositoryLive,
   AccountLifecycleLive,
   DataLifecycleLive,
@@ -76,6 +81,7 @@ const agentAccessAdapter = Layer.mergeAll(
 )
 
 export const ApiLive = Layer.mergeAll(
+  GetBusinessEvidence.layer,
   ManageProjectSharing.layer,
   ManageAccountLifecycle.layer,
   ManageDataLifecycle.layer,
@@ -101,6 +107,7 @@ export function runApi<A, E>(
   operation: Effect.Effect<
     A,
     E,
+    | GetBusinessEvidence
     | ManageProjectSharing
     | ManageAccountLifecycle
     | ManageDataLifecycle

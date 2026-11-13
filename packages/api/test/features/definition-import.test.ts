@@ -39,6 +39,7 @@ const fixture = () => {
           AuthorizeProject.of({
             authorizeUser,
             authorizeOwner: authorizeUser,
+            authorizeDiagnosticUser: authorizeUser,
             authorize: () => Effect.die("Unexpected key authorization"),
             authorizeDelegatedReader: () =>
               Effect.die("Unexpected delegated authorization"),

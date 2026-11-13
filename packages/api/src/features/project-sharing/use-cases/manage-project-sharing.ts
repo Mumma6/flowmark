@@ -116,6 +116,7 @@ export class ManageProjectSharing extends Context.Service<ManageProjectSharing>(
             input.projectId,
             email,
             tokenHash,
+            input.role ?? "viewer",
           )
           yield* Option.match(dispatch, {
             onNone: () => Effect.void,

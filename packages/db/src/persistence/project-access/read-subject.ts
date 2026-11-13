@@ -18,6 +18,11 @@ export const ProjectReadSubject = Context.Reference<
   ProjectReadIdentity | undefined
 >("@flowmark/db/ProjectReadSubject", { defaultValue: () => undefined })
 
+export const ProjectReadDepth = Context.Reference<"diagnostic" | "business">(
+  "@flowmark/db/ProjectReadDepth",
+  { defaultValue: () => "diagnostic" },
+)
+
 /** Lock current authority inside the project read fence, including delayed reads. */
 export const assertProjectReadSubject = Effect.fn("assertProjectReadSubject")(
   function* (
@@ -28,6 +33,9 @@ export const assertProjectReadSubject = Effect.fn("assertProjectReadSubject")(
     if (!subject) {
       return
     }
+    const depth = yield* ProjectReadDepth
+    const role =
+      depth === "business" ? sql`true` : sql`m.role IN ('owner', 'viewer')`
     const query = Match.value(subject).pipe(
       Match.when(
         { kind: "key" },
@@ -37,12 +45,12 @@ export const assertProjectReadSubject = Effect.fn("assertProjectReadSubject")(
       Match.when(
         { kind: "user" },
         (subject) =>
-          sql`SELECT m.user_id FROM project_members m JOIN "user" u ON u.id = m.user_id WHERE m.project_id = ${projectId}::uuid AND m.user_id = ${subject.userId} AND u.lifecycle_operation_id IS NULL FOR SHARE OF m`,
+          sql`SELECT m.user_id FROM project_members m JOIN "user" u ON u.id = m.user_id WHERE m.project_id = ${projectId}::uuid AND m.user_id = ${subject.userId} AND u.lifecycle_operation_id IS NULL AND ${role} FOR SHARE OF m`,
       ),
       Match.when(
         { kind: "delegated" },
         (subject) =>
-          sql`SELECT m.user_id FROM project_members m JOIN "user" u ON u.id = m.user_id JOIN agent_access_grant_projects g ON g.project_id = m.project_id JOIN oauth_refresh_token r ON r.authorization_code_id = g.authorization_code_id WHERE m.project_id = ${projectId}::uuid AND m.user_id = ${subject.userId} AND u.lifecycle_operation_id IS NULL AND r.user_id = ${subject.userId} AND r.client_id = ${subject.clientId} AND r.authorization_code_id = ${subject.authorizationCodeId} AND r.revoked IS NULL AND (r.expires_at IS NULL OR r.expires_at > clock_timestamp()) FOR SHARE OF m, g, r`,
+          sql`SELECT m.user_id FROM project_members m JOIN "user" u ON u.id = m.user_id JOIN agent_access_grant_projects g ON g.project_id = m.project_id JOIN oauth_refresh_token r ON r.authorization_code_id = g.authorization_code_id WHERE m.project_id = ${projectId}::uuid AND m.user_id = ${subject.userId} AND u.lifecycle_operation_id IS NULL AND ${role} AND r.user_id = ${subject.userId} AND r.client_id = ${subject.clientId} AND r.authorization_code_id = ${subject.authorizationCodeId} AND r.revoked IS NULL AND (r.expires_at IS NULL OR r.expires_at > clock_timestamp()) FOR SHARE OF m, g, r`,
       ),
       Match.exhaustive,
     )

@@ -8,7 +8,7 @@ export interface BrowserCredential {
 }
 
 export interface ProjectSummary {
-  readonly role?: "owner" | "viewer"
+  readonly role?: "owner" | "viewer" | "business"
   readonly id: string
   readonly name: string
   readonly createdAt: string
@@ -69,12 +69,12 @@ export interface ProjectCredentialsService {
   ) => Effect.Effect<string | undefined, PersistenceError>
   readonly projectForUser: (
     userId: string,
-    role?: "owner",
+    role?: "owner" | "diagnostic",
   ) => Effect.Effect<string | undefined, PersistenceError>
   readonly memberProject: (
     userId: string,
     projectId: string,
-    role?: "owner",
+    role?: "owner" | "diagnostic",
   ) => Effect.Effect<string | undefined, PersistenceError>
   readonly delegatedReaderProject: (input: {
     readonly userId: string

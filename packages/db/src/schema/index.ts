@@ -297,7 +297,7 @@ export const projectMembers = pgTable(
     projectId: uuid("project_id")
       .notNull()
       .references(() => projects.id, { onDelete: "cascade" }),
-    role: text("role", { enum: ["owner", "viewer"] }).notNull(),
+    role: text("role", { enum: ["owner", "viewer", "business"] }).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
@@ -313,7 +313,7 @@ export const projectMembers = pgTable(
       .where(sql`${table.role} = 'owner'`),
     check(
       "project_members_role_check",
-      sql`${table.role} IN ('owner', 'viewer')`,
+      sql`${table.role} IN ('owner', 'viewer', 'business')`,
     ),
   ],
 )
@@ -349,6 +349,9 @@ export const projectInvitations = pgTable(
     })
       .notNull()
       .default("pending"),
+    role: text("role", { enum: ["viewer", "business"] })
+      .notNull()
+      .default("viewer"),
     delivery: text("delivery", { enum: ["pending", "submitted", "failed"] })
       .notNull()
       .default("pending"),
@@ -371,8 +374,33 @@ export const projectInvitations = pgTable(
       sql`${table.state} IN ('pending', 'accepted', 'declined', 'revoked')`,
     ),
     check(
+      "project_invitation_role_check",
+      sql`${table.role} IN ('viewer', 'business')`,
+    ),
+    check(
       "project_invitation_delivery_check",
       sql`${table.delivery} IN ('pending', 'submitted', 'failed')`,
+    ),
+  ],
+)
+
+/** Owner-controlled disclosure, independent of telemetry/meaning ownership. */
+export const projectEvidencePublications = pgTable(
+  "project_evidence_publications",
+  {
+    projectId: uuid("project_id")
+      .primaryKey()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    revision: integer("revision").notNull().default(0),
+    publication: jsonb("publication").$type<unknown>().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    check(
+      "project_evidence_publication_revision_check",
+      sql`${table.revision} >= 0`,
     ),
   ],
 )

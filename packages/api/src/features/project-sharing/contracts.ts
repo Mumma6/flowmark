@@ -11,6 +11,7 @@ const SessionId = Schema.String.check(
 export const InviteProjectSchema = Schema.Struct({
   projectId: SharingUuid,
   currentSessionId: SessionId,
+  role: Schema.optional(Schema.Literals(["viewer", "business"])),
   email: Schema.String.check(
     Schema.isMaxLength(254),
     Schema.isPattern(/^[^\s@]+@[^\s@]+\.[^\s@]+$/),
@@ -31,7 +32,7 @@ export const InvitationReviewSchema = Schema.Struct({
   projectName: Schema.String,
   inviterName: Schema.String,
   expiresAt: Schema.String,
-  role: Schema.Literal("viewer"),
+  role: Schema.Literals(["viewer", "business"]),
   action: Schema.Literals(["review", "accept", "decline"]),
 })
 export type InvitationReview = typeof InvitationReviewSchema.Type
@@ -40,13 +41,13 @@ export const ProjectSharingSchema = Schema.Struct({
   projectId: SharingUuid,
   projectName: Schema.String,
   ownerName: Schema.String,
-  role: Schema.Literals(["owner", "viewer"]),
+  role: Schema.Literals(["owner", "viewer", "business"]),
   members: Schema.Array(
     Schema.Struct({
       userId: Schema.String,
       name: Schema.String,
       email: Schema.String,
-      role: Schema.Literals(["owner", "viewer"]),
+      role: Schema.Literals(["owner", "viewer", "business"]),
     }),
   ),
   invitations: Schema.Array(
@@ -54,6 +55,7 @@ export const ProjectSharingSchema = Schema.Struct({
       id: SharingUuid,
       email: Schema.String,
       expiresAt: Schema.String,
+      role: Schema.Literals(["viewer", "business"]),
       delivery: Schema.Literals(["pending", "submitted", "failed"]),
     }),
   ),

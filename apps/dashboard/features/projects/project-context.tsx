@@ -15,7 +15,7 @@ import { useTRPC } from "../platform/api-trpc"
 import { readStoredProjectId, storeProjectId } from "./project-selection"
 
 type Project = {
-  readonly role?: "owner" | "viewer"
+  readonly role?: "owner" | "viewer" | "business"
   readonly id: string
   readonly name: string
   readonly createdAt: string

@@ -54,12 +54,16 @@ export class GetProjectWorkflowData extends Context.Service<
             authorization.authorize(header, "read"),
           ),
           Match.tag("User", ({ userId, projectId }) =>
-            authorization.authorizeUser(userId, projectId),
+            authorization.authorizeDiagnosticUser(userId, projectId),
           ),
           Match.tag("DelegatedUser", (delegated) =>
             Effect.gen(function* () {
               const projectId =
                 yield* authorization.authorizeDelegatedReader(delegated)
+              yield* authorization.authorizeDiagnosticUser(
+                delegated.userId,
+                projectId,
+              )
               yield* agentAccess.recordLastAuthenticated({
                 userId: delegated.userId,
                 clientId: delegated.clientId,

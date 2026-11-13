@@ -34,6 +34,7 @@ function SharingControls({
 }) {
   const controls = useProjectSharing(projectId, userId, sessionId)
   const [email, setEmail] = useState("")
+  const [role, setRole] = useState<"viewer" | "business">("viewer")
   const [password, setPassword] = useState("")
   const [understood, setUnderstood] = useState(false)
   const [target, setTarget] = useState<{ userId: string; name: string } | null>(
@@ -66,22 +67,31 @@ function SharingControls({
         <CardHeader>
           <CardTitle>Project access · {details.projectName}</CardTitle>
           <CardDescription>
-            Sharing grants diagnostic reads for this project only, including
-            reported properties, error details and diagnostic downloads. Other
-            projects are not included.
+            Access applies to this project only. Diagnostic viewers see full
+            evidence; business readers see activity metadata and owner-published
+            fields.
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-5">
           <p className="text-sm">
-            Your role: <strong>{owner ? "Owner" : "Read-only viewer"}</strong>.
-            Owner: {details.ownerName}.
+            Your role:{" "}
+            <strong>
+              {owner
+                ? "Owner"
+                : details.role === "business"
+                  ? "Business reader"
+                  : "Diagnostic viewer"}
+            </strong>
+            . Owner: {details.ownerName}.
           </p>
           {!owner ? (
             <>
               <p className="text-sm text-muted-foreground">
-                You can read diagnostic evidence and save your own live
-                selections. Key management, metadata changes, invitations and
-                project deletion belong to the owner.
+                {details.role === "business"
+                  ? "You can read project activity and owner-published fields. Raw diagnostics are withheld."
+                  : "You can read full diagnostic evidence."}{" "}
+                You can save your own live selections. Management belongs to the
+                owner.
               </p>
               <div>
                 <Button
@@ -105,9 +115,13 @@ function SharingControls({
                       <strong>{member.name}</strong>
                       <br />
                       {member.email} ·{" "}
-                      {member.role === "owner" ? "Owner" : "Read-only viewer"}
+                      {member.role === "owner"
+                        ? "Owner"
+                        : member.role === "business"
+                          ? "Business reader"
+                          : "Diagnostic viewer"}
                     </span>
-                    {member.role === "viewer" ? (
+                    {member.role !== "owner" ? (
                       <Button
                         variant="outline"
                         size="sm"
@@ -127,12 +141,12 @@ function SharingControls({
               </ul>
               <p className="text-sm text-muted-foreground">
                 There is one fixed owner. Ownership transfer and owner removal
-                are unavailable. Remove viewers before deleting the project or
+                are unavailable. Remove readers before deleting the project or
                 your owning account.
               </p>
               <form
                 className="grid max-w-md gap-4"
-                aria-label="Invite a project viewer"
+                aria-label="Invite a read-only colleague"
                 aria-busy={busy}
                 onSubmit={(event) => {
                   event.preventDefault()
@@ -147,10 +161,31 @@ function SharingControls({
                     currentSessionId: sessionId,
                     email: email.trim().toLowerCase(),
                     password: submitted,
+                    role,
                   })
                 }}
               >
                 <h3 className="font-medium">Invite a read-only colleague</h3>
+                <label className="grid gap-2 text-sm">
+                  Evidence access
+                  <select
+                    className="h-10 rounded-md border border-input bg-background px-3"
+                    value={role}
+                    onChange={(e) =>
+                      setRole(
+                        e.target.value === "business" ? "business" : "viewer",
+                      )
+                    }
+                    disabled={busy}
+                  >
+                    <option value="viewer">
+                      Diagnostic viewer · full evidence
+                    </option>
+                    <option value="business">
+                      Business reader · published evidence
+                    </option>
+                  </select>
+                </label>
                 <label className="grid gap-2 text-sm">
                   Colleague email
                   <Input
@@ -185,8 +220,9 @@ function SharingControls({
                     disabled={busy}
                   />
                   <span>
-                    I understand that this grants full diagnostic read access to
-                    this project, including properties and error details.
+                    {role === "business"
+                      ? "I understand that this shares project-wide activity metadata and owner-published fields. A customer filter is not an access restriction."
+                      : "I understand that this grants full diagnostic access, including properties and error details."}
                   </span>
                 </label>
                 <p className="text-xs text-muted-foreground">

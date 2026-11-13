@@ -35,6 +35,7 @@ import { signOut } from "../auth/operations"
 import { publicConfig } from "../platform/config-public"
 import { RuntimeConfigProvider } from "../platform/runtime-config"
 import type { RemoteAgentAccessDeployment } from "../connect/access/agent-access-capability"
+import { BusinessBoundary } from "../business-evidence/business-boundary"
 import { ProjectProvider } from "../projects/project-context"
 import { ProjectSwitcher } from "../projects/project-switcher"
 import { CommandPalette } from "../search/command-palette"
@@ -257,7 +258,7 @@ export function StudioShell({
             tabIndex={-1}
             className="mx-auto min-w-0 w-full max-w-[1680px] px-4 py-8 sm:px-8 sm:py-10"
           >
-            {children}
+            <BusinessBoundary>{children}</BusinessBoundary>
           </main>
         </div>
       </ProjectProvider>

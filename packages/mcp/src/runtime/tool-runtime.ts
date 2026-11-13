@@ -5,6 +5,7 @@ import {
   type GetMcpAgentConnection,
   type AuthorizeAgentRead,
   type GetProjectWorkflowData,
+  type GetBusinessEvidence,
 } from "@flowmark/api"
 import { Effect } from "effect"
 import { McpToolReadError } from "../errors.js"
@@ -20,7 +21,10 @@ export const runMcpTool = <A extends Record<string, unknown>>(
   operation: Effect.Effect<
     A,
     McpToolFailure,
-    GetProjectWorkflowData | GetMcpAgentConnection | AuthorizeAgentRead
+    | GetProjectWorkflowData
+    | GetBusinessEvidence
+    | GetMcpAgentConnection
+    | AuthorizeAgentRead
   >,
   signal?: AbortSignal,
 ) =>

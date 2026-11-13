@@ -1,6 +1,10 @@
+import {
+  businessToolEvidence,
+  type McpBusinessResult,
+} from "./business-evidence.js"
 import type { AuthorizeAgentRead } from "@flowmark/api"
-import { GetProjectWorkflowData } from "@flowmark/api"
-import { Effect } from "effect"
+import { GetBusinessEvidence, GetProjectWorkflowData } from "@flowmark/api"
+import { Effect, Option } from "effect"
 import type { FlowmarkMcpAuthInfo } from "../../auth/claims.js"
 import { McpToolReadError } from "../../errors.js"
 import { decodeCompareRunInput } from "../../tools/schemas.js"
@@ -16,9 +20,9 @@ export const compareRunForMcp: (
   identity: FlowmarkMcpAuthInfo,
   rawInput: unknown,
 ) => Effect.Effect<
-  McpCompareRunResult,
+  McpCompareRunResult | McpBusinessResult,
   McpToolFailure,
-  GetProjectWorkflowData | AuthorizeAgentRead
+  GetProjectWorkflowData | GetBusinessEvidence | AuthorizeAgentRead
 > = Effect.fn("McpCompareRun.execute")(function* (
   identity: FlowmarkMcpAuthInfo,
   rawInput: unknown,
@@ -26,6 +30,20 @@ export const compareRunForMcp: (
   const input = yield* decodeCompareRunInput(rawInput)
   const family = yield* resolveMcpGrantFamily(identity)
   const reader = mcpDelegatedReader(identity, family.familyId, input.projectId)
+  const business = yield* businessToolEvidence(reader, "compare_run", () => ({
+    kind: "compare",
+    runId: input.runId,
+    days: input.peers?.days,
+    ...(input.peers?.environment !== undefined ||
+    input.peers?.sameRelease !== undefined ||
+    input.peers?.dimensionKey !== undefined ||
+    input.peers?.dimensionValue !== undefined
+      ? { unsupportedDiagnosticFilters: true }
+      : {}),
+  }))
+  if (Option.isSome(business)) {
+    return business.value
+  }
   const queries = yield* GetProjectWorkflowData
   const comparison = yield* queries
     .compare(reader, input.runId, input.peers)

@@ -48,12 +48,13 @@ export const ProjectSharingRepositoryLive = Layer.effect(
     const store = yield* ProjectSharingStore
     return ProjectSharingRepository.of({
       list: (userId, projectId) => sharing(store.list(userId, projectId)),
-      invite: (userId, projectId, email, hash) =>
-        sharing(store.invite(userId, projectId, email, hash)).pipe(
+      invite: (userId, projectId, email, hash, role) =>
+        sharing(store.invite(userId, projectId, email, hash, role)).pipe(
           Effect.map(
             Option.map(({ invitation, projectName, inviterName }) => ({
               id: invitation.id,
               email: invitation.email,
+              role: invitation.role,
               projectName,
               inviterName,
             })),

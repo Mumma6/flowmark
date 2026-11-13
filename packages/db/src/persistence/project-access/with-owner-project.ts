@@ -1,3 +1,4 @@
+import { ProjectReadSubject } from "./read-subject.js"
 import { and, eq } from "drizzle-orm"
 import { Effect } from "effect"
 import type { FlowmarkDatabase } from "../../client.js"
@@ -12,6 +13,7 @@ export const withOwnerProject = Effect.fn("withOwnerProject")(function* <A, E>(
   userId: string,
   projectId: string,
   use: Effect.Effect<A, E, FlowmarkDatabase>,
+  exclusive = false,
 ) {
   return yield* withActiveProject(
     projectId,
@@ -40,5 +42,6 @@ export const withOwnerProject = Effect.fn("withOwnerProject")(function* <A, E>(
       return yield* use
     }),
     "current",
-  )
+    exclusive ? "update" : "share",
+  ).pipe(Effect.provideService(ProjectReadSubject, { kind: "user", userId }))
 })
