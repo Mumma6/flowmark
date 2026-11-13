@@ -7,6 +7,10 @@
     "node": ">=20.19"
   },
   "scripts": {
+    "rust:setup": "node scripts/rust.mjs setup",
+    "rust:format": "node scripts/rust.mjs format",
+    "rust:check": "node scripts/rust.mjs check",
+    "rust:build": "node scripts/rust.mjs build",
     "demo:plan": "pnpm --filter @flowmark/demo demo plan",
     "demo:setup": "pnpm --filter @flowmark/demo demo setup",
     "demo:seed": "pnpm --filter @flowmark/demo demo seed",
