@@ -1097,12 +1097,39 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         .from(oauthRefreshToken)
         .where(eq(oauthRefreshToken.clientId, clientId))
       assert.ok(authorizationCodeId)
+      const ownerSignup = await auth.handler(
+        new Request(`${testOrigin}/api/auth/sign-up/email`, {
+          method: "POST",
+          headers: { origin: testOrigin, "content-type": "application/json" },
+          body: JSON.stringify({
+            name: "Fixed project owner",
+            email: `${randomUUID()}@example.test`,
+            password: randomUUID(),
+          }),
+        }),
+      )
+      expect(ownerSignup.status).toBe(200)
+      const ownerCookie = ownerSignup.headers
+        .getSetCookie()
+        .map((value) => value.split(";")[0])
+        .join("; ")
+      const fixedOwner = (await ownerSignup.json()).user.id as string
+      const ownerStudio = appRouter.createCaller({
+        request: new Request(`${testOrigin}/api/trpc`, {
+          headers: { cookie: ownerCookie },
+        }),
+      })
       const project = await Effect.runPromise(
-        createOwnedProject(session.user.id, {
+        createOwnedProject(fixedOwner, {
           workspace: "Acceptance workspace",
           project: "Acceptance project",
         }).pipe(Effect.provideService(Database, connection.db)),
       )
+      await connection.db.insert(projectMembers).values({
+        userId: session.user.id,
+        projectId: project.projectId,
+        role: "viewer",
+      })
       const foreign = await Effect.runPromise(
         createOwnedProject(session.user.id, {
           workspace: "Foreign workspace",
@@ -1548,7 +1575,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         peers: { days: 91 },
       })
       expect(peerTooWide.result?.isError).toBe(true)
-      await studio.resultDeclarations.create({
+      await ownerStudio.resultDeclarations.create({
         projectId: project.projectId,
         workflow: "acceptance.investigation",
         declaration: {
@@ -1847,7 +1874,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
       await connection.db.insert(projectMembers).values({
         userId: session.user.id,
         projectId: project.projectId,
-        role: "owner",
+        role: "viewer",
       })
       const recoveredMembership = await callTool(55, "get_run", {
         projectId: project.projectId,

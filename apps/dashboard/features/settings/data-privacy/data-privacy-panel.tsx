@@ -1,5 +1,7 @@
 "use client"
 
+import { ProjectOwnerOnly } from "../../project-sharing/project-owner-only"
+
 import {
   Alert,
   AlertDescription,
@@ -356,8 +358,8 @@ export function DataPrivacyPanel() {
         <CardTitle>Data &amp; privacy</CardTitle>
         <CardDescription>
           Review and erase complete telemetry or delete a solely owned project.
-          Shared projects require an ownership policy before deletion is
-          available.
+          Owners must remove viewers before erasing telemetry or deleting a
+          shared project.
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-5">
@@ -368,11 +370,13 @@ export function DataPrivacyPanel() {
           Account deletion and cleanup recovery
         </Link>
         {current ? (
-          <ProjectErasure
-            key={current.id}
-            projectId={current.id}
-            projectName={current.name}
-          />
+          <ProjectOwnerOnly>
+            <ProjectErasure
+              key={current.id}
+              projectId={current.id}
+              projectName={current.name}
+            />
+          </ProjectOwnerOnly>
         ) : (
           <p className="text-sm text-muted-foreground">
             No project selected. Create or select a project under Projects. Your

@@ -1,9 +1,9 @@
 # ADR 0017 — Explicit project sharing
 
-- Status: Proposed; maintainer approval required before implementation
+- Status: Accepted for local implementation (maintainer approval, 2026-11-13)
 - Date: 2026-11-13
 - Task: Access TASK-014; implementation belongs to TASK-015
-- Inspected baseline: staging `683bbdc`, Better Auth 1.7.17, migrations through 0025
+- Inspected baseline: staging `683bbdc`, Better Auth 1.7.17, migrations through 0026 (corrected during implementation inspection)
 
 ## Proposed first delivery
 
@@ -219,6 +219,6 @@ while rechecking the actual membership at every server/persistence boundary.
 This ADR changes no runtime, schema, provider setting or hosted account. Approval
 accepts the proposed first-delivery scope for local TASK-015 implementation and
 disposable tests only; it does not authorize real invitations, a migration/deploy,
-merge or any other hosted operation. Until approved, ADR 0015 and current owner-only
-behavior remain authoritative. Restricted business projections stay with their
+merge or any other hosted operation. The maintainer approved the proposed first version on 2026-11-13. Existing
+owner-only behavior remains authoritative until the complete guarded implementation lands. Restricted business projections stay with their
 separate tasks; this decision neither implements nor certifies them.

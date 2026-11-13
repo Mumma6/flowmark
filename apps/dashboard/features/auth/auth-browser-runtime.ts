@@ -1,5 +1,7 @@
 "use client"
 
+import { invitationReturnPath } from "../project-sharing/invitation-location"
+
 import { Effect, Layer, Match, Schema } from "effect"
 import { BrowserAuth, DashboardAuthError } from "./operations"
 import { publicConfig } from "../platform/config-public"
@@ -74,15 +76,19 @@ const BrowserAuthLive = Layer.succeed(
         authClient.changePassword({ ...input, revokeOtherSessions: true }),
       ),
     sendVerification: Effect.fn("BrowserAuth.sendVerification")(
-      function* (email) {
+      function* (email, returnTo) {
         const failure = (reason: string) =>
           new DashboardAuthError({ operation: "verify-email", reason })
+        if (returnTo !== undefined && !invitationReturnPath(returnTo)) {
+          return yield* failure("This invitation return link is invalid.")
+        }
         const result = yield* Effect.tryPromise({
           try: () =>
             authClient.sendVerificationEmail({
               email,
               callbackURL: new URL(
-                "/settings?section=account&emailVerification=complete",
+                returnTo ??
+                  "/settings?section=account&emailVerification=complete",
                 window.location.origin,
               ).href,
             }),

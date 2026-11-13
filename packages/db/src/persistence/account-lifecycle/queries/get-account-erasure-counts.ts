@@ -10,7 +10,7 @@ export const getAccountErasureCounts = Effect.fn("getAccountErasureCounts")(
       tx.execute<AccountErasureCounts & Record<string, unknown>>(sql`
     WITH owned AS (SELECT p.id, p.name, p.lifecycle_operation_id, m.role,
       (SELECT count(*) FROM project_members colleague WHERE colleague.project_id = p.id) AS members
-      FROM projects p JOIN project_members m ON m.project_id = p.id WHERE m.user_id = ${userId}),
+      FROM projects p JOIN project_members m ON m.project_id = p.id WHERE m.user_id = ${userId} AND m.role = 'owner'),
     population AS (SELECT r.id FROM workflow_runs r JOIN workflows w ON w.id = r.workflow_id JOIN owned p ON p.id = w.project_id),
     clients AS (SELECT client_id FROM oauth_client WHERE user_id = ${userId}),
     counts AS (SELECT (SELECT count(*)::int FROM owned) AS projects,

@@ -77,7 +77,19 @@ export const withEmailChangeAccount = Effect.fn("withEmailChangeAccount")(
                   ),
             cancel: (id) => provide(cancelEmailChange(profile.id, id)),
             invalidateRecovery: (exceptId) =>
-              provide(invalidateEmailRecovery(profile.id, exceptId)),
+              Effect.gen(function* () {
+                yield* runQuery(DatabaseOperation.AccountEmailChange, () =>
+                  tx.execute(
+                    sql`SELECT id FROM projects WHERE id IN (SELECT project_id FROM project_invitations WHERE state = 'pending' AND (recipient_user_id = ${profile.id} OR email = ${profile.email})) ORDER BY id FOR UPDATE`,
+                  ),
+                )
+                yield* runQuery(DatabaseOperation.AccountEmailChange, () =>
+                  tx.execute(
+                    sql`UPDATE project_invitations SET state = 'revoked', token_hash = NULL, updated_at = clock_timestamp() WHERE state = 'pending' AND (recipient_user_id = ${profile.id} OR email = ${profile.email})`,
+                  ),
+                )
+                yield* provide(invalidateEmailRecovery(profile.id, exceptId))
+              }),
           }).pipe(
             // Await provider promises before releasing their transaction, including on interruption.
             Effect.uninterruptible,

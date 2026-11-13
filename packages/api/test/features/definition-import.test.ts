@@ -38,6 +38,7 @@ const fixture = () => {
           AuthorizeProject,
           AuthorizeProject.of({
             authorizeUser,
+            authorizeOwner: authorizeUser,
             authorize: () => Effect.die("Unexpected key authorization"),
             authorizeDelegatedReader: () =>
               Effect.die("Unexpected delegated authorization"),
@@ -77,11 +78,16 @@ describe("session-owned metadata preview", () => {
     expect(result.status).toBe("Reviewable")
     expect(f.authorizeUser).toHaveBeenCalledWith("owner", "project-1")
     expect(f.find).toHaveBeenCalledWith(
+      "owner",
       "project-1",
       "booking.create",
       "booking-v1",
     )
-    expect(f.searchFields).toHaveBeenCalledWith("project-1", "booking.create")
+    expect(f.searchFields).toHaveBeenCalledWith(
+      "owner",
+      "project-1",
+      "booking.create",
+    )
     expect(f.create).not.toHaveBeenCalled()
     expect(f.setSearchFields).not.toHaveBeenCalled()
   })

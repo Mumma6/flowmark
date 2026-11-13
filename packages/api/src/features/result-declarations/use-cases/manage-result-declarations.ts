@@ -76,7 +76,7 @@ const make = Effect.gen(function* () {
       projectId: string,
       input: unknown,
     ) {
-      const authorized = yield* authorization.authorizeUser(userId, projectId)
+      const authorized = yield* authorization.authorizeOwner(userId, projectId)
       const command = yield* Schema.decodeUnknownEffect(
         DefinitionImportApplySchema,
         { onExcessProperty: "error" },
@@ -85,7 +85,10 @@ const make = Effect.gen(function* () {
     }),
     previewImport: Effect.fn("ManageResultDeclarations.previewImport")(
       function* (userId: string, projectId: string, input: unknown) {
-        const authorized = yield* authorization.authorizeUser(userId, projectId)
+        const authorized = yield* authorization.authorizeOwner(
+          userId,
+          projectId,
+        )
         const definition = yield* Schema.decodeUnknownEffect(
           DefinitionImportSchema,
           {
@@ -93,6 +96,7 @@ const make = Effect.gen(function* () {
           },
         )(input).pipe(Effect.mapError((cause) => new InvalidInput({ cause })))
         const searchFields = yield* declarations.searchFields(
+          userId,
           authorized,
           definition.workflow,
         )
@@ -101,7 +105,12 @@ const make = Effect.gen(function* () {
           {
             onNone: () => Effect.succeed(Option.none<ResultDeclaration>()),
             onSome: ({ revision }) =>
-              declarations.find(authorized, definition.workflow, revision),
+              declarations.find(
+                userId,
+                authorized,
+                definition.workflow,
+                revision,
+              ),
           },
         )
         return importPreview(authorized, definition, { result, searchFields })
@@ -113,7 +122,7 @@ const make = Effect.gen(function* () {
       workflow: string,
     ) {
       const authorized = yield* authorization.authorizeUser(userId, projectId)
-      return yield* declarations.searchFields(authorized, workflow)
+      return yield* declarations.searchFields(userId, authorized, workflow)
     }),
     setSearchFields: Effect.fn("ManageResultDeclarations.setSearchFields")(
       function* (
@@ -122,11 +131,19 @@ const make = Effect.gen(function* () {
         workflow: string,
         input: unknown,
       ) {
-        const authorized = yield* authorization.authorizeUser(userId, projectId)
+        const authorized = yield* authorization.authorizeOwner(
+          userId,
+          projectId,
+        )
         const fields = yield* Schema.decodeUnknownEffect(SearchFieldsSchema)(
           input,
         ).pipe(Effect.mapError((cause) => new InvalidInput({ cause })))
-        return yield* declarations.setSearchFields(authorized, workflow, fields)
+        return yield* declarations.setSearchFields(
+          userId,
+          authorized,
+          workflow,
+          fields,
+        )
       },
     ),
     list: Effect.fn("ManageResultDeclarations.list")(function* (
@@ -135,7 +152,7 @@ const make = Effect.gen(function* () {
       workflow: string,
     ) {
       const authorized = yield* authorization.authorizeUser(userId, projectId)
-      return yield* declarations.list(authorized, workflow)
+      return yield* declarations.list(userId, authorized, workflow)
     }),
     create: Effect.fn("ManageResultDeclarations.create")(function* (
       userId: string,
@@ -143,11 +160,12 @@ const make = Effect.gen(function* () {
       workflow: string,
       input: unknown,
     ) {
-      const authorized = yield* authorization.authorizeUser(userId, projectId)
+      const authorized = yield* authorization.authorizeOwner(userId, projectId)
       const declaration = yield* Schema.decodeUnknownEffect(
         ResultDeclarationSchema,
       )(input).pipe(Effect.mapError((cause) => new InvalidInput({ cause })))
       const created = yield* declarations.create(
+        userId,
         authorized,
         workflow,
         declaration,

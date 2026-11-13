@@ -26,6 +26,14 @@ export const renderEmail = Effect.fn("Email.render")(function* (
       ? undefined
       : `${environmentName} environment. Links in this message open ${trustedOrigin}.`
   const copy = Match.value(message).pipe(
+    Match.when(
+      { kind: "project-invitation" },
+      ({ projectName, inviterName }) => ({
+        subject: "Invitation to a Flowmark project",
+        body: `${inviterName || "A project owner"} invited you to read ${projectName}. This includes all diagnostic evidence in that project, including properties and error details. It does not grant key management or access to other projects. Sign in with this mailbox and verify it before reviewing and accepting.`,
+        action: "Review project invitation",
+      }),
+    ),
     Match.when({ kind: "delivery-test" }, () => ({
       subject: "Flowmark email delivery test",
       body: `This is the Flowmark ${environmentName} email delivery test you requested. No account settings were changed.`,
@@ -87,6 +95,11 @@ export const renderEmail = Effect.fn("Email.render")(function* (
       new EmailError({ operation: "validation", reason: "untrusted-url" }),
   })
   const expiry = Match.value(message).pipe(
+    Match.when(
+      { kind: "project-invitation" },
+      () =>
+        "This invitation expires after 72 hours, unless replaced or revoked earlier. Opening this link does not accept it. If you did not expect it, you can ignore this email.",
+    ),
     Match.when(
       { kind: "delivery-test" },
       () => "No action is required. Reply to this email if you need help.",

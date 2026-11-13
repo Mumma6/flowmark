@@ -17,6 +17,10 @@ export interface AuthorizeProjectService {
     userId: string,
     projectId?: string,
   ) => Effect.Effect<string, Unauthorized | PersistenceError>
+  readonly authorizeOwner: (
+    userId: string,
+    projectId: string,
+  ) => Effect.Effect<string, Unauthorized | PersistenceError>
   readonly authorizeDelegatedReader: (input: {
     readonly userId: string
     readonly clientId: string
@@ -105,6 +109,19 @@ export class AuthorizeProject extends Context.Service<
       return AuthorizeProject.of({
         authorize,
         authorizeUser,
+        authorizeOwner: Effect.fn("AuthorizeProject.authorizeOwner")(
+          function* (userId, projectId) {
+            const owned = yield* credentials.memberProject(
+              userId,
+              projectId,
+              "owner",
+            )
+            if (!owned) {
+              return yield* new Unauthorized({ permission: "write" })
+            }
+            return owned
+          },
+        ),
         authorizeDelegatedReader,
       })
     }),

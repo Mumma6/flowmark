@@ -1,4 +1,5 @@
 export interface ProjectSummary {
+  readonly role?: "owner" | "viewer"
   readonly id: string
   readonly name: string
   readonly createdAt: string
@@ -8,6 +9,7 @@ export type OnboardingStep =
   "project" | "key" | "install" | "instrument" | "run"
 
 export interface OnboardingState {
+  readonly sharedAccess?: boolean
   readonly step: OnboardingStep
   readonly completedAt: string | null
 }

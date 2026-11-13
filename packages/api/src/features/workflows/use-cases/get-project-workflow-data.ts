@@ -1,3 +1,4 @@
+import { CurrentProjectReader } from "../models/current-project-reader.js"
 import {
   ReferenceJourneyQuerySchema,
   LinkedComparisonQuerySchema,
@@ -76,12 +77,16 @@ export class GetProjectWorkflowData extends Context.Service<
         reader: ProjectReader,
       ) {
         const projectId = yield* authorizeReader(reader)
-        return yield* repository.snapshot(projectId)
+        return yield* repository
+          .snapshot(projectId)
+          .pipe(Effect.provideService(CurrentProjectReader, reader))
       })
       const workflows = Effect.fn("GetProjectWorkflowData.workflows")(
         function* (reader: ProjectReader) {
           const projectId = yield* authorizeReader(reader)
-          return yield* repository.workflows(projectId)
+          return yield* repository
+            .workflows(projectId)
+            .pipe(Effect.provideService(CurrentProjectReader, reader))
         },
       )
       const listRuns = Effect.fn("GetProjectWorkflowData.listRuns")(function* (
@@ -89,7 +94,9 @@ export class GetProjectWorkflowData extends Context.Service<
         query: ListRunsQuery,
       ) {
         const projectId = yield* authorizeReader(reader)
-        return yield* repository.listRuns(projectId, query)
+        return yield* repository
+          .listRuns(projectId, query)
+          .pipe(Effect.provideService(CurrentProjectReader, reader))
       })
       const search = Effect.fn("GetProjectWorkflowData.search")(function* (
         reader: ProjectReader,
@@ -104,63 +111,83 @@ export class GetProjectWorkflowData extends Context.Service<
             references: [],
           } satisfies ProjectSearch
         }
-        return yield* repository.search(projectId, text)
+        return yield* repository
+          .search(projectId, text)
+          .pipe(Effect.provideService(CurrentProjectReader, reader))
       })
       const timeline = Effect.fn("GetProjectWorkflowData.timeline")(function* (
         reader: ProjectReader,
         runId: string,
       ) {
         const projectId = yield* authorizeReader(reader)
-        return yield* repository.timeline(projectId, runId)
+        return yield* repository
+          .timeline(projectId, runId)
+          .pipe(Effect.provideService(CurrentProjectReader, reader))
       })
       const runEventPage = Effect.fn("GetProjectWorkflowData.runEventPage")(
         function* (reader: ProjectReader, query: RunEventPageQuery) {
           const projectId = yield* authorizeReader(reader)
-          return yield* repository.runEventPage(projectId, query)
+          return yield* repository
+            .runEventPage(projectId, query)
+            .pipe(Effect.provideService(CurrentProjectReader, reader))
         },
       )
       const runInvestigationSummary = Effect.fn(
         "GetProjectWorkflowData.runInvestigationSummary",
       )(function* (reader: ProjectReader, runId: string) {
         const projectId = yield* authorizeReader(reader)
-        return yield* repository.runInvestigationSummary(projectId, runId)
+        return yield* repository
+          .runInvestigationSummary(projectId, runId)
+          .pipe(Effect.provideService(CurrentProjectReader, reader))
       })
       const relatedRunsPage = Effect.fn(
         "GetProjectWorkflowData.relatedRunsPage",
       )(function* (reader: ProjectReader, query: RelatedRunsPageQuery) {
         const projectId = yield* authorizeReader(reader)
-        return yield* repository.relatedRunsPage(projectId, query)
+        return yield* repository
+          .relatedRunsPage(projectId, query)
+          .pipe(Effect.provideService(CurrentProjectReader, reader))
       })
       const expectationsPage = Effect.fn(
         "GetProjectWorkflowData.expectationsPage",
       )(function* (reader: ProjectReader, query: RunExpectationsPageQuery) {
         const projectId = yield* authorizeReader(reader)
-        return yield* repository.expectationsPage(projectId, query)
+        return yield* repository
+          .expectationsPage(projectId, query)
+          .pipe(Effect.provideService(CurrentProjectReader, reader))
       })
       const operationsPage = Effect.fn("GetProjectWorkflowData.operationsPage")(
         function* (reader: ProjectReader, query: RunOperationsPageQuery) {
           const projectId = yield* authorizeReader(reader)
-          return yield* repository.operationsPage(projectId, query)
+          return yield* repository
+            .operationsPage(projectId, query)
+            .pipe(Effect.provideService(CurrentProjectReader, reader))
         },
       )
       const discoverWorkflows = Effect.fn(
         "GetProjectWorkflowData.discoverWorkflows",
       )(function* (reader: ProjectReader, query: WorkflowDiscoveryQuery) {
         const projectId = yield* authorizeReader(reader)
-        return yield* repository.discoverWorkflows(projectId, query)
+        return yield* repository
+          .discoverWorkflows(projectId, query)
+          .pipe(Effect.provideService(CurrentProjectReader, reader))
       })
       const discoverWorkflowMeaning = Effect.fn(
         "GetProjectWorkflowData.discoverWorkflowMeaning",
       )(function* (reader: ProjectReader, query: WorkflowMeaningQuery) {
         const projectId = yield* authorizeReader(reader)
-        return yield* repository.discoverWorkflowMeaning(projectId, query)
+        return yield* repository
+          .discoverWorkflowMeaning(projectId, query)
+          .pipe(Effect.provideService(CurrentProjectReader, reader))
       })
       const related = Effect.fn("GetProjectWorkflowData.related")(function* (
         reader: ProjectReader,
         runId: string,
       ) {
         const projectId = yield* authorizeReader(reader)
-        return yield* repository.related(projectId, runId)
+        return yield* repository
+          .related(projectId, runId)
+          .pipe(Effect.provideService(CurrentProjectReader, reader))
       })
       const compare = Effect.fn("GetProjectWorkflowData.compare")(function* (
         reader: ProjectReader,
@@ -168,12 +195,16 @@ export class GetProjectWorkflowData extends Context.Service<
         selection: PeerSelection = {},
       ) {
         const projectId = yield* authorizeReader(reader)
-        return yield* repository.compare(projectId, runId, selection)
+        return yield* repository
+          .compare(projectId, runId, selection)
+          .pipe(Effect.provideService(CurrentProjectReader, reader))
       })
       const intelligence = Effect.fn("GetProjectWorkflowData.intelligence")(
         function* (reader: ProjectReader, query: IntelligenceQuery) {
           const projectId = yield* authorizeReader(reader)
-          return yield* repository.intelligence(projectId, query)
+          return yield* repository
+            .intelligence(projectId, query)
+            .pipe(Effect.provideService(CurrentProjectReader, reader))
         },
       )
       const periodReport = Effect.fn("GetProjectWorkflowData.periodReport")(
@@ -182,16 +213,17 @@ export class GetProjectWorkflowData extends Context.Service<
             return yield* new InvalidInput({ cause: periodReportWindowMessage })
           }
           const projectId = yield* authorizeReader(reader)
-          return yield* repository.periodReport(projectId, query)
+          return yield* repository
+            .periodReport(projectId, query)
+            .pipe(Effect.provideService(CurrentProjectReader, reader))
         },
       )
       const businessInsights = Effect.fn(
         "GetProjectWorkflowData.businessInsights",
       )(function* (reader: ProjectReader, query: BusinessInsightsQuery) {
-        return yield* repository.businessInsights(
-          yield* authorizeReader(reader),
-          query,
-        )
+        return yield* repository
+          .businessInsights(yield* authorizeReader(reader), query)
+          .pipe(Effect.provideService(CurrentProjectReader, reader))
       })
 
       return GetProjectWorkflowData.of({
@@ -204,7 +236,9 @@ export class GetProjectWorkflowData extends Context.Service<
             )(input).pipe(
               Effect.mapError((cause) => new InvalidInput({ cause })),
             )
-            return yield* repository.linkedComparison(projectId, query)
+            return yield* repository
+              .linkedComparison(projectId, query)
+              .pipe(Effect.provideService(CurrentProjectReader, reader))
           },
         ),
         linkedEvidence: Effect.fn("GetProjectWorkflowData.linkedEvidence")(
@@ -216,7 +250,9 @@ export class GetProjectWorkflowData extends Context.Service<
             )(input).pipe(
               Effect.mapError((cause) => new InvalidInput({ cause })),
             )
-            return yield* repository.linkedEvidence(projectId, query)
+            return yield* repository
+              .linkedEvidence(projectId, query)
+              .pipe(Effect.provideService(CurrentProjectReader, reader))
           },
         ),
         referenceJourney: Effect.fn("GetProjectWorkflowData.referenceJourney")(
@@ -227,15 +263,16 @@ export class GetProjectWorkflowData extends Context.Service<
             )(input, { onExcessProperty: "error" }).pipe(
               Effect.mapError((cause) => new InvalidInput({ cause })),
             )
-            return yield* repository.referenceJourney(projectId, query)
+            return yield* repository
+              .referenceJourney(projectId, query)
+              .pipe(Effect.provideService(CurrentProjectReader, reader))
           },
         ),
         expectations: Effect.fn("GetProjectWorkflowData.expectations")(
           function* (reader, runId) {
-            return yield* repository.expectations(
-              yield* authorizeReader(reader),
-              runId,
-            )
+            return yield* repository
+              .expectations(yield* authorizeReader(reader), runId)
+              .pipe(Effect.provideService(CurrentProjectReader, reader))
           },
         ),
         businessInsights,

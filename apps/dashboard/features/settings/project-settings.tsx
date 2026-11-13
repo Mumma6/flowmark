@@ -84,7 +84,7 @@ export function ProjectSettings() {
               </Select>
             </div>
           ) : null}
-          {current ? (
+          {current?.role === "owner" ? (
             <form
               className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end"
               onSubmit={(event: FormEvent) => {

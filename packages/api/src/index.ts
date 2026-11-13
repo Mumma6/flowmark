@@ -159,3 +159,15 @@ export {
 } from "./features/data-lifecycle/contracts.js"
 
 export { ManageAccountLifecycle } from "./features/data-lifecycle/use-cases/manage-account-lifecycle.js"
+
+export { ManageProjectSharing } from "./features/project-sharing/use-cases/manage-project-sharing.js"
+export {
+  ProjectSharingIdentity,
+  ProjectInvitationDelivery,
+} from "./features/project-sharing/ports/project-sharing.js"
+export {
+  InviteProjectSchema,
+  ReviewInvitationSchema,
+  ProjectSharingSchema,
+  InvitationReviewSchema,
+} from "./features/project-sharing/contracts.js"

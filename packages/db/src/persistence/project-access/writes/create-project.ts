@@ -1,6 +1,9 @@
+import { eq } from "drizzle-orm"
 import { Effect } from "effect"
 import {
   projectApiKeys,
+  personalWorkspaces,
+  user,
   projectMembers,
   projects,
 } from "../../../schema/index.js"
@@ -19,6 +22,22 @@ export const createProject = Effect.fn("createProject")(function* (
   const writeKey = generateProjectKey("write")
   const created = yield* runQuery(DatabaseOperation.CreateProject, () =>
     db.transaction(async (tx) => {
+      const [actor] = await tx
+        .select()
+        .from(user)
+        .where(eq(user.id, userId))
+        .for("share")
+      const [home] = await tx
+        .select()
+        .from(personalWorkspaces)
+        .where(eq(personalWorkspaces.userId, userId))
+      if (
+        !actor ||
+        actor.lifecycleOperationId !== null ||
+        home?.workspaceId !== workspaceId
+      ) {
+        throw new Error("Personal project creation target required.")
+      }
       const [project] = await tx
         .insert(projects)
         .values({ workspaceId, name })

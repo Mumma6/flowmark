@@ -5,6 +5,7 @@ import type { WorkflowAttempt, WorkflowRetryReference } from "@flowmarkdev/core"
 import {
   type AnyPgColumn,
   boolean,
+  check,
   index,
   bigint,
   bigserial,
@@ -296,7 +297,7 @@ export const projectMembers = pgTable(
     projectId: uuid("project_id")
       .notNull()
       .references(() => projects.id, { onDelete: "cascade" }),
-    role: text("role", { enum: ["owner"] }).notNull(),
+    role: text("role", { enum: ["owner", "viewer"] }).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
@@ -307,6 +308,72 @@ export const projectMembers = pgTable(
       table.projectId,
     ),
     index("project_members_user_id_idx").on(table.userId),
+    uniqueIndex("project_members_one_owner_uidx")
+      .on(table.projectId)
+      .where(sql`${table.role} = 'owner'`),
+    check(
+      "project_members_role_check",
+      sql`${table.role} IN ('owner', 'viewer')`,
+    ),
+  ],
+)
+
+/** Creation target only; workspace grouping never grants project authority. */
+export const personalWorkspaces = pgTable("personal_workspaces", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => user.id, { onDelete: "cascade" }),
+  workspaceId: uuid("workspace_id")
+    .notNull()
+    .unique()
+    .references(() => workspaces.id),
+})
+
+export const projectInvitations = pgTable(
+  "project_invitations",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    inviterId: text("inviter_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    recipientUserId: text("recipient_user_id").references(() => user.id, {
+      onDelete: "cascade",
+    }),
+    email: text("email").notNull(),
+    tokenHash: text("token_hash"),
+    state: text("state", {
+      enum: ["pending", "accepted", "declined", "revoked"],
+    })
+      .notNull()
+      .default("pending"),
+    delivery: text("delivery", { enum: ["pending", "submitted", "failed"] })
+      .notNull()
+      .default("pending"),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("project_invitation_pending_email_uidx")
+      .on(table.projectId, table.email)
+      .where(sql`${table.state} = 'pending'`),
+    index("project_invitation_recipient_idx").on(table.recipientUserId),
+    index("project_invitation_expiry_idx").on(table.expiresAt),
+    check(
+      "project_invitation_state_check",
+      sql`${table.state} IN ('pending', 'accepted', 'declined', 'revoked')`,
+    ),
+    check(
+      "project_invitation_delivery_check",
+      sql`${table.delivery} IN ('pending', 'submitted', 'failed')`,
+    ),
   ],
 )
 

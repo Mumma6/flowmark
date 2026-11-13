@@ -26,7 +26,7 @@ export const consumeAuthRateLimit = Effect.fn("consumeAuthRateLimit")(
       rule.max > 10000 ||
       !Number.isInteger(rule.window) ||
       rule.window < 1 ||
-      rule.window > 900
+      rule.window > 86400
     ) {
       return yield* Effect.die(new Error("Invalid auth limit policy."))
     }

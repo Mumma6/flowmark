@@ -75,6 +75,7 @@ export const createDefinitionImportFixture = Effect.fn(
     userId: session.user.id,
     projectId: primary.projectId,
     foreignProjectId: foreign.projectId,
+    foreignUserId,
     readKey,
     writeKey: primary.writeKey.secret,
   }

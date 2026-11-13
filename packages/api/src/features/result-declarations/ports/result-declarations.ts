@@ -21,15 +21,18 @@ export interface ResultDeclarationsService {
     InvalidInput | Unauthorized | PersistenceError
   >
   readonly find: (
+    userId: string,
     projectId: string,
     workflow: string,
     revision: string,
   ) => Effect.Effect<Option.Option<ResultDeclaration>, PersistenceError>
   readonly searchFields: (
+    userId: string,
     projectId: string,
     workflow: string,
   ) => Effect.Effect<SearchFields, PersistenceError>
   readonly setSearchFields: (
+    userId: string,
     projectId: string,
     workflow: string,
     fields: SearchFields,
@@ -38,10 +41,12 @@ export interface ResultDeclarationsService {
     InvalidInput | Unauthorized | PersistenceError
   >
   readonly list: (
+    userId: string,
     projectId: string,
     workflow: string,
   ) => Effect.Effect<ReadonlyArray<ResultDeclaration>, PersistenceError>
   readonly create: (
+    userId: string,
     projectId: string,
     workflow: string,
     declaration: ResultDeclaration,

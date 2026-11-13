@@ -22,5 +22,8 @@ export const authErasureBatches = (userId: string, operationId: string) => {
     sql`UPDATE workflow_definition_imports SET actor_id = NULL WHERE id IN (SELECT id FROM workflow_definition_imports WHERE actor_id = ${userId} LIMIT 100) RETURNING id`,
     sql`DELETE FROM data_lifecycle_operations WHERE id IN (SELECT id FROM data_lifecycle_operations WHERE actor_id = ${userId} LIMIT 100) RETURNING id`,
     sql`DELETE FROM account_lifecycle_operations WHERE id IN (SELECT id FROM account_lifecycle_operations WHERE user_id = ${userId} AND id <> ${operationId}::uuid LIMIT 100) RETURNING id`,
+    sql`DELETE FROM project_invitations WHERE id IN (SELECT id FROM project_invitations WHERE inviter_id = ${userId} OR recipient_user_id = ${userId} OR email = (SELECT email FROM "user" WHERE id = ${userId}) LIMIT 100) RETURNING id`,
+    sql`DELETE FROM project_members WHERE ctid IN (SELECT ctid FROM project_members WHERE user_id = ${userId} AND role = 'viewer' ORDER BY project_id LIMIT 100) RETURNING project_id`,
+    sql`WITH homes AS (DELETE FROM personal_workspaces WHERE user_id = ${userId} RETURNING workspace_id) DELETE FROM workspaces w USING homes h WHERE w.id = h.workspace_id AND NOT EXISTS (SELECT 1 FROM projects p WHERE p.workspace_id = w.id) RETURNING w.id`,
   ] as const
 }

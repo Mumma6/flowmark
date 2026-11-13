@@ -21,6 +21,7 @@ import { useState } from "react"
 import { publicConfig } from "../platform/config-public"
 import { CopyButton } from "../shared/dashboard-components"
 import { runBrowserAuth } from "./auth-browser-runtime"
+import { authReturnPath } from "../project-sharing/invitation-location"
 import { authenticate } from "./operations"
 
 export function AuthScreen({
@@ -51,9 +52,7 @@ export function AuthScreen({
     Result.match(result, {
       onFailure: (failure) => setError(failure.reason),
       onSuccess: (href) => {
-        router.push(
-          returnTo?.startsWith("/connect/agent/consent?") ? returnTo : href,
-        )
+        router.push(authReturnPath(returnTo) ?? href)
         router.refresh()
       },
     })
@@ -249,7 +248,7 @@ export function AuthScreen({
           >
             {isSignUp ? "Already have an account? " : "New to Flowmark? "}
             <Link
-              href={isSignUp ? "/sign-in" : "/sign-up"}
+              href={`${isSignUp ? "/sign-in" : "/sign-up"}${authReturnPath(returnTo) ? `?returnTo=${encodeURIComponent(authReturnPath(returnTo)!)}` : ""}`}
               className="text-foreground underline-offset-4 hover:text-highlight hover:underline"
             >
               {isSignUp ? "Sign in" : "Create an account"}

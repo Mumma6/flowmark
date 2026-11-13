@@ -1,5 +1,7 @@
 "use client"
 
+import { ProjectOwnerOnly } from "../../project-sharing/project-owner-only"
+
 import {
   Button,
   Card,
@@ -14,7 +16,7 @@ import { useProject } from "../../projects/project-context"
 import { type Field } from "./declaration-form"
 import { useResultDeclarationForm } from "./use-result-declaration-form"
 
-export function ResultDeclarationEditor({ workflow }: { workflow: string }) {
+function ResultDeclarationEditorContent({ workflow }: { workflow: string }) {
   const { current } = useProject()
   return current ? (
     <ResultDeclarationForm
@@ -229,5 +231,13 @@ function ResultDeclarationForm({
         </form>
       </CardContent>
     </Card>
+  )
+}
+
+export function ResultDeclarationEditor({ workflow }: { workflow: string }) {
+  return (
+    <ProjectOwnerOnly>
+      <ResultDeclarationEditorContent workflow={workflow} />
+    </ProjectOwnerOnly>
   )
 }
