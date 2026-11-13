@@ -5,10 +5,15 @@ import { Array, Effect } from "effect"
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest"
 import {
   createDatabase,
+  user,
   projectMembers,
   savedInvestigations,
 } from "@flowmark/db"
-import { InvestigationStore, Database } from "@flowmark/db/persistence"
+import {
+  createOwnedProject,
+  InvestigationStore,
+  Database,
+} from "@flowmark/db/persistence"
 import { appRouter } from "../../src/adapters/trpc/router"
 import { GET, POST } from "../../app/api/trpc/[trpc]/route"
 import { createDefinitionImportFixture } from "./support/definition-import-fixture"
@@ -56,10 +61,28 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
       other = await Effect.runPromise(
         createDefinitionImportFixture(connection.db),
       )
+      const projectOwner = randomUUID()
+      await connection.db.insert(user).values({
+        id: projectOwner,
+        name: "Fixed owner",
+        email: `${projectOwner}@example.test`,
+      })
+      const shared = await Effect.runPromise(
+        createOwnedProject(projectOwner, {
+          workspace: "Shared",
+          project: "Private selections",
+        }).pipe(Effect.provideService(Database, connection.db)),
+      )
+      owner = { ...owner, projectId: shared.projectId }
+      await connection.db.insert(projectMembers).values({
+        userId: owner.userId,
+        projectId: owner.projectId,
+        role: "viewer",
+      })
       await connection.db.insert(projectMembers).values({
         userId: other.userId,
         projectId: owner.projectId,
-        role: "owner",
+        role: "viewer",
       })
     }, 30000)
     afterAll(async () => {
@@ -265,14 +288,14 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
             store.delete(owner.userId, owner.projectId, entry.id),
           ),
         ).rejects.toMatchObject({
-          _tag: "InvestigationRejected",
-          reason: "Unauthorized",
+          _tag: "DatabaseError",
+          operation: "project-read-fence",
         })
       } finally {
         await connection.db.insert(projectMembers).values({
           userId: owner.userId,
           projectId: owner.projectId,
-          role: "owner",
+          role: "viewer",
         })
       }
       expect(

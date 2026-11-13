@@ -2,6 +2,7 @@ import { TRPCError } from "@trpc/server"
 import { Effect, Exit, Match, Option, Schema } from "effect"
 import {
   AgentAccess,
+  ManageProjectSharing,
   ManageDataLifecycle,
   ManageAccountLifecycle,
   ManageInvestigations,
@@ -62,6 +63,7 @@ async function executeQuery<A>(
     | ConfigurationError
     | InvalidInput
     | ManagementRateLimited,
+    | ManageProjectSharing
     | ManageInvestigations
     | ManageAccountLifecycle
     | ManageDataLifecycle
@@ -196,6 +198,7 @@ export function sessionQuery<A>(
   ) => Effect.Effect<
     A,
     Unauthorized | PersistenceError | InvalidInput | ManagementRateLimited,
+    | ManageProjectSharing
     | ManageInvestigations
     | ManageAccountLifecycle
     | ManageDataLifecycle

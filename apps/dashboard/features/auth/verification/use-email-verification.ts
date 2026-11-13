@@ -9,6 +9,7 @@ import {
 } from "../operations"
 
 export type EmailVerificationProps = {
+  readonly returnTo?: string
   readonly user: {
     readonly email: string
     readonly emailVerified: boolean
@@ -22,7 +23,8 @@ export type EmailVerificationProps = {
 export function useEmailVerification({
   user,
   refresh,
-}: Pick<EmailVerificationProps, "user" | "refresh">) {
+  returnTo,
+}: Pick<EmailVerificationProps, "user" | "refresh" | "returnTo">) {
   const [pending, setPending] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
   const [requested, setRequested] = useState(false)
@@ -35,7 +37,7 @@ export function useEmailVerification({
     setError(null)
     setPending(true)
     const result = await runBrowserAuth(
-      requestAccountEmailVerification(user.email),
+      requestAccountEmailVerification(user.email, returnTo),
     )
     Result.match(result, {
       onSuccess: () => setRequested(true),

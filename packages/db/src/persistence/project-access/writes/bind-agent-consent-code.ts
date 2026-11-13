@@ -38,6 +38,33 @@ export const bindAgentConsentCode = Effect.fn("bindAgentConsentCode")(
     const db = yield* Database
     return yield* runQuery(DatabaseOperation.BindAgentConsentCode, () =>
       db.transaction(async (tx) => {
+        const projectScope = sql.join(
+          Array.map(input.projectIds, (id) => sql`${id}::uuid`),
+          sql`, `,
+        )
+        await tx.execute(sql`SET LOCAL statement_timeout = '5s'`)
+        await tx.execute(sql`SET LOCAL lock_timeout = '3s'`)
+        const actors = await tx.execute<{ id: string; pending: string | null }>(
+          sql`SELECT u.id, u.lifecycle_operation_id AS pending FROM "user" u WHERE u.id = ${input.userId} OR EXISTS (SELECT 1 FROM project_members m WHERE m.user_id = u.id AND m.role = 'owner' AND m.project_id IN (${projectScope})) ORDER BY u.id FOR SHARE OF u`,
+        )
+        const liveProjects = await tx.execute(
+          sql`SELECT id FROM projects WHERE id IN (${projectScope}) AND lifecycle_operation_id IS NULL ORDER BY id FOR SHARE`,
+        )
+        const liveMembers = await tx.execute(
+          sql`SELECT project_id FROM project_members WHERE user_id = ${input.userId} AND project_id IN (${projectScope}) ORDER BY project_id FOR SHARE`,
+        )
+        if (
+          !Array.some(actors, (actor) => actor.id === input.userId) ||
+          Array.some(actors, (actor) => actor.pending !== null) ||
+          liveProjects.length !== input.projectIds.length ||
+          liveMembers.length !== input.projectIds.length
+        ) {
+          return Result.fail(
+            new AgentAccessConsentRejected({
+              reason: "Project access changed.",
+            }),
+          )
+        }
         const [code] = await tx
           .select({ id: verification.id })
           .from(verification)

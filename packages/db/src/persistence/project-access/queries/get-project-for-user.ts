@@ -8,6 +8,7 @@ import { runQuery } from "../../run-query.js"
 
 export const getProjectForUser = Effect.fn("getProjectForUser")(function* (
   userId: string,
+  role?: "owner",
 ) {
   const db = yield* Database
   const rows = yield* runQuery(DatabaseOperation.GetProjectForUser, () =>
@@ -18,6 +19,8 @@ export const getProjectForUser = Effect.fn("getProjectForUser")(function* (
       .where(
         and(
           eq(projectMembers.userId, userId),
+          role === undefined ? undefined : eq(projectMembers.role, role),
+          sql`EXISTS (SELECT 1 FROM "user" actor WHERE actor.id = ${userId} AND actor.lifecycle_operation_id IS NULL)`,
           isNull(projects.lifecycleOperationId),
           activeProjectOwners(sql`${projects.id}`),
         ),

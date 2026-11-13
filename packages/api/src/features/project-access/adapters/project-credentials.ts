@@ -25,10 +25,11 @@ export const ProjectCredentialsLive = Layer.effect(
           persist(store.authenticate(Redacted.value(key), permission)),
       ),
       projectForUser: Effect.fn("ProjectCredentialsLive.projectForUser")(
-        (userId) => persist(store.projectForUser(userId)),
+        (userId, role) => persist(store.projectForUser(userId, role)),
       ),
       memberProject: Effect.fn("ProjectCredentialsLive.memberProject")(
-        (userId, projectId) => persist(store.memberProject(userId, projectId)),
+        (userId, projectId, role) =>
+          persist(store.memberProject(userId, projectId, role)),
       ),
       delegatedReaderProject: Effect.fn(
         "ProjectCredentialsLive.delegatedReaderProject",
@@ -55,28 +56,35 @@ export const ProjectCredentialsLive = Layer.effect(
           persist(store.createProject(userId, workspaceId, name)),
       ),
       renameProject: Effect.fn("ProjectCredentialsLive.renameProject")(
-        (projectId, name) => persist(store.renameProject(projectId, name)),
+        (userId, projectId, name) =>
+          persist(store.renameProject(userId, projectId, name)),
       ),
       listApiKeys: Effect.fn("ProjectCredentialsLive.listApiKeys")(
-        (projectId) => persist(store.listApiKeys(projectId)),
+        (userId, projectId) => persist(store.listApiKeys(userId, projectId)),
       ),
       listBrowserKeys: Effect.fn("ProjectCredentialsLive.listBrowserKeys")(
-        (projectId) => persist(store.listBrowserKeys(projectId)),
+        (userId, projectId) =>
+          persist(store.listBrowserKeys(userId, projectId)),
       ),
       createApiKey: Effect.fn("ProjectCredentialsLive.createApiKey")(
-        (projectId, input) => persist(store.createApiKey(projectId, input)),
+        (userId, projectId, input) =>
+          persist(store.createApiKey(userId, projectId, input)),
       ),
       revokeApiKey: Effect.fn("ProjectCredentialsLive.revokeApiKey")(
-        (projectId, keyId) => persist(store.revokeApiKey(projectId, keyId)),
+        (userId, projectId, keyId) =>
+          persist(store.revokeApiKey(userId, projectId, keyId)),
       ),
       rotateWriteKey: Effect.fn("ProjectCredentialsLive.rotateWriteKey")(
-        (projectId, keyId) => persist(store.rotateWriteKey(projectId, keyId)),
+        (userId, projectId, keyId) =>
+          persist(store.rotateWriteKey(userId, projectId, keyId)),
       ),
       createBrowserKey: Effect.fn("ProjectCredentialsLive.createBrowserKey")(
-        (projectId, input) => persist(store.createBrowserKey(projectId, input)),
+        (userId, projectId, input) =>
+          persist(store.createBrowserKey(userId, projectId, input)),
       ),
       revokeBrowserKey: Effect.fn("ProjectCredentialsLive.revokeBrowserKey")(
-        (projectId, keyId) => persist(store.revokeBrowserKey(projectId, keyId)),
+        (userId, projectId, keyId) =>
+          persist(store.revokeBrowserKey(userId, projectId, keyId)),
       ),
     })
   }),

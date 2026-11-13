@@ -10,6 +10,7 @@ import {
   oauthRefreshToken,
   projects,
   projectMembers,
+  projectInvitations,
   projectApiKeys,
 } from "@flowmark/db"
 import { createOwnedProject, Database } from "@flowmark/db/persistence"
@@ -186,6 +187,28 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
           project: "Email ownership",
         }).pipe(Effect.provideService(Database, connection.db)),
       )
+      const colleague = await fixture()
+      const shared = await Effect.runPromise(
+        createOwnedProject(colleague.userId, {
+          workspace: "Shared email test",
+          project: "Shared evidence",
+        }).pipe(Effect.provideService(Database, connection.db)),
+      )
+      await connection.db.insert(projectMembers).values({
+        userId: f.userId,
+        projectId: shared.projectId,
+        role: "viewer",
+      })
+      const invitationId = randomUUID()
+      await connection.db.insert(projectInvitations).values({
+        id: invitationId,
+        projectId: shared.projectId,
+        inviterId: colleague.userId,
+        recipientUserId: f.userId,
+        email: f.credentials.email,
+        tokenHash: randomUUID(),
+        expiresAt: new Date(Date.now() + 3600000),
+      })
       const beforeProject = await connection.db
         .select()
         .from(projects)
@@ -241,6 +264,23 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         email: f.nextEmail,
         emailVerified: true,
       })
+      expect(
+        await connection.db
+          .select()
+          .from(projectInvitations)
+          .where(eq(projectInvitations.id, invitationId)),
+      ).toEqual([
+        expect.objectContaining({ state: "revoked", tokenHash: null }),
+      ])
+      expect(
+        await connection.db
+          .select()
+          .from(projectMembers)
+          .where(
+            sql`${projectMembers.projectId} = ${shared.projectId}::uuid AND ${projectMembers.userId} = ${f.userId}`,
+          ),
+      ).toEqual([expect.objectContaining({ role: "viewer", userId: f.userId })])
+
       expect(
         await connection.db
           .select()

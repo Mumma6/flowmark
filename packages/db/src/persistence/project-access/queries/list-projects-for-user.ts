@@ -15,6 +15,7 @@ export const listProjectsForUser = Effect.fn("listProjectsForUser")(function* (
     db
       .select({
         id: projects.id,
+        role: projectMembers.role,
         name: projects.name,
         createdAt: projects.createdAt,
       })
@@ -23,6 +24,7 @@ export const listProjectsForUser = Effect.fn("listProjectsForUser")(function* (
       .where(
         and(
           eq(projectMembers.userId, userId),
+          sql`EXISTS (SELECT 1 FROM "user" actor WHERE actor.id = ${userId} AND actor.lifecycle_operation_id IS NULL)`,
           activeProjectOwners(sql`${projects.id}`),
         ),
       )
@@ -30,6 +32,7 @@ export const listProjectsForUser = Effect.fn("listProjectsForUser")(function* (
   )
   return rows.map((row): ProjectSummary => ({
     id: row.id,
+    role: row.role,
     name: row.name,
     createdAt: row.createdAt.toISOString(),
   }))

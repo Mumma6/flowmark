@@ -1,3 +1,7 @@
+import {
+  ProjectReadSubject,
+  assertProjectReadSubject,
+} from "../project-access/read-subject.js"
 import { lockActiveProjectOwners } from "../account-lifecycle/active-account.js"
 import { and, eq, isNull } from "drizzle-orm"
 import { Effect } from "effect"
@@ -18,6 +22,7 @@ export const withActiveProject = Effect.fn("withActiveProject")(function* <
   consistency: "snapshot" | "current" = "snapshot",
 ) {
   const db = yield* Database
+  const subject = yield* ProjectReadSubject
   return yield* runTransaction(
     DatabaseOperation.ProjectReadFence,
     (body) =>
@@ -27,7 +32,11 @@ export const withActiveProject = Effect.fn("withActiveProject")(function* <
       }),
     (tx) =>
       Effect.gen(function* () {
-        yield* lockActiveProjectOwners(tx, projectId)
+        yield* lockActiveProjectOwners(
+          tx,
+          projectId,
+          subject && subject.kind !== "key" ? subject.userId : undefined,
+        )
         const rows = yield* runQuery(DatabaseOperation.ProjectReadFence, () =>
           tx
             .select({ id: projects.id })
@@ -46,6 +55,7 @@ export const withActiveProject = Effect.fn("withActiveProject")(function* <
             cause: "Project unavailable.",
           })
         }
+        yield* assertProjectReadSubject(tx, projectId, subject)
         // Drizzle transaction implements the query/transaction surface consumed here.
         return yield* use.pipe(
           Effect.provideService(Database, tx as unknown as FlowmarkDatabase),

@@ -9,6 +9,6 @@ export function useProjectKeys() {
   const { current } = useProject()
   return useQuery({
     ...trpc.project.keys.queryOptions(current?.id ?? ""),
-    enabled: Boolean(current),
+    enabled: current?.role === "owner",
   })
 }

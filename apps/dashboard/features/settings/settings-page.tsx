@@ -1,5 +1,7 @@
 "use client"
 
+import { ProjectSharingPanel } from "../project-sharing/project-sharing-panel"
+
 import {
   Alert,
   AlertDescription,
@@ -23,6 +25,7 @@ import { DefinitionImportPanel } from "../results/definitions/definition-import-
 import { DataPrivacyPanel } from "./data-privacy/data-privacy-panel"
 
 type SettingsSection =
+  | "access"
   | "projects"
   | "keys"
   | "setup"
@@ -38,6 +41,7 @@ const sections: ReadonlyArray<{
   { id: "account", label: "Account" },
   { id: "security", label: "Security" },
   { id: "projects", label: "Projects" },
+  { id: "access", label: "Project access" },
   { id: "keys", label: "Project API keys" },
   { id: "setup", label: "Setup help" },
   { id: "definitions", label: "Process metadata" },
@@ -45,6 +49,8 @@ const sections: ReadonlyArray<{
 ]
 
 const sectionHelp: Record<SettingsSection, string> = {
+  access:
+    "Invite read-only colleagues to one project, or review and leave a shared project.",
   security: "Manage your password and sign out other browser sessions.",
   privacy:
     "Review the exact scope before permanently erasing telemetry or deleting a project.",
@@ -61,6 +67,7 @@ const sectionHelp: Record<SettingsSection, string> = {
 
 function parseSection(value: string | null): SettingsSection {
   if (
+    value === "access" ||
     value === "projects" ||
     value === "privacy" ||
     value === "keys" ||
@@ -125,6 +132,9 @@ function SettingsPageInner() {
         </p>
         <TabsContent value="projects" className="mt-6">
           <ProjectSettings />
+        </TabsContent>
+        <TabsContent value="access" className="mt-6">
+          <ProjectSharingPanel />
         </TabsContent>
         <TabsContent value="keys" className="mt-6">
           <KeySettings key={current?.id ?? "no-project"} />

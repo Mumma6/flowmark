@@ -21,6 +21,7 @@ const SessionBody = Schema.Struct({
 })
 
 const OnboardingState = Schema.Struct({
+  sharedAccess: Schema.optionalKey(Schema.Boolean),
   step: Schema.Literals(["project", "key", "install", "instrument", "run"]),
   completedAt: Schema.NullOr(Schema.String),
 })

@@ -1,3 +1,4 @@
+import { CurrentProjectReader } from "../../workflows/models/current-project-reader.js"
 import {
   PeriodReadInputSchema,
   PeriodReadResponseSchema,
@@ -62,7 +63,14 @@ export class ReadPublicPeriod extends Context.Service<
             return yield* new PublicReadFailure({ code: "PROJECT_FORBIDDEN" })
           }
           const selection = { ...input, projectId }
-          const report = yield* repository.periodRead(projectId, selection)
+          const report = yield* repository
+            .periodRead(projectId, selection)
+            .pipe(
+              Effect.provideService(CurrentProjectReader, {
+                _tag: "Key",
+                header,
+              }),
+            )
           return yield* Schema.decodeUnknownEffect(PeriodReadResponseSchema)({
             version: 1,
             mode: "technical",

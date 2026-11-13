@@ -252,7 +252,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
       await connection.db.insert(projectMembers).values({
         userId: foreignMember.userId,
         projectId: value.projectId,
-        role: "owner",
+        role: "viewer",
       })
       await expect(
         caller(value).dataLifecycle.preview({

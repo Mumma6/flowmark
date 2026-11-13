@@ -74,6 +74,9 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         await connection.db.execute(
           sql`INSERT INTO ${schema}."user" (id, name, email, email_verified, created_at, updated_at) VALUES (${userId}, 'Legacy synthetic user', ${`${userId}@example.test`}, true, now(), now())`,
         )
+        await connection.db.execute(
+          sql`INSERT INTO ${schema}.project_members (user_id, project_id, role) VALUES (${userId}, ${projectId}::uuid, 'owner')`,
+        )
         await Effect.runPromise(
           Effect.forEach(upgrade, migrate, { discard: true }),
         )

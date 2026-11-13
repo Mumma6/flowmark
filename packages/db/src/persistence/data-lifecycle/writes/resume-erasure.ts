@@ -106,6 +106,7 @@ export const resumeErasure = Effect.fn("resumeErasure")(function* (
                 and(
                   eq(workspaces.id, project.workspaceId),
                   sql`NOT EXISTS (SELECT 1 FROM projects WHERE workspace_id = ${project.workspaceId}::uuid)`,
+                  sql`NOT EXISTS (SELECT 1 FROM personal_workspaces WHERE workspace_id = ${project.workspaceId}::uuid)`,
                 ),
               ),
           )

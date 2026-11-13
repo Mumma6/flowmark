@@ -10,7 +10,7 @@ import { createProject } from "../../src/persistence/project-access/writes/creat
 import { user } from "../../src/schema/auth.js"
 import {
   projectApiKeys,
-  projectMembers,
+  personalWorkspaces,
   projects,
   workspaces,
 } from "../../src/schema/index.js"
@@ -77,8 +77,10 @@ test(
         await db
           .delete(projectApiKeys)
           .where(inArray(projectApiKeys.projectId, createdIds))
-        await db.delete(projectMembers).where(eq(projectMembers.userId, userId))
         await db.delete(projects).where(inArray(projects.id, createdIds))
+        await db
+          .delete(personalWorkspaces)
+          .where(eq(personalWorkspaces.userId, userId))
         if (workspaceIds.length > 0) {
           await db
             .delete(workspaces)

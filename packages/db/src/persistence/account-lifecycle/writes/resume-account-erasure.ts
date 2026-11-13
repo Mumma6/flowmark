@@ -95,7 +95,12 @@ export const resumeAccountErasure = Effect.fn("resumeAccountErasure")(
                   projectMembers,
                   eq(projectMembers.projectId, projects.id),
                 )
-                .where(eq(projectMembers.userId, operation.userId))
+                .where(
+                  and(
+                    eq(projectMembers.userId, operation.userId),
+                    eq(projectMembers.role, "owner"),
+                  ),
+                )
                 .orderBy(projects.id)
                 .limit(1),
             )

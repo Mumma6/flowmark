@@ -35,6 +35,7 @@ export class BrowserAuth extends Context.Service<
     ) => Effect.Effect<void, DashboardAuthError>
     readonly sendVerification: (
       email: string,
+      returnTo?: string,
     ) => Effect.Effect<void, DashboardAuthError>
     readonly signOut: () => Effect.Effect<void, DashboardAuthError>
   }
@@ -86,7 +87,7 @@ export const signOut = Effect.fn("Dashboard.signOut")(function* () {
 
 export const requestAccountEmailVerification = Effect.fn(
   "Dashboard.requestEmailVerification",
-)(function* (email: string) {
+)(function* (email: string, returnTo?: string) {
   const auth = yield* BrowserAuth
-  yield* auth.sendVerification(email)
+  yield* auth.sendVerification(email, returnTo)
 })

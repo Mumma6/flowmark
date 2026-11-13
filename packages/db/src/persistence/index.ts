@@ -99,3 +99,8 @@ export {
   type EmailChangeTransaction,
   type EmailChangeResult,
 } from "./account-email-change/types.js"
+
+export { ProjectReadSubject } from "./project-access/read-subject.js"
+
+export { ProjectSharingStore } from "./project-sharing/project-sharing-store.js"
+export { SharingRejected } from "./project-sharing/types.js"
