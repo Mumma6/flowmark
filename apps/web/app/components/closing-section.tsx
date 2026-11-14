@@ -2,6 +2,7 @@ import { FlowmarkMark } from "@flowmark/ui"
 import { shellClassName } from "./shell"
 import { WaitlistForm } from "../../features/waitlist/waitlist-form"
 import { waitlistEndpoint } from "../../features/waitlist/endpoint"
+import { MotionScene, SignalPath } from "../../features/product-landing/motion"
 
 export function ClosingSection() {
   return (
@@ -15,7 +16,29 @@ export function ClosingSection() {
         className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_50%_100%,var(--hero-glow),transparent_70%)]"
       />
       <div className={`${shellClassName} text-center`}>
-        <FlowmarkMark className="mx-auto size-9 text-primary" />
+        <MotionScene className="mx-auto h-28 max-w-lg">
+          <svg
+            viewBox="0 0 500 100"
+            className="absolute inset-0 size-full"
+            aria-hidden="true"
+          >
+            <SignalPath d="M0 5 C100 5 150 75 250 75" />
+            <SignalPath
+              d="M80 0 C130 0 170 75 250 75"
+              className="text-highlight"
+              delay="[animation-delay:1s]"
+            />
+            <SignalPath d="M500 5 C400 5 350 75 250 75" />
+            <SignalPath
+              d="M420 0 C370 0 330 75 250 75"
+              className="text-highlight"
+              delay="[animation-delay:1s]"
+            />
+          </svg>
+          <div className="absolute top-[75%] left-1/2 flex size-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-2xl border border-primary/30 bg-background shadow-[0_0_40px_-10px_#b9f59735]">
+            <FlowmarkMark className="size-8 text-primary" />
+          </div>
+        </MotionScene>
         <p className="mx-auto mt-7 max-w-lg text-balance text-xs leading-6 text-muted-foreground">
           The faster we build software, the more important it becomes to
           understand what it actually does.

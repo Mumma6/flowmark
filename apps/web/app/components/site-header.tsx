@@ -16,7 +16,7 @@ export function SiteHeader() {
           className="hidden items-center gap-7 text-xs text-muted-foreground md:flex"
         >
           {[
-            { label: "Platform", href: "#studio" },
+            { label: "Platform", href: "#experience" },
             { label: "Discover", href: "#discover" },
             { label: "Evolve", href: "#evolve" },
             { label: "Docs", href: docsUrl },

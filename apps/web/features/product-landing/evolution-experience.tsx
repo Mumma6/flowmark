@@ -1,142 +1,223 @@
 "use client"
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@flowmark/ui"
+import { useState } from "react"
+import { Button, cn } from "@flowmark/ui"
+import { MotionScene, SignalPath } from "./motion"
+import { ProcessIcon, type ProcessIconName } from "./process-icon"
 
-const checks = [
-  ["Accepted booking", "Outcome and reference persisted"],
-  ["Provider rejection", "Negative result preserved"],
-  ["Delayed confirmation", "Independent expectation retained"],
-  ["Application exception", "Original error preserved"],
-] as const
+const stages = [
+  {
+    label: "Detect drift",
+    icon: "branch",
+    position: "top-[23%] left-[18%]",
+    title: "The callback moved.",
+    detail:
+      "A refactor introduces a new event handler. The confirmation is no longer instrumented. Flowmark connects the code change to the expectation it affects.",
+    status: "A gap in the evidence",
+    color: "text-highlight",
+  },
+  {
+    label: "Review the patch",
+    icon: "agent",
+    position: "top-[23%] left-[82%]",
+    title: "The meaning follows.",
+    detail:
+      "Your coding agent proposes restoring the existing confirmation reference. Your team reviews the change, with the process context beside it.",
+    status: "Agent-prepared · human-reviewed",
+    color: "text-highlight",
+  },
+  {
+    label: "Verify the evidence",
+    icon: "evidence",
+    position: "top-[80%] left-[50%]",
+    title: "Close the loop.",
+    detail:
+      "Exercise the changed path and verify that its signal is emitted, persisted and readable. Carry the same process meaning into the next release.",
+    status: "Observed evidence, end to end",
+    color: "text-primary",
+  },
+] as const satisfies readonly {
+  label: string
+  icon: ProcessIconName
+  position: string
+  title: string
+  detail: string
+  status: string
+  color: string
+}[]
 
 export function EvolutionExperience() {
+  const [stage, setStage] = useState<0 | 1 | 2>(0)
+  const current = stages[stage]
   return (
-    <div className="overflow-hidden rounded-xl border border-highlight/25 bg-card shadow-[0_20px_80px_-40px_#b7a3ff30]">
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-5 py-4">
-        <span className="font-mono text-[10px] text-muted-foreground">
-          booking-service / change review
-        </span>
-        <span className="rounded-full bg-highlight/10 px-2.5 py-1 text-[9px] text-highlight">
-          Process-aware
-        </span>
-      </div>
-      <Tabs defaultValue="change" className="gap-0">
-        <TabsList
-          aria-label="Explore continuous verification"
-          variant="line"
-          className="w-full justify-start gap-0 border-b border-border px-1 py-0 sm:gap-4 sm:px-5"
+    <MotionScene className="mt-12 grid items-center gap-10 lg:grid-cols-[1.2fr_1fr] lg:gap-20">
+      <div className="relative h-[390px] sm:h-[430px]">
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,hsl(var(--highlight)/0.09),transparent_65%)]"
+        />
+        <svg
+          viewBox="0 0 600 430"
+          preserveAspectRatio="none"
+          className="absolute inset-0 size-full"
+          aria-hidden="true"
         >
-          <TabsTrigger
-            value="change"
-            className="h-14 min-w-0 flex-1 flex-col gap-0.5 px-1 text-[10px] whitespace-normal after:bottom-0 sm:h-12 sm:flex-row sm:gap-1 sm:px-2"
+          <SignalPath
+            d="M108 99 C220 15 380 15 492 99"
+            className="text-highlight"
+          />
+          <SignalPath
+            d="M492 99 C590 260 420 330 300 344"
+            active={stage > 0}
+            className="text-highlight"
+            delay="[animation-delay:2s]"
+          />
+          <SignalPath
+            d="M300 344 C140 330 10 260 108 99"
+            active={stage === 2}
+            delay="[animation-delay:4s]"
+          />
+          <path
+            d="M300 344 C140 330 10 260 108 99"
+            fill="none"
+            stroke="currentColor"
+            strokeDasharray="4 8"
+            className={stage === 2 ? "text-transparent" : "text-highlight/20"}
+          />
+          <circle
+            cx="300"
+            cy="208"
+            r="80"
+            fill="none"
+            stroke="currentColor"
+            className="text-highlight/10"
+          />
+          <circle
+            cx="300"
+            cy="208"
+            r="96"
+            fill="none"
+            stroke="currentColor"
+            strokeDasharray="2 10"
+            className="text-highlight/10"
+          />
+        </svg>
+        {stages.map((item, index) => (
+          <div
+            key={item.label}
+            className={cn(
+              "absolute -translate-x-1/2 -translate-y-1/2",
+              item.position,
+            )}
           >
-            <span className="font-mono text-[9px] text-muted-foreground">
-              01
-            </span>{" "}
-            Detect change
-          </TabsTrigger>
-          <TabsTrigger
-            value="proposal"
-            className="h-14 min-w-0 flex-1 flex-col gap-0.5 px-1 text-[10px] whitespace-normal after:bottom-0 sm:h-12 sm:flex-row sm:gap-1 sm:px-2"
-          >
-            <span className="font-mono text-[9px] text-muted-foreground">
-              02
-            </span>{" "}
-            Review patch
-          </TabsTrigger>
-          <TabsTrigger
-            value="verify"
-            className="h-14 min-w-0 flex-1 flex-col gap-0.5 px-1 text-[10px] whitespace-normal after:bottom-0 sm:h-12 sm:flex-row sm:gap-1 sm:px-2"
-          >
-            <span className="font-mono text-[9px] text-muted-foreground">
-              03
-            </span>{" "}
-            Verify evidence
-          </TabsTrigger>
-        </TabsList>
-        <TabsContent value="change" className="min-h-[340px] p-5 sm:p-7">
-          <p className="text-xs text-warning">Instrumentation drift detected</p>
-          <h3 className="mt-5 text-xl leading-snug font-medium tracking-tight">
-            The callback moved.
-            <br />
-            Your process meaning shouldn’t.
-          </h3>
-          <div className="mt-6 rounded-lg border border-border bg-background/60 p-4 font-mono text-[11px] leading-7">
-            <p className="break-all text-muted-foreground">
-              webhooks/confirmation.ts
-            </p>
-            <p className="my-1 text-highlight" aria-hidden="true">
-              ↓
-            </p>
-            <p className="break-all text-foreground">
-              events/booking-confirmed.ts
+            <Button
+              variant="outline"
+              onClick={() => setStage(index as 0 | 1 | 2)}
+              aria-pressed={stage === index}
+              aria-label={item.label}
+              className={cn(
+                "size-16 rounded-2xl border-highlight/30 bg-background text-highlight transition-[border-color,box-shadow,transform] duration-500 motion-safe:hover:-translate-y-1 [&_svg]:size-6 sm:size-19",
+                stage === index &&
+                  "border-highlight/80 shadow-[0_0_50px_-12px_#b7a3ff50]",
+                stage === 2 && index === 2 && "border-primary/60 text-primary",
+              )}
+            >
+              <ProcessIcon name={item.icon} />
+            </Button>
+            <p className="absolute top-full left-1/2 mt-4 w-34 -translate-x-1/2 text-center text-[11px] text-muted-foreground">
+              {item.label}
             </p>
           </div>
-          <p className="mt-5 text-xs leading-6 text-muted-foreground">
-            The new handler no longer records the confirmation. Flowmark
-            connects the changed code to the expectation it affects.
+        ))}
+        <div className="absolute top-[48%] left-1/2 -translate-x-1/2 -translate-y-1/2 text-center">
+          <p className="font-mono text-[8px] uppercase tracking-[.14em] text-muted-foreground sm:text-[9px]">
+            Preserve the meaning
           </p>
-        </TabsContent>
-        <TabsContent value="proposal" className="min-h-[340px] p-5 sm:p-7">
-          <p className="text-xs text-highlight">
-            Agent-prepared · ready for review
+          <p className="mt-3 font-mono text-[10px] text-foreground sm:text-xs">
+            booking.confirmed
           </p>
-          <h3 className="mt-5 text-xl font-medium tracking-tight">
-            A small patch. Meaning preserved.
-          </h3>
-          <pre
-            tabIndex={0}
-            aria-label="Illustrative confirmation instrumentation patch"
-            className="mt-6 overflow-x-auto rounded-lg border border-border bg-background/70 p-4 font-mono text-[11px] leading-7"
-          >
-            <code>
-              <span className="text-muted-foreground">
-                {"  await persistConfirmation(event)\n"}
-              </span>
-              <span className="text-primary">
-                {
-                  "+ flowmark.resolveExpectation(\n+   event.confirmationReference\n+ )"
-                }
-              </span>
-            </code>
-          </pre>
-          <p className="mt-5 text-xs leading-6 text-muted-foreground">
-            Restore the existing expectation reference in the new handler.
-            Review the patch in your development environment; your team owns the
-            change.
-          </p>
-        </TabsContent>
-        <TabsContent value="verify" className="min-h-[340px] p-5 sm:p-7">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="text-xs text-success">Evidence checks passed</p>
-            <span className="font-mono text-[9px] text-muted-foreground">
-              LOCAL FIXTURE · 4/4
-            </span>
-          </div>
-          <ul className="mt-5 divide-y divide-border">
-            {checks.map(([label, detail]) => (
-              <li key={label} className="flex gap-3 py-3">
-                <span aria-hidden="true" className="text-success">
-                  ✓
-                </span>
-                <div>
-                  <p className="text-xs">{label}</p>
-                  <p className="mt-1 text-[10px] text-muted-foreground">
-                    {detail}
-                  </p>
-                </div>
-              </li>
-            ))}
-          </ul>
-          <p className="mt-4 text-[10px] leading-5 text-muted-foreground">
-            Illustrative local verification record. Deployed behavior is
-            assessed separately from observed evidence.
-          </p>
-        </TabsContent>
-      </Tabs>
-      <div className="border-t border-border px-5 py-3 text-[10px] text-muted-foreground">
-        Synthetic change review · no repository is connected
+          <span
+            className={cn(
+              "mt-3 inline-block size-1.5 rounded-full",
+              stage === 2 ? "bg-primary" : "bg-highlight",
+            )}
+          />
+        </div>
       </div>
-    </div>
+      <div className="min-h-[350px]" aria-live="polite">
+        <p
+          className={cn(
+            "font-mono text-[9px] uppercase tracking-widest",
+            current.color,
+          )}
+        >
+          0{stage + 1} / {current.status}
+        </p>
+        <h3 className="mt-5 text-4xl font-medium tracking-[-.045em]">
+          {current.title}
+        </h3>
+        <p className="mt-4 max-w-md text-sm leading-7 text-muted-foreground">
+          {current.detail}
+        </p>
+        <div className="mt-7 border-y border-border py-5">
+          {stage === 0 && (
+            <div className="font-mono text-[10px] leading-7 sm:text-xs">
+              <p className="text-muted-foreground line-through decoration-highlight/50">
+                webhooks/confirmation.ts
+              </p>
+              <p className="text-foreground">↳ events/booking-confirmed.ts</p>
+              <p className="mt-3 flex items-center gap-2 text-highlight">
+                <span className="size-1.5 rounded-full bg-highlight" />
+                Confirmation signal not found
+              </p>
+            </div>
+          )}
+          {stage === 1 && (
+            <pre
+              tabIndex={0}
+              aria-label="Illustrative instrumentation patch"
+              className="overflow-x-auto font-mono text-[10px] leading-7 sm:text-xs"
+            >
+              <code>
+                <span className="text-muted-foreground">
+                  {"  await persistConfirmation(event)\n"}
+                </span>
+                <span className="text-primary">
+                  {
+                    "+ flowmark.resolveExpectation(\n+   event.confirmationReference\n+ )"
+                  }
+                </span>
+              </code>
+            </pre>
+          )}
+          {stage === 2 && (
+            <div className="space-y-3 text-[11px]">
+              {[
+                "Confirmation emitted",
+                "Expectation resolved in storage",
+                "Same evidence returned by the API",
+              ].map((check) => (
+                <p key={check} className="flex items-center gap-3">
+                  <span className="text-primary">✓</span>
+                  {check}
+                </p>
+              ))}
+            </div>
+          )}
+        </div>
+        <Button
+          variant="ghost"
+          onClick={() => setStage(stage === 2 ? 0 : ((stage + 1) as 1 | 2))}
+          className="mt-4 h-11 px-0 text-xs text-primary hover:bg-transparent"
+        >
+          {stage === 2 ? "Explore the change again" : stages[stage + 1].label}
+          <span aria-hidden="true">→</span>
+        </Button>
+        <p className="mt-3 text-[9px] leading-5 text-muted-foreground">
+          Illustrative change review · no repository changes or tests are
+          executed.
+        </p>
+      </div>
+    </MotionScene>
   )
 }

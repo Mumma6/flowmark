@@ -7,7 +7,7 @@ const columns = [
   {
     title: "Product",
     links: [
-      { href: "#studio", label: "Explore the platform" },
+      { href: "#experience", label: "Explore the platform" },
       { href: "#discover", label: "Discovery & instrumentation" },
       { href: "#evolve", label: "Continuous evolution" },
       { href: "#faq", label: "FAQ" },

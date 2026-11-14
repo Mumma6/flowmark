@@ -85,10 +85,9 @@ rows to grow for results and long identifiers. Mobile run summaries use a
 semantic list rather than hiding essential values in a wide table.
 
 Studio uses shared `StudioChrome`, `StudioWorkspace`, `StudioProcessPane` and
-`StudioEvidenceList` presentation primitives. The public landing composes an
-independent illustrative process workspace and reuses the shared `RunSnapshot`
-for its evidence inspector. Both consume shared controls and tokens. Keep
-synthetic disclosures visible and preserve actual Studio query/error states.
+`StudioEvidenceList` presentation primitives. The public landing uses independent
+process diagrams rather than recreating Studio. Both consume shared controls and
+tokens. Keep synthetic disclosures visible and preserve actual Studio query/error states.
 
 ## Component ownership
 
@@ -100,13 +99,10 @@ primitives. Keep `FlowmarkMark` and the wordmark accent dot.
 Use a Card for one coherent data panel. Open sections and metric strips can use
 semantic HTML and structural dividers. Workflow summaries, result highlights,
 run lists and Overview composition belong to `apps/dashboard`.
-`RunSnapshot` is a deliberate shared product presentation: both the public landing
-and dashboard run detail render the same identity/status, result strip, milestone
-selector and payload inspection. The dashboard owns the projection from recorded
-events; the landing passes synthetic illustration props. This component performs
-no fetching and owns no SDK, API, persistence or business-outcome classification.
-Its Tailwind 3/4-compatible classes and dark palette/system fonts match across
-both consumers. Add a primitive
+`RunSnapshot` is a shared product presentation for identity/status, results,
+milestones and payload inspection. The dashboard owns the projection from recorded
+events. This component performs no fetching and owns no SDK, API, persistence or
+business-outcome classification. Add a primitive
 to `packages/ui` only when missing reusable behavior warrants it. Do not create
 an app-local UI kit or thin wrappers around every semantic element.
 
@@ -209,35 +205,38 @@ mark/accent dot, system fonts, lime actions and restrained lavender emphasis.
 The public site is dark-only; authenticated surfaces retain existing themes.
 
 Use oversized editorial typography, short explanations, structural rules and
-purposeful product illustrations. The hero joins a clear promise to an interactive
-Process Health workspace. Separate business outcomes, execution behavior and
-evidence quality; do not collapse them into a universal score. A finding leads to
-a comparison, then a connected journey and the shared run inspector. Charts expose
-their cohort, denominator, observation time and tabular values.
+purpose-built visualizations. The hero is an open application topology with moving
+signals and a selectable missing-confirmation scenario. It has no dashboard chrome.
+Discovery converges code paths into a process; a vertical journey connects separate
+executions; an outcome dot field compares historical populations; a review loop
+connects code changes, agents and evidence. People, agents and tools share a final
+connected evidence diagram. Avoid repetitive grids of feature cards.
 
-The discovery surface has three independent entrances: Automatic, Agent-assisted
-and Precision SDK. Candidate meaning is reviewed, never silently accepted. A
-process-aware change review connects code drift, a proposed instrumentation patch
-and explicit verification scope. Team perspectives and a Studio/MCP/API diagram
-show shared understanding without a chatbot-first presentation.
+Keep business outcomes, execution behavior and evidence quality separate. The
+outcome illustration uses 100 dots representing seven bookings each: 92% before
+and 76% after the illustrative release. Health rings preserve the distinct
+execution and field-coverage measures. Expose denominators, observation windows
+and tabular values; association does not establish causality.
 
-Product illustrations are local and synthetic. They do not connect a repository,
-run tests, publish meaning, authorize an agent or establish deployed capability.
-The source and operational documentation continue to describe real implementation
-and activation. Preserve unknowns and the distinction between reported completion,
-business outcomes and later confirmations.
+Product illustrations are local and synthetic. They do not connect repositories,
+run tests, publish definitions or establish deployed capability. Three independent
+instrumentation entrances remain explicit; candidate meaning requires human review.
+Preserve unknowns and distinguish execution completion from later confirmations.
 
-Use the shared Tabs, Button, Input, Sheet, Dialog and Accordion. Static narrative
-stays server-rendered; local state belongs to small client components. Evidence
-Dialog dismissal restores its actual opener. Programmatic navigation between
-workspace views focuses the destination tab. On narrow screens, graphs, evidence
-and controls reflow; code and data tables may scroll within bounded containers.
-Preserve keyboard access and 320 px reflow without page-level horizontal scrolling.
+Static narrative stays server-rendered. Local selection state and motion policy
+belong to small client components. Reuse shared Button, Input, Sheet and Accordion.
+Diagram nodes use accessible buttons with selected/expanded states. Code and tables
+scroll within bounded containers; layouts reflow at 320 px without page overflow.
 
-Existing attributed light cones and beams frame the hero. Finite SVG drawing
-communicates evidence trends. All animation uses motion-safe variants, and smooth
-anchor scrolling is disabled under reduced motion. No animation library, remote
-font or image dependency is needed.
+Aceternity's Background Lines, Tracing Beam, Timeline, Glowing Effect and Moving
+Border informed the visual direction. Existing attributed beams and spotlights
+remain; original SVG signal trails, node activation and scroll traces communicate
+relationships. Native CSS handles frames, with no per-frame React updates or new
+animation dependency. A shared preference subscription and viewport observers
+suspend offscreen/hidden scenes. Reduced motion defaults to static diagrams;
+explicit Play motion opts into scene loops, and Pause motion stops animations.
+Finite entrances, hover movement and scroll traces remain motion-safe. Unsupported
+view timelines render their complete path. Anchor scrolling respects reduced motion.
 
 **Join the Waitlist** is the primary conversion in the header, hero and closing.
 The closing email form uses the existing endpoint, preserves loading and explicit

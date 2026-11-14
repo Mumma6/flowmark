@@ -23,7 +23,7 @@ existing environment-specific overrides.
 **Process intelligence for people and agents.** The landing presents Flowmark's
 complete product vision: discover processes, observe execution and business
 outcomes, understand meaningful changes, and maintain instrumentation as code evolves.
-It introduces the product through a visual workspace, not a conversation.
+It introduces the product through custom interactive diagrams and an evidence story.
 Public access is through the waitlist; the site has no competing signup CTA.
 
 Meridian Health is fictional. Every product illustration uses fixed synthetic
@@ -36,29 +36,31 @@ operational record of deployed capabilities.
 `app/page.tsx` composes server-rendered sections. The product feature owns its
 interactive examples and fixtures:
 
-- `process-workspace.tsx`: Process Health, release comparison and a connected
-  journey. A finding opens the comparison; its next action opens the journey.
-  Inspecting a booking uses the existing shared `RunSnapshot` and Dialog.
-- `process-data.ts`, `outcome-chart.tsx`: two seven-day cohorts of 700 eligible
-  bookings, with 100 bookings per day. Confirmations fall from 644/700 (92%) to
-  532/700 (76%). Completion is 695/700 (99.3%) in both; required-field coverage is
-  700/700. All confirmation windows have elapsed at observation. Accessible
-  tabular values and exact comparison boundaries accompany the chart.
-- `discovery-experience.tsx`: independent Automatic, Agent-assisted and Precision
-  SDK entrances. Candidate review distinguishes code inference from observed
-  context and accepted meaning. The SDK tab keeps the executable, tested example.
-- `evolution-experience.tsx`: inspect a changed handler, a proposed patch and a
-  clearly illustrative local verification record. No action implies execution or
-  deployment of customer work.
-- `shared-understanding.tsx`, `evidence-network.tsx`: organization perspectives
-  and the shared Studio/MCP/API evidence model. Permissions remain explicit.
+- `process-landscape.tsx`: responsive application topology with animated evidence
+  paths. Select executions and remove/restore an illustrative confirmation.
+- `discovery-field.tsx`: independent agent-assisted, automatic and precision SDK
+  entrances; a convergence diagram changes with its evidence source. Candidate
+  review keeps human ownership explicit. The SDK example remains executable/tested.
+- `journey-timeline.tsx`: connected referral, matching, booking and confirmation
+  evidence, with an expandable execution timeline and a scroll-linked trace.
+- `outcome-field.tsx`, `process-data.ts`: comparable 700-booking cohorts. Each of
+  100 dots represents seven bookings. Confirmation changes from 644/700 (92%) to
+  532/700 (76%); execution completion stays 695/700 and field coverage 700/700.
+  Health rings retain these three separate dimensions. A keyboard-accessible
+  table includes denominators, observation time and comparison boundaries.
+- `evolution-experience.tsx`: a connected change/review/verification loop with
+  an illustrative instrumentation patch and evidence checks. No customer work runs.
+- `evidence-network.tsx`: selectable people/agent/tool perspectives connected to
+  the same process meaning, with explicit authorization boundaries.
+- `motion.tsx`, `process-icon.tsx`: landing-specific diagram primitives. Native
+  SVG/CSS performs animation; React owns only selections and motion policy.
 - `features/waitlist/`: existing Effect submission and environment isolation,
   with pending, error, unavailable and acknowledged-success presentations.
 
 Keep pure fixture presentation in TypeScript and local interaction in React.
 Actual data selection and deterministic platform computation retain their
 PostgreSQL and Rust owners. Narrative stays in Server Components; interactive
-boundaries reuse `@flowmark/ui` Tabs, Button, Dialog, Sheet, Accordion and Input.
+boundaries reuse `@flowmark/ui` Button, Sheet, Accordion and Input.
 No additional dependency or animation runtime is required.
 
 ## Visual and interaction conventions
@@ -66,15 +68,24 @@ No additional dependency or animation runtime is required.
 See [the design system](../../docs/design-system.md#product-landing-direction).
 Keep charcoal, restrained lime, lavender and system fonts. Oversized editorial
 type, open sections and connected evidence define the page. Existing attributed
-beam and spotlight effects remain behind the hero. SVG chart drawing and all
-entrance/ambient motion are guarded by `prefers-reduced-motion`; anchor scrolling
-also respects it. Normal layout uses Tailwind utilities and semantic tokens.
+beam and spotlight effects remain behind the hero. Signal trails, orbit traces and
+progressive timeline bars express observed relationships. Aceternity Background
+Lines, Tracing Beam, Timeline, Moving Border and Glowing Effect informed the visual
+research; the diagram implementation is original and uses no Motion dependency.
 
-Verify 320 px and 390 px mobile, tablet and desktop widths, horizontal overflow,
-tab keyboard activation, candidate review, code copy, evidence Dialog dismissal
-and focus restoration, mobile navigation, team perspectives, FAQ, metadata and
-console errors. Chart data is available as a table. Programmatic changes from a
-finding to another tab move focus to that tab.
+One subscription tracks reduced-motion preference and page visibility. Viewport
+observers stop offscreen scenes. Reduced motion defaults to a complete static
+experience, with an explicit **Play motion** opt-in for the diagram loops. **Pause
+motion** stops every animation. Finite entrances, hover transforms and scroll-linked
+traces retain CSS motion-safe guards; scroll traces fall back to complete lines
+where view timelines are unsupported. No per-frame JavaScript or layout measurement
+loop is used. Normal layouts use Tailwind and semantic tokens.
+
+Verify 320/390 px mobile, tablet and desktop; no page overflow; keyboard activation
+of diagram nodes, candidate review, SDK disclosure, journey evidence, cohort
+selection/table, change-review stages, people/agent/tool perspectives and mobile
+navigation. Check reduced-motion default, opt-in, pause, offscreen suspension,
+metadata and console errors. All controls remain usable without animation.
 
 For waitlist browser checks, use a temporary loopback HTTP fixture or the local
 stack. Exercise pending, rejected/malformed responses, retry and acknowledged
