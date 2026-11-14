@@ -1,6 +1,6 @@
 "use client"
 
-import { Button, Input } from "@flowmark/ui"
+import { Button, FlowmarkMark, Input } from "@flowmark/ui"
 import { Effect, Result } from "effect"
 import { useId, useState, type FormEvent } from "react"
 import { submitWaitlist } from "./join-waitlist"
@@ -33,26 +33,42 @@ export function WaitlistForm({
   }
   if (!endpoint) {
     return (
-      <p role="alert" className="mt-8 text-sm text-muted-foreground">
+      <p
+        role="alert"
+        className="mx-auto mt-8 max-w-lg rounded-xl border border-border bg-card p-6 text-sm text-muted-foreground"
+      >
         The waitlist is temporarily unavailable. Please try again later.
       </p>
     )
   }
   if (success) {
     return (
-      <p role="status" className="mx-auto mt-8 max-w-lg text-sm text-primary">
-        You’re on the waitlist. Thanks for your interest in Flowmark.
-      </p>
+      <div
+        role="status"
+        tabIndex={-1}
+        ref={(node) => node?.focus()}
+        className="mx-auto mt-9 max-w-lg rounded-xl border border-primary/25 bg-primary/5 p-7 text-left motion-safe:animate-arrive"
+      >
+        <div className="flex items-center gap-3">
+          <FlowmarkMark className="size-6 text-primary" />
+          <p className="text-lg font-medium text-primary">
+            You’re on the list.
+          </p>
+        </div>
+        <p className="mt-3 text-sm leading-6 text-muted-foreground">
+          Your request has been received. Thanks for your interest in Flowmark.
+        </p>
+      </div>
     )
   }
   return (
     <form
       onSubmit={submit}
       aria-busy={pending}
-      className="mx-auto mt-8 grid max-w-lg gap-3 text-left"
+      className="mx-auto mt-9 grid max-w-lg gap-3 text-left"
     >
       <label htmlFor={id} className="text-sm font-medium">
-        Join the Flowmark waitlist
+        Your email address
       </label>
       <div className="flex flex-col gap-3 sm:flex-row">
         <Input
@@ -60,20 +76,22 @@ export function WaitlistForm({
           name="email"
           type="email"
           autoComplete="email"
-          placeholder="you@example.com"
+          placeholder="you@company.com"
           required
           maxLength={254}
+          autoCapitalize="none"
+          spellCheck={false}
           value={email}
           onChange={(event) => setEmail(event.target.value)}
           disabled={pending}
           aria-invalid={Boolean(error)}
-          aria-describedby={error ? `${id}-error` : undefined}
-          className="h-11 bg-background sm:flex-1"
+          aria-describedby={error ? `${id}-note ${id}-error` : `${id}-note`}
+          className="h-12 min-w-0 rounded-lg bg-card sm:flex-1"
         />
         <Button
           type="submit"
           disabled={pending}
-          className="h-11 w-full px-5 sm:w-auto"
+          className="h-12 w-full rounded-lg px-5 text-xs sm:w-auto"
         >
           {pending ? "Joining…" : "Join the Waitlist"}
         </Button>
@@ -83,6 +101,12 @@ export function WaitlistForm({
           {error}
         </p>
       ) : null}
+      <p
+        id={`${id}-note`}
+        className="text-center text-[11px] leading-6 text-muted-foreground"
+      >
+        Join for early access. Just your email, no account needed.
+      </p>
     </form>
   )
 }

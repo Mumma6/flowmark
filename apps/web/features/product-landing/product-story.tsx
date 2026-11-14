@@ -1,114 +1,165 @@
+import { FlowmarkMark } from "@flowmark/ui"
 import { Arrow } from "../../app/components/brand"
 import {
   overlineClassName,
   sectionTitleClassName,
   shellClassName,
 } from "../../app/components/shell"
-import { AgentExperience } from "./agent-experience"
-import { InstrumentationExperience } from "./instrumentation-experience"
-import { OrganizationPerspectives } from "./organization-perspectives"
-import { PlatformFabric } from "./platform-fabric"
-import { PortableEvidence } from "./portable-evidence"
+import { githubUrl } from "../../app/components/site-links"
+import { WorkflowCodeBlock } from "../../app/components/workflow-code-block"
+import { DiscoveryField } from "./discovery-field"
+import { EvidenceNetwork } from "./evidence-network"
+import { EvolutionExperience } from "./evolution-experience"
+import { customerSyncCode } from "./instrumentation-example"
+import { JourneyTimeline } from "./journey-timeline"
+import { OutcomeField } from "./outcome-field"
+import { SectionTrace } from "./motion"
 
-export function ProductDimensions() {
+export function DiscoverSection() {
   return (
     <section
-      id="product"
-      className={shellClassName}
-      aria-label="One Flowmark product"
+      id="discover"
+      className="relative border-y border-border/60 py-20 sm:py-28"
+      aria-labelledby="discover-title"
     >
-      <div className="grid border-y border-border md:grid-cols-3">
-        {[
-          {
-            number: "01",
-            name: "Studio",
-            href: "#studio",
-            title: "A workspace for understanding.",
-            detail:
-              "Explore connected processes. Save an investigation, share its evidence and pick up where you left off.",
-          },
-          {
-            number: "02",
-            name: "Platform",
-            href: "#platform",
-            title: "Instrument once. Build on the evidence.",
-            detail:
-              "Typed SDK, connected context, historical analysis and programmable access.",
-          },
-          {
-            number: "03",
-            name: "Everywhere",
-            href: "#everywhere",
-            title: "Intelligence, wherever you work.",
-            detail:
-              "Coding agents, MCP, APIs and portable views. The same context travels with you.",
-          },
-        ].map((item) => (
-          <a
-            key={item.name}
-            href={item.href}
-            className="group relative min-w-0 border-border py-7 transition-colors hover:bg-highlight/[0.03] first:pl-0 last:pr-0 max-md:border-b max-md:last:border-b-0 md:px-7 md:not-last:border-r lg:px-9"
-          >
-            <span
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-highlight/70 to-transparent opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
+      <div className={shellClassName}>
+        <div className="grid gap-6 lg:grid-cols-[1.3fr_.7fr] lg:items-end lg:gap-16">
+          <div>
+            <p className={overlineClassName}>01 / Find the process</p>
+            <h2 id="discover-title" className={`${sectionTitleClassName} mt-5`}>
+              It’s already in your code.
+              <br />
+              <span className="text-primary">Bring it into view.</span>
+            </h2>
+          </div>
+          <p className="max-w-sm text-sm leading-7 text-muted-foreground">
+            Discover useful technical context automatically. Let your coding
+            agent identify meaningful processes and add the business signals
+            that explain them.
+          </p>
+        </div>
+        <DiscoveryField
+          code={
+            <WorkflowCodeBlock
+              title="app/sync-customers.ts"
+              value={customerSyncCode}
             />
-            <div className="flex items-center gap-3">
-              <span className="font-mono text-[9px] text-highlight/80">
-                {item.number}
-              </span>
-              <h2 className="text-sm font-medium transition-colors group-hover:text-highlight">
-                {item.name}
-              </h2>
-              <span className="ml-auto text-muted-foreground transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-                <Arrow diagonal />
-              </span>
-            </div>
-            <p className="mt-5 max-w-56 text-lg leading-snug tracking-tight">
-              {item.title}
-            </p>
-            <p className="mt-3 max-w-xs text-xs leading-6 text-muted-foreground">
-              {item.detail}
-            </p>
-          </a>
-        ))}
+          }
+        />
       </div>
     </section>
   )
 }
 
-export function OrganizationSection() {
+export function JourneySection() {
   return (
     <section
-      id="organization"
-      className={`${shellClassName} py-20 sm:py-28`}
-      aria-labelledby="organization-title"
+      id="journey"
+      className={`${shellClassName} py-20 sm:py-32`}
+      aria-labelledby="journey-title"
     >
-      <div className="grid gap-5 md:grid-cols-[1.2fr_1fr] md:items-end lg:gap-24">
-        <div>
-          <p className={overlineClassName}>
-            Shared evidence. Different questions.
-          </p>
-          <h2
-            id="organization-title"
-            className={`${sectionTitleClassName} mt-4`}
-          >
-            Your software runs.
+      <div className="relative grid gap-14 lg:grid-cols-[.9fr_1.1fr] lg:gap-24">
+        <div className="self-start lg:sticky lg:top-36">
+          <p className={overlineClassName}>02 / Follow the story</p>
+          <h2 id="journey-title" className={`${sectionTitleClassName} mt-5`}>
+            Follow the process.
             <br />
-            Your whole team understands.
+            <span className="text-muted-foreground">
+              Across services and time.
+            </span>
           </h2>
+          <p className="mt-6 max-w-sm text-sm leading-7 text-muted-foreground">
+            Connect executions through shared business references. Follow
+            imports, payments, background jobs and bookings across services,
+            callbacks and time.
+          </p>
+          <div className="mt-9 border-l border-primary/40 pl-5">
+            <p className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground">
+              One booking journey
+            </p>
+            <p className="mt-3 font-mono text-xs text-primary">BOOK-2049</p>
+            <p className="mt-3 text-xs text-muted-foreground">
+              Select a moment to see its evidence.
+            </p>
+          </div>
+          <p className="mt-10 max-w-xs text-xl leading-relaxed tracking-tight">
+            Your code ran.
+            <br />
+            <span className="text-primary">Did the business move forward?</span>
+          </p>
         </div>
-        <p className="max-w-md text-sm leading-7 text-muted-foreground">
-          From an engineer tracing a regression to a colleague answering a
-          customer. Start with the question, keep the context, and reveal the
-          detail you need.
-        </p>
+        <JourneyTimeline />
       </div>
-      <OrganizationPerspectives />
-      <p className="mt-5 text-[10px] text-muted-foreground">
-        Role perspectives on the same synthetic booking. Access follows project
-        permissions.
-      </p>
+    </section>
+  )
+}
+
+export function IntelligenceSection() {
+  return (
+    <section
+      id="understand"
+      className="relative isolate border-y border-border/60 bg-secondary/10 py-20 sm:py-28"
+      aria-labelledby="intelligence-title"
+    >
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_90%_35%,hsl(var(--highlight)/0.04),transparent_60%)]"
+      />
+      <div className={shellClassName}>
+        <div className="grid gap-6 lg:grid-cols-[1.2fr_.8fr] lg:items-end lg:gap-16">
+          <div>
+            <p className={overlineClassName}>03 / Notice what matters</p>
+            <h2
+              id="intelligence-title"
+              className={`${sectionTitleClassName} mt-5`}
+            >
+              Spot changes in outcomes.
+              <br />
+              <span className="text-primary">
+                Even when execution looks healthy.
+              </span>
+            </h2>
+          </div>
+          <p className="max-w-sm text-sm leading-7 text-muted-foreground">
+            Flowmark proactively surfaces changing outcomes and connects
+            findings to evidence. Compare releases with execution health and
+            reporting coverage in view.
+          </p>
+        </div>
+        <OutcomeField />
+      </div>
+    </section>
+  )
+}
+
+export function EvolveSection() {
+  return (
+    <section
+      id="evolve"
+      className={`${shellClassName} py-20 sm:py-28`}
+      aria-labelledby="evolve-title"
+    >
+      <div className="relative lg:pl-8">
+        <SectionTrace />
+        <div className="grid gap-6 lg:grid-cols-[1.2fr_.8fr] lg:items-end lg:gap-16">
+          <div>
+            <p className={overlineClassName}>04 / Keep understanding alive</p>
+            <h2 id="evolve-title" className={`${sectionTitleClassName} mt-5`}>
+              Detect instrumentation drift.
+              <br />
+              <span className="text-muted-foreground">
+                Keep process evidence current.
+              </span>
+            </h2>
+          </div>
+          <p className="max-w-sm text-sm leading-7 text-muted-foreground">
+            Detect code changes that leave process evidence incomplete. Your
+            coding agent proposes instrumentation updates; your team reviews and
+            verifies them.
+          </p>
+        </div>
+      </div>
+      <EvolutionExperience />
     </section>
   )
 }
@@ -117,127 +168,49 @@ export function EverywhereSection() {
   return (
     <section
       id="everywhere"
-      className="relative isolate overflow-hidden border-y border-border bg-secondary/10 py-20 sm:py-28"
+      className="border-y border-border/60 py-20 sm:py-28"
       aria-labelledby="everywhere-title"
     >
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_80%_20%,hsl(var(--highlight)/0.06),transparent_55%)]"
-      />
       <div className={shellClassName}>
-        <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-20">
-          <div>
-            <p className={overlineClassName}>
-              Everywhere / AI-native by design
-            </p>
-            <h2
-              id="everywhere-title"
-              className={`${sectionTitleClassName} mt-4`}
-            >
-              Your agent knows the code.
-              <br />
-              <span className="text-muted-foreground">
-                Give it the evidence.
-              </span>
-            </h2>
-            <p className="mt-6 max-w-md text-sm leading-7 text-muted-foreground">
-              Source code describes what should happen. Flowmark records what
-              your application reports actually happened. Bring that missing
-              context into the conversation.
-            </p>
-            <div className="mt-8 space-y-5">
-              {[
-                [
-                  "01",
-                  "Instrument with your agent",
-                  "Go from application code to meaningful process evidence.",
-                ],
-                [
-                  "02",
-                  "Investigate through MCP",
-                  "Ask across runs, outcomes and relationships with scoped access.",
-                ],
-                [
-                  "03",
-                  "Continue the same investigation",
-                  "Move between Studio, your agent and embedded evidence views.",
-                ],
-              ].map(([n, title, detail]) => (
-                <div key={n} className="flex gap-4">
-                  <span className="pt-1 font-mono text-[9px] text-highlight">
-                    {n}
-                  </span>
-                  <div>
-                    <h3 className="text-sm">{title}</h3>
-                    <p className="mt-1 text-xs leading-6 text-muted-foreground">
-                      {detail}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-          <AgentExperience />
-        </div>
-        <div className="mt-16 grid items-center gap-8 border-t border-border pt-10 md:grid-cols-2 lg:gap-20">
-          <div>
-            <p className={overlineClassName}>Portable by design</p>
-            <h3 className="mt-4 text-3xl leading-tight font-medium tracking-[-0.04em]">
-              The interface travels, too.
-            </h3>
-            <p className="mt-3 max-w-md text-xs leading-6 text-muted-foreground">
-              Open interactive evidence in compatible MCP Apps, embed it in an
-              internal tool, or continue in Studio. Useful context doesn’t
-              belong to one browser tab.
-            </p>
-            <div className="mt-6 grid gap-4 border-t border-border pt-5 text-xs sm:grid-cols-2">
-              <div>
-                <p className="font-medium">MCP Apps</p>
-                <p className="mt-1.5 text-[11px] leading-6 text-muted-foreground">
-                  Explore evidence directly in compatible conversations.
-                </p>
-              </div>
-              <div>
-                <p className="font-medium">Embedded interfaces</p>
-                <p className="mt-1.5 text-[11px] leading-6 text-muted-foreground">
-                  Bring the same understanding into the tools your team builds.
-                </p>
-              </div>
-            </div>
-          </div>
-          <PortableEvidence />
-        </div>
-      </div>
-    </section>
-  )
-}
-
-export function PlatformSection() {
-  return (
-    <section
-      id="platform"
-      className={`${shellClassName} py-20 sm:py-28`}
-      aria-labelledby="platform-title"
-    >
-      <div className="mb-9 grid gap-5 lg:grid-cols-[1.2fr_0.8fr] lg:items-end lg:gap-20">
-        <div>
+        <div className="mx-auto max-w-3xl text-center">
           <p className={overlineClassName}>
-            Platform / Built around your application
+            Built for people. Native to agents.
           </p>
-          <h2 id="platform-title" className={`${sectionTitleClassName} mt-4`}>
-            From application code.
+          <h2 id="everywhere-title" className={`${sectionTitleClassName} mt-5`}>
+            For your team and your agents.
             <br />
-            To shared understanding.
+            <span className="text-primary">One shared source of evidence.</span>
           </h2>
+          <p className="mx-auto mt-5 max-w-lg text-sm leading-7 text-muted-foreground">
+            Developers, product teams and operations investigate the same
+            evidence. Coding agents use that context to explain behavior and
+            improve instrumentation.
+          </p>
         </div>
-        <p className="max-w-md text-sm leading-7 text-muted-foreground">
-          Keep your functions, infrastructure and execution model. Use the
-          TypeScript SDK to report what matters, then enrich it with typed
-          outcomes, relationships, reports and expectations.
-        </p>
+        <EvidenceNetwork />
+        <div
+          id="platform"
+          className="mt-16 grid gap-6 border-t border-border pt-8 sm:grid-cols-[1fr_auto] sm:items-center"
+        >
+          <div className="flex items-center gap-4">
+            <FlowmarkMark className="size-6 shrink-0 text-primary" />
+            <div>
+              <p className="text-sm">Intelligence you can build on.</p>
+              <p className="mt-2 font-mono text-[9px] leading-6 text-muted-foreground">
+                TypeScript SDK <span className="px-2 text-primary">→</span> Rust
+                + PostgreSQL <span className="px-2 text-primary">→</span> API +
+                MCP
+              </p>
+            </div>
+          </div>
+          <a
+            href={githubUrl}
+            className="inline-flex min-h-10 items-center gap-2 text-xs text-muted-foreground hover:text-primary"
+          >
+            Explore the source <Arrow diagonal />
+          </a>
+        </div>
       </div>
-      <PlatformFabric />
-      <InstrumentationExperience />
     </section>
   )
 }

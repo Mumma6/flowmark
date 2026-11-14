@@ -75,13 +75,14 @@ export default function OpenGraphImage() {
             maxWidth: 760,
           }}
         >
-          Open-source process intelligence for people and agents.
+          Process intelligence for people and agents.
         </div>
       </div>
       <div style={{ display: "flex", gap: 28, color: "#b9f597", fontSize: 20 }}>
-        <span>Platform</span>
-        <span>Studio</span>
-        <span>Everywhere</span>
+        <span>Discover</span>
+        <span>Observe</span>
+        <span>Understand</span>
+        <span>Evolve</span>
       </div>
     </div>,
     size,

@@ -5,4 +5,4 @@ export const overlineClassName =
   "font-mono text-[11px] font-medium uppercase tracking-[0.16em] text-highlight"
 
 export const sectionTitleClassName =
-  "text-balance text-[clamp(2rem,3.8vw,3.25rem)] leading-[1.12] font-medium tracking-[-0.045em]"
+  "text-balance text-[clamp(2rem,4.5vw,3.75rem)] leading-[1.08] font-medium tracking-[-0.045em]"
