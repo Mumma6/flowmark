@@ -7,9 +7,18 @@ import {
 } from "../database.js"
 import { consumeAuthRateLimit } from "../auth/writes/consume-auth-rate-limit.js"
 import { joinWaitlist } from "./writes/join-waitlist.js"
+import { submitWaitlistWelcome } from "./writes/submit-waitlist-welcome.js"
 
 interface WaitlistStoreService {
-  readonly join: (email: string) => Effect.Effect<void, DatabaseError>
+  readonly join: (email: string) => Effect.Effect<
+    {
+      readonly id: string
+      readonly startedAt: Date
+      readonly submittedAt: Date | null
+    },
+    DatabaseError
+  >
+  readonly submitWelcome: (id: string) => Effect.Effect<void, DatabaseError>
   readonly budget: (
     key: string,
   ) => Effect.Effect<
@@ -27,6 +36,7 @@ export class WaitlistStore extends Context.Service<WaitlistStore>()(
       )
       return {
         join: (email: string) => provide(joinWaitlist(email)),
+        submitWelcome: (id: string) => provide(submitWaitlistWelcome(id)),
         budget: (key: string) =>
           provide(consumeAuthRateLimit(key, { window: 60, max: 120 })),
       } satisfies WaitlistStoreService

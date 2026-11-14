@@ -47,7 +47,7 @@ HTTPS is required except on loopback. Links must resolve to that configured
 origin without embedded credentials. Never derive the origin from request Host
 headers. Callers must use provider-generated URLs and actual provider expiry.
 The template set is `verify-email`, `reset-password`, `change-email`,
-`security-notice` (`password-changed` or `email-changed`) and `delivery-test` for
+`security-notice` (`password-changed` or `email-changed`) `waitlist-welcome`, and `delivery-test` for
 the explicit Staging delivery check. No arbitrary subject,
 HTML, attachments, batch recipients or security-notice body is accepted.
 
@@ -178,3 +178,9 @@ stored encrypted in state and delivered directly to the Production API binding.
 Staging's existing key stays in encrypted nonprod config. General Preview stays
 disabled. Environment bindings do not deploy application code or enable auth
 callbacks. The recorded inbox test predates these branded/environment variants.
+
+## Waitlist welcome
+
+`waitlist-welcome` uses a dedicated dark charcoal/lime/lavender HTML template and a plain-text alternative. Its CTA is the fixed public marketing URL, never a bearer or account link. Nonproduction subjects and HTML are visibly labeled. API acceptance is not proof of inbox delivery.
+
+The waitlist use case persists an opaque registration UUID as its message identity and records provider acceptance. Repeated accepted registrations do not resend. Ambiguous/failed attempts reuse the same recipient, identity and fixed template for at most 23 hours after the first attempt, leaving a margin inside Resend’s 24-hour retention. After that window, the request fails closed for operator reconciliation rather than minting a new ID and risking a duplicate. No automatic retries, background sending or historical bulk mail are introduced. New template revisions must not be substituted for an uncertain payload during reconciliation.

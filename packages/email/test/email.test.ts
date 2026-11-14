@@ -332,3 +332,28 @@ test("caller interruption aborts an outstanding submission", async () => {
   assert.equal(Result.isFailure(result), true)
   assert.equal(signal?.aborted, true)
 })
+
+test("waitlist welcome uses the landing brand without account-security messaging", async () => {
+  const welcome = {
+    kind: "waitlist-welcome",
+    to: "waitlist@example.test",
+    messageId: message.messageId,
+  }
+  const rendered = await Effect.runPromise(
+    renderEmail(welcome, origin, "production"),
+  )
+  assert.equal(rendered.subject, "You’re on the Flowmark waitlist")
+  assert.match(rendered.html, /#b9f597/)
+  assert.match(rendered.html, /#b7a3ff/)
+  assert.match(rendered.html, /WAITLIST CONFIRMED/)
+  assert.match(rendered.html, /You’re on the list/)
+  assert.match(rendered.html, /https:\/\/flowmark.dev\//)
+  assert.doesNotMatch(rendered.html, /ACCOUNT SECURITY|Verify email|expires in/)
+  assert.match(rendered.text, /We’ll email you when access opens/)
+  const staging = await Effect.runPromise(
+    renderEmail(welcome, origin, "staging"),
+  )
+  assert.match(staging.subject, /^\[Staging\]/)
+  assert.match(staging.html, /STAGING · WAITLIST CONFIRMED/)
+  assert.notEqual(rendered.idempotencyKey, staging.idempotencyKey)
+})

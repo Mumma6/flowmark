@@ -6,6 +6,7 @@ import {
   emailEnvironmentLabel,
   type EmailEnvironment,
 } from "./config.js"
+import { renderWaitlistWelcome } from "./templates/waitlist-welcome.js"
 import { renderEmailLayout } from "./templates/layout.js"
 
 export const renderEmail = Effect.fn("Email.render")(function* (
@@ -20,6 +21,9 @@ export const renderEmail = Effect.fn("Email.render")(function* (
         new EmailError({ operation: "validation", reason: "invalid-message" }),
     ),
   )
+  if (message.kind === "waitlist-welcome") {
+    return renderWaitlistWelcome(message, environment)
+  }
   const environmentName = emailEnvironmentLabel(environment)
   const environmentNotice =
     environment === "production"

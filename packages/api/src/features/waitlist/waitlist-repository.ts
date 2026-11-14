@@ -4,7 +4,17 @@ import type { PersistenceError } from "../../errors.js"
 export class WaitlistRepository extends Context.Service<
   WaitlistRepository,
   {
-    readonly join: (email: string) => Effect.Effect<void, PersistenceError>
+    readonly join: (email: string) => Effect.Effect<
+      {
+        readonly id: string
+        readonly startedAt: number
+        readonly submitted: boolean
+      },
+      PersistenceError
+    >
+    readonly submitWelcome: (
+      id: string,
+    ) => Effect.Effect<void, PersistenceError>
     readonly budget: () => Effect.Effect<
       { readonly allowed: boolean; readonly retryAfter: number | null },
       PersistenceError

@@ -73,7 +73,7 @@ progressive timeline bars express observed relationships. Aceternity Background
 Lines, Tracing Beam, Timeline, Moving Border and Glowing Effect informed the visual
 research; the diagram implementation is original and uses no Motion dependency.
 
-Diagram loops start automatically with no playback control and respect reduced-motion preferences. A visibility
+Diagram loops start automatically with no playback control. A visibility
 subscription and viewport observers suspend hidden/offscreen scenes.
 Finite entrances, hover transforms and scroll-linked
 traces retain CSS motion-safe guards; scroll traces fall back to complete lines
@@ -105,17 +105,22 @@ public write-only proxy permits cross-origin requests without credentials.
 The API validates, trims and lowercases addresses. PostgreSQL's unique index on
 `lower(email)` makes concurrent duplicates safe. Every accepted submission returns
 `{ "ok": true }`, including existing addresses, without revealing membership. No
-authentication, invitation, confirmation email or admin interface is involved.
+authentication, invitation or admin interface is involved. The API submits a branded
+welcome through the existing Resend adapter and records provider acceptance before
+acknowledging success. Repeated accepted registrations do not resend. Temporary
+failures preserve the registration and stable message identity for a bounded retry;
+expired uncertain deliveries require operator reconciliation. Provider acceptance
+is not proof of inbox delivery.
 
 The existing database-backed limiter caps valid waitlist submissions at 120 per
 minute per database across instances. It returns HTTP 429 with `Retry-After` when
 full. This deliberately simple shared budget does not identify individual bots
 or protect against sustained traffic exhausting that budget. No forwarded IP,
 raw email or new credential is used for the limiter key. Invalid bodies are bounded
-by the API's existing 64 KiB reader. Database failures return HTTP 503 and never
+by the API's existing 64 KiB reader. Database or email-submission failures return HTTP 503 and never
 look like successful joins; the client supports retry without creating duplicates.
 
-Apply committed migration `0032_brief_sphinx` before rolling out the API/landing
+Apply committed migrations `0032_brief_sphinx` and `0033_majestic_imperial_guard` before rolling out the API/landing
 change, following [database rollout](../../docs/migrations.md). This work does not
 authorize a hosted migration or deployment. Each environment uses its own existing
 database. The form has loading, accessible success/error states and a 10-second

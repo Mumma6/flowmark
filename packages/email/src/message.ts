@@ -39,6 +39,7 @@ export const EmailMessage = Schema.Union([
     inviterName: Schema.String.check(Schema.isMaxLength(80)),
   }),
   Schema.Struct({ ...common, kind: Schema.Literal("delivery-test") }),
+  Schema.Struct({ ...common, kind: Schema.Literal("waitlist-welcome") }),
   Schema.Struct({ ...link, kind: Schema.Literal("verify-email") }),
   Schema.Struct({ ...link, kind: Schema.Literal("reset-password") }),
   Schema.Struct({ ...link, kind: Schema.Literal("change-email") }),
