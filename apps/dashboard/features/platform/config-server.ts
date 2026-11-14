@@ -108,3 +108,7 @@ export class DashboardServerConfig extends Context.Service<
     }),
   )
 }
+
+/** Preview/Staging builds also use NODE_ENV=production. */
+export const publicRegistrationEnabled = () =>
+  process.env.VERCEL_ENV !== "production"

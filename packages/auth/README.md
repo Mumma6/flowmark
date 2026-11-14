@@ -144,3 +144,13 @@ checks cover status and feedback presentation. The managed HTTP/PostgreSQL
 suite covers confirmation, wrong-browser session isolation, mismatched addresses,
 untrusted callbacks, expired/tampered links and atomic resend limits. Tests use
 in-memory mail capture; live inbox acceptance remains a separate rollout check.
+
+## Production registration
+
+Public email/password registration is disabled when the existing `VERCEL_ENV` is
+`production`, using Better Auth’s `emailAndPassword.disableSignUp`. This covers
+HTTP sign-up, `/api/register` and direct server API calls. Studio hides registration
+links and redirects `/sign-up` to sign-in. Existing sign-in, password reset and
+account management remain enabled. Preview, Staging and Local remain open;
+`NODE_ENV` is not used because Vercel production builds also serve Preview/Staging.
+No database changes or new environment variables are needed.

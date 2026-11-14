@@ -1,3 +1,4 @@
+import { publicRegistrationEnabled } from "../../../../features/platform/config-server"
 import { Array } from "effect"
 import { AuthScreen } from "../../../../features/auth/auth-screen"
 
@@ -21,6 +22,10 @@ export default async function AgentSignIn({
     }
   })
   return (
-    <AuthScreen mode="sign-in" returnTo={`/connect/agent/consent?${query}`} />
+    <AuthScreen
+      registrationEnabled={publicRegistrationEnabled()}
+      mode="sign-in"
+      returnTo={`/connect/agent/consent?${query}`}
+    />
   )
 }
