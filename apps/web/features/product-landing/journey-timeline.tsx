@@ -83,14 +83,14 @@ export function JourneyTimeline() {
                       </div>
                       <div>
                         <p className="text-muted-foreground">
-                          Patient lookup{" "}
+                          Customer lookup{" "}
                           <span className="float-right">86 ms</span>
                         </p>
                         <div className="mt-2 ml-[8%] h-1.5 w-[16%] origin-left rounded-full bg-highlight/70 motion-safe:animate-timeline-grow [animation-delay:.15s]" />
                       </div>
                       <div>
                         <p className="text-muted-foreground">
-                          Orbit accepts booking{" "}
+                          Booking provider accepts request{" "}
                           <span className="float-right">1.6 s</span>
                         </p>
                         <div className="mt-2 ml-[12%] h-1.5 w-[88%] origin-left rounded-full bg-primary/80 motion-safe:animate-timeline-grow [animation-delay:.3s]" />

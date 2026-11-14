@@ -10,22 +10,22 @@ const entrances = {
     title: "Discover processes across code paths.",
     label: "Agent-assisted discovery",
     inputs: [
-      "routes / book-appointment.ts",
-      "integrations / orbit.ts",
-      "webhooks / confirmation.ts",
+      "routes / sync-customers.ts",
+      "integrations / customer-api.ts",
+      "jobs / sync-complete.ts",
     ],
     signals: ["Entry point", "External boundary", "Expected outcome"],
     status: "Candidate discovered",
     detail:
-      "Three code paths. One appointment-booking process. Your agent finds the relationship; your team defines what success means.",
+      "A request starts a customer sync. A background job writes the records. Your agent connects the code paths; your team defines a successful sync.",
   },
   automatic: {
     title: "Capture useful runtime context automatically.",
     label: "Automatic observation",
     inputs: [
       "HTTP / POST appointments",
-      "PostgreSQL / patient lookup",
-      "Orbit / submit booking",
+      "PostgreSQL / customer lookup",
+      "External API / submit booking",
     ],
     signals: ["Request · 1.8 s", "Query · 86 ms", "Response · 202"],
     status: "Technical context connected",
@@ -36,7 +36,7 @@ const entrances = {
     title: "Small markers. Precise business meaning.",
     label: "Precision SDK",
     inputs: [
-      "workflow / appointment.book",
+      "workflow / booking.submit",
       "result / accepted: true",
       "expect / booking.confirmed",
     ],
@@ -192,9 +192,9 @@ export function DiscoveryField({ code }: { code: ReactNode }) {
               >
                 <p className="text-highlight">One question needs your team.</p>
                 <p className="mt-2">
-                  Does “confirmed” mean the provider acknowledged the booking?
-                  Is 20 minutes the right window? Review the inferred
-                  relationship before publishing its meaning.
+                  Does “synchronized” mean the destination accepted every
+                  record? How should skipped records affect the outcome? Review
+                  the inferred relationship before publishing its meaning.
                 </p>
               </div>
             </>

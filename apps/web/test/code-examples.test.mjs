@@ -31,7 +31,7 @@ function execute({ accepted = true, failure } = {}) {
   const booking = { accepted, reference: "SYN-BOOK-RECENT" }
   const confirmation = {
     version: 1,
-    workflow: "appointment.book",
+    workflow: "booking.submit",
     runId: "synthetic-run-id",
     expectationId: "synthetic-confirmation-id",
   }
@@ -44,7 +44,7 @@ function execute({ accepted = true, failure } = {}) {
     fail: (...args) => events.push(["fail", ...args]),
   }
   const fn = runInNewContext(
-    `${compile(exports.bookingCode)}\nbookAppointment`,
+    `${compile(exports.bookingCode)}\nsubmitBookingRequest`,
     {
       flowmark: {
         workflow: (...args) => {
@@ -60,7 +60,7 @@ function execute({ accepted = true, failure } = {}) {
     },
   )
   return {
-    promise: fn("SYN-REF-2049"),
+    promise: fn("BOOK-2049"),
     events,
     submissions,
     booking,
@@ -72,13 +72,12 @@ test("booking example preserves the application result and forwards its confirma
   const execution = execute()
   assert.equal(await execution.promise, execution.booking)
   assert.equal(execution.submissions.length, 1)
-  assert.equal(execution.submissions[0].referralRef, "SYN-REF-2049")
+  assert.equal(execution.submissions[0].bookingRef, "BOOK-2049")
   assert.equal(execution.submissions[0].confirmation, execution.confirmation)
   const [, workflow, options] = execution.events[0]
-  assert.equal(workflow, "appointment.book")
-  assert.equal(options.correlationId, "SYN-REF-2049")
-  assert.equal(options.properties.customer, "Cedar Health")
-  assert.equal(options.properties.integration, "orbit")
+  assert.equal(workflow, "booking.submit")
+  assert.equal(options.correlationId, "BOOK-2049")
+  assert.equal(options.properties.integration, "booking-provider")
   assert.equal(execution.events[1][1], "booking.confirmed")
   assert.equal(execution.events[1][2].within, "20m")
   assert.equal(execution.events.at(-1)[1].outcome, "submitted")

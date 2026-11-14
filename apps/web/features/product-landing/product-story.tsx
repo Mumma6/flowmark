@@ -41,7 +41,7 @@ export function DiscoverSection() {
         <DiscoveryField
           code={
             <WorkflowCodeBlock
-              title="app/book-appointment.ts"
+              title="app/submit-booking.ts"
               value={bookingCode}
             />
           }
@@ -75,9 +75,9 @@ export function JourneySection() {
           </p>
           <div className="mt-9 border-l border-primary/40 pl-5">
             <p className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground">
-              One appointment-booking journey
+              One booking journey
             </p>
-            <p className="mt-3 font-mono text-xs text-primary">SYN-REF-2049</p>
+            <p className="mt-3 font-mono text-xs text-primary">BOOK-2049</p>
             <p className="mt-3 text-xs text-muted-foreground">
               Select a moment to see its evidence.
             </p>

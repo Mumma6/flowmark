@@ -21,17 +21,17 @@ const nodes = [
     name: "Booking submitted",
     icon: "booking",
     position: "left-[50%] top-[16%] sm:left-[34%] sm:top-[37%]",
-    code: "appointment.book",
+    code: "booking.submit",
     detail:
       "The application reports an accepted booking. Execution completed in 1.8 seconds.",
     delay: "[animation-delay:1.5s]",
   },
   {
     id: "provider",
-    name: "Orbit accepts the request",
+    name: "Provider accepts request",
     icon: "integration",
     position: "left-[85%] top-[16%] sm:left-[60%] sm:top-[37%]",
-    code: "Orbit / booking API",
+    code: "External booking API",
     detail:
       "The provider accepts the request. A separate callback is expected within 20 minutes.",
     delay: "[animation-delay:3s]",
@@ -164,7 +164,7 @@ export function ProcessLandscape() {
           className="pointer-events-none absolute inset-x-0 top-[10%] h-[85%] bg-[radial-gradient(ellipse_at_48%_80%,hsl(var(--highlight)/0.10),transparent_50%),radial-gradient(ellipse_at_50%_10%,var(--hero-glow),transparent_65%)]"
         />
         <p className="absolute top-3 left-0 font-mono text-[9px] uppercase tracking-widest text-muted-foreground/60 sm:top-14">
-          Cedar Health executes the work
+          Your application executes the process
         </p>
         <LandscapePaths missing={missing} />
         {nodes.map((node) => (

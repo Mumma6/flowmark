@@ -26,7 +26,7 @@ outcomes, understand meaningful changes, and maintain instrumentation as code ev
 It introduces the product through custom interactive diagrams and an evidence story.
 Public access is through the waitlist; the site has no competing signup CTA.
 
-Cedar Health is fictional. Every product illustration uses fixed synthetic
+Every product illustration uses fixed synthetic
 observations; no example connects a repository, publishes a definition, runs an
 agent, executes a test or reads an account. The marketing experience is not an
 operational record of deployed capabilities.
@@ -41,7 +41,7 @@ interactive examples and fixtures:
 - `discovery-field.tsx`: independent agent-assisted, automatic and precision SDK
   entrances; a convergence diagram changes with its evidence source. Candidate
   review keeps human ownership explicit. The SDK example remains executable/tested.
-- `journey-timeline.tsx`: connected referral, matching, booking and confirmation
+- `journey-timeline.tsx`: connected booking request, customer lookup, submission and confirmation
   evidence, with an expandable execution timeline and a scroll-linked trace.
 - `outcome-field.tsx`, `process-data.ts`: comparable 700-booking cohorts. Each of
   100 dots represents seven bookings. Confirmation changes from 644/700 (92%) to

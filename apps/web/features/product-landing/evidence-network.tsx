@@ -10,9 +10,9 @@ const perspectives = [
     name: "Your people",
     label: "Studio",
     icon: "person",
-    question: "Are bookings reaching their outcome?",
+    question: "Did the import process every record?",
     answer:
-      "532 of 700 bookings have a confirmation within the expected window. Product, operations and customer success explore the same process meaning.",
+      "The job completed. It reported 960 imported records and 40 skipped out of 1,000. Your team can inspect the skipped records and their reported reasons.",
     context: "Visual journeys · process health · shared definitions",
     position: "left-[15%]",
   },
@@ -22,7 +22,7 @@ const perspectives = [
     icon: "agent",
     question: "What changed — and where should I look?",
     answer:
-      "The confirmation rate fell 16 points after the release. Your coding agent follows the comparison to contributing runs and affected code.",
+      "The import now reports more skipped records after a release. Your coding agent follows the changed result to contributing runs and affected code.",
     context: "Codex · Cursor · Claude Code · any MCP client",
     position: "left-[50%]",
   },

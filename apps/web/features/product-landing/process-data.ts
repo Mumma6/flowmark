@@ -13,35 +13,35 @@ export const comparison = {
 
 export const journey = [
   {
-    id: "referral",
-    title: "Referral",
-    code: "referral.ingest",
+    id: "request",
+    title: "Booking request",
+    code: "booking.request",
     status: "Received",
     time: "10:00:00",
     description:
-      "The application accepted the referral and attached its reference to the process.",
-    payload: 'referralRef: "SYN-REF-2049"',
+      "The application received a booking request and recorded its reference.",
+    payload: 'bookingRef: "BOOK-2049"',
     attention: false,
   },
   {
     id: "match",
-    title: "Match",
-    code: "patient.match",
-    status: "Matched",
+    title: "Customer lookup",
+    code: "customer.lookup",
+    status: "Found",
     time: "10:00:01",
     description:
-      "A separate run reported a matching reference. The shared reference connects the observed work.",
-    payload: "matched: true",
+      "A separate run found the customer. The shared booking reference connects this lookup to the request.",
+    payload: "customerFound: true",
     attention: false,
   },
   {
     id: "booking",
     title: "Booking",
-    code: "appointment.book",
+    code: "booking.submit",
     status: "Accepted",
     time: "10:00:02",
     description:
-      "Orbit accepted the request. The booking run completed in 1.8 seconds; its confirmation is tracked separately.",
+      "The booking provider accepted the request. The booking run completed in 1.8 seconds; its confirmation is tracked separately.",
     payload: 'outcome: "submitted" · accepted: true',
     attention: false,
   },

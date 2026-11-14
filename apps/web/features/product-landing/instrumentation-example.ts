@@ -1,9 +1,9 @@
 // Fictional application code. submitBooking owns the work and persists/forwards
 // the expectation reference in its existing request metadata.
-export const bookingCode = `async function bookAppointment(referralRef: string) {
-  const run = flowmark.workflow("appointment.book", {
-    correlationId: referralRef,
-    properties: { customer: "Cedar Health", integration: "orbit" },
+export const bookingCode = `async function submitBookingRequest(bookingRef: string) {
+  const run = flowmark.workflow("booking.submit", {
+    correlationId: bookingRef,
+    properties: { integration: "booking-provider" },
   })
 
   try {
@@ -11,7 +11,7 @@ export const bookingCode = `async function bookAppointment(referralRef: string) 
       within: "20m",
     })
     const booking = await submitBooking({
-      referralRef,
+      bookingRef,
       confirmation,
     })
     run.done({

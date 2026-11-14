@@ -254,9 +254,9 @@ export function OutcomeField() {
         >
           <table className="w-full min-w-96 border-collapse text-left">
             <caption className="mb-4 text-left leading-5">
-              Synthetic Cedar Health cohorts · 10–17 Oct and 17–24 Oct 2026,
-              bounded at 10:30 UTC. Observed 24 Oct at 11:00 UTC; every
-              20-minute window has matured. Definition: {comparison.definition}.
+              Synthetic booking cohorts · 10–17 Oct and 17–24 Oct 2026, bounded
+              at 10:30 UTC. Observed 24 Oct at 11:00 UTC; every 20-minute window
+              has matured. Definition: {comparison.definition}.
             </caption>
             <thead className="border-b border-border">
               <tr>
