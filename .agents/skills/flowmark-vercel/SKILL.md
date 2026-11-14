@@ -88,8 +88,13 @@ Production and Preview on separate Vercel env records. Do not add one env record
 dashboard `FLOWMARK_API_URL`.
 
 Each app's `vercel.json` already sets Next.js, function region `fra1`, and
-the monorepo install and Turbo build. Node is 22.x. Leave those unless the
-infrastructure guide is updated in the same change.
+the monorepo install and Turbo build. Pulumi currently declares Node 22.x for
+the four projects; repository development and CI use Node 24 via `.node-version`.
+The hosted upgrade is deferred. Use the latest Vercel-supported LTS major
+deliberately; allow patch/minor updates within the chosen major, but never float
+to an unreviewed major. Change hosted runtimes through Pulumi and confirm live
+apply/deployment status in the operating record. Changing a declaration alone
+does not upgrade deployed functions.
 
 Each app also sets `ignoreCommand` to `scripts/vercel-should-deploy.mjs`,
 which runs Turbo's affected check through `npx turbo-ignore` (Vercel runs

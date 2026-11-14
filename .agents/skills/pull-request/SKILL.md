@@ -41,8 +41,11 @@ creating a PR is not permission to merge or deploy.
    Record tested SHA, per-environment migration/smoke results and pending gates.
    Note infrastructure changes, Vercel or Neon impact,
    and any manual deployment steps.
-8. Before reporting a PR ready to merge, inspect both CI jobs: the fast
-   `Format, lint, typecheck, and test` check and `PostgreSQL integration tests`.
+8. Before reporting a PR ready to merge, inspect all verification jobs:
+   `TypeScript format, lint, typecheck, and test`, `Rust format, Clippy, tests and properties`,
+   `WASM production compatibility (Node 24)` and `PostgreSQL integration tests`.
+   The existing required `Format, lint, typecheck, and test` aggregate must pass;
+   it propagates failures from the application, Rust and WASM jobs.
    Local `pnpm check` alone does not run the database suites without
    `TEST_DATABASE_URL`. Report pending or failed integration checks explicitly;
    use the [development guide](../../../docs/development.md#database-integration-tests)

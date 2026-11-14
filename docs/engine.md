@@ -119,10 +119,15 @@ WASM occupies the Node thread; this integration adds no worker pool.
 trace, copies only traced dependencies into a temporary artifact, and runs every
 fixture through the generated binding in that artifact. A fresh process with
 the embedded-byte entry removed must fail loading; Effect adapter tests separately
-verify that loading failures become typed initialization failures. Run the verifier with the production Node 22
-binary as well when changing bindings or runtime requirements. `pnpm check`
-includes Rust checks and artifact verification, so existing PR CI exercises the
-integration without hosted credentials. No deployment is performed.
+verify that loading failures become typed initialization failures.
+
+CI exposes native formatting/Clippy/tests/properties and Node 24 production
+WASM verification as dedicated jobs alongside application and PostgreSQL
+integration checks. The Node major is pinned in `.node-version`; use the same
+major for maintained Vercel runtimes. Rust tools/downloads and per-job Cargo
+outputs are cached by platform, pinned toolchain and dependency/source hashes;
+checks still run on cache hits. `pnpm check` remains the complete local gate.
+These checks need no hosted credentials and perform no deployment.
 
 ## Adding Rust functionality
 

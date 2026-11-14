@@ -179,7 +179,7 @@ for cohesive computation, analysis, algorithms and data processing; the
 Future Rust modules and crates can build on the same explicit ownership and
 contract boundaries. See [architecture](./docs/architecture.md#typescript-postgresql-and-rust).
 
-Node.js 20.19 or newer, pnpm 10.18.1, and Docker Compose.
+Node.js 24.x (see `.node-version`), pnpm 10.18.1, and Docker Compose.
 
 ```sh
 pnpm install

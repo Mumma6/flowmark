@@ -4,7 +4,7 @@
   "private": true,
   "packageManager": "pnpm@10.18.1",
   "engines": {
-    "node": ">=20.19"
+    "node": "24.x"
   },
   "scripts": {
     "rust:setup": "node scripts/rust.mjs setup",
@@ -33,7 +33,8 @@
     "db:migrate:staging": "node scripts/db-migrate-staging.mjs",
     "db:migrate:prod": "node scripts/db-migrate-production.mjs",
     "neon:env-pull": "node scripts/neon-env-pull.mjs",
-    "check": "pnpm rust:check && pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm engine:verify-build",
+    "check": "pnpm rust:check && pnpm check:typescript && pnpm engine:verify-build",
+    "check:typescript": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test",
     "release:verify": "node scripts/release-verify.mjs",
     "db:seed": "pnpm --filter @flowmark/auth db:seed",
     "db:setup": "pnpm --filter @flowmark/auth db:setup",

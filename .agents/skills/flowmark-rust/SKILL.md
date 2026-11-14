@@ -68,6 +68,9 @@ apply [Effect](../flowmark-effect/SKILL.md) when changing TypeScript integration
   loader/build changes, run `pnpm engine:verify-build` and relevant API/integration
   checks. Other integrations need appropriate artifact verification too;
   compilation alone is insufficient.
+- PR CI gives native Rust checks and Node/WASM production compatibility their
+  own jobs. Keep the pinned toolchain/cache and `.node-version` aligned with
+  build contracts; cache hits must never skip validation or native properties.
 - Additional Rust functionality or crates need a clear responsibility, explicit
   contract and independent tests. Extend the current engine only when the work
   belongs to it; reuse the Cargo workspace/toolchain and integrate each crate's
