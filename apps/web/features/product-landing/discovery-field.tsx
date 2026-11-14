@@ -23,9 +23,9 @@ const entrances = {
     title: "Capture useful runtime context automatically.",
     label: "Automatic observation",
     inputs: [
-      "HTTP / POST appointments",
-      "PostgreSQL / customer lookup",
-      "External API / submit booking",
+      "HTTP / POST customer-sync",
+      "PostgreSQL / customer records",
+      "External API / fetch customers",
     ],
     signals: ["Request · 1.8 s", "Query · 86 ms", "Response · 202"],
     status: "Technical context connected",
@@ -36,14 +36,14 @@ const entrances = {
     title: "Small markers. Precise business meaning.",
     label: "Precision SDK",
     inputs: [
-      "workflow / booking.submit",
+      "workflow / customer.sync",
       "result / accepted: true",
-      "expect / booking.confirmed",
+      "expect / customer.sync.completed",
     ],
-    signals: ["Business context", "Reported result", "20-minute expectation"],
+    signals: ["Business context", "Reported result", "10-minute expectation"],
     status: "Meaning made explicit",
     detail:
-      "Name the work, report its outcome, and declare what should happen next. Uses a configured Flowmark client. Your application owns execution and forwards the expectation reference to its callback.",
+      "Record that the sync was queued, then expect completion from the worker within 10 minutes. Uses a configured Flowmark client; your application forwards the expectation reference to the worker.",
   },
 } as const
 type Entrance = keyof typeof entrances
@@ -84,7 +84,7 @@ export function DiscoveryField({ code }: { code: ReactNode }) {
         ))}
       </div>
       <div className="relative mt-5 grid gap-10 py-8 sm:mt-10 lg:grid-cols-[1fr_.8fr] lg:gap-20 lg:py-12">
-        <div className="relative min-h-[360px] sm:min-h-[390px]">
+        <div className="relative h-[360px] min-w-0 self-center sm:h-[390px]">
           <div
             aria-hidden="true"
             className="absolute inset-0 bg-[radial-gradient(ellipse_at_70%_55%,var(--hero-glow),transparent_60%)]"
@@ -162,7 +162,7 @@ export function DiscoveryField({ code }: { code: ReactNode }) {
             </p>
           </div>
         </div>
-        <div className="self-center">
+        <div className="min-w-0 self-center">
           <p className="flex items-center gap-3 font-mono text-[10px] uppercase tracking-widest text-highlight">
             <ProcessIcon name="agent" className="size-4" />
             {entrance.label}

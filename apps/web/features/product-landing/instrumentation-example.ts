@@ -1,26 +1,22 @@
-// Fictional application code. submitBooking owns the work and persists/forwards
-// the expectation reference in its existing request metadata.
-export const bookingCode = `async function submitBookingRequest(bookingRef: string) {
-  const run = flowmark.workflow("booking.submit", {
-    correlationId: bookingRef,
-    properties: { integration: "booking-provider" },
+// Application code owns the queue and forwards the expectation reference to the worker.
+export const customerSyncCode = `async function requestCustomerSync(syncRef: string) {
+  const run = flowmark.workflow("customer.sync", {
+    correlationId: syncRef,
+    properties: { integration: "customer-api" },
   })
 
   try {
-    const confirmation = run.expect("booking.confirmed", {
-      within: "20m",
+    const completion = run.expect("customer.sync.completed", {
+      within: "10m",
     })
-    const booking = await submitBooking({
-      bookingRef,
-      confirmation,
-    })
+    const job = await enqueueCustomerSync({ syncRef, completion })
     run.done({
-      outcome: "submitted",
-      result: { accepted: booking.accepted },
+      outcome: job.accepted ? "queued" : "rejected",
+      result: { accepted: job.accepted },
     })
-    return booking
+    return job
   } catch (error) {
-    run.fail({ code: "BOOKING_FAILED" })
+    run.fail({ code: "SYNC_QUEUE_FAILED" })
     throw error
   }
 }`

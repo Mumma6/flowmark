@@ -36,11 +36,9 @@ export function HeroSection() {
         </h1>
         <div className="mt-7 flex flex-col justify-between gap-7 sm:mt-9 lg:flex-row lg:items-end">
           <p className="max-w-lg text-sm leading-7 text-muted-foreground sm:text-[15px]">
-            AI-native process intelligence for your application.
-            <br className="hidden sm:block" /> Flowmark makes the whole process
-            visible — and keeps
-            <br className="hidden sm:block" /> understanding alive as your
-            software changes.
+            Discover processes with your coding agent. Connect execution to
+            business outcomes, spot changes, and keep instrumentation current as
+            your code evolves.
           </p>
           <div className="flex flex-wrap items-center gap-3">
             <Button

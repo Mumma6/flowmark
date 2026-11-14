@@ -73,7 +73,7 @@ progressive timeline bars express observed relationships. Aceternity Background
 Lines, Tracing Beam, Timeline, Moving Border and Glowing Effect informed the visual
 research; the diagram implementation is original and uses no Motion dependency.
 
-Diagram loops start automatically with no playback control. A visibility
+Diagram loops start automatically with no playback control and respect reduced-motion preferences. A visibility
 subscription and viewport observers suspend hidden/offscreen scenes.
 Finite entrances, hover transforms and scroll-linked
 traces retain CSS motion-safe guards; scroll traces fall back to complete lines

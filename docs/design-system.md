@@ -233,7 +233,7 @@ Border informed the visual direction. Existing attributed beams and spotlights
 remain; original SVG signal trails, node activation and scroll traces communicate
 relationships. Native CSS handles frames, with no per-frame React updates or new
 animation dependency. A visibility subscription and viewport observers
-suspend offscreen/hidden scenes. Diagram loops play automatically without a playback control.
+suspend offscreen/hidden scenes. Diagram loops play automatically without a playback control and respect reduced-motion preferences.
 Finite entrances, hover movement and scroll traces remain motion-safe. Unsupported
 view timelines render their complete path. Anchor scrolling respects reduced motion.
 

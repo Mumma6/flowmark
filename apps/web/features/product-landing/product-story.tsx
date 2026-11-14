@@ -10,7 +10,7 @@ import { WorkflowCodeBlock } from "../../app/components/workflow-code-block"
 import { DiscoveryField } from "./discovery-field"
 import { EvidenceNetwork } from "./evidence-network"
 import { EvolutionExperience } from "./evolution-experience"
-import { bookingCode } from "./instrumentation-example"
+import { customerSyncCode } from "./instrumentation-example"
 import { JourneyTimeline } from "./journey-timeline"
 import { OutcomeField } from "./outcome-field"
 import { SectionTrace } from "./motion"
@@ -41,8 +41,8 @@ export function DiscoverSection() {
         <DiscoveryField
           code={
             <WorkflowCodeBlock
-              title="app/submit-booking.ts"
-              value={bookingCode}
+              title="app/sync-customers.ts"
+              value={customerSyncCode}
             />
           }
         />
