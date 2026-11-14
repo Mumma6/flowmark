@@ -1,6 +1,7 @@
 import { Effect, Layer } from "effect"
 import { beforeEach, expect, it, vi } from "vitest"
 import { JoinWaitlist } from "@flowmark/api"
+import { WaitlistWelcomeEmail, WaitlistWelcomeError } from "@flowmark/api"
 import { WaitlistRepository } from "@flowmark/api"
 import { PersistenceError } from "@flowmark/api"
 
@@ -8,6 +9,9 @@ const state = vi.hoisted(() => ({
   emails: new Set<string>(),
   allowed: true,
   failure: false,
+  emailFailure: false,
+  submitted: false,
+  sendAttempts: 0,
 }))
 vi.mock("@flowmark/api", async (original) => {
   const api = await original<typeof import("@flowmark/api")>()
@@ -19,11 +23,28 @@ vi.mock("@flowmark/api", async (original) => {
           Effect.provide(
             JoinWaitlist.layer.pipe(
               Layer.provide(
+                Layer.succeed(WaitlistWelcomeEmail, {
+                  send: () =>
+                    Effect.gen(function* () {
+                      state.sendAttempts += 1
+                      if (state.emailFailure) {
+                        return yield* new WaitlistWelcomeError({
+                          reason: "delivery",
+                        })
+                      }
+                    }),
+                }),
+              ),
+              Layer.provide(
                 Layer.succeed(WaitlistRepository, {
                   budget: () =>
                     Effect.succeed({
                       allowed: state.allowed,
                       retryAfter: state.allowed ? null : 12,
+                    }),
+                  submitWelcome: () =>
+                    Effect.sync(() => {
+                      state.submitted = true
                     }),
                   join: (email) =>
                     state.failure
@@ -34,7 +55,13 @@ vi.mock("@flowmark/api", async (original) => {
                           }),
                         )
                       : Effect.sync(() => {
+                          const submitted = state.submitted
                           state.emails.add(email)
+                          return {
+                            id: "12345678-1234-4234-8234-123456789abc",
+                            startedAt: Date.now(),
+                            submitted,
+                          }
                         }),
                 }),
               ),
@@ -55,6 +82,9 @@ beforeEach(() => {
   state.emails.clear()
   state.allowed = true
   state.failure = false
+  state.emailFailure = false
+  state.submitted = false
+  state.sendAttempts = 0
 })
 it("accepts anonymous joins and returns indistinguishable success for duplicates", async () => {
   const first = await handleWaitlist(
@@ -100,4 +130,21 @@ it("returns a safe failure instead of success when persistence fails", async () 
   )
   expect(response.status).toBe(503)
   expect(await response.text()).not.toContain("private")
+})
+
+it("fails safely on mail rejection and retries the existing registration", async () => {
+  state.emailFailure = true
+  const first = await handleWaitlist(request({ email: "person@example.test" }))
+  expect(first.status).toBe(503)
+  expect(await first.json()).toEqual({
+    error: "Could not join the waitlist. Please try again.",
+  })
+  expect(state.emails.size).toBe(1)
+  state.emailFailure = false
+  const retry = await handleWaitlist(request({ email: "person@example.test" }))
+  expect(retry.status).toBe(200)
+  expect(state.sendAttempts).toBe(2)
+  expect(state.submitted).toBe(true)
+  await handleWaitlist(request({ email: "person@example.test" }))
+  expect(state.sendAttempts).toBe(2)
 })

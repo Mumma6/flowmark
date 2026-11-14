@@ -232,6 +232,13 @@
       "when": 1794644336224,
       "tag": "0032_brief_sphinx",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1794674677345,
+      "tag": "0033_majestic_imperial_guard",
+      "breakpoints": true
     }
   ]
 }

@@ -2,19 +2,44 @@ import { Effect, Layer, Result } from "effect"
 import { expect, it } from "vitest"
 import { JoinWaitlist } from "../../src/features/waitlist/join-waitlist.js"
 import { WaitlistRepository } from "../../src/features/waitlist/waitlist-repository.js"
+import {
+  WaitlistWelcomeEmail,
+  WaitlistWelcomeError,
+} from "../../src/features/waitlist/welcome-email.js"
 import { PersistenceError } from "../../src/errors.js"
 
-const fixture = (overrides: Partial<WaitlistRepository["Service"]> = {}) => {
+const fixture = (
+  overrides: Partial<WaitlistRepository["Service"]> = {},
+  deliveryOverrides: Partial<WaitlistWelcomeEmail["Service"]> = {},
+) => {
   const emails: string[] = []
+  const sent: { to: string; id: string }[] = []
+  let submitted = false
+  const id = "12345678-1234-4234-8234-123456789abc"
   const repository = Layer.succeed(WaitlistRepository, {
     join: (email) =>
       Effect.sync(() => {
         emails.push(email)
+        return { id, startedAt: Date.now(), submitted }
+      }),
+    submitWelcome: () =>
+      Effect.sync(() => {
+        submitted = true
       }),
     budget: () => Effect.succeed({ allowed: true, retryAfter: null }),
     ...overrides,
   })
-  const layer = JoinWaitlist.layer.pipe(Layer.provide(repository))
+  const delivery = Layer.succeed(WaitlistWelcomeEmail, {
+    send: (to, messageId) =>
+      Effect.sync(() => {
+        sent.push({ to, id: messageId })
+      }),
+    ...deliveryOverrides,
+  })
+  const layer = JoinWaitlist.layer.pipe(
+    Layer.provide(repository),
+    Layer.provide(delivery),
+  )
   const join = (input: unknown) =>
     Effect.runPromise(
       Effect.result(
@@ -23,7 +48,7 @@ const fixture = (overrides: Partial<WaitlistRepository["Service"]> = {}) => {
         ),
       ),
     )
-  return { emails, join }
+  return { emails, sent, join }
 }
 it("normalizes email and returns the same public success for repeated joins", async () => {
   const f = fixture()
@@ -34,6 +59,9 @@ it("normalizes email and returns the same public success for repeated joins", as
     Result.succeed({ ok: true }),
   )
   expect(f.emails).toEqual(["person@example.com", "person@example.com"])
+  expect(f.sent).toEqual([
+    { to: "person@example.com", id: "12345678-1234-4234-8234-123456789abc" },
+  ])
 })
 it.each([
   null,
@@ -79,4 +107,67 @@ it("does not convert a storage failure into a successful subscription", async ()
     _tag: "Failure",
     failure: { _tag: "PersistenceError" },
   })
+})
+
+it("does not resend an uncertain submission after the provider retry window", async () => {
+  const f = fixture({
+    join: () =>
+      Effect.succeed({
+        id: "12345678-1234-4234-8234-123456789abc",
+        startedAt: Date.now() - 24 * 60 * 60 * 1000,
+        submitted: false,
+      }),
+  })
+  expect(await f.join({ email: "person@example.com" })).toMatchObject({
+    _tag: "Failure",
+    failure: { _tag: "WaitlistWelcomeError", reason: "retry-window-expired" },
+  })
+  expect(f.sent).toEqual([])
+})
+
+it("preserves registration and reuses the same message identity after delivery failure", async () => {
+  let attempt = 0
+  const ids: string[] = []
+  const f = fixture(
+    {},
+    {
+      send: (_to, id) =>
+        Effect.gen(function* () {
+          ids.push(id)
+          attempt += 1
+          if (attempt === 1) {
+            return yield* new WaitlistWelcomeError({ reason: "delivery" })
+          }
+        }),
+    },
+  )
+  expect(await f.join({ email: "person@example.com" })).toMatchObject({
+    _tag: "Failure",
+    failure: { _tag: "WaitlistWelcomeError" },
+  })
+  expect(await f.join({ email: "person@example.com" })).toEqual(
+    Result.succeed({ ok: true }),
+  )
+  expect(ids).toHaveLength(2)
+  expect(ids[0]).toBe(ids[1])
+  expect(await f.join({ email: "person@example.com" })).toEqual(
+    Result.succeed({ ok: true }),
+  )
+  expect(ids).toHaveLength(2)
+})
+it("does not report success when recording accepted delivery fails", async () => {
+  const f = fixture({
+    submitWelcome: () =>
+      Effect.fail(
+        new PersistenceError({
+          operation: "submit-welcome",
+          cause: "storage unavailable",
+        }),
+      ),
+  })
+  expect(await f.join({ email: "person@example.com" })).toMatchObject({
+    _tag: "Failure",
+    failure: { _tag: "PersistenceError" },
+  })
+  expect(f.sent).toHaveLength(1)
 })

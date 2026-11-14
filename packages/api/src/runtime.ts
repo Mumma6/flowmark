@@ -55,6 +55,7 @@ import { GetMcpAgentConnectionLive } from "./features/project-access/use-cases/g
 import { GetMcpAgentConnection } from "./features/project-access/use-cases/get-mcp-agent-connection.js"
 
 import { WaitlistStore } from "@flowmark/db/persistence"
+import { WaitlistWelcomeEmailLive } from "./features/waitlist/welcome-email.js"
 import { JoinWaitlist } from "./features/waitlist/join-waitlist.js"
 import { WaitlistRepositoryLive } from "./features/waitlist/waitlist-live.js"
 
@@ -102,6 +103,7 @@ const agentAccessAdapter = Layer.mergeAll(
 
 export const ApiLive = Layer.mergeAll(
   JoinWaitlist.layer.pipe(
+    Layer.provide(WaitlistWelcomeEmailLive),
     Layer.provide(WaitlistRepositoryLive.pipe(Layer.provide(persistence))),
   ),
   ManageSharedInvestigations.layer,

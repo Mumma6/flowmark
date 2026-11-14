@@ -12,6 +12,10 @@ export const waitlist = pgTable(
   {
     id: uuid("id").defaultRandom().primaryKey(),
     email: text("email").notNull(),
+    welcomeStartedAt: timestamp("welcome_started_at", { withTimezone: true }),
+    welcomeSubmittedAt: timestamp("welcome_submitted_at", {
+      withTimezone: true,
+    }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
