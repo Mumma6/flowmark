@@ -35,6 +35,15 @@ test("pull-request verification separates language gates with least privilege", 
   assert.match(yaml, /run: pnpm engine:verify-build/)
 })
 
+test("native Rust disables implicit package-manager caching on a cold runner", () => {
+  const yaml = readWorkflow("pull-request.yml")
+  const rust = yaml.slice(yaml.indexOf("  rust:"), yaml.indexOf("  wasm:"))
+  assert.match(rust, /package-manager-cache: false/)
+  assert.doesNotMatch(rust, /cache: pnpm|pnpm install/)
+  assert.match(rust, /uses: .\/.github\/actions\/cache-rust/)
+  assert.match(rust, /run: pnpm rust:check/)
+})
+
 test("pnpm check retains all local gates including application unit tests", () => {
   const pkg = JSON.parse(readFileSync(join(repoRoot, "package.json"), "utf8"))
   assert.match(pkg.scripts.check, /pnpm rust:check/)
