@@ -7,7 +7,7 @@ import { ProcessIcon } from "./process-icon"
 
 const entrances = {
   assisted: {
-    title: "The process hiding between the files.",
+    title: "Discover processes across code paths.",
     label: "Agent-assisted discovery",
     inputs: [
       "routes / book-appointment.ts",
@@ -20,7 +20,7 @@ const entrances = {
       "Three code paths. One appointment-booking process. Your agent finds the relationship; your team defines what success means.",
   },
   automatic: {
-    title: "The context your application already emits.",
+    title: "Capture useful runtime context automatically.",
     label: "Automatic observation",
     inputs: [
       "HTTP / POST appointments",
@@ -43,7 +43,7 @@ const entrances = {
     signals: ["Business context", "Reported result", "20-minute expectation"],
     status: "Meaning made explicit",
     detail:
-      "Name the work, report its outcome, and declare what should happen next. Ordinary TypeScript, beside the code that owns the work.",
+      "Name the work, report its outcome, and declare what should happen next. Uses a configured Flowmark client. Your application owns execution and forwards the expectation reference to its callback.",
   },
 } as const
 type Entrance = keyof typeof entrances
@@ -202,7 +202,7 @@ export function DiscoveryField({ code }: { code: ReactNode }) {
           {mode === "precision" && (
             <details className="mt-5">
               <summary className="cursor-pointer py-3 text-xs text-primary">
-                See the instrumentation
+                See the instrumentation example
               </summary>
               <div className="mt-3 min-w-0">{code}</div>
             </details>

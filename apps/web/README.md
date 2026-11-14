@@ -26,7 +26,7 @@ outcomes, understand meaningful changes, and maintain instrumentation as code ev
 It introduces the product through custom interactive diagrams and an evidence story.
 Public access is through the waitlist; the site has no competing signup CTA.
 
-Meridian Health is fictional. Every product illustration uses fixed synthetic
+Cedar Health is fictional. Every product illustration uses fixed synthetic
 observations; no example connects a repository, publishes a definition, runs an
 agent, executes a test or reads an account. The marketing experience is not an
 operational record of deployed capabilities.

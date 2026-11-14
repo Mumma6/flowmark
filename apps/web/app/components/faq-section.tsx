@@ -24,12 +24,12 @@ const questions: ReadonlyArray<{
   {
     value: "execution",
     title: "How does Flowmark fit into my application?",
-    body: "Start with automatic technical context, agent-assisted instrumentation, or precise SDK markers. Each works independently. Your application keeps its runtime, execution and business logic; Flowmark records observations and connects them to meaningful processes.",
+    body: "Use automatic technical context, agent-assisted instrumentation, or precise SDK markers independently or together. Follow imports, synchronization, payments, external integrations and AI-driven workflows. Your application keeps its runtime, execution and business logic; Flowmark records observations and connects them to meaningful processes.",
   },
   {
     value: "agents",
     title: "Do I need an AI agent to use Flowmark?",
-    body: "Studio is a visual workspace for exploring processes, outcomes and evidence. You can browse, compare and investigate directly. Agents add another way to discover processes, prepare instrumentation changes and investigate alongside your code through scoped MCP access.",
+    body: "Studio is a visual workspace for exploring processes, outcomes and evidence. You can browse, compare and investigate directly. Intelligence also helps discover processes, surface changing outcomes and detect instrumentation drift. Coding agents investigate and prepare updates alongside your code through scoped MCP access.",
   },
   {
     value: "evidence",

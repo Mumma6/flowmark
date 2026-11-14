@@ -33,8 +33,9 @@ export function DiscoverSection() {
             </h2>
           </div>
           <p className="max-w-sm text-sm leading-7 text-muted-foreground">
-            An AI-native starting point for understanding your application.
-            Discover the meaningful work. Capture the signals that explain it.
+            Discover useful technical context automatically. Let your coding
+            agent identify meaningful processes and add the business signals
+            that explain them.
           </p>
         </div>
         <DiscoveryField
@@ -61,15 +62,16 @@ export function JourneySection() {
         <div className="self-start lg:sticky lg:top-36">
           <p className={overlineClassName}>02 / Follow the story</p>
           <h2 id="journey-title" className={`${sectionTitleClassName} mt-5`}>
-            A request is a moment.
+            Follow the process.
             <br />
             <span className="text-muted-foreground">
-              A journey is the story.
+              Across services and time.
             </span>
           </h2>
           <p className="mt-6 max-w-sm text-sm leading-7 text-muted-foreground">
-            Across services, callbacks and time. Flowmark connects separate
-            executions through the business references they share.
+            Connect executions through shared business references. Follow
+            imports, payments, background jobs and bookings across services,
+            callbacks and time.
           </p>
           <div className="mt-9 border-l border-primary/40 pl-5">
             <p className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground">
@@ -111,14 +113,17 @@ export function IntelligenceSection() {
               id="intelligence-title"
               className={`${sectionTitleClassName} mt-5`}
             >
-              The code is completing.
+              Spot changes in outcomes.
               <br />
-              <span className="text-primary">The outcome is changing.</span>
+              <span className="text-primary">
+                Even when execution looks healthy.
+              </span>
             </h2>
           </div>
           <p className="max-w-sm text-sm leading-7 text-muted-foreground">
-            Process intelligence sees the difference. Explore what changed after
-            a release — while execution and reporting coverage stayed stable.
+            Flowmark proactively surfaces changing outcomes and connects
+            findings to evidence. Compare releases with execution health and
+            reporting coverage in view.
           </p>
         </div>
         <OutcomeField />
@@ -140,16 +145,17 @@ export function EvolveSection() {
           <div>
             <p className={overlineClassName}>04 / Keep understanding alive</p>
             <h2 id="evolve-title" className={`${sectionTitleClassName} mt-5`}>
-              Code moves forward.
+              Detect instrumentation drift.
               <br />
               <span className="text-muted-foreground">
-                Meaning moves with it.
+                Keep process evidence current.
               </span>
             </h2>
           </div>
           <p className="max-w-sm text-sm leading-7 text-muted-foreground">
-            Connect code changes to the processes they affect. Let your agent
-            help improve the instrumentation. Verify the evidence together.
+            Detect code changes that leave process evidence incomplete. Your
+            coding agent proposes instrumentation updates; your team reviews and
+            verifies them.
           </p>
         </div>
       </div>
@@ -171,13 +177,14 @@ export function EverywhereSection() {
             Built for people. Native to agents.
           </p>
           <h2 id="everywhere-title" className={`${sectionTitleClassName} mt-5`}>
-            Different minds.
+            For your team and your agents.
             <br />
-            <span className="text-primary">The same understanding.</span>
+            <span className="text-primary">One shared source of evidence.</span>
           </h2>
           <p className="mx-auto mt-5 max-w-lg text-sm leading-7 text-muted-foreground">
-            Your team defines what matters. Flowmark connects the evidence.
-            Everyone investigates from a shared, evolving understanding.
+            Developers, product teams and operations investigate the same
+            evidence. Coding agents use that context to explain behavior and
+            improve instrumentation.
           </p>
         </div>
         <EvidenceNetwork />

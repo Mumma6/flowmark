@@ -36,7 +36,7 @@ export function HeroSection() {
         </h1>
         <div className="mt-7 flex flex-col justify-between gap-7 sm:mt-9 lg:flex-row lg:items-end">
           <p className="max-w-lg text-sm leading-7 text-muted-foreground sm:text-[15px]">
-            From the first line of code to the final business outcome.
+            AI-native process intelligence for your application.
             <br className="hidden sm:block" /> Flowmark makes the whole process
             visible — and keeps
             <br className="hidden sm:block" /> understanding alive as your

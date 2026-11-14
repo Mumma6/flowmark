@@ -10,7 +10,7 @@ const stages = [
     label: "Detect drift",
     icon: "branch",
     position: "top-[23%] left-[18%]",
-    title: "The callback moved.",
+    title: "Find a missing confirmation signal.",
     detail:
       "A refactor introduces a new event handler. The confirmation is no longer instrumented. Flowmark connects the code change to the expectation it affects.",
     status: "A gap in the evidence",
@@ -20,7 +20,7 @@ const stages = [
     label: "Review the patch",
     icon: "agent",
     position: "top-[23%] left-[82%]",
-    title: "The meaning follows.",
+    title: "Review the instrumentation update.",
     detail:
       "Your coding agent proposes restoring the existing confirmation reference. Your team reviews the change, with the process context beside it.",
     status: "Agent-prepared · human-reviewed",
@@ -30,7 +30,7 @@ const stages = [
     label: "Verify the evidence",
     icon: "evidence",
     position: "top-[80%] left-[50%]",
-    title: "Close the loop.",
+    title: "Verify the updated evidence.",
     detail:
       "Exercise the changed path and verify that its signal is emitted, persisted and readable. Carry the same process meaning into the next release.",
     status: "Observed evidence, end to end",
