@@ -52,7 +52,7 @@ export function WaitlistForm({
       className="mx-auto mt-8 grid max-w-lg gap-3 text-left"
     >
       <label htmlFor={id} className="text-sm font-medium">
-        Join the waitlist for hosted Flowmark
+        Join the Flowmark waitlist
       </label>
       <div className="flex flex-col gap-3 sm:flex-row">
         <Input

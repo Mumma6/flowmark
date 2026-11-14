@@ -47,7 +47,7 @@ export function ClosingSection() {
           </Button>
         </div>
         <p className="mt-6 text-[11px] text-muted-foreground">
-          Open source · MIT licensed · Self-host on your infrastructure
+          Open source · MIT licensed · View the code on GitHub
         </p>
       </div>
     </section>

@@ -75,7 +75,7 @@ Static narrative stays in Server Components. Client boundaries own only local
 interaction state. Shared controls come from `@flowmark/ui`. The waitlist reuses the existing API,
 database and pinned Effect dependency; no new UI kit or infrastructure is introduced. The story and product
 navigation follow Studio → Platform → Everywhere, then organization perspectives
-and questions. The closing invitation carries the open-source/self-host message;
+and questions. The closing invitation links to the open source code;
 there is no separate open-source feature section. Unused legacy sections
 remain removed. The earlier `SpotlightWash` and
 `BackgroundBeams` decorations are reused behind the hero, with their source
