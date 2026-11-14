@@ -1,0 +1,620 @@
+[
+  {
+    "name": "empty",
+    "events": [],
+    "expected": []
+  },
+  {
+    "name": "repeated concurrent names",
+    "events": [
+      {
+        "type": "operation_started",
+        "operationId": "a",
+        "operationName": "page",
+        "durationMs": null,
+        "timestamp": "2026-01-01T00:00:00Z"
+      },
+      {
+        "type": "operation_started",
+        "operationId": "b",
+        "operationName": "page",
+        "durationMs": null,
+        "timestamp": "2026-01-01T00:00:00Z"
+      },
+      {
+        "type": "operation_started",
+        "operationId": "c",
+        "operationName": "page",
+        "durationMs": null,
+        "timestamp": "2026-01-01T00:00:00Z"
+      },
+      {
+        "type": "operation_completed",
+        "operationId": "a",
+        "operationName": "page",
+        "durationMs": 10,
+        "timestamp": "2026-01-01T00:00:00Z"
+      },
+      {
+        "type": "operation_failed",
+        "operationId": "b",
+        "operationName": "page",
+        "durationMs": 20,
+        "timestamp": "2026-01-01T00:00:00Z"
+      }
+    ],
+    "expected": [
+      {
+        "name": "page",
+        "occurrenceCount": 3,
+        "openCount": 1,
+        "failedCount": 1,
+        "medianDurationMs": 15,
+        "totalRecordedDurationMs": 30,
+        "durationMs": 20,
+        "status": "failed"
+      }
+    ]
+  },
+  {
+    "name": "terminal only then late start",
+    "events": [
+      {
+        "type": "operation_failed",
+        "operationId": "a",
+        "operationName": "page",
+        "durationMs": 20,
+        "timestamp": "2026-01-01T00:00:00Z"
+      },
+      {
+        "type": "operation_started",
+        "operationId": "a",
+        "operationName": "changed",
+        "durationMs": null,
+        "timestamp": "2026-01-01T00:00:00Z"
+      }
+    ],
+    "expected": [
+      {
+        "name": "page",
+        "occurrenceCount": 1,
+        "openCount": 0,
+        "failedCount": 1,
+        "medianDurationMs": 20,
+        "totalRecordedDurationMs": 20,
+        "durationMs": 20,
+        "status": "failed"
+      }
+    ]
+  },
+  {
+    "name": "duplicate starts and last terminal wins",
+    "events": [
+      {
+        "type": "operation_started",
+        "operationId": "a",
+        "operationName": "first",
+        "durationMs": null,
+        "timestamp": "2026-01-01T00:00:00Z"
+      },
+      {
+        "type": "operation_started",
+        "operationId": "a",
+        "operationName": "second",
+        "durationMs": null,
+        "timestamp": "2026-01-01T00:00:00Z"
+      },
+      {
+        "type": "operation_failed",
+        "operationId": "a",
+        "operationName": "third",
+        "durationMs": 21,
+        "timestamp": "2026-01-01T00:00:00Z"
+      },
+      {
+        "type": "operation_completed",
+        "operationId": "a",
+        "operationName": "fourth",
+        "durationMs": 12,
+        "timestamp": "2026-01-01T00:00:00Z"
+      }
+    ],
+    "expected": [
+      {
+        "name": "first",
+        "occurrenceCount": 1,
+        "openCount": 0,
+        "failedCount": 0,
+        "medianDurationMs": 12,
+        "totalRecordedDurationMs": 12,
+        "durationMs": 12,
+        "status": "completed"
+      }
+    ]
+  },
+  {
+    "name": "last failed terminal and null replacement",
+    "events": [
+      {
+        "type": "operation_completed",
+        "operationId": "a",
+        "operationName": "page",
+        "durationMs": 40,
+        "timestamp": "2026-01-01T00:00:00Z"
+      },
+      {
+        "type": "operation_failed",
+        "operationId": "a",
+        "operationName": "page",
+        "durationMs": null,
+        "timestamp": "2026-01-01T00:00:00Z"
+      }
+    ],
+    "expected": [
+      {
+        "name": "page",
+        "occurrenceCount": 1,
+        "openCount": 0,
+        "failedCount": 1,
+        "medianDurationMs": null,
+        "totalRecordedDurationMs": null,
+        "durationMs": null,
+        "status": "failed"
+      }
+    ]
+  },
+  {
+    "name": "null durations and zero duration",
+    "events": [
+      {
+        "type": "operation_started",
+        "operationId": "a",
+        "operationName": "empty",
+        "durationMs": null,
+        "timestamp": "2026-01-01T00:00:00Z"
+      },
+      {
+        "type": "operation_completed",
+        "operationId": "a",
+        "operationName": "empty",
+        "durationMs": null,
+        "timestamp": "2026-01-01T00:00:00Z"
+      },
+      {
+        "type": "operation_completed",
+        "operationId": "b",
+        "operationName": "zero",
+        "durationMs": 0,
+        "timestamp": "2026-01-01T00:00:00Z"
+      }
+    ],
+    "expected": [
+      {
+        "name": "empty",
+        "occurrenceCount": 1,
+        "openCount": 0,
+        "failedCount": 0,
+        "medianDurationMs": null,
+        "totalRecordedDurationMs": null,
+        "durationMs": null,
+        "status": "completed"
+      },
+      {
+        "name": "zero",
+        "occurrenceCount": 1,
+        "openCount": 0,
+        "failedCount": 0,
+        "medianDurationMs": 0,
+        "totalRecordedDurationMs": 0,
+        "durationMs": 0,
+        "status": "completed"
+      }
+    ]
+  },
+  {
+    "name": "stable names and insertion order",
+    "events": [
+      {
+        "type": "operation_started",
+        "operationId": "1",
+        "operationName": "z",
+        "durationMs": null,
+        "timestamp": "2026-01-01T00:00:00Z"
+      },
+      {
+        "type": "operation_started",
+        "operationId": "2",
+        "operationName": "a",
+        "durationMs": null,
+        "timestamp": "2026-01-01T00:00:00Z"
+      },
+      {
+        "type": "operation_completed",
+        "operationId": "2",
+        "operationName": "rename",
+        "durationMs": 9,
+        "timestamp": "2026-01-01T00:00:00Z"
+      },
+      {
+        "type": "operation_completed",
+        "operationId": "1",
+        "operationName": "rename",
+        "durationMs": 3,
+        "timestamp": "2026-01-01T00:00:00Z"
+      },
+      {
+        "type": "operation_started",
+        "operationId": "3",
+        "operationName": "z",
+        "durationMs": null,
+        "timestamp": "2026-01-01T00:00:00Z"
+      }
+    ],
+    "expected": [
+      {
+        "name": "z",
+        "occurrenceCount": 2,
+        "openCount": 1,
+        "failedCount": 0,
+        "medianDurationMs": 3,
+        "totalRecordedDurationMs": 3,
+        "durationMs": 3,
+        "status": "open"
+      },
+      {
+        "name": "a",
+        "occurrenceCount": 1,
+        "openCount": 0,
+        "failedCount": 0,
+        "medianDurationMs": 9,
+        "totalRecordedDurationMs": 9,
+        "durationMs": 9,
+        "status": "completed"
+      }
+    ]
+  },
+  {
+    "name": "fallback empty names and ignored ids",
+    "events": [
+      {
+        "type": "operation_completed",
+        "operationId": "a",
+        "operationName": null,
+        "durationMs": 3,
+        "timestamp": "2026-01-01T00:00:00Z"
+      },
+      {
+        "type": "operation_completed",
+        "operationId": "b",
+        "operationName": "",
+        "durationMs": 5,
+        "timestamp": "2026-01-01T00:00:00Z"
+      },
+      {
+        "type": "operation_completed",
+        "operationId": "",
+        "operationName": "ignored",
+        "durationMs": 7,
+        "timestamp": "2026-01-01T00:00:00Z"
+      },
+      {
+        "type": "operation_completed",
+        "operationId": null,
+        "operationName": "ignored",
+        "durationMs": 9,
+        "timestamp": "2026-01-01T00:00:00Z"
+      },
+      {
+        "type": "report",
+        "operationId": "c",
+        "operationName": "ignored",
+        "durationMs": 4,
+        "timestamp": "2026-01-01T00:00:00Z"
+      }
+    ],
+    "expected": [
+      {
+        "name": "Operation",
+        "occurrenceCount": 1,
+        "openCount": 0,
+        "failedCount": 0,
+        "medianDurationMs": 3,
+        "totalRecordedDurationMs": 3,
+        "durationMs": 3,
+        "status": "completed"
+      },
+      {
+        "name": "",
+        "occurrenceCount": 1,
+        "openCount": 0,
+        "failedCount": 0,
+        "medianDurationMs": 5,
+        "totalRecordedDurationMs": 5,
+        "durationMs": 5,
+        "status": "completed"
+      }
+    ]
+  },
+  {
+    "name": "timestamp order is not reinterpreted",
+    "events": [
+      {
+        "type": "operation_completed",
+        "operationId": "a",
+        "operationName": "page",
+        "durationMs": 8,
+        "timestamp": "2026-01-01T00:00:00Z"
+      },
+      {
+        "type": "operation_failed",
+        "operationId": "a",
+        "operationName": "page",
+        "durationMs": 4,
+        "timestamp": "2026-01-01T00:00:00Z"
+      }
+    ],
+    "expected": [
+      {
+        "name": "page",
+        "occurrenceCount": 1,
+        "openCount": 0,
+        "failedCount": 1,
+        "medianDurationMs": 4,
+        "totalRecordedDurationMs": 4,
+        "durationMs": 4,
+        "status": "failed"
+      }
+    ]
+  },
+  {
+    "name": "fractional even median",
+    "events": [
+      {
+        "type": "operation_completed",
+        "operationId": "a",
+        "operationName": "page",
+        "durationMs": 1.25,
+        "timestamp": "2026-01-01T00:00:00Z"
+      },
+      {
+        "type": "operation_completed",
+        "operationId": "b",
+        "operationName": "page",
+        "durationMs": 2.5,
+        "timestamp": "2026-01-01T00:00:00Z"
+      },
+      {
+        "type": "operation_completed",
+        "operationId": "c",
+        "operationName": "page",
+        "durationMs": 5,
+        "timestamp": "2026-01-01T00:00:00Z"
+      },
+      {
+        "type": "operation_completed",
+        "operationId": "d",
+        "operationName": "page",
+        "durationMs": 8,
+        "timestamp": "2026-01-01T00:00:00Z"
+      }
+    ],
+    "expected": [
+      {
+        "name": "page",
+        "occurrenceCount": 4,
+        "openCount": 0,
+        "failedCount": 0,
+        "medianDurationMs": 3.75,
+        "totalRecordedDurationMs": 16.75,
+        "durationMs": 8,
+        "status": "completed"
+      }
+    ]
+  },
+  {
+    "name": "odd median",
+    "events": [
+      {
+        "type": "operation_completed",
+        "operationId": "a",
+        "operationName": "page",
+        "durationMs": 9,
+        "timestamp": "2026-01-01T00:00:00Z"
+      },
+      {
+        "type": "operation_completed",
+        "operationId": "b",
+        "operationName": "page",
+        "durationMs": 1,
+        "timestamp": "2026-01-01T00:00:00Z"
+      },
+      {
+        "type": "operation_completed",
+        "operationId": "c",
+        "operationName": "page",
+        "durationMs": 4,
+        "timestamp": "2026-01-01T00:00:00Z"
+      }
+    ],
+    "expected": [
+      {
+        "name": "page",
+        "occurrenceCount": 3,
+        "openCount": 0,
+        "failedCount": 0,
+        "medianDurationMs": 4,
+        "totalRecordedDurationMs": 14,
+        "durationMs": 9,
+        "status": "completed"
+      }
+    ]
+  },
+  {
+    "name": "legacy finite negative duration arithmetic",
+    "events": [
+      {
+        "type": "operation_completed",
+        "operationId": "a",
+        "operationName": "page",
+        "durationMs": -4,
+        "timestamp": "2026-01-01T00:00:00Z"
+      },
+      {
+        "type": "operation_completed",
+        "operationId": "b",
+        "operationName": "page",
+        "durationMs": -2,
+        "timestamp": "2026-01-01T00:00:00Z"
+      }
+    ],
+    "expected": [
+      {
+        "name": "page",
+        "occurrenceCount": 2,
+        "openCount": 0,
+        "failedCount": 0,
+        "medianDurationMs": -3,
+        "totalRecordedDurationMs": -6,
+        "durationMs": 0,
+        "status": "completed"
+      }
+    ]
+  },
+  {
+    "name": "first terminal fixes fallback name",
+    "events": [
+      {
+        "type": "operation_completed",
+        "operationId": "a",
+        "operationName": null,
+        "durationMs": 10,
+        "timestamp": "2026-01-01T00:00:00Z"
+      },
+      {
+        "type": "operation_started",
+        "operationId": "a",
+        "operationName": "new",
+        "durationMs": null,
+        "timestamp": "2026-01-01T00:00:00Z"
+      },
+      {
+        "type": "operation_failed",
+        "operationId": "a",
+        "operationName": "new",
+        "durationMs": 20,
+        "timestamp": "2026-01-01T00:00:00Z"
+      }
+    ],
+    "expected": [
+      {
+        "name": "Operation",
+        "occurrenceCount": 1,
+        "openCount": 0,
+        "failedCount": 1,
+        "medianDurationMs": 20,
+        "totalRecordedDurationMs": 20,
+        "durationMs": 20,
+        "status": "failed"
+      }
+    ]
+  },
+  {
+    "name": "case and Unicode names",
+    "events": [
+      {
+        "type": "operation_completed",
+        "operationId": "a",
+        "operationName": "é",
+        "durationMs": 1,
+        "timestamp": "2026-01-01T00:00:00Z"
+      },
+      {
+        "type": "operation_completed",
+        "operationId": "b",
+        "operationName": "é",
+        "durationMs": 2,
+        "timestamp": "2026-01-01T00:00:00Z"
+      },
+      {
+        "type": "operation_completed",
+        "operationId": "c",
+        "operationName": "PAGE",
+        "durationMs": 3,
+        "timestamp": "2026-01-01T00:00:00Z"
+      },
+      {
+        "type": "operation_completed",
+        "operationId": "d",
+        "operationName": "page",
+        "durationMs": 4,
+        "timestamp": "2026-01-01T00:00:00Z"
+      }
+    ],
+    "expected": [
+      {
+        "name": "é",
+        "occurrenceCount": 1,
+        "openCount": 0,
+        "failedCount": 0,
+        "medianDurationMs": 1,
+        "totalRecordedDurationMs": 1,
+        "durationMs": 1,
+        "status": "completed"
+      },
+      {
+        "name": "é",
+        "occurrenceCount": 1,
+        "openCount": 0,
+        "failedCount": 0,
+        "medianDurationMs": 2,
+        "totalRecordedDurationMs": 2,
+        "durationMs": 2,
+        "status": "completed"
+      },
+      {
+        "name": "PAGE",
+        "occurrenceCount": 1,
+        "openCount": 0,
+        "failedCount": 0,
+        "medianDurationMs": 3,
+        "totalRecordedDurationMs": 3,
+        "durationMs": 3,
+        "status": "completed"
+      },
+      {
+        "name": "page",
+        "occurrenceCount": 1,
+        "openCount": 0,
+        "failedCount": 0,
+        "medianDurationMs": 4,
+        "totalRecordedDurationMs": 4,
+        "durationMs": 4,
+        "status": "completed"
+      }
+    ]
+  },
+  {
+    "name": "start duration ignored",
+    "events": [
+      {
+        "type": "operation_started",
+        "operationId": "a",
+        "operationName": "page",
+        "durationMs": 99,
+        "timestamp": "2026-01-01T00:00:00Z"
+      }
+    ],
+    "expected": [
+      {
+        "name": "page",
+        "occurrenceCount": 1,
+        "openCount": 1,
+        "failedCount": 0,
+        "medianDurationMs": null,
+        "totalRecordedDurationMs": null,
+        "durationMs": null,
+        "status": "open"
+      }
+    ]
+  }
+]

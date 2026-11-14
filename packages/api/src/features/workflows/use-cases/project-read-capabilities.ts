@@ -11,6 +11,7 @@ import type {
   BusinessInsights,
 } from "@flowmarkdev/core"
 import type { Effect } from "effect"
+import type { EngineError } from "@flowmark/engine"
 import type {
   InvalidInput,
   PersistenceError,
@@ -116,7 +117,7 @@ export interface ProjectReadRuns {
     selection?: PeerSelection,
   ) => Effect.Effect<
     RunComparison,
-    Unauthorized | PersistenceError | InvalidInput
+    Unauthorized | PersistenceError | InvalidInput | EngineError
   >
 }
 
@@ -161,7 +162,7 @@ export interface ProjectReadDiscovery {
     query: ReferenceJourneyQuery,
   ) => Effect.Effect<
     ReferenceJourneyPage,
-    Unauthorized | PersistenceError | InvalidInput
+    Unauthorized | PersistenceError | InvalidInput | EngineError
   >
   readonly search: (
     reader: ProjectReader,

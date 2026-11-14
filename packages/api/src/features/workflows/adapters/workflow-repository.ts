@@ -197,14 +197,17 @@ export const WorkflowRepositoryLive = Layer.effect(
       related: Effect.fn("WorkflowRepositoryLive.related")((projectId, runId) =>
         persist(withReadSubject(store.related(projectId, runId))),
       ),
-      compare: Effect.fn("WorkflowRepositoryLive.compare")(
-        (projectId, runId, selection) =>
-          withReadSubject(store.compare(projectId, runId, selection)).pipe(
-            Effect.catchTags({
-              DatabaseError: toPersistenceError,
-              InvalidResultQuery: toInvalidInput,
-            }),
-          ),
+      comparisonEvidence: Effect.fn(
+        "WorkflowRepositoryLive.comparisonEvidence",
+      )((projectId, runId, selection) =>
+        withReadSubject(
+          store.comparisonEvidence(projectId, runId, selection),
+        ).pipe(
+          Effect.catchTags({
+            DatabaseError: toPersistenceError,
+            InvalidResultQuery: toInvalidInput,
+          }),
+        ),
       ),
       intelligence: Effect.fn("WorkflowRepositoryLive.intelligence")(
         (projectId, query) =>

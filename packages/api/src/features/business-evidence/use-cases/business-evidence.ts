@@ -1,4 +1,5 @@
 import { Context, Effect, Layer, Match, Schema } from "effect"
+import { Engine } from "@flowmark/engine"
 import {
   BusinessEvidenceQuerySchema,
   type BusinessEvidence,
@@ -30,6 +31,7 @@ export class GetBusinessEvidence extends Context.Service<GetBusinessEvidence>()(
       const authorization = yield* AuthorizeProject
       const repository = yield* BusinessEvidenceRepository
       const agent = yield* AgentAccess
+      const engine = yield* Engine
       const project = Effect.fn("BusinessEvidence.authorize")(function* (
         reader: ProjectReader,
       ) {
@@ -98,7 +100,7 @@ export class GetBusinessEvidence extends Context.Service<GetBusinessEvidence>()(
                   access,
                   publication,
                   input,
-                )
+                ).pipe(Effect.provideService(Engine, engine))
                 const evidence: BusinessEvidence = {
                   projection: {
                     version: 1,

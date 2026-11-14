@@ -328,6 +328,9 @@ importers:
       "@flowmark/db":
         specifier: workspace:*
         version: link:../db
+      "@flowmark/engine":
+        specifier: workspace:*
+        version: link:../engine
       "@flowmarkdev/core":
         specifier: workspace:*
         version: link:../core
@@ -483,6 +486,22 @@ importers:
       typescript:
         specifier: ^5.9.2
         version: 5.9.3
+
+  packages/engine:
+    dependencies:
+      effect:
+        specifier: 4.1.0
+        version: 4.1.0
+    devDependencies:
+      "@types/node":
+        specifier: ^22.18.6
+        version: 22.20.5
+      typescript:
+        specifier: ^5.9.2
+        version: 5.9.3
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.7(@types/debug@4.1.13)(@types/node@22.20.5)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.23.15)(yaml@2.9.1)
 
   packages/evidence-view:
     dependencies:
@@ -642,7 +661,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^3.2.4
-        version: 3.2.7(@types/debug@4.1.13)(@types/node@22.20.5)(jiti@1.21.7)(lightningcss@1.32.0)(tsx@4.23.15)(yaml@2.9.1)
+        version: 3.2.7(@types/debug@4.1.13)(@types/node@22.20.5)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.23.15)(yaml@2.9.1)
 
 packages:
   "@alloc/quick-lru@5.3.0":

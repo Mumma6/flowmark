@@ -1,4 +1,7 @@
 node_modules
+/target/
+/.cache/
+/packages/engine/wasm/
 .pnpm-store
 .turbo
 .next

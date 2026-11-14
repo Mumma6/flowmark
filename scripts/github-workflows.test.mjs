@@ -1,8 +1,9 @@
 import assert from "node:assert/strict"
+import { spawnSync } from "node:child_process"
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
 import { test } from "node:test"
-import { fileURLToPath } from "node:url"
+import { fileURLToPath, URL } from "node:url"
 
 const repoRoot = join(fileURLToPath(new URL(".", import.meta.url)), "..")
 const workflowsDir = join(repoRoot, ".github", "workflows")
@@ -20,7 +21,7 @@ const requiredCheckJobName = () => {
   return match[1].trim()
 }
 
-test("pull-request workflow runs pnpm check on pull_request with least privilege", () => {
+test("pull-request verification separates language gates with least privilege", () => {
   const yaml = readWorkflow("pull-request.yml")
 
   assert.match(yaml, /^on:\s*\n\s*pull_request:/m)
@@ -29,16 +30,62 @@ test("pull-request workflow runs pnpm check on pull_request with least privilege
   assert.doesNotMatch(yaml, /\$\{\{\s*secrets\./)
   assert.match(yaml, /permissions:\s*\n\s*contents:\s*read/m)
   assert.match(yaml, /pnpm install --frozen-lockfile/)
-  assert.match(yaml, /pnpm check/)
-  assert.match(
-    yaml,
-    /Must not receive database, Neon, Vercel, or npm credentials/,
-  )
+  assert.match(yaml, /run: pnpm check:typescript/)
+  assert.match(yaml, /run: pnpm rust:check/)
+  assert.match(yaml, /run: pnpm engine:verify-build/)
 })
 
-test("pnpm check script includes unit tests", () => {
+test("pnpm check retains all local gates including application unit tests", () => {
   const pkg = JSON.parse(readFileSync(join(repoRoot, "package.json"), "utf8"))
-  assert.match(pkg.scripts.check, /pnpm test/)
+  assert.match(pkg.scripts.check, /pnpm rust:check/)
+  assert.match(pkg.scripts.check, /pnpm check:typescript/)
+  assert.match(pkg.scripts.check, /pnpm engine:verify-build/)
+  assert.match(pkg.scripts["check:typescript"], /pnpm test/)
+})
+
+test("the existing required status rejects failed, cancelled or skipped language jobs", () => {
+  const yaml = readWorkflow("pull-request.yml")
+  const gate = yaml.slice(
+    yaml.indexOf("  check:"),
+    yaml.indexOf("  application:"),
+  )
+  assert.match(gate, /needs: \[application, rust, wasm\]/)
+  assert.match(gate, /if: always\(\)/)
+  const script = gate.split("run: |\n")[1]
+  assert.ok(script)
+  const run = (job, status) =>
+    spawnSync("sh", [
+      "-e",
+      "-c",
+      script.replace(/\$\{\{ needs\.(\w+)\.result \}\}/g, (_, name) =>
+        name === job ? status : "success",
+      ),
+    ]).status
+  assert.equal(run(null, "success"), 0)
+  for (const job of ["application", "rust", "wasm"]) {
+    for (const status of ["failure", "cancelled", "skipped"]) {
+      assert.equal(run(job, status), 1, `${job}: ${status}`)
+    }
+  }
+})
+
+test("repository engines and every workflow use the maintained Node major", () => {
+  const major = readFileSync(join(repoRoot, ".node-version"), "utf8").trim()
+  assert.match(major, /^\d+$/)
+  const pkg = JSON.parse(readFileSync(join(repoRoot, "package.json"), "utf8"))
+  assert.equal(pkg.engines.node, `${major}.x`)
+  for (const workflow of [
+    "pull-request.yml",
+    "deploy-release.yml",
+    "publish-sdk.yml",
+  ]) {
+    const yaml = readWorkflow(workflow)
+    assert.match(yaml, /node-version-file: .node-version/)
+    assert.doesNotMatch(yaml, /node-version:/)
+  }
+  const migration = readWorkflow("database-migrate.yml")
+  assert.ok(migration.includes(`node-version: "${major}"`))
+  assert.doesNotMatch(migration, /node-version-file:/)
 })
 
 test("integration uses the disposable Actions service and shared complete-report checks", () => {

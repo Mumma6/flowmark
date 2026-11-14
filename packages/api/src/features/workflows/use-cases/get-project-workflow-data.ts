@@ -1,4 +1,7 @@
+import { calculateReferenceJourney } from "./calculate-reference-journey.js"
 import { CurrentProjectReader } from "../models/current-project-reader.js"
+import { Engine } from "@flowmark/engine"
+import { calculateRunComparison } from "./calculate-run-comparison.js"
 import {
   ReferenceJourneyQuerySchema,
   LinkedComparisonQuerySchema,
@@ -45,6 +48,7 @@ export class GetProjectWorkflowData extends Context.Service<
       const authorization = yield* AuthorizeProject
       const repository = yield* WorkflowRepository
       const agentAccess = yield* AgentAccess
+      const engine = yield* Engine
 
       const authorizeReader = Effect.fn(
         "GetProjectWorkflowData.authorizeReader",
@@ -199,9 +203,12 @@ export class GetProjectWorkflowData extends Context.Service<
         selection: PeerSelection = {},
       ) {
         const projectId = yield* authorizeReader(reader)
-        return yield* repository
-          .compare(projectId, runId, selection)
+        const evidence = yield* repository
+          .comparisonEvidence(projectId, runId, selection)
           .pipe(Effect.provideService(CurrentProjectReader, reader))
+        return yield* calculateRunComparison(evidence).pipe(
+          Effect.provideService(Engine, engine),
+        )
       })
       const intelligence = Effect.fn("GetProjectWorkflowData.intelligence")(
         function* (reader: ProjectReader, query: IntelligenceQuery) {
@@ -267,9 +274,12 @@ export class GetProjectWorkflowData extends Context.Service<
             )(input, { onExcessProperty: "error" }).pipe(
               Effect.mapError((cause) => new InvalidInput({ cause })),
             )
-            return yield* repository
+            const evidence = yield* repository
               .referenceJourney(projectId, query)
               .pipe(Effect.provideService(CurrentProjectReader, reader))
+            return yield* calculateReferenceJourney(evidence).pipe(
+              Effect.provideService(Engine, engine),
+            )
           },
         ),
         expectations: Effect.fn("GetProjectWorkflowData.expectations")(

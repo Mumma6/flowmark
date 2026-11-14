@@ -28,6 +28,8 @@ Contributor guides that ship with the public repository:
   independent main changes such as hotfixes, not after ordinary releases.
 - [Architecture](./architecture): service boundaries, persistence, local auth,
   and current system constraints.
+- [Rust and the Flowmark Engine](./engine): Rust's permanent architectural
+  role, current calculation ownership, workspace/WASM tooling and verification.
 - [Effect and module organization](./code-organization): pure models, service ownership,
   error/lifetime boundaries and the staged Studio folder target.
 - [Implementation status](./implementation-status): public mirror of shipped

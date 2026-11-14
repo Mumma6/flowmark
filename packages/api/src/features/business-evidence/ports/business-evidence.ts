@@ -1,4 +1,6 @@
+import type { ReferenceJourneyEvidence } from "../../workflows/types.js"
 import { Context, type Effect } from "effect"
+import type { EngineError } from "@flowmark/engine"
 import type {
   ResultDeclaration,
   SearchFields,
@@ -6,13 +8,12 @@ import type {
   BusinessWorkflowSummary,
   BusinessInsightsQuery,
   ReferenceJourneyQuery,
-  ReferenceJourneyPage,
 } from "@flowmarkdev/core"
 import type {
   StoredRun,
   ListRunsQuery,
   ListedRunsPage,
-  RunComparison,
+  RunComparisonEvidence,
 } from "../../workflows/types.js"
 import type {
   PersistenceError,
@@ -20,7 +21,7 @@ import type {
   Unauthorized,
 } from "../../../errors.js"
 export type BusinessEvidenceError =
-  PersistenceError | InvalidInput | Unauthorized
+  PersistenceError | InvalidInput | Unauthorized | EngineError
 export interface PublicationChoices {
   readonly declarations: readonly {
     readonly workflow: string
@@ -64,14 +65,14 @@ export interface EvidenceAccess {
   >
   readonly journey: (
     query: ReferenceJourneyQuery,
-  ) => Effect.Effect<ReferenceJourneyPage, BusinessEvidenceError>
+  ) => Effect.Effect<ReferenceJourneyEvidence, BusinessEvidenceError>
   readonly insights: (
     query: BusinessInsightsQuery,
   ) => Effect.Effect<BusinessInsights, BusinessEvidenceError>
-  readonly compare: (
+  readonly comparisonEvidence: (
     id: string,
     days: number,
-  ) => Effect.Effect<RunComparison, BusinessEvidenceError>
+  ) => Effect.Effect<RunComparisonEvidence, BusinessEvidenceError>
 }
 export class BusinessEvidenceRepository extends Context.Service<
   BusinessEvidenceRepository,

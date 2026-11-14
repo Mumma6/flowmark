@@ -1,8 +1,6 @@
+import type { ReferenceJourneyEvidence } from "./types.js"
 import { withActiveProject } from "../data-lifecycle/with-active-project.js"
-import type {
-  ReferenceJourneyQuery,
-  ReferenceJourneyPage,
-} from "@flowmarkdev/core"
+import type { ReferenceJourneyQuery } from "@flowmarkdev/core"
 import { getReferenceJourney } from "./queries/get-reference-journey.js"
 import { getLinkedComparison } from "./queries/get-linked-comparison.js"
 import { getLinkedEvidence } from "./queries/get-linked-evidence.js"
@@ -36,7 +34,7 @@ import {
 import { getProjectSnapshot } from "./queries/get-project-snapshot.js"
 import { getWorkflowSummaries } from "./queries/get-workflow-summaries.js"
 import { getRelatedRuns } from "./queries/get-related-runs.js"
-import { getRunComparison } from "./queries/get-run-comparison.js"
+import { getRunComparisonEvidence } from "./queries/get-run-comparison-evidence.js"
 import { getPeriodReport } from "./queries/get-period-report.js"
 import { getWorkflowIntelligence } from "./queries/get-workflow-intelligence.js"
 import {
@@ -58,7 +56,7 @@ import type {
   ListRunsQuery,
   ProjectSnapshot,
   RelatedRuns,
-  RunComparison,
+  RunComparisonEvidence,
   RunEventPage,
   RunEventPageQuery,
   RunInvestigationSummary,
@@ -91,7 +89,10 @@ export interface WorkflowStoreService {
   readonly referenceJourney: (
     projectId: string,
     query: ReferenceJourneyQuery,
-  ) => Effect.Effect<ReferenceJourneyPage, DatabaseError | InvalidResultQuery>
+  ) => Effect.Effect<
+    ReferenceJourneyEvidence,
+    DatabaseError | InvalidResultQuery
+  >
   readonly periodRead: (
     projectId: string,
     input: PeriodReadInput,
@@ -173,11 +174,11 @@ export interface WorkflowStoreService {
     projectId: string,
     runId: string,
   ) => Effect.Effect<RelatedRuns, DatabaseError>
-  readonly compare: (
+  readonly comparisonEvidence: (
     projectId: string,
     runId: string,
     selection?: PeerSelection,
-  ) => Effect.Effect<RunComparison, DatabaseError | InvalidResultQuery>
+  ) => Effect.Effect<RunComparisonEvidence, DatabaseError | InvalidResultQuery>
   readonly intelligence: (
     projectId: string,
     query: IntelligenceQuery,
@@ -294,11 +295,11 @@ export class WorkflowStore extends Context.Service<WorkflowStore>()(
           provide(
             withActiveProject(projectId, getRelatedRuns(projectId, runId)),
           ),
-        compare: (projectId, runId, selection) =>
+        comparisonEvidence: (projectId, runId, selection) =>
           provide(
             withActiveProject(
               projectId,
-              getRunComparison(projectId, runId, selection),
+              getRunComparisonEvidence(projectId, runId, selection),
             ),
           ),
         intelligence: (projectId, query) =>

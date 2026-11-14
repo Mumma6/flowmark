@@ -172,7 +172,14 @@ you control.
 
 ## Local development
 
-Node.js 20.19 or newer, pnpm 10.18.1, and Docker Compose.
+TypeScript + Effect is the primary application platform. PostgreSQL owns
+data-local persistence and analytics. Rust is a permanent architectural option
+for cohesive computation, analysis, algorithms and data processing; the
+[Flowmark Engine](./docs/engine.md) is its first production integration.
+Future Rust modules and crates can build on the same explicit ownership and
+contract boundaries. See [architecture](./docs/architecture.md#typescript-postgresql-and-rust).
+
+Node.js 24.x (see `.node-version`), pnpm 10.18.1, and Docker Compose.
 
 ```sh
 pnpm install
@@ -198,6 +205,7 @@ infrastructure follows the
 
 - [Development](./docs/development.md)
 - [Architecture](./docs/architecture.md)
+- [Flowmark Engine (Rust/WASM)](./docs/engine.md)
 - [Documentation index](./docs/README.md)
 - [Decisions](./docs/decisions/)
 

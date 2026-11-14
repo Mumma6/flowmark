@@ -1,12 +1,28 @@
 # Development guide
 
+Rust is a permanent architectural option alongside the primary TypeScript/Effect
+platform and PostgreSQL. Choose ownership for computation and data-processing
+changes using [architecture](./architecture.md#typescript-postgresql-and-rust);
+additional Rust modules and crates are welcome when cohesive and maintainable.
+Rust contributor setup and the current WASM integration are documented in the
+[Flowmark Engine guide](./engine.md). `pnpm check` includes native Rust
+checks, Node/WASM fixtures and production artifact verification. Tool bootstrap
+uses an ignored checkout-local cache and leaves shell profiles unchanged.
+
 ## Requirements
 
-- Node.js 20.19 or newer (Node 24 LTS recommended)
+- Node.js 24.x (the maintained version is in `.node-version`)
 - pnpm 10.18.1 (pinned in `package.json`)
 - Docker CLI and Compose supporting `up --wait`,
   `--wait-timeout`, and `--no-recreate`; OrbStack, Docker Desktop (Linux
   containers), and Docker Engine on Linux use the same commands.
+
+Use the latest Vercel-supported LTS major deliberately. Repository development
+and CI use 24.x via `.node-version` and private workspace engines; the existing
+Vercel runtime remains 22.x until its separately reviewed Pulumi upgrade.
+Minor/patch updates can advance within a chosen major; new majors require a
+tested upgrade. Public SDK/core support is a separate contract and remains
+Node.js 20.19 or newer.
 
 Install dependencies from the repository root:
 
@@ -351,8 +367,16 @@ Dashboard UI primitives follow shadcn conventions and live in `packages/ui`. Add
 
 ## Checks
 
-`pnpm check` is the pull-request gate: format, lint, typecheck, and unit tests.
-It does not run the disposable-Postgres integration job.
+`pnpm check` runs native Rust formatting, Clippy, tests/properties, application
+format/lint/typecheck/unit tests and production WASM artifact verification.
+CI exposes those as separate application, Rust and WASM jobs on Node 24, plus
+the disposable-Postgres integration job. The existing required
+`Format, lint, typecheck, and test` status aggregates the first three, including
+failures and cancellations, so existing branch protection also gates Rust/WASM.
+`pnpm check:typescript` is the
+application-only portion; Rust and artifact verification remain required gates.
+Rust toolchains/downloads and per-job compilation outputs are cached; a cache
+miss runs the same pinned bootstrap and all checks.
 
 ```sh
 pnpm check
@@ -583,8 +607,9 @@ empty PostgreSQL 18 Actions service. `pnpm test:integration --ci-service` shares
 the build/migrate/db/server/report sequence without launching Compose. That
 path requires Actions/CI markers and the declared local `flowmark_ci` role,
 `flowmark_test` database and port 5432; it refuses hosted targets and migration
-authorization. Both db and server reports must show complete execution. The fast
-`pnpm check` job remains independent and receives no database credentials. No
+authorization. Both db and server reports must show complete execution. The application, Rust and WASM jobs remain independent and receive no database
+credentials. The reusable verification workflow gates release rollout on all four
+jobs. No
 Neon credentials, hosted settings or demo seed are used.
 
 These tests cover ingestion, idempotency, browser quotas, and project isolation.

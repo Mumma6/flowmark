@@ -1,0 +1,482 @@
+[
+  {
+    "name": "mixed peers and repeated operations",
+    "input": {
+      "current": [
+        {
+          "name": "work",
+          "occurrenceCount": 3,
+          "openCount": 1,
+          "failedCount": 1,
+          "medianDurationMs": 15,
+          "totalRecordedDurationMs": 30,
+          "durationMs": 20,
+          "status": "failed"
+        }
+      ],
+      "peers": [
+        {
+          "runId": "p1",
+          "status": "Completed",
+          "durationMs": 20,
+          "operations": [
+            {
+              "name": "work",
+              "occurrenceCount": 2,
+              "openCount": 0,
+              "failedCount": 0,
+              "medianDurationMs": 5,
+              "totalRecordedDurationMs": 10,
+              "durationMs": 8,
+              "status": "completed"
+            }
+          ]
+        },
+        {
+          "runId": "p2",
+          "status": "Failed",
+          "durationMs": 40,
+          "operations": [
+            {
+              "name": "work",
+              "occurrenceCount": 1,
+              "openCount": 0,
+              "failedCount": 0,
+              "medianDurationMs": 12,
+              "totalRecordedDurationMs": 12,
+              "durationMs": 12,
+              "status": "completed"
+            },
+            {
+              "name": "peer only",
+              "occurrenceCount": 1,
+              "openCount": 1,
+              "failedCount": 0,
+              "medianDurationMs": null,
+              "totalRecordedDurationMs": null,
+              "durationMs": null,
+              "status": "open"
+            }
+          ]
+        },
+        {
+          "runId": "p3",
+          "status": "Running",
+          "durationMs": null,
+          "operations": []
+        }
+      ],
+      "names": ["peer only", "work"]
+    },
+    "expected": {
+      "peerSuccessRate": 50,
+      "peerMedianDurationMs": 30,
+      "peerP95DurationMs": 39,
+      "operations": [
+        {
+          "name": "peer only",
+          "currentDurationMs": null,
+          "currentOccurrenceCount": 0,
+          "currentOpenCount": 0,
+          "currentFailedCount": 0,
+          "currentMedianOccurrenceDurationMs": null,
+          "currentTotalRecordedDurationMs": null,
+          "currentStatus": "absent",
+          "peerMedianDurationMs": null,
+          "peerMedianOccurrenceDurationMs": null,
+          "peerMedianTotalRecordedDurationMs": null,
+          "peerOpenRunCount": 1,
+          "peerFailedRunCount": 0,
+          "peerPresentCount": 1,
+          "peerRunIds": ["p2"]
+        },
+        {
+          "name": "work",
+          "currentDurationMs": 20,
+          "currentOccurrenceCount": 3,
+          "currentOpenCount": 1,
+          "currentFailedCount": 1,
+          "currentMedianOccurrenceDurationMs": 15,
+          "currentTotalRecordedDurationMs": 30,
+          "currentStatus": "failed",
+          "peerMedianDurationMs": 10,
+          "peerMedianOccurrenceDurationMs": 8.5,
+          "peerMedianTotalRecordedDurationMs": 11,
+          "peerOpenRunCount": 0,
+          "peerFailedRunCount": 0,
+          "peerPresentCount": 2,
+          "peerRunIds": ["p1", "p2"]
+        }
+      ]
+    }
+  },
+  {
+    "name": "no peers",
+    "input": {
+      "current": [
+        {
+          "name": "solo",
+          "occurrenceCount": 1,
+          "openCount": 0,
+          "failedCount": 0,
+          "medianDurationMs": 1,
+          "totalRecordedDurationMs": 1,
+          "durationMs": 1,
+          "status": "completed"
+        }
+      ],
+      "peers": [],
+      "names": ["solo"]
+    },
+    "expected": {
+      "peerSuccessRate": null,
+      "peerMedianDurationMs": null,
+      "peerP95DurationMs": null,
+      "operations": [
+        {
+          "name": "solo",
+          "currentDurationMs": 1,
+          "currentOccurrenceCount": 1,
+          "currentOpenCount": 0,
+          "currentFailedCount": 0,
+          "currentMedianOccurrenceDurationMs": 1,
+          "currentTotalRecordedDurationMs": 1,
+          "currentStatus": "completed",
+          "peerMedianDurationMs": null,
+          "peerMedianOccurrenceDurationMs": null,
+          "peerMedianTotalRecordedDurationMs": null,
+          "peerOpenRunCount": 0,
+          "peerFailedRunCount": 0,
+          "peerPresentCount": 0,
+          "peerRunIds": []
+        }
+      ]
+    }
+  },
+  {
+    "name": "open peers retain reported durations",
+    "input": {
+      "current": [],
+      "peers": [
+        {
+          "runId": "p1",
+          "status": "Running",
+          "durationMs": 5,
+          "operations": [
+            {
+              "name": "unknown",
+              "occurrenceCount": 1,
+              "openCount": 1,
+              "failedCount": 0,
+              "medianDurationMs": null,
+              "totalRecordedDurationMs": null,
+              "durationMs": null,
+              "status": "open"
+            }
+          ]
+        },
+        {
+          "runId": "p2",
+          "status": "Running",
+          "durationMs": 15,
+          "operations": []
+        }
+      ],
+      "names": ["unknown"]
+    },
+    "expected": {
+      "peerSuccessRate": null,
+      "peerMedianDurationMs": 10,
+      "peerP95DurationMs": 14.5,
+      "operations": [
+        {
+          "name": "unknown",
+          "currentDurationMs": null,
+          "currentOccurrenceCount": 0,
+          "currentOpenCount": 0,
+          "currentFailedCount": 0,
+          "currentMedianOccurrenceDurationMs": null,
+          "currentTotalRecordedDurationMs": null,
+          "currentStatus": "absent",
+          "peerMedianDurationMs": null,
+          "peerMedianOccurrenceDurationMs": null,
+          "peerMedianTotalRecordedDurationMs": null,
+          "peerOpenRunCount": 1,
+          "peerFailedRunCount": 0,
+          "peerPresentCount": 1,
+          "peerRunIds": ["p1"]
+        }
+      ]
+    }
+  },
+  {
+    "name": "failed peers and null samples",
+    "input": {
+      "current": [
+        {
+          "name": "work",
+          "occurrenceCount": 1,
+          "openCount": 0,
+          "failedCount": 0,
+          "medianDurationMs": null,
+          "totalRecordedDurationMs": null,
+          "durationMs": null,
+          "status": "completed"
+        }
+      ],
+      "peers": [
+        {
+          "runId": "p1",
+          "status": "Failed",
+          "durationMs": null,
+          "operations": [
+            {
+              "name": "work",
+              "occurrenceCount": 1,
+              "openCount": 0,
+              "failedCount": 0,
+              "medianDurationMs": null,
+              "totalRecordedDurationMs": null,
+              "durationMs": null,
+              "status": "completed"
+            }
+          ]
+        },
+        {
+          "runId": "p2",
+          "status": "Failed",
+          "durationMs": 0,
+          "operations": [
+            {
+              "name": "work",
+              "occurrenceCount": 1,
+              "openCount": 0,
+              "failedCount": 1,
+              "medianDurationMs": 0,
+              "totalRecordedDurationMs": 0,
+              "durationMs": 0,
+              "status": "failed"
+            }
+          ]
+        }
+      ],
+      "names": ["work"]
+    },
+    "expected": {
+      "peerSuccessRate": 0,
+      "peerMedianDurationMs": 0,
+      "peerP95DurationMs": 0,
+      "operations": [
+        {
+          "name": "work",
+          "currentDurationMs": null,
+          "currentOccurrenceCount": 1,
+          "currentOpenCount": 0,
+          "currentFailedCount": 0,
+          "currentMedianOccurrenceDurationMs": null,
+          "currentTotalRecordedDurationMs": null,
+          "currentStatus": "completed",
+          "peerMedianDurationMs": 0,
+          "peerMedianOccurrenceDurationMs": 0,
+          "peerMedianTotalRecordedDurationMs": 0,
+          "peerOpenRunCount": 0,
+          "peerFailedRunCount": 1,
+          "peerPresentCount": 2,
+          "peerRunIds": ["p1", "p2"]
+        }
+      ]
+    }
+  },
+  {
+    "name": "rounded rate and fractional percentiles",
+    "input": {
+      "current": [],
+      "peers": [
+        {
+          "runId": "p1",
+          "status": "Completed",
+          "durationMs": 1.25,
+          "operations": []
+        },
+        {
+          "runId": "p2",
+          "status": "Failed",
+          "durationMs": 2.5,
+          "operations": []
+        },
+        {
+          "runId": "p3",
+          "status": "Failed",
+          "durationMs": 9,
+          "operations": []
+        }
+      ],
+      "names": []
+    },
+    "expected": {
+      "peerSuccessRate": 33.3,
+      "peerMedianDurationMs": 2.5,
+      "peerP95DurationMs": 8.35,
+      "operations": []
+    }
+  },
+  {
+    "name": "host collation and first observed names",
+    "input": {
+      "current": [
+        {
+          "name": "z",
+          "occurrenceCount": 1,
+          "openCount": 0,
+          "failedCount": 0,
+          "medianDurationMs": 5,
+          "totalRecordedDurationMs": 5,
+          "durationMs": 5,
+          "status": "completed"
+        },
+        {
+          "name": "é",
+          "occurrenceCount": 1,
+          "openCount": 0,
+          "failedCount": 0,
+          "medianDurationMs": 2,
+          "totalRecordedDurationMs": 2,
+          "durationMs": 2,
+          "status": "completed"
+        },
+        {
+          "name": "A",
+          "occurrenceCount": 1,
+          "openCount": 0,
+          "failedCount": 0,
+          "medianDurationMs": 3,
+          "totalRecordedDurationMs": 3,
+          "durationMs": 3,
+          "status": "completed"
+        }
+      ],
+      "peers": [
+        {
+          "runId": "p1",
+          "status": "Completed",
+          "durationMs": 12,
+          "operations": [
+            {
+              "name": "a",
+              "occurrenceCount": 1,
+              "openCount": 0,
+              "failedCount": 0,
+              "medianDurationMs": 3,
+              "totalRecordedDurationMs": 3,
+              "durationMs": 3,
+              "status": "completed"
+            },
+            {
+              "name": "e",
+              "occurrenceCount": 1,
+              "openCount": 0,
+              "failedCount": 0,
+              "medianDurationMs": 4,
+              "totalRecordedDurationMs": 4,
+              "durationMs": 4,
+              "status": "completed"
+            }
+          ]
+        }
+      ],
+      "names": ["a", "A", "e", "é", "z"]
+    },
+    "expected": {
+      "peerSuccessRate": 100,
+      "peerMedianDurationMs": 12,
+      "peerP95DurationMs": 12,
+      "operations": [
+        {
+          "name": "a",
+          "currentDurationMs": null,
+          "currentOccurrenceCount": 0,
+          "currentOpenCount": 0,
+          "currentFailedCount": 0,
+          "currentMedianOccurrenceDurationMs": null,
+          "currentTotalRecordedDurationMs": null,
+          "currentStatus": "absent",
+          "peerMedianDurationMs": 3,
+          "peerMedianOccurrenceDurationMs": 3,
+          "peerMedianTotalRecordedDurationMs": 3,
+          "peerOpenRunCount": 0,
+          "peerFailedRunCount": 0,
+          "peerPresentCount": 1,
+          "peerRunIds": ["p1"]
+        },
+        {
+          "name": "A",
+          "currentDurationMs": 3,
+          "currentOccurrenceCount": 1,
+          "currentOpenCount": 0,
+          "currentFailedCount": 0,
+          "currentMedianOccurrenceDurationMs": 3,
+          "currentTotalRecordedDurationMs": 3,
+          "currentStatus": "completed",
+          "peerMedianDurationMs": null,
+          "peerMedianOccurrenceDurationMs": null,
+          "peerMedianTotalRecordedDurationMs": null,
+          "peerOpenRunCount": 0,
+          "peerFailedRunCount": 0,
+          "peerPresentCount": 0,
+          "peerRunIds": []
+        },
+        {
+          "name": "e",
+          "currentDurationMs": null,
+          "currentOccurrenceCount": 0,
+          "currentOpenCount": 0,
+          "currentFailedCount": 0,
+          "currentMedianOccurrenceDurationMs": null,
+          "currentTotalRecordedDurationMs": null,
+          "currentStatus": "absent",
+          "peerMedianDurationMs": 4,
+          "peerMedianOccurrenceDurationMs": 4,
+          "peerMedianTotalRecordedDurationMs": 4,
+          "peerOpenRunCount": 0,
+          "peerFailedRunCount": 0,
+          "peerPresentCount": 1,
+          "peerRunIds": ["p1"]
+        },
+        {
+          "name": "é",
+          "currentDurationMs": 2,
+          "currentOccurrenceCount": 1,
+          "currentOpenCount": 0,
+          "currentFailedCount": 0,
+          "currentMedianOccurrenceDurationMs": 2,
+          "currentTotalRecordedDurationMs": 2,
+          "currentStatus": "completed",
+          "peerMedianDurationMs": null,
+          "peerMedianOccurrenceDurationMs": null,
+          "peerMedianTotalRecordedDurationMs": null,
+          "peerOpenRunCount": 0,
+          "peerFailedRunCount": 0,
+          "peerPresentCount": 0,
+          "peerRunIds": []
+        },
+        {
+          "name": "z",
+          "currentDurationMs": 5,
+          "currentOccurrenceCount": 1,
+          "currentOpenCount": 0,
+          "currentFailedCount": 0,
+          "currentMedianOccurrenceDurationMs": 5,
+          "currentTotalRecordedDurationMs": 5,
+          "currentStatus": "completed",
+          "peerMedianDurationMs": null,
+          "peerMedianOccurrenceDurationMs": null,
+          "peerMedianTotalRecordedDurationMs": null,
+          "peerOpenRunCount": 0,
+          "peerFailedRunCount": 0,
+          "peerPresentCount": 0,
+          "peerRunIds": []
+        }
+      ]
+    }
+  }
+]

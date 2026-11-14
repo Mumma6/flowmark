@@ -17,7 +17,7 @@ import { listRuns } from "../workflows/queries/list-runs.js"
 import { readBusinessWorkflows } from "./queries/read-workflows.js"
 import { getReferenceJourney } from "../workflows/queries/get-reference-journey.js"
 import { getBusinessInsights } from "../workflows/queries/get-business-insights.js"
-import { getRunComparison } from "../workflows/queries/get-run-comparison.js"
+import { getRunComparisonEvidence } from "../workflows/queries/get-run-comparison-evidence.js"
 import { readEvidencePublication } from "./queries/read-publication.js"
 import { readPublicationChoices } from "./queries/read-choices.js"
 import { readBusinessRunSource } from "./queries/read-run.js"
@@ -66,9 +66,9 @@ const makeAccess = Effect.fn("BusinessEvidence.access")(function* (
       provide(getReferenceJourney(projectId, query)),
     insights: (query: Parameters<typeof getBusinessInsights>[1]) =>
       provide(getBusinessInsights(projectId, query)),
-    compare: (id: string, days: number) =>
+    comparisonEvidence: (id: string, days: number) =>
       provide(
-        getRunComparison(projectId, id, {
+        getRunComparisonEvidence(projectId, id, {
           days,
           environment: "all",
           sameRelease: false,

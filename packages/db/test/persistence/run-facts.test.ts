@@ -8,8 +8,6 @@ import { Database } from "../../src/persistence/database.js"
 import { appendEvent } from "../../src/persistence/workflows/writes/append-event.js"
 import { backfillRunFacts } from "../../src/persistence/workflows/writes/backfill-run-facts.js"
 import { getOperationFacts } from "../../src/persistence/workflows/queries/get-operation-facts.js"
-import { operationSummaries } from "../../src/persistence/workflows/queries/get-run-comparison.js"
-import { getRunTimeline } from "../../src/persistence/workflows/queries/get-run-timeline.js"
 import {
   dailyInsightsSql,
   listRunsSql,
@@ -130,14 +128,15 @@ test(
       }
       const projected = await snapshot()
       assert.equal((await execute(getOperationFacts(other, run))).length, 0)
-      assert.deepEqual(
-        operationSummaries(await execute(getOperationFacts(project, run))),
-        operationSummaries(await execute(getRunTimeline(project, run))),
-      )
+      const projectedOperations = await execute(getOperationFacts(project, run))
       await db.execute(
         sql`DELETE FROM workflow_run_facts WHERE run_id = ${run}`,
       )
       const raw = await snapshot()
+      assert.deepEqual(
+        projectedOperations,
+        await execute(getOperationFacts(project, run)),
+      )
       assert.deepEqual(projected, raw)
       assert.equal(
         (await execute(backfillRunFacts(other, null, 100, true))).inspected,
