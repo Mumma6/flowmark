@@ -1,5 +1,6 @@
 import { Button } from "@flowmark/ui"
-import { StudioExperience } from "../../features/product-landing/studio-experience"
+import { ProcessLandscape } from "../../features/product-landing/process-landscape"
+import { MotionScene } from "../../features/product-landing/motion"
 import { BackgroundBeams } from "./background-beams"
 import { Arrow } from "./brand"
 import { shellClassName } from "./shell"
@@ -8,56 +9,60 @@ import { SpotlightWash } from "./spotlight-wash"
 export function HeroSection() {
   return (
     <section
-      className="relative isolate overflow-hidden pt-12 pb-16 sm:pt-12 sm:pb-24"
+      className="relative isolate overflow-hidden pt-14 pb-16 sm:pt-20 sm:pb-24"
       aria-labelledby="hero-title"
     >
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 -z-10 overflow-hidden [mask-image:linear-gradient(to_bottom,#000_65%,transparent)]"
-      >
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_25%,var(--hero-glow),transparent_65%)]" />
-        <div className="absolute inset-0 bg-[linear-gradient(#b9f59708_1px,transparent_1px),linear-gradient(90deg,#b9f59708_1px,transparent_1px)] bg-size-[72px_72px] [mask-image:radial-gradient(ellipse_at_50%_15%,#000,transparent_70%)]" />
-        <SpotlightWash className="opacity-60 sm:opacity-80" />
-        <BackgroundBeams className="opacity-35 sm:opacity-50" />
-      </div>
+      <MotionScene className="pointer-events-none absolute inset-0 -z-10 overflow-hidden [mask-image:linear-gradient(to_bottom,#000_20%,transparent_75%)]">
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 bg-[radial-gradient(ellipse_at_25%_0%,var(--hero-glow),transparent_60%)]"
+        />
+        <SpotlightWash className="opacity-35" />
+        <BackgroundBeams className="opacity-30" />
+      </MotionScene>
       <div className={shellClassName}>
-        <div className="flex flex-wrap items-center gap-3 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground sm:text-[11px]">
-          <span className="size-1.5 rounded-full bg-primary" />
-          Open-source process intelligence
-          <span className="hidden h-3 w-px bg-border sm:block" />
-          <span className="text-highlight">For people & agents</span>
-        </div>
+        <p className="flex items-center gap-3 font-mono text-[9px] uppercase tracking-[.12em] text-muted-foreground sm:text-[10px] sm:tracking-[.2em]">
+          <span className="size-1.5 shrink-0 rounded-full bg-primary shadow-[0_0_12px_#b9f59760]" />
+          Process intelligence for people and agents
+        </p>
         <h1
           id="hero-title"
-          className="mt-6 max-w-[1040px] text-balance text-[clamp(2.8rem,6.2vw,5.5rem)] leading-[1.04] font-medium tracking-[-0.065em] motion-safe:animate-arrive"
+          className="mt-7 max-w-5xl text-[clamp(3.1rem,7.4vw,6.25rem)] leading-[1.02] font-medium tracking-[-.065em] motion-safe:animate-arrive"
         >
-          Understand what your
-          <br className="hidden sm:block" />{" "}
-          <span className="text-muted-foreground">software actually does.</span>
+          Understand what
+          <br className="hidden sm:block" /> your software
+          <br className="sm:hidden" />{" "}
+          <span className="text-primary">actually does.</span>
         </h1>
-        <div className="mt-6 mb-10 flex flex-col justify-between gap-7 md:flex-row md:items-end">
-          <p className="max-w-[550px] text-base leading-7 text-muted-foreground">
-            Connect application behavior to business outcomes. Explore the
-            evidence in Studio, in your agent, or in the tools you build.
+        <div className="mt-7 flex flex-col justify-between gap-7 sm:mt-9 lg:flex-row lg:items-end">
+          <p className="max-w-lg text-sm leading-7 text-muted-foreground sm:text-[15px]">
+            Discover processes with your coding agent. Connect execution to
+            business outcomes, spot changes, and keep instrumentation current as
+            your code evolves.
           </p>
-          <div className="flex flex-wrap gap-3">
-            <Button asChild className="h-11 px-5 text-xs">
+          <div className="flex flex-wrap items-center gap-3">
+            <Button
+              asChild
+              className="h-12 rounded-lg px-6 text-xs shadow-[0_0_30px_-12px_#b9f59765]"
+            >
               <a href="#waitlist">
                 Join the Waitlist <Arrow />
               </a>
             </Button>
             <Button
               asChild
-              variant="outline"
-              className="h-11 border-border bg-card px-5 text-xs"
+              variant="ghost"
+              className="h-12 px-4 text-xs text-muted-foreground"
             >
-              <a href="#studio">
-                Explore Studio <span aria-hidden="true">↓</span>
+              <a href="#experience">
+                Follow the process <span aria-hidden="true">↓</span>
               </a>
             </Button>
           </div>
         </div>
-        <StudioExperience />
+        <div id="experience" className="mt-12 sm:mt-16">
+          <ProcessLandscape />
+        </div>
       </div>
     </section>
   )

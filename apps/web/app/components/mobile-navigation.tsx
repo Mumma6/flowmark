@@ -9,7 +9,7 @@ import {
   SheetDescription,
   SheetTrigger,
 } from "@flowmark/ui"
-import { appUrl, docsUrl, githubUrl } from "./site-links"
+import { docsUrl, githubUrl } from "./site-links"
 
 export function MobileNavigation() {
   const [open, setOpen] = useState(false)
@@ -45,14 +45,13 @@ export function MobileNavigation() {
         </SheetDescription>
         <nav aria-label="Mobile navigation" className="mt-8 grid gap-2">
           {[
-            { label: "Studio", href: "#studio" },
-            { label: "Platform", href: "#platform" },
-            { label: "Everywhere", href: "#everywhere" },
-            { label: "Your team", href: "#organization" },
-            { label: "Open Studio", href: appUrl },
+            { label: "Explore the platform", href: "#experience" },
+            { label: "Discover & observe", href: "#discover" },
+            { label: "Continuous evolution", href: "#evolve" },
+            { label: "People & agents", href: "#everywhere" },
             { label: "Documentation", href: docsUrl },
             { label: "GitHub", href: githubUrl },
-            { label: "Questions", href: "#faq" },
+            { label: "Join the Waitlist", href: "#waitlist" },
           ].map((item) => (
             <a
               key={item.label}
