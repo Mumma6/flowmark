@@ -212,3 +212,8 @@ export { EngineError } from "@flowmark/engine"
 export { JoinWaitlist } from "./features/waitlist/join-waitlist.js"
 
 export { WaitlistRepository } from "./features/waitlist/waitlist-repository.js"
+
+export {
+  WaitlistWelcomeEmail,
+  WaitlistWelcomeError,
+} from "./features/waitlist/welcome-email.js"

@@ -56,7 +56,8 @@ export function WaitlistForm({
           </p>
         </div>
         <p className="mt-3 text-sm leading-6 text-muted-foreground">
-          Your request has been received. Thanks for your interest in Flowmark.
+          Your place is saved. Check your inbox for a welcome email from
+          Flowmark.
         </p>
       </div>
     )

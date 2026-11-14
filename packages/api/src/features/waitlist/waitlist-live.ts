@@ -13,7 +13,15 @@ export const WaitlistRepositoryLive = Layer.effect(
       .update("flowmark:waitlist:submissions:v1")
       .digest("hex")
     return WaitlistRepository.of({
-      join: (email) => persist(store.join(email)),
+      join: (email) =>
+        persist(store.join(email)).pipe(
+          Effect.map((row) => ({
+            id: row.id,
+            startedAt: row.startedAt.getTime(),
+            submitted: row.submittedAt !== null,
+          })),
+        ),
+      submitWelcome: (id) => persist(store.submitWelcome(id)),
       budget: () => persist(store.budget(key)),
     })
   }),

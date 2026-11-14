@@ -1,5 +1,6 @@
 export enum DatabaseOperation {
   JoinWaitlist = "join-waitlist",
+  SubmitWaitlistWelcome = "submit-waitlist-welcome",
   EvidenceCaptures = "evidence-captures",
   SharedInvestigations = "shared-investigations",
   BusinessEvidence = "business-evidence",

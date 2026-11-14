@@ -331,6 +331,9 @@ importers:
 
   packages/api:
     dependencies:
+      "@flowmark/email":
+        specifier: workspace:*
+        version: link:../email
       "@flowmark/db":
         specifier: workspace:*
         version: link:../db
