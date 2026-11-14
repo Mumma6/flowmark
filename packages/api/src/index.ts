@@ -207,4 +207,4 @@ export type {
 } from "@flowmarkdev/core"
 
 export type { SavedEvidenceExport } from "@flowmarkdev/core"
-export { EvidenceEngineError } from "@flowmark/evidence-engine"
+export { EngineError } from "@flowmark/engine"

@@ -1,7 +1,7 @@
 node_modules
 /target/
 /.cache/
-/packages/evidence-engine/wasm/
+/packages/engine/wasm/
 .pnpm-store
 .turbo
 .next

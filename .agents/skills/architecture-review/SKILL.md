@@ -77,7 +77,7 @@ Effect services.
 | Any other path                                                               | Root [AGENTS.md](../../../AGENTS.md), the nearest nested `AGENTS.md`, and the skill for the code you actually find                                                        | Rules for a layer that is not present                      |
 
 For `crates/*`, apply [Rust](../flowmark-rust/SKILL.md), architecture owner selection
-and the crate's tests. For `packages/evidence-engine`, also apply Effect to its
+and the crate's tests. For `packages/engine`, also apply Effect to its
 TypeScript adapter. Do not impose Effect syntax inside Rust, require a performance
 bottleneck to justify Rust, or treat the first engine as its permanent scope.
 

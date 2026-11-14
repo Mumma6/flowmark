@@ -256,3 +256,11 @@ export interface RunComparisonEvidence {
     readonly events: readonly OperationEvidenceEvent[]
   }[]
 }
+
+export interface ReferenceJourneyEvidence {
+  readonly page: import("@flowmarkdev/core").ReferenceJourneyPage
+  readonly graph: {
+    readonly nodes: readonly string[]
+    readonly edges: readonly import("@flowmarkdev/core").JourneyEdge[]
+  }
+}

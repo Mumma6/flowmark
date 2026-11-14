@@ -1,5 +1,6 @@
+import { calculateReferenceJourney } from "./calculate-reference-journey.js"
 import { CurrentProjectReader } from "../models/current-project-reader.js"
-import { EvidenceEngine } from "@flowmark/evidence-engine"
+import { Engine } from "@flowmark/engine"
 import { calculateRunComparison } from "./calculate-run-comparison.js"
 import {
   ReferenceJourneyQuerySchema,
@@ -47,7 +48,7 @@ export class GetProjectWorkflowData extends Context.Service<
       const authorization = yield* AuthorizeProject
       const repository = yield* WorkflowRepository
       const agentAccess = yield* AgentAccess
-      const engine = yield* EvidenceEngine
+      const engine = yield* Engine
 
       const authorizeReader = Effect.fn(
         "GetProjectWorkflowData.authorizeReader",
@@ -206,7 +207,7 @@ export class GetProjectWorkflowData extends Context.Service<
           .comparisonEvidence(projectId, runId, selection)
           .pipe(Effect.provideService(CurrentProjectReader, reader))
         return yield* calculateRunComparison(evidence).pipe(
-          Effect.provideService(EvidenceEngine, engine),
+          Effect.provideService(Engine, engine),
         )
       })
       const intelligence = Effect.fn("GetProjectWorkflowData.intelligence")(
@@ -273,9 +274,12 @@ export class GetProjectWorkflowData extends Context.Service<
             )(input, { onExcessProperty: "error" }).pipe(
               Effect.mapError((cause) => new InvalidInput({ cause })),
             )
-            return yield* repository
+            const evidence = yield* repository
               .referenceJourney(projectId, query)
               .pipe(Effect.provideService(CurrentProjectReader, reader))
+            return yield* calculateReferenceJourney(evidence).pipe(
+              Effect.provideService(Engine, engine),
+            )
           },
         ),
         expectations: Effect.fn("GetProjectWorkflowData.expectations")(

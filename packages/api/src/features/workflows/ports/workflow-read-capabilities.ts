@@ -1,7 +1,5 @@
-import type {
-  ReferenceJourneyQuery,
-  ReferenceJourneyPage,
-} from "@flowmarkdev/core"
+import type { ReferenceJourneyEvidence } from "../types.js"
+import type { ReferenceJourneyQuery } from "@flowmarkdev/core"
 import type {
   LinkedComparisonQuery,
   LinkedComparison,
@@ -134,7 +132,7 @@ export interface WorkflowRepositoryDiscovery {
   readonly referenceJourney: (
     projectId: string,
     query: ReferenceJourneyQuery,
-  ) => Effect.Effect<ReferenceJourneyPage, PersistenceError | InvalidInput>
+  ) => Effect.Effect<ReferenceJourneyEvidence, PersistenceError | InvalidInput>
   readonly search: (
     projectId: string,
     query: string,

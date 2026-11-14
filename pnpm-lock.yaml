@@ -328,9 +328,9 @@ importers:
       "@flowmark/db":
         specifier: workspace:*
         version: link:../db
-      "@flowmark/evidence-engine":
+      "@flowmark/engine":
         specifier: workspace:*
-        version: link:../evidence-engine
+        version: link:../engine
       "@flowmarkdev/core":
         specifier: workspace:*
         version: link:../core
@@ -487,7 +487,7 @@ importers:
         specifier: ^5.9.2
         version: 5.9.3
 
-  packages/evidence-engine:
+  packages/engine:
     dependencies:
       effect:
         specifier: 4.1.0

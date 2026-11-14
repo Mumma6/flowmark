@@ -1,8 +1,6 @@
+import type { ReferenceJourneyEvidence } from "./types.js"
 import { withActiveProject } from "../data-lifecycle/with-active-project.js"
-import type {
-  ReferenceJourneyQuery,
-  ReferenceJourneyPage,
-} from "@flowmarkdev/core"
+import type { ReferenceJourneyQuery } from "@flowmarkdev/core"
 import { getReferenceJourney } from "./queries/get-reference-journey.js"
 import { getLinkedComparison } from "./queries/get-linked-comparison.js"
 import { getLinkedEvidence } from "./queries/get-linked-evidence.js"
@@ -91,7 +89,10 @@ export interface WorkflowStoreService {
   readonly referenceJourney: (
     projectId: string,
     query: ReferenceJourneyQuery,
-  ) => Effect.Effect<ReferenceJourneyPage, DatabaseError | InvalidResultQuery>
+  ) => Effect.Effect<
+    ReferenceJourneyEvidence,
+    DatabaseError | InvalidResultQuery
+  >
   readonly periodRead: (
     projectId: string,
     input: PeriodReadInput,

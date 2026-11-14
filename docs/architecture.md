@@ -56,8 +56,9 @@ refactor involving computation or data processing, compare the three owners by
 cohesion, integration cost and maintainability. Additional Rust modules and crates
 are welcome when justified; the choice is deliberate rather than automatic.
 
-The [Evidence Engine](./evidence-engine.md) is the first production Rust component.
-It currently owns operation occurrence summaries and in-memory percentiles.
+The [Flowmark Engine](./engine.md) is the first production Rust component.
+It is a general computation library with domain modules currently owning operation
+occurrence summaries, percentiles, peer comparisons and directed-cycle detection.
 Persistence retrieves ordered evidence; API use cases coordinate its Effect
 adapter and assemble read contracts. Its pure crate has no database or framework
 knowledge, and persistence does not depend on the engine or API runtime. Public

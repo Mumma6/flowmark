@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { Effect } from "effect"
-import { EvidenceEngine, EvidenceEngineError } from "@flowmark/evidence-engine"
+import { Engine, EngineError } from "@flowmark/engine"
 import { calculateRunComparison } from "../../src/features/workflows/use-cases/calculate-run-comparison.js"
 import type { StoredRun } from "../../src/features/workflows/types.js"
 
@@ -47,7 +47,7 @@ describe("application comparison calculation", () => {
           { runId: "p2", events: [event("a", 12)] },
           { runId: "p3", events: [] },
         ],
-      }).pipe(Effect.provide(EvidenceEngine.layer)),
+      }).pipe(Effect.provide(Engine.layer)),
     )
     expect(result.peerSuccessRate).toBe(50)
     expect(result.peerMedianDurationMs).toBe(30)
@@ -81,8 +81,10 @@ describe("application comparison calculation", () => {
         peerOperations: [],
       }).pipe(
         Effect.provideService(
-          EvidenceEngine,
-          EvidenceEngine.of({
+          Engine,
+          Engine.of({
+            compareSummaries: () => Effect.die("unused"),
+            hasCycle: () => Effect.die("unused"),
             summarizeOperations: () => Effect.die("must not load"),
             percentile: () => Effect.die("must not load"),
           }),
@@ -99,7 +101,7 @@ describe("application comparison calculation", () => {
     })
   })
   it("propagates engine failures without producing an empty successful comparison", async () => {
-    const failure = new EvidenceEngineError({
+    const failure = new EngineError({
       operation: "summarizeOperations",
       stage: "initialization",
       cause: "missing asset",
@@ -114,8 +116,10 @@ describe("application comparison calculation", () => {
         }),
       ).pipe(
         Effect.provideService(
-          EvidenceEngine,
-          EvidenceEngine.of({
+          Engine,
+          Engine.of({
+            compareSummaries: () => Effect.die("unused"),
+            hasCycle: () => Effect.die("unused"),
             summarizeOperations: () => Effect.fail(failure),
             percentile: () => Effect.succeed(null),
           }),

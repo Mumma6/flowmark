@@ -18,7 +18,7 @@ import {
   ManagementRateLimited,
   Onboarding,
   PersistenceError,
-  EvidenceEngineError,
+  EngineError,
   logFailure,
   runApi,
   Unauthorized,
@@ -64,7 +64,7 @@ async function executeQuery<A>(
     A,
     | Unauthorized
     | PersistenceError
-    | EvidenceEngineError
+    | EngineError
     | ConfigurationError
     | InvalidInput
     | ManagementRateLimited,
@@ -149,7 +149,7 @@ export function readQuery<A>(
     A,
     | Unauthorized
     | PersistenceError
-    | EvidenceEngineError
+    | EngineError
     | InvalidInput
     | ManagementRateLimited,
     | GetProjectWorkflowData
@@ -214,7 +214,7 @@ export function sessionQuery<A>(
     A,
     | Unauthorized
     | PersistenceError
-    | EvidenceEngineError
+    | EngineError
     | InvalidInput
     | ManagementRateLimited,
     | ManageSharedInvestigations

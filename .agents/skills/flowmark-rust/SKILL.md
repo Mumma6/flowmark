@@ -1,6 +1,6 @@
 ---
 name: flowmark-rust
-description: Write, review or extend Flowmark Rust functionality, crates, Cargo tooling and TypeScript/WASM boundaries. Use for existing or proposed Rust responsibilities across Flowmark, including the Evidence Engine; ordinary TypeScript and infrastructure retain their own skills.
+description: Write, review or extend Flowmark Rust functionality, crates, Cargo tooling and TypeScript/WASM boundaries. Use for existing or proposed Rust responsibilities across Flowmark, including the Flowmark Engine; ordinary TypeScript and infrastructure retain their own skills.
 ---
 
 # Flowmark Rust
@@ -14,24 +14,29 @@ is required, and Rust is not an automatic choice.
 
 Future Rust modules and crates may own cohesive computations, analysis, event/data
 processing, graph algorithms, statistics or other justified responsibilities.
-The Evidence Engine is the first use, not a permanent limit. Read
-[its guide](../../../docs/evidence-engine.md) for the current integration, and
+The Flowmark Engine is the first use, not a permanent limit. Read
+[its guide](../../../docs/engine.md) for the current integration, and
 apply [Effect](../flowmark-effect/SKILL.md) when changing TypeScript integration.
 
 ## Ownership
 
 - Group domain models and small responsibility-named modules by cohesive behavior.
-  Keep serialization and runtime bindings separate. The current crate uses
-  `model.rs`, `operations.rs` and `wasm.rs`; future crates need no identical template.
+  The general-purpose `crates/flowmark-engine` groups real functionality under
+  `operations/`, `statistics/`, `comparisons/` and `graphs/`; `wasm/` holds per-domain
+  serialization and exports. Add domains only when they contain real work.
+  `packages/engine` keeps one loader and Effect service, with domain contracts and
+  methods in separate modules. Neither package depends on database/HTTP or API runtime.
 - Pure domain code takes explicit inputs and returns values or `Result`, without
   clocks, I/O, configuration or application runtimes. If a future responsibility
   needs effects, give them an explicit adapter and owner rather than hiding them
   inside deterministic rules. TypeScript/Effect normally owns orchestration.
-- For the current engine, persistence retrieves authorized ordered evidence,
-  API use cases coordinate calculations, and the TypeScript package owns loading,
+- For the current engine, persistence retrieves authorized ordered samples and
+  bounded graphs, API use cases coordinate calculations, and the TypeScript package owns loading,
   contracts and typed failures. Persistence does not import the engine or API.
 - Keep public core/SDK contracts independent of WASM initialization. Give migrated
   rules one production implementation; do not add a silent TypeScript fallback.
+  The engine may own any cohesive deterministic computation, beyond observability.
+  Preserve host-dependent presentation contracts (such as locale collation) explicitly.
 
 ## Rust style
 
@@ -60,7 +65,7 @@ apply [Effect](../flowmark-effect/SKILL.md) when changing TypeScript integration
 - Add shared fixtures for preserved behavior and native property tests for actual
   invariants. Do not assume order independence for an ordered evidence stream.
 - Run `pnpm rust:check` and affected crate/consumer tests. For current engine
-  loader/build changes, run `pnpm evidence:verify-build` and relevant API/integration
+  loader/build changes, run `pnpm engine:verify-build` and relevant API/integration
   checks. Other integrations need appropriate artifact verification too;
   compilation alone is insufficient.
 - Additional Rust functionality or crates need a clear responsibility, explicit

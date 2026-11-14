@@ -56,7 +56,7 @@
     },
     "dev:ready": {
       "dependsOn": [
-        "@flowmark/evidence-engine#build",
+        "@flowmark/engine#build",
         "@flowmark/api#build",
         "@flowmark/auth#build",
         "@flowmark/db#build",
@@ -68,22 +68,22 @@
     "@flowmark/server#typecheck": {
       "dependsOn": ["build"]
     },
-    "@flowmark/evidence-engine#build": {
+    "@flowmark/engine#build": {
       "inputs": [
         "$TURBO_DEFAULT$",
         "$TURBO_ROOT$/Cargo.toml",
         "$TURBO_ROOT$/Cargo.lock",
         "$TURBO_ROOT$/rust-toolchain.toml",
-        "$TURBO_ROOT$/crates/flowmark-evidence/**",
+        "$TURBO_ROOT$/crates/flowmark-engine/**",
         "$TURBO_ROOT$/scripts/rust.mjs"
       ],
       "outputs": ["dist/**", "wasm/**"],
       "passThroughEnv": ["CARGO_HOME", "RUSTUP_HOME", "CARGO_TARGET_DIR"]
     },
-    "@flowmark/evidence-engine#typecheck": {
+    "@flowmark/engine#typecheck": {
       "dependsOn": ["build"]
     },
-    "@flowmark/evidence-engine#test": {
+    "@flowmark/engine#test": {
       "dependsOn": ["build"]
     }
   }

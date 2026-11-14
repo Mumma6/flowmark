@@ -1,6 +1,6 @@
 import { expect, it } from "vitest"
 import { Effect } from "effect"
-import { EvidenceEngineError, Unauthorized } from "@flowmark/api"
+import { EngineError, Unauthorized } from "@flowmark/api"
 import { McpConnectionResolveError, McpToolReadError } from "../src/errors.js"
 import { presentMcpTool } from "../src/tools/response.js"
 
@@ -40,7 +40,7 @@ it("presents engine failures without leaking evidence or returning a successful 
   const result = await Effect.runPromise(
     presentMcpTool(
       Effect.fail(
-        new EvidenceEngineError({
+        new EngineError({
           operation: "summarizeOperations",
           stage: "initialization",
           cause: "PRIVATE_CAUSE",

@@ -1,5 +1,11 @@
 import { spawnSync } from "node:child_process"
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs"
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs"
 import path from "node:path"
 import process from "node:process"
 import console from "node:console"
@@ -20,7 +26,7 @@ const toolchain = readFileSync(
   "utf8",
 ).match(/channel = "([^"]+)"/)[1]
 const bindingVersion = readFileSync(
-  path.join(root, "crates/flowmark-evidence/Cargo.toml"),
+  path.join(root, "crates/flowmark-engine/Cargo.toml"),
   "utf8",
 ).match(/wasm-bindgen = "=([^"]+)"/)[1]
 
@@ -106,14 +112,15 @@ if (command === "build") {
     "--target",
     "wasm32-unknown-unknown",
     "-p",
-    "flowmark-evidence",
+    "flowmark-engine",
   ])
-  const output = path.join(root, "packages/evidence-engine/wasm")
+  const output = path.join(root, "packages/engine/wasm")
+  rmSync(output, { recursive: true, force: true })
   run("wasm-bindgen", [
     path.resolve(
       root,
       env.CARGO_TARGET_DIR ?? "target",
-      "wasm32-unknown-unknown/release/flowmark_evidence.wasm",
+      "wasm32-unknown-unknown/release/flowmark_engine.wasm",
     ),
     "--target",
     "web",
@@ -124,20 +131,20 @@ if (command === "build") {
     path.join(output, "package.json"),
     JSON.stringify({ type: "module" }) + "\n",
   )
-  const binary = readFileSync(path.join(output, "flowmark_evidence_bg.wasm"))
+  const binary = readFileSync(path.join(output, "flowmark_engine_bg.wasm"))
   writeFileSync(
     path.join(output, "engine.js"),
     [
       'import { Buffer } from "node:buffer"',
-      'import { initSync, summarize_operations_json, percentile_json } from "./flowmark_evidence.js"',
+      'import { initSync, summarize_operations_json, percentile_json, compare_summaries_json, has_cycle_json } from "./flowmark_engine.js"',
       `initSync({ module: Buffer.from(${JSON.stringify(binary.toString("base64"))}, "base64") })`,
-      "export { summarize_operations_json, percentile_json }",
+      "export { summarize_operations_json, percentile_json, compare_summaries_json, has_cycle_json }",
       "",
     ].join("\n"),
   )
   writeFileSync(
     path.join(output, "engine.d.ts"),
-    'export { summarize_operations_json, percentile_json } from "./flowmark_evidence.js"\n',
+    'export { summarize_operations_json, percentile_json, compare_summaries_json, has_cycle_json } from "./flowmark_engine.js"\n',
   )
   console.info(
     `Built ESM bindings with ${binary.length} embedded WASM bytes; no runtime file reads.`,

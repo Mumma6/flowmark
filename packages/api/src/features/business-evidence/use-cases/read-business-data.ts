@@ -1,3 +1,4 @@
+import { calculateReferenceJourney } from "../../workflows/use-cases/calculate-reference-journey.js"
 import { Array, Effect, Match } from "effect"
 import { calculateRunComparison } from "../../workflows/use-cases/calculate-run-comparison.js"
 import type {
@@ -129,11 +130,13 @@ export const readBusinessData = Effect.fn("readBusinessData")(function* (
           access.revision,
           fingerprint + ":candidates",
         )
-        const page = yield* access.journey({
-          ...selection,
-          cursor: inner,
-          candidateCursor: candidates,
-        })
+        const page = yield* calculateReferenceJourney(
+          yield* access.journey({
+            ...selection,
+            cursor: inner,
+            candidateCursor: candidates,
+          }),
+        )
         return {
           kind: "journey" as const,
           state: page.state,

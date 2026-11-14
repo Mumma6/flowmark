@@ -26,8 +26,14 @@ before choosing the implementation owner.
 - **Rust** is a permanent, first-class option for pure deterministic computation,
   evidence processing/analysis, algorithms, graph operations, event transformations,
   statistics, performance-sensitive components and other cohesive responsibilities
-  with meaningful benefits. The Evidence Engine is its first integration, not its
+  with meaningful benefits. The Flowmark Engine is its first integration, not its
   scope limit. Future tasks may add Rust functionality, modules or crates.
+
+The current `crates/flowmark-engine` / `packages/engine` pair is a general-purpose
+computation boundary. Its operations, statistics, comparisons and graph modules
+do not limit future domains to telemetry. Keep the TypeScript service small by
+grouping domain-specific contracts/methods separately from loading and invocation;
+keep Rust serialization/WASM bindings separate from independently testable domains.
 
 Rust does not require a performance problem to justify its use. Learning,
 functional programming, polyglot design and engineering craftsmanship are valid

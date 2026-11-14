@@ -1,5 +1,6 @@
+import type { ReferenceJourneyEvidence } from "../../workflows/types.js"
 import { Context, type Effect } from "effect"
-import type { EvidenceEngineError } from "@flowmark/evidence-engine"
+import type { EngineError } from "@flowmark/engine"
 import type {
   ResultDeclaration,
   SearchFields,
@@ -7,7 +8,6 @@ import type {
   BusinessWorkflowSummary,
   BusinessInsightsQuery,
   ReferenceJourneyQuery,
-  ReferenceJourneyPage,
 } from "@flowmarkdev/core"
 import type {
   StoredRun,
@@ -21,7 +21,7 @@ import type {
   Unauthorized,
 } from "../../../errors.js"
 export type BusinessEvidenceError =
-  PersistenceError | InvalidInput | Unauthorized | EvidenceEngineError
+  PersistenceError | InvalidInput | Unauthorized | EngineError
 export interface PublicationChoices {
   readonly declarations: readonly {
     readonly workflow: string
@@ -65,7 +65,7 @@ export interface EvidenceAccess {
   >
   readonly journey: (
     query: ReferenceJourneyQuery,
-  ) => Effect.Effect<ReferenceJourneyPage, BusinessEvidenceError>
+  ) => Effect.Effect<ReferenceJourneyEvidence, BusinessEvidenceError>
   readonly insights: (
     query: BusinessInsightsQuery,
   ) => Effect.Effect<BusinessInsights, BusinessEvidenceError>

@@ -9,10 +9,10 @@ review of every workspace manifest, root script, database CLI and Actions workfl
 ## Root interface
 
 Rust workspace tooling includes `pnpm rust:setup`, `rust:format` and `rust:check`
-for the pinned toolchain and native verification. The current Evidence Engine's
+for the pinned toolchain and native verification. The current Flowmark Engine's
 `pnpm rust:build` generates its WASM bindings; additional crates should join the
 workspace with appropriate build and verification steps. See the
-[Rust guide](./evidence-engine.md). `pnpm evidence:verify-build` verifies the actual server build,
+[Rust guide](./engine.md). `pnpm engine:verify-build` verifies the actual server build,
 embedded WASM bytes and isolated traced bindings. These commands do not deploy.
 
 | Command                                                                        | Behavior and reason to retain                                                                                                                                                             |
@@ -76,6 +76,7 @@ work. They are not competing local setup procedures.
 | `apps/docs`                                                     | Same app/check commands; `prebuild` and `pretypecheck` generate Fumadocs MDX before those operations. Tests verify links, navigation and SDK snippets.                                                                                                                                                                    |
 | `apps/internal-docs`                                            | `dev`, `build`, `start`, `lint`, `typecheck` and MDX lifecycle hooks. Renders contributor docs, binds to loopback; never deployed.                                                                                                                                                                                        |
 | `packages/core`, `packages/sdk`, `packages/api`                 | `build`, `dev` compiler watcher, `lint`, `typecheck`, `test`. Build output is consumed by app imports, tests and SDK packaging.                                                                                                                                                                                           |
+| `packages/engine`                                               | `build` generates Rust/WASM and TypeScript output; `dev` watches the adapter TypeScript after the startup build; `lint`, `typecheck`, `test` verify the domain boundary. Rust changes use the explicit build workflow in the engine guide.                                                                                |
 | `packages/auth`                                                 | Same library/check commands, plus `db:setup` and `db:seed` called directly by the root. Owns fixture account provisioning; depends on db without a reverse dependency.                                                                                                                                                    |
 | `packages/db`                                                   | Compiler `build` / `dev`, `lint`, `typecheck`, unit `test`; `infra`, `test:integration`, `db:generate`, `db:studio`, `db:migrate`, `db:reset-local-telemetry` implement root commands.                                                                                                                                    |
 | `packages/db` operator tools                                    | `db:migrations:verify` verifies committed hashes/timestamps (hosted wrapper preflight/postflight); `db:schema-baseline` supports explicit approved schema-only Preview/Staging adoption; `db:facts:backfill` is bounded local dry-run/apply with project scoping and Compose proof. These have distinct safety contracts. |

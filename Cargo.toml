@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/flowmark-evidence"]
+members = ["crates/flowmark-engine"]
 resolver = "3"
 
 [workspace.package]

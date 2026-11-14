@@ -28,9 +28,9 @@ TypeScript + Effect remains the primary application platform; PostgreSQL and Rus
 are established owners for appropriate data-local work and cohesive computation.
 For computation, analysis or data-processing changes, evaluate the owner using the
 [architecture guidance](./docs/architecture.md#typescript-postgresql-and-rust).
-Rust contributions may extend the Evidence Engine or introduce another justified
+Rust contributions may extend the Flowmark Engine or introduce another justified
 crate. Learning and functional craftsmanship are valid benefits; keep integration
-cost and maintainability explicit. The [Rust/WASM guide](./docs/evidence-engine.md)
+cost and maintainability explicit. The [Rust/WASM guide](./docs/engine.md)
 documents the shared toolchain and the current engine's build and tests.
 
 Customer-facing SDK documentation is built from `apps/docs` and published at

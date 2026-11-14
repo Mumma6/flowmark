@@ -1,5 +1,5 @@
 import { EvidenceCaptureStore } from "@flowmark/db/persistence"
-import { EvidenceEngine } from "@flowmark/evidence-engine"
+import { Engine } from "@flowmark/engine"
 import {
   EvidenceCapturesLive,
   EvidenceCaptureAdmissionLive,
@@ -117,7 +117,7 @@ export const ApiLive = Layer.mergeAll(
   Layer.provideMerge(agentAccessAdapter),
   Layer.provide(dependencies),
   Layer.provide(ApiSettings.layer),
-  Layer.provide(EvidenceEngine.layer),
+  Layer.provide(Engine.layer),
 )
 
 /** Request boundary: acquire dependencies, execute once, then release the scope. */

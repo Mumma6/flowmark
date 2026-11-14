@@ -1,0 +1,137 @@
+[
+  {
+    "name": "empty",
+    "input": {
+      "nodes": [],
+      "edges": []
+    },
+    "expected": false
+  },
+  {
+    "name": "chain",
+    "input": {
+      "nodes": ["a", "b", "c"],
+      "edges": [
+        {
+          "from": "a",
+          "to": "b"
+        },
+        {
+          "from": "b",
+          "to": "c"
+        }
+      ]
+    },
+    "expected": false
+  },
+  {
+    "name": "cycle",
+    "input": {
+      "nodes": ["a", "b", "c"],
+      "edges": [
+        {
+          "from": "a",
+          "to": "b"
+        },
+        {
+          "from": "b",
+          "to": "c"
+        },
+        {
+          "from": "c",
+          "to": "a"
+        }
+      ]
+    },
+    "expected": true
+  },
+  {
+    "name": "self loop",
+    "input": {
+      "nodes": ["a"],
+      "edges": [
+        {
+          "from": "a",
+          "to": "a"
+        }
+      ]
+    },
+    "expected": true
+  },
+  {
+    "name": "disconnected cycle",
+    "input": {
+      "nodes": ["a", "b", "c"],
+      "edges": [
+        {
+          "from": "b",
+          "to": "c"
+        },
+        {
+          "from": "c",
+          "to": "b"
+        }
+      ]
+    },
+    "expected": true
+  },
+  {
+    "name": "external edges ignored",
+    "input": {
+      "nodes": ["a", "b"],
+      "edges": [
+        {
+          "from": "x",
+          "to": "a"
+        },
+        {
+          "from": "a",
+          "to": "y"
+        },
+        {
+          "from": "b",
+          "to": "x"
+        }
+      ]
+    },
+    "expected": false
+  },
+  {
+    "name": "duplicate nodes and edges",
+    "input": {
+      "nodes": ["a", "a", "b"],
+      "edges": [
+        {
+          "from": "a",
+          "to": "b"
+        },
+        {
+          "from": "a",
+          "to": "b"
+        }
+      ]
+    },
+    "expected": false
+  },
+  {
+    "name": "cycle with outgoing tail",
+    "input": {
+      "nodes": ["a", "b", "c"],
+      "edges": [
+        {
+          "from": "a",
+          "to": "b"
+        },
+        {
+          "from": "b",
+          "to": "a"
+        },
+        {
+          "from": "b",
+          "to": "c"
+        }
+      ]
+    },
+    "expected": true
+  }
+]

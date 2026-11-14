@@ -22,7 +22,7 @@
     "dev": "tsc -p tsconfig.build.json --watch --preserveWatchOutput"
   },
   "dependencies": {
-    "@flowmark/evidence-engine": "workspace:*",
+    "@flowmark/engine": "workspace:*",
     "@flowmarkdev/core": "workspace:*",
     "@flowmark/db": "workspace:*",
     "effect": "4.1.0"

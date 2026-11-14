@@ -357,7 +357,7 @@ function dependencies(
         Layer.succeed(WorkflowRepository, store),
         Layer.succeed(ProjectCredentials, credentials),
         Layer.succeed(AgentAccess, access),
-        EvidenceEngine.layer,
+        Engine.layer,
       ),
     ),
     Layer.provide(
@@ -1257,4 +1257,4 @@ describe("API Effect services", () => {
     })
   })
 })
-import { EvidenceEngine } from "@flowmark/evidence-engine"
+import { Engine } from "@flowmark/engine"
