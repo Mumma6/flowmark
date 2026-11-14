@@ -54,7 +54,12 @@ import { ProjectCredentialsLive } from "./features/project-access/adapters/proje
 import { GetMcpAgentConnectionLive } from "./features/project-access/use-cases/get-mcp-agent-connection.js"
 import { GetMcpAgentConnection } from "./features/project-access/use-cases/get-mcp-agent-connection.js"
 
+import { WaitlistStore } from "@flowmark/db/persistence"
+import { JoinWaitlist } from "./features/waitlist/join-waitlist.js"
+import { WaitlistRepositoryLive } from "./features/waitlist/waitlist-live.js"
+
 const persistence = Layer.mergeAll(
+  WaitlistStore.layer,
   SharedInvestigationStore.layer,
   EvidenceCaptureStore.layer,
   BusinessEvidenceStore.layer,
@@ -96,6 +101,9 @@ const agentAccessAdapter = Layer.mergeAll(
 )
 
 export const ApiLive = Layer.mergeAll(
+  JoinWaitlist.layer.pipe(
+    Layer.provide(WaitlistRepositoryLive.pipe(Layer.provide(persistence))),
+  ),
   ManageSharedInvestigations.layer,
   ManageEvidenceCaptures.layer,
   GetBusinessEvidence.layer,
@@ -125,6 +133,7 @@ export function runApi<A, E>(
   operation: Effect.Effect<
     A,
     E,
+    | JoinWaitlist
     | ManageSharedInvestigations
     | ManageEvidenceCaptures
     | GetBusinessEvidence

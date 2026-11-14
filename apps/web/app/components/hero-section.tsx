@@ -3,7 +3,6 @@ import { StudioExperience } from "../../features/product-landing/studio-experien
 import { BackgroundBeams } from "./background-beams"
 import { Arrow } from "./brand"
 import { shellClassName } from "./shell"
-import { docsUrl } from "./site-links"
 import { SpotlightWash } from "./spotlight-wash"
 
 export function HeroSection() {
@@ -43,8 +42,8 @@ export function HeroSection() {
           </p>
           <div className="flex flex-wrap gap-3">
             <Button asChild className="h-11 px-5 text-xs">
-              <a href={docsUrl}>
-                Start building <Arrow />
+              <a href="#waitlist">
+                Join the Waitlist <Arrow />
               </a>
             </Button>
             <Button

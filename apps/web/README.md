@@ -72,8 +72,8 @@ generated Open Graph image use the same identity.
 - **Mobile:** the shared Sheet manages navigation focus and Escape dismissal.
 
 Static narrative stays in Server Components. Client boundaries own only local
-interaction state. Shared controls come from `@flowmark/ui`; no new UI kit,
-backend, dependencies or infrastructure are introduced. The story and product
+interaction state. Shared controls come from `@flowmark/ui`. The waitlist reuses the existing API,
+database and pinned Effect dependency; no new UI kit or infrastructure is introduced. The story and product
 navigation follow Studio → Platform → Everywhere, then organization perspectives
 and questions. The closing invitation carries the open-source/self-host message;
 there is no separate open-source feature section. Unused legacy sections
@@ -99,7 +99,8 @@ listener, remote font or image request is required.
 Verify desktop and mobile layouts, keyboard tabs, search/clear recovery, evidence
 selection, cross-interface context, Dialog/Sheet dismissal and focus restoration,
 SDK evidence expansion and copying, FAQ expansion, anchor destinations, metadata
-and the browser console. The synthetic landing needs no database or other app.
+and the browser console. The synthetic product illustrations need no database or other app. Waitlist
+submissions use the existing Studio/API stack described below.
 
 ### Color hierarchy
 
@@ -107,3 +108,33 @@ Lime remains the brand and primary action color. The `highlight` token adds
 restrained lavender to Studio identity, navigation and decorative light; it
 never replaces execution or outcome status colors. Studio uses a darker violet
 in its light theme to preserve text contrast. Keep these accents sparse.
+
+## Waitlist
+
+The hero links to an email form in the closing section. It submits without cookies
+to `/api/waitlist` on the existing `NEXT_PUBLIC_FLOWMARK_APP_URL` Studio origin
+(local default: `http://localhost:3001`). The dashboard uses its existing API proxy;
+no database credentials or new hosted settings are needed in the web app.
+Preview uses the existing sibling-dashboard resolver; Staging requires its
+configured Staging origin. Missing or Production-targeting Preview metadata
+disables the form instead of submitting to Production. The
+public write-only proxy permits cross-origin requests without credentials.
+
+The API validates, trims and lowercases addresses. PostgreSQL's unique index on
+`lower(email)` makes concurrent duplicates safe. Every accepted submission returns
+`{ "ok": true }`, including existing addresses, without revealing membership. No
+authentication, invitation, confirmation email or admin interface is involved.
+
+The existing database-backed limiter caps valid waitlist submissions at 120 per
+minute per database across instances. It returns HTTP 429 with `Retry-After` when
+full. This deliberately simple shared budget does not identify individual bots
+or protect against sustained traffic exhausting that budget. No forwarded IP,
+raw email or new credential is used for the limiter key. Invalid bodies are bounded
+by the API's existing 64 KiB reader. Database failures return HTTP 503 and never
+look like successful joins; the client supports retry without creating duplicates.
+
+Apply committed migration `0032_brief_sphinx` before rolling out the API/landing
+change, following [database rollout](../../docs/migrations.md). This work does not
+authorize a hosted migration or deployment. Each environment uses its own existing
+database. The form has loading, accessible success/error states and a 10-second
+network timeout. No submitted address or request body is written to application logs.

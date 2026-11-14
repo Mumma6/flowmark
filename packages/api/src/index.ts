@@ -208,3 +208,7 @@ export type {
 
 export type { SavedEvidenceExport } from "@flowmarkdev/core"
 export { EngineError } from "@flowmark/engine"
+
+export { JoinWaitlist } from "./features/waitlist/join-waitlist.js"
+
+export { WaitlistRepository } from "./features/waitlist/waitlist-repository.js"
