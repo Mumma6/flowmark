@@ -134,6 +134,8 @@ export function createFlowmarkAuth(options: {
     emailVerification: email?.emailVerification,
     emailAndPassword: {
       enabled: true,
+      // Vercel uses NODE_ENV=production for Preview/Staging too.
+      disableSignUp: process.env.VERCEL_ENV === "production",
       minPasswordLength: 8,
       autoSignIn: true,
       requireEmailVerification: false,

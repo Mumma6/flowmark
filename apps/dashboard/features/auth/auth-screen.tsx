@@ -26,9 +26,11 @@ import { authenticate } from "./operations"
 
 export function AuthScreen({
   mode,
+  registrationEnabled,
   localAccount,
   returnTo,
 }: {
+  registrationEnabled: boolean
   mode: "sign-in" | "sign-up"
   localAccount?: { readonly email: string; readonly password: string }
   returnTo?: string
@@ -242,18 +244,25 @@ export function AuthScreen({
               <ArrowRight aria-hidden="true" className="ml-auto size-4" />
             </Button>
           </form>
-          <nav
-            aria-label="Account"
-            className="mt-6 text-center text-xs text-muted-foreground"
-          >
-            {isSignUp ? "Already have an account? " : "New to Flowmark? "}
-            <Link
-              href={`${isSignUp ? "/sign-in" : "/sign-up"}${authReturnPath(returnTo) ? `?returnTo=${encodeURIComponent(authReturnPath(returnTo)!)}` : ""}`}
-              className="text-foreground underline-offset-4 hover:text-highlight hover:underline"
+          {registrationEnabled ? (
+            <nav
+              aria-label="Account"
+              className="mt-6 text-center text-xs text-muted-foreground"
             >
-              {isSignUp ? "Sign in" : "Create an account"}
-            </Link>
-          </nav>
+              {isSignUp ? "Already have an account? " : "New to Flowmark? "}
+              <Link
+                href={`${isSignUp ? "/sign-in" : "/sign-up"}${authReturnPath(returnTo) ? `?returnTo=${encodeURIComponent(authReturnPath(returnTo)!)}` : ""}`}
+                className="text-foreground underline-offset-4 hover:text-highlight hover:underline"
+              >
+                {isSignUp ? "Sign in" : "Create an account"}
+              </Link>
+            </nav>
+          ) : (
+            <p className="mt-6 text-center text-sm text-muted-foreground">
+              Public registration is currently closed. Existing accounts can
+              still sign in.
+            </p>
+          )}
           {localAccount ? (
             <details className="mt-8 rounded-lg border border-dashed border-border bg-card/30 px-4 py-3">
               <summary className="cursor-pointer text-[11px] text-muted-foreground">
