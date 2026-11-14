@@ -1,5 +1,7 @@
 "use client"
 
+import { ProjectOwnerOnly } from "../../project-sharing/project-owner-only"
+
 import {
   Button,
   Card,
@@ -19,7 +21,7 @@ import {
 } from "./definition-document"
 import example from "../../../../../examples/booking-definition.json"
 
-export function DefinitionImportPanel({ workflow }: { workflow?: string }) {
+function DefinitionImportPanelContent({ workflow }: { workflow?: string }) {
   const { current } = useProject()
   return current ? (
     <ImportForm
@@ -240,5 +242,13 @@ function ImportForm({
         <WorkflowMeaning key={visibleWorkflow} workflow={visibleWorkflow} />
       )}
     </div>
+  )
+}
+
+export function DefinitionImportPanel({ workflow }: { workflow?: string }) {
+  return (
+    <ProjectOwnerOnly>
+      <DefinitionImportPanelContent workflow={workflow} />
+    </ProjectOwnerOnly>
   )
 }

@@ -72,6 +72,7 @@ jobs:
           version: 10.18.1
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
+          # Reviewed historical revisions may predate .node-version.
           node-version: "24"
           cache: pnpm
       - run: pnpm install --frozen-lockfile

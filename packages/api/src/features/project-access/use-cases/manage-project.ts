@@ -132,7 +132,7 @@ export class ManageProject extends Context.Service<
       const credentials = yield* ProjectCredentials
 
       const requireMember = (userId: string, projectId: string) =>
-        authorization.authorizeUser(userId, projectId)
+        authorization.authorizeOwner(userId, projectId)
 
       const requireCreationQuota = Effect.fn(
         "ManageProject.requireCreationQuota",
@@ -192,7 +192,7 @@ export class ManageProject extends Context.Service<
       ) {
         const name = yield* requireName(rawName, "Project name")
         yield* requireMember(userId, projectId)
-        yield* credentials.renameProject(projectId, name)
+        yield* credentials.renameProject(userId, projectId, name)
       })
 
       const keys = Effect.fn("ManageProject.keys")(function* (
@@ -201,8 +201,8 @@ export class ManageProject extends Context.Service<
       ) {
         yield* requireMember(userId, projectId)
         const [apiKeys, browserKeys] = yield* Effect.all([
-          credentials.listApiKeys(projectId),
-          credentials.listBrowserKeys(projectId),
+          credentials.listApiKeys(userId, projectId),
+          credentials.listBrowserKeys(userId, projectId),
         ])
         return { apiKeys, browserKeys }
       })
@@ -212,7 +212,7 @@ export class ManageProject extends Context.Service<
           const name = yield* requireName(rawName, "Key name")
           yield* requireMember(userId, projectId)
           yield* requireCreationQuota(userId, "key")
-          return yield* credentials.createApiKey(projectId, {
+          return yield* credentials.createApiKey(userId, projectId, {
             name,
             permission: "write",
           })
@@ -227,7 +227,7 @@ export class ManageProject extends Context.Service<
         const name = yield* requireName(rawName, "Key name")
         yield* requireMember(userId, projectId)
         yield* requireCreationQuota(userId, "key")
-        return yield* credentials.createApiKey(projectId, {
+        return yield* credentials.createApiKey(userId, projectId, {
           name,
           permission: "read",
         })
@@ -239,7 +239,11 @@ export class ManageProject extends Context.Service<
         keyId: string,
       ) {
         yield* requireMember(userId, projectId)
-        const deleted = yield* credentials.revokeApiKey(projectId, keyId)
+        const deleted = yield* credentials.revokeApiKey(
+          userId,
+          projectId,
+          keyId,
+        )
         if (!deleted) {
           return yield* new InvalidInput({ cause: "Unknown API key." })
         }
@@ -258,7 +262,7 @@ export class ManageProject extends Context.Service<
           const origins = yield* requireOrigins(input.origins)
           yield* requireMember(userId, projectId)
           yield* requireCreationQuota(userId, "key")
-          return yield* credentials.createBrowserKey(projectId, {
+          return yield* credentials.createBrowserKey(userId, projectId, {
             name,
             origins,
           })
@@ -268,7 +272,11 @@ export class ManageProject extends Context.Service<
       const revokeBrowserKey = Effect.fn("ManageProject.revokeBrowserKey")(
         function* (userId: string, projectId: string, keyId: string) {
           yield* requireMember(userId, projectId)
-          const deleted = yield* credentials.revokeBrowserKey(projectId, keyId)
+          const deleted = yield* credentials.revokeBrowserKey(
+            userId,
+            projectId,
+            keyId,
+          )
           if (!deleted) {
             return yield* new InvalidInput({ cause: "Unknown browser key." })
           }
@@ -279,7 +287,11 @@ export class ManageProject extends Context.Service<
         function* (userId: string, projectId: string, keyId: string) {
           yield* requireMember(userId, projectId)
           yield* requireCreationQuota(userId, "key")
-          const created = yield* credentials.rotateWriteKey(projectId, keyId)
+          const created = yield* credentials.rotateWriteKey(
+            userId,
+            projectId,
+            keyId,
+          )
           if (!created) {
             return yield* new InvalidInput({
               cause:

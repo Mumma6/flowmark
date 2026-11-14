@@ -169,6 +169,69 @@
       "when": 1794479955256,
       "tag": "0023_private_live_investigations",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1794492610059,
+      "tag": "0024_sturdy_ultimates",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1794493985690,
+      "tag": "0025_hesitant_amazoness",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1794496231069,
+      "tag": "0026_shallow_william_stryker",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1794569626376,
+      "tag": "0027_busy_serpent_society",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1794582102132,
+      "tag": "0028_lively_the_fury",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1794588090905,
+      "tag": "0029_opposite_jazinda",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1794590232179,
+      "tag": "0030_orange_tempest",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1794592845231,
+      "tag": "0031_remarkable_felicia_hardy",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1794644336224,
+      "tag": "0032_brief_sphinx",
+      "breakpoints": true
     }
   ]
 }

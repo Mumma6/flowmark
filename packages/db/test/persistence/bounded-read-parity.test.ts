@@ -9,7 +9,7 @@ import { Database, InvalidResultQuery } from "../../src/persistence/database.js"
 import { getBusinessInsights } from "../../src/persistence/workflows/queries/get-business-insights.js"
 import { getPeriodReport } from "../../src/persistence/workflows/queries/get-period-report.js"
 import { getRelatedRunsPage } from "../../src/persistence/workflows/queries/get-related-runs-page.js"
-import { getRunComparison } from "../../src/persistence/workflows/queries/get-run-comparison.js"
+import { getRunComparisonEvidence } from "../../src/persistence/workflows/queries/get-run-comparison-evidence.js"
 import {
   getRunEventPage,
   runEventPageGuardQuery,
@@ -507,7 +507,7 @@ test(
       assert.equal(outcomePeriod?.current.finishedRuns, 5)
       assert.equal(outcomePeriod?.previous.finishedRuns, 0)
       const comparison = Result.getOrThrow(
-        await run(getRunComparison(project, wrongType)),
+        await run(getRunComparisonEvidence(project, wrongType)),
       )
       assert.equal(comparison.current?.id, wrongType)
       assert.equal(comparison.peers.length, 4)

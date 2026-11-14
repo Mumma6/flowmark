@@ -1,5 +1,9 @@
 "use client"
 
+import { PublicationSettings } from "../business-evidence/publication-settings"
+
+import { ProjectSharingPanel } from "../project-sharing/project-sharing-panel"
+
 import {
   Alert,
   AlertDescription,
@@ -10,29 +14,48 @@ import {
   TabsTrigger,
 } from "@flowmark/ui"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import Link from "next/link"
 import { Suspense } from "react"
 import { PageHeading } from "../shared/dashboard-components"
 import { ConnectSetupPanel } from "../connect/setup/connect-setup"
 import { useProject } from "../projects/project-context"
+import { AccountSecurity } from "./account-security"
 import { AccountSettings } from "./account-settings"
 import { KeySettings } from "./key-settings"
 import { ProjectSettings } from "./project-settings"
 import { DefinitionImportPanel } from "../results/definitions/definition-import-panel"
+import { DataPrivacyPanel } from "./data-privacy/data-privacy-panel"
 
-type SettingsSection = "projects" | "keys" | "setup" | "account" | "definitions"
+type SettingsSection =
+  | "access"
+  | "projects"
+  | "keys"
+  | "setup"
+  | "account"
+  | "security"
+  | "definitions"
+  | "privacy"
 
 const sections: ReadonlyArray<{
   readonly id: SettingsSection
   readonly label: string
 }> = [
+  { id: "account", label: "Account" },
+  { id: "security", label: "Security" },
   { id: "projects", label: "Projects" },
-  { id: "keys", label: "API keys" },
+  { id: "access", label: "Project access" },
+  { id: "keys", label: "Project API keys" },
   { id: "setup", label: "Setup help" },
   { id: "definitions", label: "Process metadata" },
-  { id: "account", label: "Account" },
+  { id: "privacy", label: "Data & privacy" },
 ]
 
 const sectionHelp: Record<SettingsSection, string> = {
+  access:
+    "Invite read-only colleagues to one project, or review and leave a shared project.",
+  security: "Manage your password and sign out other browser sessions.",
+  privacy:
+    "Review the exact scope before permanently erasing telemetry or deleting a project.",
   definitions:
     "Review and apply optional result labels and searchable references from your application code. This changes metadata, never application execution.",
   projects:
@@ -46,11 +69,14 @@ const sectionHelp: Record<SettingsSection, string> = {
 
 function parseSection(value: string | null): SettingsSection {
   if (
+    value === "access" ||
     value === "projects" ||
+    value === "privacy" ||
     value === "keys" ||
     value === "setup" ||
     value === "definitions" ||
-    value === "account"
+    value === "account" ||
+    value === "security"
   ) {
     return value
   }
@@ -98,8 +124,22 @@ function SettingsPageInner() {
         <p className="mt-4 max-w-3xl text-base leading-7 text-muted-foreground">
           {sectionHelp[section]}
         </p>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Account and Security apply across your projects. Keys, process
+          metadata and telemetry controls use the selected project.{" "}
+          <Link href="/account/help" className="text-primary underline">
+            Account and setup help
+          </Link>{" "}
+          is available before project setup.
+        </p>
         <TabsContent value="projects" className="mt-6">
           <ProjectSettings />
+        </TabsContent>
+        <TabsContent value="access" className="mt-6">
+          <div className="grid gap-6">
+            <ProjectSharingPanel />
+            <PublicationSettings />
+          </div>
         </TabsContent>
         <TabsContent value="keys" className="mt-6">
           <KeySettings key={current?.id ?? "no-project"} />
@@ -115,8 +155,14 @@ function SettingsPageInner() {
             }
           />
         </TabsContent>
+        <TabsContent value="security" className="mt-6">
+          <AccountSecurity />
+        </TabsContent>
         <TabsContent value="definitions" className="mt-6">
           <DefinitionImportPanel />
+        </TabsContent>
+        <TabsContent value="privacy" className="mt-6">
+          <DataPrivacyPanel />
         </TabsContent>
       </Tabs>
     </div>

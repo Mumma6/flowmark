@@ -2,7 +2,7 @@ import {
   AGENT_ACCESS_QUERY_BOUNDS,
   AgentAccessContractError,
 } from "@flowmark/auth/agent-access"
-import { InvalidInput, Unauthorized } from "@flowmark/api"
+import { InvalidInput, Unauthorized, type EngineError } from "@flowmark/api"
 import { Effect, Match, Option, Predicate } from "effect"
 import {
   McpConfigurationError,
@@ -66,6 +66,7 @@ export const mcpToolResult = (structured: Record<string, unknown>) =>
   mcpResultFits(structured) ? formatToolResult(structured) : responseTooLarge()
 
 export type McpToolFailure =
+  | EngineError
   | InvalidInput
   | Unauthorized
   | AgentAccessContractError
@@ -83,6 +84,7 @@ export const presentMcpTool = <A extends Record<string, unknown>, R>(
   effect.pipe(
     Effect.map((value) => mcpToolResult(value)),
     Effect.catchTags({
+      EngineError: () => toolError("Evidence analysis is unavailable."),
       InvalidInput: (error) => toolError(invalidInputMessage(error.cause)),
       Unauthorized: () =>
         toolError(

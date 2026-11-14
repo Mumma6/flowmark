@@ -1,0 +1,1 @@
+CREATE INDEX "shared_investigations_creator_project_idx" ON "shared_investigations" USING btree ("creator_id","project_id");

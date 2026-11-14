@@ -126,7 +126,7 @@ describe("ManageProject", () => {
       manage.createReadKey("user", "project-1", "CLI"),
     )
     await Effect.runPromise(create.pipe(Effect.provide(provide(credentials))))
-    expect(createApiKey).toHaveBeenCalledWith("project-1", {
+    expect(createApiKey).toHaveBeenCalledWith("user", "project-1", {
       name: "CLI",
       permission: "read",
     })
@@ -245,8 +245,8 @@ describe("ManageProject", () => {
       ),
     )
     expect(result.secret).toBe("fm_write_secret")
-    expect(memberProject).toHaveBeenCalledWith("user-1", "project-1")
-    expect(createApiKey).toHaveBeenCalledWith("project-1", {
+    expect(memberProject).toHaveBeenCalledWith("user-1", "project-1", "owner")
+    expect(createApiKey).toHaveBeenCalledWith("user-1", "project-1", {
       name: "Ingestion",
       permission: "write",
     })
@@ -302,7 +302,11 @@ describe("ManageProject", () => {
       name: "Worker",
       secret: "fm_write_secret",
     })
-    expect(rotateWriteKey).toHaveBeenCalledWith("project-1", "key-old")
+    expect(rotateWriteKey).toHaveBeenCalledWith(
+      "user-1",
+      "project-1",
+      "key-old",
+    )
     expect(createApiKey).not.toHaveBeenCalled()
     expect(revokeApiKey).not.toHaveBeenCalled()
   })

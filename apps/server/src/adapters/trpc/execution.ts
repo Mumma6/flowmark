@@ -2,16 +2,23 @@ import { TRPCError } from "@trpc/server"
 import { Effect, Exit, Match, Option, Schema } from "effect"
 import {
   AgentAccess,
+  ManageProjectSharing,
+  ManageDataLifecycle,
+  ManageAccountLifecycle,
   ManageInvestigations,
   ManageResultDeclarations,
   ConfigurationError,
   GetProjectWorkflowData,
+  GetBusinessEvidence,
+  ManageSharedInvestigations,
+  ManageEvidenceCaptures,
   type ProjectReader,
   InvalidInput,
   ManageProject,
   ManagementRateLimited,
   Onboarding,
   PersistenceError,
+  EngineError,
   logFailure,
   runApi,
   Unauthorized,
@@ -57,10 +64,17 @@ async function executeQuery<A>(
     A,
     | Unauthorized
     | PersistenceError
+    | EngineError
     | ConfigurationError
     | InvalidInput
     | ManagementRateLimited,
+    | ManageSharedInvestigations
+    | ManageEvidenceCaptures
+    | GetBusinessEvidence
+    | ManageProjectSharing
     | ManageInvestigations
+    | ManageAccountLifecycle
+    | ManageDataLifecycle
     | AgentAccess
     | GetProjectWorkflowData
     | ManageProject
@@ -133,8 +147,15 @@ export function readQuery<A>(
     reader: ProjectReader,
   ) => Effect.Effect<
     A,
-    Unauthorized | PersistenceError | InvalidInput | ManagementRateLimited,
-    GetProjectWorkflowData
+    | Unauthorized
+    | PersistenceError
+    | EngineError
+    | InvalidInput
+    | ManagementRateLimited,
+    | GetProjectWorkflowData
+    | GetBusinessEvidence
+    | ManageSharedInvestigations
+    | ManageEvidenceCaptures
   >,
 ) {
   const projectId = requestedProjectId(request)
@@ -191,8 +212,18 @@ export function sessionQuery<A>(
     userId: string,
   ) => Effect.Effect<
     A,
-    Unauthorized | PersistenceError | InvalidInput | ManagementRateLimited,
+    | Unauthorized
+    | PersistenceError
+    | EngineError
+    | InvalidInput
+    | ManagementRateLimited,
+    | ManageSharedInvestigations
+    | ManageEvidenceCaptures
+    | GetBusinessEvidence
+    | ManageProjectSharing
     | ManageInvestigations
+    | ManageAccountLifecycle
+    | ManageDataLifecycle
     | ManageProject
     | ManageResultDeclarations
     | AgentAccess
@@ -259,4 +290,15 @@ export function sessionAgentAccessQuery<A>(
       ),
     ),
   )
+}
+
+export function accountCleanupQuery<A>(
+  request: Request,
+  operation: Effect.Effect<
+    A,
+    Unauthorized | PersistenceError | InvalidInput | ManagementRateLimited,
+    ManageAccountLifecycle
+  >,
+) {
+  return executeQuery(request, operation)
 }

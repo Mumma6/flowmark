@@ -39,8 +39,13 @@ export function WorkflowSearchFields({ workflow }: { workflow: string }) {
     setValues("")
   })
   const meaning = useWorkflowMeaning(workflow, Boolean(current))
+  const owner = current?.role === "owner"
   const blocked =
-    !current || fields.isPending || Boolean(fields.error) || save.isPending
+    !owner ||
+    !current ||
+    fields.isPending ||
+    Boolean(fields.error) ||
+    save.isPending
   return (
     <Card>
       <CardHeader>
@@ -88,120 +93,129 @@ export function WorkflowSearchFields({ workflow }: { workflow: string }) {
                   ? "Reference"
                   : `Category: ${field.values.join(", ")}`}
               </span>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={
-                  blocked ||
-                  meaning.isPending ||
-                  Boolean(meaning.error) ||
-                  Option.isSome(
+              {owner ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={
+                    blocked ||
+                    meaning.isPending ||
+                    Boolean(meaning.error) ||
+                    Option.isSome(
+                      searchFieldSource(meaning.data?.searchSources, field.key),
+                    )
+                  }
+                  onClick={() =>
+                    current &&
+                    save.mutate({
+                      projectId: current.id,
+                      workflow,
+                      fields: fields.data.filter(
+                        (item) => item.key !== field.key,
+                      ),
+                    })
+                  }
+                >
+                  {Option.isSome(
                     searchFieldSource(meaning.data?.searchSources, field.key),
                   )
-                }
-                onClick={() =>
-                  current &&
-                  save.mutate({
-                    projectId: current.id,
-                    workflow,
-                    fields: fields.data.filter(
-                      (item) => item.key !== field.key,
-                    ),
-                  })
-                }
-              >
-                {Option.isSome(
-                  searchFieldSource(meaning.data?.searchSources, field.key),
-                )
-                  ? searchFieldOwnerLabel(
-                      meaning.data?.searchSources,
-                      field.key,
-                    )
-                  : `Disable ${field.key}`}
-              </Button>
+                    ? searchFieldOwnerLabel(
+                        meaning.data?.searchSources,
+                        field.key,
+                      )
+                    : `Disable ${field.key}`}
+                </Button>
+              ) : null}
             </li>
           ))}
         </ul>
-        <form
-          className="grid gap-4"
-          onSubmit={(event) => {
-            event.preventDefault()
-            if (blocked || !current) {
-              return
-            }
-            const field =
-              role === "lookup"
-                ? { key, role }
-                : {
-                    key,
-                    role,
-                    values: values
-                      .split(",")
-                      .map((value) => value.trim())
-                      .filter(Boolean),
-                  }
-            save.mutate({
-              projectId: current.id,
-              workflow,
-              fields: [
-                ...(fields.data ?? []).filter((item) => item.key !== key),
-                field,
-              ],
-            })
-          }}
-        >
-          <label className="grid gap-2 text-sm">
-            Property key
-            <Input
-              required
-              pattern="[a-zA-Z][a-zA-Z0-9_]{0,63}"
-              maxLength={64}
-              value={key}
-              onChange={(event) => setKey(event.target.value)}
-              placeholder="batchId"
-            />
-          </label>
-          <div className="grid gap-2 text-sm">
-            <label htmlFor={roleId}>Search role</label>
-            <NativeSelect
-              id={roleId}
-              value={role}
-              onChange={(event) =>
-                setRole(
-                  event.target.value === "dimension" ? "dimension" : "lookup",
-                )
+        {owner ? (
+          <form
+            className="grid gap-4"
+            onSubmit={(event) => {
+              event.preventDefault()
+              if (blocked || !current) {
+                return
               }
-            >
-              <option value="lookup">Reference (exact match)</option>
-              <option value="dimension">Category (allowed values)</option>
-            </NativeSelect>
-          </div>
-          {role === "dimension" && (
+              const field =
+                role === "lookup"
+                  ? { key, role }
+                  : {
+                      key,
+                      role,
+                      values: values
+                        .split(",")
+                        .map((value) => value.trim())
+                        .filter(Boolean),
+                    }
+              save.mutate({
+                projectId: current.id,
+                workflow,
+                fields: [
+                  ...(fields.data ?? []).filter((item) => item.key !== key),
+                  field,
+                ],
+              })
+            }}
+          >
             <label className="grid gap-2 text-sm">
-              Allowed values, comma separated
+              Property key
               <Input
                 required
-                value={values}
-                maxLength={5139}
-                onChange={(event) => setValues(event.target.value)}
-                placeholder="crm-a, crm-b"
+                pattern="[a-zA-Z][a-zA-Z0-9_]{0,63}"
+                maxLength={64}
+                value={key}
+                onChange={(event) => setKey(event.target.value)}
+                placeholder="batchId"
               />
             </label>
-          )}
-          <p className="text-xs text-muted-foreground">
-            Up to 8 keys and 20 values per category; values up to 256
-            characters. Saving an existing key updates its search permission.
-          </p>
-          {save.error && (
-            <p role="alert">
-              Could not save search fields: {save.error.message}
+            <div className="grid gap-2 text-sm">
+              <label htmlFor={roleId}>Search role</label>
+              <NativeSelect
+                id={roleId}
+                value={role}
+                onChange={(event) =>
+                  setRole(
+                    event.target.value === "dimension" ? "dimension" : "lookup",
+                  )
+                }
+              >
+                <option value="lookup">Reference (exact match)</option>
+                <option value="dimension">Category (allowed values)</option>
+              </NativeSelect>
+            </div>
+            {role === "dimension" && (
+              <label className="grid gap-2 text-sm">
+                Allowed values, comma separated
+                <Input
+                  required
+                  value={values}
+                  maxLength={5139}
+                  onChange={(event) => setValues(event.target.value)}
+                  placeholder="crm-a, crm-b"
+                />
+              </label>
+            )}
+            <p className="text-xs text-muted-foreground">
+              Up to 8 keys and 20 values per category; values up to 256
+              characters. Saving an existing key updates its search permission.
             </p>
-          )}
-          {save.isSuccess && <p role="status">Search fields saved.</p>}
-          <Button type="submit" disabled={blocked}>
-            {save.isPending ? "Saving…" : "Enable or update field"}
-          </Button>
-        </form>
+            {save.error && (
+              <p role="alert">
+                Could not save search fields: {save.error.message}
+              </p>
+            )}
+            {save.isSuccess && <p role="status">Search fields saved.</p>}
+            <Button type="submit" disabled={blocked}>
+              {save.isPending ? "Saving…" : "Enable or update field"}
+            </Button>
+          </form>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            Search configuration is read-only. Ask the project owner to change
+            it.
+          </p>
+        )}
       </CardContent>
     </Card>
   )

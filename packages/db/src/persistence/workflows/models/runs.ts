@@ -242,3 +242,30 @@ export type RunTimelineEvent = {
   parentRunId: string | null
   readonly boundedPreviewOmissions?: ReadonlyArray<string>
 }
+
+/** Ordered evidence for application-owned comparison calculations. */
+export interface OperationEvidenceEvent {
+  readonly type: string
+  readonly operationId: string | null
+  readonly operationName: string | null
+  readonly durationMs: number | null
+  readonly timestamp: string
+}
+export interface RunComparisonEvidence {
+  readonly population?: PeerPopulation
+  readonly current: StoredRun | null
+  readonly peers: readonly StoredRun[]
+  readonly currentOperations: readonly OperationEvidenceEvent[]
+  readonly peerOperations: readonly {
+    readonly runId: string
+    readonly events: readonly OperationEvidenceEvent[]
+  }[]
+}
+
+export interface ReferenceJourneyEvidence {
+  readonly page: import("@flowmarkdev/core").ReferenceJourneyPage
+  readonly graph: {
+    readonly nodes: readonly string[]
+    readonly edges: readonly import("@flowmarkdev/core").JourneyEdge[]
+  }
+}

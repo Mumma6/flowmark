@@ -24,6 +24,7 @@ import {
   oauthRefreshToken,
   oauthResource,
   projectApiKeys,
+  personalWorkspaces,
   projectMembers,
   projects,
   workspaces,
@@ -48,6 +49,7 @@ test(
     const exec = run(db)
     const userId = randomUUID()
     const otherUserId = randomUUID()
+    const ownerId = randomUUID()
     const clientId = `test-client-${randomUUID()}`
     const resourceIdentifier = `https://integration.flowmark.test/mcp`
     const resourceUrl = resourceIdentifier
@@ -130,18 +132,27 @@ test(
         email: `${otherUserId}@example.test`,
       })
 
+      await db.insert(user).values({
+        id: ownerId,
+        name: "Project owner",
+        email: `${ownerId}@example.test`,
+      })
       const ownedA = await exec(
-        createOwnedProject(userId, {
+        createOwnedProject(ownerId, {
           workspace: "W1",
           project: "Project A",
         }),
       )
       const ownedB = await exec(
-        createOwnedProject(userId, {
+        createOwnedProject(ownerId, {
           workspace: "W2",
           project: "Project B",
         }),
       )
+      await db.insert(projectMembers).values([
+        { userId, projectId: ownedA.projectId, role: "viewer" },
+        { userId, projectId: ownedB.projectId, role: "viewer" },
+      ])
       createdProjectIds.push(ownedA.projectId, ownedB.projectId)
       const wsRows = await db
         .select({ workspaceId: projects.workspaceId })
@@ -254,7 +265,7 @@ test(
       await db.insert(projectMembers).values({
         userId,
         projectId: ownedA.projectId,
-        role: "owner",
+        role: "viewer",
       })
 
       await assert.rejects(
@@ -387,10 +398,15 @@ test(
         await db.delete(projectMembers).where(eq(projectMembers.userId, userId))
         await db.delete(projects).where(inArray(projects.id, createdProjectIds))
       }
+      await db
+        .delete(personalWorkspaces)
+        .where(eq(personalWorkspaces.userId, ownerId))
       if (workspaceIds.length > 0) {
         await db.delete(workspaces).where(inArray(workspaces.id, workspaceIds))
       }
-      await db.delete(user).where(inArray(user.id, [userId, otherUserId]))
+      await db
+        .delete(user)
+        .where(inArray(user.id, [userId, otherUserId, ownerId]))
       await close()
     }
   },

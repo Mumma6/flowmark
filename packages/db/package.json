@@ -48,6 +48,10 @@
     "./test-environment": {
       "types": "./dist/environment/test-database.d.ts",
       "import": "./dist/environment/test-database.js"
+    },
+    "./capture-environment": {
+      "types": "./dist/environment/evidence-capture-target.d.ts",
+      "import": "./dist/environment/evidence-capture-target.js"
     }
   },
   "scripts": {

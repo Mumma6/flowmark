@@ -27,10 +27,26 @@ const link = {
 }
 
 export const EmailMessage = Schema.Union([
+  Schema.Struct({
+    ...common,
+    kind: Schema.Literal("project-invitation"),
+    role: Schema.optional(Schema.Literals(["viewer", "business"])),
+    actionUrl: Schema.String.check(Schema.isMaxLength(4096)),
+    projectName: Schema.String.check(
+      Schema.isMinLength(1),
+      Schema.isMaxLength(80),
+    ),
+    inviterName: Schema.String.check(Schema.isMaxLength(80)),
+  }),
   Schema.Struct({ ...common, kind: Schema.Literal("delivery-test") }),
   Schema.Struct({ ...link, kind: Schema.Literal("verify-email") }),
   Schema.Struct({ ...link, kind: Schema.Literal("reset-password") }),
   Schema.Struct({ ...link, kind: Schema.Literal("change-email") }),
+  Schema.Struct({
+    ...link,
+    kind: Schema.Literal("confirm-email-change"),
+    newEmail: Mailbox,
+  }),
   Schema.Struct({
     ...common,
     kind: Schema.Literal("security-notice"),

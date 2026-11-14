@@ -1,3 +1,4 @@
+import { decodeBusinessResult, isBusinessResult } from "./business-result.js"
 import * as HashSet from "effect/HashSet"
 import * as Array from "effect/Array"
 import { pipe } from "effect/Function"
@@ -66,7 +67,7 @@ const evidence = Schema.Struct({
 })
 
 /** Only completed results bound to the supplied invocation can become a view. */
-export const decodeToolEvidence = (
+const decodeDiagnosticToolEvidence = (
   argumentsValue: unknown,
   resultValue: unknown,
 ) =>
@@ -174,6 +175,7 @@ export const decodeToolEvidence = (
       )
     }
     return {
+      kind: "diagnostic" as const,
       snapshot: projected,
       // Carry only validated read references; discard the rest of the RPC envelope.
       invocation: {
@@ -187,6 +189,45 @@ export const decodeToolEvidence = (
     }
   })
 
+type DiagnosticToolEvidence = Result.Result.Success<
+  ReturnType<typeof decodeDiagnosticToolEvidence>
+>
+type BusinessToolEvidence = Result.Result.Success<
+  ReturnType<typeof decodeBusinessResult>
+>
+export const decodeToolEvidence = (
+  args: unknown,
+  result: unknown,
+): Result.Result<
+  DiagnosticToolEvidence | BusinessToolEvidence,
+  EvidenceInputError
+> => {
+  if (isBusinessResult(result)) {
+    const serialized = Result.try(() => JSON.stringify(result))
+    if (
+      Result.isFailure(serialized) ||
+      typeof serialized.success !== "string" ||
+      new TextEncoder().encode(serialized.success).byteLength > 65536
+    ) {
+      return Result.fail(
+        new EvidenceInputError({
+          reason: "Business evidence exceeds the 64 KiB view limit.",
+        }),
+      )
+    }
+    return decodeBusinessResult(args, result).pipe(
+      Result.mapError(
+        () =>
+          new EvidenceInputError({
+            reason:
+              "Business evidence is invalid or does not match its invocation.",
+          }),
+      ),
+    )
+  }
+  return decodeDiagnosticToolEvidence(args, result)
+}
+
 export type ToolEvidence = Result.Result.Success<
   ReturnType<typeof decodeToolEvidence>
 >
@@ -197,5 +238,14 @@ export const projectToolEvidence = (
   resultValue: unknown,
 ) =>
   decodeToolEvidence(argumentsValue, resultValue).pipe(
-    Result.map((value) => value.snapshot),
+    Result.flatMap((value) =>
+      value.kind === "diagnostic"
+        ? Result.succeed(value.snapshot)
+        : Result.fail(
+            new EvidenceInputError({
+              reason:
+                "This is a business evidence view, not a diagnostic snapshot.",
+            }),
+          ),
+    ),
   )

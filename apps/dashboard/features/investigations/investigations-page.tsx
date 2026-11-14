@@ -1,4 +1,10 @@
 "use client"
+import { CapturePage } from "../evidence-captures/capture-page"
+import { CaptureList } from "../evidence-captures/capture-list"
+import { ExportEvidence } from "./export-evidence"
+import { SharedQuestionPage } from "../shared-investigations/shared-question-page"
+import { SharedInvestigationList } from "../shared-investigations/shared-list"
+import { ShareSavedQuestion } from "../shared-investigations/share-saved-question"
 import { Button } from "@flowmark/ui"
 import {
   skipToken,
@@ -7,7 +13,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query"
 import { Result } from "effect"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useState } from "react"
 import type { SavedInvestigationSummary } from "@flowmarkdev/core"
 import { useTRPCClient } from "../platform/api-trpc"
@@ -19,6 +25,15 @@ import { privateInvestigationKey, savedSelectionHref } from "./saved-selection"
 export function InvestigationsPage() {
   const { current } = useProject()
   const userId = useInvestigationOwner()
+  const params = useSearchParams()
+  const capture = params.get("capture")
+  if (capture !== null) {
+    return <CapturePage projectId={params.get("project")} id={capture} />
+  }
+  const shared = params.get("shared")
+  if (shared !== null) {
+    return <SharedQuestionPage projectId={params.get("project")} id={shared} />
+  }
   return (
     <div className="grid min-w-0 gap-6">
       <div>
@@ -30,11 +45,21 @@ export function InvestigationsPage() {
         </p>
       </div>
       {current && userId ? (
-        <InvestigationList
-          key={`${userId}:${current.id}`}
-          userId={userId}
-          projectId={current.id}
-        />
+        <>
+          <CaptureList
+            key={`captures:${userId}:${current.id}`}
+            projectId={current.id}
+          />
+          <SharedInvestigationList
+            key={`shared:${userId}:${current.id}`}
+            projectId={current.id}
+          />
+          <InvestigationList
+            key={`${userId}:${current.id}`}
+            userId={userId}
+            projectId={current.id}
+          />
+        </>
       ) : (
         <p role="status">Select a project to see your saved investigations.</p>
       )}
@@ -143,6 +168,7 @@ function InvestigationEntry({
   userId: string
   projectId: string
 }) {
+  const { current } = useProject()
   const client = useTRPCClient()
   const cache = useQueryClient()
   const router = useRouter()
@@ -212,6 +238,16 @@ function InvestigationEntry({
           Delete saved investigation
         </Button>
       </div>
+      {item.supported && current?.role !== "business" ? (
+        <ExportEvidence
+          load={() =>
+            client.investigations.export.query({ projectId, id: item.id })
+          }
+        />
+      ) : null}
+      {item.supported ? (
+        <ShareSavedQuestion projectId={projectId} id={item.id} />
+      ) : null}
       {confirming && (
         <div className="grid justify-items-start gap-2">
           <p className="text-sm">

@@ -74,25 +74,3 @@ export const projectJourneyEdges = (
     ),
   )
 }
-/** Kahn elimination over the bounded graph; an empty frontier with nodes left is a cycle. */
-export const journeyHasCycle = (
-  ids: readonly string[],
-  edges: readonly JourneyEdge[],
-): boolean => {
-  if (ids.length === 0) {
-    return false
-  }
-  const remaining = HashSet.fromIterable(ids)
-  const internal = Array.filter(
-    edges,
-    (edge) =>
-      edge.scope === "journey" &&
-      HashSet.has(remaining, edge.fromRunId) &&
-      HashSet.has(remaining, edge.toRunId),
-  )
-  const targets = HashSet.fromIterable(
-    Array.map(internal, (edge) => edge.toRunId),
-  )
-  const next = Array.filter(ids, (id) => HashSet.has(targets, id))
-  return next.length === ids.length || journeyHasCycle(next, internal)
-}

@@ -317,30 +317,31 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
           Effect.provideService(Database, connection.db),
         ),
       )
+      await connection.db.insert(projectMembers).values({
+        userId: fixture.foreignUserId,
+        projectId: fixture.projectId,
+        role: "viewer",
+      })
+      const apply = () =>
+        Effect.runPromise(
+          store.apply(fixture.foreignUserId, fixture.projectId, command),
+        )
+      await expect(apply()).rejects.toMatchObject({
+        _tag: "DatabaseError",
+        operation: "project-read-fence",
+      })
       await connection.db
         .delete(projectMembers)
         .where(
           and(
-            eq(projectMembers.userId, fixture.userId),
+            eq(projectMembers.userId, fixture.foreignUserId),
             eq(projectMembers.projectId, fixture.projectId),
           ),
         )
-      try {
-        await expect(
-          Effect.runPromise(
-            store.apply(fixture.userId, fixture.projectId, command),
-          ),
-        ).rejects.toMatchObject({
-          _tag: "DefinitionImportRejected",
-          reason: "Unauthorized",
-        })
-      } finally {
-        await connection.db.insert(projectMembers).values({
-          userId: fixture.userId,
-          projectId: fixture.projectId,
-          role: "owner",
-        })
-      }
+      await expect(apply()).rejects.toMatchObject({
+        _tag: "DatabaseError",
+        operation: "project-read-fence",
+      })
       expect((await rows(command.definition.workflow))[0]).toEqual([])
     })
 

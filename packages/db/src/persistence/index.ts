@@ -35,7 +35,7 @@ export * from "./project-access/writes/submit-agent-access-consent.js"
 export * from "./project-access/writes/update-onboarding-state.js"
 export * from "./workflows/queries/get-project-snapshot.js"
 export * from "./workflows/queries/get-related-runs.js"
-export * from "./workflows/queries/get-run-comparison.js"
+export * from "./workflows/queries/get-run-comparison-evidence.js"
 export * from "./workflows/queries/get-run-timeline.js"
 export * from "./workflows/queries/get-run-event-page.js"
 export * from "./workflows/queries/get-run-investigation-summary.js"
@@ -78,3 +78,38 @@ export * from "./workflows/queries/get-reference-journey.js"
 
 export * from "./investigations/investigation-store.js"
 export * from "./investigations/investigation-error.js"
+export * from "./data-lifecycle/data-lifecycle-store.js"
+export * from "./data-lifecycle/types.js"
+export { runQuery } from "./run-query.js"
+export { runTransaction } from "./run-transaction.js"
+
+export { AccountLifecycleStore } from "./account-lifecycle/account-lifecycle-store.js"
+export {
+  AccountLifecycleRejected,
+  type AccountLifecycleOperation,
+} from "./account-lifecycle/types.js"
+export { isAccountActive } from "./account-lifecycle/active-account.js"
+export { renewCleanupCapability } from "./account-lifecycle/writes/renew-cleanup-capability.js"
+
+export { AccountEmailChangeStore } from "./account-email-change/account-email-change-store.js"
+export {
+  EmailChangeRejected,
+  type EmailChangeData,
+  type EmailChangeRecord,
+  type EmailChangeTransaction,
+  type EmailChangeResult,
+} from "./account-email-change/types.js"
+
+export { ProjectReadSubject } from "./project-access/read-subject.js"
+
+export { ProjectSharingStore } from "./project-sharing/project-sharing-store.js"
+export { SharingRejected } from "./project-sharing/types.js"
+export { BusinessEvidenceStore } from "./business-evidence/business-evidence-store.js"
+export { EvidenceAccessRejected } from "./business-evidence/types.js"
+export { SharedInvestigationStore } from "./shared-investigations/shared-investigation-store.js"
+export { SharedInvestigationRejected } from "./shared-investigations/types.js"
+
+export { EvidenceCaptureStore } from "./evidence-captures/evidence-capture-store.js"
+export { EvidenceCaptureRejected } from "./evidence-captures/types.js"
+
+export { WaitlistStore } from "./waitlist/waitlist-store.js"

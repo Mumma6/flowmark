@@ -6,13 +6,16 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react"
+import { Array as EffectArray } from "effect"
 import { useTRPC } from "../platform/api-trpc"
 import { readStoredProjectId, storeProjectId } from "./project-selection"
 
 type Project = {
+  readonly role?: "owner" | "viewer" | "business"
   readonly id: string
   readonly name: string
   readonly createdAt: string
@@ -33,6 +36,33 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
   const trpc = useTRPC()
   const queryClient = useQueryClient()
   const list = useQuery(trpc.project.list.queryOptions())
+  const previousProjects = useRef<readonly Project[] | undefined>(undefined)
+  useEffect(() => {
+    const currentProjects = list.data
+    if (!currentProjects || list.isFetching || list.isError) {
+      return
+    }
+    const before = previousProjects.current
+    previousProjects.current = currentProjects
+    if (
+      before &&
+      EffectArray.some(
+        before,
+        (project) =>
+          !EffectArray.some(
+            currentProjects,
+            (next) => next.id === project.id && next.role === project.role,
+          ),
+      )
+    ) {
+      queryClient.removeQueries({
+        predicate: (query) => {
+          const path = query.queryKey[0]
+          return !(Array.isArray(path) && path.join(".") === "project.list")
+        },
+      })
+    }
+  }, [list.data, list.isFetching, list.isError, queryClient])
   const [selectedId, setSelectedId] = useState<string | null>(
     readStoredProjectId,
   )

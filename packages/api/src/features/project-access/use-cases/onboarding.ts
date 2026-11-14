@@ -57,7 +57,7 @@ export class Onboarding extends Context.Service<
       ) {
         const nextStep = yield* validStep(step)
         if (nextStep !== "project") {
-          const projectId = yield* credentials.projectForUser(userId)
+          const projectId = yield* credentials.projectForUser(userId, "owner")
           if (!projectId) {
             return yield* new InvalidInput({
               cause: "Create a project before continuing onboarding.",
@@ -69,15 +69,15 @@ export class Onboarding extends Context.Service<
       const complete = Effect.fn("Onboarding.complete")(function* (
         userId: string,
       ) {
-        const projectId = yield* credentials.projectForUser(userId)
+        const projectId = yield* credentials.projectForUser(userId, "owner")
         if (!projectId) {
           return yield* new InvalidInput({
             cause: "Create a project before completing onboarding.",
           })
         }
         const keys = yield* Effect.all([
-          credentials.listApiKeys(projectId),
-          credentials.listBrowserKeys(projectId),
+          credentials.listApiKeys(userId, projectId),
+          credentials.listBrowserKeys(userId, projectId),
         ])
         if (keys[0].length === 0) {
           return yield* new InvalidInput({

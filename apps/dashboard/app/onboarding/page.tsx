@@ -18,8 +18,10 @@ export default async function OnboardingPage({
   }
   const state = Option.getOrNull(access.onboarding)
   const params = await searchParams
-  const reviewMode = Boolean(state?.completedAt) && params.mode === "guide"
-  if (state?.completedAt && !reviewMode) {
+  const reviewMode =
+    Boolean(state?.completedAt || state?.sharedAccess) &&
+    params.mode === "guide"
+  if ((state?.completedAt || state?.sharedAccess) && !reviewMode) {
     redirect("/")
   }
   return (

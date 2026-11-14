@@ -1,6 +1,6 @@
 name: Pull request verification
 
-# Fast job: Must not receive database, Neon, Vercel, or npm credentials.
+# Application, Rust and WASM jobs must not receive hosted credentials.
 # Integration uses only its disposable local service database.
 
 on:
@@ -10,6 +10,10 @@ on:
 permissions:
   contents: read
 
+env:
+  CARGO_HOME: ${{ github.workspace }}/.cache/rust/cargo
+  RUSTUP_HOME: ${{ github.workspace }}/.cache/rust/rustup
+
 concurrency:
   group: pull-request-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
@@ -17,7 +21,21 @@ concurrency:
 jobs:
   check:
     name: Format, lint, typecheck, and test
+    needs: [application, rust, wasm]
+    if: always()
     runs-on: ubuntu-latest
+    steps:
+      # Preserve the existing required status while making every language gate it.
+      - name: Require application, Rust and WASM checks
+        run: |
+          test "${{ needs.application.result }}" = success
+          test "${{ needs.rust.result }}" = success
+          test "${{ needs.wasm.result }}" = success
+
+  application:
+    name: TypeScript format, lint, typecheck, and test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -30,14 +48,74 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
-          node-version: "24"
+          node-version-file: .node-version
           cache: pnpm
+
+      - name: Cache Rust build tools
+        uses: ./.github/actions/cache-rust
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
       - name: Check format, lint, typecheck, and unit tests
-        run: pnpm check
+        run: pnpm check:typescript
+
+  rust:
+    name: Rust format, Clippy, tests and properties
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.18.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version-file: .node-version
+
+          # This job never installs npm packages, so no pnpm store is created.
+          package-manager-cache: false
+
+      - name: Cache Rust tools
+        uses: ./.github/actions/cache-rust
+        with:
+          variant: native
+
+      - name: Check native Rust
+        run: pnpm rust:check
+
+  wasm:
+    name: WASM production compatibility (Node 24)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.18.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      - name: Cache Rust build tools
+        uses: ./.github/actions/cache-rust
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build server and verify traced WASM artifact
+        run: pnpm engine:verify-build
 
   integration:
     name: PostgreSQL integration tests
@@ -74,8 +152,11 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
-          node-version: "24"
+          node-version-file: .node-version
           cache: pnpm
+
+      - name: Cache Rust build tools
+        uses: ./.github/actions/cache-rust
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile

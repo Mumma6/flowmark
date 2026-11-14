@@ -63,15 +63,18 @@ export const ResultDeclarationsLive = Layer.effect(
     return ResultDeclarations.of({
       apply: (userId, projectId, input) =>
         declarationWrite(store.apply(userId, projectId, input)),
-      find: (projectId, workflow, revision) =>
-        persist(store.find(projectId, workflow, revision)),
-      searchFields: (projectId, workflow) =>
-        persist(store.searchFields(projectId, workflow)),
-      setSearchFields: (projectId, workflow, fields) =>
-        declarationWrite(store.setSearchFields(projectId, workflow, fields)),
-      list: (projectId, workflow) => persist(store.list(projectId, workflow)),
-      create: (projectId, workflow, declaration) =>
-        persist(store.create(projectId, workflow, declaration)),
+      find: (userId, projectId, workflow, revision) =>
+        persist(store.find(userId, projectId, workflow, revision)),
+      searchFields: (userId, projectId, workflow) =>
+        persist(store.searchFields(userId, projectId, workflow)),
+      setSearchFields: (userId, projectId, workflow, fields) =>
+        declarationWrite(
+          store.setSearchFields(userId, projectId, workflow, fields),
+        ),
+      list: (userId, projectId, workflow) =>
+        persist(store.list(userId, projectId, workflow)),
+      create: (userId, projectId, workflow, declaration) =>
+        persist(store.create(userId, projectId, workflow, declaration)),
     })
   }),
 )

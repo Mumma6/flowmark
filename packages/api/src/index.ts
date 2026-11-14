@@ -149,3 +149,66 @@ export type {
   SavedInvestigation,
   SavedInvestigationPage,
 } from "@flowmarkdev/core"
+
+export { ManageDataLifecycle } from "./features/data-lifecycle/use-cases/manage-data-lifecycle.js"
+export { LifecycleReauthentication } from "./features/data-lifecycle/ports/data-lifecycle.js"
+export {
+  ErasureScopeSchema,
+  type ErasureScope,
+  type ErasureOperation,
+} from "./features/data-lifecycle/contracts.js"
+
+export { ManageAccountLifecycle } from "./features/data-lifecycle/use-cases/manage-account-lifecycle.js"
+
+export { ManageProjectSharing } from "./features/project-sharing/use-cases/manage-project-sharing.js"
+export {
+  ProjectSharingIdentity,
+  ProjectInvitationDelivery,
+} from "./features/project-sharing/ports/project-sharing.js"
+export {
+  InviteProjectSchema,
+  ReviewInvitationSchema,
+  ProjectSharingSchema,
+  InvitationReviewSchema,
+} from "./features/project-sharing/contracts.js"
+
+export { GetBusinessEvidence } from "./features/business-evidence/use-cases/business-evidence.js"
+export { BusinessEvidenceRepository } from "./features/business-evidence/ports/business-evidence.js"
+export {
+  BusinessEvidenceQuerySchema,
+  BusinessPublicationSchema,
+} from "@flowmarkdev/core"
+export type {
+  BusinessEvidence,
+  BusinessEvidenceQuery,
+  BusinessRunSummary,
+  BusinessPublication,
+  BusinessMeaning,
+} from "@flowmarkdev/core"
+
+export { ManageSharedInvestigations } from "./features/shared-investigations/use-cases/manage-shared-investigations.js"
+export {
+  ShareInvestigationSchema,
+  SharedInvestigationSelectionSchema,
+  SharedInvestigationListSchema,
+} from "@flowmarkdev/core"
+export type {
+  SharedInvestigationSelection,
+  SharedInvestigation,
+  SharedInvestigationSummary,
+} from "@flowmarkdev/core"
+
+export { ManageEvidenceCaptures } from "./features/evidence-captures/use-cases/manage-evidence-captures.js"
+export { CaptureRunSchema, CapturedRunEvidenceSchema } from "@flowmarkdev/core"
+export type {
+  CapturedRunEvidence,
+  EvidenceCaptureRead,
+  EvidenceCaptureSummary,
+} from "@flowmarkdev/core"
+
+export type { SavedEvidenceExport } from "@flowmarkdev/core"
+export { EngineError } from "@flowmark/engine"
+
+export { JoinWaitlist } from "./features/waitlist/join-waitlist.js"
+
+export { WaitlistRepository } from "./features/waitlist/waitlist-repository.js"

@@ -1,10 +1,14 @@
 import { drizzleAdapter } from "@better-auth/drizzle-adapter"
 import { betterAuth, type BetterAuthOptions } from "better-auth"
-import { Cause, Data, Effect, Exit } from "effect"
+import { Array, Cause, Data, Effect, Exit } from "effect"
 import { LOCAL_DEV_AUTH_SECRET } from "@flowmark/db/demo"
 import { account, session, user, verification } from "@flowmark/db/schema"
 import type { FlowmarkDatabase } from "@flowmark/db"
+import { emailChangeBoundary } from "./email-change/provider-boundary.js"
+import { createAccountEmailChanges } from "./email-change/create-email-changes.js"
+import { createAccountSessions } from "./sessions/account-sessions.js"
 import { accountRateLimits } from "./account-rate-limits.js"
+import { accountLifecycle } from "./account-lifecycle.js"
 import {
   AUTH_CLIENT_IP_HEADER,
   normalizeAuthClientIdentity,
@@ -67,7 +71,10 @@ export function createFlowmarkAuth(options: {
     readonly issuerOrigin: string
     readonly apiOrigin: string
   }
-}): ReturnType<typeof betterAuth> {
+}): ReturnType<typeof betterAuth> & {
+  readonly accountSessions: ReturnType<typeof createAccountSessions>
+  readonly accountEmailChanges: ReturnType<typeof createAccountEmailChanges>
+} {
   const storage = createAuthRateLimitStorage(options.db, options.secret)
   const sourceRule = (max: number) => (request: Request) =>
     request.headers.has(AUTH_CLIENT_IP_HEADER)
@@ -123,10 +130,12 @@ export function createFlowmarkAuth(options: {
         overrides: { "reset-password:": "hashed" },
       },
     },
-    user: { changeEmail: { enabled: false } },
+    user: { changeEmail: { enabled: false }, deleteUser: { enabled: false } },
     emailVerification: email?.emailVerification,
     emailAndPassword: {
       enabled: true,
+      // Vercel uses NODE_ENV=production for Preview/Staging too.
+      disableSignUp: process.env.VERCEL_ENV === "production",
       minPasswordLength: 8,
       autoSignIn: true,
       requireEmailVerification: false,
@@ -165,6 +174,8 @@ export function createFlowmarkAuth(options: {
     },
     plugins: [
       accountRateLimits(storage),
+      accountLifecycle(options.db),
+      emailChangeBoundary(),
       ...(agentAccess ? flowmarkAgentAccessPlugins(agentAccess) : []),
     ] as BetterAuthOptions["plugins"],
     // Keep the same provider CSRF/origin checks in tests and deployed requests.
@@ -181,6 +192,33 @@ export function createFlowmarkAuth(options: {
   const auth = betterAuth(configuration)
   // Explicit provider HTTP boundary: normalize trust before the native limiter.
   const handler = async (request: Request) => {
+    // Native listing returns bearer tokens, and native revoke bypasses our
+    // password confirmation. Keep these server APIs behind the safe Studio seam.
+    const path = new URL(request.url).pathname
+      .replace(/^\/api\/auth/, "")
+      .replace(/\/$/, "")
+    if (
+      Array.contains(
+        [
+          "/list-sessions",
+          "/revoke-session",
+          "/revoke-other-sessions",
+          "/revoke-sessions",
+        ],
+        path,
+      )
+    ) {
+      return Response.json(
+        { message: "Use Account security to manage sessions." },
+        {
+          status: 403,
+          headers: { "cache-control": "no-store" },
+        },
+      )
+    }
+    if (path.startsWith("/email-change/")) {
+      return accountEmailChanges.handle(request, path)
+    }
     const startedAt = Date.now()
     const isRecoveryRequest = new URL(request.url).pathname
       .replace(/\/$/, "")
@@ -282,5 +320,54 @@ export function createFlowmarkAuth(options: {
       },
     })
   }
-  return { ...auth, handler, fetch: handler }
+  const accountEmailChanges = createAccountEmailChanges(options.db, {
+    auth,
+    baseURL,
+    trustedOrigins: [
+      new URL(baseURL).origin,
+      ...(options.trustedOrigins ?? []),
+      process.env.FLOWMARK_DASHBOARD_ORIGIN ?? "http://localhost:3001",
+    ],
+    delivery: options.emailDelivery,
+    consume: storage.consume,
+    scoped: (database, callbacks) =>
+      betterAuth<BetterAuthOptions>({
+        ...configuration,
+        database: drizzleAdapter(database, {
+          provider: "pg",
+          schema: {
+            user,
+            session,
+            account,
+            verification,
+            ...flowmarkAgentAccessSchema,
+          },
+        }),
+        plugins: [
+          accountRateLimits(storage),
+          accountLifecycle(database),
+          emailChangeBoundary(true),
+        ] as BetterAuthOptions["plugins"],
+        user: {
+          ...configuration.user,
+          changeEmail: {
+            enabled: true,
+            updateEmailWithoutVerification: false,
+            sendChangeEmailConfirmation: callbacks.old,
+          },
+        },
+        emailVerification: {
+          ...email?.emailVerification,
+          sendVerificationEmail: callbacks.next,
+        },
+        advanced: { ...configuration.advanced, backgroundTasks: undefined },
+      }),
+  })
+  return {
+    ...auth,
+    handler,
+    fetch: handler,
+    accountEmailChanges,
+    accountSessions: createAccountSessions(auth, storage.consume),
+  }
 }

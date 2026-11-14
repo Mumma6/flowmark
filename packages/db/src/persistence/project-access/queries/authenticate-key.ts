@@ -1,6 +1,7 @@
-import { and, eq } from "drizzle-orm"
+import { activeProjectOwners } from "../../account-lifecycle/active-account.js"
+import { sql, and, eq, isNull } from "drizzle-orm"
 import { Effect } from "effect"
-import { projectApiKeys } from "../../../schema/index.js"
+import { projectApiKeys, projects } from "../../../schema/index.js"
 import { Database, hashApiKey } from "../../database.js"
 import { DatabaseOperation } from "../../database-operation.js"
 import { runQuery } from "../../run-query.js"
@@ -14,10 +15,14 @@ export const authenticateKey = Effect.fn("authenticateKey")(function* (
     db
       .select({ projectId: projectApiKeys.projectId })
       .from(projectApiKeys)
+      .innerJoin(projects, eq(projects.id, projectApiKeys.projectId))
       .where(
         and(
           eq(projectApiKeys.keyHash, hashApiKey(key)),
           eq(projectApiKeys.permission, permission),
+          eq(projectApiKeys.credentialEpoch, projects.credentialEpoch),
+          isNull(projects.lifecycleOperationId),
+          activeProjectOwners(sql`${projects.id}`),
         ),
       )
       .limit(1),

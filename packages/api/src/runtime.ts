@@ -1,3 +1,25 @@
+import { EvidenceCaptureStore } from "@flowmark/db/persistence"
+import { Engine } from "@flowmark/engine"
+import {
+  EvidenceCapturesLive,
+  EvidenceCaptureAdmissionLive,
+} from "./features/evidence-captures/adapters/evidence-captures.js"
+import { ManageEvidenceCaptures } from "./features/evidence-captures/use-cases/manage-evidence-captures.js"
+import { SharedInvestigationStore } from "@flowmark/db/persistence"
+import { SharedInvestigationsLive } from "./features/shared-investigations/adapters/shared-investigations.js"
+import { ManageSharedInvestigations } from "./features/shared-investigations/use-cases/manage-shared-investigations.js"
+import { BusinessEvidenceStore } from "@flowmark/db/persistence"
+import { BusinessEvidenceRepositoryLive } from "./features/business-evidence/adapters/business-evidence.js"
+import { GetBusinessEvidence } from "./features/business-evidence/use-cases/business-evidence.js"
+import { ProjectSharingStore } from "@flowmark/db/persistence"
+import { ProjectSharingRepositoryLive } from "./features/project-sharing/adapters/project-sharing.js"
+import { ManageProjectSharing } from "./features/project-sharing/use-cases/manage-project-sharing.js"
+import { AccountLifecycleStore } from "@flowmark/db/persistence"
+import { AccountLifecycleLive } from "./features/data-lifecycle/adapters/account-lifecycle.js"
+import { ManageAccountLifecycle } from "./features/data-lifecycle/use-cases/manage-account-lifecycle.js"
+import { ManageDataLifecycle } from "./features/data-lifecycle/use-cases/manage-data-lifecycle.js"
+import { DataLifecycleLive } from "./features/data-lifecycle/adapters/data-lifecycle.js"
+import { DataLifecycleStore } from "@flowmark/db/persistence"
 import { ManageInvestigations } from "./features/investigations/use-cases/manage-investigations.js"
 import { InvestigationsLive } from "./features/investigations/adapters/investigations.js"
 import { InvestigationStore } from "@flowmark/db/persistence"
@@ -32,7 +54,18 @@ import { ProjectCredentialsLive } from "./features/project-access/adapters/proje
 import { GetMcpAgentConnectionLive } from "./features/project-access/use-cases/get-mcp-agent-connection.js"
 import { GetMcpAgentConnection } from "./features/project-access/use-cases/get-mcp-agent-connection.js"
 
+import { WaitlistStore } from "@flowmark/db/persistence"
+import { JoinWaitlist } from "./features/waitlist/join-waitlist.js"
+import { WaitlistRepositoryLive } from "./features/waitlist/waitlist-live.js"
+
 const persistence = Layer.mergeAll(
+  WaitlistStore.layer,
+  SharedInvestigationStore.layer,
+  EvidenceCaptureStore.layer,
+  BusinessEvidenceStore.layer,
+  ProjectSharingStore.layer,
+  AccountLifecycleStore.layer,
+  DataLifecycleStore.layer,
   InvestigationStore.layer,
   ResultDeclarationStore.layer,
   WorkflowStore.layer,
@@ -40,6 +73,13 @@ const persistence = Layer.mergeAll(
   AgentAccessStore.layer,
 ).pipe(Layer.provide(DatabaseLive))
 const databaseAdapters = Layer.mergeAll(
+  SharedInvestigationsLive,
+  EvidenceCapturesLive,
+  EvidenceCaptureAdmissionLive,
+  BusinessEvidenceRepositoryLive,
+  ProjectSharingRepositoryLive,
+  AccountLifecycleLive,
+  DataLifecycleLive,
   InvestigationsLive,
   ResultDeclarationsLive,
   AgentConsentRepositoryLive,
@@ -61,6 +101,15 @@ const agentAccessAdapter = Layer.mergeAll(
 )
 
 export const ApiLive = Layer.mergeAll(
+  JoinWaitlist.layer.pipe(
+    Layer.provide(WaitlistRepositoryLive.pipe(Layer.provide(persistence))),
+  ),
+  ManageSharedInvestigations.layer,
+  ManageEvidenceCaptures.layer,
+  GetBusinessEvidence.layer,
+  ManageProjectSharing.layer,
+  ManageAccountLifecycle.layer,
+  ManageDataLifecycle.layer,
   ManageInvestigations.layer,
   ReadPublicRun.layer,
   ReadPublicPeriod.layer,
@@ -76,6 +125,7 @@ export const ApiLive = Layer.mergeAll(
   Layer.provideMerge(agentAccessAdapter),
   Layer.provide(dependencies),
   Layer.provide(ApiSettings.layer),
+  Layer.provide(Engine.layer),
 )
 
 /** Request boundary: acquire dependencies, execute once, then release the scope. */
@@ -83,6 +133,13 @@ export function runApi<A, E>(
   operation: Effect.Effect<
     A,
     E,
+    | JoinWaitlist
+    | ManageSharedInvestigations
+    | ManageEvidenceCaptures
+    | GetBusinessEvidence
+    | ManageProjectSharing
+    | ManageAccountLifecycle
+    | ManageDataLifecycle
     | ManageInvestigations
     | AuthorizeAgentRead
     | ReadPublicPeriod

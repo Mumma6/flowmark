@@ -39,6 +39,37 @@ API use cases, ports, and persistence adapters live in the separate
 
 Module placement and future refactoring follow [Effect and module organization](./code-organization.md).
 
+## TypeScript, PostgreSQL and Rust
+
+TypeScript + Effect is Flowmark's primary application platform. It normally owns
+orchestration, API use cases, Services/Layers, authentication, permissions,
+persistence integration, SDK, MCP and Studio. PostgreSQL owns data-local queries,
+joins, transactions and aggregations where the stored population is the right
+boundary.
+
+Rust is a permanent, first-class option for deterministic computation, evidence
+analysis, algorithms and graphs, event processing and transformations, statistics,
+performance-sensitive components and other cohesive responsibilities. Learning,
+functional programming, polyglot design and craftsmanship are valid benefits;
+Rust does not require a performance bottleneck. For each new feature or meaningful
+refactor involving computation or data processing, compare the three owners by
+cohesion, integration cost and maintainability. Additional Rust modules and crates
+are welcome when justified; the choice is deliberate rather than automatic.
+
+The [Flowmark Engine](./engine.md) is the first production Rust component.
+It is a general computation library with domain modules currently owning operation
+occurrence summaries, percentiles, peer comparisons and directed-cycle detection.
+Persistence retrieves ordered evidence; API use cases coordinate its Effect
+adapter and assemble read contracts. Its pure crate has no database or framework
+knowledge, and persistence does not depend on the engine or API runtime. Public
+core/SDK contracts remain independent of WASM initialization.
+
+Use explicit language/error contracts and independently testable modules. Keep
+each business rule with one production owner, without circular dependencies or
+unnecessary runtime coupling. WASM serves the current integration; choose an
+appropriate boundary for future Rust components rather than prescribing one
+mechanism for every responsibility.
+
 ## Core domain package
 
 `@flowmarkdev/core` is the framework-independent contract package shared by the
@@ -50,7 +81,8 @@ the package's public exports.
 Core should grow when multiple layers need the same domain rule, value,
 transition, or validated contract. It should not become a general-purpose
 utility package or collect SDK delivery, authorization, SQL/query, HTTP, or
-dashboard behavior. Keep pure domain functions here; use Effect services and
+dashboard behavior. Keep shared pure TypeScript domain functions here; Rust-owned
+algorithms remain in their crates. Use Effect services and
 ports in application packages when behavior needs dependencies or orchestration.
 
 ## SDK

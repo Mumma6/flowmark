@@ -1,3 +1,4 @@
+import type { ReferenceJourneyEvidence } from "../types.js"
 import { createHash } from "node:crypto"
 import { Array, Effect, HashMap, HashSet, Option, pipe } from "effect"
 import type {
@@ -18,7 +19,6 @@ import {
   readJourneyCursor,
 } from "../reference-journey-cursor.js"
 import {
-  journeyHasCycle,
   projectJourneyEdges,
   projectJourneyNode,
   type JourneyEvidenceRow,
@@ -120,14 +120,18 @@ export const getReferenceJourney = Effect.fn("getReferenceJourney")(function* (
     if (cursor) {
       return yield* invalidJourneySelection()
     }
-    return {
+    const page: ReferenceJourneyPage = {
       ...base,
       state: found.length === 0 && !candidateCursor ? "NotFound" : "Ambiguous",
       anchorRunId: null,
       nodes: [],
       edges: [],
       nextCursor: null,
-    } satisfies ReferenceJourneyPage
+    }
+    return {
+      page,
+      graph: { nodes: [], edges: [] },
+    } satisfies ReferenceJourneyEvidence
   }
   const nodeScope = [...scope, anchor.id]
   if (
@@ -219,7 +223,7 @@ export const getReferenceJourney = Effect.fn("getReferenceJourney")(function* (
   }
   const page = pipe(nodes, Array.drop(position + 1), Array.take(limit))
   const pageIds = HashSet.fromIterable(Array.map(page, (node) => node.id))
-  return {
+  const result: ReferenceJourneyPage = {
     ...base,
     state: "Selected",
     anchorRunId: anchor.id,
@@ -236,10 +240,10 @@ export const getReferenceJourney = Effect.fn("getReferenceJourney")(function* (
     bounds: {
       ...base.bounds,
       traversalTruncated: graph.truncated || beyond.length > 0,
-      cycleDetected: journeyHasCycle(
-        Array.map(nodes, (node) => node.id),
-        edges,
-      ),
     },
-  } satisfies ReferenceJourneyPage
+  }
+  return {
+    page: result,
+    graph: { nodes: Array.map(nodes, (node) => node.id), edges },
+  } satisfies ReferenceJourneyEvidence
 })

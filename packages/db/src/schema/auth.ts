@@ -5,6 +5,7 @@ import {
   pgTable,
   text,
   timestamp,
+  uuid,
 } from "drizzle-orm/pg-core"
 
 // Short-lived HMAC identifiers only; never raw addresses, IPs or credentials.
@@ -20,6 +21,7 @@ export const authRateLimits = pgTable(
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
+  lifecycleOperationId: uuid("lifecycle_operation_id"),
   name: text("name").notNull(),
   email: text("email").notNull().unique(),
   emailVerified: boolean("email_verified").default(false).notNull(),

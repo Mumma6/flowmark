@@ -11,7 +11,9 @@
     "test": "node --test test/*.test.mjs"
   },
   "dependencies": {
+    "@flowmark/db": "workspace:*",
     "@flowmark/ui": "workspace:*",
+    "effect": "4.1.0",
     "next": "^16.4.2",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"

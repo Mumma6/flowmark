@@ -8,6 +8,7 @@ export interface BrowserCredential {
 }
 
 export interface ProjectSummary {
+  readonly role?: "owner" | "viewer" | "business"
   readonly id: string
   readonly name: string
   readonly createdAt: string
@@ -17,6 +18,7 @@ export type OnboardingStep =
   "project" | "key" | "install" | "instrument" | "run"
 
 export interface OnboardingState {
+  readonly sharedAccess?: boolean
   readonly step: OnboardingStep
   readonly completedAt: string | null
 }
@@ -67,10 +69,12 @@ export interface ProjectCredentialsService {
   ) => Effect.Effect<string | undefined, PersistenceError>
   readonly projectForUser: (
     userId: string,
+    role?: "owner" | "diagnostic",
   ) => Effect.Effect<string | undefined, PersistenceError>
   readonly memberProject: (
     userId: string,
     projectId: string,
+    role?: "owner" | "diagnostic",
   ) => Effect.Effect<string | undefined, PersistenceError>
   readonly delegatedReaderProject: (input: {
     readonly userId: string
@@ -119,16 +123,20 @@ export interface ProjectCredentialsService {
     PersistenceError
   >
   readonly renameProject: (
+    userId: string,
     projectId: string,
     name: string,
   ) => Effect.Effect<void, PersistenceError>
   readonly listApiKeys: (
+    userId: string,
     projectId: string,
   ) => Effect.Effect<ReadonlyArray<ApiKeySummary>, PersistenceError>
   readonly listBrowserKeys: (
+    userId: string,
     projectId: string,
   ) => Effect.Effect<ReadonlyArray<BrowserKeySummary>, PersistenceError>
   readonly createApiKey: (
+    userId: string,
     projectId: string,
     input: {
       readonly name: string
@@ -136,14 +144,17 @@ export interface ProjectCredentialsService {
     },
   ) => Effect.Effect<CreatedSecret, PersistenceError>
   readonly revokeApiKey: (
+    userId: string,
     projectId: string,
     keyId: string,
   ) => Effect.Effect<boolean, PersistenceError>
   readonly rotateWriteKey: (
+    userId: string,
     projectId: string,
     keyId: string,
   ) => Effect.Effect<CreatedSecret | null, PersistenceError>
   readonly createBrowserKey: (
+    userId: string,
     projectId: string,
     input: {
       readonly name: string
@@ -151,6 +162,7 @@ export interface ProjectCredentialsService {
     },
   ) => Effect.Effect<CreatedSecret, PersistenceError>
   readonly revokeBrowserKey: (
+    userId: string,
     projectId: string,
     keyId: string,
   ) => Effect.Effect<boolean, PersistenceError>

@@ -1,3 +1,4 @@
+import { native } from "./native-saved-object"
 import { ManageInvestigations } from "@flowmark/api"
 import { Schema } from "effect"
 import { t } from "./context"
@@ -28,6 +29,23 @@ export const investigationsRouter = t.router({
       sessionQuery(ctx.request, (userId) =>
         ManageInvestigations.use((manage) =>
           manage.list(userId, input.projectId, input.query),
+        ),
+      ),
+    ),
+  export: t.procedure
+    .input(
+      Schema.toStandardSchemaV1(Schema.Struct({ ...scope, id: UuidSchema }), {
+        parseOptions: { onExcessProperty: "error" },
+      }),
+    )
+    .query(({ ctx, input }) =>
+      sessionQuery(ctx.request, (userId) =>
+        native(
+          ctx.request,
+          userId,
+          ManageInvestigations.use((service) =>
+            service.export(userId, input.projectId, input.id),
+          ),
         ),
       ),
     ),

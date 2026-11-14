@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm"
+import { eq, sql } from "drizzle-orm"
 import { Effect } from "effect"
 import { user } from "../../../schema/index.js"
 import { Database } from "../../database.js"
@@ -27,6 +27,7 @@ export const getOnboardingState = Effect.fn("getOnboardingState")(function* (
     db
       .select({
         step: user.onboardingStep,
+        sharedAccess: sql<boolean>`EXISTS (SELECT 1 FROM project_members m JOIN projects p ON p.id = m.project_id WHERE m.user_id = ${userId} AND m.role IN ('viewer', 'business') AND p.lifecycle_operation_id IS NULL AND NOT EXISTS (SELECT 1 FROM project_members o JOIN "user" owner ON owner.id = o.user_id WHERE o.project_id = p.id AND o.role = 'owner' AND owner.lifecycle_operation_id IS NOT NULL))`,
         completedAt: user.onboardingCompletedAt,
       })
       .from(user)
@@ -38,6 +39,7 @@ export const getOnboardingState = Effect.fn("getOnboardingState")(function* (
   }
   return {
     step: decodeStep(row.step),
+    sharedAccess: row.sharedAccess,
     completedAt: row.completedAt?.toISOString() ?? null,
   } satisfies OnboardingState
 })

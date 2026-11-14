@@ -18,6 +18,7 @@ import {
   oauthConsent,
   oauthRefreshToken,
   projectMembers,
+  agentAccessGrantProjects,
   verification,
   workflows,
   workflowRuns,
@@ -1097,12 +1098,39 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         .from(oauthRefreshToken)
         .where(eq(oauthRefreshToken.clientId, clientId))
       assert.ok(authorizationCodeId)
+      const ownerSignup = await auth.handler(
+        new Request(`${testOrigin}/api/auth/sign-up/email`, {
+          method: "POST",
+          headers: { origin: testOrigin, "content-type": "application/json" },
+          body: JSON.stringify({
+            name: "Fixed project owner",
+            email: `${randomUUID()}@example.test`,
+            password: randomUUID(),
+          }),
+        }),
+      )
+      expect(ownerSignup.status).toBe(200)
+      const ownerCookie = ownerSignup.headers
+        .getSetCookie()
+        .map((value) => value.split(";")[0])
+        .join("; ")
+      const fixedOwner = (await ownerSignup.json()).user.id as string
+      const ownerStudio = appRouter.createCaller({
+        request: new Request(`${testOrigin}/api/trpc`, {
+          headers: { cookie: ownerCookie, origin: testOrigin },
+        }),
+      })
       const project = await Effect.runPromise(
-        createOwnedProject(session.user.id, {
+        createOwnedProject(fixedOwner, {
           workspace: "Acceptance workspace",
           project: "Acceptance project",
         }).pipe(Effect.provideService(Database, connection.db)),
       )
+      await connection.db.insert(projectMembers).values({
+        userId: session.user.id,
+        projectId: project.projectId,
+        role: "viewer",
+      })
       const foreign = await Effect.runPromise(
         createOwnedProject(session.user.id, {
           workspace: "Foreign workspace",
@@ -1548,7 +1576,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         peers: { days: 91 },
       })
       expect(peerTooWide.result?.isError).toBe(true)
-      await studio.resultDeclarations.create({
+      await ownerStudio.resultDeclarations.create({
         projectId: project.projectId,
         workflow: "acceptance.investigation",
         declaration: {
@@ -1847,7 +1875,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
       await connection.db.insert(projectMembers).values({
         userId: session.user.id,
         projectId: project.projectId,
-        role: "owner",
+        role: "viewer",
       })
       const recoveredMembership = await callTool(55, "get_run", {
         projectId: project.projectId,
@@ -1855,6 +1883,120 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         section: "events",
       })
       expect(recoveredMembership.result?.isError).toBeUndefined()
+      // A new read level requires a new membership and explicit grant binding.
+      await ownerStudio.projectSharing.remove({
+        projectId: project.projectId,
+        userId: session.user.id,
+      })
+      await connection.db.insert(projectMembers).values({
+        projectId: project.projectId,
+        userId: session.user.id,
+        role: "business",
+      })
+      await connection.db
+        .insert(agentAccessGrantProjects)
+        .values({ projectId: project.projectId, authorizationCodeId })
+      const businessRun = await callTool(61, "get_run", {
+        projectId: project.projectId,
+        runId,
+        section: "events",
+      })
+      expect(businessRun.result?.isError).toBeUndefined()
+      expect(businessRun.result?.structuredContent).toMatchObject({
+        tool: "get_run",
+        evidence: {
+          projection: { depth: "business" },
+          data: { kind: "run", fields: [], references: [] },
+        },
+      })
+      expect(businessRun.result?.structuredContent).not.toHaveProperty("page")
+      expect(JSON.stringify(businessRun)).not.toContain(
+        "UNTRUSTED_EVIDENCE_CANARY",
+      )
+      expect(JSON.stringify(businessRun)).not.toContain("synthetic-acceptance")
+      const businessDiscovery = await callTool(62, "list_workflows", {
+        projectId: project.projectId,
+      })
+      expect(businessDiscovery.result?.structuredContent).toMatchObject({
+        evidence: {
+          projection: { depth: "business" },
+          data: { kind: "overview" },
+        },
+      })
+      const businessOperations = await callTool(63, "get_run", {
+        projectId: project.projectId,
+        runId,
+        section: "operations",
+      })
+      expect(businessOperations.result?.isError).toBe(true)
+      const businessHiddenFilter = await callTool(64, "find_runs", {
+        projectId: project.projectId,
+        workflow: "acceptance.investigation",
+        startedAfter: windows.currentStartedAfter,
+        startedBefore: windows.currentStartedBefore,
+        externalId: runId,
+      })
+      expect(businessHiddenFilter.result?.isError).toBe(true)
+      const businessTechnical = await callTool(65, "get_workflow_insights", {
+        projectId: project.projectId,
+        mode: "technical",
+        ...windows,
+      })
+      expect(businessTechnical.result?.isError).toBe(true)
+      const businessFind = await callTool(67, "find_runs", {
+        projectId: project.projectId,
+        workflow: "acceptance.investigation",
+        startedAfter: windows.currentStartedAfter,
+        startedBefore: windows.currentStartedBefore,
+      })
+      expect(businessFind.result?.structuredContent).toMatchObject({
+        evidence: { projection: { depth: "business" }, data: { kind: "runs" } },
+      })
+      const businessCompare = await callTool(68, "compare_run", {
+        projectId: project.projectId,
+        runId,
+        peers: { days: 30 },
+      })
+      expect(businessCompare.result?.structuredContent).toMatchObject({
+        evidence: { data: { kind: "compare" } },
+      })
+      const hiddenCompare = await callTool(69, "compare_run", {
+        projectId: project.projectId,
+        runId,
+        peers: { days: 30, dimensionKey: "secret", dimensionValue: "hidden" },
+      })
+      expect(hiddenCompare.result?.isError).toBe(true)
+      await ownerStudio.businessEvidence.replace({
+        projectId: project.projectId,
+        expectedRevision: 0,
+        publication: {
+          results: [
+            {
+              workflow: "acceptance.investigation",
+              revision: "booked",
+              paths: [["status"]],
+            },
+          ],
+          references: [],
+        },
+      })
+      const businessInsight = await callTool(70, "get_workflow_insights", {
+        projectId: project.projectId,
+        mode: "business",
+        ...businessQuery,
+      })
+      expect(businessInsight.result?.structuredContent).toMatchObject({
+        evidence: { data: { kind: "insights" } },
+      })
+      await ownerStudio.projectSharing.remove({
+        projectId: project.projectId,
+        userId: session.user.id,
+      })
+      const businessRemoved = await callTool(66, "get_run", {
+        projectId: project.projectId,
+        runId,
+      })
+      expect(businessRemoved.result?.isError).toBe(true)
       const unknownTool = await callTool(13, "ingest_events", {})
       expect(
         unknownTool.result?.isError === true || unknownTool.error !== undefined,
@@ -1884,7 +2026,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         _meta: { "io.flowmark/evidence": { state: "access-unavailable" } },
       })
       expect(revokedPage.result?.structuredContent).toBeUndefined()
-      expect(await studio.run.investigationSummary({ id: runId })).toEqual(
+      expect(await ownerStudio.run.investigationSummary({ id: runId })).toEqual(
         selected.result?.structuredContent?.summary,
       )
       await connection.db

@@ -28,14 +28,20 @@ Contributor guides that ship with the public repository:
   independent main changes such as hotfixes, not after ordinary releases.
 - [Architecture](./architecture): service boundaries, persistence, local auth,
   and current system constraints.
+- [Rust and the Flowmark Engine](./engine): Rust's permanent architectural
+  role, current calculation ownership, workspace/WASM tooling and verification.
 - [Effect and module organization](./code-organization): pure models, service ownership,
   error/lifetime boundaries and the staged Studio folder target.
 - [Implementation status](./implementation-status): public mirror of shipped
   Connect Your Agent and related Product 1.0 items through Agent TASK-005.4.
 - [Authentication boundaries](./auth-perimeter): provider login, registration,
   proxy protections, and remaining durable-limit work.
+- [Account security](./account-security): active browser sessions, password-confirmed
+  session sign-out and account controls before onboarding.
 - [Historical facts](./historical-facts): compact run projections and backfill
   limits.
+- [Data lifecycle](./data-lifecycle): complete telemetry erasure, project deletion,
+  key invalidation, resumable cleanup and backup limitations.
 - [Design system](./design-system): dashboard and landing presentation rules.
 - [Architecture decisions](./decisions/0001-turborepo): accepted decisions and
   their consequences. See [ADR 0007](./decisions/0007-connect-agent-mcp-dependencies.md)

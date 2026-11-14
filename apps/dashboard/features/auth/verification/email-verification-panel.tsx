@@ -13,6 +13,7 @@ export function EmailVerificationPanel({
   sessionError,
   linkFailed,
   refresh,
+  returnTo,
 }: EmailVerificationProps) {
   const {
     pending,
@@ -22,7 +23,7 @@ export function EmailVerificationPanel({
     busy,
     requestLink,
     refreshStatus,
-  } = useEmailVerification({ user, refresh })
+  } = useEmailVerification({ user, refresh, returnTo })
 
   return (
     <section className="grid gap-3" aria-label="Email verification">
@@ -55,8 +56,9 @@ export function EmailVerificationPanel({
       ) : (
         <>
           <p className="text-sm text-muted-foreground">
-            Your email address is not verified. Verification is optional; you
-            can keep using Flowmark without it.
+            {returnTo
+              ? "Verify the invited email address before reviewing or accepting project access."
+              : "Your email address is not verified. Verification is optional; you can keep using Flowmark without it."}
           </p>
           {linkFailed && !requested ? (
             <Alert>

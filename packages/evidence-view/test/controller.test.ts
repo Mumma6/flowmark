@@ -163,6 +163,80 @@ describe("SDK view lifecycle", () => {
       }
     },
   )
+  it("refreshes projected business evidence and clears it after publication or authority changes", async () => {
+    const view = await setup()
+    const business = (revision: number, published: boolean) => ({
+      structuredContent: {
+        tool: "get_run",
+        projectId: args.projectId,
+        evidence: {
+          projection: {
+            version: 1,
+            depth: "business",
+            projectId: args.projectId,
+            publicationRevision: revision,
+            observedAt: "2026-11-13T00:00:00Z",
+            withheld: ["errors"],
+          },
+          data: {
+            kind: "run",
+            summary: { ...structured.summary, outcome: "accepted" },
+            fields: published
+              ? [
+                  {
+                    revision: "v1",
+                    path: ["accepted"],
+                    label: "Accepted",
+                    unit: null,
+                    kind: "count",
+                    state: "available",
+                    value: 3,
+                  },
+                ]
+              : [],
+            references: [],
+          },
+        },
+      },
+      content: [],
+    })
+    view.app.ontoolinput?.({ arguments: args })
+    view.app.ontoolresult?.(business(1, true))
+    await vi.waitFor(() =>
+      expect(view.render.mock.lastCall?.[0].evidence.kind).toBe("business"),
+    )
+    expect(view.render.mock.lastCall?.[0].evidence).not.toHaveProperty(
+      "snapshot",
+    )
+    view.actions("next")
+    expect(view.read).not.toHaveBeenCalled()
+    view.read.mockResolvedValueOnce(business(2, false))
+    view.actions("refresh")
+    await vi.waitFor(() =>
+      expect(view.render.mock.lastCall?.[0].evidence.business.revision).toBe(2),
+    )
+    expect(view.render.mock.lastCall?.[0].evidence.business.fields).toEqual([])
+    expect(view.read.mock.calls[0]?.[0]).toMatchObject({
+      name: "get_run",
+      arguments: {
+        projectId: args.projectId,
+        runId: args.runId,
+        section: "events",
+      },
+    })
+    view.read.mockResolvedValueOnce({
+      isError: true,
+      content: [],
+      _meta: { "io.flowmark/evidence": { state: "access-unavailable" } },
+    })
+    view.actions("refresh")
+    await vi.waitFor(() =>
+      expect(view.render.mock.lastCall?.[0].status).toBe("access-unavailable"),
+    )
+    expect(view.render.mock.lastCall?.[0]).not.toHaveProperty("evidence")
+    view.actions("refresh")
+    expect(view.read).toHaveBeenCalledTimes(2)
+  })
   it("clears inaccessible authority without retrying cached references", async () => {
     const view = await setup()
     await view.supply()

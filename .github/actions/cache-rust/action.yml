@@ -1,0 +1,21 @@
+name: Cache Rust
+description: Cache the pinned toolchain, Cargo downloads and job-specific compilation outputs.
+inputs:
+  variant:
+    description: Tool set required by the job (native or wasm).
+    default: wasm
+runs:
+  using: composite
+  steps:
+    - name: Cache toolchain and Cargo downloads
+      uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5
+      with:
+        path: .cache/rust
+        key: rust-tools-v1-${{ runner.os }}-${{ runner.arch }}-${{ inputs.variant }}-${{ hashFiles('rust-toolchain.toml', 'Cargo.toml', 'Cargo.lock', 'crates/**/Cargo.toml', 'scripts/rust.mjs') }}
+    - name: Cache compilation outputs
+      uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5
+      with:
+        path: target
+        key: rust-target-v1-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-${{ hashFiles('rust-toolchain.toml', 'Cargo.toml', 'Cargo.lock', 'crates/**/Cargo.toml') }}-${{ hashFiles('crates/**/src/**', 'crates/**/tests/**') }}
+        restore-keys: |
+          rust-target-v1-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-${{ hashFiles('rust-toolchain.toml', 'Cargo.toml', 'Cargo.lock', 'crates/**/Cargo.toml') }}-

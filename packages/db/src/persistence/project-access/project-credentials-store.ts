@@ -1,3 +1,4 @@
+import { withOwnerProject } from "./with-owner-project.js"
 import { consumePublicReadBudget } from "./writes/consume-public-read-budget.js"
 import { Context, Effect, Layer } from "effect"
 import {
@@ -81,10 +82,12 @@ export interface ProjectCredentialsStoreService {
   ) => Effect.Effect<boolean, DatabaseError>
   readonly projectForUser: (
     userId: string,
+    role?: "owner" | "diagnostic",
   ) => Effect.Effect<string | undefined, DatabaseError>
   readonly memberProject: (
     userId: string,
     projectId: string,
+    role?: "owner" | "diagnostic",
   ) => Effect.Effect<string | undefined, DatabaseError>
   readonly delegatedReaderProject: (input: {
     readonly userId: string
@@ -137,16 +140,20 @@ export interface ProjectCredentialsStoreService {
     DatabaseError
   >
   readonly renameProject: (
+    userId: string,
     projectId: string,
     name: string,
   ) => Effect.Effect<void, DatabaseError>
   readonly listApiKeys: (
+    userId: string,
     projectId: string,
   ) => Effect.Effect<ReadonlyArray<ApiKeySummary>, DatabaseError>
   readonly listBrowserKeys: (
+    userId: string,
     projectId: string,
   ) => Effect.Effect<ReadonlyArray<BrowserKeySummary>, DatabaseError>
   readonly createApiKey: (
+    userId: string,
     projectId: string,
     input: {
       readonly name: string
@@ -154,14 +161,17 @@ export interface ProjectCredentialsStoreService {
     },
   ) => Effect.Effect<CreatedSecret, DatabaseError>
   readonly revokeApiKey: (
+    userId: string,
     projectId: string,
     keyId: string,
   ) => Effect.Effect<boolean, DatabaseError>
   readonly rotateWriteKey: (
+    userId: string,
     projectId: string,
     keyId: string,
   ) => Effect.Effect<CreatedSecret | null, DatabaseError>
   readonly createBrowserKey: (
+    userId: string,
     projectId: string,
     input: {
       readonly name: string
@@ -169,6 +179,7 @@ export interface ProjectCredentialsStoreService {
     },
   ) => Effect.Effect<CreatedSecret, DatabaseError>
   readonly revokeBrowserKey: (
+    userId: string,
     projectId: string,
     keyId: string,
   ) => Effect.Effect<boolean, DatabaseError>
@@ -191,9 +202,13 @@ export class ProjectCredentialsStore extends Context.Service<ProjectCredentialsS
         authenticateBrowser: (key) => provide(authenticateBrowserKey(key)),
         browserOriginAllowed: (origin) => provide(browserOriginAllowed(origin)),
         consumeBrowserQuota: (keyId) => provide(consumeBrowserQuota(keyId)),
-        projectForUser: (userId) => provide(getProjectForUser(userId)),
-        memberProject: (userId, projectId) =>
-          provide(getMemberProject(userId, projectId)),
+        projectForUser: (userId, role) =>
+          provide(getProjectForUser(userId, role)),
+        memberProject: (
+          userId: string,
+          projectId: string,
+          role?: "owner" | "diagnostic",
+        ) => provide(getMemberProject(userId, projectId, role)),
         delegatedReaderProject: (input) =>
           provide(getDelegatedReaderProject(input)),
         listProjects: (userId) => provide(listProjectsForUser(userId)),
@@ -207,20 +222,48 @@ export class ProjectCredentialsStore extends Context.Service<ProjectCredentialsS
           provide(createOwnedProject(userId, names)),
         createProject: (userId, workspaceId, name) =>
           provide(createProject(userId, workspaceId, name)),
-        renameProject: (projectId, name) =>
-          provide(renameProject(projectId, name)),
-        listApiKeys: (projectId) => provide(listApiKeys(projectId)),
-        listBrowserKeys: (projectId) => provide(listBrowserKeys(projectId)),
-        createApiKey: (projectId, input) =>
-          provide(createApiKey(projectId, input)),
-        revokeApiKey: (projectId, keyId) =>
-          provide(revokeApiKey(projectId, keyId)),
-        rotateWriteKey: (projectId, keyId) =>
-          provide(rotateWriteKey(projectId, keyId)),
-        createBrowserKey: (projectId, input) =>
-          provide(createBrowserKey(projectId, input)),
-        revokeBrowserKey: (projectId, keyId) =>
-          provide(revokeBrowserKey(projectId, keyId)),
+        renameProject: (userId, projectId, name) =>
+          provide(
+            withOwnerProject(userId, projectId, renameProject(projectId, name)),
+          ),
+        listApiKeys: (userId, projectId) =>
+          provide(withOwnerProject(userId, projectId, listApiKeys(projectId))),
+        listBrowserKeys: (userId, projectId) =>
+          provide(
+            withOwnerProject(userId, projectId, listBrowserKeys(projectId)),
+          ),
+        createApiKey: (userId, projectId, input) =>
+          provide(
+            withOwnerProject(userId, projectId, createApiKey(projectId, input)),
+          ),
+        revokeApiKey: (userId, projectId, keyId) =>
+          provide(
+            withOwnerProject(userId, projectId, revokeApiKey(projectId, keyId)),
+          ),
+        rotateWriteKey: (userId, projectId, keyId) =>
+          provide(
+            withOwnerProject(
+              userId,
+              projectId,
+              rotateWriteKey(projectId, keyId),
+            ),
+          ),
+        createBrowserKey: (userId, projectId, input) =>
+          provide(
+            withOwnerProject(
+              userId,
+              projectId,
+              createBrowserKey(projectId, input),
+            ),
+          ),
+        revokeBrowserKey: (userId, projectId, keyId) =>
+          provide(
+            withOwnerProject(
+              userId,
+              projectId,
+              revokeBrowserKey(projectId, keyId),
+            ),
+          ),
       } satisfies ProjectCredentialsStoreService
     }),
   },

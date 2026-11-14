@@ -205,6 +205,43 @@ export const submitAgentAccessConsent = Effect.fn("submitAgentAccessConsent")(
     }
     return yield* runQuery(DatabaseOperation.SubmitAgentAccessConsent, () =>
       db.transaction(async (tx) => {
+        const projectScope = sql.join(
+          EffectArray.map(uniqueProjects, (id) => sql`${id}::uuid`),
+          sql`, `,
+        )
+        // A stale approval must not recreate a removed membership's grant binding.
+        await tx.execute(sql`SET LOCAL statement_timeout = '5s'`)
+        await tx.execute(sql`SET LOCAL lock_timeout = '3s'`)
+        const actors = await tx.execute<{ id: string; pending: string | null }>(
+          sql`SELECT u.id, u.lifecycle_operation_id AS pending FROM "user" u WHERE u.id = ${input.userId} OR EXISTS (SELECT 1 FROM project_members m WHERE m.user_id = u.id AND m.role = 'owner' AND m.project_id IN (${projectScope})) ORDER BY u.id FOR SHARE OF u`,
+        )
+        if (
+          !EffectArray.some(actors, (actor) => actor.id === input.userId) ||
+          EffectArray.some(actors, (actor) => actor.pending !== null)
+        ) {
+          return Result.fail(
+            new AgentAccessConsentRejected({
+              reason: "Account access changed.",
+            }),
+          )
+        }
+        const liveProjects = await tx.execute(
+          sql`SELECT id FROM projects WHERE id IN (${projectScope}) AND lifecycle_operation_id IS NULL ORDER BY id FOR SHARE`,
+        )
+        const liveMembers = await tx.execute(
+          sql`SELECT project_id FROM project_members WHERE user_id = ${input.userId} AND project_id IN (${projectScope}) ORDER BY project_id FOR SHARE`,
+        )
+        if (
+          liveProjects.length !== uniqueProjects.length ||
+          liveMembers.length !== uniqueProjects.length
+        ) {
+          return Result.fail(
+            new AgentAccessConsentRejected({
+              reason: "Project access changed.",
+            }),
+          )
+        }
+
         const now = new Date()
         // Serialize consent/revoke against this family and recheck liveness in
         // the transaction. Duplicate submissions may repeat, never widen, scope.

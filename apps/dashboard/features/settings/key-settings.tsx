@@ -1,5 +1,7 @@
 "use client"
 
+import { ProjectOwnerOnly } from "../project-sharing/project-owner-only"
+
 import {
   Alert,
   AlertDescription,
@@ -28,7 +30,7 @@ import { type FormEvent } from "react"
 import { SecretAlert } from "../projects/create-project-form"
 import { useKeySettings } from "./use-key-settings"
 
-export function KeySettings() {
+function KeySettingsContent() {
   const {
     current,
     projects,
@@ -445,5 +447,13 @@ export function KeySettings() {
         </DialogContent>
       </Dialog>
     </div>
+  )
+}
+
+export function KeySettings() {
+  return (
+    <ProjectOwnerOnly>
+      <KeySettingsContent />
+    </ProjectOwnerOnly>
   )
 }

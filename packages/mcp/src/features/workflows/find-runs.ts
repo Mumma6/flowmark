@@ -1,6 +1,10 @@
+import {
+  businessToolEvidence,
+  type McpBusinessResult,
+} from "./business-evidence.js"
 import type { AuthorizeAgentRead } from "@flowmark/api"
-import { GetProjectWorkflowData } from "@flowmark/api"
-import { Effect } from "effect"
+import { GetBusinessEvidence, GetProjectWorkflowData } from "@flowmark/api"
+import { Effect, Option } from "effect"
 import type { FlowmarkMcpAuthInfo } from "../../auth/claims.js"
 import { McpToolReadError } from "../../errors.js"
 import { assertHistoryWindow } from "../../tools/response.js"
@@ -14,9 +18,9 @@ export const findRunsForMcp: (
   identity: FlowmarkMcpAuthInfo,
   rawInput: unknown,
 ) => Effect.Effect<
-  McpFindRunsResult,
+  McpFindRunsResult | McpBusinessResult,
   McpToolFailure,
-  GetProjectWorkflowData | AuthorizeAgentRead
+  GetProjectWorkflowData | GetBusinessEvidence | AuthorizeAgentRead
 > = Effect.fn("McpFindRuns.execute")(function* (
   identity: FlowmarkMcpAuthInfo,
   rawInput: unknown,
@@ -25,6 +29,36 @@ export const findRunsForMcp: (
   yield* assertHistoryWindow(input.startedAfter, input.startedBefore)
   const family = yield* resolveMcpGrantFamily(identity)
   const reader = mcpDelegatedReader(identity, family.familyId, input.projectId)
+  const business = yield* businessToolEvidence(reader, "find_runs", () => ({
+    kind: "runs",
+    query: {
+      workflow: input.workflow,
+      status: input.status,
+      startedAfter: input.startedAfter,
+      startedBefore: input.startedBefore,
+      cursor: input.cursor,
+      limit: input.limit,
+      ...(input.search !== undefined ? { search: input.search } : {}),
+      ...(input.externalId !== undefined
+        ? { externalId: input.externalId }
+        : {}),
+      ...(input.correlationId !== undefined
+        ? { correlationId: input.correlationId }
+        : {}),
+      ...(input.parentRunId !== undefined
+        ? { parentRunId: input.parentRunId }
+        : {}),
+      ...(input.environment !== undefined
+        ? { environment: input.environment }
+        : {}),
+      ...(input.release !== undefined ? { release: input.release } : {}),
+      ...(input.failCode !== undefined ? { failCode: input.failCode } : {}),
+      ...(input.namespace !== undefined ? { namespace: input.namespace } : {}),
+    },
+  }))
+  if (Option.isSome(business)) {
+    return business.value
+  }
   const queries = yield* GetProjectWorkflowData
   const page = yield* queries
     .listRuns(reader, {

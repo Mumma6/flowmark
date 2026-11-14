@@ -1,8 +1,12 @@
 import { sql } from "drizzle-orm"
+export { dataLifecycleOperations } from "./data-lifecycle.js"
+export { accountLifecycleOperations } from "./account-lifecycle.js"
 import type { WorkflowAttempt, WorkflowRetryReference } from "@flowmarkdev/core"
 import {
   type AnyPgColumn,
   boolean,
+  check,
+  foreignKey,
   index,
   bigint,
   bigserial,
@@ -83,6 +87,9 @@ export const projects = pgTable(
       .notNull()
       .references(() => workspaces.id),
     name: text("name").notNull(),
+    lifecycleOperationId: uuid("lifecycle_operation_id"),
+    credentialEpoch: integer("credential_epoch").notNull().default(0),
+    newRunAfter: timestamp("new_run_after", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
@@ -247,6 +254,7 @@ export const workflowMetricFacts = pgTable(
 )
 
 export const projectApiKeys = pgTable("project_api_keys", {
+  credentialEpoch: integer("credential_epoch").notNull().default(0),
   id: uuid("id").defaultRandom().primaryKey(),
   projectId: uuid("project_id")
     .notNull()
@@ -261,6 +269,7 @@ export const projectApiKeys = pgTable("project_api_keys", {
 })
 
 export const projectBrowserKeys = pgTable("project_browser_keys", {
+  credentialEpoch: integer("credential_epoch").notNull().default(0),
   id: uuid("id").defaultRandom().primaryKey(),
   projectId: uuid("project_id")
     .notNull()
@@ -289,7 +298,7 @@ export const projectMembers = pgTable(
     projectId: uuid("project_id")
       .notNull()
       .references(() => projects.id, { onDelete: "cascade" }),
-    role: text("role", { enum: ["owner"] }).notNull(),
+    role: text("role", { enum: ["owner", "viewer", "business"] }).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
@@ -300,6 +309,100 @@ export const projectMembers = pgTable(
       table.projectId,
     ),
     index("project_members_user_id_idx").on(table.userId),
+    uniqueIndex("project_members_one_owner_uidx")
+      .on(table.projectId)
+      .where(sql`${table.role} = 'owner'`),
+    check(
+      "project_members_role_check",
+      sql`${table.role} IN ('owner', 'viewer', 'business')`,
+    ),
+  ],
+)
+
+/** Creation target only; workspace grouping never grants project authority. */
+export const personalWorkspaces = pgTable("personal_workspaces", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => user.id, { onDelete: "cascade" }),
+  workspaceId: uuid("workspace_id")
+    .notNull()
+    .unique()
+    .references(() => workspaces.id),
+})
+
+export const projectInvitations = pgTable(
+  "project_invitations",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    inviterId: text("inviter_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    recipientUserId: text("recipient_user_id").references(() => user.id, {
+      onDelete: "cascade",
+    }),
+    email: text("email").notNull(),
+    tokenHash: text("token_hash"),
+    state: text("state", {
+      enum: ["pending", "accepted", "declined", "revoked"],
+    })
+      .notNull()
+      .default("pending"),
+    role: text("role", { enum: ["viewer", "business"] })
+      .notNull()
+      .default("viewer"),
+    delivery: text("delivery", { enum: ["pending", "submitted", "failed"] })
+      .notNull()
+      .default("pending"),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("project_invitation_pending_email_uidx")
+      .on(table.projectId, table.email)
+      .where(sql`${table.state} = 'pending'`),
+    index("project_invitation_recipient_idx").on(table.recipientUserId),
+    index("project_invitation_expiry_idx").on(table.expiresAt),
+    check(
+      "project_invitation_state_check",
+      sql`${table.state} IN ('pending', 'accepted', 'declined', 'revoked')`,
+    ),
+    check(
+      "project_invitation_role_check",
+      sql`${table.role} IN ('viewer', 'business')`,
+    ),
+    check(
+      "project_invitation_delivery_check",
+      sql`${table.delivery} IN ('pending', 'submitted', 'failed')`,
+    ),
+  ],
+)
+
+/** Owner-controlled disclosure, independent of telemetry/meaning ownership. */
+export const projectEvidencePublications = pgTable(
+  "project_evidence_publications",
+  {
+    projectId: uuid("project_id")
+      .primaryKey()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    revision: integer("revision").notNull().default(0),
+    publication: jsonb("publication").$type<unknown>().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    check(
+      "project_evidence_publication_revision_check",
+      sql`${table.revision} >= 0`,
+    ),
   ],
 )
 
@@ -326,6 +429,100 @@ export const savedInvestigations = pgTable(
       table.projectId,
       table.createdAt,
       table.id,
+    ),
+  ],
+)
+
+/** Immutable project-shared questions; never captured results or grants. */
+export const sharedInvestigations = pgTable(
+  "shared_investigations",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    creatorId: text("creator_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    selection: jsonb("selection").$type<unknown>().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    foreignKey({
+      name: "shared_investigation_creator_membership_fk",
+      columns: [table.creatorId, table.projectId],
+      foreignColumns: [projectMembers.userId, projectMembers.projectId],
+    }).onDelete("cascade"),
+    index("shared_investigations_creator_project_idx").on(
+      table.creatorId,
+      table.projectId,
+    ),
+    index("shared_investigations_project_created_idx").on(
+      table.projectId,
+      table.createdAt,
+      table.id,
+    ),
+    check(
+      "shared_investigation_title_check",
+      sql`length(${table.title}) BETWEEN 1 AND 120 AND length(btrim(${table.title})) > 0`,
+    ),
+    check(
+      "shared_investigation_selection_size_check",
+      sql`octet_length(${table.selection}::text) <= 16384`,
+    ),
+  ],
+)
+
+/** Short-lived projected observations; no raw diagnostics. */
+export const evidenceCaptures = pgTable(
+  "evidence_captures",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    creatorId: text("creator_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    sourceRunId: uuid("source_run_id")
+      .notNull()
+      .references((): AnyPgColumn => workflowRuns.id, { onDelete: "cascade" }),
+    publicationRevision: integer("publication_revision").notNull(),
+    capturedAt: timestamp("captured_at", { withTimezone: true }).notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    payload: jsonb("payload").$type<unknown>().notNull(),
+  },
+  (table) => [
+    foreignKey({
+      name: "evidence_capture_creator_membership_fk",
+      columns: [table.creatorId, table.projectId],
+      foreignColumns: [projectMembers.userId, projectMembers.projectId],
+    }).onDelete("cascade"),
+    index("evidence_captures_project_created_idx").on(
+      table.projectId,
+      table.capturedAt,
+      table.id,
+    ),
+    index("evidence_captures_creator_project_idx").on(
+      table.creatorId,
+      table.projectId,
+    ),
+    index("evidence_captures_source_idx").on(table.sourceRunId),
+    index("evidence_captures_expiry_idx").on(table.expiresAt, table.id),
+    check(
+      "evidence_capture_size_check",
+      sql`octet_length(${table.payload}::text)<=65536`,
+    ),
+    check(
+      "evidence_capture_lifetime_check",
+      sql`${table.expiresAt}>${table.capturedAt} AND ${table.expiresAt}<=${table.capturedAt}+interval '24 hours'`,
+    ),
+    check(
+      "evidence_capture_revision_check",
+      sql`${table.publicationRevision}>=0`,
     ),
   ],
 )
@@ -534,3 +731,5 @@ export const agentAccessConnectionLastAuth = pgTable(
     index("agent_access_connection_last_auth_client_idx").on(table.clientId),
   ],
 )
+
+export { waitlist } from "./waitlist.js"

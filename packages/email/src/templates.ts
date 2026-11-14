@@ -26,6 +26,14 @@ export const renderEmail = Effect.fn("Email.render")(function* (
       ? undefined
       : `${environmentName} environment. Links in this message open ${trustedOrigin}.`
   const copy = Match.value(message).pipe(
+    Match.when(
+      { kind: "project-invitation" },
+      ({ projectName, inviterName, role }) => ({
+        subject: "Invitation to a Flowmark project",
+        body: `${inviterName || "A project owner"} invited you to read ${projectName}. ${role === "business" ? "This grants project-wide activity metadata and only owner-published business result/reference fields. Raw diagnostic evidence is withheld. A customer filter is not a customer access restriction." : "This includes all diagnostic evidence in that project, including properties and error details."} It does not grant key management or access to other projects. Sign in with this mailbox and verify it before reviewing and accepting.`,
+        action: "Review project invitation",
+      }),
+    ),
     Match.when({ kind: "delivery-test" }, () => ({
       subject: "Flowmark email delivery test",
       body: `This is the Flowmark ${environmentName} email delivery test you requested. No account settings were changed.`,
@@ -43,6 +51,11 @@ export const renderEmail = Effect.fn("Email.render")(function* (
       subject: "Reset your Flowmark password",
       body: "A password reset was requested for your Flowmark account.",
       action: "Reset password",
+    })),
+    Match.when({ kind: "confirm-email-change" }, ({ newEmail }) => ({
+      subject: "Approve your Flowmark email change",
+      body: `A change to ${newEmail} was requested. Approve it here, then verify the new address. Your current email remains unchanged until both steps complete.`,
+      action: "Approve email change",
     })),
     Match.when({ kind: "change-email" }, () => ({
       subject: "Confirm your new Flowmark email",
@@ -82,6 +95,11 @@ export const renderEmail = Effect.fn("Email.render")(function* (
       new EmailError({ operation: "validation", reason: "untrusted-url" }),
   })
   const expiry = Match.value(message).pipe(
+    Match.when(
+      { kind: "project-invitation" },
+      () =>
+        "This invitation expires after 72 hours, unless replaced or revoked earlier. Opening this link does not accept it. If you did not expect it, you can ignore this email.",
+    ),
     Match.when(
       { kind: "delivery-test" },
       () => "No action is required. Reply to this email if you need help.",

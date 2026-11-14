@@ -118,3 +118,6 @@ export type {
 export { Toaster, toast } from "./toast"
 
 export { Textarea } from "./textarea"
+
+export { BusinessRunView } from "./business-run"
+export type { BusinessRunViewProps } from "./business-run"

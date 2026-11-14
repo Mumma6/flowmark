@@ -158,3 +158,68 @@ confirmations and the operations view use `run.relatedPage`,
 `run.expectationsPage` and `run.operationsPage`. Peer, period and business
 arithmetic stay on the existing aggregate reads. Compact facts remain preferred;
 a run with no fact row still resolves through the raw-event fallback.
+
+## Captured business observations
+
+Studio can capture one run's **published business evidence** in verified local
+Compose development. Captures contain no raw events, operations, errors,
+unpublished result/property siblings, environment or release. Owners use the
+same projection. The server accepts only a run ID and title, projects inside the
+source/project authorization transaction, and persists at most 64 KiB including
+provenance. Each creator/project may retain 20 captures; each project 100.
+Expired copies count until deleted. Lists contain at most 25 entries per page.
+
+A capture is an application-reported past observation, not a live result or a
+verified business outcome. Its deadline is the earliest of 24 hours after
+capture, 30 days after source start, and 30 days after source receipt. Every read
+checks current project/creator membership, active accounts, delegated grant when
+applicable, source lifetime, publication revision and stored schema. A publication
+revision change permanently invalidates the old capture. Unavailable titles and
+payloads are withheld; creators and owners retain minimal cleanup metadata.
+Deleting a capture removes only that copy. Creator membership removal and
+source/account/project erasure remove dependent copies.
+
+Hosted capture remains disabled pending reviewed hosted expiry operations and
+operating cadence (ADR 0019). Bounded local cleanup is described below. Read-time denial does not claim physical
+purge at a deadline. This feature installs no scheduler, public link, export
+artifact, new MCP tool or portable capture view. Source and account cleanup reuse
+existing persisted phase numbers; foreign keys are a final integrity safeguard.
+
+### Saved evidence exports and expiry cleanup
+
+Saved-object JSON exports are fresh authenticated reads, not cached download
+links or a restore/import format. Private exports contain the current user's
+supported selection and require current diagnostic access, including inside the
+read transaction. Shared exports retain their approved evidence ceiling and
+recheck membership, grants and publication before disclosing a question. Live
+exports contain a **question only** and explicitly recompute when reopened.
+Capture exports reuse the authorized capture read, preserving observation time,
+publication/declaration revisions, omissions and expiry. An unavailable capture
+cannot be exported, even by its creator or the project owner. Keys cannot export
+saved objects. A delivered/clipboard copy cannot be recalled or made to expire.
+
+In verified local development, project owners can explicitly remove expired
+captures from Investigations. Each native-session operation removes at most
+25 copies and reports whether another batch remains. Repeating the operation
+resumes from retained eligible rows; no saved cursor or job phase is reset.
+Eligibility uses database time against both stored and current source deadlines.
+A failed batch rolls back, reports an error and can be retried. Valid captures,
+other projects, source telemetry and live selections keep their own lifecycle.
+
+This is a manual local maintenance path, not an installed background schedule.
+Hosted capture and cleanup remain disabled. Before enabling hosted admission,
+review and approve an operating cadence against actual source-retention deadlines,
+including bounded retries, failure monitoring, missed-run recovery and physical
+purge evidence. Any scheduler/provider settings require the infrastructure writer
+and an exact reviewed deployment plan. Read-time expiry already denies access;
+it does not promise physical deletion at a deadline. Creating a scheduler or
+loosening the local gate is not part of this implementation.
+
+Project/account deletion previews include personal, shared and captured objects.
+Their existing bounded erasure phases drain owned copies before FK parents;
+scoped source erasure removes dependent captures while keeping live-question
+metadata truthful about recomputation. Restored expired copies remain unreadable,
+and a missing/erased source cannot satisfy capture admission. Backup expiry and
+isolated restore/suppression procedures remain governed by
+[ADR 0015](decisions/0015-complete-data-lifecycle.md); no backup restore or provider
+retention operation is implemented or authorized here.

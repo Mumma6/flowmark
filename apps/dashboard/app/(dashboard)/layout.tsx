@@ -22,7 +22,7 @@ export default async function DashboardLayout({
     redirect("/sign-in")
   }
   const state = Option.getOrNull(access.onboarding)
-  if (state && !state.completedAt) {
+  if (state && !state.completedAt && !state.sharedAccess) {
     redirect(`/onboarding?step=${state.step}`)
   }
   return (

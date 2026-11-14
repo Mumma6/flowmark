@@ -82,6 +82,30 @@ function OnboardingContent({
               {reviewMode ? "Setup guide" : "Studio setup"}
             </span>
           </div>
+          <Link
+            href="/account"
+            className="text-xs text-muted-foreground underline underline-offset-4"
+          >
+            Account
+          </Link>
+          <Link
+            href="/account/security"
+            className="text-xs text-muted-foreground underline underline-offset-4"
+          >
+            Account security
+          </Link>
+          <Link
+            href="/data-privacy"
+            className="text-xs text-muted-foreground underline underline-offset-4"
+          >
+            Account data &amp; privacy
+          </Link>
+          <Link
+            href="/account/help"
+            className="text-xs text-muted-foreground underline underline-offset-4"
+          >
+            Setup help
+          </Link>
           {reviewMode ? (
             <Link
               href="/"
