@@ -3,7 +3,7 @@ import "./globals.css"
 
 const title = "Flowmark — Understand what your software actually does"
 const description =
-  "Open-source process intelligence for people and agents. Connect application behavior to business outcomes through Flowmark Platform, Studio, APIs and MCP."
+  "Process intelligence for people and agents. Discover application processes, connect execution to business outcomes, and keep understanding alive as your software evolves."
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://flowmark.dev"),

@@ -23,7 +23,7 @@ export function Arrow({ diagonal = false }: { diagonal?: boolean }) {
 export function BrandLink({ href = "/" }: { href?: string }) {
   return (
     <a href={href} aria-label="Flowmark home">
-      <FlowmarkWordmark />
+      <FlowmarkWordmark className="max-[359px]:[&>span:first-child]:hidden" />
     </a>
   )
 }

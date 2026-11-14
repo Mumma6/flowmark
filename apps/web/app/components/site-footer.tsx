@@ -1,22 +1,22 @@
 import { Separator } from "@flowmark/ui"
 import { BrandLink } from "./brand"
 import { shellClassName } from "./shell"
-import { appUrl, docsUrl, githubUrl } from "./site-links"
+import { docsUrl, githubUrl } from "./site-links"
 
 const columns = [
   {
     title: "Product",
     links: [
-      { href: "#studio", label: "Studio" },
-      { href: "#platform", label: "Platform" },
-      { href: "#everywhere", label: "Everywhere" },
+      { href: "#studio", label: "Explore the platform" },
+      { href: "#discover", label: "Discovery & instrumentation" },
+      { href: "#evolve", label: "Continuous evolution" },
       { href: "#faq", label: "FAQ" },
     ],
   },
   {
     title: "Resources",
     links: [
-      { href: appUrl, label: "Open Studio" },
+      { href: "#waitlist", label: "Join the Waitlist" },
       { href: docsUrl, label: "Documentation" },
       { href: githubUrl, label: "GitHub" },
     ],

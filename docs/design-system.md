@@ -84,14 +84,11 @@ Buttons use intrinsic width by default, including inside grid forms. Opt into
 rows to grow for results and long identifiers. Mobile run summaries use a
 semantic list rather than hiding essential values in a wide table.
 
-Studio and the landing's interactive example share `StudioChrome`,
-`StudioWorkspace`, `StudioProcessPane` and `StudioEvidenceList` from
-`@flowmark/ui`. These components accept presentation data and interaction slots;
-they own no project queries, authentication, routing or business classification.
-The dashboard projects real run DTOs into the list and supplies Next links;
-the landing supplies fixed synthetic evidence and opens the shared `RunSnapshot`.
-Keep the synthetic disclosure visible and preserve actual Studio query/error
-states when changing shared presentation.
+Studio uses shared `StudioChrome`, `StudioWorkspace`, `StudioProcessPane` and
+`StudioEvidenceList` presentation primitives. The public landing composes an
+independent illustrative process workspace and reuses the shared `RunSnapshot`
+for its evidence inspector. Both consume shared controls and tokens. Keep
+synthetic disclosures visible and preserve actual Studio query/error states.
 
 ## Component ownership
 
@@ -204,67 +201,49 @@ long identifiers, zoom/reflow and reduced motion. Preserve layout during refresh
 and retain explicit errors. Target WCAG AA text contrast. Use the pinned pnpm
 commands in the [dashboard README](../apps/dashboard/README.md).
 
-## Product 1.0 landing and Studio direction
+## Product landing direction
 
-The landing establishes the visual direction for Product 1.0. The authenticated
-application now evolves as Studio in `apps/dashboard`, with its existing hosting
-configuration. Keep charcoal surfaces, the Flowmark mark and
-accent dot, system fonts and restrained lime. Its neutral charcoal palette
-reduces the old green cast. The public site is dark-only; authenticated product
-surfaces continue to support their existing themes.
+The landing presents the complete Flowmark product vision through discovery,
+observation, understanding and continuous evolution. Keep charcoal, the Flowmark
+mark/accent dot, system fonts, lime actions and restrained lavender emphasis.
+The public site is dark-only; authenticated surfaces retain existing themes.
 
-Use large editorial headings (fluid 45–88 px for the public hero), short readable
-explanations and open sections divided by fine rules. Monospace identifies
-references, source, context and exact payloads. Avoid decorative card grids and
-ornament competing with evidence. Soft lime
-light cones, a faint grid and slowly travelling background beams frame the hero.
-Keep them behind content and disable their movement under reduced motion. Studio
-gets a stronger rim light, ambient glow and selected-state accents so the product
-illustration stands out without changing status colors or interaction behavior.
+Use oversized editorial typography, short explanations, structural rules and
+purposeful product illustrations. The hero joins a clear promise to an interactive
+Process Health workspace. Separate business outcomes, execution behavior and
+evidence quality; do not collapse them into a universal score. A finding leads to
+a comparison, then a connected journey and the shared run inspector. Charts expose
+their cohort, denominator, observation time and tabular values.
 
-The primary visual is a working contextual investigation, not a screenshot:
-process selection → connected evidence → inspector → existing run detail.
-Studio, agent and structured-data views preserve the selected case. A shared
-Dialog reveals `RunSnapshot`; its schema and dashboard consumer are unchanged.
-An explicit observation snapshot accompanies missing-confirmation evidence.
-Completed execution remains separate from reported results and expectations.
-RunSnapshot uses 20 px metric values and 12 px metric padding on narrow screens,
-returning to 28 px and 16 px at the small breakpoint. Inspection initially focuses
-its title so long mobile content opens at the beginning.
+The discovery surface has three independent entrances: Automatic, Agent-assisted
+and Precision SDK. Candidate meaning is reviewed, never silently accepted. A
+process-aware change review connects code drift, a proposed instrumentation patch
+and explicit verification scope. Team perspectives and a Studio/MCP/API diagram
+show shared understanding without a chatbot-first presentation.
 
-Organization perspectives adapt the question and depth around the same reference.
-Agent and portable-view illustrations show how that context travels; they do not
-simulate authorization or a real connected client. Keep fictional organizations
-and synthetic data identifiable. Landing copy describes the full Product 1.0 in
-present tense; actual operational state elsewhere stays factual.
+Product illustrations are local and synthetic. They do not connect a repository,
+run tests, publish meaning, authorize an agent or establish deployed capability.
+The source and operational documentation continue to describe real implementation
+and activation. Preserve unknowns and the distinction between reported completion,
+business outcomes and later confirmations.
 
-On narrow screens, navigation becomes the shared Sheet, investigation selection
-becomes a compact two-column list, and the journey and inspector stack. Preserve
-all evidence and actions rather than clipping a desktop console. Use shared
-Tabs, Button, Input, Sheet, Dialog and Accordion; no second component system.
-Keep visible keyboard focus, meaningful no-match recovery, Escape dismissal and
-focus restoration. Entrance motion and anchor scrolling honor reduced motion.
+Use the shared Tabs, Button, Input, Sheet, Dialog and Accordion. Static narrative
+stays server-rendered; local state belongs to small client components. Evidence
+Dialog dismissal restores its actual opener. Programmatic navigation between
+workspace views focuses the destination tab. On narrow screens, graphs, evidence
+and controls reflow; code and data tables may scroll within bounded containers.
+Preserve keyboard access and 320 px reflow without page-level horizontal scrolling.
 
-Platform uses one evidence-to-interface diagram rather than a disconnected grid
-of infrastructure features. Show the application-owned process, shared meaning
-and the people/agent/API clients together. Reuse the same fictional reference
-across illustrations. Diagram connectors are decorative; labels and working
-links carry the meaning on mobile and for assistive navigation.
+Existing attributed light cones and beams frame the hero. Finite SVG drawing
+communicates evidence trends. All animation uses motion-safe variants, and smooth
+anchor scrolling is disabled under reduced motion. No animation library, remote
+font or image dependency is needed.
 
-Everywhere pairs one client-independent conversation with synthetic evidence and a
-portable view that switches host shells while keeping the same facts. Shared
-RunSnapshot remains the inspection surface. Match Studio’s fine lime borders,
-quiet glows and selected-state emphasis; use the existing warning/success roles
-for evidence status. Illustrative hosts do not perform live tool calls, authorize
-connections or create a second analytics/presentation system.
-
-Follow the page order in desktop/mobile navigation, product links and footer:
-Studio → Platform → Everywhere. Keep one useful agent conversation instead of
-client tabs that only substitute prompt text. The SDK illustration follows the
-same fictional booking from application code into context, a reported result and
-an expected confirmation. Expandable details explain distinct signals; code copy
-uses the executable example. Keep the closing invitation bold and concise, with
-open-source/self-host details integrated there rather than a separate section.
+**Join the Waitlist** is the primary conversion in the header, hero and closing.
+The closing email form uses the existing endpoint, preserves loading and explicit
+failure states, and acknowledges success only after the API confirms it. Avoid
+competing public signup or Studio-launch actions. Documentation and source remain
+quiet secondary resources.
 
 ## Studio workspace, authentication and setup
 

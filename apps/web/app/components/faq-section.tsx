@@ -18,18 +18,18 @@ const questions: ReadonlyArray<{
 }> = [
   {
     value: "identity",
-    title: "Is Flowmark observability, analytics, or something else?",
-    body: "Flowmark connects execution evidence to business meaning. Start with a process, a customer reference or an outcome, then investigate across runs and over time. Engineering and business teams use the same evidence, at the depth their question needs.",
+    title: "What is process intelligence?",
+    body: "An understanding of how your software’s processes behave and what they report accomplishing. Flowmark connects code, executions, business outcomes and history so you can follow a changed result back to its evidence — and keep that understanding current as the application changes.",
   },
   {
     value: "execution",
-    title: "Does Flowmark run my workflows?",
-    body: "Your application owns execution, scheduling and retries. Flowmark observes the work you instrument with ordinary TypeScript and Promises. Keep the runtime, frameworks and business logic you already use.",
+    title: "How does Flowmark fit into my application?",
+    body: "Start with automatic technical context, agent-assisted instrumentation, or precise SDK markers. Each works independently. Your application keeps its runtime, execution and business logic; Flowmark records observations and connects them to meaningful processes.",
   },
   {
     value: "agents",
-    title: "How do people and AI agents work together?",
-    body: "Use an agent to help instrument your application, then give it scoped access to structured process evidence through MCP. Continue an investigation in Studio, external agents or portable evidence views in compatible clients. Flowmark provides context and evidence; access stays explicit and project-scoped.",
+    title: "Do I need an AI agent to use Flowmark?",
+    body: "Studio is a visual workspace for exploring processes, outcomes and evidence. You can browse, compare and investigate directly. Agents add another way to discover processes, prepare instrumentation changes and investigate alongside your code through scoped MCP access.",
   },
   {
     value: "evidence",
@@ -38,8 +38,8 @@ const questions: ReadonlyArray<{
   },
   {
     value: "open",
-    title: "Is the Flowmark source code available?",
-    body: "Yes. Flowmark’s source code is available on GitHub under the MIT license. Explore the SDK and platform to see how Flowmark works.",
+    title: "How can I get access?",
+    body: "Join the waitlist with your email. Flowmark is preparing for public access. You can also explore the SDK, architecture and source on GitHub under the MIT license.",
   },
 ]
 
@@ -53,7 +53,7 @@ export function FaqSection() {
       <div>
         <p className={overlineClassName}>Questions</p>
         <h2 id="faq-title" className={`${sectionTitleClassName} mt-4`}>
-          A few useful distinctions.
+          A little more context.
         </h2>
       </div>
       <Accordion multiple>

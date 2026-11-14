@@ -4,10 +4,11 @@ import { HeroSection } from "./components/hero-section"
 import { SiteFooter } from "./components/site-footer"
 import { SiteHeader } from "./components/site-header"
 import {
+  DiscoverSection,
   EverywhereSection,
-  OrganizationSection,
+  EvolveSection,
+  MeaningSection,
   PlatformSection,
-  ProductDimensions,
 } from "../features/product-landing/product-story"
 
 export default function HomePage() {
@@ -22,10 +23,11 @@ export default function HomePage() {
       <SiteHeader />
       <main id="main" tabIndex={-1}>
         <HeroSection />
-        <ProductDimensions />
-        <PlatformSection />
+        <MeaningSection />
+        <DiscoverSection />
+        <EvolveSection />
         <EverywhereSection />
-        <OrganizationSection />
+        <PlatformSection />
         <FaqSection />
         <ClosingSection />
       </main>
