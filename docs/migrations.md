@@ -263,3 +263,12 @@ Migrations 0015/0016 add same-transaction run/metric projections without an auto
 historical scan. Follow [historical facts](historical-facts.md) for bounded
 backfill, reconciliation, old-writer compatibility and retention ownership.
 Hosted backfill is separately approved and is not part of the merge pipeline.
+
+## Waitlist table
+
+Migration `0032_brief_sphinx` adds the independent `waitlist` table with generated
+UUIDs, timestamps and a unique index on `lower(email)`. It is additive and does not
+modify auth tables or existing registration behavior. Apply it before deploying
+the waitlist endpoint. Preview/hosted rollout needs the normal approval; the local
+integration runner verifies migrations and concurrent case-insensitive duplicates
+on its disposable Compose database. See the [website guide](../apps/web/README.md#waitlist).

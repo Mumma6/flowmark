@@ -1,11 +1,14 @@
 import { Button, FlowmarkMark } from "@flowmark/ui"
 import { Arrow } from "./brand"
 import { overlineClassName, shellClassName } from "./shell"
+import { WaitlistForm } from "../../features/waitlist/waitlist-form"
+import { waitlistEndpoint } from "../../features/waitlist/endpoint"
 import { docsUrl, githubUrl } from "./site-links"
 
 export function ClosingSection() {
   return (
     <section
+      id="waitlist"
       className="relative isolate overflow-hidden border-t border-highlight/20 bg-card py-20 sm:py-28"
       aria-labelledby="closing-title"
     >
@@ -30,6 +33,7 @@ export function ClosingSection() {
           Connect what runs to what it means. Put that understanding in the
           hands of your team, your agents and the tools you build.
         </p>
+        <WaitlistForm endpoint={waitlistEndpoint()} />
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
           <Button asChild size="lg" className="h-11 px-6">
             <a href={docsUrl}>
@@ -43,7 +47,7 @@ export function ClosingSection() {
           </Button>
         </div>
         <p className="mt-6 text-[11px] text-muted-foreground">
-          Open source · MIT licensed · Self-host on your infrastructure
+          Open source · MIT licensed · View the code on GitHub
         </p>
       </div>
     </section>

@@ -38,8 +38,8 @@ const questions: ReadonlyArray<{
   },
   {
     value: "open",
-    title: "Can I self-host Flowmark and build on it?",
-    body: "Yes. Flowmark is open source under MIT, built with TypeScript and PostgreSQL. Inspect the SDK and platform, self-host on your infrastructure, and compose process intelligence into your own tools through programmable interfaces.",
+    title: "Is the Flowmark source code available?",
+    body: "Yes. Flowmark’s source code is available on GitHub under the MIT license. Explore the SDK and platform to see how Flowmark works.",
   },
 ]
 

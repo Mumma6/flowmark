@@ -1,4 +1,5 @@
 export enum DatabaseOperation {
+  JoinWaitlist = "join-waitlist",
   EvidenceCaptures = "evidence-captures",
   SharedInvestigations = "shared-investigations",
   BusinessEvidence = "business-evidence",

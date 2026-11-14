@@ -731,3 +731,5 @@ export const agentAccessConnectionLastAuth = pgTable(
     index("agent_access_connection_last_auth_client_idx").on(table.clientId),
   ],
 )
+
+export { waitlist } from "./waitlist.js"

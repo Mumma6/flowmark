@@ -111,3 +111,5 @@ export { SharedInvestigationRejected } from "./shared-investigations/types.js"
 
 export { EvidenceCaptureStore } from "./evidence-captures/evidence-capture-store.js"
 export { EvidenceCaptureRejected } from "./evidence-captures/types.js"
+
+export { WaitlistStore } from "./waitlist/waitlist-store.js"
