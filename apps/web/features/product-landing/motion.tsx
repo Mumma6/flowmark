@@ -13,17 +13,10 @@ import { cn } from "@flowmark/ui"
 
 const MotionContext = createContext({ hidden: true })
 const subscribeVisibility = (notify: () => void) => {
-  const preference = window.matchMedia("(prefers-reduced-motion: reduce)")
-  preference.addEventListener("change", notify)
   document.addEventListener("visibilitychange", notify)
-  return () => {
-    preference.removeEventListener("change", notify)
-    document.removeEventListener("visibilitychange", notify)
-  }
+  return () => document.removeEventListener("visibilitychange", notify)
 }
-const pageHidden = () =>
-  document.hidden ||
-  window.matchMedia("(prefers-reduced-motion: reduce)").matches
+const pageHidden = () => document.hidden
 const serverHidden = () => true
 
 export function LandingMotion({ children }: { children: ReactNode }) {
