@@ -232,9 +232,8 @@ Aceternity's Background Lines, Tracing Beam, Timeline, Glowing Effect and Moving
 Border informed the visual direction. Existing attributed beams and spotlights
 remain; original SVG signal trails, node activation and scroll traces communicate
 relationships. Native CSS handles frames, with no per-frame React updates or new
-animation dependency. A shared preference subscription and viewport observers
-suspend offscreen/hidden scenes. Reduced motion defaults to static diagrams;
-explicit Play motion opts into scene loops, and Pause motion stops animations.
+animation dependency. A visibility subscription and viewport observers
+suspend offscreen/hidden scenes. Diagram loops play automatically without a playback control.
 Finite entrances, hover movement and scroll traces remain motion-safe. Unsupported
 view timelines render their complete path. Anchor scrolling respects reduced motion.
 

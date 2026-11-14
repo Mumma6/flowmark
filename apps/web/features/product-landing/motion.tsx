@@ -9,43 +9,26 @@ import {
   useSyncExternalStore,
   type ReactNode,
 } from "react"
-import { Button, cn } from "@flowmark/ui"
+import { cn } from "@flowmark/ui"
 
-const MotionContext = createContext({
-  paused: true,
-  hidden: true,
-  toggle: () => {},
-})
-const subscribeMotion = (notify: () => void) => {
-  const preference = window.matchMedia("(prefers-reduced-motion: reduce)")
-  preference.addEventListener("change", notify)
+const MotionContext = createContext({ hidden: true })
+const subscribeVisibility = (notify: () => void) => {
   document.addEventListener("visibilitychange", notify)
-  return () => {
-    preference.removeEventListener("change", notify)
-    document.removeEventListener("visibilitychange", notify)
-  }
+  return () => document.removeEventListener("visibilitychange", notify)
 }
-const motionPolicy = () =>
-  (document.hidden ? 1 : 0) |
-  (window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 2 : 0)
-const serverMotionPolicy = () => 3
+const pageHidden = () => document.hidden
+const serverHidden = () => true
 
 export function LandingMotion({ children }: { children: ReactNode }) {
-  const [override, setOverride] = useState<boolean | null>(null)
-  const policy = useSyncExternalStore(
-    subscribeMotion,
-    motionPolicy,
-    serverMotionPolicy,
+  const hidden = useSyncExternalStore(
+    subscribeVisibility,
+    pageHidden,
+    serverHidden,
   )
-  const reduced = (policy & 2) !== 0
-  const hidden = (policy & 1) !== 0
-  const paused = override ?? reduced
   return (
-    <MotionContext.Provider
-      value={{ paused, hidden, toggle: () => setOverride(!paused) }}
-    >
+    <MotionContext.Provider value={{ hidden }}>
       <div
-        data-paused={paused || hidden}
+        data-paused={hidden}
         className="[&[data-paused=true]_*]:[animation-play-state:paused]"
       >
         {children}
@@ -66,7 +49,7 @@ export function MotionScene({
 }) {
   const ref = useRef<HTMLDivElement>(null)
   const [visible, setVisible] = useState(false)
-  const { paused, hidden } = useContext(MotionContext)
+  const { hidden } = useContext(MotionContext)
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => setVisible(entry.isIntersecting),
@@ -82,7 +65,7 @@ export function MotionScene({
       ref={ref}
       role={label ? "region" : undefined}
       aria-label={label}
-      data-playing={visible && !paused && !hidden}
+      data-playing={visible && !hidden}
       data-visible={visible}
       className={cn(
         "group/scene relative [&[data-playing=false]_*]:[animation-play-state:paused]",
@@ -91,22 +74,6 @@ export function MotionScene({
     >
       {children}
     </div>
-  )
-}
-
-export function MotionControl() {
-  const { paused, toggle } = useContext(MotionContext)
-  return (
-    <Button
-      variant="ghost"
-      onClick={toggle}
-      className="h-9 px-2 font-mono text-[9px] uppercase tracking-wider text-muted-foreground"
-    >
-      <span aria-hidden="true" className="text-primary">
-        {paused ? "▷" : "Ⅱ"}
-      </span>
-      {paused ? "Play motion" : "Pause motion"}
-    </Button>
   )
 }
 

@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { Button, FlowmarkMark, cn } from "@flowmark/ui"
-import { MotionControl, MotionScene, SignalPath } from "./motion"
+import { MotionScene, SignalPath } from "./motion"
 import { ProcessIcon, type ProcessIconName } from "./process-icon"
 
 const nodes = [
@@ -156,7 +156,6 @@ export function ProcessLandscape() {
           <span className="mr-3 text-primary">↳</span> One booking. A whole
           connected story.
         </p>
-        <MotionControl />
       </div>
       <div className="relative h-[540px] sm:h-[440px]">
         <div

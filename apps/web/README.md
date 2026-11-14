@@ -73,10 +73,9 @@ progressive timeline bars express observed relationships. Aceternity Background
 Lines, Tracing Beam, Timeline, Moving Border and Glowing Effect informed the visual
 research; the diagram implementation is original and uses no Motion dependency.
 
-One subscription tracks reduced-motion preference and page visibility. Viewport
-observers stop offscreen scenes. Reduced motion defaults to a complete static
-experience, with an explicit **Play motion** opt-in for the diagram loops. **Pause
-motion** stops every animation. Finite entrances, hover transforms and scroll-linked
+Diagram loops start automatically with no playback control. A visibility
+subscription and viewport observers suspend hidden/offscreen scenes.
+Finite entrances, hover transforms and scroll-linked
 traces retain CSS motion-safe guards; scroll traces fall back to complete lines
 where view timelines are unsupported. No per-frame JavaScript or layout measurement
 loop is used. Normal layouts use Tailwind and semantic tokens.
@@ -84,7 +83,7 @@ loop is used. Normal layouts use Tailwind and semantic tokens.
 Verify 320/390 px mobile, tablet and desktop; no page overflow; keyboard activation
 of diagram nodes, candidate review, SDK disclosure, journey evidence, cohort
 selection/table, change-review stages, people/agent/tool perspectives and mobile
-navigation. Check reduced-motion default, opt-in, pause, offscreen suspension,
+navigation. Check automatic playback, offscreen suspension,
 metadata and console errors. All controls remain usable without animation.
 
 For waitlist browser checks, use a temporary loopback HTTP fixture or the local
