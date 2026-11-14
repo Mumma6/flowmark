@@ -78,6 +78,9 @@ jobs:
         with:
           node-version-file: .node-version
 
+          # This job never installs npm packages, so no pnpm store is created.
+          package-manager-cache: false
+
       - name: Cache Rust tools
         uses: ./.github/actions/cache-rust
         with:
