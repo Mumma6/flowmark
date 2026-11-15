@@ -85,6 +85,11 @@ select an existing installation. Rust is pinned in `rust-toolchain.toml`; Cargo
 uses its committed lockfile. The wasm-bindgen CLI matches the crate's exact
 version. Initial builds require official Rust downloads and crates.io access.
 
+The committed workspace settings point rust-analyzer at
+`.cache/rust/cargo/bin/cargo` and set `CARGO_HOME`, `RUSTUP_HOME` and `PATH` for
+both Cargo and the rust-analyzer server. Run `pnpm rust:setup` once so editor
+diagnostics use that same pinned toolchain. The cache directory stays gitignored.
+
 Native property tests need no database; integration tests use disposable Compose
 PostgreSQL. Shared JSON fixtures were captured from the previous TypeScript
 operation, peer-comparison and cycle calculations. They run in native Rust,
