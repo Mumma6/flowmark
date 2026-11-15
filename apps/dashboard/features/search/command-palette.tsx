@@ -61,6 +61,7 @@ const pageIcons = {
   troubleshooting: LifeBuoy,
   "security-privacy": ShieldAlert,
   "product-issue": CircleAlert,
+  "private-support": LifeBuoy,
   "security-report": ShieldAlert,
 } satisfies Record<CommandPage["id"], typeof Workflow>
 

@@ -10,6 +10,7 @@ it("keeps troubleshooting beside a configured docs page and always offers public
     "troubleshooting",
     "security-privacy",
     "product-issue",
+    "private-support",
     "security-report",
   ])
   expect(destinations[1]?.href).toBe(
@@ -21,8 +22,8 @@ it("keeps troubleshooting beside a configured docs page and always offers public
   expect(destinations[3]?.href).toBe(
     "https://github.com/Mumma6/flowmark/issues/new",
   )
-  expect(destinations[4]?.href).toBe(
-    "https://github.com/Mumma6/flowmark/security/advisories/new",
+  expect(destinations[5]?.href).toBe(
+    "mailto:flowmark.dev@gmail.com?subject=Flowmark%20security%20report",
   )
 })
 
@@ -31,7 +32,12 @@ it("omits doc siblings when the documentation URL is not a docs page", () => {
     helpDestinations("https://docs.example/guide?tab=install").map(
       (destination) => destination.id,
     ),
-  ).toEqual(["documentation", "product-issue", "security-report"])
+  ).toEqual([
+    "documentation",
+    "product-issue",
+    "private-support",
+    "security-report",
+  ])
 })
 
 it("omits doc siblings when the documentation URL cannot be parsed", () => {
@@ -40,6 +46,7 @@ it("omits doc siblings when the documentation URL cannot be parsed", () => {
   ).toEqual([
     "not a url",
     "https://github.com/Mumma6/flowmark/issues/new",
-    "https://github.com/Mumma6/flowmark/security/advisories/new",
+    "mailto:flowmark.dev@gmail.com",
+    "mailto:flowmark.dev@gmail.com?subject=Flowmark%20security%20report",
   ])
 })

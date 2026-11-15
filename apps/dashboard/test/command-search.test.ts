@@ -42,6 +42,7 @@ describe("command palette search", () => {
       "troubleshooting",
       "security-privacy",
       "product-issue",
+      "private-support",
       "security-report",
     ])
     expect(filterCommandPages(pages, "run").map((page) => page.id)).toEqual([

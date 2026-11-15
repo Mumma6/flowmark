@@ -1,6 +1,7 @@
 import type { ReactNode } from "react"
 import { publicConfig } from "../platform/config-public"
 import { HelpLinks } from "./help-links"
+import { SupportDetailsForm } from "./support-details-form"
 
 export function RecoveryScreen({
   title,
@@ -19,6 +20,7 @@ export function RecoveryScreen({
       </div>
       {children}
       <HelpLinks documentationUrl={publicConfig.documentationUrl} />
+      <SupportDetailsForm />
     </main>
   )
 }

@@ -13,6 +13,7 @@ import { resetAuthCacheForTests } from "../../src/auth"
 import { POST } from "../../app/v1/events/route"
 import { POST as readPeriod } from "../../app/v1/read/period/route"
 import { createDefinitionImportFixture } from "./support/definition-import-fixture"
+import { localTestServer } from "./support/local-test-server"
 
 const execute = <A, E>(operation: Effect.Effect<A, E>) =>
   Effect.runPromise(operation)
@@ -439,76 +440,54 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
           }),
         )
         const { POST: readRun } = await import("../../app/v1/read/run/route")
-        const live = await createServerFor(readRun)
-        const { stdout } = await promisify(execFile)(
-          "pnpm",
-          [
-            "--filter",
-            "@flowmark/db",
-            "exec",
-            "tsx",
-            "--tsconfig",
-            "../../examples/tsconfig.json",
-            "../../examples/read-run.ts",
-            input,
-            "--snapshot",
-            output,
-          ],
-          {
-            cwd: fileURLToPath(new URL("../../../../", import.meta.url)),
-            env: {
-              ...process.env,
-              FLOWMARK_API_URL: live.origin,
-              FLOWMARK_READ_KEY: owner.readKey,
-            },
-          },
+        await Effect.runPromise(
+          Effect.scoped(
+            Effect.gen(function* () {
+              const live = yield* localTestServer(readRun)
+              const { stdout } = yield* Effect.promise(() =>
+                promisify(execFile)(
+                  "pnpm",
+                  [
+                    "--filter",
+                    "@flowmark/db",
+                    "exec",
+                    "tsx",
+                    "--tsconfig",
+                    "../../examples/tsconfig.json",
+                    "../../examples/read-run.ts",
+                    input,
+                    "--snapshot",
+                    output,
+                  ],
+                  {
+                    cwd: fileURLToPath(
+                      new URL("../../../../", import.meta.url),
+                    ),
+                    env: {
+                      ...process.env,
+                      FLOWMARK_API_URL: live.origin,
+                      FLOWMARK_READ_KEY: owner.readKey,
+                    },
+                  },
+                ),
+              )
+              const json = yield* Effect.promise(() => readFile(output, "utf8"))
+              const snapshot = JSON.parse(json) as {
+                status: string
+                evidenceNote: string
+              }
+              expect(snapshot.status).toBe("Completed")
+              expect(snapshot.evidenceNote).toContain(owner.projectId)
+              expect(snapshot.evidenceNote).toContain(partial.id)
+              expect(json + stdout).not.toContain(canary)
+              expect(json + stdout).not.toContain(owner.writeKey)
+              expect(json + stdout).not.toContain(owner.readKey)
+            }),
+          ),
         )
-        const snapshot = JSON.parse(await readFile(output, "utf8")) as {
-          status: string
-          evidenceNote: string
-        }
-        expect(snapshot.status).toBe("Completed")
-        expect(snapshot.evidenceNote).toContain(owner.projectId)
-        expect(snapshot.evidenceNote).toContain(partial.id)
-        expect(snapshot.evidenceNote + stdout).not.toContain(canary)
-        expect(snapshot.evidenceNote + stdout).not.toContain(owner.writeKey)
-        await live.close()
       } finally {
         await rm(directory, { recursive: true, force: true })
       }
     }, 30000)
   },
 )
-
-const createServerFor = async (
-  handler: (request: Request) => Promise<Response> | Response,
-) => {
-  const { createServer } = await import("node:http")
-  const { Readable } = await import("node:stream")
-  const server = createServer((incoming, outgoing) => {
-    const request = new Request(`http://127.0.0.1${incoming.url}`, {
-      method: incoming.method,
-      headers: incoming.headers as HeadersInit,
-      body: Readable.toWeb(incoming) as ReadableStream<Uint8Array>,
-      duplex: "half",
-    } as RequestInit)
-    void Promise.resolve(handler(request))
-      .then(async (response) => {
-        outgoing.writeHead(
-          response.status,
-          Object.fromEntries(response.headers),
-        )
-        outgoing.end(Buffer.from(await response.arrayBuffer()))
-      })
-      .catch(() => outgoing.destroy())
-  })
-  await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve))
-  const address = server.address()
-  if (!address || typeof address === "string") {
-    throw new Error("Missing test port")
-  }
-  return {
-    origin: `http://127.0.0.1:${address.port}`,
-    close: () => new Promise<void>((resolve) => server.close(() => resolve())),
-  }
-}
