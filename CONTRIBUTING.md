@@ -13,6 +13,8 @@ Requirements and the full local pipeline are in the
 ```sh
 pnpm install
 pnpm dev:setup
+pnpm infra status
+pnpm infra doctor
 pnpm infra up
 pnpm db:setup
 pnpm dev
@@ -23,6 +25,33 @@ Open the dashboard at `http://localhost:3001`. The
 authentication, persistence, and dashboard fit together. Sign-in configuration
 lives in the private `@flowmark/auth` package. Request boundaries are in
 [Authentication request boundaries](./docs/auth-perimeter.md).
+
+`dev:setup` copies public local templates without replacing existing configuration.
+`infra up` starts checkout-scoped Docker Compose infrastructure; it does not
+migrate or seed. `db:setup` explicitly applies local migrations and synthetic demo
+fixtures once. Application startup never performs either operation. Preserve an
+already-running container and record `container`/`startedByThisCall`; stop only a
+service you started. Two active checkouts require separate ports. See the
+[Compose instructions](./docs/development.md#local-postgresql-with-compose).
+
+Use the local demo sign-in documented in the development guide, then select a
+local project in Studio. Server ingestion and read keys have different roles;
+create each under **Settings → API keys** when its example needs it. No hosted
+account, maintainer ID, private planning file or AI client is required.
+
+For a smaller first contribution, run the existing memory-only booking example
+without Docker or a database:
+
+```sh
+pnpm exec turbo build --filter=@flowmarkdev/node...
+pnpm --filter @flowmarkdev/node test booking-setup-demo
+```
+
+To extend a real read into a portable view, follow the
+[query-to-view example](./examples/portable-evidence/README.md#read-a-real-authorized-selection-into-the-view).
+Keep read credentials in the CLI environment; the viewer only receives supplied
+metadata. These commands do not establish commercial AI-client compatibility or
+certify every host platform. Optional AI setup is separate from contributing.
 
 TypeScript + Effect remains the primary application platform; PostgreSQL and Rust
 are established owners for appropriate data-local work and cohesive computation.
@@ -55,26 +84,25 @@ They bind to `127.0.0.1`, are not part of the public product surface, and must
 not be deployed. The harness generates fixture telemetry for local integration
 checks; it is not a hosted demo.
 
-## Databases and self-hosting
+## Local and hosted infrastructure
 
 Maintained Flowmark infrastructure uses the
 [Pulumi writer policy](./docs/infrastructure.md#pulumi-is-the-infrastructure-writer)
 and existing `infrastructure/` project for all hosted resource/settings changes.
 Provider tools inspect and verify; they are not an imperative provisioning path.
 App deployments and Drizzle migrations keep their existing workflows. This
-maintainer policy does not prescribe tooling for an independent self-host.
+maintainer policy keeps hosted changes separate from local contributions.
 
 Flowmark stores workflow telemetry in PostgreSQL through an ordinary
-`DATABASE_URL`. Local development should use a dedicated loopback database.
+`DATABASE_URL`. Local development uses checkout-scoped Docker Compose on loopback.
 `pnpm db:setup` and `pnpm db:seed` apply migrations and fixture data only in
 safe local demo mode; **never** run seed or demo setup against hosted
 production, staging, preview, or other shared databases.
 
-Neon and Vercel are the maintainers' **reference** deployment for
-[flowmark.dev](https://flowmark.dev); they are not required to hack on the
-code or to run your own instance. Any PostgreSQL compatible with the committed
-migrations is enough for self-hosting. Flowmark is open-source software you
-run yourself — not a separate enterprise SSO product or second hosted tier.
+Neon and Vercel host the maintained product at [flowmark.dev](https://flowmark.dev);
+they are not required for local contributions. Open source provides code
+transparency and extension examples; this contributor path does not promise a
+supported self-host deployment topology.
 
 See [ADR 0006](./docs/decisions/0006-mvp-0.1-infrastructure.md) for
 infrastructure choices that apply to the reference deployment.

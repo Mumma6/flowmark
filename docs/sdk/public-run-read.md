@@ -95,5 +95,12 @@ link, poll, ingest evidence, seed data or execute application work.
 The same client and CLI also support [technical period comparison](./public-period-read.md)
 through `readPeriod`; the run endpoint continues to accept only run/events selections.
 
+For a run/events selection, append `--snapshot /absolute/path/new-evidence.json`
+to export metadata into the existing local supplied-data viewer. Build the private
+workspace presentation first; see the [complete read-to-view example](../../examples/portable-evidence/README.md#read-a-real-authorized-selection-into-the-view).
+The file never contains a key, raw event payload or business result; existing
+files are not overwritten. This is an explicit local copy, not a live or revocable
+view. Period selections cannot be exported as run snapshots.
+
 See the [public documentation source](../../apps/docs/content/docs/public-reads.mdx)
 for a complete local setup, exported types, error codes and compatibility rules.

@@ -1,4 +1,5 @@
-import { readFile } from "node:fs/promises"
+import { readFile, writeFile } from "node:fs/promises"
+import { parseArgs } from "node:util"
 import {
   createFlowmarkReadClient,
   FlowmarkReadError,
@@ -11,10 +12,17 @@ import {
 async function main() {
   const apiBaseUrl = process.env.FLOWMARK_API_URL
   const readKey = process.env.FLOWMARK_READ_KEY
-  const file = process.argv[2]
-  if (!apiBaseUrl || !readKey || !file) {
+  const { values, positionals } = parseArgs({
+    options: { snapshot: { type: "string" } },
+    allowPositionals: true,
+  })
+  const [file, cursor] = positionals
+  if (values.snapshot !== undefined && values.snapshot.length === 0) {
+    throw new FlowmarkReadError("UNSUPPORTED_SELECTION")
+  }
+  if (!apiBaseUrl || !readKey || !file || positionals.length > 2) {
     throw new Error(
-      "Set FLOWMARK_API_URL and FLOWMARK_READ_KEY; provide a Studio selection JSON file, then an optional next cursor.",
+      "Set FLOWMARK_API_URL and FLOWMARK_READ_KEY; provide a Studio selection JSON file, an optional next cursor, and optionally --snapshot /path/to/new-snapshot.json.",
     )
   }
   // The client validates unknown runtime data; the type is only its TS input.
@@ -25,8 +33,7 @@ async function main() {
   const cancel = () => controller.abort()
   process.once("SIGINT", cancel)
   try {
-    const cursor = process.argv[3]
-    if (selection.kind === "period" && cursor) {
+    if (selection.kind === "period" && (cursor || values.snapshot)) {
       throw new FlowmarkReadError("UNSUPPORTED_SELECTION")
     }
     const response =
@@ -35,6 +42,14 @@ async function main() {
         : await client.readRun(cursor ? { ...selection, cursor } : selection, {
             signal: controller.signal,
           })
+    if (values.snapshot && "page" in response) {
+      // Workspace-only presentation seam; loaded only when explicitly requested.
+      const { publicReadSnapshotJson } =
+        await import("@flowmark/evidence-view/public-read")
+      const snapshot = await publicReadSnapshotJson(response)
+      // Never overwrite an existing file. A saved copy is not a live authorization.
+      await writeFile(values.snapshot, snapshot, { flag: "wx", mode: 0o600 })
+    }
     console.log(JSON.stringify(response, null, 2))
     if ("page" in response) {
       if (response.page.events.length === 0) {
