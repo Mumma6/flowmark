@@ -17,6 +17,7 @@ import { useApiOrigin } from "../../platform/runtime-config"
 import { CreateProjectForm } from "../../projects/create-project-form"
 import { useProjectKeys } from "../../projects/keys-query"
 import { useProject } from "../../projects/project-context"
+import { hasServerWriteKey } from "../onboarding-state"
 import {
   manualWorkflowSnippet,
   serverEnvironmentSnippet,
@@ -70,7 +71,7 @@ export function GettingStartedChecklist({
   const { current, projects } = useProject()
   const hasProject = projects.length > 0
   const keys = useProjectKeys()
-  const hasWriteKey = (keys.data?.apiKeys.length ?? 0) > 0
+  const hasWriteKey = hasServerWriteKey(keys.data?.apiKeys ?? [])
   const origin = useApiOrigin()
   const snippet = manualWorkflowSnippet(origin)
 
@@ -91,6 +92,9 @@ export function GettingStartedChecklist({
         </CardDescription>
       </CardHeader>
       <CardContent>
+        <Button asChild variant="outline" className="mb-4">
+          <Link href="/onboarding?mode=guide">Open setup and key recovery</Link>
+        </Button>
         <ol className="grid gap-3" aria-label="Getting started checklist">
           <ChecklistRow
             done={hasProject}

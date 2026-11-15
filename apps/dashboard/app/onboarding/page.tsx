@@ -3,6 +3,7 @@ import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import { OnboardingFlow } from "../../features/onboarding/onboarding-flow"
 import { getDashboardAccess } from "../../features/platform/server-runtime"
+import { initialSetupStep } from "../../features/onboarding/onboarding-state"
 
 export const dynamic = "force-dynamic"
 
@@ -26,11 +27,10 @@ export default async function OnboardingPage({
   }
   return (
     <OnboardingFlow
+      userId={access.session.user.id}
       email={access.session.user.email}
       apiOrigin={access.apiOrigin}
-      initialStep={
-        params.step ?? (reviewMode ? "project" : state?.step) ?? "project"
-      }
+      initialStep={initialSetupStep(state?.step, params.step, reviewMode)}
       reviewMode={reviewMode}
     />
   )

@@ -1,4 +1,5 @@
 "use client"
+import { Button } from "@flowmark/ui"
 import { Check, Radio } from "lucide-react"
 import { DataState } from "../../shared/dashboard-components"
 import type { useOnboarding } from "../use-onboarding"
@@ -37,6 +38,17 @@ export function RunStep({
               ? `${snapshot.data?.metrics.totalRuns.toLocaleString()} runs recorded in this project. Open Studio to explore the supporting evidence.`
               : "Run the process in your application. Evidence appears after the API receives it. You can finish setup now and return when it arrives."}
           </p>
+          {!hasRuns && (
+            <Button
+              type="button"
+              variant="outline"
+              className="mt-4"
+              disabled={snapshot.isFetching}
+              onClick={() => void snapshot.refetch()}
+            >
+              {snapshot.isFetching ? "Checking…" : "Check for runs"}
+            </Button>
+          )}
         </div>
       ) : null}
     </div>

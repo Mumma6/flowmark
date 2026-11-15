@@ -8,7 +8,9 @@ import { authClient } from "../auth/auth-client"
 import { useProject } from "./project-context"
 import type { CreatedSecret } from "./types"
 
-export function useCreateProject(onCreated?: (secret: CreatedSecret) => void) {
+export function useCreateProject(
+  onCreated?: (secret: CreatedSecret, projectId: string) => void,
+) {
   const trpc = useTRPC()
   const session = authClient.useSession()
   const email = session.data?.user.email ?? ""
@@ -38,7 +40,7 @@ export function useCreateProject(onCreated?: (secret: CreatedSecret) => void) {
         setShownFor(result.project.id)
         setNewName("")
         select(result.project.id)
-        onCreated?.(result.writeKey)
+        onCreated?.(result.writeKey, result.project.id)
       },
     }),
   )
