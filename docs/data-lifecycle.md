@@ -15,7 +15,9 @@ and a nonempty workspace remain intact.
 Review the counts and exact scope, type the project name and verify your current
 password. A preview expires after five minutes; changes to the reviewed evidence
 require a fresh preview. Cancelling a preview changes no project data or keys.
-Export downloads are not yet available: preserve needed evidence before deletion.
+[Account and owner-project exports](./data-exports.md) are available. Download
+any needed evidence before confirming deletion; exports do not pause erasure or
+extend retention.
 
 ## What happens after confirmation
 
