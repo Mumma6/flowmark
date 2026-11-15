@@ -7,6 +7,30 @@ private `@flowmark/auth` package. Schema and the atomic limiter SQL remain in
 `@flowmark/db`. The local fixture is `local@flowmark.test`. Hosted users and
 the local fixture use the same provider login implementation.
 
+## Optional verification and account recovery
+
+Address verification is optional. Signup does not send mail, sign-in does not
+require `emailVerified`, and neither path marks an existing account verified.
+There is no migration or login job that sets `emailVerified=true`. A local
+fixture is not copied into a hosted environment as a verified user.
+
+Recovery proves access to the account mailbox with one provider link. It does
+not require or set the verified flag. A reset link is single-use, expires after
+30 minutes, revokes existing sessions and does not accept the previous password.
+Direct reset and email-change calls without that proof are rejected. Duplicate
+signup, including `POST /api/register`, leaves the original account and password
+in place and does not issue a session. A rejected verification send leaves the
+account unverified and usable; the same signed-in account can request the link
+again.
+
+The dashboard pages are `/forgot-password` and `/reset-password`. Verification
+returns to `/settings?section=account&emailVerification=complete` on the
+configured dashboard origin. Reset and verification links are provider URLs on
+that same origin. Pages use `no-store`/`no-referrer` where they carry a token,
+and the reset form removes the token from the address bar after reading it.
+Unknown addresses get the same reset-request response as known addresses.
+Creating a second account is not the recovery path.
+
 ## Request paths
 
 - `POST /v1/read/run` accepts only a live stored project read key and an explicit
