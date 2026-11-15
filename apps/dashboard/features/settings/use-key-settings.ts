@@ -22,7 +22,7 @@ export function useKeySettings() {
   const queryClient = useQueryClient()
   const session = authClient.useSession()
   const email = session.data?.user.email ?? ""
-  const { current, projects } = useProject()
+  const { current, projects, pending, error, retry } = useProject()
   const keys = useProjectKeys()
   const [readName, setReadName] = useState("Read key")
   const [writeName, setWriteName] = useState("Write key")
@@ -182,6 +182,9 @@ export function useKeySettings() {
   return {
     current,
     projects,
+    pending,
+    error,
+    retry,
     keys,
     readName,
     setReadName,

@@ -7,7 +7,9 @@ import {
   NativeSelectOption,
 } from "@flowmark/ui"
 import { CreateProjectForm } from "../../projects/create-project-form"
+import { projectListState } from "../../projects/project-list-state"
 import { useProject } from "../../projects/project-context"
+import { DataState } from "../../shared/dashboard-components"
 import type { useOnboarding } from "../use-onboarding"
 export function ProjectStep({
   current,
@@ -18,12 +20,26 @@ export function ProjectStep({
   ReturnType<typeof useOnboarding>,
   "current" | "projects" | "setCreatedSecret" | "setStep"
 >) {
-  const { select } = useProject()
+  const { select, pending, error, retry } = useProject()
   const projectCreated: typeof setCreatedSecret = (secret, projectId) => {
     setStep(0)
     setCreatedSecret(secret, projectId)
   }
-  if (projects.length === 0) {
+  const list = projectListState({
+    pending,
+    failed: error !== null,
+    count: projects.length,
+  })
+  if (list === "unavailable" || list === "pending") {
+    return (
+      <DataState
+        pending={list === "pending"}
+        error={list === "unavailable" ? error : null}
+        retry={retry}
+      />
+    )
+  }
+  if (list === "empty") {
     return <CreateProjectForm onCreated={projectCreated} />
   }
   return (

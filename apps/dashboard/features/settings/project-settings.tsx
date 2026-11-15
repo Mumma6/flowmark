@@ -24,12 +24,37 @@ import {
 } from "@flowmark/ui"
 import { type FormEvent } from "react"
 import { CreateProjectForm } from "../projects/create-project-form"
+import { projectListState } from "../projects/project-list-state"
+import { DataState } from "../shared/dashboard-components"
 import { useProjectSettings } from "./use-project-settings"
 
 export function ProjectSettings() {
-  const { current, projects, select, name, setName, rename } =
-    useProjectSettings()
-  if (projects.length === 0) {
+  const {
+    current,
+    projects,
+    select,
+    pending,
+    error,
+    retry,
+    name,
+    setName,
+    rename,
+  } = useProjectSettings()
+  const list = projectListState({
+    pending,
+    failed: error !== null,
+    count: projects.length,
+  })
+  if (list === "unavailable" || list === "pending") {
+    return (
+      <DataState
+        pending={list === "pending"}
+        error={list === "unavailable" ? error : null}
+        retry={retry}
+      />
+    )
+  }
+  if (list === "empty") {
     return (
       <Card>
         <CardHeader>
