@@ -5,6 +5,7 @@ import { Button, Card, CardHeader, CardTitle, CardContent } from "@flowmark/ui"
 import { getDashboardSession } from "../../../features/platform/server-runtime"
 import { publicConfig } from "../../../features/platform/config-public"
 import { AccountNavigation } from "../../../features/settings/account-navigation"
+import { HelpLinks } from "../../../features/support/help-links"
 
 export const dynamic = "force-dynamic"
 
@@ -79,6 +80,14 @@ export default async function AccountHelpPage() {
             Connect and project settings may send you back to unfinished setup.
             Account, Security and Data &amp; privacy remain available here.
           </p>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>When something goes wrong</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <HelpLinks documentationUrl={publicConfig.documentationUrl} />
         </CardContent>
       </Card>
     </main>

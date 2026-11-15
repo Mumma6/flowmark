@@ -1,4 +1,5 @@
 import { Array as EffectArray } from "effect"
+import { helpDestinations } from "../support/help-destinations"
 import type { RouterOutputs } from "../platform/api-types"
 import {
   explorerDefaults,
@@ -20,7 +21,12 @@ export type CommandPage = {
     | "insights"
     | "issues"
     | "settings"
+    | "setup-help"
     | "documentation"
+    | "troubleshooting"
+    | "security-privacy"
+    | "product-issue"
+    | "security-report"
   readonly label: string
   readonly href: string
   readonly keywords: string
@@ -79,12 +85,19 @@ export function commandPages(docsUrl: string): readonly CommandPage[] {
       external: false,
     },
     {
-      id: "documentation",
-      label: "Documentation",
-      href: docsUrl,
-      keywords: "docs help",
-      external: true,
+      id: "setup-help",
+      label: "Setup help",
+      href: "/account/help",
+      keywords: "help onboarding guide",
+      external: false,
     },
+    ...helpDestinations(docsUrl).map((destination) => ({
+      id: destination.id,
+      label: destination.label,
+      href: destination.href,
+      keywords: `docs ${destination.label} ${destination.description}`,
+      external: true,
+    })),
   ]
 }
 
