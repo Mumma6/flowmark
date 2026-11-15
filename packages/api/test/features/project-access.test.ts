@@ -364,6 +364,123 @@ describe("ManageProject", () => {
 })
 
 describe("Onboarding", () => {
+  it.each(["install", "instrument", "run"] as const)(
+    "rejects advancing to %s with read keys only",
+    async (step) => {
+      const update = vi.fn(() => Effect.void)
+      const result = await Effect.runPromise(
+        Effect.flatMap(Onboarding, (onboarding) =>
+          onboarding.advance("user-1", step, "project-1"),
+        ).pipe(
+          Effect.provide(
+            provideOnboarding(
+              projectCredentials({
+                listApiKeys: () =>
+                  Effect.succeed([
+                    {
+                      id: "read",
+                      name: "Read",
+                      prefix: "fm_read",
+                      permission: "read",
+                      createdAt: "2026-11-15T00:00:00Z",
+                    },
+                  ]),
+                updateOnboardingState: update,
+              }),
+            ),
+          ),
+          Effect.result,
+        ),
+      )
+      expectLeft(result, { _tag: "InvalidInput" })
+      expect(update).not.toHaveBeenCalled()
+    },
+  )
+
+  it("binds eligibility and completion to the selected owned project without requiring an event", async () => {
+    const arbitrary = vi.fn(() => Effect.succeed("wrong-project"))
+    const member = vi.fn((_user: string, projectId: string) =>
+      Effect.succeed(projectId),
+    )
+    const list = vi.fn(() =>
+      Effect.succeed([
+        {
+          id: "write",
+          name: "Write",
+          prefix: "fm_write",
+          permission: "write" as const,
+          createdAt: "2026-11-15T00:00:00Z",
+        },
+      ]),
+    )
+    const update = vi.fn(() => Effect.void)
+    await Effect.runPromise(
+      Effect.gen(function* () {
+        const onboarding = yield* Onboarding
+        yield* onboarding.advance("user-1", "run", "selected-project")
+        yield* onboarding.complete("user-1", "selected-project")
+      }).pipe(
+        Effect.provide(
+          provideOnboarding(
+            projectCredentials({
+              projectForUser: arbitrary,
+              memberProject: member,
+              listApiKeys: list,
+              updateOnboardingState: update,
+            }),
+          ),
+        ),
+      ),
+    )
+    expect(arbitrary).not.toHaveBeenCalled()
+    expect(member).toHaveBeenCalledWith("user-1", "selected-project", "owner")
+    expect(list).toHaveBeenCalledWith("user-1", "selected-project")
+    expect(update).toHaveBeenLastCalledWith("user-1", "run", expect.any(Date))
+  })
+
+  it("requires an explicit selection and never falls back to another project's key", async () => {
+    const fallback = vi.fn(() => Effect.succeed("another-owned-project"))
+    const result = await Effect.runPromise(
+      Effect.flatMap(Onboarding, (onboarding) =>
+        onboarding.advance("user-1", "key"),
+      ).pipe(
+        Effect.provide(
+          provideOnboarding(projectCredentials({ projectForUser: fallback })),
+        ),
+        Effect.result,
+      ),
+    )
+    expectLeft(result, { _tag: "InvalidInput" })
+    expect(fallback).not.toHaveBeenCalled()
+  })
+
+  it("does not complete setup using a read key", async () => {
+    const result = await Effect.runPromise(
+      Effect.flatMap(Onboarding, (onboarding) =>
+        onboarding.complete("user-1", "project-1"),
+      ).pipe(
+        Effect.provide(
+          provideOnboarding(
+            projectCredentials({
+              listApiKeys: () =>
+                Effect.succeed([
+                  {
+                    id: "read",
+                    name: "Read",
+                    prefix: "fm_read",
+                    permission: "read",
+                    createdAt: "2026-11-15T00:00:00Z",
+                  },
+                ]),
+            }),
+          ),
+        ),
+        Effect.result,
+      ),
+    )
+    expectLeft(result, { _tag: "InvalidInput" })
+  })
+
   it("returns the persisted onboarding state", async () => {
     const onboardingState = vi.fn(() =>
       Effect.succeed({ step: "instrument" as const, completedAt: null }),
@@ -385,12 +502,12 @@ describe("Onboarding", () => {
   it("requires a project before advancing", async () => {
     const result = await Effect.runPromise(
       Effect.flatMap(Onboarding, (onboarding) =>
-        Effect.result(onboarding.advance("user-1", "key")),
+        Effect.result(onboarding.advance("user-1", "key", "project-1")),
       ).pipe(
         Effect.provide(
           provideOnboarding(
             projectCredentials({
-              projectForUser: () => Effect.succeed(undefined),
+              memberProject: () => Effect.succeed(undefined),
             }),
           ),
         ),
@@ -403,7 +520,7 @@ describe("Onboarding", () => {
   it("requires a write key before completing", async () => {
     const result = await Effect.runPromise(
       Effect.flatMap(Onboarding, (onboarding) =>
-        Effect.result(onboarding.complete("user-1")),
+        Effect.result(onboarding.complete("user-1", "project-1")),
       ).pipe(
         Effect.provide(
           provideOnboarding(

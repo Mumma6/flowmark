@@ -5,6 +5,7 @@ import { useEffect, useRef } from "react"
 import Link from "next/link"
 import { DataState } from "../shared/dashboard-components"
 import { publicConfig } from "../platform/config-public"
+import { HelpLinks } from "../support/help-links"
 import { RuntimeConfigProvider } from "../platform/runtime-config"
 import { ProjectProvider, useProject } from "../projects/project-context"
 import { steps } from "./steps"
@@ -58,9 +59,10 @@ function OnboardingContent({
     projectState.pending ||
     Boolean(projectState.error) ||
     busy ||
-    (currentStep.id === "project" && !current) ||
-    (currentStep.id === "key" &&
-      (!hasWriteKey || keys.isPending || Boolean(keys.error)))
+    (!reviewMode &&
+      (current?.role !== "owner" ||
+        (currentStep.id !== "project" &&
+          (!hasWriteKey || keys.isPending || Boolean(keys.error)))))
 
   return (
     <main className="relative isolate min-h-screen bg-background">
@@ -125,6 +127,14 @@ function OnboardingContent({
           )}
         </div>
       </header>
+      <details className="mx-auto w-full max-w-6xl px-5 pt-6 sm:px-8">
+        <summary className="cursor-pointer text-xs text-muted-foreground">
+          Need help?
+        </summary>
+        <div className="mt-4 max-w-lg">
+          <HelpLinks documentationUrl={publicConfig.documentationUrl} />
+        </div>
+      </details>
       <div className="mx-auto max-w-6xl px-5 py-10 sm:px-8 sm:py-16">
         <div className="mb-10 max-w-2xl">
           <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-primary">
@@ -226,6 +236,7 @@ function OnboardingContent({
                   current={current}
                   projects={projects}
                   setCreatedSecret={setCreatedSecret}
+                  setStep={setStep}
                 />
               ) : null}
               {currentStep.id === "key" ? (
@@ -233,16 +244,46 @@ function OnboardingContent({
                   keys={keys}
                   createdSecret={createdSecret}
                   hasWriteKey={hasWriteKey}
+                  current={current}
+                  setCreatedSecret={setCreatedSecret}
                 />
               ) : null}
               {currentStep.id === "install" ? (
                 <InstallStep origin={origin} />
               ) : null}
+              {!reviewMode && step > 1 && (
+                <>
+                  <DataState
+                    pending={keys.isPending}
+                    error={keys.error}
+                    retry={() => void keys.refetch()}
+                  />
+                  {keys.isSuccess && !hasWriteKey && (
+                    <Alert>
+                      <AlertDescription className="grid gap-3">
+                        <p>
+                          The selected project needs a server write key. Recover
+                          it before continuing; read keys do not authorize SDK
+                          ingestion.
+                        </p>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setStep(1)}
+                        >
+                          Return to key recovery
+                        </Button>
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                </>
+              )}
               {currentStep.id === "instrument" ? (
                 <InstrumentStep
                   current={current}
                   origin={origin}
                   snippet={snippet}
+                  recoverKey={() => setStep(1)}
                 />
               ) : null}
               {currentStep.id === "run" ? (
@@ -297,6 +338,7 @@ function OnboardingContent({
 }
 
 export function OnboardingFlow(props: {
+  readonly userId: string
   readonly apiOrigin: string
   readonly email: string
   readonly initialStep: string
@@ -304,7 +346,7 @@ export function OnboardingFlow(props: {
 }) {
   return (
     <RuntimeConfigProvider apiOrigin={props.apiOrigin}>
-      <ProjectProvider>
+      <ProjectProvider key={props.userId}>
         <OnboardingContent {...props} />
       </ProjectProvider>
     </RuntimeConfigProvider>

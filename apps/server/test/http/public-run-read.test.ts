@@ -3,7 +3,7 @@ import { Readable } from "node:stream"
 import { createHash, randomUUID } from "node:crypto"
 import { execFile } from "node:child_process"
 import { promisify } from "node:util"
-import { mkdtemp, writeFile, rm } from "node:fs/promises"
+import { mkdtemp, readFile, stat, writeFile, rm } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { fileURLToPath } from "node:url"
@@ -232,6 +232,65 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
       )
       expect(Exit.isFailure(denied)).toBe(true)
     })
+
+    it("exports the authorized page into a portable view without ingestion secrets", async () => {
+      const directory = await mkdtemp(join(tmpdir(), "flowmark-read-snapshot-"))
+      const file = join(directory, "selection.json")
+      const output = join(directory, "evidence.json")
+      await writeFile(file, JSON.stringify(input))
+      const args = [
+        "--filter",
+        "@flowmark/db",
+        "exec",
+        "tsx",
+        "--tsconfig",
+        "../../examples/tsconfig.json",
+        "../../examples/read-run.ts",
+        file,
+        "--snapshot",
+        output,
+      ]
+      const options = {
+        cwd: fileURLToPath(new URL("../../../../", import.meta.url)),
+        env: {
+          ...process.env,
+          FLOWMARK_API_URL: origin,
+          FLOWMARK_READ_KEY: readKey,
+        },
+      }
+      try {
+        const { stdout } = await promisify(execFile)("pnpm", args, options)
+        const json = await readFile(output, "utf8")
+        const snapshot = JSON.parse(json) as {
+          workflow: string
+          status: string
+          evidenceNote: string
+        }
+        expect(snapshot).toMatchObject({
+          workflow: "public.read",
+          status: "Completed",
+        })
+        expect(snapshot.evidenceNote).toContain(projectId)
+        expect(snapshot.evidenceNote).toContain(runId)
+        expect(snapshot.evidenceNote).toContain(
+          "Showing 1 of 1 events in one initial page (limit 1)",
+        )
+        expect(snapshot.evidenceNote).toContain("3 events recorded")
+        expect(snapshot.evidenceNote).toContain("More pages exist.")
+        expect(json + stdout).not.toContain(readKey)
+        expect(json + stdout).not.toContain(writeKey)
+        expect(json + stdout).not.toContain("PRIVATE-LARGE-PAYLOAD")
+        if (process.platform !== "win32") {
+          expect((await stat(output)).mode & 0o777).toBe(0o600)
+        }
+        await expect(
+          promisify(execFile)("pnpm", args, options),
+        ).rejects.toMatchObject({ code: 1 })
+        expect(await readFile(output, "utf8")).toBe(json)
+      } finally {
+        await rm(directory, { recursive: true, force: true })
+      }
+    }, 30000)
 
     it("denies write/session/MCP authority, foreign project/run and foreign or altered cursors", async () => {
       expect((await raw(input, writeKey)).status).toBe(401)

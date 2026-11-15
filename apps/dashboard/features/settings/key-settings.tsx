@@ -28,12 +28,17 @@ import {
 import Link from "next/link"
 import { type FormEvent } from "react"
 import { SecretAlert } from "../projects/create-project-form"
+import { projectListState } from "../projects/project-list-state"
+import { DataState } from "../shared/dashboard-components"
 import { useKeySettings } from "./use-key-settings"
 
 function KeySettingsContent() {
   const {
     current,
     projects,
+    pending,
+    error,
+    retry,
     keys,
     readName,
     setReadName,
@@ -58,7 +63,21 @@ function KeySettingsContent() {
     revokeApi,
     revokeBrowser,
   } = useKeySettings()
-  if (projects.length === 0 || !current) {
+  const list = projectListState({
+    pending,
+    failed: error !== null,
+    count: projects.length,
+  })
+  if (list === "unavailable" || list === "pending") {
+    return (
+      <DataState
+        pending={list === "pending"}
+        error={list === "unavailable" ? error : null}
+        retry={retry}
+      />
+    )
+  }
+  if (list === "empty" || !current) {
     return (
       <Card>
         <CardHeader>

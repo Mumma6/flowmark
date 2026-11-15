@@ -12,11 +12,13 @@ import {
 import { Check } from "lucide-react"
 import Link from "next/link"
 import { type ReactNode } from "react"
-import { CopyButton } from "../../shared/dashboard-components"
+import { CopyButton, DataState } from "../../shared/dashboard-components"
+import { projectListState } from "../../projects/project-list-state"
 import { useApiOrigin } from "../../platform/runtime-config"
 import { CreateProjectForm } from "../../projects/create-project-form"
 import { useProjectKeys } from "../../projects/keys-query"
 import { useProject } from "../../projects/project-context"
+import { hasServerWriteKey } from "../onboarding-state"
 import {
   manualWorkflowSnippet,
   serverEnvironmentSnippet,
@@ -67,10 +69,15 @@ export function GettingStartedChecklist({
   hasRuns: boolean
   compact?: boolean
 }) {
-  const { current, projects } = useProject()
-  const hasProject = projects.length > 0
+  const { current, projects, pending, error, retry } = useProject()
+  const list = projectListState({
+    pending,
+    failed: error !== null,
+    count: projects.length,
+  })
+  const hasProject = list === "ready"
   const keys = useProjectKeys()
-  const hasWriteKey = (keys.data?.apiKeys.length ?? 0) > 0
+  const hasWriteKey = hasServerWriteKey(keys.data?.apiKeys ?? [])
   const origin = useApiOrigin()
   const snippet = manualWorkflowSnippet(origin)
 
@@ -78,19 +85,26 @@ export function GettingStartedChecklist({
     <Card>
       <CardHeader>
         <CardTitle>
-          {!hasProject
-            ? "Create a project to continue"
-            : hasRuns
-              ? "Getting started"
-              : "No runs yet — get started"}
+          {list === "unavailable"
+            ? "Projects could not be loaded"
+            : !hasProject
+              ? "Create a project to continue"
+              : hasRuns
+                ? "Getting started"
+                : "No runs yet — get started"}
         </CardTitle>
         <CardDescription>
-          {!hasProject
-            ? "Sign-up only creates your account. A project holds runs and ingestion keys — create one before you can instrument an app."
-            : "Flowmark observes work your application already runs. It does not execute, schedule, or retry that work. Completed means the application reported completion — not that every record succeeded."}
+          {list === "unavailable"
+            ? "The project list failed. This is not an empty account."
+            : !hasProject
+              ? "Sign-up only creates your account. A project holds runs and ingestion keys — create one before you can instrument an app."
+              : "Flowmark observes work your application already runs. It does not execute, schedule, or retry that work. Completed means the application reported completion — not that every record succeeded."}
         </CardDescription>
       </CardHeader>
       <CardContent>
+        <Button asChild variant="outline" className="mb-4">
+          <Link href="/onboarding?mode=guide">Open setup and key recovery</Link>
+        </Button>
         <ol className="grid gap-3" aria-label="Getting started checklist">
           <ChecklistRow
             done={hasProject}
@@ -109,6 +123,12 @@ export function GettingStartedChecklist({
                 </Link>
                 .
               </p>
+            ) : list === "unavailable" || list === "pending" ? (
+              <DataState
+                pending={list === "pending"}
+                error={list === "unavailable" ? error : null}
+                retry={retry}
+              />
             ) : (
               <CreateProjectForm />
             )}

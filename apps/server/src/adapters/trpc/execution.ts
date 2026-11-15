@@ -3,6 +3,7 @@ import { Effect, Exit, Match, Option, Schema } from "effect"
 import {
   AgentAccess,
   ManageProjectSharing,
+  ManageDataExports,
   ManageDataLifecycle,
   ManageAccountLifecycle,
   ManageInvestigations,
@@ -74,6 +75,7 @@ async function executeQuery<A>(
     | ManageProjectSharing
     | ManageInvestigations
     | ManageAccountLifecycle
+    | ManageDataExports
     | ManageDataLifecycle
     | AgentAccess
     | GetProjectWorkflowData
@@ -223,7 +225,9 @@ export function sessionQuery<A>(
     | ManageProjectSharing
     | ManageInvestigations
     | ManageAccountLifecycle
+    | ManageDataExports
     | ManageDataLifecycle
+    | GetProjectWorkflowData
     | ManageProject
     | ManageResultDeclarations
     | AgentAccess

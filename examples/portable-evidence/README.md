@@ -6,6 +6,56 @@ example executes application work or needs an ingestion key or database.
 
 ## Supplied-data example
 
+### Read a real authorized selection into the view
+
+The existing [`read-run.ts`](../read-run.ts) consumer can export its current run
+page directly into this presentation. A reproducible question is: **What final
+outcome was reported for this run, what event metadata is retained on this page,
+and how much evidence is omitted?** This metadata endpoint does not expose business
+result objects; it cannot answer how many bookings succeeded.
+
+Build the workspace presentation and read client once:
+
+```sh
+pnpm exec turbo build --filter=@flowmark/evidence-view... --filter=@flowmarkdev/node...
+```
+
+Save a run/events selection copied from Studio as `selection.json`. Set
+`FLOWMARK_API_URL` and `FLOWMARK_READ_KEY` in the CLI environment using a read key
+for that local project. Then run:
+
+```sh
+pnpm --filter @flowmark/db exec tsx --tsconfig ../../examples/tsconfig.json ../../examples/read-run.ts /absolute/path/selection.json --snapshot /absolute/path/new-evidence.json
+```
+
+An optional cursor stays positional before `--snapshot`; only the explicitly
+requested page is read. A period selection with `--snapshot` is rejected before
+HTTP rather than misrepresented as a run. The export is limited to 64 KiB and the
+receiving view's schema. Existing files are never overwritten; on POSIX the new
+file is owner-readable/writable only. Failures exit nonzero without echoing keys
+or upstream error details. JSON stdout remains the ordinary public read response.
+
+Open the local supplied-data host below and choose **Open snapshot file**. The
+file is read in the browser without an upload, credential, API request or polling.
+Invalid replacement files clear previous evidence; select another file or paste
+JSON to recover. No ingestion key is needed by either reader or viewer.
+
+The same shared metadata projection used by MCP and Studio selects at most eight
+milestones. It preserves project/run references, initial versus continuation page,
+retrieval time, truncation and missing final outcome. It excludes raw payloads,
+results, API keys and cursor values. This is a local copy; later revocation or
+retention does not recall an already exported file. Delete copies yourself and
+perform a fresh authorized read to check current evidence. It is not a live saved
+investigation or the business-only captured-evidence feature.
+
+`@flowmark/evidence-view/public-read` is the private workspace extension seam;
+`@flowmarkdev/node/read` remains the published Promise client. No package
+publication, hosted tracing, database access or new generator is required by this
+consumer. The loopback tests use the actual CLI with a fixed synthetic HTTP
+response; they do not certify hosted authorization or commercial clients.
+
+### Run the supplied-data host
+
 From a configured Flowmark checkout with dependencies installed:
 
 ```sh

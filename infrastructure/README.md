@@ -4,6 +4,9 @@ This is the Pulumi TypeScript project for Flowmark's existing Vercel, Neon and R
 reference deployment. Resources are adopted by import, starting with
 non-production. Do not recreate them with a starter template.
 
+The following is the recorded adoption snapshot, not a fresh hosted-state check.
+Use reviewed Pulumi inspection for current state; this closeout changes no resources.
+
 Persistent reference-infrastructure adoption completed on 2 November 2026;
 transactional-email resources were added on 3 November.
 `nonprod` has 31 state resources: its two Neon branches, computes, databases and
@@ -84,9 +87,11 @@ application's Effect runtime or import application packages.
 
 `vercel-email.ts` prepares four new API-only Vercel env records per explicitly
 enabled environment. Gates default to false; existing resources are unchanged.
-The package [delivery contract](../packages/email/README.md) documents behavior
-and the pending domain/delivery/operational checks. Resend was selected by the
-maintainer. Binding creation does not create a Resend account or sending domain.
+The package [delivery contract](../packages/email/README.md) documents behavior,
+the verified `flowmark.dev` domain and the one recorded Staging inbox delivery.
+Resend was selected by the maintainer. Binding creation does not create a Resend
+account or sending domain. Plan, quota, recurring cost, bounce/complaint
+webhooks and a Production inbox check are not established by these bindings.
 
 Use `nonprod` for `staging`/parked `preview`, and `production` for `production`.
 Each stage has these logical config inputs. `FLOWMARK_EMAIL_ENVIRONMENT` is derived

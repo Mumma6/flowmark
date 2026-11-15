@@ -16,9 +16,10 @@ import {
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Suspense } from "react"
-import { PageHeading } from "../shared/dashboard-components"
+import { DataState, PageHeading } from "../shared/dashboard-components"
 import { ConnectSetupPanel } from "../connect/setup/connect-setup"
 import { useProject } from "../projects/project-context"
+import { projectListState } from "../projects/project-list-state"
 import { AccountSecurity } from "./account-security"
 import { AccountSettings } from "./account-settings"
 import { KeySettings } from "./key-settings"
@@ -87,7 +88,7 @@ function SettingsPageInner() {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
-  const { projects, current } = useProject()
+  const { projects, current, pending, error, retry } = useProject()
   const section = parseSection(searchParams.get("section"))
   const setSection = (next: string) => {
     const params = new URLSearchParams(searchParams.toString())
@@ -100,7 +101,13 @@ function SettingsPageInner() {
         title="Settings"
         description="Manage your projects, application access and account."
       />
-      {projects.length === 0 ? (
+      {projectListState({
+        pending,
+        failed: error !== null,
+        count: projects.length,
+      }) === "unavailable" ? (
+        <DataState pending={false} error={error} retry={retry} />
+      ) : projects.length === 0 && !pending ? (
         <Alert>
           <AlertTitle>No project yet</AlertTitle>
           <AlertDescription>

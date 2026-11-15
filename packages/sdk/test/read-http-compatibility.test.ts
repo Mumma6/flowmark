@@ -172,53 +172,60 @@ it.each([undefined, null])(
   },
 )
 
-it("prints an explicit CLI error for an unsupported period cursor without sending a widened read", async () => {
-  const directory = await mkdtemp(join(tmpdir(), "flowmark-read-compat-"))
-  const file = join(directory, "selection.json")
-  await writeFile(
-    file,
-    JSON.stringify({
-      version: 1,
-      kind: "period",
-      projectId: input.projectId,
-      workflow: "test",
-      currentStartedAfter: "2026-11-01T00:00:00.000Z",
-      currentStartedBefore: "2026-11-08T00:00:00.000Z",
-      previousStartedAfter: "2026-10-25T00:00:00.000Z",
-      previousStartedBefore: "2026-11-01T00:00:00.000Z",
-    }),
-  )
-  const before = requests.length
-  try {
-    await expect(
-      promisify(execFile)(
-        "pnpm",
-        [
-          "--filter",
-          "@flowmark/db",
-          "exec",
-          "tsx",
-          "--tsconfig",
-          "../../examples/tsconfig.json",
-          "../../examples/read-run.ts",
-          file,
-          "unsupported-cursor",
-        ],
-        {
-          cwd: fileURLToPath(new URL("../../../", import.meta.url)),
-          env: {
-            ...process.env,
-            FLOWMARK_API_URL: origin,
-            FLOWMARK_READ_KEY: "fm_read_synthetic",
+it.each([
+  { arguments: ["unsupported-cursor"] },
+  { arguments: ["--snapshot", "unused-snapshot.json"] },
+])(
+  "rejects unsupported period CLI arguments $arguments without sending a widened read",
+  async ({ arguments: extra }) => {
+    const directory = await mkdtemp(join(tmpdir(), "flowmark-read-compat-"))
+    const file = join(directory, "selection.json")
+    await writeFile(
+      file,
+      JSON.stringify({
+        version: 1,
+        kind: "period",
+        projectId: input.projectId,
+        workflow: "test",
+        currentStartedAfter: "2026-11-01T00:00:00.000Z",
+        currentStartedBefore: "2026-11-08T00:00:00.000Z",
+        previousStartedAfter: "2026-10-25T00:00:00.000Z",
+        previousStartedBefore: "2026-11-01T00:00:00.000Z",
+      }),
+    )
+    const before = requests.length
+    try {
+      await expect(
+        promisify(execFile)(
+          "pnpm",
+          [
+            "--filter",
+            "@flowmark/db",
+            "exec",
+            "tsx",
+            "--tsconfig",
+            "../../examples/tsconfig.json",
+            "../../examples/read-run.ts",
+            file,
+            ...extra,
+          ],
+          {
+            cwd: fileURLToPath(new URL("../../../", import.meta.url)),
+            env: {
+              ...process.env,
+              FLOWMARK_API_URL: origin,
+              FLOWMARK_READ_KEY: "fm_read_synthetic",
+            },
           },
-        },
-      ),
-    ).rejects.toMatchObject({
-      code: 1,
-      stderr: expect.stringContaining("UNSUPPORTED_SELECTION"),
-    })
-    expect(requests.length).toBe(before)
-  } finally {
-    await rm(directory, { recursive: true, force: true })
-  }
-}, 15000)
+        ),
+      ).rejects.toMatchObject({
+        code: 1,
+        stderr: expect.stringContaining("UNSUPPORTED_SELECTION"),
+      })
+      expect(requests.length).toBe(before)
+    } finally {
+      await rm(directory, { recursive: true, force: true })
+    }
+  },
+  15000,
+)

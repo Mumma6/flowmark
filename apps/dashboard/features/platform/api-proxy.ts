@@ -107,6 +107,11 @@ const proxyToApi = Effect.fn("proxyToApi")(function* (
       "retry-after",
       "x-retry-after",
       "www-authenticate",
+      "content-disposition",
+      "content-digest",
+      "x-flowmark-export-next",
+      "x-flowmark-export-complete",
+      "x-flowmark-export-part",
     ]),
     (name) => {
       const value = response.headers.get(name)

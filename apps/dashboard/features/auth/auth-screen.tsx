@@ -19,10 +19,12 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { publicConfig } from "../platform/config-public"
+import { HelpLinks } from "../support/help-links"
 import { CopyButton } from "../shared/dashboard-components"
 import { runBrowserAuth } from "./auth-browser-runtime"
 import { authReturnPath } from "../project-sharing/invitation-location"
 import { authenticate } from "./operations"
+import { useQueryClient } from "@tanstack/react-query"
 
 export function AuthScreen({
   mode,
@@ -36,6 +38,7 @@ export function AuthScreen({
   returnTo?: string
 }) {
   const router = useRouter()
+  const cache = useQueryClient()
   const isSignUp = mode === "sign-up"
   const title = isSignUp ? "Create your workspace." : "Welcome to Studio."
   const [name, setName] = useState("")
@@ -54,6 +57,7 @@ export function AuthScreen({
     Result.match(result, {
       onFailure: (failure) => setError(failure.reason),
       onSuccess: (href) => {
+        cache.clear()
         router.push(authReturnPath(returnTo) ?? href)
         router.refresh()
       },
@@ -263,6 +267,9 @@ export function AuthScreen({
               still sign in.
             </p>
           )}
+          <div className="mt-8">
+            <HelpLinks documentationUrl={publicConfig.documentationUrl} />
+          </div>
           {localAccount ? (
             <details className="mt-8 rounded-lg border border-dashed border-border bg-card/30 px-4 py-3">
               <summary className="cursor-pointer text-[11px] text-muted-foreground">

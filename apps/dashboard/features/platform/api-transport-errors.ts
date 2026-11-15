@@ -1,4 +1,12 @@
-import { Match, Result, Schema } from "effect"
+import { Data, Match, Result, Schema } from "effect"
+import { isAuthorizationFailure } from "../auth/session-recovery"
+
+export class DashboardTransportError extends Data.TaggedError(
+  "DashboardTransportError",
+)<{
+  readonly status: number
+  readonly message: string
+}> {}
 
 const ProxyPlainError = Schema.Struct({
   error: Schema.String,
@@ -60,6 +68,9 @@ export function mapNonTrpcHttpError(status: number) {
 
 /** Safe user-facing copy for React Query / tRPC failures at the browser boundary. */
 export function presentQueryError(error: unknown) {
+  if (isAuthorizationFailure(error)) {
+    return "This data is unavailable to this account. Select another project, or sign in again."
+  }
   if (!(error instanceof Error)) {
     return "Could not load data."
   }
@@ -98,7 +109,7 @@ export async function dashboardTrpcFetch(
   const response = await fetch(input, { ...init, credentials: "include" })
   const message = await readDashboardTransportError(response)
   if (message) {
-    throw new Error(message)
+    throw new DashboardTransportError({ status: response.status, message })
   }
   return response
 }

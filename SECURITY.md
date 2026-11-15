@@ -6,8 +6,10 @@ before public disclosure.
 
 ## Reporting
 
-Use [GitHub private vulnerability reporting](https://github.com/Mumma6/flowmark/security/advisories/new)
-for this repository. Do not open a public issue for exploitable security bugs.
+Email the existing incident mailbox at
+[flowmark.dev@gmail.com](mailto:flowmark.dev@gmail.com?subject=Flowmark%20security%20report).
+GitHub private vulnerability reporting is not enabled for this repository.
+Do not open a public issue for exploitable security bugs or send live credentials.
 
 Include enough detail for us to reproduce the problem:
 
@@ -48,4 +50,4 @@ rather than taking a weekly stream of version bumps.
 Local development may still report additional findings through `pnpm audit`
 (dev-only paths are not always covered by GitHub alerts). Those are triaged
 separately and are not a substitute for reporting product vulnerabilities
-through private advisory reporting above.
+through the private incident mailbox above.

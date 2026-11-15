@@ -49,14 +49,14 @@ authoritative evidence of a business outcome.
 
 ## tRPC queries
 
-The API router in `apps/server/src/adapters/trpc.ts` exposes these procedures
+The API router in `apps/server/src/adapters/trpc/router.ts` exposes these procedures
 at `/api/trpc`:
 
 - `health.check`
 - `project.snapshot`, `project.intelligence`, `project.businessInsights`
 - `project.list`, `project.create`, `project.rename`, and write/browser key
   management, including `project.rotateWriteKey`
-- `onboarding.state`, `onboarding.advance`, `onboarding.complete`
+- `onboarding.state`, `onboarding.advance`, `onboarding.complete`, `onboarding.snapshot`
 - `resultDeclarations.list`, `resultDeclarations.create`,
   `resultDeclarations.searchFields`, `resultDeclarations.setSearchFields`
 - `workflow.list`

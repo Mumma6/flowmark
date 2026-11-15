@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
-import { useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 import { useApiOrigin } from "../platform/runtime-config"
 import { useTRPC } from "../platform/api-trpc"
 import { useProjectKeys } from "../projects/keys-query"
@@ -10,21 +10,31 @@ import { useProject } from "../projects/project-context"
 import type { CreatedSecret } from "../projects/types"
 import { flowmarkAgentPrompt } from "./agent-prompt"
 import { stepIndex, steps } from "./steps"
+import {
+  hasServerWriteKey,
+  setupSecretForProject,
+  type ScopedSetupSecret,
+} from "./onboarding-state"
 
 export function useOnboarding(initialStep: string, reviewMode = false) {
   const trpc = useTRPC()
   const router = useRouter()
   const { current, projects } = useProject()
-  const [step, setStep] = useState(() => stepIndex(initialStep))
-  const [createdSecret, setCreatedSecret] = useState<CreatedSecret | null>(null)
+  const [requestedStep, setStep] = useState(() => stepIndex(initialStep))
+  const step = !reviewMode && current?.role !== "owner" ? 0 : requestedStep
+  const [secret, setSecret] = useState<ScopedSetupSecret | null>(null)
+  const createdSecret = setupSecretForProject(secret, current?.id)
+  const setCreatedSecret = (value: CreatedSecret, projectId: string) =>
+    setSecret({ value, projectId })
   const currentStep = steps[step] ?? steps[0]!
-  const keys = useProjectKeys()
+  const keys = useProjectKeys({ retry: false })
   const snapshot = useQuery({
-    ...trpc.project.snapshot.queryOptions(),
+    ...trpc.onboarding.snapshot.queryOptions(current?.id ?? ""),
     enabled: Boolean(current?.id),
+    retry: false,
   })
-  const hasWriteKey = (keys.data?.apiKeys.length ?? 0) > 0
-  const hasRuns = (snapshot.data?.metrics.totalRuns ?? 0) > 0
+  const hasWriteKey = keys.isSuccess && hasServerWriteKey(keys.data.apiKeys)
+  const hasRuns = snapshot.isSuccess && snapshot.data.metrics.totalRuns > 0
   const advance = useMutation(
     trpc.onboarding.advance.mutationOptions({
       onSuccess: () => undefined,
@@ -41,17 +51,13 @@ export function useOnboarding(initialStep: string, reviewMode = false) {
   const origin = useApiOrigin()
   const snippet = useMemo(() => flowmarkAgentPrompt(origin), [origin])
 
-  useEffect(() => {
-    setCreatedSecret(null)
-  }, [current?.id])
-
   const goTo = (next: number) => {
     const nextStep = steps[next]
     if (!nextStep) {
       return
     }
     advance.mutate(
-      { step: nextStep.id },
+      { step: nextStep.id, projectId: current?.id },
       {
         onSuccess: () => setStep(next),
       },
@@ -68,7 +74,9 @@ export function useOnboarding(initialStep: string, reviewMode = false) {
       return
     }
     if (step === steps.length - 1) {
-      complete.mutate()
+      if (current) {
+        complete.mutate({ projectId: current.id })
+      }
       return
     }
     goTo(step + 1)

@@ -13,6 +13,14 @@ application work.
 Agent access stays off unless the deployment enables it. A disabled deployment
 answers MCP HTTP with an explicit not-found response.
 
+## User setup versus adapter internals
+
+Start with the public [MCP connection guide](https://docs.flowmark.dev/docs/mcp)
+([source](../../apps/docs/content/docs/mcp.mdx)) for endpoint selection, consent,
+investigation and revocation. This README owns transport/tool implementation
+contracts; version-specific client evidence belongs in `docs/agent-clients/`.
+Do not turn the reference HTTP proof into a universal vendor setup claim.
+
 ## Tools
 
 | Tool                    | Behavior                                                                                                       |

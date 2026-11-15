@@ -42,7 +42,7 @@ export function SecretAlert({
 export function CreateProjectForm({
   onCreated,
 }: {
-  onCreated?: (secret: CreatedSecret) => void
+  onCreated?: (secret: CreatedSecret, projectId: string) => void
 }) {
   const { projects, newName, setNewName, secret, create } =
     useCreateProject(onCreated)

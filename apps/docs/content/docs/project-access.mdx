@@ -1,0 +1,47 @@
+---
+title: Projects and access
+description: Understand ownership, diagnostic viewers, business readers and published evidence.
+---
+
+A project scopes evidence and access. In **Settings → Project access**, the fixed
+owner can invite a colleague by email, choose a role and confirm the scope with
+their password. Invitation acceptance requires the intended verified email.
+A shared investigation link is not a membership invitation.
+
+| Role              | Access                                                                                                                    |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| Owner             | Manages the project, keys, invitations and business publication.                                                          |
+| Diagnostic viewer | Reads full project diagnostics, including reported properties, errors, results and diagnostic downloads.                  |
+| Business reader   | Reads project-wide activity metadata and explicitly published business results/references, with raw diagnostics withheld. |
+
+Business access is **project-wide**, not customer-specific. Searching a customer
+reference filters evidence; it does not create customer-level permissions. Only
+invite someone who should see the project's permitted metadata.
+
+## Publish business evidence
+
+Under **Business evidence publication**, the owner selects declared result paths
+for an exact immutable workflow revision and reference keys for particular
+workflows. Results and references start unpublished. A new result revision needs
+its own publication selection.
+
+Published labels, units and category vocabularies explain application-reported
+values. Missing, invalid or unpublished values stay unavailable. Publication does
+not establish that the application reported the truth or that a completed run
+succeeded for every record.
+
+Business readers cannot use raw events, properties, errors or technical filters
+to bypass publication. Portable views and agent reads retain their applicable
+authority and projection rules. See [MCP](/docs/mcp) and
+[shared investigations](/docs/investigations).
+
+## Remove access
+
+The owner manages membership in Project access. Subsequent server reads recheck
+authority. Removal does not recall screenshots or previously downloaded files.
+Browser sessions, agent grants and project keys have separate lifecycles; use
+[account and data controls](/docs/account-data) for the distinction.
+
+There is one fixed owner. Ownership transfer is not implemented. Shared projects
+are blocked from destructive lifecycle actions that require sole ownership;
+removing access is not an ownership-transfer mechanism.

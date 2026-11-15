@@ -1,0 +1,1 @@
+CREATE INDEX "data_export_session_idx" ON "data_export_requests" USING btree ("session_id");

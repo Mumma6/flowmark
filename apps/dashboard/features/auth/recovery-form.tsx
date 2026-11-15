@@ -20,6 +20,8 @@ import {
   type RecoveryError,
 } from "./recovery"
 import { runRecovery } from "./recovery-browser-runtime"
+import { publicConfig } from "../platform/config-public"
+import { HelpLinks } from "../support/help-links"
 
 const errorMessage = (error: RecoveryError, mode: "request" | "reset") =>
   Match.value(error.reason).pipe(
@@ -229,6 +231,7 @@ export function RecoveryForm({
               </Button>
             ) : null}
           </nav>
+          <HelpLinks documentationUrl={publicConfig.documentationUrl} />
         </CardContent>
       </Card>
     </main>

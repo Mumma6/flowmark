@@ -1,4 +1,5 @@
 import { Result, Schema } from "effect"
+import { studioReturnPath } from "../auth/studio-return-path"
 const Uuid =
   "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}"
 export const InvitationReturnPath = Schema.String.check(
@@ -17,4 +18,4 @@ export const invitationPath = (id: string, token: string) =>
 export const authReturnPath = (value: unknown) =>
   typeof value === "string" && value.startsWith("/connect/agent/consent?")
     ? value
-    : invitationReturnPath(value)
+    : (invitationReturnPath(value) ?? studioReturnPath(value))

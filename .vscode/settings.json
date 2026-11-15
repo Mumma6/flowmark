@@ -1,5 +1,17 @@
 {
   "chat.tools.terminal.autoApprove": {
     "pnpm": true
+  },
+  "rust-analyzer.cargo.path": "${workspaceFolder}/.cache/rust/cargo/bin/cargo",
+  "rust-analyzer.rustc.source": "discover",
+  "rust-analyzer.cargo.extraEnv": {
+    "CARGO_HOME": "${workspaceFolder}/.cache/rust/cargo",
+    "RUSTUP_HOME": "${workspaceFolder}/.cache/rust/rustup",
+    "PATH": "${workspaceFolder}/.cache/rust/cargo/bin:${env:PATH}"
+  },
+  "rust-analyzer.server.extraEnv": {
+    "CARGO_HOME": "${workspaceFolder}/.cache/rust/cargo",
+    "RUSTUP_HOME": "${workspaceFolder}/.cache/rust/rustup",
+    "PATH": "${workspaceFolder}/.cache/rust/cargo/bin:${env:PATH}"
   }
 }

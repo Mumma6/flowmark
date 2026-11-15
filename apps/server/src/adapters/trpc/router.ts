@@ -1,4 +1,5 @@
 import { evidenceCapturesRouter } from "./evidence-captures-router"
+import { dataExportsRouter } from "./data-exports-router"
 import { sharedInvestigationsRouter } from "./shared-investigations-router"
 import { businessEvidenceRouter } from "./business-evidence-router"
 import { projectSharingRouter } from "./project-sharing-router"
@@ -17,6 +18,7 @@ import { searchRouter } from "./search-router"
 import { runRouter } from "./run-router"
 
 export const appRouter = t.router({
+  dataExports: dataExportsRouter,
   evidenceCaptures: evidenceCapturesRouter,
   sharedInvestigations: sharedInvestigationsRouter,
   businessEvidence: businessEvidenceRouter,

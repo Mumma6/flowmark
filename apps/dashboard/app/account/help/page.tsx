@@ -5,6 +5,8 @@ import { Button, Card, CardHeader, CardTitle, CardContent } from "@flowmark/ui"
 import { getDashboardSession } from "../../../features/platform/server-runtime"
 import { publicConfig } from "../../../features/platform/config-public"
 import { AccountNavigation } from "../../../features/settings/account-navigation"
+import { HelpLinks } from "../../../features/support/help-links"
+import { SupportDetailsForm } from "../../../features/support/support-details-form"
 
 export const dynamic = "force-dynamic"
 
@@ -17,6 +19,7 @@ export default async function AccountHelpPage() {
     <main className="mx-auto grid w-full max-w-3xl min-w-0 gap-6 px-4 py-8">
       <AccountNavigation current="help" />
       <h1 className="text-2xl font-semibold">Setup help</h1>
+      <SupportDetailsForm />
       <p className="text-sm leading-6 text-muted-foreground">
         You can manage your account before creating a project. Flowmark observes
         work your application runs; connecting it does not execute or retry that
@@ -79,6 +82,14 @@ export default async function AccountHelpPage() {
             Connect and project settings may send you back to unfinished setup.
             Account, Security and Data &amp; privacy remain available here.
           </p>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>When something goes wrong</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <HelpLinks documentationUrl={publicConfig.documentationUrl} />
         </CardContent>
       </Card>
     </main>
