@@ -34,10 +34,25 @@ already-running container and record `container`/`startedByThisCall`; stop only 
 service you started. Two active checkouts require separate ports. See the
 [Compose instructions](./docs/development.md#local-postgresql-with-compose).
 
-Use the local demo sign-in documented in the development guide, then select a
-local project in Studio. Server ingestion and read keys have different roles;
-create each under **Settings → API keys** when its example needs it. No hosted
-account, maintainer ID, private planning file or AI client is required.
+Sign in at `http://localhost:3001` with the local account in the development
+guide. The local auth template trusts that exact origin, so
+`http://127.0.0.1:3001` does not sign in. Continue onboarding for the project
+`db:setup` already provisioned; Studio does not reveal that project's existing
+write key again. Applications use `fm_demo_write_local_only` for the seeded
+local project. Deliver the booking example to the loopback API and open the
+resulting `booking.create` run from Explore, as described in the
+[booking setup demo](./examples/SETUP-DEMO.md). Create another key under
+**Settings → API keys** only when an example needs a different project.
+No hosted account, maintainer ID or private planning file is required.
+
+Use a separate checkout when this one already has a Compose project. `infra up`
+reports whether that call started the container. Stop only a container that call
+started, and do not delete its volume. Startup does not migrate, seed or reset
+another checkout's database. Copying the onboarding coding-agent instruction
+does not connect or authorize an AI client, and no AI client is required.
+
+This sequence was exercised on macOS with Docker Desktop, Node 24 and
+pnpm 10.18.1. Windows and a native Linux host were not exercised.
 
 For a smaller first contribution, run the existing memory-only booking example
 without Docker or a database:
@@ -50,8 +65,9 @@ pnpm --filter @flowmarkdev/node test booking-setup-demo
 To extend a real read into a portable view, follow the
 [query-to-view example](./examples/portable-evidence/README.md#read-a-real-authorized-selection-into-the-view).
 Keep read credentials in the CLI environment; the viewer only receives supplied
-metadata. These commands do not establish commercial AI-client compatibility or
-certify every host platform. Optional AI setup is separate from contributing.
+metadata. These smaller commands do not replace the Studio walk above, establish
+commercial AI-client compatibility, or certify Windows or a native Linux host.
+Optional AI setup is separate from contributing.
 
 TypeScript + Effect remains the primary application platform; PostgreSQL and Rust
 are established owners for appropriate data-local work and cohesive computation.

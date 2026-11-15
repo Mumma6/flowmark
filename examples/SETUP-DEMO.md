@@ -28,18 +28,34 @@ It covers:
 ## Optional loopback delivery (Studio verification)
 
 Call `runBookingSetupDemo({ deliver: true, apiUrl, apiKey })` from a local script
-or REPL after `pnpm --filter @flowmarkdev/node... build`. Use an **isolated local
-project** and disposable loopback API only. Never point this at Production or
-shared hosted data.
+or REPL after `pnpm --filter @flowmarkdev/node... build`. Use the checkout's
+loopback API only. Never point this at Production or shared hosted data.
 
-1. Start local API and PostgreSQL (`pnpm dev:stack` or your usual checkout session).
-2. Create a project and write key in Studio Settings.
-3. Pass `FLOWMARK_API_URL` and `FLOWMARK_API_KEY` for the loopback API and an
-   isolated project write key (never commit the key).
+From a checkout that does not already own a running Compose project:
 
-4. Open **Runs** in Studio for the selected project and inspect the synthetic
-   `booking.create` execution. Copied setup instructions or finishing onboarding
-   is not evidence — only persisted runs are.
+```bash
+pnpm dev:setup
+pnpm infra up
+pnpm db:setup
+pnpm dev
+```
+
+`infra up` starts that checkout's database and does not migrate or seed.
+`db:setup` is the explicit local migration and demo-fixture step. `pnpm dev`
+does neither, and neither command resets another checkout's database. If
+`infra up` reports `startedByThisCall: false`, leave that container alone.
+
+`db:setup` provisions the documented local project and write key
+`fm_demo_write_local_only`. Sign in at `http://localhost:3001` and continue
+onboarding for that project. The existing secret is not shown again. The API
+listens on `http://127.0.0.1:3003`; pass that origin as `apiUrl` and the local
+write key as `apiKey`. Build `@flowmarkdev/node` first. Keep the script outside
+the repository.
+
+After delivery, finish onboarding and open the run from Explore. The live
+execution is `booking.create` with external id `liveRunId`. Its reported
+completion is evidence that the events were stored, not proof that booking work
+succeeded. Copying an onboarding agent instruction does not send the events.
 
 Synthetic properties include `synthetic: true` so runs are easy to distinguish
 from real application traffic.
