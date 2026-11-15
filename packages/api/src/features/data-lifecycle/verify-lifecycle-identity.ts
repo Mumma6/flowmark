@@ -16,5 +16,6 @@ export const verifyLifecycleIdentity = Effect.fn("verifyLifecycleIdentity")(
     ) {
       return yield* new Unauthorized({ permission: "write" })
     }
+    return identity
   },
 )

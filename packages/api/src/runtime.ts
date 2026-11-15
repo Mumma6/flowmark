@@ -1,3 +1,6 @@
+import { DataExportStore } from "@flowmark/db/persistence"
+import { DataExportsLive } from "./features/data-exports/adapters/data-exports.js"
+import { ManageDataExports } from "./features/data-exports/use-cases/manage-data-exports.js"
 import { EvidenceCaptureStore } from "@flowmark/db/persistence"
 import { Engine } from "@flowmark/engine"
 import {
@@ -66,6 +69,7 @@ const persistence = Layer.mergeAll(
   BusinessEvidenceStore.layer,
   ProjectSharingStore.layer,
   AccountLifecycleStore.layer,
+  DataExportStore.layer,
   DataLifecycleStore.layer,
   InvestigationStore.layer,
   ResultDeclarationStore.layer,
@@ -80,6 +84,7 @@ const databaseAdapters = Layer.mergeAll(
   BusinessEvidenceRepositoryLive,
   ProjectSharingRepositoryLive,
   AccountLifecycleLive,
+  DataExportsLive,
   DataLifecycleLive,
   InvestigationsLive,
   ResultDeclarationsLive,
@@ -111,6 +116,7 @@ export const ApiLive = Layer.mergeAll(
   GetBusinessEvidence.layer,
   ManageProjectSharing.layer,
   ManageAccountLifecycle.layer,
+  ManageDataExports.layer,
   ManageDataLifecycle.layer,
   ManageInvestigations.layer,
   ReadPublicRun.layer,
@@ -141,6 +147,7 @@ export function runApi<A, E>(
     | GetBusinessEvidence
     | ManageProjectSharing
     | ManageAccountLifecycle
+    | ManageDataExports
     | ManageDataLifecycle
     | ManageInvestigations
     | AuthorizeAgentRead

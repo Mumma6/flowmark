@@ -239,6 +239,20 @@
       "when": 1794674677345,
       "tag": "0033_majestic_imperial_guard",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1794741966247,
+      "tag": "0034_legal_sheva_callister",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1794744724510,
+      "tag": "0035_omniscient_azazel",
+      "breakpoints": true
     }
   ]
 }

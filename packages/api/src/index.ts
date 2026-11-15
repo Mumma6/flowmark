@@ -217,3 +217,10 @@ export {
   WaitlistWelcomeEmail,
   WaitlistWelcomeError,
 } from "./features/waitlist/welcome-email.js"
+
+export { ManageDataExports } from "./features/data-exports/use-cases/manage-data-exports.js"
+export {
+  DataExports,
+  type ExportRequest,
+  type ExportPart,
+} from "./features/data-exports/ports/data-exports.js"
