@@ -1,0 +1,60 @@
+---
+title: Account and data controls
+description: Manage sessions, verified email changes, exports and deletion safely.
+---
+
+Account controls remain available before SDK setup is complete. Open **Account**,
+**Account security** or **Account data & privacy** from setup; Studio also exposes
+account controls and **Settings → Data & privacy**.
+
+## Sign-in and credentials
+
+Your email/password signs you into Studio. Optional email verification proves
+mailbox ownership; it is not generally required to create a project. Invitation
+acceptance and verified email changes have their own proof requirements.
+Use **Forgot password?** for recovery. A verified email change requires your
+password and proof of both the old and new addresses; follow the displayed
+cancellation/deadline controls rather than changing email through another route.
+
+Account security lists browser sessions and supports password-confirmed sign-out.
+Signing out a browser session does not revoke agent connections or project keys.
+Manage agent connections in **Connect**, and ingestion/read keys in Settings.
+Keep write keys on the server; their full values are shown only when issued.
+
+## Download your data
+
+Under **Download your data**, choose the scope, review the local-file warning and
+confirm your password:
+
+- **My account personal data:** your profile, membership and safe account/connection
+  metadata and private selections. Membership does not automatically include all
+  project telemetry in this export.
+- **Selected project data:** requires the current owner and includes that project's
+  evidence/configuration and the requester's private selections, not other users'
+  private selections.
+
+Download every numbered NDJSON part through the final `complete: true` marker.
+There is no emailed export or background artifact. Requests expire after fifteen
+minutes and remain bound to current session/ownership checks. Retry the current
+part or resume as the UI permits; do not assume one part is the full export.
+
+Credential secrets, password hashes and session tokens are excluded. Reported
+application payloads can still contain sensitive information. Store downloaded
+files accordingly. A portable presentation or clipboard copy is not this export.
+
+## Delete evidence or an account
+
+Review the exact scope and counts, confirm the project name where requested and
+verify your password. Download needed evidence before deletion. Destructive
+controls require sole ownership; shared projects are blocked. Ownership transfer
+is not provided as a workaround.
+
+Confirmed erasure invalidates project keys and fences ordinary access while
+bounded cleanup proceeds. A failed batch is not completed deletion. Use **Resume
+cleanup** for the same operation; do not repeat an unrelated delete. Closing the
+page or pausing stops continuation, not previously committed deletion.
+
+Backups/provider records and previously downloaded copies have separate lifetimes.
+These controls do not promise instant removal from every system. Consult
+[security and privacy](/docs/security-privacy) for telemetry boundaries and contact
+the maintainer privately for unresolved rights/account questions.

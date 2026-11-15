@@ -5,9 +5,11 @@ search its execution evidence, inspect a run and return to the same filters.
 The package name remains `dashboard`. Hosting and domains keep their existing
 configuration.
 
-Saved investigations are not built. Connect explains agent and manual setup and
-does not claim that an agent is connected. Studio does not render the landing's
-synthetic examples.
+Private live investigations, authenticated sharing and business-only evidence
+captures are implemented. Capture admission and physical cleanup have separate
+operational gates. Connect supports setup, consent and own-connection revocation;
+copying instructions alone never establishes a connection. Studio does not render
+the landing's synthetic examples. See [implementation status](../../docs/implementation-status.md).
 
 Anonymous visitors are redirected to sign in. Registration creates the account;
 onboarding/Settings creates the first project and write key. Existing local demo

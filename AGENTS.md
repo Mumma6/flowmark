@@ -3,9 +3,10 @@
 ## Start here
 
 - Product direction, roadmap, and infrastructure operating notes live in the
-  local-only `private/` folder. `PRODUCT-VISION.md` is the authoritative
-  Product 1.0 direction; `plans/product-1-0/{SPEC,ROADMAP,BRAND}.md` own the
-  experience, delivery plan and messaging. `INFRASTRUCTURE-ROADMAP.md` and
+  local-only `private/` folder. Product 1.0 is implementation-complete;
+  `plans/product-1-0/HANDOVER.md` owns its closeout and explicit follow-ups.
+  `plans/product-2-0/{VISION,SPEC,ARCHITECTURE,ROADMAP}.md` own the next product
+  direction. Preserve the historical 1.0 vision/specification and accepted ADRs. `INFRASTRUCTURE-ROADMAP.md` and
   `docs/infrastructure.md` retain operational ownership. That folder is listed in
   `.gitignore` and is not in the public Git tree. Confirmed provider
   and auth choices are in
@@ -13,6 +14,9 @@
   four Vercel projects exist. Local demo stays on loopback. Do not seed Neon.
   npm publish, backup restore, and retention cleanup are not automatically
   approved.
+- Public contributors do not need the private planning tree. Use
+  [implementation status](./docs/implementation-status.md), subject guides and
+  source when local-only plans are unavailable.
 - Read applicable nested `AGENTS.md` files. Next.js apps require checking the
   installed Next.js documentation before framework changes.
 

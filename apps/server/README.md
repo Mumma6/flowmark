@@ -28,6 +28,6 @@ When `FLOWMARK_AGENT_ACCESS_ENABLED=true` and the API, issuer, and dashboard
 origins resolve, this app mounts `POST /mcp` and the protected-resource
 metadata routes from `@flowmark/mcp`. That package owns the six read-only
 investigation tools. Disabled agent access returns 404 for those routes. The
-router is `src/adapters/trpc.ts`. Customer-facing endpoint notes are in the
+router is `src/adapters/trpc/router.ts`. Customer-facing endpoint notes are in the
 [API guide](https://docs.flowmark.dev/docs/api). The reference deployment is
 `https://api.flowmark.dev`.

@@ -21,7 +21,8 @@ Existing documentation URLs are preserved.
 - **Getting started:** introduction, quickstart, configuration.
 - **Core concepts:** workflows/runs (including the Flow lifecycle diagrams),
   business results, dashboard interpretation, explicit run links.
-- **Integrations:** Next.js and browser guides.
+- **Use Studio:** project roles/publication, private/shared investigations, account sessions and data controls.
+- **Integrations:** MCP connection lifecycle and tool overview, Next.js and browser guides.
 - **SDK reference:** client creation/configuration, delivery lifecycle, run
   markers, types/bounds, proxy, advanced transports/errors.
 - **Operations:** local development, HTTP API, security/privacy, troubleshooting.
@@ -52,3 +53,9 @@ The built-in Node tests check internal document/anchor links, navigation
 coverage, single-title content, API reference coverage, and selected snippet
 contracts against the SDK source. They add no runtime/test dependencies.
 Production builds validate MDX generation and every static documentation route.
+
+Public guides own user journeys. Repository `docs/` owns deeper contracts,
+architecture and operations; link to those owners rather than copy their full
+implementation details into each guide. Client configuration claims require
+version-specific evidence; an MCP endpoint or copied instruction is not a
+verified connection.

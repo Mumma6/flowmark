@@ -267,7 +267,7 @@ the hosted migration wrappers and approval rules are unchanged. The reference
 hosted database is Neon; see [ADR 0006](./decisions/0006-mvp-0.1-infrastructure.md).
 
 The reference Neon project is a separate database. Its operating notes are in
-the [infrastructure guide](./infrastructure). Local demo setup keeps
+the [infrastructure guide](./infrastructure.md). Local demo setup keeps
 `DATABASE_URL` on loopback. Do not point Studio, `pnpm db:setup`, or
 `pnpm db:seed` at that project. Preview deployments must not use the
 production database or `https://api.flowmark.dev`.
@@ -344,7 +344,7 @@ key shares a 120-request/minute quota across local clients.
 The server allows the local dashboard origin by default. The reference
 deployment sets `FLOWMARK_DASHBOARD_ORIGIN` and `BETTER_AUTH_URL` to
 `https://app.flowmark.dev`. The full local and production catalog is in
-the [infrastructure guide](./infrastructure).
+the [infrastructure guide](./infrastructure.md).
 
 The framework-independent use cases, ports, and persistence adapters are in
 `packages/api` (`@flowmark/api`). The current `apps/server` Next.js application
@@ -421,7 +421,7 @@ Provider CLI/connector reads may inspect settings; provisioning or changing them
 requires the existing Pulumi program and an approved exact-stack plan. Drizzle
 migrations and local loopback setup remain separate workflows.
 
-The [infrastructure guide](./infrastructure) lists every variable, which
+The [infrastructure guide](./infrastructure.md) lists every variable, which
 process reads it, and the value used in each environment.
 
 Run `pnpm dev:setup` to configure local demo mode. The API uses the

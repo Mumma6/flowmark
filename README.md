@@ -5,7 +5,8 @@
 <h1 align="center">flowmark.</h1>
 
 <p align="center">
-  <strong>Understand what your software actually does.</strong>
+  <strong>Process Intelligence for People and Agents.</strong><br />
+  Understand what your software actually does.
 </p>
 
 <p align="center">
@@ -22,17 +23,31 @@ Today, the TypeScript SDK and web interface support workflow investigation,
 related executions, progress, outcomes, confirmations and historical business
 analytics. Your application keeps ownership of execution.
 
-**Product 1.0 direction:** Flowmark Platform supplies the programmable foundation,
-Flowmark Studio is the investigation workspace, and Flowmark Everywhere is the
-direction for agents, custom tools and portable interfaces. These are dimensions
-of one product. Studio is the current dashboard. The API serves six read-only
-MCP investigation tools when that deployment enables agent access. Private saved
-investigations and authenticated sharing are implemented in repository source;
-availability depends on the deployed revision and current project permissions.
-The shared run view works in a supplied-data host
-and one patched MCP Apps reference host; the [portable evidence example](./examples/portable-evidence/README.md)
-records exact compatibility and local setup. Commercial-client support and hosted
-MCP availability must be verified separately.
+Platform supplies the programmable foundation, Studio is the investigation
+workspace, and Everywhere brings authorized evidence into agents, custom tools
+and portable interfaces. These are dimensions of one product.
+
+Product 1.0 is **implementation-complete** in this repository. Studio includes
+reference journeys, linked comparisons, private and shared investigations,
+business-reader projections, account controls and data exports. The API provides
+public read endpoints and six read-only MCP tools when the deployment enables
+agent access. See [implementation status](./docs/implementation-status.md) for
+source boundaries and deliberate limitations.
+
+Implementation completion is not a blanket deployment or compatibility claim.
+Vendor-client support, hosted capture/cleanup activation and operational acceptance
+remain separately recorded. Product 2.0 will build on this foundation with process
+health, easier discovery/capture and maintained process meaning; those are future
+capabilities, not promises about today's deployment.
+
+## Choose your path
+
+- **Instrument your application:** [SDK quickstart](https://docs.flowmark.dev/docs/sdk).
+- **Investigate with an agent:** [MCP connection guide](https://docs.flowmark.dev/docs/mcp).
+- **Work with colleagues:** [project access](https://docs.flowmark.dev/docs/project-access) and [saved/shared investigations](https://docs.flowmark.dev/docs/investigations).
+- **Manage your account or data:** [sessions, exports and deletion](https://docs.flowmark.dev/docs/account-data).
+- **Build a custom consumer:** [public reads](https://docs.flowmark.dev/docs/public-reads) and [portable evidence](https://docs.flowmark.dev/docs/portable-evidence).
+- **Contribute:** [local setup and contribution guide](./CONTRIBUTING.md).
 
 ## Getting started
 
@@ -141,8 +156,9 @@ Browser clients use a public browser key, or a same-origin proxy that keeps the
 server write key private. See
 [browser integration](https://docs.flowmark.dev/docs/browser).
 
-Self-hosting uses these applications, the committed migrations, and PostgreSQL
-you control.
+The repository supports local development and inspectable contributions. A supported
+self-host distribution is not a project goal; configurable origins are compatibility
+boundaries, not a promise of deployment support.
 
 ## Documentation
 
@@ -155,18 +171,25 @@ you control.
 
 ## Repository
 
-| Path             | Role                                        |
-| ---------------- | ------------------------------------------- |
-| `packages/sdk`   | Public SDK, `@flowmarkdev/node`             |
-| `packages/core`  | Shared event contracts, `@flowmarkdev/core` |
-| `packages/api`   | Use cases and ports                         |
-| `packages/db`    | Schema, migrations, and persistence         |
-| `packages/auth`  | Sessions, local accounts, and agent access  |
-| `packages/mcp`   | Private read-only MCP adapter               |
-| `apps/server`    | HTTP, tRPC, and MCP route shell             |
-| `apps/dashboard` | Studio                                      |
-| `apps/web`       | Landing page                                |
-| `apps/docs`      | Customer documentation                      |
+| Path                     | Role                                        |
+| ------------------------ | ------------------------------------------- |
+| `packages/sdk`           | Public SDK, `@flowmarkdev/node`             |
+| `packages/core`          | Shared event contracts, `@flowmarkdev/core` |
+| `packages/api`           | Use cases and ports                         |
+| `packages/db`            | Schema, migrations, and persistence         |
+| `packages/auth`          | Sessions, local accounts, and agent access  |
+| `packages/mcp`           | Private read-only MCP adapter               |
+| `packages/engine`        | Effect adapter for the Rust Engine          |
+| `crates/flowmark-engine` | Deterministic Rust computation              |
+| `packages/evidence-view` | Portable supplied-data evidence views       |
+| `packages/email`         | Private transactional delivery              |
+| `packages/ui`            | Shared presentation and controls            |
+| `packages/demo`          | Synthetic local showcase tooling            |
+| `packages/config`        | Shared tool configuration                   |
+| `apps/server`            | HTTP, tRPC, and MCP route shell             |
+| `apps/dashboard`         | Studio                                      |
+| `apps/web`               | Landing page                                |
+| `apps/docs`              | Customer documentation                      |
 
 `apps/dev-harness` and
 `apps/internal-docs` are local-only and bind to loopback. The
@@ -186,6 +209,7 @@ Node.js 24.x (see `.node-version`), pnpm 10.18.1, and Docker Compose.
 ```sh
 pnpm install
 pnpm dev:setup
+pnpm infra doctor
 pnpm infra up
 pnpm db:setup
 pnpm dev
