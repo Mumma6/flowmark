@@ -1,5 +1,8 @@
 "use client"
 
+import { useInvestigationOwner } from "../../investigations/investigation-owner"
+import { DataExportPanel } from "./data-export-panel"
+
 import { ProjectOwnerOnly } from "../../project-sharing/project-owner-only"
 
 import {
@@ -92,9 +95,9 @@ function ProjectErasure({
       <p className="text-sm leading-6 text-muted-foreground">
         Selected project:{" "}
         <strong className="text-foreground">{projectName}</strong>. Erasure is
-        permanent. Export downloads are not available yet; preserve any evidence
-        you need before continuing. Backups and provider records expire
-        separately.
+        permanent. Use Download your data above to export evidence you need
+        before continuing. A diagnostic timeline copy is only a limited view.
+        Backups and provider records expire separately.
       </p>
       {error ? (
         <Alert variant="destructive">
@@ -351,6 +354,7 @@ function ProjectErasure({
 }
 
 export function DataPrivacyPanel() {
+  const exportOwner = useInvestigationOwner()
   const { current } = useProject()
   return (
     <Card>
@@ -363,6 +367,11 @@ export function DataPrivacyPanel() {
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-5">
+        <DataExportPanel
+          key={`${exportOwner}:${current?.id ?? "account-only"}:${current?.role ?? "none"}`}
+          projectId={current?.id ?? null}
+          owner={current?.role === "owner"}
+        />
         <Link
           href="/data-privacy"
           className="text-sm text-primary underline underline-offset-4"

@@ -61,6 +61,47 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
+it("preserves authenticated export attachment and integrity headers without caching the bytes", async () => {
+  const payload = '{"type":"manifest","synthetic":true}\n'
+  const fetch = vi.fn().mockResolvedValue(
+    new Response(payload, {
+      headers: {
+        "content-type": "application/x-ndjson; charset=utf-8",
+        "content-disposition":
+          'attachment; filename="flowmark-account-synthetic-part-1.ndjson"',
+        "content-digest": "sha-256=:synthetic-digest:",
+        "x-flowmark-export-complete": "false",
+        "x-flowmark-export-next": "synthetic-next",
+        "x-flowmark-export-part": "1",
+        "cache-control": "public, max-age=3600",
+      },
+    }),
+  )
+  vi.stubGlobal("fetch", fetch)
+  const response = await proxyToApiHandler(
+    new Request("http://localhost:3001/api/data-export", {
+      method: "POST",
+      headers: {
+        cookie: "synthetic-session",
+        origin: "http://localhost:3001",
+        "content-type": "application/json",
+      },
+      body: '{"id":"synthetic-id","cursor":"synthetic-cursor"}',
+    }),
+    "/v1/data-export",
+  )
+  expect(response.headers.get("cache-control")).toBe("no-store")
+  expect(response.headers.get("content-disposition")).toContain("attachment;")
+  expect(response.headers.get("content-digest")).toBe(
+    "sha-256=:synthetic-digest:",
+  )
+  expect(response.headers.get("x-flowmark-export-next")).toBe("synthetic-next")
+  expect(await response.text()).toBe(payload)
+  expect((fetch.mock.calls[0][1].headers as Headers).get("cookie")).toBe(
+    "synthetic-session",
+  )
+})
+
 it("returns 500 for missing hosted API configuration without attempting fetch", async () => {
   vi.stubEnv("FLOWMARK_API_URL", "")
   const fetch = vi.fn()

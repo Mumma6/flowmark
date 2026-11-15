@@ -113,3 +113,7 @@ export { EvidenceCaptureStore } from "./evidence-captures/evidence-capture-store
 export { EvidenceCaptureRejected } from "./evidence-captures/types.js"
 
 export { WaitlistStore } from "./waitlist/waitlist-store.js"
+export {
+  DataExportStore,
+  DataExportRejected,
+} from "./data-exports/data-export-store.js"

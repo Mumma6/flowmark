@@ -85,6 +85,7 @@ export enum DatabaseOperation {
   ListRuns = "list-runs",
   SearchBusinessReferences = "search-business-references",
   SearchWorkflowNames = "search-workflow-names",
+  DataExport = "data-export",
   Reset = "reset",
   Seed = "seed",
   UpdateOnboardingState = "update-onboarding-state",
