@@ -38,10 +38,10 @@ when those steps are requested and approved.
 
 ## Branch naming
 
-Use lowercase, descriptive names:
+For new Codex branches, use lowercase, descriptive names:
 
 ```text
-<type>/<short-description>
+codex/<type>-<short-description>
 ```
 
 | Type        | Use for                                         |
@@ -55,23 +55,24 @@ Use lowercase, descriptive names:
 
 Examples:
 
-- `feat/sdk-business-outcomes`
-- `feat/team-invitations`
-- `fix/workflow-terminal-state`
-- `refactor/sdk-workflow-engine`
-- `docs/sdk-usage-examples`
-- `chore/pulumi-infrastructure`
-- `test/sdk-event-delivery`
+- `codex/feat-sdk-business-outcomes`
+- `codex/feat-team-invitations`
+- `codex/fix-workflow-terminal-state`
+- `codex/refactor-sdk-workflow-engine`
+- `codex/docs-sdk-usage-examples`
+- `codex/chore-pulumi-infrastructure`
+- `codex/test-sdk-event-delivery`
 
 Keep names concise and meaningful. Avoid generic names such as `feature`,
 `updates`, `fixes`, or `task-1`.
 
 When work maps to an internal roadmap task, include the task identifier in the
-slug when it helps traceability (for example `feat/task-011-sdk-outcomes`).
+slug when it helps traceability (for example `codex/feat-task-011-sdk-outcomes`).
 Task IDs may repeat across roadmaps — prefer a short descriptive suffix too.
 
 Infrastructure-only work may use `chore/` (or an existing remote branch named
-`infra/...` from earlier work). Do not introduce new `codex/` prefixes.
+`infra/...` from earlier work). New Codex branches use `codex/` in accordance
+with the desktop workspace convention; preserve existing branch names.
 
 Suggest a name from the task title or user request; confirm if ambiguous.
 
@@ -138,7 +139,7 @@ When the working tree is clean and a new branch is needed:
 
 ```bash
 git fetch origin
-git switch -c <type>/<short-description> --track origin/staging
+git switch -c codex/<type>-<short-description> --track origin/staging
 ```
 
 Or equivalent: create from `origin/staging` without checking out stale local

@@ -4,6 +4,9 @@ This is the Pulumi TypeScript project for Flowmark's existing Vercel, Neon and R
 reference deployment. Resources are adopted by import, starting with
 non-production. Do not recreate them with a starter template.
 
+The following is the recorded adoption snapshot, not a fresh hosted-state check.
+Use reviewed Pulumi inspection for current state; this closeout changes no resources.
+
 Persistent reference-infrastructure adoption completed on 2 November 2026;
 transactional-email resources were added on 3 November.
 `nonprod` has 31 state resources: its two Neon branches, computes, databases and

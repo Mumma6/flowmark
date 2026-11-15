@@ -1,12 +1,12 @@
 # Architecture
 
-This document describes the implemented system. Product 1.0 evolves it toward a
-shared process-intelligence platform: Studio, external APIs, MCP and portable
-views will reuse authorized use cases and evidence semantics. Studio runs in
-`apps/dashboard`; delegated agent access and public reads have source
-implementations. Saved investigations remain planned. The product
-identity changes without renaming packages, replacing the workflow/run model or
-changing the current deployment topology.
+This document describes the implemented Product 1.0 foundation. Studio, public
+reads, MCP and portable views reuse authorized use cases and evidence semantics.
+Studio runs in `apps/dashboard`; private/shared investigations, business-reader
+projections, account controls and exports are implemented. See
+[implementation status](./implementation-status.md) for limitations and operational
+follow-ups. Product milestones do not rename packages, replace the workflow/run
+model or establish environment rollout.
 
 ```text
 Customer server application
@@ -28,10 +28,10 @@ Dashboard
 
 The reference API is `https://api.flowmark.dev` and the dashboard is
 `https://app.flowmark.dev`. Maintainer operating notes for that deployment
-stay outside the public tree. The same application shape runs locally and
-can be self-hosted: any PostgreSQL reachable through `DATABASE_URL` is
-enough for storage. Neon and Vercel are the maintainers' reference stack, not
-a requirement for every install ([ADR 0006](./decisions/0006-mvp-0.1-infrastructure.md)).
+stay outside the public tree. The same application shape runs locally with checkout-owned Docker Compose.
+Neon and Vercel are the reference hosted stack. A supported self-host distribution
+is not a project goal; configurable PostgreSQL and origins preserve adapter
+boundaries rather than certify an arbitrary deployment ([ADR 0006](./decisions/0006-mvp-0.1-infrastructure.md)).
 Flowmark is software you deploy; it is not a separate hosted enterprise product
 or SSO platform. The server application is a replaceable HTTP/framework shell;
 API use cases, ports, and persistence adapters live in the separate
@@ -336,7 +336,7 @@ releases its reader on success, invalid input, or interruption.
 The HTTP API exposes `GET /api/health`, Better Auth `GET|POST /api/auth/*`,
 `POST /api/register`, `GET|POST|OPTIONS /api/trpc`, private `POST /v1/events`,
 and browser `POST|OPTIONS /v1/browser-events`. Registration creates the Better
-Auth user only. The tRPC router in `apps/server/src/adapters/trpc.ts` currently
+Auth user only. The tRPC router in `apps/server/src/adapters/trpc/router.ts` currently
 exposes:
 
 - `health.check`
@@ -462,9 +462,11 @@ execution, while workflow history is persistent. Technical SDK diagnostics use a
 separate local project.
 
 The reference deployment is the four public hostnames in the
-[infrastructure guide](./infrastructure). Alerting, retention cleanup,
-durable delivery, and a backup restore drill are not implemented. A
-register-and-ingest pass against that deployment has not been recorded.
+[infrastructure guide](./infrastructure.md). Durable SDK delivery and general retention
+scheduling are not implemented. Bounded erasure and captured-evidence expiry
+primitives exist, but hosted cleanup cadence, alerting and backup restore evidence
+remain operational follow-ups. This source inventory is not a fresh deployment
+or inbox acceptance record.
 The direct browser-key quota is a basic per-key limit, not production-grade
 abuse prevention. No offline queue or durable delivery guarantee exists.
 

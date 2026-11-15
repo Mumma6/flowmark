@@ -13,7 +13,7 @@ failures never replace your return value or thrown error.
 npm i @flowmarkdev/node
 ```
 
-Current package version: **0.2.0**. It depends on `@flowmarkdev/core` at the
+Source package version: **0.3.0** (see `package.json`). It depends on `@flowmarkdev/core` at the
 same version. Node.js 20.19 or newer is required. Next.js 16 or newer is an
 optional peer for `@flowmarkdev/node/next`.
 

@@ -27,8 +27,8 @@ creating a PR is not permission to merge or deploy.
 5. Scan for unrelated files, secrets, `.env` or credential material,
    temporary debugging code, and accidental edits.
 6. **Run `pnpm check` from the repository root** before the first push for the
-   PR and before `gh pr create`. This matches CI (`format:check`, lint,
-   typecheck, test). If it fails, fix the failure (including
+   PR and before `gh pr create`. This runs Rust checks, TypeScript format/lint/typecheck/tests and production
+   WASM verification; CI also has a separate PostgreSQL integration job. If it fails, fix the failure (including
    `pnpm exec prettier --write` on touched files when format check fails) and
    re-run until it passes. Do not push or open the PR while `pnpm check` is
    red. For changes that truly cannot use the full monorepo check, run the
@@ -126,7 +126,8 @@ merge, deploy, force-push, and destructive production operations.
   [application releases](../../../docs/releases.md).
 - Feature PRs use squash merges; release and synchronization PRs use merge
   commits to preserve ancestry. Merge still requires explicit approval.
-- Branch names: `feat/...`, `fix/...`, `infra/...`, etc.
+- New Codex branch names use `codex/feat-...`, `codex/fix-...`, etc.; preserve
+  existing branches and the release `staging` → `main` convention.
 - Meaningful conventional commit messages on the branch.
 - No unrelated work in the same PR.
 - Push the feature branch and open a PR when the change is ready for review.
