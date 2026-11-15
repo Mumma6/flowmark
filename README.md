@@ -40,6 +40,15 @@ remain separately recorded. Product 2.0 will build on this foundation with proce
 health, easier discovery/capture and maintained process meaning; those are future
 capabilities, not promises about today's deployment.
 
+## Choose your path
+
+- **Instrument your application:** [SDK quickstart](https://docs.flowmark.dev/docs/sdk).
+- **Investigate with an agent:** [MCP connection guide](https://docs.flowmark.dev/docs/mcp).
+- **Work with colleagues:** [project access](https://docs.flowmark.dev/docs/project-access) and [saved/shared investigations](https://docs.flowmark.dev/docs/investigations).
+- **Manage your account or data:** [sessions, exports and deletion](https://docs.flowmark.dev/docs/account-data).
+- **Build a custom consumer:** [public reads](https://docs.flowmark.dev/docs/public-reads) and [portable evidence](https://docs.flowmark.dev/docs/portable-evidence).
+- **Contribute:** [local setup and contribution guide](./CONTRIBUTING.md).
+
 ## Getting started
 
 Requires Node.js 20.19 or newer.

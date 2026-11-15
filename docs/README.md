@@ -80,3 +80,13 @@ in `packages/sdk/README.md`, `packages/core/README.md`, `packages/api/README.md`
 - [MCP adapter](../packages/mcp/README.md): tools, authority and bounded reads.
 - [Portable views](../packages/evidence-view/README.md): supplied-data/host boundary.
 - [Client evidence](./agent-clients/codex-cli.md): exact observed compatibility.
+
+## Public user journeys
+
+The customer documentation owns how-to guidance; the internal guides above own
+contracts and operation. Start with [MCP setup](../apps/docs/content/docs/mcp.mdx),
+[project access](../apps/docs/content/docs/project-access.mdx),
+[investigations](../apps/docs/content/docs/investigations.mdx) and
+[account/data controls](../apps/docs/content/docs/account-data.mdx).
+Do not duplicate client-specific setup claims here; retain exact compatibility
+evidence under `docs/agent-clients/`.

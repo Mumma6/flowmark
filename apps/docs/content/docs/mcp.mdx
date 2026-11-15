@@ -1,0 +1,88 @@
+---
+title: Connect an agent with MCP
+description: Connect a compatible client, choose project access, investigate evidence and revoke the connection.
+---
+
+Flowmark's MCP server lets a compatible agent investigate the same authorized
+application evidence as Studio. It does not execute, schedule or retry your work.
+Instrumentation and investigation are separate: the SDK writes telemetry; an MCP
+connection reads permitted evidence.
+
+## Before you connect
+
+Sign in to Studio and open **Connect**. Use the remote endpoint displayed for
+that environment. Do not guess an endpoint from another deployment.
+
+- **Not enabled:** use Studio and its manual evidence handoff. A copied prompt
+  does not enable MCP or authorize an agent.
+- **Could not be confirmed:** retry the deployment check. This is different from
+  a disabled deployment or a successful connection.
+- **Endpoint available:** continue with a client that supports Flowmark's OAuth
+  and Streamable HTTP contract. An endpoint alone is not authorization.
+
+Do not paste ingestion keys, browser keys, session cookies or a project read key
+into an MCP OAuth configuration. The [public read client](/docs/public-reads)
+uses a different credential and API.
+
+## Connect and investigate
+
+1. Add the displayed MCP endpoint using your client's remote-server configuration.
+   Client registration and callback support must match the deployment; there is
+   no universal configuration snippet that certifies every client/version.
+2. Follow the client's browser authorization flow. Check the Flowmark account,
+   requested access and selected projects before granting consent.
+3. Call `get_connection` to inspect the grant's available project scope. Then
+   select an authorized project explicitly for investigation calls.
+4. Use `list_workflows` to discover process names, then `find_runs` with an
+   explicit UTC start window. Open one returned run with `get_run`.
+5. Follow the returned Studio link to inspect supporting evidence. Keep scope,
+   coverage and continuation cursors in subsequent questions.
+
+A useful first request is: “List processes in my selected Flowmark project, find
+runs started during this UTC interval, and explain one reported outcome with its
+supporting evidence.” The client translates this into tool calls; a model's
+explanation is not independent proof of business correctness.
+
+## Available tools
+
+| Tool                    | Use                                                                                      |
+| ----------------------- | ---------------------------------------------------------------------------------------- |
+| `get_connection`        | Inspect grant scope and available investigation tools.                                   |
+| `list_workflows`        | Discover workflows and bounded declaration meaning.                                      |
+| `find_runs`             | Find runs within an explicit start window of at most 31 days.                            |
+| `get_run`               | Read a compact summary and one page of events, related runs, expectations or operations. |
+| `compare_run`           | Compare one run with an explicitly bounded peer selection.                               |
+| `get_workflow_insights` | Read technical period comparisons or declared business-result insights.                  |
+
+Results are bounded pages, not an unrestricted telemetry dump. Use the returned
+cursor with the same query and project. Unsupported filters are rejected rather
+than silently ignored. Not every Studio feature has an MCP tool or public API.
+Business readers receive permitted projections; technical modes do not bypass
+[project permissions](/docs/project-access).
+
+## Revoke or reconnect
+
+Open **Connect** to inspect your own connections and revoke the intended one.
+If confirmation is lost, refresh its state before submitting another action.
+Revoking an agent connection is separate from signing out a browser session or
+revoking an ingestion key. Reconnecting creates fresh authority; it does not
+revive the old connection or broaden project membership.
+
+## Troubleshooting and compatibility
+
+- A disabled endpoint cannot be repaired by changing credentials in the client.
+- A denied project may require a new selection, membership or consent—not a new
+  ingestion key. A link grants no access.
+- After revocation, authorize a fresh connection instead of reusing old tokens.
+- Respect rate limits and returned bounds; do not strip filters to make a call pass.
+- MCP Apps rendering is optional. Ordinary tool evidence remains useful without
+  an embedded view; see [portable evidence](/docs/portable-evidence).
+
+Client support is version-specific. The repository records
+[local Codex CLI evidence](https://github.com/Mumma6/flowmark/blob/staging/docs/agent-clients/codex-cli.md)
+and [reference-host limits](https://github.com/Mumma6/flowmark/blob/staging/examples/portable-evidence/COMPATIBILITY.md).
+Those records do not certify all Codex surfaces, Cursor, Claude or a hosted
+Flowmark deployment. Use the manual handoff when your client's lifecycle has not
+been verified. Maintainers can consult the
+[MCP adapter contract](https://github.com/Mumma6/flowmark/blob/staging/packages/mcp/README.md)
+for transport, registration, budgets and security boundaries.

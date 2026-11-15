@@ -126,8 +126,9 @@ merge, deploy, force-push, and destructive production operations.
   [application releases](../../../docs/releases.md).
 - Feature PRs use squash merges; release and synchronization PRs use merge
   commits to preserve ancestry. Merge still requires explicit approval.
-- New Codex branch names use `codex/feat-...`, `codex/fix-...`, etc.; preserve
-  existing branches and the release `staging` → `main` convention.
+- Use task branches such as `docs/...`, `feat/...` and `fix/...` without a
+  `codex/` prefix, per maintainer preference. Preserve existing branches and
+  the release `staging` → `main` convention.
 - Meaningful conventional commit messages on the branch.
 - No unrelated work in the same PR.
 - Push the feature branch and open a PR when the change is ready for review.
