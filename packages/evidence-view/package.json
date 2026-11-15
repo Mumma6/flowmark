@@ -4,6 +4,10 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./public-read": {
+      "types": "./dist/public-read.d.ts",
+      "import": "./dist/public-read.js"
+    },
     "./projection": {
       "types": "./dist/projection.d.ts",
       "import": "./dist/projection.js"

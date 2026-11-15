@@ -26,8 +26,10 @@ analytics. Your application keeps ownership of execution.
 Flowmark Studio is the investigation workspace, and Flowmark Everywhere is the
 direction for agents, custom tools and portable interfaces. These are dimensions
 of one product. Studio is the current dashboard. The API serves six read-only
-MCP investigation tools when that deployment enables agent access. Saved
-investigations are not built. The shared run view works in a supplied-data host
+MCP investigation tools when that deployment enables agent access. Private saved
+investigations and authenticated sharing are implemented in repository source;
+availability depends on the deployed revision and current project permissions.
+The shared run view works in a supplied-data host
 and one patched MCP Apps reference host; the [portable evidence example](./examples/portable-evidence/README.md)
 records exact compatibility and local setup. Commercial-client support and hosted
 MCP availability must be verified separately.

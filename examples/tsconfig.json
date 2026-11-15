@@ -1,10 +1,14 @@
 {
   "extends": "../packages/config/typescript/base.json",
   "compilerOptions": {
+    "jsx": "react-jsx",
     "paths": {
       "@flowmarkdev/node": ["../packages/sdk/src/index.ts"],
       "@flowmarkdev/node/next": ["../packages/sdk/src/adapters/next.ts"],
-      "@flowmarkdev/node/read": ["../packages/sdk/src/reads/index.ts"]
+      "@flowmarkdev/node/read": ["../packages/sdk/src/reads/index.ts"],
+      "@flowmark/evidence-view/public-read": [
+        "../packages/evidence-view/src/public-read.ts"
+      ]
     },
     "typeRoots": ["../packages/sdk/node_modules/@types"]
   },
