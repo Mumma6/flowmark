@@ -9,7 +9,7 @@ import { useProject } from "../projects/project-context"
 export function useProjectSettings() {
   const trpc = useTRPC()
   const queryClient = useQueryClient()
-  const { current, projects, select } = useProject()
+  const { current, projects, select, pending, error, retry } = useProject()
   const [name, setName] = useState(current?.name ?? "")
   useEffect(() => {
     setName(current?.name ?? "")
@@ -22,5 +22,15 @@ export function useProjectSettings() {
       },
     }),
   )
-  return { current, projects, select, name, setName, rename }
+  return {
+    current,
+    projects,
+    select,
+    pending,
+    error,
+    retry,
+    name,
+    setName,
+    rename,
+  }
 }

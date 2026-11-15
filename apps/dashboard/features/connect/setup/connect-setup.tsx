@@ -15,6 +15,7 @@ import {
 import { Check } from "lucide-react"
 import Link from "next/link"
 import { DataState, PageHeading } from "../../shared/dashboard-components"
+import { projectListState } from "../../projects/project-list-state"
 import type { ConnectSetupStage } from "./connect-setup-state"
 import { setupRecoveryCopy } from "./setup-instructions"
 import { AgentAccessGuide } from "./agent-access-guide"
@@ -152,14 +153,25 @@ export function ConnectSetupPanel({ compact = false }: { compact?: boolean }) {
 }
 
 export function ConnectPage() {
-  const { current, projects } = useProject()
+  const { current, projects, pending, error, retry } = useProject()
+  const list = projectListState({
+    pending,
+    failed: error !== null,
+    count: projects.length,
+  })
   return (
     <div className="grid min-w-0 gap-6">
       <PageHeading
         title="Connect"
         description="Instrument your application, then read evidence with the agent you already use. Ingestion keys, copied setup instructions, manual handoff, and any future remote read access stay separate — none of them imply OAuth, MCP, or a verified agent connection by themselves."
       />
-      {projects.length === 0 ? (
+      {list === "unavailable" || list === "pending" ? (
+        <DataState
+          pending={list === "pending"}
+          error={list === "unavailable" ? error : null}
+          retry={retry}
+        />
+      ) : projects.length === 0 ? (
         <Alert>
           <AlertTitle>Create a project first</AlertTitle>
           <AlertDescription className="grid gap-3">

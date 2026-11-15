@@ -12,7 +12,8 @@ import {
 import { Check } from "lucide-react"
 import Link from "next/link"
 import { type ReactNode } from "react"
-import { CopyButton } from "../../shared/dashboard-components"
+import { CopyButton, DataState } from "../../shared/dashboard-components"
+import { projectListState } from "../../projects/project-list-state"
 import { useApiOrigin } from "../../platform/runtime-config"
 import { CreateProjectForm } from "../../projects/create-project-form"
 import { useProjectKeys } from "../../projects/keys-query"
@@ -68,8 +69,13 @@ export function GettingStartedChecklist({
   hasRuns: boolean
   compact?: boolean
 }) {
-  const { current, projects } = useProject()
-  const hasProject = projects.length > 0
+  const { current, projects, pending, error, retry } = useProject()
+  const list = projectListState({
+    pending,
+    failed: error !== null,
+    count: projects.length,
+  })
+  const hasProject = list === "ready"
   const keys = useProjectKeys()
   const hasWriteKey = hasServerWriteKey(keys.data?.apiKeys ?? [])
   const origin = useApiOrigin()
@@ -79,16 +85,20 @@ export function GettingStartedChecklist({
     <Card>
       <CardHeader>
         <CardTitle>
-          {!hasProject
-            ? "Create a project to continue"
-            : hasRuns
-              ? "Getting started"
-              : "No runs yet — get started"}
+          {list === "unavailable"
+            ? "Projects could not be loaded"
+            : !hasProject
+              ? "Create a project to continue"
+              : hasRuns
+                ? "Getting started"
+                : "No runs yet — get started"}
         </CardTitle>
         <CardDescription>
-          {!hasProject
-            ? "Sign-up only creates your account. A project holds runs and ingestion keys — create one before you can instrument an app."
-            : "Flowmark observes work your application already runs. It does not execute, schedule, or retry that work. Completed means the application reported completion — not that every record succeeded."}
+          {list === "unavailable"
+            ? "The project list failed. This is not an empty account."
+            : !hasProject
+              ? "Sign-up only creates your account. A project holds runs and ingestion keys — create one before you can instrument an app."
+              : "Flowmark observes work your application already runs. It does not execute, schedule, or retry that work. Completed means the application reported completion — not that every record succeeded."}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -113,6 +123,12 @@ export function GettingStartedChecklist({
                 </Link>
                 .
               </p>
+            ) : list === "unavailable" || list === "pending" ? (
+              <DataState
+                pending={list === "pending"}
+                error={list === "unavailable" ? error : null}
+                retry={retry}
+              />
             ) : (
               <CreateProjectForm />
             )}
