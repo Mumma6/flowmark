@@ -3,8 +3,10 @@
 Private, server-only transactional email using Effect 4 and Resend's HTTP API.
 There is no extra provider SDK. This package prepares delivery; it does not
 enable identity flows itself. `@flowmark/auth` owns the provider callbacks, and
-`apps/server` composes recovery delivery from its existing mail settings. Email
-change remains disabled; normal access does not require prior verification.
+`apps/server` composes delivery when the mail settings below are present.
+Native Better Auth email change stays disabled so that path cannot bypass the
+verified email-change coordinator. Normal access does not require prior
+verification.
 
 ## Use at a server composition boundary
 
@@ -117,30 +119,30 @@ No provider account, DNS record, webhook or tracking setting is created by this
 package. Adopt the relevant Resend/DNS resources into the existing Pulumi
 project before changing them; do not configure manually and reconcile later.
 
-Before enabling an account flow, the maintainer must record:
+Recorded operation, with the steps that are still open named separately:
 
-- Verified sender/domain and SPF/DKIM results, reviewed DMARC policy, separate
-  environment keys with sending-only/domain scope, and controlled recipients.
-  A Gmail reply mailbox is supported; Gmail is not an owned sending domain.
-  See [verified domains](https://resend.com/docs/dashboard/domains/introduction).
-- Disabled open/click tracking for bearer links, approved sending region,
-  provider processing/retention terms, expected volume, current quota/cost and
-  an explicit acceptance of any recurring cost. Do not infer a free plan.
-- A monitored reply mailbox and named responsibility for delivery, incidents,
-  suppression and recovery. Do not bypass bounce/complaint suppressions with
-  retries; review recipient ownership and provide a safe recovery channel.
-- Real inbox/junk-folder checks, expiration and callback behavior through the
-  dashboard proxy, plus rejection, bounce and complaint evidence. Resend's
+- The maintainer owns sending. Production sends as `accounts@flowmark.dev` and
+  Staging as `staging@flowmark.dev`, both on the verified `flowmark.dev` domain
+  in `eu-west-1`, with open and click tracking disabled. Reply-to and the
+  incident mailbox are `flowmark.dev@gmail.com`. That Gmail address is not an
+  owned sending domain. SPF, DKIM and the four sending DNS records are verified.
+  DMARC is not declared by this package.
+- One controlled Staging `delivery-test` was accepted by Resend and confirmed in
+  that inbox before the branded templates. Provider acceptance is not inbox
+  delivery. No Production inbox check is recorded. Resend's
   [test recipients](https://resend.com/docs/dashboard/emails/send-test-emails)
-  simulate delivery events and count against quota; they do not prove inbox
-  placement. Provider acceptance is not proof of delivery.
-- A reviewed delivery-monitoring procedure (or separately scoped signed webhook
-  implementation), alert ownership and token-free support diagnostics. No
-  webhook or asynchronous outbox is implemented here.
+  simulate events and count against quota; they do not prove inbox placement.
+- The current Resend plan, included quota, processing terms and recurring price
+  are not stored in this repository. Do not infer a free tier or a paid
+  commitment from the presence of bindings. A numeric cost record remains an
+  operator decision.
+- No bounce or complaint webhook is implemented. Do not bypass a suppression
+  with another send. Recovery for a lost password uses the password-reset flow.
+  Monitoring is an operator review of the provider event for a known message,
+  plus the guarded Staging CLI. There is no alert destination and no outbox.
 
-These live checks and operational decisions remain pending. Do not enable
-verification/reset against a dummy key or infer that sending is active merely
-because Pulumi has stored a secret.
+Do not send with a dummy key, and do not treat a stored Pulumi secret as proof
+that a new environment can deliver mail.
 
 ## Branded templates
 
