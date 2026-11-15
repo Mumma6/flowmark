@@ -23,6 +23,7 @@ import { CopyButton } from "../shared/dashboard-components"
 import { runBrowserAuth } from "./auth-browser-runtime"
 import { authReturnPath } from "../project-sharing/invitation-location"
 import { authenticate } from "./operations"
+import { useQueryClient } from "@tanstack/react-query"
 
 export function AuthScreen({
   mode,
@@ -36,6 +37,7 @@ export function AuthScreen({
   returnTo?: string
 }) {
   const router = useRouter()
+  const cache = useQueryClient()
   const isSignUp = mode === "sign-up"
   const title = isSignUp ? "Create your workspace." : "Welcome to Studio."
   const [name, setName] = useState("")
@@ -54,6 +56,7 @@ export function AuthScreen({
     Result.match(result, {
       onFailure: (failure) => setError(failure.reason),
       onSuccess: (href) => {
+        cache.clear()
         router.push(authReturnPath(returnTo) ?? href)
         router.refresh()
       },

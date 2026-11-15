@@ -227,6 +227,7 @@ export function sessionQuery<A>(
     | ManageAccountLifecycle
     | ManageDataExports
     | ManageDataLifecycle
+    | GetProjectWorkflowData
     | ManageProject
     | ManageResultDeclarations
     | AgentAccess

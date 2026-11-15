@@ -1,31 +1,47 @@
 import { Effect, Schema } from "effect"
-import { Onboarding } from "@flowmark/api"
+import { GetProjectWorkflowData, Onboarding } from "@flowmark/api"
 import { t } from "./context"
-import { onboardingQuery } from "./execution"
+import { onboardingQuery, sessionQuery } from "./execution"
+import { UuidSchema } from "./schemas"
+import { studioMutation } from "./studio-origin"
 const OnboardingStep = Schema.toStandardSchemaV1(
   Schema.Struct({
     step: Schema.Literals(["project", "key", "install", "instrument", "run"]),
+    projectId: Schema.optional(UuidSchema),
   }),
 )
 
 export const onboardingRouter = t.router({
+  snapshot: t.procedure
+    .input(Schema.toStandardSchemaV1(UuidSchema))
+    .query(({ ctx, input }) =>
+      sessionQuery(ctx.request, (userId) =>
+        Effect.flatMap(GetProjectWorkflowData, (queries) =>
+          queries.snapshot({ _tag: "User", userId, projectId: input }),
+        ),
+      ),
+    ),
   state: t.procedure.query(({ ctx }) =>
     onboardingQuery(ctx.request, (userId) =>
       Effect.flatMap(Onboarding, (onboarding) => onboarding.state(userId)),
     ),
   ),
-  advance: t.procedure
+  advance: studioMutation
     .input(OnboardingStep)
     .mutation(({ ctx, input }) =>
       onboardingQuery(ctx.request, (userId) =>
         Effect.flatMap(Onboarding, (onboarding) =>
-          onboarding.advance(userId, input.step),
+          onboarding.advance(userId, input.step, input.projectId),
         ),
       ),
     ),
-  complete: t.procedure.mutation(({ ctx }) =>
-    onboardingQuery(ctx.request, (userId) =>
-      Effect.flatMap(Onboarding, (onboarding) => onboarding.complete(userId)),
+  complete: studioMutation
+    .input(Schema.toStandardSchemaV1(Schema.Struct({ projectId: UuidSchema })))
+    .mutation(({ ctx, input }) =>
+      onboardingQuery(ctx.request, (userId) =>
+        Effect.flatMap(Onboarding, (onboarding) =>
+          onboarding.complete(userId, input.projectId),
+        ),
+      ),
     ),
-  ),
 })

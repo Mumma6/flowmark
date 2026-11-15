@@ -3,6 +3,30 @@ title: Troubleshooting
 description: Diagnose missing runs, incomplete timelines, and reported failures.
 ---
 
+## Resume setup or recover a lost key
+
+Open **Setup and key recovery** from Studio's Getting started checklist. During
+initial setup, progress is saved to your account; refreshing does not preserve
+the one-time key value.
+
+Choose the project you own before continuing. Setup requires a **server write
+key** for that project; read keys and browser keys cannot authorize server SDK
+ingestion. If you lost the secret or revoked the key, return to the key step and
+choose **Create another server write key**. Existing keys keep working. Save the
+new value in your server environment, never in browser code or local storage.
+
+A failed project, key or run request shows an error with a retry control. It is
+different from an empty project. If copying is unavailable, select and copy the
+displayed text manually. Account, security and setup help remain reachable from
+the setup header.
+
+Installing the SDK or finishing the guide does not prove a connection. The run
+step checks for a received run in the selected project. You can finish setup
+before reporting a run and return to the guide later. If a run remains missing,
+check the project, API origin, key permissions and revocation state below;
+rate-limited requests need to respect the server's retry guidance. Flowmark
+does not execute your application to generate a test run.
+
 ## A run is missing
 
 1. Confirm the workflow marker runs in application code and uses a semantic

@@ -58,9 +58,10 @@ function OnboardingContent({
     projectState.pending ||
     Boolean(projectState.error) ||
     busy ||
-    (currentStep.id === "project" && !current) ||
-    (currentStep.id === "key" &&
-      (!hasWriteKey || keys.isPending || Boolean(keys.error)))
+    (!reviewMode &&
+      (current?.role !== "owner" ||
+        (currentStep.id !== "project" &&
+          (!hasWriteKey || keys.isPending || Boolean(keys.error)))))
 
   return (
     <main className="relative isolate min-h-screen bg-background">
@@ -226,6 +227,7 @@ function OnboardingContent({
                   current={current}
                   projects={projects}
                   setCreatedSecret={setCreatedSecret}
+                  setStep={setStep}
                 />
               ) : null}
               {currentStep.id === "key" ? (
@@ -233,16 +235,46 @@ function OnboardingContent({
                   keys={keys}
                   createdSecret={createdSecret}
                   hasWriteKey={hasWriteKey}
+                  current={current}
+                  setCreatedSecret={setCreatedSecret}
                 />
               ) : null}
               {currentStep.id === "install" ? (
                 <InstallStep origin={origin} />
               ) : null}
+              {!reviewMode && step > 1 && (
+                <>
+                  <DataState
+                    pending={keys.isPending}
+                    error={keys.error}
+                    retry={() => void keys.refetch()}
+                  />
+                  {keys.isSuccess && !hasWriteKey && (
+                    <Alert>
+                      <AlertDescription className="grid gap-3">
+                        <p>
+                          The selected project needs a server write key. Recover
+                          it before continuing; read keys do not authorize SDK
+                          ingestion.
+                        </p>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setStep(1)}
+                        >
+                          Return to key recovery
+                        </Button>
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                </>
+              )}
               {currentStep.id === "instrument" ? (
                 <InstrumentStep
                   current={current}
                   origin={origin}
                   snippet={snippet}
+                  recoverKey={() => setStep(1)}
                 />
               ) : null}
               {currentStep.id === "run" ? (
@@ -297,6 +329,7 @@ function OnboardingContent({
 }
 
 export function OnboardingFlow(props: {
+  readonly userId: string
   readonly apiOrigin: string
   readonly email: string
   readonly initialStep: string
@@ -304,7 +337,7 @@ export function OnboardingFlow(props: {
 }) {
   return (
     <RuntimeConfigProvider apiOrigin={props.apiOrigin}>
-      <ProjectProvider>
+      <ProjectProvider key={props.userId}>
         <OnboardingContent {...props} />
       </ProjectProvider>
     </RuntimeConfigProvider>
