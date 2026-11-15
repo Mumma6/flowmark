@@ -26,6 +26,7 @@ export type CommandPage = {
     | "troubleshooting"
     | "security-privacy"
     | "product-issue"
+    | "private-support"
     | "security-report"
   readonly label: string
   readonly href: string

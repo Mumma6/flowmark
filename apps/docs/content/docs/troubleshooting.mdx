@@ -27,6 +27,24 @@ check the project, API origin, key permissions and revocation state below;
 rate-limited requests need to respect the server's retry guidance. Flowmark
 does not execute your application to generate a test run.
 
+## Studio access or session errors
+
+Losing access to one project does not necessarily end your sign-in session.
+Choose another permitted project or use **Access help**. Studio confirms the
+session before presenting **Sign in again**. If the auth service is unavailable,
+the failed request stays an error; it is not treated as proof of session expiry.
+
+When a session has ended, Studio cancels pending queries, clears its private
+query cache and offers sign-in with a known local return page. It does not
+repeat your previous mutation after sign-in. Check the current state before
+trying a write again.
+
+Help offers the existing private incident mailbox as well as public issues.
+**Prepare optional support details** creates a local preview containing only
+the error code and context you enter. Nothing is attached or sent automatically.
+Review it before copying, and leave out credentials, email callback links,
+personal data and private telemetry.
+
 ## A run is missing
 
 1. Confirm the workflow marker runs in application code and uses a semantic

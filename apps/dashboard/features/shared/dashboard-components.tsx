@@ -22,6 +22,7 @@ import { ArrowRight, RefreshCw } from "lucide-react"
 import Link from "next/link"
 import { useMemo, type ReactNode } from "react"
 import { presentQueryError } from "../platform/api-transport-errors"
+import { isAuthorizationFailure } from "../auth/session-recovery"
 import { runStatusLabel, type RunStatus } from "../runs/models/run-presentation"
 import {
   clipboardCopyFailureDescription,
@@ -148,6 +149,16 @@ export function DataState({
       <Alert variant="destructive">
         <AlertTitle>Could not load data</AlertTitle>
         <AlertDescription>{presentQueryError(error)}</AlertDescription>
+        {isAuthorizationFailure(error) && (
+          <div className="mt-3 flex flex-wrap gap-4 text-sm">
+            <Link href="/" className="text-primary underline">
+              Choose a project in Studio
+            </Link>
+            <Link href="/account/help" className="text-primary underline">
+              Access help
+            </Link>
+          </div>
+        )}
         {retry && (
           <Button variant="outline" size="sm" onClick={retry} className="mt-3">
             <RefreshCw aria-hidden="true" />

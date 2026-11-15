@@ -6,6 +6,7 @@ export type HelpDestination = {
     | "troubleshooting"
     | "security-privacy"
     | "product-issue"
+    | "private-support"
     | "security-report"
   readonly label: string
   readonly href: string
@@ -14,7 +15,7 @@ export type HelpDestination = {
 
 const productIssueUrl = "https://github.com/Mumma6/flowmark/issues/new"
 const securityReportUrl =
-  "https://github.com/Mumma6/flowmark/security/advisories/new"
+  "mailto:flowmark.dev@gmail.com?subject=Flowmark%20security%20report"
 
 const documentationPage = (
   documentationUrl: string,
@@ -79,6 +80,13 @@ export function helpDestinations(
       label: "Report a product issue",
       href: productIssueUrl,
       description: "A public bug or feature request.",
+    },
+    {
+      id: "private-support",
+      label: "Contact the maintainer privately",
+      href: "mailto:flowmark.dev@gmail.com",
+      description:
+        "Account, privacy or incident questions. No guaranteed response time.",
     },
     {
       id: "security-report",
