@@ -37,7 +37,12 @@ describe("command palette search", () => {
       "insights",
       "issues",
       "settings",
+      "setup-help",
       "documentation",
+      "troubleshooting",
+      "security-privacy",
+      "product-issue",
+      "security-report",
     ])
     expect(filterCommandPages(pages, "run").map((page) => page.id)).toEqual([
       "runs",
@@ -47,6 +52,12 @@ describe("command palette search", () => {
     ])
     expect(filterCommandPages(pages, "docs")[0]?.href).toBe(
       "https://docs.example/docs/introduction",
+    )
+    expect(filterCommandPages(pages, "troubleshooting")[0]?.id).toBe(
+      "troubleshooting",
+    )
+    expect(filterCommandPages(pages, "vulnerability")[0]?.id).toBe(
+      "security-report",
     )
   })
 

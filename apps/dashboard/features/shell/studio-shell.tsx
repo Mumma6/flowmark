@@ -18,6 +18,7 @@ import {
   Code2,
   Compass,
   History,
+  LifeBuoy,
   Bookmark,
   LayoutGrid,
   LineChart,
@@ -54,6 +55,7 @@ const utilities = [
   { href: "/overview", label: "Project overview", icon: LayoutGrid },
   { href: "/connect", label: "Connect", icon: Link2 },
   { href: "/settings", label: "Settings", icon: Settings },
+  { href: "/account/help", label: "Help", icon: LifeBuoy },
   { href: "/onboarding?mode=guide", label: "Setup guide", icon: Code2 },
 ] as const
 

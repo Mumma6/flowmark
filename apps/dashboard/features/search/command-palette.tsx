@@ -18,9 +18,11 @@ import {
   Folder,
   GitBranch,
   LayoutDashboard,
+  LifeBuoy,
   LineChart,
   Search,
   Settings,
+  ShieldAlert,
   Workflow,
 } from "lucide-react"
 import { useRouter, useSearchParams } from "next/navigation"
@@ -54,7 +56,12 @@ const pageIcons = {
   insights: LineChart,
   issues: CircleAlert,
   settings: Settings,
+  "setup-help": LifeBuoy,
   documentation: BookOpen,
+  troubleshooting: LifeBuoy,
+  "security-privacy": ShieldAlert,
+  "product-issue": CircleAlert,
+  "security-report": ShieldAlert,
 } satisfies Record<CommandPage["id"], typeof Workflow>
 
 const subscribe = () => () => {}

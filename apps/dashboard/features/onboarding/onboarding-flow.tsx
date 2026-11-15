@@ -5,6 +5,7 @@ import { useEffect, useRef } from "react"
 import Link from "next/link"
 import { DataState } from "../shared/dashboard-components"
 import { publicConfig } from "../platform/config-public"
+import { HelpLinks } from "../support/help-links"
 import { RuntimeConfigProvider } from "../platform/runtime-config"
 import { ProjectProvider, useProject } from "../projects/project-context"
 import { steps } from "./steps"
@@ -126,6 +127,14 @@ function OnboardingContent({
           )}
         </div>
       </header>
+      <details className="mx-auto w-full max-w-6xl px-5 pt-6 sm:px-8">
+        <summary className="cursor-pointer text-xs text-muted-foreground">
+          Need help?
+        </summary>
+        <div className="mt-4 max-w-lg">
+          <HelpLinks documentationUrl={publicConfig.documentationUrl} />
+        </div>
+      </details>
       <div className="mx-auto max-w-6xl px-5 py-10 sm:px-8 sm:py-16">
         <div className="mb-10 max-w-2xl">
           <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-primary">
