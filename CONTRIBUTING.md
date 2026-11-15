@@ -60,7 +60,9 @@ For computation, analysis or data-processing changes, evaluate the owner using t
 Rust contributions may extend the Flowmark Engine or introduce another justified
 crate. Learning and functional craftsmanship are valid benefits; keep integration
 cost and maintainability explicit. The [Rust/WASM guide](./docs/engine.md)
-documents the shared toolchain and the current engine's build and tests.
+documents the shared toolchain, the workspace rust-analyzer settings and the
+current engine's build and tests. Run `pnpm rust:setup` before relying on editor
+diagnostics; it installs the pinned toolchain under ignored `.cache/rust/`.
 
 Customer-facing SDK documentation is built from `apps/docs` and published at
 [docs.flowmark.dev](https://docs.flowmark.dev). Change that site when the
