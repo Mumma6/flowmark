@@ -1,4 +1,13 @@
-import { Array as EffectArray } from "effect"
+import {
+  Array as EffectArray,
+  Data,
+  Effect,
+  Exit,
+  Match,
+  Option,
+  Result,
+  Schema,
+} from "effect"
 import {
   AUTH_PROXY_IDENTITY_HEADER,
   signAuthProxyIdentity,
@@ -8,7 +17,6 @@ import {
   decideAuthProxyLocation,
   redirectUriFromRequest,
 } from "@flowmark/auth/agent-access/proxy-route"
-import { Data, Effect, Exit, Match, Option } from "effect"
 import "server-only"
 import { runDashboardServerExit } from "./server-runtime"
 import { DashboardApi } from "./api-server-client"
@@ -16,6 +24,42 @@ import { DashboardApi } from "./api-server-client"
 class DashboardProxyError extends Data.TaggedError("DashboardProxyError")<{
   readonly cause: unknown
 }> {}
+
+const ProviderRedirectDocument = Schema.Struct({
+  redirect: Schema.Literal(true),
+  url: Schema.NonEmptyString,
+})
+
+const oauthBrowserPath = (issuerPath: string) =>
+  issuerPath === "/oauth2" || issuerPath.startsWith("/oauth2/")
+
+const readProviderRedirectUrl = Effect.fn("proxyToApi.providerRedirect")(
+  function* (response: Response) {
+    const mediaType = response.headers
+      .get("content-type")
+      ?.split(";")[0]
+      ?.trim()
+    if (response.status !== 200 || mediaType !== "application/json") {
+      return Option.none<string>()
+    }
+    const body = yield* Effect.exit(
+      Effect.tryPromise({
+        try: () => response.clone().json() as Promise<unknown>,
+        catch: () => new DashboardProxyError({ cause: new Error("unread") }),
+      }),
+    )
+    return Exit.match(body, {
+      onFailure: () => Option.none(),
+      onSuccess: (value) =>
+        Schema.decodeUnknownResult(ProviderRedirectDocument)(value).pipe(
+          Result.match({
+            onFailure: () => Option.none(),
+            onSuccess: (document) => Option.some(document.url),
+          }),
+        ),
+    })
+  },
+)
 
 const proxyToApi = Effect.fn("proxyToApi")(function* (
   request: Request,
@@ -81,10 +125,17 @@ const proxyToApi = Effect.fn("proxyToApi")(function* (
     },
   )
   const location = response.headers.get("location")
-  if (location && pathname.startsWith("/api/auth/")) {
+  const providerRedirect =
+    !location &&
+    (request.method === "GET" || request.method === "HEAD") &&
+    oauthBrowserPath(issuerPath)
+      ? yield* readProviderRedirectUrl(response)
+      : Option.none()
+  const redirectTarget = location ?? Option.getOrUndefined(providerRedirect)
+  if (redirectTarget && pathname.startsWith("/api/auth/")) {
     const destination = yield* decideAuthProxyLocation({
       issuerPath,
-      location,
+      location: redirectTarget,
       requestUrl: incoming.href,
       redirectUri,
     }).pipe(
@@ -121,6 +172,10 @@ const proxyToApi = Effect.fn("proxyToApi")(function* (
     },
   )
   forwarded.set("cache-control", "no-store")
+  if (Option.isSome(providerRedirect) && forwarded.has("location")) {
+    forwarded.delete("content-type")
+    return new Response(null, { status: 302, headers: forwarded })
+  }
   return new Response(response.body, {
     status: response.status,
     headers: forwarded,
