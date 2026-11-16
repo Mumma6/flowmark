@@ -207,13 +207,14 @@ export const ownershipFindings = (tree) => {
       }
       const disallowed =
         (pkg.file.startsWith("packages/") && target.file.startsWith("apps/")) ||
-        (pkg.name === "@flowmark/core" && target.name !== "@flowmark/core") ||
+        (pkg.file === "packages/core/package.json" &&
+          target.file !== pkg.file) ||
         (pkg.name === "@flowmark/db" &&
           ["@flowmark/auth", "@flowmark/api", "@flowmark/engine"].includes(
             dependency,
           )) ||
         (pkg.name === "@flowmark/engine" &&
-          !["@flowmark/core"].includes(dependency))
+          !["@flowmarkdev/core"].includes(dependency))
       return disallowed
         ? [
             {

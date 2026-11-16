@@ -134,7 +134,7 @@ test("removed commands require real matching root command references, not longer
 test("type-only manifest dependencies obey ownership and package source organization", () => {
   const after = tree({
     "packages/core/package.json": JSON.stringify({
-      name: "@flowmark/core",
+      name: "@flowmarkdev/core",
       devDependencies: { "@flowmark/api": "workspace:*" },
     }),
     "packages/api/package.json": JSON.stringify({ name: "@flowmark/api" }),
