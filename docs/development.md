@@ -375,7 +375,7 @@ Node 24, plus the disposable-Postgres integration job. The existing required
 cancellations and skipped jobs. The application job also runs deterministic
 architecture/documentation regression checks; the build job builds affected
 public frontends using Turbo. See [Software Factory](./software-factory.md) for
-coverage, local guardian usage and automatic cross-PR learning evidence.
+coverage, local guardian usage and the local Codex review and cross-PR learning loop.
 `pnpm check:typescript` is the
 application-only portion; Rust and artifact verification remain required gates.
 Rust toolchains/downloads and per-job compilation outputs are cached; a cache

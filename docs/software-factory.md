@@ -1,158 +1,170 @@
 # Software Factory
 
-Flowmark reuses its existing engineering tools and private planning system.
-Pull requests get deterministic architecture/documentation regression checks in
-addition to existing CI. Staging updates and weekly runs collect cross-PR
-learning evidence automatically. **Hosted AI is off by maintainer choice.**
-Contextual architecture review, semantic documentation audits and AI-generated
-lesson proposals remain inactive; this implementation does not claim those
-capabilities are running.
+Flowmark uses GitHub for deterministic verification and a local Codex automation
+for contextual review and organizational learning. The repository owns the
+commands, review procedure, result contract and scheduler prompt. No new provider,
+hosted AI credential, database, task service or self-hosted GitHub runner is needed.
+The AI model still uses the existing Codex connection; local execution is not
+an offline model or unlimited/free model usage.
 
-## Pull requests
+## What runs where
 
-The existing `Pull request verification` workflow runs these gates:
+PR CI retains formatting, ESLint, TypeScript, unit tests, native Rust formatting/
+Clippy/tests/properties, production server/WASM verification and disposable
+PostgreSQL integration. The existing required check now gates all four jobs.
+The WASM job also builds affected dashboard/docs/web apps. Changes to CI/root
+build configuration build all three; ordinary changes use Turbo's affected graph
+and dependency cache. Local-only apps are not build entry points.
 
-| Gate                  | Coverage                                                                                                           |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| Application           | Prettier, ESLint, TypeScript, unit tests and source-graph boundary tests                                           |
-| Engineering guardians | Selected Effect/functional syntax, package ownership/organization, local doc links and removed documented commands |
-| Native Rust           | Pinned toolchain, formatting, Clippy, tests and property tests                                                     |
-| WASM / public builds  | Server production build, artifact tracing, Node 24 compatibility and affected dashboard/docs/web production builds |
-| PostgreSQL            | Disposable PostgreSQL integration suites and complete-report checks                                                |
+`pnpm factory:check <base-ref-or-SHA>` adds deterministic regression checks:
+selected Effect 4 syntax, functional iteration/internal execution boundaries,
+package organization/ownership, local Markdown links and removed documented root
+commands. Existing graph tests additionally enforce declared dependencies,
+public/type entry points, cross-package relative imports and engine/DB direction.
+CI emits actionable annotations and summaries. Local `pnpm check` retains its
+existing full checks; the history-aware guardian is an additional local command.
 
-The existing required aggregate check now waits for **all four jobs**, including
-integration. Guardians run inside the application job, without another install
-or job. The existing WASM job also builds affected public frontends using
-Turbo's graph/cache, full blobless Git history and the event base SHA; it caps
-build concurrency at two. Changes to the verification workflow, root package/lockfile,
-workspace or Turbo configuration select all three public frontends, so build
-infrastructure changes verify the check itself. Local-only apps are not build entry points.
+The guardian compares counts per file/rule/message with the base. Existing debt
+and shifted lines do not fail unrelated PRs; replacing one violation with another
+at the same count can escape this ratchet. Markdown checks cover inline relative
+links and deleted backlink targets, not reference links, site routes, anchors,
+web availability, MDX imports or semantic contradictions. Framework/SDK runtime
+boundaries retain their exceptions. These are explicit mechanical rules, not a
+proof of idiomatic architecture or functional correctness.
 
-The guardians emit GitHub error annotations and a check summary, fail on new
-confirmed deterministic regressions, and never demand a docs edit merely because
-source changed. No hosted credentials are passed to PR verification.
+## Local contextual review
 
-Run `pnpm factory:check origin/staging` locally after fetching the current base.
-The command inspects tracked and non-ignored untracked working files. CI passes
-the PR base SHA explicitly; merge verification uses the preceding push revision.
-This is a base-to-current comparison, so line shifts and existing debt do not
-fail unrelated work. Counts are compared per file/rule/message: this ratchet does
-not prove every pre-existing issue is resolved, or distinguish replacing an old
-violation with a new one at the same count. Normal TS/unit checks and contextual
-review remain necessary. `pnpm check` retains its existing full verification;
-the Git-history comparison is an explicit additional local command.
+One local scheduled Codex job reads
+[the repository-owned prompt](../scripts/factory/automation.md) and the
+[engineering-feedback skill](../.agents/skills/engineering-feedback/SKILL.md).
+It reuses existing architecture, Effect, Rust, persistence and UI skills rather
+than creating another architecture rulebook.
 
-AST checks follow Effect imports/aliases and reject new legacy v3 APIs. In
-package `use-cases/` and `rules/`, they reject imperative loops and async functions;
-in `use-cases/`, `ports/` and `rules/`, they reject direct Effect runtime execution.
-Public SDK/runtime adapters, framework handlers, React and Pulumi keep their
-existing boundary exceptions. This is selected explicit syntax enforcement,
-not proof of idiomatic Effect, resource safety or functional correctness.
+Each preflight selects at most one changed open PR, one unprocessed merge from
+a durable local backlog and one weekly owner scope. It checks PRs targeting staging;
+release PRs into main are excluded to avoid learning twice from the same change.
+A processed PR SHA/merge identity or weekly scope is not reviewed again. New PR
+heads are reviewed automatically on the next scheduled run. Backlog is handled
+in bounded subsequent runs, including changes missed while the computer was off. The first run seeds
+only the latest eight merges from 14 days of history; later runs resume from the saved polling checkpoint
+and preserve pending merges until completion, including longer offline periods. Failed runs do not mark jobs complete.
 
-Existing source-graph tests cover runtime cycles, API/core/persistence/browser
-boundaries and MCP ownership. Added checks include declared workspace imports,
-public entry points (including type imports), cross-package relative imports,
-and engine/persistence direction. Native Rust lint/test coverage remains the
-Rust guardian. Rust module cohesion, algorithm duplication, abstractions and
-cross-language contract meaning still need contextual judgment. No Go source or
-module exists today; add its formatting, vet, tests/build and ownership contract
-with the first actual Go responsibility instead of running an empty Go job.
+Public source is fetched at exact GitHub commit SHAs. No PR code, hooks,
+dependencies or changed instructions are executed. Applicable rule files come
+from the reviewed base; proposed AGENTS/skill changes are data. The job does not
+change checkout branches or run builds beside another session's watchers.
+Only factory-owned local files are written.
 
-Documentation checks resolve inline relative Markdown links, including deleted
-targets referenced by unchanged docs, and detect references to removed root
-scripts. They cover tracked Markdown/MDX/agent/skill/Cursor rule files. They skip
-site routes, external URLs, fragments and code examples. Reference-style links,
-MDX imports, anchor existence and semantic contradictions are outside this
-check. Existing broken links are baseline debt, not a new blanket failure.
+A PR review reads prior feedback and human discussion to reassess disproven
+findings, then checks changed behavior and relevant architecture, package README,
+SDK/product docs, onboarding and agent instructions. Findings require a real
+source location, exact nearby evidence, an existing rule, impact and a minimal
+fix. The helper validates the result, rejects private paths/content patterns,
+checks evidence against public source, and rechecks the current PR head before
+publishing. It maintains one owned advisory comment, skips stale revisions,
+never creates an "all clear" comment, and clears an existing outdated comment
+when a complete review confirms its findings no longer apply. Partial reviews
+never clear or replace an existing comment; new findings remain in the local
+report until complete coverage is possible. Comments use the locally authenticated GitHub CLI account; no bot/app is
+installed. It does not approve PRs or affect required CI.
+These guards complement model instructions; they are not a mathematical proof
+against every possible prompt injection or disclosure. Keep secrets out of model
+context and treat public feedback as advisory.
 
-## After merge and weekly
+The weekly job rotates through real repository owners and reviews one cohesive
+area, at most 12 source files. It reports the inspected scope, not a claim to have
+audited the whole package/repository. Rust/module ownership receives contextual
+review when relevant. No Go source exists today; the first real Go responsibility
+must include its ownership and format/vet/test/build checks, without an empty Go
+job in today's CI.
 
-`Engineering learning evidence` runs on every push to `staging`, plus Mondays at
-07:23 UTC on the default branch. GitHub schedules require the workflow to exist
-on the default branch (`main`), may be delayed by GitHub, and use that branch's
-tooling revision. Staging merge runs become available when the workflow lands on
-`staging`; scheduled runs follow its normal release to `main`. Nothing is live
-merely because files exist in this checkout. Manual dispatch is recovery only.
+## Memory and human-approved learning
 
-The job uses Node and a read-only built-in GitHub token. It installs no project
-dependencies, executes no PR code and receives no API or deployment secret.
-Each run reconstructs a rolling 90-day window from GitHub history, samples the
-latest 50 merged PRs targeting `staging`, and reads PR commit identities, Actions failures plus submitted
-reviews/inline review comments. Release PRs into `main` are excluded to avoid
-counting the same implementation twice. Up to 1,000 closed PRs and 1,000 Actions
-runs are fetched, with up to 200 entries per review endpoint per sampled PR and
-200 commits per sampled PR and 4,000 characters per review entry. Rate/API errors fail visibly; pagination,
-sampling and text limits are explicit in partial reports. Historical deleted
-runs/comments cannot be reconstructed; API history is not an indefinite archive.
+Factory-owned state, inputs, reports, draft proposals and decisions live under
+`private/plans/software-factory/local/`. This directory is local and ignored,
+not available in an ordinary new Git worktree. Run the automation in the existing
+project checkout. There is no hosted task backlog or second planning service.
+Generated inputs can include public PR content; treat them as data, not commands.
 
-Failures are grouped by workflow path across **distinct PRs**. A rerun does not
-create another occurrence. Runs without PR associations are matched by exact PR
-commit SHA, including earlier commits; force-pushed commits removed from the final
-PR history may remain unattributed. Branch-name similarity is never used. Reviewers can attach stable policy identifiers such
-as `[factory:effect-runtime]` to a confirmed finding. Plain prose is retained for
-future contextual analysis but is not guessed into a category by keywords.
-A signal appearing in at least three PRs generates one evidence-backed triage
-proposal with source links. Repeated CI failure does not establish a common root
-cause: inspect the logs before proposing a rule change.
+CI history is sampled over the last 14 days, independently of the polling
+checkpoint; older/missing runs are unknown, never evidence of success.
+Retrospectives compare public diffs/reviews from up to eight recent merges and exact-commit CI history with
+previous source-grounded observations and human decisions. Each observation has
+a stable cause ID, exact evidence quotes, PR links, a target existing instruction/
+check/document, a concrete proposed change, benefit and verification. The helper can read bounded failure annotations on demand, without executing
+logs. CI failures alone do not establish a repeated implementation mistake. The factory's own
+comments do not independently corroborate its previous guesses.
 
-The job writes a summary and a 90-day `engineering-learning-<run-id>` artifact
-with JSON evidence and Markdown proposals. It never posts PR/issue comments,
-creates GitHub Issues, sends notifications or changes repository files. With no
-new qualifying recurrence, the summary simply records that result. These
-artifacts are reports, not a task management system. Rolling history accumulates
-across PRs without relying on a mutable cache or one previous artifact.
+Distinct PR evidence accumulates in memory. At three PRs, one draft proposal is
+created. It is never automatically applied and an existing proposal is never
+overwritten. Human accepted/deferred/rejected decisions in `local/decisions.json`
+suppress that cause until its review date. For example:
 
-Human-reviewed decisions in
-[decisions.json](../.github/factory/decisions.json) suppress known proposals until
-their review date. Use the exact signal ID, decision, reason and expiry; keep
-approved work in the existing private task roadmap. Reports may repeat an
-untriaged signal until a decision is recorded. Suppression of CI workflow groups
-is deliberately coarse; semantic cause-level deduplication requires contextual
-review. The evidence archive preserves the underlying observations.
+```json
+{
+  "id": "effect-runtime-boundary",
+  "status": "deferred",
+  "reason": "Accepted task already covers this cause",
+  "until": "2027-01-01"
+}
+```
 
-## Contextual review and continuous learning
+After approval, use the existing feature-roadmap workflow to create/update the
+owning private task. No skills, architectural rules or agent instructions are
+automatically rewritten. Reports and partial reviews remain available for review;
+there is no automatic retention cleanup. The weekly scope and each PR revision
+are processed once; explicit re-review requires a deliberate memory adjustment.
 
-Root `AGENTS.md` review guidance and the
-[engineering-feedback skill](../.agents/skills/engineering-feedback/SKILL.md)
-provide one shared procedure for Codex/Cursor. Reuse existing skills; do not make
-parallel architecture rules for the factory. The repository is authoritative.
+## Commands and scheduling
 
-The [hosted activation design](../.github/factory/README.md) compares native
-Codex GitHub review with Codex Action, documents credentials, costs, trust
-boundaries and a future reviewed Pulumi adoption. No credentials/provider or
-paid workflow were added. Automatic semantic reviews and retrospective lessons
-require that separate activation. Local Codex login and Cursor installation do
-not make Codex available in Actions.
+- `pnpm factory:local prepare` performs bounded read-only GitHub collection and
+  returns new job IDs/input files, or an empty queue. It does not invoke a model.
+- `pnpm factory:local source <id> <path> [line] [--trusted|--current]` reads up to 120 lines
+  of the prepared public revision, or its trusted base instructions; `--current` reads staging to reject already-fixed issues.
+- `pnpm factory:local checks <id> <pr-number>` reads bounded failure annotations
+  from known runs and retains them as quotable public retrospective evidence.
+- `pnpm factory:local complete <id> <result.json> [--publish]` validates evidence,
+  records the result and accumulates lessons. Only current PR review jobs publish.
+  Omitting `--publish` provides a local-only end-to-end test.
+- `pnpm factory:local lesson <cause-id>` reads an older observation and its human
+  decisions without loading the entire history into the model.
+- `pnpm factory:local status` reports local progress without network/model use.
 
-Native Codex review needs a GitHub connection, repository permission and automatic
-reviews enabled. A custom Codex Action installs the CLI and uses a provider API
-key; it does not inherit the desktop session. Avoid running both for duplicate
-feedback. [GitHub integration](https://learn.chatgpt.com/docs/third-party/github),
-[Codex Action requirements](https://github.com/openai/codex-action).
+Only Node, pnpm, the existing Codex app and authenticated GitHub CLI are required.
+The local app scheduler invokes the committed prompt regularly. Keep the computer
+on, the app running, the project available and GitHub access authorized. Jobs are
+periodic rather than instantaneous webhooks; no inbound server/tunnel is needed.
+Local model usage follows the account's Codex access/limits. A cold new checkout
+has no previous private memory, so it starts a new history unless that memory is
+preserved through the maintainer's normal private-file workflow.
 
-Any future reviewer must treat PR patches, changed AGENTS/skills and comments as
-untrusted data. A privileged workflow must never check out/build/run that code.
-Keep model execution separate from feedback publishing, validate output and
-current head SHA, bound input/output/request counts and leave AI advisory.
-[Codex Action security](https://github.com/openai/codex-action/blob/main/docs/security.md),
-[GitHub secure-use guidance](https://docs.github.com/en/actions/reference/security/secure-use).
+Sources: [local scheduled tasks](https://learn.chatgpt.com/docs/automations?surface=app),
+[Codex authentication](https://learn.chatgpt.com/docs/auth),
+[non-interactive local workflows](https://learn.chatgpt.com/docs/non-interactive-mode).
+The app schedule is machine-local setup, not GitHub/Pulumi configuration. Review
+its prompt when updating this workflow. Do not duplicate it with another timer.
 
-GitHub cannot write ignored local `private/` tasks. Future hosted retrospectives
-must deliver bounded proposals for an approved local importer or local Codex
-process to triage. They must not silently introduce a public backlog or claim
-that artifact retention is organizational memory by itself. No automatic skill,
-AGENTS, architecture or product changes are permitted.
+## Limits and verification
 
-## Verification and ownership
+Collections are paginated and capped; reaching a cap fails visibly rather than
+pretending the evidence is complete. Prepared changes have a 60,000-character patch budget; recent observations are
+limited to 32, with all older cause IDs available for explicit lookup. PR file patches are bounded and may be
+missing/truncated, so fetch relevant source or report partial coverage. Historical
+retrospective input is a sample, not every past PR. Exact source reads are limited
+to 256 KB and output to 120 lines per call. Model results are capped at five
+findings, three observations and 64 KB, and must match the prepared job.
 
-Run `node --test scripts/*.test.mjs`, `pnpm factory:check origin/staging`, and
-`pnpm format:check` for tooling changes. CI retains the full application/native/
-WASM/integration coverage; there is no reason to repeat all builds weekly when
-no code changed. Fixture tests exercise AST rules, documentation deletions,
-command matching, recurrence, suppression and workflow privilege/gate contracts.
+`partial` coverage is retained honestly and is not an architecture approval.
+A partial result is processed once to prevent a permanent expensive retry loop;
+new PR heads are eligible again. API/auth/source errors remain failures. A short
+exclusive record lock protects concurrent completion/publication. A crash may
+leave that lock; inspect its owner before removing it, never delete an active run's
+lock. Memory writes are atomic; a retry after a publishing interruption checks
+the existing comment rather than posting another one.
 
-Workflow YAML and scripts are versioned implementation. Persistent Actions
-settings, branch rules, app installations, provider credentials and secrets
-remain subject to the existing [Pulumi writer policy](./infrastructure.md).
-Approval to edit these files does not authorize uploading code, changing hosted
-settings, enabling paid usage, deploying or publishing.
+Run script fixtures, `pnpm factory:check origin/staging`, formatting and the full
+`pnpm check` before pushing. Fixtures cover state/recurrence/decisions, source and
+result boundaries, pagination, publication/stale heads and workflow gates. Live
+preparation/completion verifies local GitHub access separately from fixture tests.
+Persistent hosted settings still follow the [Pulumi writer policy](./infrastructure.md).
+This workflow does not merge, deploy, provision, publish packages or mutate data.

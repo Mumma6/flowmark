@@ -184,7 +184,8 @@ Engineering feedback:
 - [Software Factory](./docs/software-factory.md) owns engineering automation;
   [engineering-feedback](./.agents/skills/engineering-feedback/SKILL.md) owns
   triage and improvement proposals. Existing architecture/language skills remain
-  the standards. Hosted AI is off until separately approved and activated.
+  the standards. Contextual review and learning run through the local Codex
+  factory; GitHub owns deterministic CI and receives only validated public feedback.
 - PR reviews apply the existing architecture-review lenses to changed owners and
   their boundaries. Inspect relevant architecture/package/SDK/product docs,
   onboarding, agents and skills when behavior changes. Report a documentation
@@ -195,6 +196,6 @@ Engineering feedback:
 - For recurring confirmed findings, an optional stable marker such as
   `[factory:effect-runtime]` lets learning reports group distinct PRs. Never
   invent recurrence from similar wording or assume a CI failure is a coding defect.
-- Retrospectives propose improvements for human review. Never automatically
+- Retrospectives retain source-grounded cross-PR observations and propose improvements for human review. Never automatically
   rewrite instructions, skills or architecture rules. Keep approved tasks in
   `private/`; never publish its paths/content or create another task tracker.

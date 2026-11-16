@@ -68,7 +68,7 @@ const summary =
         `- \`${file}:${line}\` **${rule}**: ${message}`,
     ),
     "",
-    "Covers selected Effect 4/functional syntax, package ownership, local Markdown links and removed documented root commands. Existing graph tests cover runtime direction/cycles. Contextual architecture, duplication and semantic documentation review require AI/human judgment; hosted AI is disabled.",
+    "Covers selected Effect 4/functional syntax, package ownership, local Markdown links and removed documented root commands. Existing graph tests cover runtime direction/cycles. Contextual architecture, duplication and semantic documentation review run through the separate local Codex factory; this check reports deterministic regressions only.",
   ].join("\n") + "\n"
 process.stdout.write(summary)
 if (process.env.GITHUB_STEP_SUMMARY) {

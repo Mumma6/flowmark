@@ -224,21 +224,13 @@ test("guardians run within application verification against the event base witho
   assert.doesNotMatch(application, /secrets\.|pull_request_target/)
 })
 
-test("learning uses trusted merge/schedule tooling, read-only evidence and no paid AI", () => {
-  const yaml = readWorkflow("engineering-health.yml")
-  assert.match(yaml, /branches: \[staging\]/)
-  assert.match(yaml, /schedule:/)
-  assert.match(yaml, /persist-credentials: false/)
-  assert.match(yaml, /actions: read/)
-  assert.match(yaml, /pull-requests: read/)
-  assert.match(yaml, /node scripts\/factory-learning.mjs/)
-  assert.match(yaml, /retention-days: 90/)
-  assert.match(yaml, /include-hidden-files: true/)
+test("AI learning stays local without another hosted workflow or provider key", () => {
+  const pkg = JSON.parse(readFileSync(join(repoRoot, "package.json"), "utf8"))
+  assert.equal(pkg.scripts["factory:local"], "node scripts/factory-local.mjs")
   assert.doesNotMatch(
-    yaml,
-    /pull_request_target|workflow_run|secrets\.|: write|pnpm install|codex-action|OPENAI/,
+    readWorkflow("pull-request.yml"),
+    /secrets\.|OPENAI|codex-action|factory:local/,
   )
-  assert.doesNotMatch(yaml, /refs\/pull|head.sha|ref:/)
 })
 
 test("public frontend build integrity reuses the WASM job and affected Turbo graph", () => {

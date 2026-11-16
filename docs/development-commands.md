@@ -155,9 +155,15 @@ resources, secrets, migration history or deployment activation are changed.
 
 - `pnpm factory:check origin/staging` checks new deterministic architecture and
   documentation regressions against the fetched base, including working files.
-- `pnpm factory:learning` collects a bounded cross-PR evidence report with
-  `GITHUB_REPOSITORY` and a read-only `GH_TOKEN`. Actions runs it automatically;
-  local use is optional and must keep credentials out of arguments/logs.
+- `pnpm factory:local prepare` selects new PR heads, recent merges and a weekly
+  review scope using the existing local GitHub login; no model is invoked.
+- `pnpm factory:local source <id> <path> [line] [--trusted]` reads prepared public
+  source/base instructions without checking out or executing PR code.
+- `pnpm factory:local checks <id> <pr-number>` reads known CI failure annotations
+  for retrospective evidence without executing logs.
+- `pnpm factory:local complete <id> <result.json> [--publish]` validates and records
+  local AI review/learning results; only current source-backed PR findings publish.
+- `pnpm factory:local status` shows local memory/report progress.
 
-See [Software Factory](./software-factory.md) for coverage, limits and the
-inactive hosted AI activation path.
+See [Software Factory](./software-factory.md) for the local Codex schedule,
+private memory, limits and human-approved proposal workflow.
