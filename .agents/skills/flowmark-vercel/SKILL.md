@@ -105,30 +105,27 @@ dependency changes still rebuild every consumer.
 ## Database-dependent deploys
 
 Follow [database rollout](../../../docs/migrations.md). The controlled merge
-pipeline owns staging/main rollout after explicit one-time activation: checks →
-migration/history verification → API deploy → remaining apps → readiness/commit/
-domain checks. Merge approval authorizes that branch's rollout; no duplicate
-permission ask. Each app disables competing Git deploy on staging/main only.
-Feature PR previews remain Git based. Do not merge the cutover until scoped
-secrets, project IDs, branch-restricted environments and activation flag are ready.
-Use standalone migration dispatch only for Preview or approved manual recovery.
-Never migrate in Vercel builds/requests or ordinary PR CI. No seed or publication.
-A green availability check does not prove authenticated business-flow correctness.
+pipeline owns `staging` and `main` after `FLOWMARK_RELEASE_PIPELINE_ENABLED=true`:
+checks, then migration and history verification, then API deploy, then the
+remaining apps, then readiness, commit, and domain checks. Merge approval
+authorizes that branch's rollout; no duplicate permission ask. Each app
+disables Git deploy on `staging` and `main` only. The Pulumi program sets
+`previewDeploymentsDisabled: true`; a feature PR may have no Vercel deployment.
+The live pause and the live pipeline flag are not readable from Git. Use
+standalone migration dispatch for the shared Preview database or an approved
+manual recovery. Never migrate in Vercel builds, requests, or ordinary PR CI.
+Do not seed Neon. Do not publish the SDK from this path. A green availability
+check does not prove authenticated business-flow correctness.
 
 ## Deploy
 
-After pipeline activation, a push to `main` migrates Production and deploys all
-four projects from that commit through Actions; Vercel does not independently
-Git-deploy main/staging. Until cutover, follow the documented activation/fallback
-procedure. Uncommitted
-files are not in a Git build. Prefer that path once the change is committed.
-
-Use a CLI production deploy only when the user has asked to deploy the
-working tree before it is pushed:
-
-```sh
-npx vercel@latest deploy --prod --yes --logs --project <project> --scope mumma6s-projects
-```
+A push to `main` starts **Migrate and deploy**. When the pipeline flag is
+`true`, that job migrates Production and deploys all four projects from that
+commit through the pinned Vercel CLI in Actions. Vercel does not Git-deploy
+`main` or `staging`. When the flag is not `true`, the job exits before
+migration and deployment. Uncommitted files are not in that build. Do not
+substitute `vercel deploy --prod` for the pipeline; it can publish an app
+ahead of the migration.
 
 `.vercelignore` is committed. While it exists, Vercel uses it instead of
 `.gitignore` for the upload. It must keep excluding `.env`, `.env.*`,

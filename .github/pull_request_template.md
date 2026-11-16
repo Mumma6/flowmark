@@ -28,4 +28,4 @@
 
 ### Deployment Notes
 
-<!-- Schema changes: record reviewed SHA, Preview verification, activated merge pipeline (migration before deploy) and separate Production release rollout. Link the approved workflow run when available. See docs/migrations.md. Merging to main deploys Production. Write "None" if none. -->
+<!-- Schema changes: record reviewed SHA, shared Preview database verification, and the activated merge pipeline (migration before deploy). A push to main starts Migrate and deploy; Production mutation runs only when FLOWMARK_RELEASE_PIPELINE_ENABLED=true. See docs/migrations.md. Write "None" if none. -->
