@@ -1,5 +1,13 @@
 "use client"
-import { Button, Input, NativeSelect } from "@flowmark/ui"
+import {
+  Button,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@flowmark/ui"
 import type { useBusinessOutcomes } from "./use-business-outcomes"
 import type { BusinessOutcomesProps } from "./business-outcomes-model"
 
@@ -70,39 +78,69 @@ export function OutcomeFilters({
           )}
           <label className="text-sm">
             Definition revision
-            <NativeSelect
+            <Select
               name="biRevision"
+              items={{
+                "": "Select revision",
+                ...Object.fromEntries(
+                  (declarations.data ?? []).map((item) => [
+                    item.revision,
+                    item.revision,
+                  ]),
+                ),
+              }}
               value={formRevision}
-              onChange={(event) => {
-                setRevision(event.target.value)
+              onValueChange={(next) => {
+                setRevision(next)
                 setFormPath("")
                 setFormNumerator("")
                 setFormDenominator("")
               }}
             >
-              <option value="">Select revision</option>
-              {declarations.data?.map((item) => (
-                <option key={item.revision}>{item.revision}</option>
-              ))}
-            </NativeSelect>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Select revision</SelectItem>
+                {declarations.data?.map((item) => (
+                  <SelectItem key={item.revision} value={item.revision}>
+                    {item.revision}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </label>
           <label className="text-sm">
             Reported field
-            <NativeSelect
+            <Select
               name="biPath"
+              items={{
+                "": "Select field",
+                ...Object.fromEntries(
+                  formFields.map((item) => [
+                    JSON.stringify(item.path),
+                    item.label,
+                  ]),
+                ),
+              }}
               value={selectedFormPath}
-              onChange={(event) => setFormPath(event.target.value)}
+              onValueChange={setFormPath}
             >
-              <option value="">Select field</option>
-              {formFields.map((item) => (
-                <option
-                  key={JSON.stringify(item.path)}
-                  value={JSON.stringify(item.path)}
-                >
-                  {item.label}
-                </option>
-              ))}
-            </NativeSelect>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Select field</SelectItem>
+                {formFields.map((item) => (
+                  <SelectItem
+                    key={JSON.stringify(item.path)}
+                    value={JSON.stringify(item.path)}
+                  >
+                    {item.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </label>
           {lockedWindow ? (
             <>
@@ -133,39 +171,67 @@ export function OutcomeFilters({
           )}
           <label className="text-sm">
             Ratio numerator
-            <NativeSelect
+            <Select
               name="biNumerator"
+              items={{
+                "": "No ratio",
+                ...Object.fromEntries(
+                  formCountFields.map((item) => [
+                    JSON.stringify(item.path),
+                    item.label,
+                  ]),
+                ),
+              }}
               value={formNumerator}
-              onChange={(event) => setFormNumerator(event.target.value)}
+              onValueChange={setFormNumerator}
             >
-              <option value="">No ratio</option>
-              {formCountFields.map((item) => (
-                <option
-                  key={JSON.stringify(item.path)}
-                  value={JSON.stringify(item.path)}
-                >
-                  {item.label}
-                </option>
-              ))}
-            </NativeSelect>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">No ratio</SelectItem>
+                {formCountFields.map((item) => (
+                  <SelectItem
+                    key={JSON.stringify(item.path)}
+                    value={JSON.stringify(item.path)}
+                  >
+                    {item.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </label>
           <label className="text-sm">
             Ratio denominator
-            <NativeSelect
+            <Select
               name="biDenominator"
+              items={{
+                "": "No ratio",
+                ...Object.fromEntries(
+                  formCountFields.map((item) => [
+                    JSON.stringify(item.path),
+                    item.label,
+                  ]),
+                ),
+              }}
               value={formDenominator}
-              onChange={(event) => setFormDenominator(event.target.value)}
+              onValueChange={setFormDenominator}
             >
-              <option value="">No ratio</option>
-              {formCountFields.map((item) => (
-                <option
-                  key={JSON.stringify(item.path)}
-                  value={JSON.stringify(item.path)}
-                >
-                  {item.label}
-                </option>
-              ))}
-            </NativeSelect>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">No ratio</SelectItem>
+                {formCountFields.map((item) => (
+                  <SelectItem
+                    key={JSON.stringify(item.path)}
+                    value={JSON.stringify(item.path)}
+                  >
+                    {item.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </label>
           <label className="text-sm">
             Release A
@@ -185,37 +251,66 @@ export function OutcomeFilters({
           </label>
           <label className="text-sm">
             Declared dimension
-            <NativeSelect
+            <Select
               name="biDimension"
+              items={{
+                "": "All dimensions",
+                ...Object.fromEntries(
+                  (dimensions.data ?? [])
+                    .filter((item) => item.role === "dimension")
+                    .map((item) => [item.key, item.key]),
+                ),
+              }}
               value={dimension}
-              onChange={(event) => {
-                setDimension(event.target.value)
+              onValueChange={(next) => {
+                setDimension(next)
                 setFormDimensionValue("")
               }}
             >
-              <option value="">All dimensions</option>
-              {dimensions.data
-                ?.filter((item) => item.role === "dimension")
-                .map((item) => (
-                  <option key={item.key} value={item.key}>
-                    {item.key}
-                  </option>
-                ))}
-            </NativeSelect>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">All dimensions</SelectItem>
+                {dimensions.data
+                  ?.filter((item) => item.role === "dimension")
+                  .map((item) => (
+                    <SelectItem key={item.key} value={item.key}>
+                      {item.key}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
           </label>
           <label className="text-sm">
             Dimension value
-            <NativeSelect
+            <Select
               name="biDimensionValue"
+              items={{
+                "": "Select value",
+                ...Object.fromEntries(
+                  (dimensionField?.role === "dimension"
+                    ? dimensionField.values
+                    : []
+                  ).map((value) => [value, value]),
+                ),
+              }}
               value={formDimensionValue}
-              onChange={(event) => setFormDimensionValue(event.target.value)}
+              onValueChange={setFormDimensionValue}
             >
-              <option value="">Select value</option>
-              {dimensionField?.role === "dimension" &&
-                dimensionField.values.map((value) => (
-                  <option key={value}>{value}</option>
-                ))}
-            </NativeSelect>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Select value</SelectItem>
+                {dimensionField?.role === "dimension" &&
+                  dimensionField.values.map((value) => (
+                    <SelectItem key={value} value={value}>
+                      {value}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
           </label>
           <Button
             type="submit"

@@ -1,6 +1,13 @@
 "use client"
 
-import { Button, NativeSelect, NativeSelectOption } from "@flowmark/ui"
+import {
+  Button,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@flowmark/ui"
 import { type PeriodDays } from "./period"
 
 export function PeriodControls({
@@ -47,18 +54,26 @@ export function PeriodControls({
         >
           Workflow
         </label>
-        <NativeSelect
-          id="period-workflow"
+        <Select
+          items={{
+            "": "All workflows",
+            ...Object.fromEntries(workflowNames.map((name) => [name, name])),
+          }}
           value={workflow ?? ""}
-          onChange={(event) => onChange(days, event.target.value || undefined)}
+          onValueChange={(next) => onChange(days, next || undefined)}
         >
-          <NativeSelectOption value="">All workflows</NativeSelectOption>
-          {workflowNames.map((name) => (
-            <NativeSelectOption key={name} value={name}>
-              {name}
-            </NativeSelectOption>
-          ))}
-        </NativeSelect>
+          <SelectTrigger id="period-workflow">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">All workflows</SelectItem>
+            {workflowNames.map((name) => (
+              <SelectItem key={name} value={name}>
+                {name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
     </div>
   )

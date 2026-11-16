@@ -8,7 +8,11 @@ import {
   CardHeader,
   CardTitle,
   Input,
-  NativeSelect,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@flowmark/ui"
 import { useId, useState } from "react"
 import { useProject } from "../../projects/project-context"
@@ -22,6 +26,11 @@ import {
   searchFieldOwnerLabel,
 } from "../definitions/metadata-source"
 import { Option } from "effect"
+
+const searchRoleItems = {
+  lookup: "Reference (exact match)",
+  dimension: "Category (allowed values)",
+}
 
 export function WorkflowSearchFields({ workflow }: { workflow: string }) {
   const { current } = useProject()
@@ -171,18 +180,25 @@ export function WorkflowSearchFields({ workflow }: { workflow: string }) {
             </label>
             <div className="grid gap-2 text-sm">
               <label htmlFor={roleId}>Search role</label>
-              <NativeSelect
-                id={roleId}
+              <Select
+                items={searchRoleItems}
                 value={role}
-                onChange={(event) =>
-                  setRole(
-                    event.target.value === "dimension" ? "dimension" : "lookup",
-                  )
+                onValueChange={(next) =>
+                  setRole(next === "dimension" ? "dimension" : "lookup")
                 }
               >
-                <option value="lookup">Reference (exact match)</option>
-                <option value="dimension">Category (allowed values)</option>
-              </NativeSelect>
+                <SelectTrigger id={roleId}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="lookup">
+                    Reference (exact match)
+                  </SelectItem>
+                  <SelectItem value="dimension">
+                    Category (allowed values)
+                  </SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             {role === "dimension" && (
               <label className="grid gap-2 text-sm">

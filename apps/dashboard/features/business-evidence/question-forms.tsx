@@ -7,6 +7,11 @@ import {
   CardTitle,
   Checkbox,
   Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@flowmark/ui"
 import { Array } from "effect"
 import { useState } from "react"
@@ -61,17 +66,30 @@ export function BusinessJourneyForm({ meaning, choose }: Props) {
           >
             <label className="grid gap-2 text-sm">
               Anchor workflow and reference key
-              <select
-                className="h-10 rounded-md border border-input bg-background px-3"
+              <Select
+                items={Object.fromEntries(
+                  choices.map((c) => [
+                    JSON.stringify(c),
+                    `${c.workflow} · ${c.key}`,
+                  ]),
+                )}
                 value={anchor}
-                onChange={(e) => setAnchor(e.target.value)}
+                onValueChange={setAnchor}
               >
-                {choices.map((c) => (
-                  <option key={JSON.stringify(c)} value={JSON.stringify(c)}>
-                    {c.workflow} · {c.key}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {choices.map((c) => (
+                    <SelectItem
+                      key={JSON.stringify(c)}
+                      value={JSON.stringify(c)}
+                    >
+                      {c.workflow} · {c.key}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </label>
             <label className="grid gap-2 text-sm">
               Reference value
@@ -202,24 +220,38 @@ export function BusinessInsightForm({ meaning, choose }: Props) {
           >
             <label className="grid gap-2 text-sm">
               Published result field
-              <select
-                className="h-10 rounded-md border border-input bg-background px-3"
+              <Select
+                items={Object.fromEntries(
+                  fields.map((f) => [
+                    JSON.stringify([f.workflow, f.revision, f.field.path]),
+                    `${f.workflow} · ${f.field.label} · ${f.revision}`,
+                  ]),
+                )}
                 value={selection}
-                onChange={(e) => setSelection(e.target.value)}
+                onValueChange={setSelection}
               >
-                {fields.map((f) => (
-                  <option
-                    key={JSON.stringify([f.workflow, f.revision, f.field.path])}
-                    value={JSON.stringify([
-                      f.workflow,
-                      f.revision,
-                      f.field.path,
-                    ])}
-                  >
-                    {f.workflow} · {f.field.label} · {f.revision}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {fields.map((f) => (
+                    <SelectItem
+                      key={JSON.stringify([
+                        f.workflow,
+                        f.revision,
+                        f.field.path,
+                      ])}
+                      value={JSON.stringify([
+                        f.workflow,
+                        f.revision,
+                        f.field.path,
+                      ])}
+                    >
+                      {f.workflow} · {f.field.label} · {f.revision}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </label>
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="grid gap-2 text-sm">
