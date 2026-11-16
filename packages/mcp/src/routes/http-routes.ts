@@ -5,11 +5,7 @@ import { serveMcpProtectedResourceMetadata } from "../http/protected-resource-me
 import { AGENT_ACCESS_EXECUTION_BOUNDS } from "@flowmark/auth/agent-access"
 import { consumeAdmission } from "../runtime/admission.js"
 import { McpAuthGateway } from "../ports/mcp-auth-gateway.js"
-import {
-  agentAccessDisabledResponse,
-  resolveAgentAccessRuntime,
-  type ResolvedAgentAccessRuntime,
-} from "../runtime/agent-access-runtime.js"
+import { resolveAgentAccessRuntime } from "../runtime/agent-access-runtime.js"
 import { McpHostConfiguration } from "../ports/mcp-host-configuration.js"
 
 export type McpRouteRequirements = McpAuthGateway | McpHostConfiguration
@@ -30,6 +26,12 @@ const discoveryUnavailable = () =>
     { status: 503, headers: { "cache-control": "no-store" } },
   )
 
+const configurationUnavailable = () =>
+  Response.json(
+    { message: "MCP is not configured for this deployment." },
+    { status: 503, headers: { "cache-control": "no-store" } },
+  )
+
 const methodNotAllowed = () =>
   Response.json(
     { message: "Only POST is supported for MCP over HTTP." },
@@ -39,21 +41,12 @@ const methodNotAllowed = () =>
 const resolvePostHandler = Effect.fn("McpRoutes.resolvePostHandler")(
   function* () {
     const runtime = yield* resolveAgentAccessRuntime()
-    return yield* Option.match(runtime, {
-      onNone: () =>
-        Effect.succeed(() => Promise.resolve(agentAccessDisabledResponse())),
-      onSome: (resolved) =>
-        Effect.gen(function* () {
-          const gateway = yield* McpAuthGateway
-          const authorizationServerMetadata =
-            yield* gateway.readAuthorizationServerMetadata(
-              resolved.issuerOrigin,
-            )
-          return createFlowmarkMcpPostHandler({
-            runtime: resolved,
-            authorizationServerMetadata,
-          })
-        }),
+    const gateway = yield* McpAuthGateway
+    const authorizationServerMetadata =
+      yield* gateway.readAuthorizationServerMetadata(runtime.issuerOrigin)
+    return createFlowmarkMcpPostHandler({
+      runtime,
+      authorizationServerMetadata,
     })
   },
 )
@@ -63,17 +56,28 @@ export const createMcpHttpRoutes = (run: RunMcpEffect) => {
     if (!cachedPost) {
       const resolved = await run(
         resolvePostHandler().pipe(
-          Effect.map(Option.some),
+          Effect.map((handler) => ({ handler, unavailable: "none" as const })),
           Effect.catchTags({
-            AgentAccessRuntimeError: () => Effect.succeed(Option.none()),
-            McpDiscoveryError: () => Effect.succeed(Option.none()),
+            AgentAccessRuntimeError: () =>
+              Effect.succeed({
+                handler: undefined,
+                unavailable: "configuration" as const,
+              }),
+            McpDiscoveryError: () =>
+              Effect.succeed({
+                handler: undefined,
+                unavailable: "discovery" as const,
+              }),
           }),
         ),
       )
-      if (Option.isNone(resolved)) {
+      if (resolved.unavailable === "configuration") {
+        return configurationUnavailable()
+      }
+      if (resolved.unavailable === "discovery" || !resolved.handler) {
         return discoveryUnavailable()
       }
-      cachedPost = resolved.value
+      cachedPost = resolved.handler
     }
     if (request.method !== "POST") {
       return methodNotAllowed()
@@ -81,65 +85,64 @@ export const createMcpHttpRoutes = (run: RunMcpEffect) => {
     return cachedPost(request)
   }
 
-  const readRuntime = () =>
-    resolveAgentAccessRuntime().pipe(
-      Effect.catchTag("AgentAccessRuntimeError", () =>
-        Effect.succeed(Option.none<ResolvedAgentAccessRuntime>()),
+  const handleMcpProtectedResourceMetadata = async (request: Request) => {
+    const runtime = await run(
+      resolveAgentAccessRuntime().pipe(
+        Effect.map(Option.some),
+        Effect.catchTag("AgentAccessRuntimeError", () =>
+          Effect.succeed(Option.none()),
+        ),
       ),
     )
-
-  const handleMcpProtectedResourceMetadata = async (request: Request) => {
-    const runtime = await run(readRuntime())
-    return Option.match(runtime, {
-      onNone: () => agentAccessDisabledResponse(),
-      onSome: async (resolved) => {
-        const admitted = await Effect.runPromise(
-          consumeAdmission(
-            "service:discovery",
-            AGENT_ACCESS_EXECUTION_BOUNDS.discoveryPerServicePerMinute,
-          ).pipe(
-            Effect.provide(ApiLive),
-            Effect.as(true),
-            Effect.catchCause(() => Effect.succeed(false)),
-          ),
-          { signal: request.signal },
+    if (Option.isNone(runtime)) {
+      return configurationUnavailable()
+    }
+    const resolved = runtime.value
+    const admitted = await Effect.runPromise(
+      consumeAdmission(
+        "service:discovery",
+        AGENT_ACCESS_EXECUTION_BOUNDS.discoveryPerServicePerMinute,
+      ).pipe(
+        Effect.provide(ApiLive),
+        Effect.as(true),
+        Effect.catchCause(() => Effect.succeed(false)),
+      ),
+      { signal: request.signal },
+    )
+    if (!admitted) {
+      return Response.json(
+        { message: "Discovery admission is unavailable or exhausted." },
+        {
+          status: 503,
+          headers: { "cache-control": "no-store", "retry-after": "60" },
+        },
+      )
+    }
+    const gateway = await run(
+      Effect.gen(function* () {
+        const auth = yield* McpAuthGateway
+        const metadata = yield* auth.readAuthorizationServerMetadata(
+          resolved.issuerOrigin,
         )
-        if (!admitted) {
-          return Response.json(
-            { message: "Discovery admission is unavailable or exhausted." },
-            {
-              status: 503,
-              headers: { "cache-control": "no-store", "retry-after": "60" },
-            },
-          )
-        }
-        const gateway = await run(
-          Effect.gen(function* () {
-            const auth = yield* McpAuthGateway
-            const metadata = yield* auth.readAuthorizationServerMetadata(
-              resolved.issuerOrigin,
-            )
-            return Option.some({ metadata })
-          }).pipe(
-            Effect.catchTag("McpDiscoveryError", () =>
-              Effect.succeed(Option.none()),
-            ),
-          ),
-        )
-        return Option.match(gateway, {
-          onNone: () => discoveryUnavailable(),
-          onSome: (discovered) =>
-            serveMcpProtectedResourceMetadata(
-              request,
-              resolved,
-              discovered.metadata,
-            ) ??
-            Response.json(
-              { message: "Protected resource metadata is not available here." },
-              { status: 404, headers: { "cache-control": "no-store" } },
-            ),
-        })
-      },
+        return Option.some({ metadata })
+      }).pipe(
+        Effect.catchTag("McpDiscoveryError", () =>
+          Effect.succeed(Option.none()),
+        ),
+      ),
+    )
+    return Option.match(gateway, {
+      onNone: () => discoveryUnavailable(),
+      onSome: (discovered) =>
+        serveMcpProtectedResourceMetadata(
+          request,
+          resolved,
+          discovered.metadata,
+        ) ??
+        Response.json(
+          { message: "Protected resource metadata is not available here." },
+          { status: 404, headers: { "cache-control": "no-store" } },
+        ),
     })
   }
 

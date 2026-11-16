@@ -74,8 +74,8 @@ it("separates a missing grant, a rejected read, and an unavailable service", () 
     interpretAgentReadVerification({ ...base, clientSupported: false })._tag,
   ).toBe("UnsupportedClient")
   expect(
-    interpretAgentReadVerification({ ...base, deployment: "disabled" })._tag,
-  ).toBe("Disabled")
+    interpretAgentReadVerification({ ...base, deployment: "unavailable" })._tag,
+  ).toBe("Unavailable")
 })
 
 it("does not promote a multi-project grant timestamp into project-specific verification", () => {

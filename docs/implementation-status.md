@@ -53,8 +53,9 @@ and [release](./releases.md) workflows. Preserve separate approval for hosted
 operations and every npm publish.
 
 Remaining records include email plan/quota/cost and bounce/complaint monitoring;
-operator/privacy disclosures and rights/incident/backup procedures; delegated
-client activation/smoke/rollback evidence; and capture/cleanup operating cadence.
+operator/privacy disclosures and rights/incident/backup procedures; a hosted
+Cursor sign-in smoke after this server revision is deployed; and capture/cleanup
+operating cadence. MCP itself is no longer behind an environment flag.
 These are explicit follow-ups, not additional Product 2.0 feature requirements.
 
 ## Product 2.0 boundary

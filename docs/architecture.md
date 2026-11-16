@@ -282,7 +282,8 @@ The server's `adapters/mcp/mcp-host-configuration.ts` composes origin configurat
 without acquiring auth. `agent-access-runtime.ts` uses that adapter directly;
 `mcp-layers.ts` combines it with the auth-backed discovery gateway. This keeps
 auth initialization independent of the gateway that later calls auth. Origin
-validation remains lazy, and disabled agent access does not require auth setup.
+validation remains lazy. Missing origins fail the MCP routes with 503 and do
+not require a separate auth setup to import the route modules.
 
 `@flowmark/auth` is private and unpublished. Server auth routes call its
 factory. The dashboard proxy signs client identity through

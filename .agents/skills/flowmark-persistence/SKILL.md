@@ -146,10 +146,13 @@ one feature PR. Do not edit applied migrations or bypass Drizzle history.
 - Implementation: inspect SQL, apply locally and pass relevant local/CI tests.
   Use a disposable loopback DB for test writes; include upgrade coverage when
   existing rows/defaults/constraints/backfills are affected.
-- Feature merge: verify Preview and confirm pipeline activation. Migrate before
-  dependent app deployment. Once the merge pipeline is activated, feature merge
-  triggers checks → Staging migration → deploy → verify; no manual pre-merge
-  migration is required.
+- Feature merge: verify the shared Preview database and confirm pipeline
+  activation. Automatic feature deployments are paused, so Preview verification
+  is the approved migration and whatever deployment actually exists. Once the
+  merge pipeline is activated, a push to `staging` runs checks, then Staging
+  migration, then deploy, then verify. No manual pre-merge Staging migration
+  is required. If the pipeline flag is not `true`, that push fails before
+  mutation.
 - Release: approved merge into main triggers checks → Production migration →
   deploy → verify after deliberate pipeline activation. Production is not a feature implementation/merge gate.
 - Track implementation and per-environment rollout separately. Do not keep an

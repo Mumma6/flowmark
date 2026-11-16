@@ -12,7 +12,11 @@ import {
   CardHeader,
   CardTitle,
   Input,
-  NativeSelect,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Table,
   TableBody,
   TableCell,
@@ -28,6 +32,16 @@ import { RunCompareChart } from "../../../reporting/insight-charts"
 import { formatDuration, formatTimestamp } from "../../../shared/format"
 import { getRunResultHighlights } from "../../models/run-presentation"
 import { durationDelta } from "../../models/run-state"
+
+const peerEnvironmentItems = {
+  same: "Same environment",
+  all: "All environments (explicit broadening)",
+}
+
+const peerReleaseItems = {
+  all: "All releases",
+  same: "Same release (missing matches missing)",
+}
 import { Array as EffectArray } from "effect"
 import { runInvestigationPath } from "../investigation-navigation"
 
@@ -113,27 +127,39 @@ export function RunComparisonPanel({
           </label>
           <label className="text-sm">
             Peer environment
-            <NativeSelect
+            <Select
               name="peerEnvironment"
+              items={peerEnvironmentItems}
               defaultValue={params.get("peerEnvironment") ?? "same"}
             >
-              <option value="same">Same environment</option>
-              <option value="all">
-                All environments (explicit broadening)
-              </option>
-            </NativeSelect>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="same">Same environment</SelectItem>
+                <SelectItem value="all">
+                  All environments (explicit broadening)
+                </SelectItem>
+              </SelectContent>
+            </Select>
           </label>
           <label className="text-sm">
             Peer release
-            <NativeSelect
+            <Select
               name="peerRelease"
+              items={peerReleaseItems}
               defaultValue={params.get("peerRelease") ?? "all"}
             >
-              <option value="all">All releases</option>
-              <option value="same">
-                Same release (missing matches missing)
-              </option>
-            </NativeSelect>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All releases</SelectItem>
+                <SelectItem value="same">
+                  Same release (missing matches missing)
+                </SelectItem>
+              </SelectContent>
+            </Select>
           </label>
           <label className="text-sm">
             Declared dimension key

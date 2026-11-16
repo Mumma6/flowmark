@@ -58,7 +58,7 @@ test("the existing required status rejects failed, cancelled or skipped language
     yaml.indexOf("  check:"),
     yaml.indexOf("  application:"),
   )
-  assert.match(gate, /needs: \[application, rust, wasm\]/)
+  assert.match(gate, /needs: \[application, rust, wasm, integration\]/)
   assert.match(gate, /if: always\(\)/)
   const script = gate.split("run: |\n")[1]
   assert.ok(script)
@@ -71,7 +71,7 @@ test("the existing required status rejects failed, cancelled or skipped language
       ),
     ]).status
   assert.equal(run(null, "success"), 0)
-  for (const job of ["application", "rust", "wasm"]) {
+  for (const job of ["application", "rust", "wasm", "integration"]) {
     for (const status of ["failure", "cancelled", "skipped"]) {
       assert.equal(run(job, status), 1, `${job}: ${status}`)
     }
@@ -207,4 +207,82 @@ test("merge rollout verifies, migrates and deploys in order with no parallel Git
     readFileSync(join(repoRoot, ".vercelignore"), "utf8"),
     /^private$/m,
   )
+})
+
+test("guardians run within application verification against the event base without credentials", () => {
+  const yaml = readWorkflow("pull-request.yml")
+  const application = yaml.slice(
+    yaml.indexOf("  application:"),
+    yaml.indexOf("  rust:"),
+  )
+  assert.match(
+    application,
+    /github.event.pull_request.base.sha \|\| github.event.before \|\| github.sha/,
+  )
+  assert.match(application, /git fetch --no-tags --depth=1 origin "\$BASE_SHA"/)
+  assert.match(application, /pnpm factory:check "\$BASE_SHA"/)
+  assert.doesNotMatch(application, /secrets\.|pull_request_target/)
+})
+
+test("AI learning stays local without another hosted workflow or provider key", () => {
+  const pkg = JSON.parse(readFileSync(join(repoRoot, "package.json"), "utf8"))
+  assert.equal(pkg.scripts["factory:local"], "node scripts/factory-local.mjs")
+  assert.doesNotMatch(
+    readWorkflow("pull-request.yml"),
+    /secrets\.|OPENAI|codex-action|factory:local/,
+  )
+})
+
+test("public frontend build integrity reuses the WASM job and affected Turbo graph", () => {
+  const yaml = readWorkflow("pull-request.yml")
+  const wasm = yaml.slice(
+    yaml.indexOf("  wasm:"),
+    yaml.indexOf("  integration:"),
+  )
+  assert.match(wasm, /fetch-depth: 0/)
+  assert.match(wasm, /filter: blob:none/)
+  assert.match(
+    wasm,
+    /TURBO_SCM_BASE: \$\{\{ github.event.pull_request.base.sha/,
+  )
+  assert.match(wasm, /factory_build_selection=\(--affected\)/)
+  assert.match(
+    wasm,
+    /pnpm exec turbo run build "\$\{factory_build_selection\[@\]\}"/,
+  )
+  assert.match(
+    wasm,
+    /--filter=@flowmark\/dashboard --filter=@flowmark\/docs --filter=@flowmark\/web/,
+  )
+  assert.match(wasm, /--concurrency=2/)
+  assert.doesNotMatch(wasm, /--filter=@flowmark\/(dev-harness|internal-docs)/)
+})
+
+test("build configuration changes select every public frontend; ordinary changes use affected selection", () => {
+  const yaml = readWorkflow("pull-request.yml")
+  const step = yaml.slice(
+    yaml.indexOf("      - name: Build affected public frontends"),
+    yaml.indexOf("  integration:"),
+  )
+  const script = step.split("run: |\n")[1]
+  assert.ok(script)
+  const selection = (status) =>
+    spawnSync(
+      "bash",
+      [
+        "-e",
+        "-c",
+        `git() { return ${status}; }; pnpm() { printf '%s\\n' "$*"; }; ${script}`,
+      ],
+      { encoding: "utf8" },
+    )
+  const unchanged = selection(0)
+  assert.equal(unchanged.status, 0)
+  assert.match(unchanged.stdout, /build --affected/)
+  const changed = selection(1)
+  assert.equal(changed.status, 0)
+  assert.doesNotMatch(changed.stdout, /--affected/)
+  assert.match(changed.stdout, /--filter=@flowmark\/dashboard/)
+  assert.equal(selection(128).status, 0)
+  assert.doesNotMatch(selection(128).stdout, /--affected/)
 })

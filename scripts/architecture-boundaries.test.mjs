@@ -87,6 +87,21 @@ test("source graph follows runtime barrels, mixed imports, require and dynamic i
     ),
     ["./side", "./mixed", "./barrel", "./lazy", "./native"],
   )
+  assert.deepEqual(
+    runtimeImports(
+      "fixture.ts",
+      `import type { A } from './a'; type B = import('./b').B; import X = require('./x'); import type Y = require('./y')`,
+      { includeTypes: true },
+    ),
+    ["./a", "./b", "./x", "./y"],
+  )
+  assert.deepEqual(
+    runtimeImports(
+      "fixture.ts",
+      `import X = require('./x'); import type Y = require('./y')`,
+    ),
+    ["./x"],
+  )
   const fixture = sourceGraph(
     new Map([
       ["a", `export * from 'b'`],
@@ -190,6 +205,77 @@ test("MCP reaches persistence only through API capabilities", () => {
           .filter((specifier) => specifier.startsWith("@flowmark/db"))
           .map((specifier) => `${file} → ${specifier}`),
       ),
+    [],
+  )
+})
+
+test("workspace imports use declared dependencies and published entry points, including types", () => {
+  const violations = [...sources].flatMap(([file, text]) => {
+    const owner = workspaces.find(({ dir }) => file.startsWith(`${dir}/`))
+    return runtimeImports(file, text, { includeTypes: true }).flatMap(
+      (specifier) => {
+        const target = workspaces.find(
+          ({ name }) => specifier === name || specifier.startsWith(`${name}/`),
+        )
+        if (!target) {
+          if (specifier.startsWith(".")) {
+            const destination = posix.normalize(
+              posix.join(dirname(file), specifier),
+            )
+            const crossed = workspaces.find(
+              ({ dir }) =>
+                destination.startsWith(`${dir}/`) && dir !== owner.dir,
+            )
+            return crossed
+              ? [`${file}: cross-workspace relative import ${specifier}`]
+              : []
+          }
+          return []
+        }
+        const entry =
+          specifier === target.name
+            ? "."
+            : `.${specifier.slice(target.name.length)}`
+        const declared =
+          target === owner ||
+          Object.hasOwn(
+            {
+              ...owner.dependencies,
+              ...owner.devDependencies,
+              ...owner.peerDependencies,
+            },
+            target.name,
+          )
+        return [
+          ...(!declared
+            ? [`${file}: undeclared dependency ${target.name}`]
+            : []),
+          ...(!target.exports?.[entry]
+            ? [`${file}: private package entry ${specifier}`]
+            : []),
+        ]
+      },
+    )
+  })
+  assert.deepEqual(violations, [])
+})
+
+test("engine adapter and persistence keep computation ownership separate", () => {
+  assert.deepEqual(
+    checkReachability(
+      files.filter((file) => file.startsWith("packages/engine/")),
+      (file) =>
+        /^(apps\/|packages\/(api|auth|db|mcp|sdk)\/|external:(node:(fs|net|http)|next|drizzle|postgres))/.test(
+          file,
+        ),
+    ),
+    [],
+  )
+  assert.deepEqual(
+    checkReachability(
+      files.filter((file) => file.startsWith("packages/db/")),
+      (file) => file.startsWith("packages/engine/"),
+    ),
     [],
   )
 })

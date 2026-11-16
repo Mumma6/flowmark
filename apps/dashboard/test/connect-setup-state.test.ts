@@ -5,6 +5,7 @@ import {
 } from "../features/connect/setup/connect-setup-state"
 import {
   instrumentationGuideUrl,
+  manualWorkflowSnippet,
   serverEnvironmentSnippet,
   setupRecoveryCopy,
 } from "../features/connect/setup/setup-instructions"
@@ -45,4 +46,13 @@ it("builds manual setup snippets and recovery copy for the validated origin", ()
   expect(recovery.wrongProject).toContain("Production app")
   expect(recovery.wrongOrigin).toContain(origin)
   expect(recovery.copyFailure).toContain("clipboard")
+  const snippet = manualWorkflowSnippet(origin)
+  expect(snippet).toContain('outcome: "partial"')
+  expect(snippet).toContain("result: imported")
+  expect(snippet).toContain("return imported")
+  expect(snippet).toContain("throw error")
+  expect(snippet).toContain("await flowmark.flush()")
+  expect(snippet).not.toContain("shutdown()")
+  expect(snippet).toContain("FLOWMARK_API_KEY=<write key>")
+  expect(snippet).not.toMatch(/fm_[A-Za-z0-9]+/)
 })

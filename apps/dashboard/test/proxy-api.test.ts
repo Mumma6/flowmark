@@ -318,6 +318,55 @@ it("forwards an authorization request to the API origin and returns the provider
   expect(response.headers.get("cache-control")).toBe("no-store")
 })
 
+it("turns a provider JSON redirect into a browser redirect", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi
+      .fn()
+      .mockResolvedValue(
+        Response.json(
+          { redirect: true, url: "/connect/agent/consent?request=opaque" },
+          { headers: { "set-cookie": "session=synthetic; HttpOnly" } },
+        ),
+      ),
+  )
+  const response = await proxyIssuerPath(
+    new Request("https://dashboard.example/oauth2/authorize?client_id=cursor"),
+    "/oauth2/authorize",
+  )
+  expect(response.status).toBe(302)
+  expect(response.headers.get("location")).toBe(
+    "https://dashboard.example/connect/agent/consent?request=opaque",
+  )
+  expect(response.headers.get("set-cookie")).toContain("session=synthetic")
+  expect(await response.text()).toBe("")
+})
+
+it("refuses a provider JSON redirect that leaves the registered callback", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn().mockResolvedValue(
+      Response.json({
+        redirect: true,
+        url: "https://untrusted.example/callback?code=synthetic-preview-token",
+      }),
+    ),
+  )
+  const log = vi.spyOn(console, "error").mockImplementation(() => {})
+  const response = await proxyIssuerPath(
+    new Request(
+      "https://dashboard.example/oauth2/authorize?redirect_uri=http%3A%2F%2F127.0.0.1%3A4312%2Fcallback",
+    ),
+    "/oauth2/authorize",
+  )
+  expect(response.status).toBe(502)
+  expect(response.headers.has("location")).toBe(false)
+  expect(JSON.stringify(log.mock.calls)).not.toContain(
+    "synthetic-preview-token",
+  )
+  expect(await response.text()).not.toContain("synthetic-preview-token")
+})
+
 it("preserves token status, media type and protocol headers", async () => {
   vi.stubGlobal(
     "fetch",

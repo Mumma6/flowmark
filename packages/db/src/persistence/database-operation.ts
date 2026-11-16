@@ -8,6 +8,7 @@ export enum DatabaseOperation {
   AccountEmailChange = "account-email-change",
   DataLifecycle = "data-lifecycle",
   ProjectReadFence = "project-read-fence",
+  EnsureCursorMcpClient = "ensure-cursor-mcp-client",
   GetAgentConsentClient = "get-agent-consent-client",
   BindAgentConsentCode = "bind-agent-consent-code",
   McpAdmission = "mcp-admission",

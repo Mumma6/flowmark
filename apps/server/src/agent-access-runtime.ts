@@ -3,7 +3,6 @@ import { Effect } from "effect"
 import { McpHostConfigurationLive } from "./adapters/mcp/mcp-host-configuration"
 
 export {
-  agentAccessDisabledResponse,
   agentAccessRequiredScopes,
   AgentAccessRuntimeError,
   type ResolvedAgentAccessRuntime,

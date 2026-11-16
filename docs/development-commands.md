@@ -35,7 +35,7 @@ embedded WASM bytes and isolated traced bindings. These commands do not deploy.
 | `pnpm typecheck`                                                               | Workspace type checks with dependency builds.                                                                                                                                             |
 | `pnpm format` / `pnpm format:check`                                            | Prettier write/check; different intentional effects.                                                                                                                                      |
 | `pnpm check:typescript`                                                        | Application format, lint, typecheck and unit tests; excludes native Rust checks and artifact verification.                                                                                |
-| `pnpm check`                                                                   | Complete local equivalent of CI application, Rust and WASM gates. Stop dev watchers first.                                                                                                |
+| `pnpm check`                                                                   | Local application, native Rust and server/WASM verification. CI additionally checks guardian regressions, affected public builds and PostgreSQL integration. Stop dev watchers first.     |
 | `pnpm db:migrate`                                                              | Shared guarded migration entrypoint for hosted wrappers and the managed integration runner. Daily local work uses the explicitly local command above.                                     |
 | `pnpm db:migrate:preview` / `pnpm db:migrate:staging` / `pnpm db:migrate:prod` | Distinct hosted approval/branch/host guards, history preflight, migration and history verification. See [rollout](./migrations.md); never folded into local setup.                        |
 | `pnpm neon:env-pull`                                                           | Pulls ignored operator connection files. Use `-- --preview` or `-- --staging` for those branches; default is Production. Does not provision resources or rewrite app env.                 |
@@ -50,17 +50,29 @@ stop nor test cleanup may delete volumes. Unit tests can run without Docker.
 
 The private workstation fixture uses the existing application use cases and
 guarded database connections. See [the operational guide](../packages/demo/README.md)
-for initial builds, secure account setup, ownership checks and exact approvals.
+for the local build, account setup, and ownership checks.
 It never runs as part of application startup or deployment.
 
-| Command                                      | Behavior                                                                                                                                                                                                            |
-| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `pnpm demo:plan --reference <UTC-timestamp>` | Deterministic 30-day plan without database access.                                                                                                                                                                  |
-| `pnpm demo:setup --env local\|staging ...`   | Normal auth registration/sign-in and owned project provisioning; password via secure stdin. Hosted setup requires separate approval/confirmation.                                                                   |
-| `pnpm demo:status --env local\|staging`      | Verifies target, key, ownership and manifest; reports dataset completeness.                                                                                                                                         |
-| `pnpm demo:seed --env local\|staging`        | Idempotent authenticated fixture ingestion. Hosted seed requires `--confirm-staging-seed` after approval.                                                                                                           |
-| `pnpm demo:reset --env local\|staging`       | Deletes only manifest-verified demo runs/events and cascading projections; retains accounts, projects, keys, settings and unrelated telemetry. Requires the environment-specific reset confirmation after approval. |
-| `pnpm demo:reseed --env local\|staging`      | Verified reset and seed in one transaction; hosted use requires both reset and seed approval/confirmations.                                                                                                         |
+| Command                                      | Behavior                                                                                                                                                                               |
+| -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm demo:plan --reference <UTC-timestamp>` | Deterministic 30-day plan without database access.                                                                                                                                     |
+| `pnpm demo:setup --env local ...`            | Local auth registration/sign-in and owned project provisioning on the checkout Compose database. Password via secure stdin.                                                            |
+| `pnpm demo:status --env local`               | Verifies the local target, key, ownership and manifest; reports dataset completeness.                                                                                                  |
+| `pnpm demo:seed --env local`                 | Idempotent authenticated fixture ingestion into the local database.                                                                                                                    |
+| `pnpm demo:reset --env local`                | Deletes only manifest-verified local demo runs/events and cascading projections. Requires `--confirm-local-reset`. Retains accounts, projects, keys, settings and unrelated telemetry. |
+| `pnpm demo:reseed --env local`               | Verified local reset and seed in one transaction. Requires `--confirm-local-reset`.                                                                                                    |
+
+Supported demo seeding is `--env local` against loopback, after `pnpm db:setup`.
+`pnpm db:seed` provisions local fixtures and the local account; it does not
+migrate and it refuses a hosted target. Do not seed, set up, reset, or reseed
+Neon preview, staging, or production.
+
+The demo CLI still accepts `--env staging` and requires
+`--confirm-staging-setup`, `--confirm-staging-seed`, or
+`--confirm-staging-reset` before those writes. Any other `--env` value,
+including `production` and `preview`, is rejected. Those staging flags are
+not an approved operating procedure. Do not run them. The integration suite
+covers the same lifecycle against disposable loopback Postgres.
 
 The disposable integration runner also executes Meridian provisioning,
 ingestion, search/analytics, seed/reset/reseed and preservation coverage.
@@ -150,3 +162,20 @@ Staging/Production migrate-and-deploy, and separately approved SDK publication.
 CI uses its declared disposable Actions service through `--ci-service`; this
 is an isolated CI adapter, not an alternative contributor setup. No hosted
 resources, secrets, migration history or deployment activation are changed.
+
+## Engineering feedback
+
+- `pnpm factory:check origin/staging` checks new deterministic architecture and
+  documentation regressions against the fetched base, including working files.
+- `pnpm factory:local prepare` selects new PR heads, recent merges and a weekly
+  review scope using the existing local GitHub login; no model is invoked.
+- `pnpm factory:local source <id> <path> [line] [--trusted]` reads prepared public
+  source/base instructions without checking out or executing PR code.
+- `pnpm factory:local checks <id> <pr-number>` reads known CI failure annotations
+  for retrospective evidence without executing logs.
+- `pnpm factory:local complete <id> <result.json> [--publish]` validates and records
+  local AI review/learning results; only current source-backed PR findings publish.
+- `pnpm factory:local status` shows local memory/report progress.
+
+See [Software Factory](./software-factory.md) for the local Codex schedule,
+private memory, limits and human-approved proposal workflow.

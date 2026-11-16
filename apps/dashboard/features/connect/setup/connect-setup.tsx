@@ -18,6 +18,8 @@ import { DataState, PageHeading } from "../../shared/dashboard-components"
 import { projectListState } from "../../projects/project-list-state"
 import type { ConnectSetupStage } from "./connect-setup-state"
 import { setupRecoveryCopy } from "./setup-instructions"
+import { connectPageDescription } from "../access/agent-access-guidance"
+import { useAgentAccessDeployment } from "../../platform/runtime-config"
 import { AgentAccessGuide } from "./agent-access-guide"
 import { SetupPathTabs } from "./setup-path-tabs"
 import { useConnectSetup } from "./use-connect-setup"
@@ -153,6 +155,7 @@ export function ConnectSetupPanel({ compact = false }: { compact?: boolean }) {
 }
 
 export function ConnectPage() {
+  const deployment = useAgentAccessDeployment()
   const { current, projects, pending, error, retry } = useProject()
   const list = projectListState({
     pending,
@@ -163,7 +166,7 @@ export function ConnectPage() {
     <div className="grid min-w-0 gap-6">
       <PageHeading
         title="Connect"
-        description="Instrument your application, then read evidence with the agent you already use. Ingestion keys, copied setup instructions, manual handoff, and any future remote read access stay separate — none of them imply OAuth, MCP, or a verified agent connection by themselves."
+        description={connectPageDescription(deployment.kind)}
       />
       {list === "unavailable" || list === "pending" ? (
         <DataState

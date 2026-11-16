@@ -19,7 +19,7 @@ export function InvestigationContextHandoffCard({
   title = "Preview investigation context",
   description = handoff.mode === "connected"
     ? "Copy the exact tool arguments for an agent that already has read access. This text does not grant access or change the selection."
-    : "Factual summary for your agent with deliberate redaction. Copy only when you intend to paste it elsewhere. Remote MCP tools are not available — use this text and source links, not unimplemented tool calls.",
+    : "Factual summary for your agent with deliberate redaction. Copy only when you intend to paste it elsewhere. Use this text and source links until Connect confirms an MCP endpoint.",
   compact = false,
 }: {
   handoff: SafeRunContextHandoff

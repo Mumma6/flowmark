@@ -34,6 +34,8 @@ creating a PR is not permission to merge or deploy.
    red. For changes that truly cannot use the full monorepo check, run the
    narrowest equivalent and say so in **Verification** — default is always
    `pnpm check`.
+   Also run `pnpm factory:check origin/staging` against the fetched base for
+   deterministic architecture and documentation regressions.
 7. For schema changes, follow [database rollout](../../../docs/migrations.md).
    Include generated migrations with the stack change. Separate implementation,
    feature merge readiness (Preview plus activated ordered rollout), and release
@@ -43,9 +45,10 @@ creating a PR is not permission to merge or deploy.
    and any manual deployment steps.
 8. Before reporting a PR ready to merge, inspect all verification jobs:
    `TypeScript format, lint, typecheck, and test`, `Rust format, Clippy, tests and properties`,
-   `WASM production compatibility (Node 24)` and `PostgreSQL integration tests`.
+   `WASM and affected public app builds (Node 24)` and `PostgreSQL integration tests`.
    The existing required `Format, lint, typecheck, and test` aggregate must pass;
-   it propagates failures from the application, Rust and WASM jobs.
+   it propagates failures from the application, Rust, WASM/public-build and
+   PostgreSQL integration jobs.
    Local `pnpm check` alone does not run the database suites without
    `TEST_DATABASE_URL`. Report pending or failed integration checks explicitly;
    use the [development guide](../../../docs/development.md#database-integration-tests)
@@ -147,9 +150,11 @@ Run `pnpm check` after the diff is final and before any push that precedes
 For changes that affect deployed apps (`apps/web`, `apps/dashboard`,
 `apps/server`, `apps/docs`, etc.):
 
-- Inspect relevant **Vercel Preview** deployments when available; verify
-  behavior, not only green builds.
-- Use the isolated Neon **`preview`** branch for Preview DB testing only.
+- Inspect a Vercel deployment when one exists. The Pulumi program pauses
+  automatic feature-branch deployments, so a feature PR may have none. Verify
+  behavior when a deployment is available; record the absence when it is not.
+- Use the shared Neon **`preview`** branch for approved Preview database
+  verification only. It is one branch for every PR, not a database per PR.
 - Never run migrations or destructive database operations without explicit
   approval (see git-safety rule).
 - Label verification as automated vs manual.

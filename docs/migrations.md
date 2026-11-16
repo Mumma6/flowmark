@@ -41,9 +41,11 @@ SDK publishing and destructive maintenance are not included in that approval.
    using disposable loopback PostgreSQL. PR checks have no hosted secrets.
    Add upgrade coverage with representative synthetic data when rows, defaults,
    constraints or backfills are affected; an empty-DB pass is not upgrade proof.
-2. **Verify Preview before feature merge.** Preview remains separate from Staging.
-   Apply approved PR migrations there using the standalone migration workflow or
-   guarded workstation wrapper, and verify the PR deployment. Shared Preview
+2. **Verify the shared Preview database before feature merge.** Preview remains
+   a separate Neon branch from Staging. Apply approved PR migrations there with
+   the standalone migration workflow or the guarded workstation wrapper. Automatic
+   feature-branch deployments are paused in the Pulumi program, so a pull request
+   may have no Vercel deployment to exercise; say so in the PR. Shared Preview
    schema changes must be coordinated. Per-PR Neon branches are future separate
    provisioning/lifecycle work, not created by this PR.
 3. **Merge to Staging.** The `push` workflow reuses both PR verification jobs on
@@ -74,15 +76,38 @@ or rewriting migration history part of ordinary migration work.
 
 ## Controlled merge pipeline
 
-`.github/workflows/deploy-release.yml` runs on pushes to `staging` and `main`.
-It is opt-in through `FLOWMARK_RELEASE_PIPELINE_ENABLED=true`. Until setup is
-complete it fails before any mutation. All four app `vercel.json` files disable
-independent Vercel Git deployments for these **two** branches. Feature-branch
-PR previews stay enabled. The migration and deployment jobs share a concurrency
-lock with standalone migrations; running rollouts are never cancelled by a newer
-push. A failed check/migration prevents deployment.
+`.github/workflows/deploy-release.yml` runs on every push to `staging` and
+`main`. It does not run on feature-branch pulls. The reusable verification
+workflow runs first and receives no hosted credentials. The rollout job then
+requires the GitHub variable `FLOWMARK_RELEASE_PIPELINE_ENABLED` to equal
+`true`. That variable is not stored in the repository, so this page cannot say
+whether a given hosted environment currently has it set.
 
-The pipeline checks out the push's exact SHA, sets its branch metadata in a
+When the variable is `true`, rollout checks out that push SHA, preflights the
+four existing Vercel projects, migrates the branch database, verifies Drizzle
+history, deploys the API, checks API health for that SHA, then deploys
+dashboard, docs, and web. A failed check or migration stops the job before
+deployment. A later deploy failure does not roll back SQL or earlier project
+promotions.
+
+When the variable is missing or any other value, the rollout step exits before
+checkout, migration, or deployment. All four `vercel.json` files set
+`git.deploymentEnabled` to false for `staging` and `main`, so Vercel does not
+Git-deploy those branches either. The deployment already serving stays in
+place. Finish the documented activation and rerun the failed workflow. Do not
+deploy those branches with a separate Vercel Git integration, Deploy Hook, or
+workstation `vercel deploy`.
+
+`infrastructure/vercel-production.ts` sets `previewDeploymentsDisabled: true`
+on the four projects. Feature-branch names are still allowed by `vercel.json`;
+that does not re-enable automatic previews while the project setting is in
+effect. Live Vercel was not queried for this description. The migration and
+deployment jobs share a concurrency lock with standalone migrations. The
+workflow sets `cancel-in-progress: false` on that lock. GitHub's interaction
+with the reusable verification workflow's own concurrency group is not encoded
+beyond those two files.
+
+On an enabled rollout, the job checks out the push's exact SHA, sets its branch metadata in a
 throwaway checkout, builds database dependencies without hosted credentials,
 checks existing project IDs/team/root directories, then uses the guarded
 migrations and verifier. No secrets or pulled app env files are uploaded as
@@ -162,11 +187,15 @@ gh workflow run database-migrate.yml --ref main \
   -f target=preview -f sha=<reviewed-40-character-commit-sha>
 ```
 
-The routine Staging/Production path is the merge pipeline above. Standalone
-Staging/Production migrations are an explicitly approved recovery/manual fallback;
-use `production` only for a reviewed release candidate reachable from Staging. Review the SQL **and** candidate code,
-since the job executes that commit. Dispatch from `main`, where the workflow is
-reviewed; do not dispatch a modified feature-branch workflow. A changed candidate
+The routine Staging and Production path is the push pipeline above. Standalone
+Staging and Production migrations are the recovery and manual fallback. Review
+the SQL and the candidate code, because the job checks out and runs that
+commit. Dispatch with `--ref main`. The preflight job is conditional on
+`refs/heads/main`; a dispatch from another ref skips preflight and therefore
+skips migration. For `target=production`, the workflow also requires
+`git merge-base --is-ancestor` of the SHA against `origin/staging`. A release
+merge commit that exists only on `main` fails that check. The push pipeline
+does not apply it and migrates `github.sha` on `main`. A changed candidate
 requires renewed affected verification and approval.
 
 The job performs protected-environment preflight, checks out the exact commit,

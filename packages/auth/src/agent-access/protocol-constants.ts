@@ -11,6 +11,19 @@ export const AGENT_ACCESS_PROTOCOL_CONTRACT = {
 export const AGENT_ACCESS_OAUTH_SCOPE_READ = "flowmark:read" as const
 export const AGENT_ACCESS_OAUTH_SCOPE_OFFLINE = "offline_access" as const
 
+/**
+ * First-party public client for Cursor's static OAuth configuration.
+ * Dynamic registration stays closed. No client secret.
+ */
+export const CURSOR_MCP_PUBLIC_CLIENT = {
+  clientId: "flowmark-cursor",
+  redirectUris: [
+    "http://localhost:8787/callback",
+    "https://www.cursor.com/agents/mcp/oauth/callback",
+  ],
+  scopes: ["openid", "profile", "email", "offline_access", "flowmark:read"],
+} as const
+
 export const AGENT_ACCESS_ACCESS_TOKEN_TTL_SECONDS = 10 * 60
 export const AGENT_ACCESS_REFRESH_FAMILY_MAX_DAYS = 30
 

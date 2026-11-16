@@ -20,8 +20,12 @@ import { ArrowUpRight, Check } from "lucide-react"
 import Link from "next/link"
 import { CopyButton } from "../../shared/dashboard-components"
 import { publicConfig } from "../../platform/config-public"
-import type { AgentClientGuide } from "../access/agent-access-guidance"
+import {
+  agentHandoffPresentation,
+  type AgentClientGuide,
+} from "../access/agent-access-guidance"
 import type { RemoteAgentAccessDeployment } from "../access/agent-access-capability"
+import { cursorMcpClientId } from "../access/cursor-mcp-client"
 import { useAgentAccess } from "../access/use-agent-access"
 import { useAgentReadVerification } from "../access/use-agent-read-verification"
 import { AgentConnections } from "../connections/agent-connections"
@@ -85,24 +89,6 @@ function RemoteAccessStatus({
 }: {
   deployment: RemoteAgentAccessDeployment
 }) {
-  if (deployment.kind === "enabled") {
-    return (
-      <Alert>
-        <AlertTitle>Remote read endpoint</AlertTitle>
-        <AlertDescription className="grid gap-2">
-          <p>
-            MCP endpoint for this environment:{" "}
-            <code className="text-foreground">{deployment.mcpUrl}</code>
-          </p>
-          <p className="text-sm">
-            Register it in your client and approve projects in Studio. The
-            endpoint alone is not authorization. Vendor client compatibility is
-            not established; the tested path is the reference HTTP client.
-          </p>
-        </AlertDescription>
-      </Alert>
-    )
-  }
   if (deployment.kind === "unavailable") {
     return (
       <Alert>
@@ -113,13 +99,17 @@ function RemoteAccessStatus({
   }
   return (
     <Alert>
-      <AlertTitle>{deployment.headline}</AlertTitle>
-      <AlertDescription className="grid gap-3 text-sm leading-6">
-        <p>{deployment.detail}</p>
+      <AlertTitle>Remote read endpoint</AlertTitle>
+      <AlertDescription className="grid gap-2">
         <p>
-          There is no connection list, consent flow, or verified remote state on
-          this page yet. Manual Studio navigation and copy actions below are the
-          supported path.
+          MCP endpoint for this environment:{" "}
+          <code className="text-foreground">{deployment.mcpUrl}</code>
+        </p>
+        <p className="text-sm">
+          For Cursor, use static OAuth client id{" "}
+          <code className="text-foreground">{cursorMcpClientId}</code> and
+          approve projects in Studio. Do not add a client secret. The endpoint
+          alone is not authorization.
         </p>
       </AlertDescription>
     </Alert>
@@ -150,9 +140,6 @@ function verificationCopy(verification: AgentReadVerification) {
   }
   if (verification._tag === "Copied") {
     return "Configuration was copied on this page. That does not grant access."
-  }
-  if (verification._tag === "Disabled") {
-    return "Remote read access is not enabled. Copied Studio text stays a manual handoff."
   }
   return "Access has not been checked yet."
 }
@@ -249,6 +236,7 @@ export function AgentAccessGuide() {
     transient.handoffIntroCopied ||
     Object.values(transient.exampleQuestionsCopied).some(Boolean) ||
     Object.values(transient.clientGuidanceCopied).some(Boolean)
+  const handoff = agentHandoffPresentation(deployment.kind)
 
   return (
     <section
@@ -279,16 +267,13 @@ export function AgentAccessGuide() {
       {deployment.kind === "enabled" ? <AgentConnections /> : null}
       <Card>
         <CardHeader>
-          <CardTitle>Manual evidence handoff</CardTitle>
-          <CardDescription>
-            Open Studio, copy factual run summaries, then paste them into your
-            agent. No OAuth or model call happens from this page.
-          </CardDescription>
+          <CardTitle>{handoff.title}</CardTitle>
+          <CardDescription>{handoff.description}</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4">
           <div className="flex flex-wrap gap-2">
             <Button asChild variant="outline" size="sm">
-              <Link href="/explore">Open Explore</Link>
+              <Link href="/">Open Explore</Link>
             </Button>
             <Button asChild variant="outline" size="sm">
               <Link href="/runs">Open Runs</Link>
@@ -323,10 +308,7 @@ export function AgentAccessGuide() {
       <Card>
         <CardHeader>
           <CardTitle>Example questions</CardTitle>
-          <CardDescription>
-            Starter prompts for manual paste. Replace placeholders with run
-            links and UTC windows from Studio when you have them.
-          </CardDescription>
+          <CardDescription>{handoff.questions}</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-5">
           {examples.map((example) => (
@@ -350,11 +332,7 @@ export function AgentAccessGuide() {
       <Card>
         <CardHeader>
           <CardTitle>Choose your client</CardTitle>
-          <CardDescription>
-            {deployment.kind === "enabled"
-              ? "Use the endpoint for this environment. Copying it does not write your client configuration or grant access."
-              : "Four manual paths without remote MCP. Copy guidance into the surface you already use; nothing here registers OAuth or stores a connection."}
-          </CardDescription>
+          <CardDescription>{handoff.clients}</CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="codex">

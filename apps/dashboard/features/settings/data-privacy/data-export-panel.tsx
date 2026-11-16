@@ -4,8 +4,11 @@ import {
   Button,
   Checkbox,
   Input,
-  NativeSelect,
-  NativeSelectOption,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@flowmark/ui"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { Effect } from "effect"
@@ -122,11 +125,17 @@ export function DataExportPanel({
       >
         <label className="grid gap-2 text-sm">
           <span>Export scope</span>
-          <NativeSelect
-            value={scope}
+          <Select
             disabled={running}
-            onChange={(event) => {
-              setScope(event.target.value)
+            items={{
+              account: "My account personal data",
+              ...(owner && projectId
+                ? { project: "Selected project data (owner only)" }
+                : {}),
+            }}
+            value={scope}
+            onValueChange={(next) => {
+              setScope(next)
               setFinished(false)
               setOperation(null)
               setCursor(null)
@@ -135,15 +144,18 @@ export function DataExportPanel({
               setMessage(null)
             }}
           >
-            <NativeSelectOption value="account">
-              My account personal data
-            </NativeSelectOption>
-            {owner && projectId && (
-              <NativeSelectOption value="project">
-                Selected project data (owner only)
-              </NativeSelectOption>
-            )}
-          </NativeSelect>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="account">My account personal data</SelectItem>
+              {owner && projectId && (
+                <SelectItem value="project">
+                  Selected project data (owner only)
+                </SelectItem>
+              )}
+            </SelectContent>
+          </Select>
         </label>
         <p className="text-sm text-muted-foreground">
           {scope === "account"

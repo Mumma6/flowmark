@@ -24,7 +24,6 @@ export {
   type RunMcpEffect,
 } from "./routes/http-routes.js"
 export {
-  agentAccessDisabledResponse,
   agentAccessRequiredScopes,
   resolveAgentAccessRuntime,
   type ResolvedAgentAccessRuntime,

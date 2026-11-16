@@ -16,10 +16,14 @@ vi.mock("@flowmark/db", async (original) => ({
   ...(await original<typeof import("@flowmark/db")>()),
   createDatabase: vi.fn(() => ({ db: {} })),
 }))
-vi.mock("@flowmark/db/persistence", async (original) => ({
-  ...(await original<typeof import("@flowmark/db/persistence")>()),
-  revokeAllAgentAccessConnectionsForUser: vi.fn(),
-}))
+vi.mock("@flowmark/db/persistence", async (original) => {
+  const { Effect } = await import("effect")
+  return {
+    ...(await original<typeof import("@flowmark/db/persistence")>()),
+    revokeAllAgentAccessConnectionsForUser: vi.fn(),
+    ensureCursorMcpClient: vi.fn(() => Effect.void),
+  }
+})
 
 afterEach(() => {
   resetAuthCacheForTests()
@@ -33,7 +37,6 @@ it("propagates failed delegated revocation and logs only safe operation context"
   vi.stubEnv("BETTER_AUTH_URL", "http://127.0.0.1:3901")
   vi.stubEnv("FLOWMARK_DASHBOARD_ORIGIN", "http://127.0.0.1:3901")
   vi.stubEnv("BETTER_AUTH_SECRET", "synthetic-auth-secret-for-revocation-test")
-  vi.stubEnv("FLOWMARK_AGENT_ACCESS_ENABLED", "false")
   vi.stubEnv("RESEND_API_KEY", "")
   vi.stubEnv("FLOWMARK_EMAIL_FROM", "")
   vi.stubEnv("FLOWMARK_EMAIL_REPLY_TO", "")

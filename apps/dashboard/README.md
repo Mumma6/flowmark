@@ -8,7 +8,10 @@ configuration.
 Private live investigations, authenticated sharing and business-only evidence
 captures are implemented. Capture admission and physical cleanup have separate
 operational gates. Connect supports setup, consent and own-connection revocation;
-copying instructions alone never establishes a connection. Studio does not render
+copying instructions alone never establishes a connection. Connect shows the
+MCP endpoint when this deployment returns protected-resource metadata, including
+the Cursor public client id. A failed metadata check keeps the manual handoff
+and does not describe MCP as a future feature. Studio does not render
 the landing's synthetic examples. See [implementation status](../../docs/implementation-status.md).
 
 Anonymous visitors are redirected to sign in. Registration creates the account;
@@ -60,7 +63,7 @@ features (`auth`, `platform`, `runs` and `reporting`).
   result; Outcome, Timeline, Context, Compare and Related runs tabs. Timeline
   offers a waterfall and paginated event table. Peer sample size and recorded
   links remain explicit; raw data/exports are available without dominating.
-- **Connect (`/connect`):** agent and manual SDK setup with separate copied, configured, and observed states, instrumentation guide links, and recovery for lost keys or wrong project/origin.
+- **Connect (`/connect`):** agent and manual SDK setup with separate copied, configured, and observed states, instrumentation guide links, and recovery for lost keys or wrong project/origin. Explore links use `/`. Remote MCP copy follows the deployment probe: the endpoint and Cursor public client when metadata matches, and a manual handoff when metadata could not be confirmed.
 - **Settings:** project creation/rename, write/browser key management, Connect setup help
   and account controls. Project switching stays in the navigation.
 - **Search:** the navbar command palette opens with ⌘K / Ctrl+K. Pages and

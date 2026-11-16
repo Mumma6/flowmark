@@ -56,7 +56,7 @@ class AgentAccessDiscoveryError extends Data.TaggedError(
 }> {}
 
 export const FLOWMARK_AGENT_ACCESS_PROVIDER = {
-  enabledByDefault: false,
+  enabledByDefault: true,
   composedWith: ["jwt()", "mcp()", "cimd()"],
   pluginIdsWhenEnabled: ["jwt", "oauth-provider", "cimd"],
   dynamicClientRegistration: false,
@@ -148,6 +148,16 @@ export const alignAgentAccessWithBaseUrl = Effect.fn("AgentAccess.alignIssuer")(
   },
 )
 
+/** Shared JWKS rows across parallel files that each rotate `BETTER_AUTH_SECRET`. */
+export const disposableIntegrationDatabase = (
+  env: NodeJS.ProcessEnv = process.env,
+): boolean =>
+  Match.value(env.FLOWMARK_TEST_DATABASE_SOURCE).pipe(
+    Match.when("compose", () => true),
+    Match.when("ci-service", () => true),
+    Match.orElse(() => false),
+  )
+
 const scopes = [
   "openid",
   "profile",
@@ -165,6 +175,10 @@ export const flowmarkAgentAccessPlugins = (input: {
       issuer: input.issuerOrigin,
       expirationTime: AGENT_ACCESS_ACCESS_TOKEN_TTL_SECONDS,
     },
+    // Hosted keys stay encrypted. Only the disposable integration sources skip it.
+    ...(disposableIntegrationDatabase()
+      ? { jwks: { disablePrivateKeyEncryption: true } }
+      : {}),
   }),
   mcp({
     storeTokens: { hash: hashOAuthToken },

@@ -1,18 +1,17 @@
 import { describe, expect, it, vi } from "vitest"
-import { Effect, Option } from "effect"
+import { Effect } from "effect"
 import { createFlowmarkMcpPostHandler } from "../src/http/post-handler.js"
 import { resolveAgentAccessRuntime } from "../src/runtime/agent-access-runtime.js"
 import { McpHostConfiguration } from "../src/ports/mcp-host-configuration.js"
 
 const runtime = Effect.runSync(
   resolveAgentAccessRuntime({
-    FLOWMARK_AGENT_ACCESS_ENABLED: "true",
     FLOWMARK_API_URL: "http://127.0.0.1:3902",
   }).pipe(
     Effect.provideService(McpHostConfiguration, {
       readAuthIssuerOrigin: Effect.succeed("http://127.0.0.1:3901"),
     }),
-    Effect.map(Option.getOrThrow),
+    Effect.map((runtime) => runtime),
   ),
 )
 const handle = createFlowmarkMcpPostHandler({
