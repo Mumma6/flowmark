@@ -18,7 +18,7 @@ const disabled: RemoteAgentAccessDeployment = {
   kind: "disabled",
   headline: "Remote agent read access is not enabled here",
   detail:
-    "This deployment does not offer a working MCP endpoint, OAuth consent, connection list, or verified remote read state yet. Use Studio below and copy factual handoff text into the agent you already use.",
+    "Remote MCP is not enabled for this deployment. There is no working MCP endpoint, OAuth consent, connection list, or verified remote read state. Use Studio and copy factual handoff text into the agent you already use.",
 }
 
 const unavailable: RemoteAgentAccessDeployment = {

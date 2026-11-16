@@ -20,14 +20,33 @@ ${serverEnvironmentSnippet(apiOrigin)}
 
 import { createFlowmark } from "@flowmarkdev/node"
 
-export const flowmark = createFlowmark()
+const flowmark = createFlowmark()
 
-const flow = flowmark.workflow("example.process")
-flow.step("started")
-await flow.operation("work", async () => {
-  // existing application work
-})
-flow.done({ result: { ok: true } })`
+export async function importCustomers(batchId: string) {
+  const flow = flowmark.workflow("customer.import", {
+    properties: { batchId },
+  })
+  try {
+    const imported = await flow.operation("import-batch", async () => {
+      // existing application work
+      return { imported: 988, skipped: 12 }
+    })
+    flow.done({
+      outcome: "partial",
+      result: imported,
+    })
+    return imported
+  } catch (error) {
+    flow.fail({ code: "IMPORT_FAILED" })
+    throw error
+  } finally {
+    try {
+      await flowmark.flush()
+    } catch (error) {
+      console.error("Flowmark delivery failed", error)
+    }
+  }
+}`
 }
 
 export function setupRecoveryCopy(
