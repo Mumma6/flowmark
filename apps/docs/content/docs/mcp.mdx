@@ -13,10 +13,8 @@ connection reads permitted evidence.
 Sign in to Studio and open **Connect**. Use the remote endpoint displayed for
 that environment. Do not guess an endpoint from another deployment.
 
-- **Not enabled:** use Studio and its manual evidence handoff. A copied prompt
-  does not enable MCP or authorize an agent.
-- **Could not be confirmed:** retry the deployment check. This is different from
-  a disabled deployment or a successful connection.
+- **Not confirmed:** retry the deployment check. This is a missing metadata
+  response, not a disabled product mode.
 - **Endpoint available:** continue with a client that supports Flowmark's OAuth
   and Streamable HTTP contract. An endpoint alone is not authorization.
 
@@ -27,8 +25,12 @@ uses a different credential and API.
 ## Connect and investigate
 
 1. Add the displayed MCP endpoint using your client's remote-server configuration.
-   Client registration and callback support must match the deployment; there is
-   no universal configuration snippet that certifies every client/version.
+   Cursor uses Streamable HTTP and static OAuth. Set `auth.CLIENT_ID` to
+   `flowmark-cursor` and request `openid`, `offline_access`, and `flowmark:read`.
+   Do not set a client secret. Dynamic client registration stays off. Cursor
+   desktop uses `http://localhost:8787/callback`. Cursor on the web uses
+   `https://www.cursor.com/agents/mcp/oauth/callback`. Custom-scheme callbacks
+   are rejected.
 2. Follow the client's browser authorization flow. Check the Flowmark account,
    requested access and selected projects before granting consent.
 3. Call `get_connection` to inspect the grant's available project scope. Then

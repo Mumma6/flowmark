@@ -24,10 +24,13 @@ a proven disposable target. Do not configure a development database as
 `TEST_DATABASE_URL`. See
 [database integration tests](../../docs/development.md#database-integration-tests).
 
-When `FLOWMARK_AGENT_ACCESS_ENABLED=true` and the API, issuer, and dashboard
-origins resolve, this app mounts `POST /mcp` and the protected-resource
-metadata routes from `@flowmark/mcp`. That package owns the six read-only
-investigation tools. Disabled agent access returns 404 for those routes. The
-router is `src/adapters/trpc/router.ts`. Customer-facing endpoint notes are in the
+`apps/server` always mounts `POST /mcp` and the protected-resource metadata
+routes from `@flowmark/mcp`. Access is OAuth plus an explicit project grant.
+There is no deployment flag. A missing issuer or API origin returns 503 and
+no evidence. The API origin is `FLOWMARK_API_URL` when set, otherwise the
+reference Production or Staging API origin for that issuer, otherwise
+`http://localhost:3003` outside hosted environments.
+
+The router is `src/adapters/trpc/router.ts`. Customer-facing endpoint notes are in the
 [API guide](https://docs.flowmark.dev/docs/api). The reference deployment is
 `https://api.flowmark.dev`.

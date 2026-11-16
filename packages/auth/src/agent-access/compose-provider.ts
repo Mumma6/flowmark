@@ -56,7 +56,7 @@ class AgentAccessDiscoveryError extends Data.TaggedError(
 }> {}
 
 export const FLOWMARK_AGENT_ACCESS_PROVIDER = {
-  enabledByDefault: false,
+  enabledByDefault: true,
   composedWith: ["jwt()", "mcp()", "cimd()"],
   pluginIdsWhenEnabled: ["jwt", "oauth-provider", "cimd"],
   dynamicClientRegistration: false,
@@ -165,6 +165,11 @@ export const flowmarkAgentAccessPlugins = (input: {
       issuer: input.issuerOrigin,
       expirationTime: AGENT_ACCESS_ACCESS_TOKEN_TTL_SECONDS,
     },
+    // Disposable integration databases share one JWKS table across files that
+    // rotate BETTER_AUTH_SECRET. Leave production keys encrypted.
+    ...(process.env.FLOWMARK_TEST_DATABASE_SOURCE === "compose"
+      ? { jwks: { disablePrivateKeyEncryption: true } }
+      : {}),
   }),
   mcp({
     storeTokens: { hash: hashOAuthToken },

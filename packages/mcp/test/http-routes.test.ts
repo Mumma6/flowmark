@@ -15,7 +15,6 @@ afterEach(() => {
 })
 
 it("retries transient discovery failures instead of caching an outage", async () => {
-  vi.stubEnv("FLOWMARK_AGENT_ACCESS_ENABLED", "true")
   vi.stubEnv("FLOWMARK_API_URL", "http://127.0.0.1:3902")
   const discover = vi
     .fn()

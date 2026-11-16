@@ -15,7 +15,6 @@ export type AgentReadVerification =
   | { readonly _tag: "WrongProject" }
   | { readonly _tag: "UnsupportedClient" }
   | { readonly _tag: "Unavailable" }
-  | { readonly _tag: "Disabled" }
 
 const sameProject = (left: string, right: string) =>
   left.toLowerCase() === right.toLowerCase()
@@ -33,7 +32,7 @@ const grantsForProject = (
  * get_connection and failed reads. It cannot verify project evidence retrieval.
  */
 export const interpretAgentReadVerification = (input: {
-  readonly deployment: "disabled" | "enabled" | "unavailable"
+  readonly deployment: "enabled" | "unavailable"
   readonly clientSupported: boolean
   readonly configurationCopied: boolean
   readonly copyFailed: boolean
@@ -47,9 +46,6 @@ export const interpretAgentReadVerification = (input: {
     })),
     Match.when({ deployment: "unavailable" }, () => ({
       _tag: "Unavailable" as const,
-    })),
-    Match.when({ deployment: "disabled" }, () => ({
-      _tag: "Disabled" as const,
     })),
     Match.when({ connections: "unavailable" }, () => ({
       _tag: "Unavailable" as const,

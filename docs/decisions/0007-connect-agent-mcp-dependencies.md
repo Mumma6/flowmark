@@ -256,8 +256,10 @@ are **not** claimed passed here. TASK-008 owns external client/version evidence.
   from merging this decision record.
 - Issuer paths, scopes, tool names, and client registration are frozen in
   [ADR 0008](./0008-connect-agent-protocol-contract.md).
-- Enabling agent access in Production remains a feature flag / rollout gate, not
-  implied by merging this ADR.
+- Enabling agent access in Production was originally a feature-flag gate. That
+  flag has been removed. MCP is part of the server. OAuth and project grants
+  remain the access control. Deployment still follows the normal release
+  process.
 
 ## References
 

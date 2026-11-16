@@ -79,7 +79,7 @@ it("builds a safe preview without raw payloads or failure message text", () => {
   expect(preview.preview).not.toContain("Sensitive detail")
   expect(preview.preview).not.toContain("hidden")
   expect(preview.preview).not.toContain("FLOWMARK_API_KEY")
-  expect(preview.preview).toContain("unavailable Flowmark tools")
+  expect(preview.preview).toContain("not confirmed on this deployment")
   expect(preview.preview).toContain(separateObservationNotice)
   expect(preview.omissions.join("\n")).toContain("Failure message text")
 })

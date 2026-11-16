@@ -1,5 +1,5 @@
 import { McpHostConfiguration } from "@flowmark/mcp"
-import { Effect, Option, Result } from "effect"
+import { Effect, Result } from "effect"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { McpHostConfigurationLive } from "../src/adapters/mcp/mcp-host-configuration"
 import { resolveAgentAccessRuntime } from "../src/agent-access-runtime"
@@ -47,22 +47,21 @@ describe("MCP configuration composition", () => {
     expect(await Effect.runPromise(readIssuer)).toBe("http://localhost:3011")
   })
 
-  it("leaves disabled agent access independent of hosted origin and auth configuration", async () => {
-    vi.stubEnv("FLOWMARK_AGENT_ACCESS_ENABLED", "false")
+  it("resolves reference origins without an activation flag", async () => {
     vi.stubEnv("NODE_ENV", "production")
     vi.stubEnv("VERCEL_ENV", "production")
-    vi.stubEnv("BETTER_AUTH_URL", undefined)
-    vi.stubEnv("FLOWMARK_DASHBOARD_ORIGIN", undefined)
+    vi.stubEnv("BETTER_AUTH_URL", "https://app.staging.flowmark.dev")
+    vi.stubEnv("FLOWMARK_DASHBOARD_ORIGIN", "https://app.staging.flowmark.dev")
+    vi.stubEnv("FLOWMARK_API_URL", undefined)
     vi.stubEnv("DATABASE_URL", undefined)
     vi.stubEnv("BETTER_AUTH_SECRET", undefined)
 
-    expect(
-      Option.isNone(await Effect.runPromise(resolveAgentAccessRuntime())),
-    ).toBe(true)
+    const runtime = await Effect.runPromise(resolveAgentAccessRuntime())
+    expect(runtime.issuerOrigin).toBe("https://app.staging.flowmark.dev")
+    expect(runtime.mcpResourceUrl).toBe("https://api.staging.flowmark.dev/mcp")
   })
 
-  it("resolves enabled agent origins without constructing the auth provider", async () => {
-    vi.stubEnv("FLOWMARK_AGENT_ACCESS_ENABLED", "true")
+  it("resolves an explicit API origin without constructing the auth provider", async () => {
     vi.stubEnv("NODE_ENV", "production")
     vi.stubEnv("VERCEL_ENV", "production")
     vi.stubEnv("BETTER_AUTH_URL", "https://studio.example.test")
@@ -71,12 +70,8 @@ describe("MCP configuration composition", () => {
     vi.stubEnv("DATABASE_URL", undefined)
     vi.stubEnv("BETTER_AUTH_SECRET", undefined)
 
-    Option.match(await Effect.runPromise(resolveAgentAccessRuntime()), {
-      onNone: () => expect.fail("Agent access is enabled"),
-      onSome: (runtime) => {
-        expect(runtime.issuerOrigin).toBe("https://studio.example.test")
-        expect(runtime.mcpResourceUrl).toBe("https://api.example.test/mcp")
-      },
-    })
+    const runtime = await Effect.runPromise(resolveAgentAccessRuntime())
+    expect(runtime.issuerOrigin).toBe("https://studio.example.test")
+    expect(runtime.mcpResourceUrl).toBe("https://api.example.test/mcp")
   })
 })

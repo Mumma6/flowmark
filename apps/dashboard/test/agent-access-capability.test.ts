@@ -1,15 +1,15 @@
 import { expect, it } from "vitest"
 import { remoteAgentAccessFromProbe } from "../features/connect/access/agent-access-capability"
 
-it("reports remote agent access as disabled without advertising an MCP command", () => {
+it("does not advertise an MCP endpoint when metadata is missing", () => {
   const deployment = remoteAgentAccessFromProbe({
     apiOrigin: "https://api.example.test",
     status: 404,
     resource: null,
   })
-  expect(deployment.kind).toBe("disabled")
-  if (deployment.kind === "disabled") {
-    expect(deployment.headline).toContain("not enabled")
+  expect(deployment.kind).toBe("unavailable")
+  if (deployment.kind === "unavailable") {
+    expect(deployment.headline).toContain("could not be confirmed")
     expect(JSON.stringify(deployment)).not.toContain("/mcp")
   }
 })

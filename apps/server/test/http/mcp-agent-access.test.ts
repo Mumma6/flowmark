@@ -31,7 +31,7 @@ import {
   revokeAgentAccessConnection,
   consumeMcpBudget,
 } from "@flowmark/db/persistence"
-import { Array as EffectArray, Effect, Option, Result, Schema } from "effect"
+import { Array as EffectArray, Effect, Result, Schema } from "effect"
 import {
   periodCohortToolInput,
   runSelectionToolInput,
@@ -115,7 +115,6 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
       vi.stubEnv("BETTER_AUTH_URL", testOrigin)
       vi.stubEnv("FLOWMARK_DASHBOARD_ORIGIN", testOrigin)
       vi.stubEnv("FLOWMARK_API_URL", testOrigin)
-      vi.stubEnv("FLOWMARK_AGENT_ACCESS_ENABLED", "true")
       vi.stubEnv("FLOWMARK_DEMO_MODE", "false")
       vi.stubEnv("VERCEL_ENV", "")
       const { getAuth, resetAuthCacheForTests } =
@@ -168,28 +167,45 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
       vi.unstubAllEnvs()
     })
 
-    it("returns disabled responses before agent access is enabled", async () => {
-      const previous = process.env.FLOWMARK_AGENT_ACCESS_ENABLED
-      process.env.FLOWMARK_AGENT_ACCESS_ENABLED = "false"
+    it("registers the Cursor public client without a secret or custom-scheme redirect", async () => {
+      const { CURSOR_MCP_PUBLIC_CLIENT } =
+        await import("@flowmark/auth/agent-access")
+      const rows = await connection.db
+        .select()
+        .from(oauthClient)
+        .where(eq(oauthClient.clientId, CURSOR_MCP_PUBLIC_CLIENT.clientId))
+      expect(rows).toHaveLength(1)
+      expect(rows[0]?.clientSecret ?? null).toBeNull()
+      expect(rows[0]?.requirePKCE).toBe(true)
+      expect(rows[0]?.tokenEndpointAuthMethod).toBe("none")
+      expect(rows[0]?.skipConsent).toBe(false)
+      expect([...(rows[0]?.redirectUris ?? [])]).toEqual([
+        ...CURSOR_MCP_PUBLIC_CLIENT.redirectUris,
+      ])
+      expect(
+        (rows[0]?.redirectUris ?? []).some((uri) => uri.startsWith("cursor:")),
+      ).toBe(false)
+    })
+
+    it("returns 503 when MCP origins cannot be resolved", async () => {
+      vi.stubEnv("NODE_ENV", "production")
+      vi.stubEnv("VERCEL_ENV", "production")
+      vi.stubEnv("FLOWMARK_API_URL", "")
+      vi.stubEnv("BETTER_AUTH_URL", "https://unknown.example.test")
+      vi.stubEnv("FLOWMARK_DASHBOARD_ORIGIN", "https://unknown.example.test")
       resetMcpRouteCacheForTests()
       const response = await handleMcpPost(
         mcpRequest({ jsonrpc: "2.0", method: "initialize", id: 1 }),
       )
-      expect(response.status).toBe(404)
-      const disabledResource = await handleMcpPost(
-        mcpRequest({
-          jsonrpc: "2.0",
-          id: 2,
-          method: "resources/read",
-          params: { uri: "ui://flowmark/run-evidence/v1.html" },
-        }),
-      )
-      expect(disabledResource.status).toBe(404)
-      const consent = await handleAgentConsent(
-        new Request(`${testOrigin}/v1/agent-consent`),
-      )
-      expect(consent.status).toBe(404)
-      process.env.FLOWMARK_AGENT_ACCESS_ENABLED = previous
+      expect(response.status).toBe(503)
+      expect(await response.json()).toEqual({
+        message: "MCP is not configured for this deployment.",
+      })
+      vi.stubEnv("NODE_ENV", "test")
+      vi.stubEnv("VERCEL_ENV", "")
+      vi.stubEnv("FLOWMARK_API_URL", testOrigin)
+      vi.stubEnv("BETTER_AUTH_URL", testOrigin)
+      vi.stubEnv("FLOWMARK_DASHBOARD_ORIGIN", testOrigin)
       resetMcpRouteCacheForTests()
     })
 
@@ -1786,9 +1802,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
           },
         }),
       ).rejects.toMatchObject({ code: "UNAUTHORIZED" })
-      const independentRuntime = Option.getOrThrow(
-        await runMcpRoute(resolveAgentAccessRuntime()),
-      )
+      const independentRuntime = await runMcpRoute(resolveAgentAccessRuntime())
       const independentMetadata = await runMcpRoute(
         McpAuthGateway.use((gateway) =>
           gateway.readAuthorizationServerMetadata(

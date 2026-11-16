@@ -55,7 +55,7 @@ function handoffHeader(delivery: HandoffDelivery): readonly string[] {
   }
   return [
     "Flowmark investigation context (manual handoff)",
-    "Remote MCP read tools are not used on this deployment. Paste this text deliberately and open the evidence link — do not instruct an agent to call unavailable Flowmark tools.",
+    "Remote MCP read tools are not confirmed on this deployment. Paste this text deliberately and open the evidence link. Do not instruct an agent to call Flowmark tools until Connect shows an endpoint.",
     separateObservationNotice,
     "",
   ]

@@ -1,12 +1,14 @@
 import { after } from "next/server"
 import { Email, resendLayer } from "@flowmark/email"
-import { Data, Effect, Exit, Option } from "effect"
+import { Data, Effect, Exit } from "effect"
 import { createDatabase } from "@flowmark/db"
 import {
   Database,
+  ensureCursorMcpClient,
   revokeAllAgentAccessConnectionsForUser,
 } from "@flowmark/db/persistence"
 import { createFlowmarkAuth, readAuthSecret } from "@flowmark/auth"
+import { CURSOR_MCP_PUBLIC_CLIENT } from "@flowmark/auth/agent-access"
 import { assertPreviewDatabase } from "@flowmark/db/environment"
 import { ConfigurationError } from "@flowmark/api"
 
@@ -65,21 +67,24 @@ export const getAuth = Effect.fn("getAuth")(function* () {
     )
   })
   const agentAccess = yield* resolveAgentAccessRuntime().pipe(
-    Effect.map((resolved) =>
-      Option.match(resolved, {
-        onNone: () => undefined,
-        onSome: (value) => value.agentAccessInput,
-      }),
-    ),
-    Effect.catchTag("AgentAccessRuntimeError", () => Effect.succeed(undefined)),
+    Effect.mapError((error) => new ConfigurationError({ cause: error })),
   )
   const { db } = createDatabase(url)
+  yield* ensureCursorMcpClient({
+    resourceUrl: agentAccess.mcpResourceUrl,
+    client: CURSOR_MCP_PUBLIC_CLIENT,
+    replaceOtherResources:
+      process.env.FLOWMARK_TEST_DATABASE_SOURCE !== "compose",
+  }).pipe(
+    Effect.provideService(Database, db),
+    Effect.mapError((cause) => new ConfigurationError({ cause })),
+  )
   cached = createFlowmarkAuth({
     db,
     secret,
     baseURL,
     trustedOrigins: [dashboardOrigin],
-    agentAccess,
+    agentAccess: agentAccess.agentAccessInput,
     emailDelivery,
     onRevokeDelegatedAgentAccess: (userId) =>
       Effect.runPromise(
