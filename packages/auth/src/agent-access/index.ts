@@ -8,6 +8,7 @@ export { hashOAuthToken } from "./grant-family-claims.js"
 export { AGENT_ACCESS_EXECUTION_BOUNDS } from "./protocol-constants.js"
 export {
   FLOWMARK_AGENT_ACCESS_PROVIDER,
+  disposableIntegrationDatabase,
   flowmarkAuthorizationServerMetadata,
   flowmarkOpenIdConfiguration,
   resolveEnabledAgentAccess,

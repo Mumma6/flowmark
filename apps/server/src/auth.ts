@@ -8,7 +8,10 @@ import {
   revokeAllAgentAccessConnectionsForUser,
 } from "@flowmark/db/persistence"
 import { createFlowmarkAuth, readAuthSecret } from "@flowmark/auth"
-import { CURSOR_MCP_PUBLIC_CLIENT } from "@flowmark/auth/agent-access"
+import {
+  CURSOR_MCP_PUBLIC_CLIENT,
+  disposableIntegrationDatabase,
+} from "@flowmark/auth/agent-access"
 import { assertPreviewDatabase } from "@flowmark/db/environment"
 import { ConfigurationError } from "@flowmark/api"
 
@@ -73,8 +76,7 @@ export const getAuth = Effect.fn("getAuth")(function* () {
   yield* ensureCursorMcpClient({
     resourceUrl: agentAccess.mcpResourceUrl,
     client: CURSOR_MCP_PUBLIC_CLIENT,
-    replaceOtherResources:
-      process.env.FLOWMARK_TEST_DATABASE_SOURCE !== "compose",
+    replaceOtherResources: !disposableIntegrationDatabase(),
   }).pipe(
     Effect.provideService(Database, db),
     Effect.mapError((cause) => new ConfigurationError({ cause })),
