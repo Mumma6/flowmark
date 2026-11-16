@@ -35,7 +35,7 @@ embedded WASM bytes and isolated traced bindings. These commands do not deploy.
 | `pnpm typecheck`                                                               | Workspace type checks with dependency builds.                                                                                                                                             |
 | `pnpm format` / `pnpm format:check`                                            | Prettier write/check; different intentional effects.                                                                                                                                      |
 | `pnpm check:typescript`                                                        | Application format, lint, typecheck and unit tests; excludes native Rust checks and artifact verification.                                                                                |
-| `pnpm check`                                                                   | Complete local equivalent of CI application, Rust and WASM gates. Stop dev watchers first.                                                                                                |
+| `pnpm check`                                                                   | Local application, native Rust and server/WASM verification. CI additionally checks guardian regressions, affected public builds and PostgreSQL integration. Stop dev watchers first.     |
 | `pnpm db:migrate`                                                              | Shared guarded migration entrypoint for hosted wrappers and the managed integration runner. Daily local work uses the explicitly local command above.                                     |
 | `pnpm db:migrate:preview` / `pnpm db:migrate:staging` / `pnpm db:migrate:prod` | Distinct hosted approval/branch/host guards, history preflight, migration and history verification. See [rollout](./migrations.md); never folded into local setup.                        |
 | `pnpm neon:env-pull`                                                           | Pulls ignored operator connection files. Use `-- --preview` or `-- --staging` for those branches; default is Production. Does not provision resources or rewrite app env.                 |
@@ -150,3 +150,20 @@ Staging/Production migrate-and-deploy, and separately approved SDK publication.
 CI uses its declared disposable Actions service through `--ci-service`; this
 is an isolated CI adapter, not an alternative contributor setup. No hosted
 resources, secrets, migration history or deployment activation are changed.
+
+## Engineering feedback
+
+- `pnpm factory:check origin/staging` checks new deterministic architecture and
+  documentation regressions against the fetched base, including working files.
+- `pnpm factory:local prepare` selects new PR heads, recent merges and a weekly
+  review scope using the existing local GitHub login; no model is invoked.
+- `pnpm factory:local source <id> <path> [line] [--trusted]` reads prepared public
+  source/base instructions without checking out or executing PR code.
+- `pnpm factory:local checks <id> <pr-number>` reads known CI failure annotations
+  for retrospective evidence without executing logs.
+- `pnpm factory:local complete <id> <result.json> [--publish]` validates and records
+  local AI review/learning results; only current source-backed PR findings publish.
+- `pnpm factory:local status` shows local memory/report progress.
+
+See [Software Factory](./software-factory.md) for the local Codex schedule,
+private memory, limits and human-approved proposal workflow.

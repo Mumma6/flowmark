@@ -90,3 +90,5 @@ contracts and operation. Start with [MCP setup](../apps/docs/content/docs/mcp.md
 [account/data controls](../apps/docs/content/docs/account-data.mdx).
 Do not duplicate client-specific setup claims here; retain exact compatibility
 evidence under `docs/agent-clients/`.
+
+Engineering automation: [Software Factory](./software-factory.md).
