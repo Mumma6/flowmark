@@ -63,6 +63,9 @@ Creating a second account is not the recovery path.
   `/.well-known/oauth-authorization-server`,
   `/.well-known/openid-configuration`, `/oauth2/*` and `/jwks`. The dashboard
   forwards only those issuer paths to the API auth handler under `/api/auth`.
+  The handler serves the two discovery documents on that mount. The provider's
+  automatic metadata route is the issuer root, so `/api/auth/.well-known/*`
+  would otherwise miss it.
   Ordinary `/api/auth/*` redirects stay on the dashboard origin. An
   `/oauth2/*` response may redirect to the request's own loopback or HTTPS
   `redirect_uri`, and nowhere else. The MCP resource identifier is

@@ -1,6 +1,6 @@
 import { drizzleAdapter } from "@better-auth/drizzle-adapter"
 import { betterAuth, type BetterAuthOptions } from "better-auth"
-import { Array, Cause, Data, Effect, Exit } from "effect"
+import { Array, Cause, Data, Effect, Exit, Match } from "effect"
 import { LOCAL_DEV_AUTH_SECRET } from "@flowmark/db/demo"
 import { account, session, user, verification } from "@flowmark/db/schema"
 import type { FlowmarkDatabase } from "@flowmark/db"
@@ -20,6 +20,8 @@ import {
   alignAgentAccessWithBaseUrl,
   flowmarkAgentAccessPlugins,
   flowmarkAgentAccessSchema,
+  flowmarkAuthorizationServerMetadata,
+  flowmarkOpenIdConfiguration,
 } from "./agent-access/compose-provider.js"
 
 /** Optional hook after primary-account password changes (reset or credential update). */
@@ -218,6 +220,26 @@ export function createFlowmarkAuth(options: {
     }
     if (path.startsWith("/email-change/")) {
       return accountEmailChanges.handle(request, path)
+    }
+    // The provider publishes these documents at the issuer root. The API mounts
+    // auth under /api/auth, which is the path the dashboard proxy forwards.
+    const discovery = Match.value(path).pipe(
+      Match.when(
+        "/.well-known/oauth-authorization-server",
+        () => flowmarkAuthorizationServerMetadata,
+      ),
+      Match.when(
+        "/.well-known/openid-configuration",
+        () => flowmarkOpenIdConfiguration,
+      ),
+      Match.orElse(() => undefined),
+    )
+    if (
+      agentAccess &&
+      discovery &&
+      (request.method === "GET" || request.method === "HEAD")
+    ) {
+      return discovery(auth)(request)
     }
     const startedAt = Date.now()
     const isRecoveryRequest = new URL(request.url).pathname

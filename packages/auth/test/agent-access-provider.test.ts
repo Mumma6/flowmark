@@ -152,6 +152,32 @@ test("enabled discovery uses canonical local and self-host values", () =>
     ),
   ))
 
+test("the API auth mount serves issuer discovery", () =>
+  Effect.runPromise(
+    Effect.gen(function* () {
+      const deployment = AGENT_ACCESS_REFERENCE_DEPLOYMENTS.staging
+      const auth = authFor(deployment, true)
+      const response = yield* Effect.promise(() =>
+        auth.handler(
+          new Request(
+            `${deployment.apiOrigin}/api/auth/.well-known/oauth-authorization-server`,
+          ),
+        ),
+      )
+      const metadata = yield* readDocument(response)
+      assert.equal(response.status, 200)
+      assert.equal(metadata.issuer, deployment.issuerOrigin)
+      assert.equal(
+        metadata.authorization_endpoint,
+        `${deployment.issuerOrigin}/oauth2/authorize`,
+      )
+      assert.equal(
+        metadata.token_endpoint,
+        `${deployment.issuerOrigin}/oauth2/token`,
+      )
+    }),
+  ))
+
 test("hosted HTTP resources are rejected before the provider is composed", () => {
   const exit = Effect.runSyncExit(
     Effect.try({
