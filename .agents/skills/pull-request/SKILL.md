@@ -150,9 +150,11 @@ Run `pnpm check` after the diff is final and before any push that precedes
 For changes that affect deployed apps (`apps/web`, `apps/dashboard`,
 `apps/server`, `apps/docs`, etc.):
 
-- Inspect relevant **Vercel Preview** deployments when available; verify
-  behavior, not only green builds.
-- Use the isolated Neon **`preview`** branch for Preview DB testing only.
+- Inspect a Vercel deployment when one exists. The Pulumi program pauses
+  automatic feature-branch deployments, so a feature PR may have none. Verify
+  behavior when a deployment is available; record the absence when it is not.
+- Use the shared Neon **`preview`** branch for approved Preview database
+  verification only. It is one branch for every PR, not a database per PR.
 - Never run migrations or destructive database operations without explicit
   approval (see git-safety rule).
 - Label verification as automated vs manual.

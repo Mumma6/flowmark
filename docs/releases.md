@@ -7,13 +7,16 @@ migration/history verification → Vercel API deployment → remaining apps →
 availability/revision/domain verification. See [database rollout](./migrations.md)
 for activation, responsibilities, commands and recovery.
 
-The four app configs disable Vercel's independent Git deploy for `staging` and
-`main` to prevent it racing the migration. Feature-branch PR previews remain Git
-based. No live settings are changed merely by preparing this code, but the configs
-take effect on merge: configure/approve activation before merging this change.
-The pipeline fails before mutation if not enabled/configured. No new services,
-projects, domains or SDK publication are included. `apps/dev-harness` and
-`apps/internal-docs` remain local-only.
+The four app configs disable Vercel's Git deploy for `staging` and `main` so
+those branches cannot deploy around the migration. The Pulumi program pauses
+automatic feature-branch deployments (`previewDeploymentsDisabled: true`).
+`vercel.json` still lists other branches as deployable; that does not override
+the project pause. Live Vercel and the GitHub variable
+`FLOWMARK_RELEASE_PIPELINE_ENABLED` are outside this repository. When that
+variable is not `true`, a push still runs verification and then exits before
+migration or deployment, and the current deployment keeps serving. No new
+services, projects, domains, or SDK publication are included.
+`apps/dev-harness` and `apps/internal-docs` remain local-only.
 
 ## Branches and merge policy
 
@@ -132,7 +135,10 @@ evidence, mergeability, and migration prerequisites. If the reviewed candidate
 changes, renew the affected verification and approval. Obtain explicit approval
 for the exact release PR and merge commit operation. Keep `staging` intact.
 
-Merging into main triggers the controlled migration/deployment pipeline. Record the resulting main merge SHA and
+Merging into `main` pushes that SHA and starts **Migrate and deploy**. Production
+migration and deployment run only when `FLOWMARK_RELEASE_PIPELINE_ENABLED` is
+`true`; otherwise the rollout fails before either mutation and Git deployment
+of `main` stays disabled. Record the resulting main merge SHA and
 verify **each** project: `flowmark-web`, `flowmark-docs`, `flowmark-dashboard`,
 and `flowmark-api`. Confirm Ready state, Production target, deployed SHA, and
 the canonical domain's current deployment. A green build or working old domain

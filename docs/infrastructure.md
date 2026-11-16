@@ -120,27 +120,45 @@ first project and write key are created in onboarding or Settings.
 
 ## Environments
 
-| Environment | Database                                        | How code gets there                                |
-| ----------- | ----------------------------------------------- | -------------------------------------------------- |
-| Local demo  | Loopback PostgreSQL in `apps/server/.env.local` | `pnpm dev`                                         |
-| Preview     | Neon branch `preview`                           | Automatic feature previews paused; config retained |
-| Staging     | Neon branch `staging`                           | Controlled rollout after a merge to `staging`      |
-| Production  | Neon branch `production`                        | Controlled rollout after a release merge to `main` |
+| Environment | Database                                        | How code gets there                                                                |
+| ----------- | ----------------------------------------------- | ---------------------------------------------------------------------------------- |
+| Local demo  | Loopback PostgreSQL in `apps/server/.env.local` | `pnpm dev`                                                                         |
+| Preview     | Neon branch `preview`                           | Automatic feature deployments paused in the Pulumi program; bindings retained      |
+| Staging     | Neon branch `staging`                           | **Migrate and deploy** after a push to `staging`, when the pipeline flag is `true` |
+| Production  | Neon branch `production`                        | **Migrate and deploy** after a push to `main`, when the pipeline flag is `true`    |
+
+Repository development and CI use Node 24 (`.node-version`). The Pulumi program
+declares Node `22.x` for the four Vercel projects (`infrastructure/vercel-production.ts`).
+Published `@flowmarkdev/core` and `@flowmarkdev/node` require Node.js 20.19 or
+newer. This page does not change those versions. A declaration in Git is not
+proof of the runtime currently executing on Vercel.
 
 Preview, Staging, and Production do not share one database. Local demo setup
-stays on loopback. Do not point `pnpm db:setup`, `pnpm db:seed`, or Drizzle
-Studio at a hosted branch. Do not seed Neon.
+stays on loopback. `pnpm db:setup` and `pnpm db:seed` are local commands. Do not
+point them, Drizzle Studio, or `pnpm demo:*` at a hosted branch. Do not seed Neon.
 
 `GET /api/health` is a liveness check. It does not prove that the database or
 authentication is available.
 
 ## What is deployed with the apps
 
-Vercel builds the four public apps from this repository. Automatic feature-branch
-previews are currently paused on all four projects; Staging remains the active
-non-production rollout. After the migrate-and-deploy pipeline is activated,
-merges to `staging` and `main` migrate the matching Neon branch before
-deploying the apps. See [database rollout](./migrations.md) and
+Vercel builds the four public apps from this repository. The Pulumi program sets
+`previewDeploymentsDisabled: true` on all four projects, so automatic
+feature-branch deployments are paused. Each app `vercel.json` disables Git
+deployment for `staging` and `main` only. Other branch names stay allowed in
+that file; the file does not turn the project-level pause back on. Staging is
+the non-production rollout. The Neon `preview` branch remains available to an
+approved standalone migration. This repository cannot show whether the live
+Vercel project still matches the Pulumi input.
+
+A push to `staging` or `main` starts
+[Migrate and deploy](./migrations.md#controlled-merge-pipeline). The rollout
+migrates the matching Neon branch and then deploys the apps only when
+`FLOWMARK_RELEASE_PIPELINE_ENABLED` is `true`. When it is not, verification
+still runs and the rollout exits before checkout, migration, or deployment.
+The previous deployment keeps serving, because Git deployment for those two
+branches is off. Whether the live GitHub variable is set is not in this
+repository. See [database rollout](./migrations.md) and
 [application releases](./releases.md). Preparing that workflow does not by
 itself change live credentials or run a migration.
 

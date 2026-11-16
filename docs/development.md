@@ -271,9 +271,12 @@ the [infrastructure guide](./infrastructure.md). Local demo setup keeps
 `DATABASE_URL` on loopback. Do not point Studio, `pnpm db:setup`, or
 `pnpm db:seed` at that project. Preview deployments must not use the
 production database or `https://api.flowmark.dev`.
-`pnpm db:migrate:preview` applies committed migrations to the Neon `preview`
-branch only. It refuses a production, loopback, or non-Neon host. The branch
-is created by an approved operator step, not by a Vercel build.
+`pnpm db:migrate:preview` applies committed migrations to the shared Neon
+`preview` branch only. It refuses a production, loopback, or non-Neon host.
+The branch is an approved operator resource, not something a Vercel build
+creates. Automatic feature-branch deployments are paused; see the
+[infrastructure guide](./infrastructure.md#environments). A preview migration
+does not deploy an app.
 `pnpm db:migrate:staging` is the same guard for the Neon `staging` branch. It
 also refuses the preview host. Neither command runs from a Vercel build.
 
@@ -721,8 +724,12 @@ billing, notification, and search controls are intentionally not shown.
 
 Start normal feature and infrastructure branches from current `origin/staging`
 and open PRs explicitly targeting `staging`. Run `pnpm check` before pushing.
-Staging accumulates approved changes; a release PR from `staging` into `main`
-triggers the existing Vercel Production deploys after an approved merge.
+Staging accumulates approved changes. A release PR from `staging` into `main`,
+merged as a merge commit, pushes `main` and starts **Migrate and deploy**.
+That workflow migrates Production and deploys the four apps only when
+`FLOWMARK_RELEASE_PIPELINE_ENABLED` is `true`. Vercel Git deployment for
+`main` and `staging` is disabled. The flag's live value is not in Git; see
+[application releases](./releases.md) and [database rollout](./migrations.md).
 
 See [application releases](./releases.md) for merge methods, branch
 synchronization, schema deployment order, release notes, and verification.

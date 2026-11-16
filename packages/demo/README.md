@@ -185,67 +185,37 @@ sessions under existing policy. These actions use the configured Staging Resend
 delivery and are independent of demo seed/reset/reseed. They are never triggered
 by the telemetry generator. Do not copy token-bearing links into logs or docs.
 
-## Staging preparation and approval
+## Hosted Neon is not a demo target
 
-Hosted operations are separate from local implementation/testing. Obtain
-explicit approval for the exact environment, reviewed revision, logical
-configuration and operation. A confirmation flag records the operator's choice;
-it does not itself grant an agent permission. No Staging writes or actual email
-tests are implied by building or merging this tool.
+Do not seed, set up, reset, or reseed preview, staging, or production. Supported
+commands use `--env local` against the checkout Compose database. `pnpm db:seed`
+and `pnpm db:setup` are the same local boundary and refuse a non-loopback
+database. Building or merging this package does not write to Neon.
 
-Use the existing read-only `neon:env-pull` workflow to prepare the three ignored
-Neon environment files (`.env.neon`, `.env.neon.preview`, `.env.neon.staging`).
-Do not copy them into app env files. Preserve the existing Pulumi source of
-truth. The Staging source must identify `NEON_BRANCH=staging` and a direct TLS
-endpoint distinct from Production and Preview. The CLI independently resolves
-the endpoint's actual Staging branch via fresh read-only Neon API inventory.
-Use the existing authenticated Neon CLI (version `8.16.0`);
-the fixture neither installs provider tools nor reads their private credentials.
-The adapter reuses installed executable code from the npm cache, or invokes
-the exact pinned version with `npx --no-install` when it is already available.
+The CLI still parses `--env staging`. Staging setup, seed, and reseed require
+`--confirm-staging-setup` or `--confirm-staging-seed`; staging reset and reseed
+require `--confirm-staging-reset`. Any other environment name, including
+`production` and `preview`, is rejected before a connection. A confirmation flag
+is not approval to run the command. Do not pass those flags.
 
-Before account setup it also inspects both canonical Staging deployments with
-the existing Vercel CLI (`65.9.0`), scoped to `mumma6s-projects`. Both must be READY,
-non-Production, from `staging`, at the same commit, in `flowmark-dashboard` and
-`flowmark-api`. Existing deployed auth/database isolation guards still apply.
-No provider configuration is changed by these reads. Unavailable or unexpected
-provider metadata fails closed and must be investigated, not bypassed.
-
-Unset exported database, migration, test, local demo, API and auth-origin
-overrides first. Hosted runtimes, Production and Preview are rejected. The
-workstation CLI reads only the guarded files, checks live provider identity,
-and verifies database/user identity after connecting. It never runs migrations.
-
-After separate approval, use the nonsecret existing Neon project ID from
-the Pulumi operating record:
-
-```sh
-read -rs 'meridian_password?Meridian Staging account password: '
-printf '%s' "$meridian_password" | pnpm demo:setup \
-  --env staging --reference 2026-11-03T12:00:00.000Z \
-  --neon-project <existing-project-id> --password-stdin --confirm-staging-setup
-unset meridian_password
-```
-
-The exact fixed reference above is useful for repeatable review. For an active
-Staging demo, choose and review a reference near the intended import time.
-Setup does not seed telemetry. Do not use `db:seed` against Neon.
+When that staging code path is reached, it reads the ignored Neon env files,
+checks that the direct TLS host is the staging branch and distinct from
+production and preview, and refuses to migrate. Those checks describe the
+unused code path. They are not a procedure.
 
 ## Dataset commands
 
-Commands use saved configuration and the private write key; they revalidate the
-target each time. Staging confirmations are deliberately separate:
+Local commands use saved configuration and the private write key, and they
+revalidate the checkout database each time:
 
 ```sh
-pnpm demo:status --env staging
-pnpm demo:seed --env staging --confirm-staging-seed
-pnpm demo:reset --env staging --confirm-staging-reset
-pnpm demo:reseed --env staging --confirm-staging-reset --confirm-staging-seed
+pnpm demo:status --env local
+pnpm demo:seed --env local
+pnpm demo:reset --env local --confirm-local-reset
+pnpm demo:reseed --env local --confirm-local-reset
 ```
 
-The equivalent local seed/status commands need only `--env local`. Local reset
-and reseed require `--confirm-local-reset`. Seed is transactional and repeating
-it with the same configuration leaves the same logical dataset. Reset is
+Seed is transactional. Repeating it with the same configuration leaves the same logical dataset. Reset is
 idempotent; reseed performs verified reset plus regeneration in one transaction.
 Nothing runs automatically during builds, deployments or application startup.
 
@@ -284,10 +254,10 @@ retention cleanup, volume reset or force-cleanup option exists here. If evidence
 has changed, inspect it and make a separately reviewed maintenance plan.
 
 After schema migrations, rebuild the native packages and run disposable tests
-before any hosted refresh. Check that the fixture's persisted-field comparison
-matches the new schema. Reset/reseed with the original manifest and reviewed
-code only after approval; do not patch timestamps, edit applied migrations or
-discard ownership evidence to make a seed succeed.
+before another local seed. Do not refresh a hosted database with this fixture.
+Check that the fixture's persisted-field comparison matches the new schema.
+Reset or reseed locally with the original manifest; do not patch timestamps,
+edit applied migrations, or discard ownership evidence to make a seed succeed.
 
 ## Dashboard walkthrough and limits
 
