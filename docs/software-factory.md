@@ -24,7 +24,9 @@ The existing required aggregate check now waits for **all four jobs**, including
 integration. Guardians run inside the application job, without another install
 or job. The existing WASM job also builds affected public frontends using
 Turbo's graph/cache, full blobless Git history and the event base SHA; it caps
-build concurrency at two. Local-only apps are not build entry points.
+build concurrency at two. Changes to the verification workflow, root package/lockfile,
+workspace or Turbo configuration select all three public frontends, so build
+infrastructure changes verify the check itself. Local-only apps are not build entry points.
 
 The guardians emit GitHub error annotations and a check summary, fail on new
 confirmed deterministic regressions, and never demand a docs edit merely because

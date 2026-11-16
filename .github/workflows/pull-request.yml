@@ -134,10 +134,15 @@ jobs:
       - name: Build affected public frontends
         env:
           TURBO_SCM_BASE: ${{ github.event.pull_request.base.sha || github.event.before || github.sha }}
-        run: >-
-          pnpm exec turbo run build --affected
-          --filter=@flowmark/dashboard --filter=@flowmark/docs --filter=@flowmark/web
-          --concurrency=2
+        run: |
+          factory_build_selection=()
+          if git diff --quiet "$TURBO_SCM_BASE" HEAD -- \
+            .github/workflows/pull-request.yml package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json; then
+            factory_build_selection=(--affected)
+          fi
+          pnpm exec turbo run build "${factory_build_selection[@]}" \
+            --filter=@flowmark/dashboard --filter=@flowmark/docs --filter=@flowmark/web \
+            --concurrency=2
 
   integration:
     name: PostgreSQL integration tests

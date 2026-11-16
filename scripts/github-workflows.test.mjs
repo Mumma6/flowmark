@@ -253,11 +253,44 @@ test("public frontend build integrity reuses the WASM job and affected Turbo gra
     wasm,
     /TURBO_SCM_BASE: \$\{\{ github.event.pull_request.base.sha/,
   )
-  assert.match(wasm, /pnpm exec turbo run build --affected/)
+  assert.match(wasm, /factory_build_selection=\(--affected\)/)
+  assert.match(
+    wasm,
+    /pnpm exec turbo run build "\$\{factory_build_selection\[@\]\}"/,
+  )
   assert.match(
     wasm,
     /--filter=@flowmark\/dashboard --filter=@flowmark\/docs --filter=@flowmark\/web/,
   )
   assert.match(wasm, /--concurrency=2/)
   assert.doesNotMatch(wasm, /--filter=@flowmark\/(dev-harness|internal-docs)/)
+})
+
+test("build configuration changes select every public frontend; ordinary changes use affected selection", () => {
+  const yaml = readWorkflow("pull-request.yml")
+  const step = yaml.slice(
+    yaml.indexOf("      - name: Build affected public frontends"),
+    yaml.indexOf("  integration:"),
+  )
+  const script = step.split("run: |\n")[1]
+  assert.ok(script)
+  const selection = (status) =>
+    spawnSync(
+      "bash",
+      [
+        "-e",
+        "-c",
+        `git() { return ${status}; }; pnpm() { printf '%s\\n' "$*"; }; ${script}`,
+      ],
+      { encoding: "utf8" },
+    )
+  const unchanged = selection(0)
+  assert.equal(unchanged.status, 0)
+  assert.match(unchanged.stdout, /build --affected/)
+  const changed = selection(1)
+  assert.equal(changed.status, 0)
+  assert.doesNotMatch(changed.stdout, /--affected/)
+  assert.match(changed.stdout, /--filter=@flowmark\/dashboard/)
+  assert.equal(selection(128).status, 0)
+  assert.doesNotMatch(selection(128).stdout, /--affected/)
 })
