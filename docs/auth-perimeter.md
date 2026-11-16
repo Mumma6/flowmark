@@ -82,10 +82,10 @@ Creating a second account is not the recovery path.
   the provider leaves signup, sign-in, password recovery, origin checks and
   account limits on the same handlers. `get-session` accepts the dashboard
   session cookie and does not treat the provider access token as that session.
-  `POST /mcp` is not served by the auth handler. The API app serves it only when
-  `FLOWMARK_AGENT_ACCESS_ENABLED=true` and origins resolve (`FLOWMARK_API_URL`,
-  `BETTER_AUTH_URL`, `FLOWMARK_DASHBOARD_ORIGIN`). When disabled, the route
-  returns an honest `404` (no working remote read claim). `GET /mcp` is `405`.
+  Agent access is part of the server. `POST /mcp` is served whenever the issuer
+  and API origins resolve (`FLOWMARK_API_URL`, or the reference Production or
+  Staging API origin for `BETTER_AUTH_URL`, plus `FLOWMARK_DASHBOARD_ORIGIN`).
+  Unresolved origins return 503 and no evidence. `GET /mcp` is `405`.
   MCP checks the request URL and Host against the configured API hostname before
   reading a body or validating a token. A present Origin must exactly equal the
   configured API or issuer origin, including scheme and port; native clients

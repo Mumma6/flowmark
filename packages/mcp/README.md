@@ -89,14 +89,12 @@ Studio exports a strict version-1 run selection from `@flowmarkdev/core`.
 `runSelectionToolInput` converts it to `get_run` arguments. It carries identifiers
 and paging only; the caller still needs its own active grant and membership.
 
-## Disabled mode and diagnostics
+## Availability and diagnostics
 
-Startup serves `POST /mcp` only when `FLOWMARK_AGENT_ACCESS_ENABLED=true` and
-the API, issuer, and dashboard origins resolve. Otherwise the route and consent
-bridge answer `404`. That is an unavailable deployment, not an empty connection.
-`GET /mcp` stays `405` with `Allow: POST`; this adapter does not offer an SSE
-transport. Unauthenticated calls answer `401` with a `WWW-Authenticate`
-challenge and no evidence.
+Agent access is part of the API server. OAuth and project grants control
+access. A request without a valid token receives 401 and no evidence.
+Unresolved origins return 503. `GET /mcp` stays `405` with `Allow: POST`; this
+adapter does not offer an SSE transport.
 
 `initialize` follows the MCP SDK negotiation. A supported protocol revision is
 echoed. An unsupported revision is not accepted as the session version; the

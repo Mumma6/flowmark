@@ -1,9 +1,10 @@
 import {
   AGENT_ACCESS_OAUTH_SCOPE_READ,
+  AGENT_ACCESS_REFERENCE_DEPLOYMENTS,
   buildRequireMcpAuthOverrides,
   resolveAgentAccessOrigins,
 } from "@flowmark/auth/agent-access"
-import { Effect, Option, Schema } from "effect"
+import { Array, Effect, Option, Schema } from "effect"
 import { AgentAccessRuntimeError } from "../errors.js"
 import { McpHostConfiguration } from "../ports/mcp-host-configuration.js"
 
@@ -24,41 +25,49 @@ const hostedEnvironment = (env: NodeJS.ProcessEnv) =>
   env.VERCEL_ENV === "production" ||
   env.VERCEL_ENV === "preview"
 
-const readApiOrigin = Effect.fn("McpRuntime.readApiOrigin")(function* (
-  env: NodeJS.ProcessEnv = process.env,
-) {
-  return yield* Option.fromNullishOr(env.FLOWMARK_API_URL?.trim()).pipe(
-    Option.filter((value) => value.length > 0),
-    Option.match({
-      onNone: () =>
-        hostedEnvironment(env)
-          ? Effect.fail(
-              new AgentAccessRuntimeError({
-                reason:
-                  "FLOWMARK_API_URL is required when agent access is enabled.",
-              }),
-            )
-          : Effect.succeed("http://localhost:3003"),
-      onSome: (explicit) =>
-        Schema.decodeUnknownEffect(HttpOrigin)(explicit).pipe(
-          Effect.mapError(
-            () =>
-              new AgentAccessRuntimeError({
-                reason:
-                  "FLOWMARK_API_URL must be an HTTP(S) origin without credentials, path, query, or fragment.",
-              }),
-          ),
-          Effect.map((origin) => origin.origin),
-        ),
-    }),
+const referenceApiOrigin = (issuerOrigin: string) =>
+  Array.findFirst(
+    [
+      AGENT_ACCESS_REFERENCE_DEPLOYMENTS.production,
+      AGENT_ACCESS_REFERENCE_DEPLOYMENTS.staging,
+    ],
+    (deployment) => deployment.issuerOrigin === issuerOrigin,
   )
+
+const decodeApiOrigin = (value: string) =>
+  Schema.decodeUnknownEffect(HttpOrigin)(value).pipe(
+    Effect.mapError(
+      () =>
+        new AgentAccessRuntimeError({
+          reason:
+            "FLOWMARK_API_URL must be an HTTP(S) origin without credentials, path, query, or fragment.",
+        }),
+    ),
+    Effect.map((origin) => origin.origin),
+  )
+
+const readApiOrigin = Effect.fn("McpRuntime.readApiOrigin")(function* (
+  issuerOrigin: string,
+  env: NodeJS.ProcessEnv,
+) {
+  const explicit = env.FLOWMARK_API_URL?.trim()
+  if (explicit) {
+    return yield* decodeApiOrigin(explicit)
+  }
+  const known = referenceApiOrigin(issuerOrigin)
+  if (Option.isSome(known)) {
+    return known.value.apiOrigin
+  }
+  if (!hostedEnvironment(env)) {
+    return "http://localhost:3003"
+  }
+  return yield* new AgentAccessRuntimeError({
+    reason:
+      "FLOWMARK_API_URL is required when the issuer is not a reference Flowmark deployment.",
+  })
 })
 
-const isAgentAccessEnabled = (env: NodeJS.ProcessEnv = process.env) =>
-  env.FLOWMARK_AGENT_ACCESS_ENABLED === "true"
-
 export interface ResolvedAgentAccessRuntime {
-  readonly enabled: true
   readonly issuerOrigin: string
   readonly apiOrigin: string
   readonly mcpResourceUrl: string
@@ -72,12 +81,9 @@ export interface ResolvedAgentAccessRuntime {
 export const resolveAgentAccessRuntime = Effect.fn(
   "McpRuntime.resolveAgentAccessRuntime",
 )(function* (env: NodeJS.ProcessEnv = process.env) {
-  if (!isAgentAccessEnabled(env)) {
-    return Option.none<ResolvedAgentAccessRuntime>()
-  }
   const host = yield* McpHostConfiguration
   const authIssuerOrigin = yield* host.readAuthIssuerOrigin
-  const apiOrigin = yield* readApiOrigin(env)
+  const apiOrigin = yield* readApiOrigin(authIssuerOrigin, env)
   const origins = yield* resolveAgentAccessOrigins({
     dashboardOrigin: authIssuerOrigin,
     apiOrigin,
@@ -91,8 +97,7 @@ export const resolveAgentAccessRuntime = Effect.fn(
       reason: "BETTER_AUTH_URL must be the agent-access issuer origin.",
     })
   }
-  return Option.some({
-    enabled: true,
+  return {
     issuerOrigin: origins.issuerOrigin,
     apiOrigin: origins.apiOrigin,
     mcpResourceUrl: origins.mcpResourceUrl,
@@ -101,14 +106,8 @@ export const resolveAgentAccessRuntime = Effect.fn(
       issuerOrigin: origins.issuerOrigin,
       apiOrigin: origins.apiOrigin,
     },
-  } satisfies ResolvedAgentAccessRuntime)
+  } satisfies ResolvedAgentAccessRuntime
 })
-
-export const agentAccessDisabledResponse = () =>
-  Response.json(
-    { message: "Agent access is not enabled on this deployment." },
-    { status: 404, headers: { "cache-control": "no-store" } },
-  )
 
 export const agentAccessRequiredScopes = () =>
   [AGENT_ACCESS_OAUTH_SCOPE_READ] as const

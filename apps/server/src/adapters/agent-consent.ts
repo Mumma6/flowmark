@@ -12,7 +12,7 @@ import {
   verifyAgentConsentAccountBinding,
   verifyAgentConsentRequest,
 } from "@flowmark/auth/agent-access"
-import { Effect, Exit, Match, Option, Schema } from "effect"
+import { Effect, Exit, Match, Schema } from "effect"
 import { getAuth } from "../auth"
 import {
   resolveAgentAccessRuntime,
@@ -183,15 +183,11 @@ export const handleAgentConsent = async (request: Request) => {
   const runtime = await Effect.runPromiseExit(resolveAgentAccessRuntime(), {
     signal: request.signal,
   })
-  if (Exit.isFailure(runtime) || Option.isNone(runtime.value)) {
+  if (Exit.isFailure(runtime)) {
     return Response.json(
+      { message: "MCP authorization is unavailable." },
       {
-        message: Exit.isFailure(runtime)
-          ? "Authorization is temporarily unavailable."
-          : "Agent access is not enabled here.",
-      },
-      {
-        status: Exit.isFailure(runtime) ? 503 : 404,
+        status: 503,
         headers: {
           "cache-control": "no-store",
           "referrer-policy": "no-referrer",
@@ -200,7 +196,7 @@ export const handleAgentConsent = async (request: Request) => {
     )
   }
   const exit = await runApi(
-    consentRequest(request, runtime.value.value),
+    consentRequest(request, runtime.value),
     request.signal,
   )
   const response = Exit.match(exit, {

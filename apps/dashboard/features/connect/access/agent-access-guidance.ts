@@ -1,5 +1,6 @@
 import { Array as EffectArray, Match } from "effect"
 import type { RemoteAgentAccessDeployment } from "./agent-access-capability"
+import { cursorMcpClientId, cursorMcpConfig } from "./cursor-mcp-client"
 
 type AgentAccessKind = RemoteAgentAccessDeployment["kind"]
 
@@ -9,11 +10,27 @@ const connectedGuide = (
   id: AgentClientId,
   mcpUrl: string,
 ): AgentClientGuide => {
+  if (id === "cursor") {
+    return {
+      id,
+      label: "Cursor",
+      summary:
+        "Cursor uses Streamable HTTP and a pre-registered public client. Dynamic registration stays closed. Studio does not write Cursor's config, and copying this text does not grant access. Vendor compatibility is not a substitute for approving projects. The reference HTTP client remains the automated proof.",
+      steps: [
+        `Add the endpoint ${mcpUrl} with static OAuth client id ${cursorMcpClientId}. Do not set a client secret or paste an ingestion key.`,
+        "Cursor desktop redirects to http://localhost:8787/callback. Cursor on the web uses https://www.cursor.com/agents/mcp/oauth/callback. Both are registered. Custom-scheme callbacks are not accepted.",
+        "Sign in and approve only the projects you select on the Studio consent screen.",
+        "Call get_connection, then investigate with list_workflows, find_runs, get_run, compare_run, or get_workflow_insights.",
+        "Inspect the tool result. A copied snippet does not authorize those calls.",
+      ],
+      pasteHint: `Copy this into Cursor mcp.json yourself. Flowmark does not write that file.\n${cursorMcpConfig(mcpUrl)}`,
+    }
+  }
   const label = MatchLabel[id]
   return {
     id,
     label,
-    summary: `Inspectable steps for ${label}. Vendor compatibility is not established; the tested path is the reference HTTP client. Studio does not edit the client's files, and copying this text does not grant access.`,
+    summary: `Inspectable steps for ${label}. Vendor compatibility is not established; the tested path is the reference HTTP client. Studio does not write the client's files, and copying this text does not grant access.`,
     steps: [
       `Register the MCP endpoint ${mcpUrl} in ${label}. Use OAuth; do not paste an ingestion key or a dashboard cookie.`,
       "Approve only the projects you select on the Studio consent screen.",
@@ -65,7 +82,7 @@ export function agentClientGuides(
       id: "codex",
       label: "Codex",
       summary:
-        "Use Codex in the CLI or IDE you already trust. Remote MCP is not enabled for this deployment, so you paste Studio links and copied summaries yourself.",
+        "Use Codex in the CLI or IDE you already trust. MCP metadata could not be confirmed, so paste Studio links and copied summaries yourself.",
       steps: [
         "Open Explore or Runs in Studio for the project you are investigating.",
         "Inspect one run, open the Handoff section, and copy the investigation summary.",
@@ -79,11 +96,11 @@ export function agentClientGuides(
       id: "cursor",
       label: "Cursor",
       summary:
-        "Cursor can reason about copied Flowmark facts alongside your repository. Remote MCP is not enabled for this deployment.",
+        "Cursor can reason about copied Flowmark facts alongside your repository when MCP metadata could not be confirmed.",
       steps: [
         "Switch to the correct project in the Studio header before copying anything.",
         "From a run inspector, copy the investigation summary or export JSON you need.",
-        "Paste the copied text into Cursor chat or a scratch file in your repo — not into client MCP config expecting a live connection.",
+        "Paste the copied text into Cursor chat until this page shows an MCP endpoint. Do not invent a client secret.",
         "Add your own code inspection; Flowmark reports application telemetry, not verified root cause.",
       ],
       pasteHint:
@@ -93,7 +110,7 @@ export function agentClientGuides(
       id: "claude-code",
       label: "Claude Code",
       summary:
-        "Claude Code uses the same manual handoff. Remote MCP is not enabled for this deployment.",
+        "Claude Code uses the same manual handoff when MCP metadata could not be confirmed.",
       steps: [
         "Confirm the active Studio project matches the application you are debugging.",
         "Copy a run handoff summary, timeline export, or the example questions below.",
@@ -101,15 +118,15 @@ export function agentClientGuides(
         "Never paste server write keys or ingestion secrets into Claude Code sessions.",
       ],
       pasteHint:
-        "Paste into your Claude Code session manually. Remote MCP is not enabled for this deployment, so do not register an endpoint.",
+        "Paste into your Claude Code session manually while metadata is unconfirmed. Do not guess an endpoint.",
     },
     {
       id: "custom",
       label: "Custom agent",
       summary:
-        "Any agent can use the same manual path. Remote MCP is not enabled for this deployment, so authorized evidence stays in Studio until you copy it.",
+        "Any agent can use the same manual path when MCP metadata could not be confirmed. Authorized evidence stays in Studio until you copy it.",
       steps: [
-        "Read project-scoped evidence only through Studio while remote tools are disabled.",
+        "Read project-scoped evidence through Studio until this page confirms the MCP endpoint.",
         "Copy structured exports or the investigation summary from a run you are allowed to view.",
         "Hand the text and dashboard links to your agent; it combines them with code and logs you already trust.",
         "Do not embed dashboard session cookies, write keys, or guessed MCP URLs in shared configuration.",
@@ -167,9 +184,6 @@ export function agentExampleQuestions(
         prompt: `For ${project}, call get_workflow_insights for the declared business results across the two UTC periods I provide. Respect the returned coverage limits. Do not invent history the tool did not return.`,
       },
     ]),
-    Match.when("disabled", () =>
-      manualExampleQuestions(project, "is not enabled for this deployment"),
-    ),
     Match.when("unavailable", () =>
       manualExampleQuestions(
         project,
@@ -218,13 +232,6 @@ export function manualEvidenceHandoffIntro(
         "Do not paste an ingestion key, browser key, or dashboard cookie. Business correctness is not verified by Flowmark.",
       ].join("\n"),
     ),
-    Match.when("disabled", () =>
-      manualHandoff(
-        project,
-        studioOrigin,
-        "is not enabled for this deployment",
-      ),
-    ),
     Match.when("unavailable", () =>
       manualHandoff(
         project,
@@ -249,12 +256,6 @@ export function agentAccessIntroCopy(kind: AgentAccessKind): {
       separation:
         "Ingestion keys authenticate your application. An MCP connection is a separate read grant. It cannot ingest events, and it is not a dashboard session.",
     })),
-    Match.when("disabled", () => ({
-      title,
-      body: "Remote MCP is not enabled for this deployment. Use Studio and copy a factual handoff into the agent you already use. Copying that text does not grant access.",
-      separation:
-        "Ingestion keys authenticate your application. A copied handoff is manual evidence. It is not an MCP connection or an OAuth grant.",
-    })),
     Match.when("unavailable", () => ({
       title,
       body: "Remote MCP could not be confirmed for this deployment. Retry the check before registering a client. Copied instructions are not a connection.",
@@ -273,14 +274,9 @@ export function connectPageDescription(kind: AgentAccessKind): string {
         "Instrument your application, then investigate with the MCP read tools when this page shows an endpoint. Ingestion keys, copied setup, and an MCP grant stay separate. None of them is authorization by itself.",
     ),
     Match.when(
-      "disabled",
-      () =>
-        "Instrument your application, then read evidence in Studio. Remote MCP is not enabled for this deployment. Ingestion keys and copied handoff text do not create an OAuth connection.",
-    ),
-    Match.when(
       "unavailable",
       () =>
-        "Instrument your application, then read evidence in Studio. Remote MCP could not be confirmed for this deployment. Copied instructions are not a connection.",
+        "Instrument your application, then read evidence in Studio until this page confirms MCP metadata. Ingestion keys and copied handoff text do not create an OAuth connection.",
     ),
     Match.exhaustive,
   )
@@ -301,15 +297,6 @@ export function agentHandoffPresentation(kind: AgentAccessKind): {
         "Starter prompts for an authorized MCP connection. They name the existing read-only tools. Copying a prompt does not grant access.",
       clients:
         "Use the endpoint for this environment. Copying it does not write your client configuration or grant access.",
-    })),
-    Match.when("disabled", () => ({
-      title: "Manual evidence handoff",
-      description:
-        "Remote MCP is not enabled for this deployment. Open Studio, copy a factual summary, and paste it into your agent.",
-      questions:
-        "Starter prompts for manual paste. Remote MCP is not enabled for this deployment, so these prompts use Studio evidence you copy.",
-      clients:
-        "Remote MCP is not enabled for this deployment. Copy guidance into the surface you already use; nothing here registers OAuth or stores a connection.",
     })),
     Match.when("unavailable", () => ({
       title: "Manual evidence handoff",
