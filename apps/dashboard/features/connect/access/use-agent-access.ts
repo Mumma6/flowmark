@@ -41,7 +41,10 @@ export function useAgentAccess() {
   }, [current?.id, email])
 
   const deployment = useAgentAccessDeployment()
-  const intro = useMemo(() => agentAccessIntroCopy(), [])
+  const intro = useMemo(
+    () => agentAccessIntroCopy(deployment.kind),
+    [deployment.kind],
+  )
   const clients = useMemo(
     () =>
       agentClientGuides(
@@ -50,12 +53,17 @@ export function useAgentAccess() {
     [deployment],
   )
   const examples = useMemo(
-    () => agentExampleQuestions(current?.name ?? null),
-    [current?.name],
+    () => agentExampleQuestions(current?.name ?? null, deployment.kind),
+    [current?.name, deployment.kind],
   )
   const handoffIntro = useMemo(
-    () => manualEvidenceHandoffIntro(current?.name ?? null, studioOrigin),
-    [current?.name, studioOrigin],
+    () =>
+      manualEvidenceHandoffIntro(
+        current?.name ?? null,
+        studioOrigin,
+        deployment.kind,
+      ),
+    [current?.name, studioOrigin, deployment.kind],
   )
 
   const markCopied = (target: Parameters<typeof markAgentAccessCopied>[1]) => {

@@ -20,7 +20,10 @@ import { ArrowUpRight, Check } from "lucide-react"
 import Link from "next/link"
 import { CopyButton } from "../../shared/dashboard-components"
 import { publicConfig } from "../../platform/config-public"
-import type { AgentClientGuide } from "../access/agent-access-guidance"
+import {
+  agentHandoffPresentation,
+  type AgentClientGuide,
+} from "../access/agent-access-guidance"
 import type { RemoteAgentAccessDeployment } from "../access/agent-access-capability"
 import { useAgentAccess } from "../access/use-agent-access"
 import { useAgentReadVerification } from "../access/use-agent-read-verification"
@@ -249,6 +252,7 @@ export function AgentAccessGuide() {
     transient.handoffIntroCopied ||
     Object.values(transient.exampleQuestionsCopied).some(Boolean) ||
     Object.values(transient.clientGuidanceCopied).some(Boolean)
+  const handoff = agentHandoffPresentation(deployment.kind)
 
   return (
     <section
@@ -279,16 +283,13 @@ export function AgentAccessGuide() {
       {deployment.kind === "enabled" ? <AgentConnections /> : null}
       <Card>
         <CardHeader>
-          <CardTitle>Manual evidence handoff</CardTitle>
-          <CardDescription>
-            Open Studio, copy factual run summaries, then paste them into your
-            agent. No OAuth or model call happens from this page.
-          </CardDescription>
+          <CardTitle>{handoff.title}</CardTitle>
+          <CardDescription>{handoff.description}</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4">
           <div className="flex flex-wrap gap-2">
             <Button asChild variant="outline" size="sm">
-              <Link href="/explore">Open Explore</Link>
+              <Link href="/">Open Explore</Link>
             </Button>
             <Button asChild variant="outline" size="sm">
               <Link href="/runs">Open Runs</Link>
@@ -323,10 +324,7 @@ export function AgentAccessGuide() {
       <Card>
         <CardHeader>
           <CardTitle>Example questions</CardTitle>
-          <CardDescription>
-            Starter prompts for manual paste. Replace placeholders with run
-            links and UTC windows from Studio when you have them.
-          </CardDescription>
+          <CardDescription>{handoff.questions}</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-5">
           {examples.map((example) => (
@@ -350,11 +348,7 @@ export function AgentAccessGuide() {
       <Card>
         <CardHeader>
           <CardTitle>Choose your client</CardTitle>
-          <CardDescription>
-            {deployment.kind === "enabled"
-              ? "Use the endpoint for this environment. Copying it does not write your client configuration or grant access."
-              : "Four manual paths without remote MCP. Copy guidance into the surface you already use; nothing here registers OAuth or stores a connection."}
-          </CardDescription>
+          <CardDescription>{handoff.clients}</CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="codex">
