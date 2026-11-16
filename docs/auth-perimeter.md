@@ -68,7 +68,9 @@ Creating a second account is not the recovery path.
   would otherwise miss it.
   Ordinary `/api/auth/*` redirects stay on the dashboard origin. An
   `/oauth2/*` response may redirect to the request's own loopback or HTTPS
-  `redirect_uri`, and nowhere else. The MCP resource identifier is
+  `redirect_uri`, and nowhere else. A browser GET or HEAD whose provider body
+  is `{ "redirect": true, "url" }` becomes that same checked HTTP redirect.
+  The JSON document is not shown. The MCP resource identifier is
   `{apiOrigin}/mcp`. That resource accepts the issued scopes, including
   `offline_access`, so the provider can keep and rotate a refresh token.
   The audience stays the MCP resource.
