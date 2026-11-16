@@ -21,16 +21,17 @@ concurrency:
 jobs:
   check:
     name: Format, lint, typecheck, and test
-    needs: [application, rust, wasm]
+    needs: [application, rust, wasm, integration]
     if: always()
     runs-on: ubuntu-latest
     steps:
-      # Preserve the existing required status while making every language gate it.
-      - name: Require application, Rust and WASM checks
+      # Preserve the existing required status while gating all verification jobs.
+      - name: Require application, Rust, WASM and integration checks
         run: |
           test "${{ needs.application.result }}" = success
           test "${{ needs.rust.result }}" = success
           test "${{ needs.wasm.result }}" = success
+          test "${{ needs.integration.result }}" = success
 
   application:
     name: TypeScript format, lint, typecheck, and test
@@ -56,6 +57,16 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Fetch guardian comparison base
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before || github.sha }}
+        run: git fetch --no-tags --depth=1 origin "$BASE_SHA"
+
+      - name: Check architecture and documentation regressions
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before || github.sha }}
+        run: pnpm factory:check "$BASE_SHA"
 
       - name: Check format, lint, typecheck, and unit tests
         run: pnpm check:typescript
@@ -90,12 +101,15 @@ jobs:
         run: pnpm rust:check
 
   wasm:
-    name: WASM production compatibility (Node 24)
+    name: WASM and affected public app builds (Node 24)
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          filter: blob:none
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -116,6 +130,14 @@ jobs:
 
       - name: Build server and verify traced WASM artifact
         run: pnpm engine:verify-build
+
+      - name: Build affected public frontends
+        env:
+          TURBO_SCM_BASE: ${{ github.event.pull_request.base.sha || github.event.before || github.sha }}
+        run: >-
+          pnpm exec turbo run build --affected
+          --filter=@flowmark/dashboard --filter=@flowmark/docs --filter=@flowmark/web
+          --concurrency=2
 
   integration:
     name: PostgreSQL integration tests

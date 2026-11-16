@@ -58,7 +58,7 @@ test("the existing required status rejects failed, cancelled or skipped language
     yaml.indexOf("  check:"),
     yaml.indexOf("  application:"),
   )
-  assert.match(gate, /needs: \[application, rust, wasm\]/)
+  assert.match(gate, /needs: \[application, rust, wasm, integration\]/)
   assert.match(gate, /if: always\(\)/)
   const script = gate.split("run: |\n")[1]
   assert.ok(script)
@@ -71,7 +71,7 @@ test("the existing required status rejects failed, cancelled or skipped language
       ),
     ]).status
   assert.equal(run(null, "success"), 0)
-  for (const job of ["application", "rust", "wasm"]) {
+  for (const job of ["application", "rust", "wasm", "integration"]) {
     for (const status of ["failure", "cancelled", "skipped"]) {
       assert.equal(run(job, status), 1, `${job}: ${status}`)
     }
@@ -207,4 +207,57 @@ test("merge rollout verifies, migrates and deploys in order with no parallel Git
     readFileSync(join(repoRoot, ".vercelignore"), "utf8"),
     /^private$/m,
   )
+})
+
+test("guardians run within application verification against the event base without credentials", () => {
+  const yaml = readWorkflow("pull-request.yml")
+  const application = yaml.slice(
+    yaml.indexOf("  application:"),
+    yaml.indexOf("  rust:"),
+  )
+  assert.match(
+    application,
+    /github.event.pull_request.base.sha \|\| github.event.before \|\| github.sha/,
+  )
+  assert.match(application, /git fetch --no-tags --depth=1 origin "\$BASE_SHA"/)
+  assert.match(application, /pnpm factory:check "\$BASE_SHA"/)
+  assert.doesNotMatch(application, /secrets\.|pull_request_target/)
+})
+
+test("learning uses trusted merge/schedule tooling, read-only evidence and no paid AI", () => {
+  const yaml = readWorkflow("engineering-health.yml")
+  assert.match(yaml, /branches: \[staging\]/)
+  assert.match(yaml, /schedule:/)
+  assert.match(yaml, /persist-credentials: false/)
+  assert.match(yaml, /actions: read/)
+  assert.match(yaml, /pull-requests: read/)
+  assert.match(yaml, /node scripts\/factory-learning.mjs/)
+  assert.match(yaml, /retention-days: 90/)
+  assert.match(yaml, /include-hidden-files: true/)
+  assert.doesNotMatch(
+    yaml,
+    /pull_request_target|workflow_run|secrets\.|: write|pnpm install|codex-action|OPENAI/,
+  )
+  assert.doesNotMatch(yaml, /refs\/pull|head.sha|ref:/)
+})
+
+test("public frontend build integrity reuses the WASM job and affected Turbo graph", () => {
+  const yaml = readWorkflow("pull-request.yml")
+  const wasm = yaml.slice(
+    yaml.indexOf("  wasm:"),
+    yaml.indexOf("  integration:"),
+  )
+  assert.match(wasm, /fetch-depth: 0/)
+  assert.match(wasm, /filter: blob:none/)
+  assert.match(
+    wasm,
+    /TURBO_SCM_BASE: \$\{\{ github.event.pull_request.base.sha/,
+  )
+  assert.match(wasm, /pnpm exec turbo run build --affected/)
+  assert.match(
+    wasm,
+    /--filter=@flowmark\/dashboard --filter=@flowmark\/docs --filter=@flowmark\/web/,
+  )
+  assert.match(wasm, /--concurrency=2/)
+  assert.doesNotMatch(wasm, /--filter=@flowmark\/(dev-harness|internal-docs)/)
 })

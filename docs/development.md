@@ -369,10 +369,13 @@ Dashboard UI primitives follow shadcn conventions and live in `packages/ui`. Add
 
 `pnpm check` runs native Rust formatting, Clippy, tests/properties, application
 format/lint/typecheck/unit tests and production WASM artifact verification.
-CI exposes those as separate application, Rust and WASM jobs on Node 24, plus
-the disposable-Postgres integration job. The existing required
-`Format, lint, typecheck, and test` status aggregates the first three, including
-failures and cancellations, so existing branch protection also gates Rust/WASM.
+CI exposes those as separate application, Rust and WASM/public-build jobs on
+Node 24, plus the disposable-Postgres integration job. The existing required
+`Format, lint, typecheck, and test` status aggregates all four, including failures,
+cancellations and skipped jobs. The application job also runs deterministic
+architecture/documentation regression checks; the build job builds affected
+public frontends using Turbo. See [Software Factory](./software-factory.md) for
+coverage, local guardian usage and automatic cross-PR learning evidence.
 `pnpm check:typescript` is the
 application-only portion; Rust and artifact verification remain required gates.
 Rust toolchains/downloads and per-job compilation outputs are cached; a cache

@@ -1,7 +1,11 @@
 import ts from "typescript"
 
-/** Runtime edges only; type-position imports do not execute a module. */
-export const runtimeImports = (filename, text) => {
+/** Runtime edges by default; includeTypes also checks declared type boundaries. */
+export const runtimeImports = (
+  filename,
+  text,
+  { includeTypes = false } = {},
+) => {
   const source = ts.createSourceFile(
     filename,
     text,
@@ -25,7 +29,24 @@ export const runtimeImports = (filename, text) => {
           (ts.isNamedImports(bindings) || ts.isNamedExports(bindings)) &&
           bindings.elements.length > 0 &&
           bindings.elements.every((element) => element.isTypeOnly))
-      return typeOnly ? [] : [node.moduleSpecifier.text]
+      return typeOnly && !includeTypes ? [] : [node.moduleSpecifier.text]
+    }
+    if (
+      includeTypes &&
+      ts.isImportTypeNode(node) &&
+      ts.isLiteralTypeNode(node.argument) &&
+      ts.isStringLiteral(node.argument.literal)
+    ) {
+      return [node.argument.literal.text]
+    }
+    if (
+      ts.isImportEqualsDeclaration(node) &&
+      ts.isExternalModuleReference(node.moduleReference) &&
+      ts.isStringLiteral(node.moduleReference.expression)
+    ) {
+      return node.isTypeOnly && !includeTypes
+        ? []
+        : [node.moduleReference.expression.text]
     }
     if (
       ts.isCallExpression(node) &&

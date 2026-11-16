@@ -34,3 +34,6 @@ coverage
 
 # Maintainer-only product / ops docs (not published to GitHub)
 /private/
+
+# Generated engineering evidence; private/ remains the planning source.
+.factory-reports/

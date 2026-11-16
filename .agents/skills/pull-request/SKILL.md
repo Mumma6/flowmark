@@ -34,6 +34,8 @@ creating a PR is not permission to merge or deploy.
    red. For changes that truly cannot use the full monorepo check, run the
    narrowest equivalent and say so in **Verification** — default is always
    `pnpm check`.
+   Also run `pnpm factory:check origin/staging` against the fetched base for
+   deterministic architecture and documentation regressions.
 7. For schema changes, follow [database rollout](../../../docs/migrations.md).
    Include generated migrations with the stack change. Separate implementation,
    feature merge readiness (Preview plus activated ordered rollout), and release
@@ -43,9 +45,10 @@ creating a PR is not permission to merge or deploy.
    and any manual deployment steps.
 8. Before reporting a PR ready to merge, inspect all verification jobs:
    `TypeScript format, lint, typecheck, and test`, `Rust format, Clippy, tests and properties`,
-   `WASM production compatibility (Node 24)` and `PostgreSQL integration tests`.
+   `WASM and affected public app builds (Node 24)` and `PostgreSQL integration tests`.
    The existing required `Format, lint, typecheck, and test` aggregate must pass;
-   it propagates failures from the application, Rust and WASM jobs.
+   it propagates failures from the application, Rust, WASM/public-build and
+   PostgreSQL integration jobs.
    Local `pnpm check` alone does not run the database suites without
    `TEST_DATABASE_URL`. Report pending or failed integration checks explicitly;
    use the [development guide](../../../docs/development.md#database-integration-tests)

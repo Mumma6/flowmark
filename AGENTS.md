@@ -176,3 +176,25 @@
   Never commit env files, secrets, database dumps, or local account configuration.
 - Do not assume services are yours to restart or stop; verify existing processes
   and ports first. Do not reset local telemetry to make a test pass.
+
+## Code Review Rules
+
+Engineering feedback:
+
+- [Software Factory](./docs/software-factory.md) owns engineering automation;
+  [engineering-feedback](./.agents/skills/engineering-feedback/SKILL.md) owns
+  triage and improvement proposals. Existing architecture/language skills remain
+  the standards. Hosted AI is off until separately approved and activated.
+- PR reviews apply the existing architecture-review lenses to changed owners and
+  their boundaries. Inspect relevant architecture/package/SDK/product docs,
+  onboarding, agents and skills when behavior changes. Report a documentation
+  finding only with a concrete contradictory statement or broken reference.
+- Prefer deterministic checks; contextual findings must cite changed code,
+  the applicable rule, practical impact and a minimal fix. Finding nothing is valid;
+  omit preferences and already-covered CI failures. Never require docs for every PR.
+- For recurring confirmed findings, an optional stable marker such as
+  `[factory:effect-runtime]` lets learning reports group distinct PRs. Never
+  invent recurrence from similar wording or assume a CI failure is a coding defect.
+- Retrospectives propose improvements for human review. Never automatically
+  rewrite instructions, skills or architecture rules. Keep approved tasks in
+  `private/`; never publish its paths/content or create another task tracker.

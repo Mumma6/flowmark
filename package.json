@@ -43,7 +43,9 @@
     "test:integration": "pnpm --filter @flowmark/db test:integration",
     "typecheck": "turbo typecheck",
     "dev:all": "pnpm dev:setup && pnpm infra doctor --require-ready && turbo dev",
-    "dev:stack": "pnpm dev:setup && pnpm infra up && turbo dev db:studio"
+    "dev:stack": "pnpm dev:setup && pnpm infra up && turbo dev db:studio",
+    "factory:check": "node scripts/factory-check.mjs",
+    "factory:learning": "node scripts/factory-learning.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.35.0",
