@@ -10,10 +10,24 @@ import {
   CardHeader,
   CardTitle,
   Input,
-  NativeSelect,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@flowmark/ui"
 import { useProject } from "../../projects/project-context"
-import { type Field } from "./declaration-form"
+
+const displayItems = {
+  count: "Count",
+  category: "Category",
+  reasons: "Reason distribution",
+}
+
+const aggregateItems = {
+  no: "Presentation only",
+  yes: "Allow reported totals/distributions",
+}
 import { useResultDeclarationForm } from "./use-result-declaration-form"
 
 function ResultDeclarationEditorContent({ workflow }: { workflow: string }) {
@@ -146,18 +160,27 @@ function ResultDeclarationForm({
               </label>
               <label className="text-sm">
                 Display
-                <NativeSelect
+                <Select
+                  items={displayItems}
                   value={field.kind}
-                  onChange={(event) =>
+                  onValueChange={(next) =>
                     updateField(index, {
-                      kind: event.target.value as Field["kind"],
+                      kind:
+                        next === "category" || next === "reasons"
+                          ? next
+                          : "count",
                     })
                   }
                 >
-                  <option value="count">Count</option>
-                  <option value="category">Category</option>
-                  <option value="reasons">Reason distribution</option>
-                </NativeSelect>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="count">Count</SelectItem>
+                    <SelectItem value="category">Category</SelectItem>
+                    <SelectItem value="reasons">Reason distribution</SelectItem>
+                  </SelectContent>
+                </Select>
               </label>
               <label className="text-sm">
                 Unit (optional)
@@ -172,19 +195,25 @@ function ResultDeclarationForm({
               </label>
               <label className="text-sm">
                 Aggregate across runs
-                <NativeSelect
+                <Select
+                  items={aggregateItems}
                   value={field.aggregate ? "yes" : "no"}
-                  onChange={(event) =>
+                  onValueChange={(next) =>
                     updateField(index, {
-                      aggregate: event.target.value === "yes",
+                      aggregate: next === "yes",
                     })
                   }
                 >
-                  <option value="no">Presentation only</option>
-                  <option value="yes">
-                    Allow reported totals/distributions
-                  </option>
-                </NativeSelect>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="no">Presentation only</SelectItem>
+                    <SelectItem value="yes">
+                      Allow reported totals/distributions
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
               </label>
               {field.kind !== "count" && (
                 <label className="text-sm">

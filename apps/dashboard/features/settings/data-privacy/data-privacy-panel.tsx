@@ -16,14 +16,23 @@ import {
   CardTitle,
   Checkbox,
   Input,
-  NativeSelect,
-  NativeSelectOption,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@flowmark/ui"
 import { Array, pipe } from "effect"
 import { useState, type FormEvent } from "react"
 import Link from "next/link"
 import { useProject } from "../../projects/project-context"
 import { useDataErasure } from "./use-data-erasure"
+
+const erasureItems = {
+  workflow: "Erase a workflow’s complete runs in a period",
+  runs: "Erase specific complete runs",
+  project: "Permanently delete this project",
+}
 
 function ProjectErasure({
   projectId,
@@ -160,20 +169,22 @@ function ProjectErasure({
           <form className="grid max-w-xl gap-4" onSubmit={submitPreview}>
             <label className="grid gap-2 text-sm">
               <span className="font-medium">Operation</span>
-              <NativeSelect
-                value={kind}
-                onChange={(event) => setKind(event.target.value)}
-              >
-                <NativeSelectOption value="workflow">
-                  Erase a workflow’s complete runs in a period
-                </NativeSelectOption>
-                <NativeSelectOption value="runs">
-                  Erase specific complete runs
-                </NativeSelectOption>
-                <NativeSelectOption value="project">
-                  Permanently delete this project
-                </NativeSelectOption>
-              </NativeSelect>
+              <Select items={erasureItems} value={kind} onValueChange={setKind}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="workflow">
+                    Erase a workflow’s complete runs in a period
+                  </SelectItem>
+                  <SelectItem value="runs">
+                    Erase specific complete runs
+                  </SelectItem>
+                  <SelectItem value="project">
+                    Permanently delete this project
+                  </SelectItem>
+                </SelectContent>
+              </Select>
             </label>
             {kind === "workflow" ? (
               <>

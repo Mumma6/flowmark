@@ -16,12 +16,22 @@ import {
   DialogHeader,
   DialogTitle,
   Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@flowmark/ui"
 import Link from "next/link"
 import { useRef, useState } from "react"
 import { authClient } from "../auth/auth-client"
 import { useProject } from "../projects/project-context"
 import { useProjectSharing } from "./use-project-sharing"
+
+const accessItems = {
+  viewer: "Diagnostic viewer · full evidence",
+  business: "Business reader · published evidence",
+}
 
 function SharingControls({
   projectId,
@@ -168,23 +178,26 @@ function SharingControls({
                 <h3 className="font-medium">Invite a read-only colleague</h3>
                 <label className="grid gap-2 text-sm">
                   Evidence access
-                  <select
-                    className="h-10 rounded-md border border-input bg-background px-3"
-                    value={role}
-                    onChange={(e) =>
-                      setRole(
-                        e.target.value === "business" ? "business" : "viewer",
-                      )
-                    }
+                  <Select
                     disabled={busy}
+                    items={accessItems}
+                    value={role}
+                    onValueChange={(next) =>
+                      setRole(next === "business" ? "business" : "viewer")
+                    }
                   >
-                    <option value="viewer">
-                      Diagnostic viewer · full evidence
-                    </option>
-                    <option value="business">
-                      Business reader · published evidence
-                    </option>
-                  </select>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="viewer">
+                        Diagnostic viewer · full evidence
+                      </SelectItem>
+                      <SelectItem value="business">
+                        Business reader · published evidence
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
                 </label>
                 <label className="grid gap-2 text-sm">
                   Colleague email

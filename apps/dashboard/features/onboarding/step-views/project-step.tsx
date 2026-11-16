@@ -3,8 +3,11 @@ import { CheckCheck } from "lucide-react"
 import {
   Alert,
   AlertDescription,
-  NativeSelect,
-  NativeSelectOption,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@flowmark/ui"
 import { CreateProjectForm } from "../../projects/create-project-form"
 import { projectListState } from "../../projects/project-list-state"
@@ -46,23 +49,31 @@ export function ProjectStep({
     <div className="grid gap-4">
       <label className="grid gap-2 text-sm">
         <span>Project for this setup</span>
-        <NativeSelect
-          value={current?.id ?? ""}
-          onChange={(event) => {
+        <Select
+          items={Object.fromEntries(
+            projects.map((project) => [
+              project.id,
+              `${project.name}${project.role === "owner" ? "" : " (read-only)"}`,
+            ]),
+          )}
+          value={current?.id ?? null}
+          onValueChange={(next) => {
             setStep(0)
-            select(event.target.value)
+            select(next)
           }}
         >
-          <NativeSelectOption value="" disabled>
-            Choose a project
-          </NativeSelectOption>
-          {projects.map((project) => (
-            <NativeSelectOption key={project.id} value={project.id}>
-              {project.name}
-              {project.role === "owner" ? "" : " (read-only)"}
-            </NativeSelectOption>
-          ))}
-        </NativeSelect>
+          <SelectTrigger>
+            <SelectValue placeholder="Choose a project" />
+          </SelectTrigger>
+          <SelectContent>
+            {projects.map((project) => (
+              <SelectItem key={project.id} value={project.id}>
+                {project.name}
+                {project.role === "owner" ? "" : " (read-only)"}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </label>
       {current?.role === "owner" ? (
         <div className="flex items-start gap-3 rounded-lg border border-primary/15 bg-primary/5 p-4">

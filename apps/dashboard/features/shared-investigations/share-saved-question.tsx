@@ -1,5 +1,12 @@
 "use client"
-import { Button } from "@flowmark/ui"
+import {
+  Button,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@flowmark/ui"
 import { useMutation } from "@tanstack/react-query"
 import { useState } from "react"
 import { useTRPCClient } from "../platform/api-trpc"
@@ -46,24 +53,32 @@ export function ShareSavedQuestion({
         <>
           <label className="grid gap-2 text-sm">
             Maximum evidence depth
-            <select
-              className="h-10 rounded-md border border-input bg-background px-3"
+            <Select
+              items={{
+                business: "Business · published evidence",
+                ...(current?.role !== "business"
+                  ? { diagnostic: "Diagnostic · diagnostic members only" }
+                  : {}),
+              }}
               value={depth}
-              onChange={(event) =>
-                setDepth(
-                  event.target.value === "diagnostic"
-                    ? "diagnostic"
-                    : "business",
-                )
+              onValueChange={(next) =>
+                setDepth(next === "diagnostic" ? "diagnostic" : "business")
               }
             >
-              <option value="business">Business · published evidence</option>
-              {current?.role !== "business" ? (
-                <option value="diagnostic">
-                  Diagnostic · diagnostic members only
-                </option>
-              ) : null}
-            </select>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="business">
+                  Business · published evidence
+                </SelectItem>
+                {current?.role !== "business" ? (
+                  <SelectItem value="diagnostic">
+                    Diagnostic · diagnostic members only
+                  </SelectItem>
+                ) : null}
+              </SelectContent>
+            </Select>
           </label>
           {selection ? (
             <ShareQuestion
