@@ -32,6 +32,20 @@ it("returns the instrumentation guide for the API origin that was fetched", asyn
   expect(body).toContain("does not connect an agent")
   expect(body).toContain("must never change business behavior")
   expect(body).toContain("There is no `track()`, `span()`, or `metric()`.")
+  expect(body).toContain("npm i @flowmarkdev/node@0.3.0")
+  expect(body).toContain("export async function POST()")
+  expect(body).toContain("importInvoices(flow: Flow)")
+  expect(body).toContain('flow.operation("save-invoices"')
+  expect(body).toContain(
+    'outcome: result.rejected > 0 ? "partial" : "complete"',
+  )
+  expect(body).toContain("await flowmark.shutdown()")
+  expect(body).toContain("throw error")
+  expect(body).toContain("Two entry points own two clients")
+  expect(body).toContain("needs no credentials during builds")
+  expect(body).toContain("3 seconds")
+  expect(body).toContain("Authentication failures are not retried")
+  expect(body).toContain("new** run")
   expect(body).not.toMatch(/fm_[A-Za-z0-9]+/)
 })
 

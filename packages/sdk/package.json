@@ -58,7 +58,8 @@
     "build": "tsc -p tsconfig.build.json",
     "lint": "eslint src test",
     "test": "vitest run",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test:consumer": "node ../../scripts/verify-sdk-consumer.mjs"
   },
   "dependencies": {
     "@flowmarkdev/core": "workspace:*",

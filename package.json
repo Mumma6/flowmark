@@ -39,7 +39,7 @@
     "db:seed": "pnpm --filter @flowmark/auth db:seed",
     "db:setup": "pnpm --filter @flowmark/auth db:setup",
     "db:reset-local-telemetry": "pnpm --filter @flowmark/db db:reset-local-telemetry",
-    "test": "node --test scripts/*.test.mjs && turbo test",
+    "test": "node --test scripts/*.test.mjs && turbo test && pnpm --filter @flowmarkdev/node test:consumer",
     "test:integration": "pnpm --filter @flowmark/db test:integration",
     "typecheck": "turbo typecheck",
     "dev:all": "pnpm dev:setup && pnpm infra doctor --require-ready && turbo dev",

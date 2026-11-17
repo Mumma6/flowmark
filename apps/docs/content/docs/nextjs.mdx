@@ -1,92 +1,135 @@
 ---
-title: Next.js server integration
-description: Record workflows in Route Handlers and Server Actions.
+title: Next.js integration
+description: Start workflows in Route Handlers or Server Actions; let Next own delivery.
 ---
 
-## Install
+Use Next.js 16 or newer with the Node.js runtime. Install `@flowmarkdev/node`.
+For published **0.3.0**, set `FLOWMARK_API_KEY` and
+`FLOWMARK_API_URL=https://api.flowmark.dev` in the server environment. Local or
+staging Flowmark APIs use their own explicit origin. Never use `NEXT_PUBLIC_*`
+for a private key. See [configuration](/docs/configuration) for release-specific defaults.
 
-```bash
-npm i @flowmarkdev/node
-```
-
-## Configure a server client
-
-Use the `@flowmarkdev/node/next` entry point from a server-only module. This is an
-ordinary module; neither the module name nor `flowmark.config.ts` is
-automatically discovered.
+## Create one shared client
 
 ```ts
-// lib/flowmark.ts
+// lib/flowmark.ts (server only)
 import { createFlowmark } from "@flowmarkdev/node/next"
 
 export const flowmark = createFlowmark()
 ```
 
-Set the private `FLOWMARK_API_KEY` in the server environment. Set `FLOWMARK_API_URL`
-when the API is not the development default `http://localhost:3003`. Never put
-a private write key in client code or a `NEXT_PUBLIC_*` variable.
+This is the entire lifecycle setup. Construction and typed workflow definitions
+are inert: they read no credentials, start no delivery and call no `after()`.
+Importing this module during `next build` needs no runtime credentials.
+Configuration is validated when a workflow starts or an expectation is settled.
+Missing credentials then throw explicitly; they do not create a silent no-op client.
 
-## Instrument a handler
+## Instrument an existing handler
 
-Use the shared client in a Route Handler or Server Action. `importInvoices`
-below belongs to your application:
+Keep your existing authentication, validation and response behavior. `saveInvoices`
+below is your application's business logic:
 
 ```ts
 import { flowmark } from "@/lib/flowmark"
 
+export const runtime = "nodejs"
+
 export async function POST() {
   const flow = flowmark.workflow("invoice.import")
   try {
-    flow.step("file-validated", {
-      properties: { rowCount: 120 },
+    flow.step("file-validated")
+    const result = await flow.operation("save-invoices", () => saveInvoices(), {
+      mapError: () => ({ code: "SAVE_FAILED" }),
     })
-    const result = await importInvoices()
-    flow.done({ result: { saved: result.saved, skipped: result.skipped } })
-  } catch (cause) {
-    flow.error({
-      code: "INVOICE_IMPORT_FAILED",
-      handled: false,
-      retryable: false,
+    flow.done({
+      outcome: result.rejected > 0 ? "partial" : "complete",
+      result: { imported: result.imported, rejected: result.rejected },
     })
-    flow.fail({ code: "INVOICE_IMPORT_FAILED", retryable: false })
-    throw cause
+    return Response.json(result)
+  } catch (error) {
+    flow.fail({ code: "IMPORT_FAILED" })
+    throw error
   }
+}
+```
+
+`operation()` measures work and preserves its return value or original rejection.
+It closes its operation, but a rejected operation does not fail the workflow.
+The catch above reports terminal failure and preserves the application's error.
+`done()` means execution completed; `outcome: "partial"` and counts describe its
+business result. See [completion](/docs/reference/completion).
+
+## Server Actions
+
+An action uses the same shared client and marker API:
+
+```ts
+"use server"
+
+import { flowmark } from "@/lib/flowmark"
+import { importInvoices } from "@/business/import-invoices"
+
+export async function importAction() {
+  // Preserve the action's existing authorization and validation here.
+  const flow = flowmark.workflow("invoice.import")
+  return importInvoices(flow)
+}
+```
+
+The shared business function records operations and terminal markers, as shown in
+the [Node.js guide](/docs/nodejs#share-business-logic-with-nextjs). It imports neither
+runtime adapter. A standalone script creates a Node client and owns shutdown;
+it never imports the Next client module or probes request scope with exceptions.
+
+## Supported execution boundaries
+
+| Context                                                 | Behavior                                                            |
+| ------------------------------------------------------- | ------------------------------------------------------------------- |
+| Route Handler / Server Action, Node.js runtime          | Start instrumentation here; delivery drains automatically           |
+| Module import or typed workflow definition during build | Inert; credentials are not needed                                   |
+| Server Component render / static generation             | Import is safe; move business instrumentation to its handler/action |
+| Application work deliberately inside `after()`          | Start and finish the workflow inside the application's callback     |
+| Separate background worker / standalone script          | Use the Node entry point and process-owned shutdown                 |
+| Client Component, Pages API route, Edge/Proxy           | This Next adapter is not supported                                  |
+
+Next's `after()` can run during prerender and does not make a page dynamic.
+Rendering can repeat during build, revalidation or navigation. It is therefore
+not a reliable boundary for business executions. Starting a workflow during
+static rendering is real instrumentation and requires credentials; the SDK does
+not guess whether it should suppress it.
+
+For intentional post-response business work:
+
+```ts
+import { after } from "next/server"
+import { flowmark } from "@/lib/flowmark"
+
+export async function POST() {
+  after(async () => {
+    const flow = flowmark.workflow("invoice.import")
+    await importInvoices(flow)
+  })
   return Response.json({ accepted: true })
 }
 ```
 
-## Automatic delivery
+Nested `after()` is supported. This remains subject to the route/host's maximum
+duration; Flowmark does not extend arbitrary job lifetimes. Await business work
+inside its owner; an unawaited promise or timer is not a lifecycle guarantee.
 
-The adapter uses Next.js `after()` to drain delivery after the response; there
-is no need for a transport, wrapper, or manual flush. Use it only in supported
-server request contexts—not Client Components, middleware, or during rendering.
-If telemetry delivery fails, the adapter logs it and does not undo application
-changes.
+## Automatic delivery and diagnostics
 
-`defineConfig()` can provide typed server options, but it only returns its input
-unchanged. Explicitly import and pass the configuration to the client; no
-configuration file is loaded automatically.
+Each workflow start or expectation settlement creates an independent delivery
+client and registers `after()` before emitting. The callback drains and releases
+it even if the handler throws. There is no manual `flush()`/`shutdown()`, React
+provider, special config file or runtime fallback.
 
-See [local development](/docs/local-development) for the current stack and
-[configuration](/docs/configuration) for all client options.
+Delivery errors are logged and do not replace the response or undo application
+changes. Pass `onInstrumentationError` for marker/delivery diagnostics and
+`onDeliveryHealth` for the final counters after each client drains, including
+failed drains. Those callbacks' errors are contained. Configuration errors remain
+explicit at the instrumentation call. See [delivery](/docs/delivery).
 
-## Request lifecycle
-
-Create the shared adapter in a server-only module, then start runs inside a
-supported request context. The adapter returns workflow/definition and expectation settlement methods; it does not
-expose manual `flush()` or `shutdown()`.
-
-Each workflow start or expectation settlement call creates a separate delivery
-client and registers its drain in that request lifecycle. No React provider, callback wrapper, or special configuration file
-is needed.
-
-## Continue instrumenting
-
-The returned run has the [standard marker API](/docs/reference):
-checkpoints, operations, progress, errors, properties, and completion.
-Use [`operation()`](/docs/reference/operation) for measured work and
-[`done({ result })`](/docs/reference/completion) for a bounded business summary.
-
-## Expectation evidence
-
-[Expected confirmations](/docs/reference/expectations) require the accepting `expectations-v1` server and migrations. Resolve/cancel are explicit, project-scoped evidence reports and may follow a terminal run without changing its outcome/result. Direct browser evidence stays untrusted; the existing generic server-key proxy rejects expectation events. Deadlines are evaluated on read from server observation, without background notifications or a retention extension.
+The adapter exposes `workflow`, `defineWorkflow`, `resolveExpectation` and
+`cancelExpectation`. Expectation settlements require the accepting
+`expectations-v1` server; see [expectations](/docs/reference/expectations).

@@ -5,7 +5,7 @@ import { ApiOriginSchema } from "./api-origin.js"
 
 const SettingsSchema = Schema.Struct({
   apiKey: Schema.Redacted(
-    Schema.String.pipe(Schema.check(Schema.isMinLength(1))),
+    Schema.String.pipe(Schema.check(Schema.isPattern(/\S/))),
   ),
   apiUrl: ApiOriginSchema,
 })
@@ -23,10 +23,10 @@ export function resolveSettings(
   config: FlowmarkConfig,
 ): FlowmarkSettingsService {
   const apiKey = config.apiKey ?? process.env.FLOWMARK_API_KEY
-  if (!apiKey) {
+  if (typeof apiKey !== "string" || !apiKey.trim()) {
     throw new FlowmarkConfigError({
       cause:
-        "A server write key is required. Set FLOWMARK_API_KEY in the server environment or pass apiKey to createFlowmark(). For the local repository demo, run pnpm dev:setup first. Never put a server key in browser configuration.",
+        "A server write key is required. Set FLOWMARK_API_KEY in the server environment or pass apiKey to createFlowmark(). Never put a server key in browser configuration.",
     })
   }
   const decoded = Schema.decodeUnknownResult(SettingsSchema)({
@@ -34,9 +34,7 @@ export function resolveSettings(
     apiUrl:
       config.apiUrl ??
       process.env.FLOWMARK_API_URL ??
-      (process.env.NODE_ENV !== "production"
-        ? "http://localhost:3003"
-        : undefined),
+      "https://api.flowmark.dev",
   })
   return Result.match(decoded, {
     onFailure: (cause) => {

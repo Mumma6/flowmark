@@ -13,7 +13,7 @@ failures never replace your return value or thrown error.
 npm i @flowmarkdev/node
 ```
 
-Source package version: **0.3.0** (see `package.json`). It depends on `@flowmarkdev/core` at the
+Source package version: **0.3.0** (version bump pending; changes below are unreleased) (see `package.json`). It depends on `@flowmarkdev/core` at the
 same version. Node.js 20.19 or newer is required. Next.js 16 or newer is an
 optional peer for `@flowmarkdev/node/next`.
 
@@ -39,6 +39,10 @@ export const flowmark = createFlowmark()
 ```
 
 The Next.js client drains with `after()`. Do not call `shutdown()` yourself.
+Start runs inside Node-runtime App Router Route Handlers or Server Actions.
+Importing/constructing the client during build is safe; render/static generation
+is not a business-execution boundary. For application-owned work inside `after()`,
+start and finish the workflow inside that callback.
 Its public methods are `workflow`, `defineWorkflow`, `resolveExpectation`, and
 `cancelExpectation`.
 
@@ -68,10 +72,18 @@ FLOWMARK_API_KEY=<project write key>
 FLOWMARK_API_URL=https://api.flowmark.dev
 ```
 
+The environment example above works with published **0.3.0** and this source.
+**Unreleased default change:** the next SDK release will use
+`https://api.flowmark.dev` in every environment when `apiUrl`/`FLOWMARK_API_URL`
+is omitted. Hosted users will need only `FLOWMARK_API_KEY`. Local and staging
+users must supply their API origin when upgrading. Published 0.3.0 still requires
+an explicit production URL and defaults to localhost outside production.
+
 Server only. Never put the write key in `NEXT_PUBLIC_*` or a browser bundle.
-`FLOWMARK_API_URL` is the API origin, not `/v1/events`. Production needs an
-explicit origin. Outside production, the server client defaults to
-`http://localhost:3003`.
+`FLOWMARK_API_URL` is the API origin, not `/v1/events`. The SDK does not load
+.env files. Missing/blank keys or invalid URLs throw `FlowmarkConfigError`:
+immediately in Node, at the first workflow/settlement call in Next. Next client
+construction is inert and safe during builds without credentials.
 
 ```ts
 import { flowmark } from "./flowmark"
@@ -96,6 +108,40 @@ export async function completeCheckout(orderId: string) {
   }
 }
 ```
+
+## Next.js and scripts in the same application
+
+Let each entry point own its client. Shared business logic accepts a `Flow`:
+
+```ts
+import type { Flow } from "@flowmarkdev/node"
+
+export async function importInvoices(flow: Flow) {
+  // Existing application work, operation()/step(), then done() or fail().
+}
+```
+
+The Route Handler starts a run with its Next client and passes it in. The CLI
+starts a run with its Node client, passes it to the same function, then drains:
+
+```ts
+const flowmark = createFlowmark() // Node entry point
+try {
+  await importInvoices(flowmark.workflow("invoice.import"))
+} finally {
+  try {
+    await flowmark.shutdown()
+  } catch (error) {
+    console.error("Flowmark delivery failed", error)
+  }
+}
+```
+
+The catch makes delivery failure visible without masking a business exception.
+The SDK installs no signal handlers. Long-lived clients flush at a job boundary
+and shut down only after all their work finishes. Shared business logic imports
+neither runtime client: no request-scope probing, exception matching, mutable
+fallback clients or custom lifecycle adapters are needed.
 
 ## Markers
 
@@ -277,6 +323,8 @@ supersede a pending `done()`.
 - [Attempts](https://docs.flowmark.dev/docs/reference/attempts)
 - [Expectations](https://docs.flowmark.dev/docs/reference/expectations)
 - [Delivery](https://docs.flowmark.dev/docs/delivery)
+- [Next.js](https://docs.flowmark.dev/docs/nextjs)
+- [Node.js scripts and shared business logic](https://docs.flowmark.dev/docs/nodejs)
 
 Runnable loopback examples live in the repository under `packages/sdk/examples/`.
 
@@ -288,12 +336,12 @@ MIT · [Mumma6/flowmark](https://github.com/Mumma6/flowmark)
 
 SDK **0.3.0** adds the `@flowmarkdev/node/read` subpath, providing
 `createFlowmarkReadClient`, `FlowmarkReadClient`, `FlowmarkReadError` and the public
-read DTO types. See the [run read guide](../../docs/sdk/public-run-read.md) for
+read DTO types. See the [run read guide](https://docs.flowmark.dev/docs/public-reads) for
 read-key issuance, self-hosted URLs, limits and the runnable CLI. Both the SDK
 publication and the accepting API deployment must be complete before using these
 reads. Existing ingestion exports are unchanged.
 
 `client.readPeriod` supports the same explicit technical-period selection used
-by Studio/MCP. See [period comparisons](../../docs/sdk/public-period-read.md) for
+by Studio/MCP. See [period comparisons](https://docs.flowmark.dev/docs/public-reads) for
 full-population counts, coverage and unsupported filters. Both read methods
 share the same scoped transport, auth/error boundary and runnable consumer.

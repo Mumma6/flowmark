@@ -1,0 +1,86 @@
+---
+title: Node.js scripts and workers
+description: Own delivery at the process boundary and share business logic with Next.js.
+---
+
+Install `@flowmarkdev/node` and configure the server as described in the
+[quickstart](/docs/sdk). Published **0.3.0** needs `FLOWMARK_API_KEY` and an explicit
+`FLOWMARK_API_URL` in production. Scripts inherit environment variables; unlike
+Next.js, the SDK does not load `.env` files. Load them before creating the client.
+
+## A short-lived script
+
+The process creates one client, starts runs and drains before exit. `importInvoices`
+is your existing business function, accepting a [Flow](/docs/reference/workflow).
+
+```ts
+import { createFlowmark } from "@flowmarkdev/node"
+import { importInvoices } from "./business/import-invoices"
+
+const flowmark = createFlowmark()
+try {
+  const result = await importInvoices(flowmark.workflow("invoice.import"))
+  console.log(result)
+} finally {
+  try {
+    await flowmark.shutdown()
+  } catch (error) {
+    console.error("Flowmark delivery failed", error)
+  }
+}
+```
+
+The inner catch makes a delivery problem visible without replacing a business
+exception or successful result. If telemetry delivery is a requirement of a
+separate verification script, let its explicit drain reject instead.
+
+## Share business logic with Next.js
+
+Keep the business function independent of either runtime client:
+
+```ts
+import type { Flow } from "@flowmarkdev/node"
+
+export async function importInvoices(flow: Flow) {
+  try {
+    const result = await flow.operation("save-invoices", () => saveInvoices(), {
+      mapError: () => ({ code: "SAVE_FAILED" }),
+    })
+    flow.step("saved")
+    flow.done({
+      outcome: result.rejected > 0 ? "partial" : "complete",
+      result: { imported: result.imported, rejected: result.rejected },
+    })
+    return result
+  } catch (error) {
+    flow.fail({ code: "IMPORT_FAILED" })
+    throw error
+  }
+}
+```
+
+`saveInvoices()` above is your application's existing helper. A Next Route Handler
+or Server Action starts the run using its shared `@flowmarkdev/node/next` client
+and passes the Flow to this function. The CLI starts the run with its own Node
+client. A narrow `Pick<FlowmarkClient, "workflow">` dependency also works when the
+business module owns run creation. No runtime probing or lifecycle wrapper is
+needed. Keep Next-only imports out of the shared business module.
+
+See the [Next.js guide](/docs/nextjs) for the matching request entry point.
+
+## Long-lived workers and servers
+
+Reuse the process client across jobs. `await flowmark.flush()` drains pending
+evidence without closing it. Call `shutdown()` after all work using that client
+has finished, from the application's existing graceful-shutdown path. The SDK
+installs no signal handlers and does not call `process.exit()`.
+
+`shutdown()` drains queued events and releases delivery resources; it does not
+finish business work, close open operations, or fabricate `done()`/`fail()` events.
+Repeated shutdown calls share the same result. Starting a new workflow on a
+closed client throws. A drain can reject after delivery failures; it does not
+reset cumulative `deliveryHealth()` counters. See [delivery](/docs/delivery).
+
+For a new business attempt after terminal failure, generate a new run and optionally
+pass `retryOf`. Continue the same id only while the original process is unfinished.
+See [attempts](/docs/reference/attempts).

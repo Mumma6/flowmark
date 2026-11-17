@@ -57,7 +57,10 @@ export function defineConfig<const T extends NextFlowmarkConfig>(
  * Use in Route Handlers or Server Actions. Not Client Components, middleware, or render.
  * Reads FLOWMARK_API_KEY and FLOWMARK_API_URL. Never NEXT_PUBLIC_*.
  * Drains via after() — do not call shutdown() yourself.
- * One shared module-level client; wrap the places the developer named.
+ * Construction is inert and safe during builds without credentials. Configuration
+ * is checked at the first workflow/settlement call in a request, never by probing
+ * runtime errors. Standalone scripts must own a separate Node client and pass a
+ * Flow or workflow-capable dependency into shared business logic.
  * @example
  * import { createFlowmark } from "@flowmarkdev/node/next"
  * export const flowmark = createFlowmark()

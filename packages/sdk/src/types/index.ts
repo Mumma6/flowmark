@@ -58,8 +58,8 @@ export interface FlowmarkConfig {
   readonly apiKey?: string
   /**
    * Flowmark API origin, not an ingestion path.
-   * Defaults to FLOWMARK_API_URL or http://localhost:3003 outside production.
-   * Production requires an explicit origin. HTTPS is required except on localhost.
+   * Defaults to FLOWMARK_API_URL or https://api.flowmark.dev in every environment.
+   * Set explicitly for local/staging APIs. HTTPS is required except on localhost.
    */
   readonly apiUrl?: string
   /** Optional deployment environment added to each started event. */

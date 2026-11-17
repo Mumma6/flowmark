@@ -13,10 +13,33 @@ import { createFlowmark, defineConfig } from "../src/adapters/next.js"
 afterEach(() => {
   callbacks.length = 0
   vi.unstubAllGlobals()
+  vi.unstubAllEnvs()
   vi.restoreAllMocks()
 })
 
 describe("Next.js integration", () => {
+  it("defers credentials until instrumentation runs and reads the runtime environment", async () => {
+    vi.stubEnv("FLOWMARK_API_KEY", undefined)
+    vi.stubEnv("FLOWMARK_API_URL", undefined)
+    const fetcher = vi.fn<typeof fetch>(
+      async () => new Response(null, { status: 202 }),
+    )
+    vi.stubGlobal("fetch", fetcher)
+    const client = createFlowmark()
+    const definition = client.defineWorkflow("build.safe")
+    expect(callbacks).toHaveLength(0)
+    expect(fetcher).not.toHaveBeenCalled()
+    expect(() => definition.start()).toThrow("Set FLOWMARK_API_KEY")
+    await callbacks[0]()
+    expect(fetcher).not.toHaveBeenCalled()
+    vi.stubEnv("FLOWMARK_API_KEY", "runtime-key")
+    definition.start().done({ outcome: "complete" })
+    await callbacks[1]()
+    expect(String(fetcher.mock.calls[0]?.[0])).toBe(
+      "https://api.flowmark.dev/v1/events",
+    )
+  })
+
   it("registers and drains settlement-only requests without creating a workflow", async () => {
     const fetcher = vi.fn<typeof fetch>(async () =>
       Response.json(
