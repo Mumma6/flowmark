@@ -414,22 +414,32 @@ never stored in PostgreSQL or logged by the CLI. No invitation lookup endpoint i
 exposed. The invitation is removed after account creation. Links expire after 24
 hours.
 
-From a trusted operator shell configured with the target's existing server email
-and database settings, run:
+From a trusted operator shell, run:
 
 ```sh
 pnpm invite user@example.com
 ```
 
-Supply `DATABASE_URL`, `BETTER_AUTH_URL`, `RESEND_API_KEY`,
+With no explicit invitation environment, the command reads the existing Pulumi
+`production` stack through the signed-in Pulumi CLI. It reuses the managed Neon
+branch/compute/role/database, domain-restricted sending key, and API email
+bindings. Values remain in process memory: no hosted settings, app env files or
+parallel secret catalog are created or updated. The command prints its target
+before proceeding. Pulumi must already be installed and authenticated.
+
+Check the configuration and invitation table without writing or sending email:
+
+```sh
+pnpm invite user@example.com --check
+```
+
+A complete explicit environment remains supported for Staging, Preview or local
+operation: supply `DATABASE_URL`, `BETTER_AUTH_URL`, `RESEND_API_KEY`,
 `FLOWMARK_EMAIL_FROM`, `FLOWMARK_EMAIL_REPLY_TO`, and
-`FLOWMARK_EMAIL_ENVIRONMENT` from the existing approved environment. For hosted
-targets, also set the existing `NEON_BRANCH` selector to the same environment
-(`production`, `staging`, or `preview`); leave `DATABASE_MIGRATION_URL` unset.
-The command does not pull credentials, load local env files, migrate, or seed.
-Local targets must pass the checkout-owned Compose guard. Check the target
-database and canonical dashboard origin before running: the branch selector is
-an operator assertion, not a provider lookup.
+`FLOWMARK_EMAIL_ENVIRONMENT`. Hosted targets also need the matching `NEON_BRANCH`;
+leave `DATABASE_MIGRATION_URL` unset. Partial explicit settings fail with the
+missing variable names and never fall back to Production. Local targets still
+pass the checkout-owned Compose guard. The command never migrates or seeds.
 
 Duplicate active invitations and existing accounts send no email. Running the
 command after expiry issues a new link and invalidates the old one. A reported
