@@ -29,9 +29,8 @@ Dashboard
 The reference API is `https://api.flowmark.dev` and the dashboard is
 `https://app.flowmark.dev`. Maintainer operating notes for that deployment
 stay outside the public tree. The same application shape runs locally with checkout-owned Docker Compose.
-Neon and Vercel are the reference hosted stack. A supported self-host distribution
-is not a project goal; configurable PostgreSQL and origins preserve adapter
-boundaries rather than certify an arbitrary deployment ([ADR 0006](./decisions/0006-mvp-0.1-infrastructure.md)).
+Neon and Vercel host the maintained product. Configurable PostgreSQL and origins
+preserve adapter boundaries for local development and maintained environments ([ADR 0006](./decisions/0006-mvp-0.1-infrastructure.md)).
 Flowmark is software you deploy; it is not a separate hosted enterprise product
 or SSO platform. The server application is a replaceable HTTP/framework shell;
 API use cases, ports, and persistence adapters live in the separate

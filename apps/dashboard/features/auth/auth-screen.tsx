@@ -145,7 +145,7 @@ export function AuthScreen({
           </div>
         </div>
         <p className="text-[11px] text-muted-foreground">
-          Open-source process intelligence for people and agents.
+          Source-available process intelligence for people and agents.
         </p>
       </aside>
 

@@ -16,7 +16,7 @@ export const metadata: Metadata = {
     "workflow observability",
     "TypeScript",
     "SDK",
-    "open source",
+    "source available",
     "AI agents",
     "MCP",
     "Flowmark Studio",

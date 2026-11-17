@@ -44,8 +44,7 @@ funnel, and release associations do not establish causality.
   environment-specific evidence. Exported copies cannot be recalled.
 - Source permission and lifecycle tests do not establish a completed hosted
   rollout, privacy/legal acceptance, backup restore or incident rehearsal.
-- A supported self-host distribution was cancelled as a Product 1.0 deliverable.
-  Optional MFA and shorter retention controls are not required 1.0 capabilities.
+- Optional MFA and shorter retention controls are not required 1.0 capabilities.
 
 ## Operational follow-ups
 

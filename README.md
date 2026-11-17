@@ -11,11 +11,11 @@
 
 <p align="center">
   <a href="https://www.npmjs.com/package/@flowmarkdev/node"><img alt="npm" src="https://img.shields.io/npm/v/@flowmarkdev/node?color=b9f597&label=npm&labelColor=0d1311" /></a>
-  <a href="./LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/License-MIT-b9f597?labelColor=0d1311" /></a>
+  <a href="./LICENSE"><img alt="FSL-1.1-ALv2 platform license" src="https://img.shields.io/badge/License-FSL--1.1--ALv2-b9f597?labelColor=0d1311" /></a>
   <a href="https://flowmark.dev"><img alt="flowmark.dev" src="https://img.shields.io/badge/flowmark.dev-0d1311" /></a>
 </p>
 
-Flowmark is an open-source process-intelligence platform for people and AI
+Flowmark is a source-available process-intelligence platform for people and AI
 agents. Instrument the processes your application already runs, collect execution
 evidence, and understand technical and reported business outcomes over time.
 
@@ -156,9 +156,8 @@ Browser clients use a public browser key, or a same-origin proxy that keeps the
 server write key private. See
 [browser integration](https://docs.flowmark.dev/docs/browser).
 
-The repository supports local development and inspectable contributions. A supported
-self-host distribution is not a project goal; configurable origins are compatibility
-boundaries, not a promise of deployment support.
+Flowmark is a hosted product. The public repository supports code inspection,
+learning and local development for contributions.
 
 ## Documentation
 
@@ -237,4 +236,15 @@ infrastructure follows the
 
 ## License
 
-[MIT](./LICENSE)
+The platform uses [FSL-1.1-ALv2](./LICENSE): source-available, with restrictions
+on competing commercial uses. Each version also becomes available under Apache
+2.0 two years after it is made available. FSL is not OSI-approved open source.
+
+The public SDK ([core](./packages/core/LICENSE) and [node](./packages/sdk/LICENSE)),
+documentation and examples use Apache-2.0. SDK consumers can use the SDK in
+personal, commercial, enterprise and open-source applications without adopting
+FSL. Using the hosted service does not require licensing your application under FSL.
+
+Previously distributed MIT versions retain their MIT rights. Code licenses do
+not grant general rights to the Flowmark name or branding. See
+[licensing scope and exceptions](./docs/licensing.md).

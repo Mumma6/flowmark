@@ -2,7 +2,7 @@
   "name": "@flowmarkdev/node",
   "version": "0.3.0",
   "description": "Workflow observability for processes your Node.js and Next.js apps already run",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

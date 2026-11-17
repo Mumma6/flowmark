@@ -18,3 +18,9 @@ the v4 Schema API; for example, use `Schema.decodeUnknownEffect(schema)` and
 `typeof schema.Type`. Telemetry JSON contracts are unchanged. Upgrade
 `@flowmarkdev/core` and `@flowmarkdev/node` together. Do not depend on Effect
 v3 error internals.
+
+## License
+
+Copyright 2026 Martin Persson. Licensed under [Apache-2.0](./LICENSE). This public
+SDK dependency does not use the platform's FSL license. Previously distributed
+MIT versions retain their MIT rights.

@@ -205,7 +205,7 @@ resolution. It never trusts an ordinary browser-supplied `X-Forwarded-For`.
 
 On Vercel (`VERCEL=1`), direct requests use the platform's single
 `x-vercel-forwarded-for` address. See [Vercel request headers](https://vercel.com/docs/headers/request-headers).
-For self-hosting, the optional `FLOWMARK_AUTH_TRUSTED_IP_HEADER` accepts
+Outside Vercel, the optional `FLOWMARK_AUTH_TRUSTED_IP_HEADER` accepts
 `x-real-ip` or `cf-connecting-ip` only after the operator restricts the origin to a
 proxy that overwrites that header. A header name alone does not establish trust;
 leave this unset on an unprotected origin. Invalid/multiple addresses supply no
@@ -263,7 +263,7 @@ rows. Apply it before dependent API code through [database rollout](./migrations
 New proxy metadata uses the existing server-only `FLOWMARK_*` environment path;
 never use `NEXT_PUBLIC_*`, a browser cookie, or the Better Auth signing secret for
 it. Prepare separate proxy secrets for Preview, Staging and Production. The
-optional self-hosted trusted-header setting does not belong on Vercel.
+optional trusted-header setting does not belong on Vercel.
 
 Implementation tests are separate from hosted activation. Before accepting the
 Staging proxy contract, approve the exact environment/revision, provision the
