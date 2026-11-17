@@ -1,55 +1,8 @@
-import { Array as EffectArray, Match } from "effect"
+import { Match } from "effect"
 import type { RemoteAgentAccessDeployment } from "./agent-access-capability"
-import { cursorMcpClientId, cursorMcpConfig } from "./cursor-mcp-client"
 
 type AgentAccessKind = RemoteAgentAccessDeployment["kind"]
-
-export type AgentClientId = "codex" | "cursor" | "claude-code" | "custom"
-
-const connectedGuide = (
-  id: AgentClientId,
-  mcpUrl: string,
-): AgentClientGuide => {
-  if (id === "cursor") {
-    return {
-      id,
-      label: "Cursor",
-      summary:
-        "Cursor uses Streamable HTTP and a pre-registered public client. Dynamic registration stays closed. Studio does not write Cursor's config, and copying this text does not grant access. Vendor compatibility is not a substitute for approving projects. The reference HTTP client remains the automated proof.",
-      steps: [
-        `Add the endpoint ${mcpUrl} with static OAuth client id ${cursorMcpClientId}. Do not set a client secret or paste an ingestion key.`,
-        "Cursor desktop redirects to http://localhost:8787/callback. Cursor on the web uses https://www.cursor.com/agents/mcp/oauth/callback. Both are registered. Custom-scheme callbacks are not accepted.",
-        "Sign in and approve only the projects you select on the Studio consent screen.",
-        "Call get_connection, then investigate with list_workflows, find_runs, get_run, compare_run, or get_workflow_insights.",
-        "Inspect the tool result. A copied snippet does not authorize those calls.",
-      ],
-      pasteHint: `Copy this into Cursor mcp.json yourself. Flowmark does not write that file.\n${cursorMcpConfig(mcpUrl)}`,
-    }
-  }
-  const label = MatchLabel[id]
-  return {
-    id,
-    label,
-    summary: `Inspectable steps for ${label}. Vendor compatibility is not established; the tested path is the reference HTTP client. Studio does not write the client's files, and copying this text does not grant access.`,
-    steps: [
-      `Register the MCP endpoint ${mcpUrl} in ${label}. Use OAuth; do not paste an ingestion key or a dashboard cookie.`,
-      "Approve only the projects you select on the Studio consent screen.",
-      "Call get_connection, then investigate with list_workflows, find_runs, get_run, compare_run, or get_workflow_insights. Copying this text does not authorize those calls.",
-      "Inspect the tool result. Studio records connection authentication, which does not prove a successful project read.",
-      "A saved snippet or a failed copy is not a connection, and it does not mean an agent process is running.",
-    ],
-    pasteHint:
-      "Copy the endpoint into the client yourself. Flowmark does not write a global client configuration.",
-  }
-}
-
-const MatchLabel: Record<AgentClientId, string> = {
-  codex: "Codex",
-  cursor: "Cursor",
-  "claude-code": "Claude Code",
-  custom: "Custom agent",
-}
-
+export type AgentClientId = "cursor"
 export type AgentClientGuide = {
   readonly id: AgentClientId
   readonly label: string
@@ -57,14 +10,7 @@ export type AgentClientGuide = {
   readonly steps: readonly string[]
   readonly pasteHint: string
 }
-
-export const agentClientOrder: readonly AgentClientId[] = [
-  "codex",
-  "cursor",
-  "claude-code",
-  "custom",
-]
-
+export const agentClientOrder: readonly AgentClientId[] = ["cursor"]
 export type AgentExampleQuestion = {
   readonly id: string
   readonly label: string
@@ -74,67 +20,39 @@ export type AgentExampleQuestion = {
 export function agentClientGuides(
   mcpUrl?: string,
 ): readonly AgentClientGuide[] {
-  if (mcpUrl) {
-    return EffectArray.map(agentClientOrder, (id) => connectedGuide(id, mcpUrl))
-  }
   return [
-    {
-      id: "codex",
-      label: "Codex",
-      summary:
-        "Use Codex in the CLI or IDE you already trust. MCP metadata could not be confirmed, so paste Studio links and copied summaries yourself.",
-      steps: [
-        "Open Explore or Runs in Studio for the project you are investigating.",
-        "Inspect one run, open the Handoff section, and copy the investigation summary.",
-        "Paste the summary and Studio link into Codex with a focused question about recorded evidence.",
-        "Keep ingestion write keys out of Codex prompts; they belong only in your server environment.",
-      ],
-      pasteHint:
-        "Paste into your Codex workspace as context. Sending a message is deliberate — nothing leaves Studio without your action.",
-    },
     {
       id: "cursor",
       label: "Cursor",
-      summary:
-        "Cursor can reason about copied Flowmark facts alongside your repository when MCP metadata could not be confirmed.",
-      steps: [
-        "Switch to the correct project in the Studio header before copying anything.",
-        "From a run inspector, copy the investigation summary or export JSON you need.",
-        "Paste the copied text into Cursor chat until this page shows an MCP endpoint. Do not invent a client secret.",
-        "Add your own code inspection; Flowmark reports application telemetry, not verified root cause.",
-      ],
+      summary: mcpUrl
+        ? "Connect Cursor to read your Flowmark evidence alongside your application code."
+        : "The MCP endpoint could not be confirmed. Retry, or continue with manual SDK setup.",
+      steps: mcpUrl
+        ? [
+            "Merge the configuration into .cursor/mcp.json in your repository. Create the file if needed.",
+            "In Cursor Settings → Tools & MCP, enable flowmark and choose Connect or Sign in.",
+            "Sign in to Flowmark in the browser, select this project and allow read access. Return to Cursor.",
+          ]
+        : [
+            "Reload this page to check the endpoint again.",
+            "You can install the SDK manually and explore evidence in Studio while the connection is unavailable.",
+          ],
       pasteHint:
-        "Use Cursor chat or docs in your repo. Do not treat a copied snippet as OAuth authorization or a verified MCP session.",
-    },
-    {
-      id: "claude-code",
-      label: "Claude Code",
-      summary:
-        "Claude Code uses the same manual handoff when MCP metadata could not be confirmed.",
-      steps: [
-        "Confirm the active Studio project matches the application you are debugging.",
-        "Copy a run handoff summary, timeline export, or the example questions below.",
-        "Paste into Claude Code with explicit references to the Studio URL you copied.",
-        "Never paste server write keys or ingestion secrets into Claude Code sessions.",
-      ],
-      pasteHint:
-        "Paste into your Claude Code session manually while metadata is unconfirmed. Do not guess an endpoint.",
-    },
-    {
-      id: "custom",
-      label: "Custom agent",
-      summary:
-        "Any agent can use the same manual path when MCP metadata could not be confirmed. Authorized evidence stays in Studio until you copy it.",
-      steps: [
-        "Read project-scoped evidence through Studio until this page confirms the MCP endpoint.",
-        "Copy structured exports or the investigation summary from a run you are allowed to view.",
-        "Hand the text and dashboard links to your agent; it combines them with code and logs you already trust.",
-        "Do not embed dashboard session cookies, write keys, or guessed MCP URLs in shared configuration.",
-      ],
-      pasteHint:
-        "Treat copied text as untrusted application-reported evidence. Your agent still needs explicit user intent to send it onward.",
+        "Flowmark does not write your Cursor configuration. Keep write keys out of this file.",
     },
   ]
+}
+
+export function cursorConnectionPrompt(
+  project: { readonly id: string; readonly name: string } | null,
+): string {
+  return [
+    "Use Flowmark MCP to call get_connection.",
+    project
+      ? `Confirm access to project ${JSON.stringify(project.name)} (project ID: ${project.id}), then call list_workflows for that project.`
+      : "Ask me which authorized project to use, then call list_workflows for it.",
+    "Report whether both calls succeeded and whether the project is authorized. An empty workflow list is fine: instrumentation comes next. If access is denied, ask me to reconnect and approve this project. Do not request an ingestion key.",
+  ].join("\n")
 }
 
 const projectLabel = (projectName: string | null) =>
@@ -248,38 +166,26 @@ export function agentAccessIntroCopy(kind: AgentAccessKind): {
   readonly body: string
   readonly separation: string
 } {
-  const title = "Read evidence with your agent"
+  const title = "Connect Cursor · recommended"
   return Match.value(kind).pipe(
     Match.when("enabled", () => ({
       title,
-      body: "Remote MCP read access is available on this deployment. Register the endpoint shown below, approve the projects you select, then investigate with the read-only tools. Copying this page does not grant access.",
+      body: "MCP lets Cursor read process evidence alongside your code. Sign in and choose which projects it can read.",
       separation:
-        "Ingestion keys authenticate your application. An MCP connection is a separate read grant. It cannot ingest events, and it is not a dashboard session.",
+        "Cursor edits your code using its own coding tools. The Flowmark SDK sends evidence; MCP reads it.",
     })),
     Match.when("unavailable", () => ({
       title,
-      body: "Remote MCP could not be confirmed for this deployment. Retry the check before registering a client. Copied instructions are not a connection.",
+      body: "The Cursor connection could not be confirmed for this environment. Retry the check or continue with manual SDK setup.",
       separation:
-        "Ingestion keys stay separate from agent read access. Do not guess an MCP endpoint.",
+        "Your application can still report evidence through the SDK. Use the endpoint shown here when the connection is available.",
     })),
     Match.exhaustive,
   )
 }
 
-export function connectPageDescription(kind: AgentAccessKind): string {
-  return Match.value(kind).pipe(
-    Match.when(
-      "enabled",
-      () =>
-        "Instrument your application, then investigate with the MCP read tools when this page shows an endpoint. Ingestion keys, copied setup, and an MCP grant stay separate. None of them is authorization by itself.",
-    ),
-    Match.when(
-      "unavailable",
-      () =>
-        "Instrument your application, then read evidence in Studio until this page confirms MCP metadata. Ingestion keys and copied handoff text do not create an OAuth connection.",
-    ),
-    Match.exhaustive,
-  )
+export function connectPageDescription(): string {
+  return "Connect Cursor, add the SDK and explore your first execution. Manual setup is available below."
 }
 
 export function agentHandoffPresentation(kind: AgentAccessKind): {

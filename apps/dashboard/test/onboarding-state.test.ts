@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest"
+import { stepIndex, steps } from "../features/onboarding/steps"
 import {
   hasServerWriteKey,
   initialSetupStep,
@@ -31,4 +32,17 @@ describe("selected-project setup state", () => {
     expect(setupSecretForProject(pending, "new-project")).toBe(value)
     expect(setupSecretForProject(null, "new-project")).toBeNull()
   })
+})
+
+it("resumes the retired install step at instrumentation while retaining the existing persisted IDs", () => {
+  expect(steps.map((step) => step.id)).toEqual([
+    "project",
+    "key",
+    "instrument",
+    "run",
+  ])
+  expect(steps[stepIndex("install")]?.id).toBe("instrument")
+  expect(steps[stepIndex("key")]?.id).toBe("key")
+  expect(steps[stepIndex("run")]?.id).toBe("run")
+  expect(steps[stepIndex("unknown")]?.id).toBe("project")
 })

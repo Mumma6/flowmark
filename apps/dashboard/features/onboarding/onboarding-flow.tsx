@@ -12,7 +12,8 @@ import { steps } from "./steps"
 import { useOnboarding } from "./use-onboarding"
 import { guidance } from "./onboarding-guidance"
 import { KeyStep } from "./step-views/key-step"
-import { InstallStep } from "./step-views/install-step"
+import { CursorConnectionSetup } from "../connect/setup/cursor-connection-setup"
+import type { RemoteAgentAccessDeployment } from "../connect/access/agent-access-capability"
 import { InstrumentStep } from "./step-views/instrument-step"
 import { RunStep } from "./step-views/run-step"
 import { ProjectStep } from "./step-views/project-step"
@@ -145,8 +146,9 @@ function OnboardingContent({
             <br className="hidden sm:block" /> understandable.
           </h1>
           <p className="mt-4 max-w-lg text-xs leading-7 text-muted-foreground">
-            A few deliberate signals are enough to begin. Set up your
-            application, report one execution, and explore what happened.
+            Start with one useful process. Connect Cursor for guided setup, or
+            use the manual SDK steps. Aim for your first insight in about 15
+            minutes.
           </p>
         </div>
         <div className="grid items-start gap-8 lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-12">
@@ -158,7 +160,7 @@ function OnboardingContent({
               aria-valuemax={steps.length}
               aria-valuenow={step + 1}
               aria-valuetext={`Step ${step + 1} of ${steps.length}: ${currentStep.title}`}
-              className="mb-5 grid grid-cols-5 gap-1.5"
+              className="mb-5 grid grid-cols-4 gap-1.5"
             >
               {steps.map((item, index) => (
                 <span
@@ -240,18 +242,25 @@ function OnboardingContent({
                 />
               ) : null}
               {currentStep.id === "key" ? (
-                <KeyStep
-                  keys={keys}
-                  createdSecret={createdSecret}
-                  hasWriteKey={hasWriteKey}
-                  current={current}
-                  setCreatedSecret={setCreatedSecret}
-                />
+                <>
+                  <CursorConnectionSetup />
+                  <DataState
+                    pending={keys.isPending}
+                    error={keys.error}
+                    retry={() => void keys.refetch()}
+                  />
+                  {keys.isSuccess && !hasWriteKey ? (
+                    <KeyStep
+                      keys={keys}
+                      createdSecret={createdSecret}
+                      hasWriteKey={hasWriteKey}
+                      current={current}
+                      setCreatedSecret={setCreatedSecret}
+                    />
+                  ) : null}
+                </>
               ) : null}
-              {currentStep.id === "install" ? (
-                <InstallStep origin={origin} />
-              ) : null}
-              {!reviewMode && step > 1 && (
+              {!reviewMode && currentStep.id === "run" && (
                 <>
                   <DataState
                     pending={keys.isPending}
@@ -269,9 +278,9 @@ function OnboardingContent({
                         <Button
                           type="button"
                           variant="outline"
-                          onClick={() => setStep(1)}
+                          onClick={() => setStep(2)}
                         >
-                          Return to key recovery
+                          Set up application key
                         </Button>
                       </AlertDescription>
                     </Alert>
@@ -279,12 +288,16 @@ function OnboardingContent({
                 </>
               )}
               {currentStep.id === "instrument" ? (
-                <InstrumentStep
-                  current={current}
-                  origin={origin}
-                  snippet={snippet}
-                  recoverKey={() => setStep(1)}
-                />
+                <>
+                  <KeyStep
+                    keys={keys}
+                    createdSecret={createdSecret}
+                    hasWriteKey={hasWriteKey}
+                    current={current}
+                    setCreatedSecret={setCreatedSecret}
+                  />
+                  <InstrumentStep origin={origin} snippet={snippet} />
+                </>
               ) : null}
               {currentStep.id === "run" ? (
                 <RunStep snapshot={snapshot} hasRuns={hasRuns} />
@@ -326,7 +339,9 @@ function OnboardingContent({
                     ? hasRuns
                       ? "Open Studio"
                       : "Finish setup"
-                    : "Continue"}
+                    : currentStep.id === "key"
+                      ? "Continue to instrumentation"
+                      : "Continue"}
                 <ArrowRight aria-hidden="true" className="size-3.5" />
               </Button>
             </div>
@@ -340,12 +355,16 @@ function OnboardingContent({
 export function OnboardingFlow(props: {
   readonly userId: string
   readonly apiOrigin: string
+  readonly agentAccess: RemoteAgentAccessDeployment
   readonly email: string
   readonly initialStep: string
   readonly reviewMode?: boolean
 }) {
   return (
-    <RuntimeConfigProvider apiOrigin={props.apiOrigin}>
+    <RuntimeConfigProvider
+      apiOrigin={props.apiOrigin}
+      agentAccess={props.agentAccess}
+    >
       <ProjectProvider key={props.userId}>
         <OnboardingContent {...props} />
       </ProjectProvider>

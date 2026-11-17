@@ -2,7 +2,10 @@ import { Option } from "effect"
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import { OnboardingFlow } from "../../features/onboarding/onboarding-flow"
-import { getDashboardAccess } from "../../features/platform/server-runtime"
+import {
+  getDashboardAccess,
+  getRemoteAgentAccess,
+} from "../../features/platform/server-runtime"
 import { initialSetupStep } from "../../features/onboarding/onboarding-state"
 
 export const dynamic = "force-dynamic"
@@ -30,6 +33,7 @@ export default async function OnboardingPage({
       userId={access.session.user.id}
       email={access.session.user.email}
       apiOrigin={access.apiOrigin}
+      agentAccess={await getRemoteAgentAccess(access.apiOrigin)}
       initialStep={initialSetupStep(state?.step, params.step, reviewMode)}
       reviewMode={reviewMode}
     />

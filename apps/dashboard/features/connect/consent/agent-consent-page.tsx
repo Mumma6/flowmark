@@ -42,11 +42,11 @@ function AgentConsentForm({
           Flowmark / Agent access
         </p>
         <h1 className="text-3xl font-medium tracking-tight">
-          Review read access
+          Choose projects to connect
         </h1>
       </div>
       {query.isPending ? (
-        <p role="status">Loading the authorization request…</p>
+        <p role="status">Loading connection request…</p>
       ) : null}
       {query.error ? (
         <Alert variant="destructive">
@@ -69,7 +69,7 @@ function AgentConsentForm({
         <>
           <section className="grid gap-3 rounded-xl border border-border bg-card p-5">
             <h2 className="text-lg font-medium break-words">
-              {query.data.clientName ?? "OAuth client"}
+              {query.data.clientName ?? "AI client"}
             </h2>
             <p className="break-all font-mono text-xs text-muted-foreground">
               {query.data.clientId}
@@ -80,8 +80,8 @@ function AgentConsentForm({
             </p>
             {query.data.scopes.includes("offline_access") ? (
               <p className="text-sm text-muted-foreground">
-                Persistent access is requested. The client can refresh access
-                until the connection expires or is revoked.
+                Stay connected between sessions. Access continues until the
+                connection expires or you revoke it in Connect.
               </p>
             ) : null}
           </section>
@@ -143,7 +143,7 @@ function AgentConsentForm({
               disabled={pending}
               onClick={() => void submit(false)}
             >
-              Deny and return to client
+              Decline and return
             </Button>
             <Button asChild variant="ghost">
               <Link href="/connect">Cancel without granting access</Link>

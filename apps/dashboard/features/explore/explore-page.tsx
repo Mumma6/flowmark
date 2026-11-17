@@ -17,7 +17,6 @@ import {
   ArrowLeft,
   ArrowRight,
   ArrowUpRight,
-  BookOpen,
   CircleDot,
   RotateCw,
   Search,
@@ -35,7 +34,6 @@ import {
 import { RunInspector } from "../runs/investigation/run-inspector"
 import { ReferenceJourney } from "../journeys/reference-journey"
 import { startJourneyHref } from "../journeys/journey-selection"
-import { publicConfig } from "../platform/config-public"
 import { useProject } from "../projects/project-context"
 import { SaveInvestigation } from "../investigations/save-investigation"
 import { useSnapshot } from "../projects/queries"
@@ -128,6 +126,33 @@ function ExploreWorkspace() {
           </Link>
         </Button>
       </div>
+      {snapshot.isSuccess && snapshot.data.metrics.totalRuns > 0 ? (
+        <details className="text-xs leading-6 text-muted-foreground">
+          <summary className="cursor-pointer">
+            New to this evidence? Start here
+          </summary>
+          <ol className="mt-3 grid list-decimal gap-2 pl-5">
+            <li>
+              Select a process to see its execution history, then open an
+              execution.
+            </li>
+            <li>
+              Read Outcome for application-reported results. Use Timeline to
+              inspect operations, milestones and failures.
+            </li>
+            <li>
+              Ask Cursor to investigate the same evidence through{" "}
+              <Link
+                href="/connect#agent-access"
+                className="text-primary underline underline-offset-4"
+              >
+                Flowmark MCP
+              </Link>
+              .
+            </li>
+          </ol>
+        </details>
+      ) : null}
       {periodSelection._tag === "Rejected" ? (
         <Alert>
           <AlertTitle>Period selection not applied</AlertTitle>
@@ -364,7 +389,7 @@ function ExploreWorkspace() {
                 <p className="max-w-sm text-xs leading-6 text-muted-foreground">
                   {activeFilters.length
                     ? "Try another process or clear the conditions to search the recorded history."
-                    : "Instrument the work your application already owns. Its executions and reported results will appear here."}
+                    : "Connect Cursor for guided setup, or follow the manual SDK steps. Run one process in your application to see its reported result here."}
                 </p>
                 {activeFilters.length ? (
                   <Button
@@ -376,10 +401,7 @@ function ExploreWorkspace() {
                   </Button>
                 ) : (
                   <Button asChild variant="outline" className="mt-2 text-xs">
-                    <a href={publicConfig.documentationUrl}>
-                      <BookOpen aria-hidden="true" className="size-3.5" />
-                      Instrumentation guide
-                    </a>
+                    <Link href="/connect">Set up your first process</Link>
                   </Button>
                 )}
               </div>

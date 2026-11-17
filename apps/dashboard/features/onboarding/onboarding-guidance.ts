@@ -1,43 +1,35 @@
-import { Code2, KeyRound, Radio, Workflow } from "lucide-react"
+import { Code2, Radio, Workflow } from "lucide-react"
 export const guidance = {
   project: {
     icon: Workflow,
     description:
-      "Give your application a home. A project keeps its evidence, access and ingestion keys together.",
-    note: "One application, one context.",
+      "Start with the application you want to understand. A project keeps its process evidence and access together.",
+    note: "Start small.",
     detail:
-      "You can create more projects later. Start with the application and environment you want to understand first.",
+      "Name your project after your application. You can create more projects later.",
   },
   key: {
-    icon: KeyRound,
-    description:
-      "Save the credential your application uses to send evidence. Your Studio account and your write key have different jobs.",
-    note: "Your key stays on your server.",
-    detail:
-      "Store it in your application's server environment. Keep it out of browser bundles, Git, agent prompts and chat messages.",
-  },
-  install: {
     icon: Code2,
     description:
-      "Add the TypeScript SDK to the application you already own. Keep your runtime, framework and business logic.",
-    note: "Built around your application.",
+      "Recommended: let Cursor investigate Flowmark evidence alongside your code. Add the configuration, sign in and approve this project.",
+    note: "Cursor is optional.",
     detail:
-      "Use the Node client for workers and servers, or the Next.js adapter for request-lifecycle delivery. The API URL is the origin, without /v1/events.",
+      "Continue to instrumentation to use Cursor or follow the manual SDK steps. You can connect later from Connect in Studio.",
   },
   instrument: {
     icon: Workflow,
     description:
-      "Choose one process worth understanding. Use your coding agent to add meaningful context and reported outcomes.",
-    note: "Give the agent guidance, not secrets.",
+      "Save your application key, then give Cursor the prompt below. It will inspect your code and help you instrument one useful process. Manual SDK steps are available alongside it.",
+    note: "One process, one useful result.",
     detail:
-      "These instructions work with Codex, Cursor, Claude Code or your coding agent. Copying a prompt does not connect or authorize an agent.",
+      "Capture a result your application already knows, such as imported and skipped counts. Cursor edits the code; the SDK sends evidence; MCP reads it.",
   },
   run: {
     icon: Radio,
     description:
-      "Run your application normally, then follow the execution evidence into Studio.",
-    note: "Completion is one piece of evidence.",
+      "Run the process in your application, then check for its execution here.",
+    note: "Read the result, then follow the evidence.",
     detail:
-      "Reported results and expected confirmations tell you more. A completed execution does not prove every record succeeded.",
+      "Completion means the application reported completion. Check the reported result for skipped or rejected work, then inspect operations and failures.",
   },
 } as const

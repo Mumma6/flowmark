@@ -53,9 +53,9 @@ export function AgentConnections() {
       <CardHeader>
         <CardTitle>Your connections</CardTitle>
         <CardDescription>
-          These are grants for the signed-in account. Signing out of Studio ends
-          this browser session and does not revoke them. Changing the project
-          list means revoke, then connect again.
+          Review or revoke access for your connected clients. To change approved
+          projects, revoke the connection and connect again. Signing out of
+          Studio leaves these connections active.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -100,9 +100,8 @@ export function AgentConnections() {
           ) : null}
           {!list.isPending && !list.isError && connections.length === 0 ? (
             <p className="text-sm leading-6 text-muted-foreground">
-              No active connections. An expired or revoked grant is not listed.
-              Connect again from your client. That creates a new grant and does
-              not restore the old one.
+              No active connections yet. Enable Flowmark in Cursor, sign in and
+              approve a project to connect.
             </p>
           ) : null}
           <ul className="grid gap-3">

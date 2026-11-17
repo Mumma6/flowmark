@@ -57,12 +57,23 @@ export function KeyStep({
           </AlertDescription>
         </Alert>
       ) : null}
+      <p className="text-xs leading-6 text-muted-foreground">
+        Replace the placeholder with your saved write key. Keep the key out of
+        Cursor chat, source control and browser code.
+      </p>
       {!keys.isPending && !keys.error && (
-        <WriteKeyRecovery
-          key={current.id}
-          projectId={current.id}
-          onCreated={setCreatedSecret}
-        />
+        <details>
+          <summary className="cursor-pointer text-sm text-muted-foreground">
+            Need a new write key?
+          </summary>
+          <div className="mt-4">
+            <WriteKeyRecovery
+              key={current.id}
+              projectId={current.id}
+              onCreated={setCreatedSecret}
+            />
+          </div>
+        </details>
       )}
     </>
   )

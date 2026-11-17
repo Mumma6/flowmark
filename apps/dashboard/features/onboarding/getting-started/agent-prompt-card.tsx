@@ -9,14 +9,16 @@ import {
 } from "@flowmark/ui"
 import { useApiOrigin } from "../../platform/runtime-config"
 import { SetupPathTabs } from "../../connect/setup/setup-path-tabs"
+import { useProject } from "../../projects/project-context"
 import { flowmarkAgentPrompt } from "../agent-prompt"
 
 export function AgentPromptBody() {
   const origin = useApiOrigin()
+  const { current } = useProject()
   return (
     <SetupPathTabs
       origin={origin}
-      agentPrompt={flowmarkAgentPrompt(origin)}
+      agentPrompt={flowmarkAgentPrompt(origin, current)}
       compact
       onCopied={() => undefined}
     />
@@ -27,10 +29,10 @@ export function AgentPromptCard() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Coding agent</CardTitle>
+        <CardTitle>Set up with Cursor</CardTitle>
         <CardDescription>
-          Copy one instruction. The agent fetches the instrumentation guide from
-          the API and follows it. The write key stays in the server environment.
+          Copy the prompt into Cursor to instrument one process. Keep the write
+          key in your server environment.
         </CardDescription>
       </CardHeader>
       <CardContent>

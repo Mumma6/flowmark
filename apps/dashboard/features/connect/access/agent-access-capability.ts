@@ -11,9 +11,9 @@ export type RemoteAgentAccessDeployment =
 
 const unavailable: RemoteAgentAccessDeployment = {
   kind: "unavailable",
-  headline: "Remote MCP metadata could not be confirmed",
+  headline: "Cursor connection could not be confirmed",
   detail:
-    "This deployment did not return its protected-resource metadata. Retry the check. OAuth and an explicit project grant are still required before any evidence is readable. Copied instructions are not a connection.",
+    "Flowmark could not check the connection endpoint for this environment. Retry in a moment. If it still fails, check that the API is reachable.",
 }
 
 /** The metadata response is the deployment's own capability. A guessed URL is not. */

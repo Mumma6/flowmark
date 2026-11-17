@@ -63,7 +63,7 @@ const sectionHelp: Record<SettingsSection, string> = {
     "Create or select the project that owns the work you want to observe. Switch projects in the Studio header to inspect their runs.",
   keys: "Create project write keys for ingestion or secret read keys for a server-side read client. Browser ingestion keys never grant reads. Use Connect for delegated agent access.",
   setup:
-    "Follow coding-agent or manual SDK instructions to instrument your application, then verify evidence in Runs. For reading evidence with Codex, Cursor, Claude Code or a custom agent, open Connect and scroll to agent access.",
+    "Open Connect to set up Cursor, then instrument one process with the ready-to-copy prompt. Manual SDK instructions are also available here.",
   account:
     "Update the identity and credentials you use to sign in to the dashboard.",
 }

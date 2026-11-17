@@ -86,7 +86,8 @@ export function ProjectStep({
               {current?.name ?? "Selecting your project…"}
             </p>
             <p className="mt-2 text-xs leading-6 text-muted-foreground">
-              Your project is ready. Continue to configure your application.
+              Your project is ready. Next, connect Cursor or continue with
+              manual SDK setup.
             </p>
           </div>
         </div>

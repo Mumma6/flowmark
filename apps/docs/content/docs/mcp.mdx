@@ -1,90 +1,144 @@
 ---
-title: Connect an agent with MCP
-description: Connect a compatible client, choose project access, investigate evidence and revoke the connection.
+title: Connect Cursor with MCP
+description: Connect Cursor, approve a project and check read access before instrumenting your first process.
 ---
 
-Flowmark's MCP server lets a compatible agent investigate the same authorized
-application evidence as Studio. It does not execute, schedule or retry your work.
-Instrumentation and investigation are separate: the SDK writes telemetry; an MCP
-connection reads permitted evidence.
+MCP lets Cursor read Flowmark evidence alongside your application code. It helps
+you verify instrumentation and investigate what happened. Cursor is the recommended
+AI client; it has been verified against real application data in Staging.
 
-## Before you connect
+Cursor edits your repository using its own coding tools. The **SDK sends evidence**;
+**MCP reads it**. Flowmark does not execute, schedule or retry your application work.
+You can also follow the [manual SDK quickstart](/docs/sdk#manual-sdk-setup) without Cursor.
 
-Sign in to Studio and open **Connect**. Use the remote endpoint displayed for
-that environment. Do not guess an endpoint from another deployment.
+## 1. Create a project
 
-- **Not confirmed:** retry the deployment check. This is a missing metadata
-  response, not a disabled product mode.
-- **Endpoint available:** continue with a client that supports Flowmark's OAuth
-  and Streamable HTTP contract. An endpoint alone is not authorization.
+Sign in to Studio and create a project for your application. Save the write key
+for your application's server environment. Keep it out of Cursor chat and MCP
+configuration.
 
-Do not paste ingestion keys, browser keys, session cookies or a project read key
-into an MCP OAuth configuration. The [public read client](/docs/public-reads)
-uses a different credential and API.
+## 2. Add Flowmark to Cursor
 
-## Connect and investigate
+Open **Connect** in Studio (or the Cursor step during onboarding). Copy the
+configuration shown for that environment into your repository's `.cursor/mcp.json`.
+Create the file if needed; merge with any existing `mcpServers` entries.
 
-1. Add the displayed MCP endpoint using your client's remote-server configuration.
-   Cursor uses Streamable HTTP and static OAuth. Set `auth.CLIENT_ID` to
-   `flowmark-cursor` and request `openid`, `offline_access`, and `flowmark:read`.
-   Do not set a client secret. Dynamic client registration stays off. Cursor
-   desktop uses `http://localhost:8787/callback`. Cursor on the web uses
-   `https://www.cursor.com/agents/mcp/oauth/callback`. Custom-scheme callbacks
-   are rejected.
-2. Follow the client's browser authorization flow. Check the Flowmark account,
-   requested access and selected projects before granting consent.
-3. Call `get_connection` to inspect the grant's available project scope. Then
-   select an authorized project explicitly for investigation calls.
-4. Use `list_workflows` to discover process names, then `find_runs` with an
-   explicit UTC start window. Open one returned run with `get_run`.
-5. Follow the returned Studio link to inspect supporting evidence. Keep scope,
-   coverage and continuation cursors in subsequent questions.
+The configuration has this shape. Replace the example URL with the endpoint
+shown in Studio:
 
-A useful first request is: “List processes in my selected Flowmark project, find
-runs started during this UTC interval, and explain one reported outcome with its
-supporting evidence.” The client translates this into tool calls; a model's
-explanation is not independent proof of business correctness.
+```json
+{
+  "mcpServers": {
+    "flowmark": {
+      "url": "https://YOUR-FLOWMARK-API/mcp",
+      "auth": {
+        "CLIENT_ID": "flowmark-cursor",
+        "scopes": ["openid", "offline_access", "flowmark:read"]
+      }
+    }
+  }
+}
+```
 
-## Available tools
+Open Cursor Settings → Tools & MCP, enable **flowmark**, then choose **Connect**
+or **Sign in** when prompted. Labels can vary by Cursor version. See
+[Cursor's MCP documentation](https://cursor.com/docs/mcp) for configuration locations.
 
-| Tool                    | Use                                                                                      |
-| ----------------------- | ---------------------------------------------------------------------------------------- |
-| `get_connection`        | Inspect grant scope and available investigation tools.                                   |
-| `list_workflows`        | Discover workflows and bounded declaration meaning.                                      |
-| `find_runs`             | Find runs within an explicit start window of at most 31 days.                            |
-| `get_run`               | Read a compact summary and one page of events, related runs, expectations or operations. |
-| `compare_run`           | Compare one run with an explicitly bounded peer selection.                               |
-| `get_workflow_insights` | Read technical period comparisons or declared business-result insights.                  |
+If Studio cannot confirm the endpoint, retry its connection check. You can
+continue with manual SDK setup while the API connection is unavailable.
 
-Results are bounded pages, not an unrestricted telemetry dump. Use the returned
-cursor with the same query and project. Unsupported filters are rejected rather
-than silently ignored. Not every Studio feature has an MCP tool or public API.
-Business readers receive permitted projections; technical modes do not bypass
-[project permissions](/docs/project-access).
+## 3. Sign in and approve your project
 
-## Revoke or reconnect
+Cursor opens Flowmark in your browser. Sign in with your Flowmark account, select
+the project you created and choose **Allow read access**. Return to Cursor.
 
-Open **Connect** to inspect your own connections and revoke the intended one.
-If confirmation is lost, refresh its state before submitting another action.
-Revoking an agent connection is separate from signing out a browser session or
-revoking an ingestion key. Reconnecting creates fresh authority; it does not
-revive the old connection or broaden project membership.
+Your connection can read only the projects you approve, within your existing
+permissions. It stays connected between sessions until expiry or revocation.
+Your application write key is separate and is never needed for this sign-in.
 
-## Troubleshooting and compatibility
+## 4. Check read access
 
-- A disabled endpoint cannot be repaired by changing credentials in the client.
-- A denied project may require a new selection, membership or consent—not a new
-  ingestion key. A link grants no access.
-- After revocation, authorize a fresh connection instead of reusing old tokens.
-- Respect rate limits and returned bounds; do not strip filters to make a call pass.
-- MCP Apps rendering is optional. Ordinary tool evidence remains useful without
-  an embedded view; see [portable evidence](/docs/portable-evidence).
+Copy the project-specific connection-check prompt from Studio into Cursor. It
+asks Cursor to call `get_connection`, then `list_workflows` for that project.
+Check that **both tool calls succeed** and name the intended project.
 
-Client support is version-specific. The repository records
-[local Codex CLI evidence](https://github.com/Mumma6/flowmark/blob/staging/docs/agent-clients/codex-cli.md)
-and [reference-host limits](https://github.com/Mumma6/flowmark/blob/staging/examples/portable-evidence/COMPATIBILITY.md).
-Those records do not certify all Codex surfaces, Cursor, Claude or a hosted
-Flowmark deployment. Use the manual handoff when your client's lifecycle has not
-been verified. Maintainers can consult the
+An empty process list is expected before you instrument anything. A copied
+configuration or Studio's **Connection authenticated** status alone does not
+verify a successful project read.
+
+## 5. Instrument one useful process
+
+In Studio, continue to **Instrument one process**. Set your saved write key and
+the displayed API origin in your application's server environment yourself.
+Copy the instrumentation prompt into Cursor in that application's repository.
+
+The prompt asks Cursor to inspect your application, read the actual SDK docs,
+install the SDK and add markers to one useful process. Start with an import,
+checkout or background job with a result someone cares about. Preserve existing
+return values, exceptions and retry behavior. Capture small reported results,
+such as imported and skipped counts, without sensitive payloads.
+
+Run your application to trigger that process. Cursor can then use MCP to find the
+execution, inspect its outcome and operations, and return the Studio link.
+
+## Explore your first evidence
+
+In Studio, select the process in **Explore** to see its execution history. Open
+an execution: **Outcome** shows the application-reported result; **Timeline**
+shows milestones, operations and failures. Ask Cursor to explain one execution
+with the supporting Flowmark evidence.
+
+Completion is a report, not proof every record succeeded. Missing terminal
+telemetry proves neither activity nor failure.
+
+## Manage the connection
+
+In **Connect**, expand **Manage connections and project access** to inspect or
+revoke your connections. To change approved projects, revoke and connect again.
+Signing out of Studio does not revoke Cursor access. If a revocation response is
+unclear, refresh connection state before trying again.
+
+## Troubleshooting
+
+- **Sign-in fails:** confirm the copied configuration includes `auth.CLIENT_ID`
+  and all three scopes. Do not add a client secret or ingestion key.
+- **Project missing or denied:** check the Flowmark account, select the correct
+  Studio project, then reconnect and approve it. A new write key will not fix
+  MCP permissions.
+- **No processes yet:** a successful empty `list_workflows` response means read
+  access works. Instrument and run your application next.
+- **No execution after running:** confirm the server write key and API origin
+  match this project and environment; check [SDK delivery](/docs/delivery) and
+  [troubleshooting](/docs/troubleshooting).
+- **Expired or revoked:** reconnect from Cursor and approve the project again.
+
+## Advanced connection details
+
+Flowmark uses Streamable HTTP with a registered public OAuth client. Dynamic
+client registration stays off. Cursor desktop uses
+`http://localhost:8787/callback`; Cursor on the web uses
+`https://www.cursor.com/agents/mcp/oauth/callback`. Custom-scheme callbacks are
+rejected. The configuration does not require a client secret.
+
+Cursor is the primary verified setup path. The Staging verification covers real
+MCP tool calls against application data; it does not certify every Cursor
+version, surface, or Flowmark deployment. Other clients are outside this setup
+guide. MCP Apps rendering has its own
+[reference-host limits](/docs/portable-evidence).
+
+### Available read tools
+
+| Tool                    | Use                                                                            |
+| ----------------------- | ------------------------------------------------------------------------------ |
+| `get_connection`        | Check available project scope and investigation tools.                         |
+| `list_workflows`        | Discover processes and their recorded meaning.                                 |
+| `find_runs`             | Find executions in an explicit UTC start window of at most 31 days.            |
+| `get_run`               | Read a summary and a page of events, operations, related runs or expectations. |
+| `compare_run`           | Compare one execution with a bounded peer selection.                           |
+| `get_workflow_insights` | Read period comparisons or declared business-result insights.                  |
+
+Results are bounded pages. Keep the same project and query when using a returned
+cursor. Business readers receive only permitted projections. See
+[project permissions](/docs/project-access) and the
 [MCP adapter contract](https://github.com/Mumma6/flowmark/blob/staging/packages/mcp/README.md)
-for transport, registration, budgets and security boundaries.
+for the detailed transport and security boundaries.

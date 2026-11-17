@@ -35,9 +35,22 @@ export function RunStep({
           </h3>
           <p className="mt-3 text-xs leading-7 text-muted-foreground">
             {hasRuns
-              ? `${snapshot.data?.metrics.totalRuns.toLocaleString()} runs recorded in this project. Open Studio to explore the supporting evidence.`
+              ? `${snapshot.data?.metrics.totalRuns.toLocaleString()} ${snapshot.data?.metrics.totalRuns === 1 ? "execution" : "executions"} recorded. In Explore, select your process and open an execution to see its reported result.`
               : "Run the process in your application. Evidence appears after the API receives it. You can finish setup now and return when it arrives."}
           </p>
+          {hasRuns ? (
+            <ol className="mt-4 grid list-decimal gap-2 pl-5 text-xs leading-6 text-muted-foreground">
+              <li>Select the process to see its execution history.</li>
+              <li>
+                Open an execution: Outcome shows reported results; Timeline
+                shows operations and failures.
+              </li>
+              <li>
+                Ask Cursor to explain the execution with Flowmark MCP and follow
+                the returned Studio link.
+              </li>
+            </ol>
+          ) : null}
           {!hasRuns && (
             <Button
               type="button"

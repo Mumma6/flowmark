@@ -58,22 +58,39 @@ export function SetupPathTabs({
         aria-label="Instrumentation setup paths"
         className="h-auto w-full flex-wrap justify-start gap-1 border-b border-border pb-2 [&_[data-slot=tabs-trigger]]:after:bg-highlight"
       >
-        <TabsTrigger value="agent">Coding agent</TabsTrigger>
+        <TabsTrigger value="agent">Cursor · recommended</TabsTrigger>
         <TabsTrigger value="manual">Manual SDK</TabsTrigger>
       </TabsList>
       <TabsContent value="agent" className="mt-6 grid gap-4">
         <p className="text-sm leading-6 text-muted-foreground">
-          Copy one instruction into your coding workspace. The agent fetches the
-          instrumentation guide from the API. Configure the write key in your
-          server environment yourself. Copying does not connect or authorize an
-          agent.
+          Set the server environment yourself, then paste the prompt into
+          Cursor. It reads the SDK docs and helps instrument one useful process.
         </p>
         <SetupCode
-          title="Instrumentation instruction"
-          value={agentPrompt}
-          copyLabel="Copy instruction"
-          onCopied={() => onCopied("agent")}
+          title="Server environment · set this yourself"
+          value={envSnippet}
+          copyLabel="Copy environment template"
         />
+        <div className="grid gap-2">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-xs font-medium">
+              Your first process · Cursor prompt
+            </p>
+            <CopyButton
+              value={agentPrompt}
+              label="Copy instrumentation prompt"
+              onCopied={() => onCopied("agent")}
+            />
+          </div>
+          <details className="text-xs leading-6 text-muted-foreground">
+            <summary className="cursor-pointer">
+              Preview instrumentation prompt
+            </summary>
+            <pre className="mt-3 max-h-80 overflow-auto rounded-lg border border-border bg-muted p-4 text-xs leading-6 whitespace-pre-wrap text-foreground">
+              {agentPrompt}
+            </pre>
+          </details>
+        </div>
         <Button
           asChild
           variant="outline"
@@ -88,8 +105,10 @@ export function SetupPathTabs({
       </TabsContent>
       <TabsContent value="manual" className="mt-6 grid gap-4">
         <p className="text-sm leading-6 text-muted-foreground">
-          Follow the SDK guide yourself: install the package, configure the
-          server environment, then instrument one meaningful process.
+          No AI client required. Install the SDK, set your server environment,
+          then add markers to one process your application already runs. For
+          Next.js, use the Next.js adapter described in the instrumentation
+          guide.
         </p>
         <SetupCode
           title="Install"

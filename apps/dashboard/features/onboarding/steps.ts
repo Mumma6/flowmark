@@ -1,17 +1,18 @@
-type OnboardingStep = "project" | "key" | "install" | "instrument" | "run"
+type OnboardingStep = "project" | "key" | "instrument" | "run"
 
 export const steps: ReadonlyArray<{
   readonly id: OnboardingStep
   readonly title: string
 }> = [
   { id: "project", title: "Create a project" },
-  { id: "key", title: "Secure your write key" },
-  { id: "install", title: "Install the SDK" },
-  { id: "instrument", title: "Instrument a process" },
-  { id: "run", title: "Explore your evidence" },
+  { id: "key", title: "Connect Cursor" },
+  { id: "instrument", title: "Instrument one process" },
+  { id: "run", title: "Explore your first execution" },
 ]
 
 export const stepIndex = (value: string): number => {
-  const index = steps.findIndex((step) => step.id === value)
+  // Existing accounts may resume the former manual installation step.
+  const id = value === "install" ? "instrument" : value
+  const index = steps.findIndex((step) => step.id === id)
   return index >= 0 ? index : 0
 }
