@@ -4,8 +4,8 @@ declare function pushAccount(accountId: string): Promise<void>
 
 /**
  * The application decides whether to try again. `attempt` only labels
- * what already happened. `mapError` replaces automatic error copying for
- * that callback and may send `code`, `message`, and `retryable`.
+ * what already happened. `mapError` selects safe `code`, `message` and
+ * `retryable` fields instead of the generic default failure code.
  */
 export async function syncAccount(accountId: string): Promise<void> {
   const flow = flowmark.workflow("crm.account-sync", {

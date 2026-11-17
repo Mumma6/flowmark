@@ -35,7 +35,7 @@ try {
     // Business reports are never coalesced. Record useful milestones, not every row.
     if (saved % 1000 === 0) flow.report({ saved })
   }
-  flow.done({ result: { saved } })
+  flow.done({ outcome: "complete", result: { saved } })
 } catch (cause) {
   flow.fail({ code: "IMPORT_FAILED", result: { saved } })
   throw cause

@@ -14,23 +14,18 @@ description: Choose an entry point, configure a client, and keep credentials in 
 
 Do not import the server entry into a browser bundle.
 
-## Release availability
+## Hosted configuration
 
-The public npm release is **0.3.0**. Configure both server variables for that
-release:
+Set one server environment variable:
 
 ```dotenv
 FLOWMARK_API_KEY=<project server-write key>
-FLOWMARK_API_URL=https://api.flowmark.dev
 ```
 
-**Unreleased 0.4.0:** the next SDK release defaults to
-`https://api.flowmark.dev` in every environment, so hosted users need only
-`FLOWMARK_API_KEY`. This default is not available in npm 0.3.0. Local/staging
-users must set their API origin when upgrading; the automatic localhost default
-is removed. No runtime detection or `NODE_ENV`-based selection is involved.
+The API defaults to `https://api.flowmark.dev` in every environment. Set
+`FLOWMARK_API_URL` explicitly for a local or staging API.
 
-## Server settings in published 0.3.0
+## Server settings
 
 ```ts
 import { createFlowmark } from "@flowmarkdev/node"
@@ -46,16 +41,14 @@ export const flowmark = createFlowmark({
 | Option                   | Default            | Meaning                                             |
 | ------------------------ | ------------------ | --------------------------------------------------- |
 | `apiKey`                 | `FLOWMARK_API_KEY` | Required private project write key                  |
-| `apiUrl`                 | `FLOWMARK_API_URL` | API origin; required in production                  |
+| `apiUrl`                 | `FLOWMARK_API_URL` | API origin; defaults to hosted Flowmark             |
 | `environment`            | Not set            | Default run environment                             |
 | `release`                | Not set            | Default run release/version                         |
 | `delivery.progress`      | `"all"`            | Opt into `"latest"` for unsent progress replacement |
 | `onInstrumentationError` | SDK warning log    | Receives delivery/validation failures               |
 
-Explicit options take precedence over environment variables. Outside production,
-the API URL falls back to `http://localhost:3003`. Production has no URL
-fallback; the reference API is `https://api.flowmark.dev`. HTTPS is required
-except for permitted loopback development origins.
+Explicit options take precedence over environment variables, then the hosted
+API default. HTTPS is required except for permitted loopback development origins.
 Environment/release defaults come from options, not automatically from
 environment variables. Per-run values override client defaults.
 

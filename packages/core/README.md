@@ -1,26 +1,8 @@
 # @flowmarkdev/core
 
-Shared workflow event contracts for Flowmark.
+Shared event contracts and schemas for Flowmark.
 
-Application code should install
-[`@flowmarkdev/node`](https://www.npmjs.com/package/@flowmarkdev/node). This
-package is published so the SDK can depend on a normal registry version of the
-telemetry envelope the API accepts.
+To instrument an application, install
+[@flowmarkdev/node](https://www.npmjs.com/package/@flowmarkdev/node).
 
-```bash
-npm i @flowmarkdev/node
-```
-
-Docs: [docs.flowmark.dev](https://docs.flowmark.dev)
-
-The source package version is 0.4.0 (unreleased) and uses Effect 4.1.0. Exported schemas require
-the v4 Schema API; for example, use `Schema.decodeUnknownEffect(schema)` and
-`typeof schema.Type`. Telemetry JSON contracts are unchanged. Upgrade
-`@flowmarkdev/core` and `@flowmarkdev/node` together. Do not depend on Effect
-v3 error internals.
-
-## License
-
-Copyright 2026 Martin Persson. Licensed under [Apache-2.0](./LICENSE). This public
-SDK dependency does not use the platform's FSL license. Previously distributed
-MIT versions retain their MIT rights.
+[Documentation](https://docs.flowmark.dev) · [Apache-2.0](./LICENSE)

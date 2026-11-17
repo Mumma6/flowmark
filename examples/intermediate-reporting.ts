@@ -39,7 +39,7 @@ export async function importCustomersByPage(batchId: string): Promise<void> {
 
     flow.report({ imported, rejected })
     flow.done({
-      outcome: rejected === 0 ? "complete" : "partial",
+      outcome: rejected === 0 && skipped === 0 ? "complete" : "partial",
       result: { imported, rejected, skipped },
     })
   } catch (cause) {

@@ -30,43 +30,41 @@ const customerImport = flowmark.defineWorkflow<
  * server already knows about.
  */
 export async function importCustomers(batchId: string): Promise<ImportResult> {
-  const flow = customerImport.start({
-    properties: {
-      batchId,
-      source: "salesforce",
-      definitionRevision: "customer-import-v3",
+  return customerImport.start(
+    async (flow) => {
+      const batch = await loadCustomerBatch(batchId)
+      let imported = 0
+      let skipped = 0
+      let rejected = 0
+
+      flow.step("batch-loaded", { properties: { rows: batch.rows.length } })
+
+      for (const row of batch.rows) {
+        if (!isValidCustomer(row)) {
+          rejected += 1
+          continue
+        }
+        try {
+          await upsertCustomer(row)
+          imported += 1
+        } catch {
+          skipped += 1
+        }
+      }
+
+      const result = { imported, skipped, rejected }
+      flow.done({
+        outcome: rejected === 0 && skipped === 0 ? "complete" : "partial",
+        result,
+      })
+      return result
     },
-  })
-
-  try {
-    const batch = await loadCustomerBatch(batchId)
-    let imported = 0
-    let skipped = 0
-    let rejected = 0
-
-    flow.step("batch-loaded", { properties: { rows: batch.rows.length } })
-
-    for (const row of batch.rows) {
-      if (!isValidCustomer(row)) {
-        rejected += 1
-        continue
-      }
-      try {
-        await upsertCustomer(row)
-        imported += 1
-      } catch {
-        skipped += 1
-      }
-    }
-
-    const result = { imported, skipped, rejected }
-    flow.done({
-      outcome: rejected === 0 && skipped === 0 ? "complete" : "partial",
-      result,
-    })
-    return result
-  } catch (cause) {
-    flow.fail({ code: "CUSTOMER_IMPORT_FAILED" })
-    throw cause
-  }
+    {
+      properties: {
+        batchId,
+        source: "salesforce",
+        definitionRevision: "customer-import-v3",
+      },
+    },
+  )
 }

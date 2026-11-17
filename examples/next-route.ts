@@ -16,31 +16,18 @@ declare function insertTicket(draft: TicketDraft): Promise<Ticket>
  * expose `shutdown()` or `flush()`. Do not import this from a Client
  * Component, middleware, or render.
  */
-const flowmark = createFlowmark({
-  onDeliveryHealth(health) {
-    if (health.dropped > 0 || health.failed > 0) {
-      console.error("[Flowmark] Delivery degraded", {
-        dropped: health.dropped,
-        failed: health.failed,
-        lastFailure: health.lastFailure?.type,
-      })
-    }
-  },
-})
+const flowmark = createFlowmark()
 
 export async function createTicket(draft: TicketDraft): Promise<Ticket> {
-  const flow = flowmark.workflow("support.ticket", {
-    properties: { customerId: draft.customerId },
-  })
-
-  try {
-    const ticket = await flow.operation("insert-ticket", () =>
-      insertTicket(draft),
-    )
-    flow.done({ outcome: "created", result: { ticketId: ticket.id } })
-    return ticket
-  } catch (cause) {
-    flow.fail({ code: "TICKET_CREATE_FAILED" })
-    throw cause
-  }
+  return flowmark.workflow(
+    "support.ticket",
+    async (flow) => {
+      const ticket = await flow.operation("insert-ticket", () =>
+        insertTicket(draft),
+      )
+      flow.done({ outcome: "created", result: { ticketId: ticket.id } })
+      return ticket
+    },
+    { properties: { customerId: draft.customerId } },
+  )
 }

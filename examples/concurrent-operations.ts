@@ -19,25 +19,22 @@ export async function prepareFulfillment(orderId: string): Promise<{
   readonly inventory: Reservation
   readonly payment: PaymentCapture
 }> {
-  const flow = flowmark.workflow("fulfillment.prepare", {
-    properties: { orderId },
-  })
-
-  try {
-    const [inventory, payment] = await Promise.all([
-      flow.operation("reserve-inventory", () => reserveInventory(orderId)),
-      flow.operation("capture-payment", () => capturePayment(orderId)),
-    ])
-    flow.done({
-      outcome: "ready",
-      result: {
-        reservationId: inventory.reservationId,
-        paymentId: payment.paymentId,
-      },
-    })
-    return { inventory, payment }
-  } catch (cause) {
-    flow.fail({ code: "PREPARE_FAILED" })
-    throw cause
-  }
+  return flowmark.workflow(
+    "fulfillment.prepare",
+    async (flow) => {
+      const [inventory, payment] = await Promise.all([
+        flow.operation("reserve-inventory", () => reserveInventory(orderId)),
+        flow.operation("capture-payment", () => capturePayment(orderId)),
+      ])
+      flow.done({
+        outcome: "ready",
+        result: {
+          reservationId: inventory.reservationId,
+          paymentId: payment.paymentId,
+        },
+      })
+      return { inventory, payment }
+    },
+    { properties: { orderId } },
+  )
 }

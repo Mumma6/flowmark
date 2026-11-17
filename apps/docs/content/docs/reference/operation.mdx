@@ -9,19 +9,13 @@ description: Measure a named unit of work and record its duration.
 run.operation(name: string, options?: WorkflowOperationOptions): WorkflowOperation
 run.operation<T>(
   name: string,
-  callback: () => PromiseLike<T>,
+  callback: () => T | PromiseLike<T>,
   options?: WorkflowOperationOptions,
 ): Promise<T>
 ```
 
-## Release availability
-
-Published **0.3.0** copies structured exception fields or `Error.message` unless
-`mapError` is supplied. **Unreleased 0.4.0** changes the default to only
-`{ code: "operation_failed" }`, without inspecting the original exception. Its callback also accepts synchronous
-return values, so ordinary validation/transformation functions need no `async`
-adapter; `operation()` still returns a Promise and must be awaited. Use
-`mapError` below for explicit, safe details on either version.
+Callbacks accept synchronous values or Promises and always return a Promise.
+Await measured work. Use `mapError` for explicitly selected safe failure details.
 
 ## Promise callback
 
@@ -32,9 +26,8 @@ const receipt = await run.operation("charge-payment", () => chargeCustomer())
 The SDK starts an operation, closes it when the callback settles, and preserves
 its return value. If it rejects, the operation is marked failed and the
 **same original cause is rethrown**. Synchronous callback throws are also recorded
-as operation failures. In published 0.3.0, a thrown `{ code, message?, retryable? }`
-is copied into telemetry and an `Error` includes its message. In unreleased 0.4.0,
-both produce only `{ code: "operation_failed" }` unless you provide `mapError`.
+as operation failures. Only `{ code: "operation_failed" }` is reported by default,
+without inspecting the exception. Provide `mapError` to select safe details.
 
 `options.properties` attach bounded JSON to the operation start event, the
 same way step properties stay on that step.
@@ -99,9 +92,9 @@ exact original object/value. Callback success and return inference are unchanged
 Only validated mapped `code`, `message?` and `retryable?` fields enter telemetry;
 extra fields are discarded and original exception details are never appended.
 
-When omitted in 0.4.0, only `{ code: "operation_failed" }` is sent. No raw
-exception code, message, retryable flag or stack is read or copied. Published
-0.3.0 retains the automatic conversion described above until you upgrade. Manual `operation.fail(...)` is unchanged and does not invoke the mapper.
+When omitted, only `{ code: "operation_failed" }` is sent. No raw
+exception code, message, retryable flag or stack is read or copied. Manual
+`operation.fail(...)` reports your explicit failure and does not invoke the mapper.
 Throwing/invalid mappers produce a bounded `FlowmarkErrorMappingError` diagnostic
 and generic `{ code: "operation_failed" }` telemetry, never an operation success
 or raw-message fallback. Explicit drains report these failures; Next contains and
