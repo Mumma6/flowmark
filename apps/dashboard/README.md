@@ -44,6 +44,11 @@ features (`auth`, `platform`, `runs` and `reporting`).
   `view` or history `view=runs`. Search/process/status filters stay in the URL; all applied conditions remain visible. All filters
   opens the existing history with the exact same conditions. Process selection
   becomes a compact selector on mobile. Run links preserve the return cohort.
+  A confirmed empty project shows one calm **No recorded executions** state and
+  a **Setup instructions** link, without empty analytics, filters or pagination.
+  Failed reads and empty filtered results remain distinct. When evidence arrives,
+  the existing polling restores the normal workspace with execution evidence
+  before period analytics; no completion gate or celebration is added.
 - **Overview (`/overview`):** four seven-day execution metrics from `project.intelligence`,
   all-recorded workflow summaries, failures within the latest-100 snapshot,
   five recent runs with reported results, 30-day trend charts, observed-change

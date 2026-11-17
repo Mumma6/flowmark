@@ -175,11 +175,13 @@ export function WorkflowDirectory({
       {result.total === 0 && (
         <p className="px-5 py-8 text-center text-sm leading-7 text-muted-foreground">
           {workflows.length === 0
-            ? "No workflows recorded. Start a run with the SDK to create one."
+            ? "No processes in this directory."
             : "No workflows match these filters."}
         </p>
       )}
-      <TablePagination {...result} onPageChange={setPage} />
+      {result.total > 0 && (
+        <TablePagination {...result} onPageChange={setPage} />
+      )}
     </Card>
   )
 }

@@ -117,15 +117,26 @@ For a long-running process, use `flush()` without closing the client.
 An explicit drain can reject; handle that separately from the business result.
 The [Next.js adapter](/docs/nextjs) handles draining after the response.
 
-### 5. Inspect the run
+### 5. Inspect reported evidence
 
-Open **Explore** in Studio with the same project selected. Choose `invoice.import`
+Your application may not run this process until hours or days after deployment.
+Studio does not need to stay open: it shows **No recorded executions** until the
+application reports one. **Setup instructions** reopens the guide whenever you
+need it.
+
+For an optional delivery check, use an existing test or safe application action
+that runs the actual instrumented process. Local checks alone do not prove a
+deployment or delivery. If there is no safe way to run it now, wait for normal
+activity; do not create artificial executions or trigger business operations just
+to populate Studio.
+
+Once an execution arrives, open **Explore** in Studio with the same project selected. Choose `invoice.import`
 to see its execution history, then open the execution. **Outcome** shows reported
 results, including imported and skipped counts; **Timeline** shows milestones,
 operations and failures. If Cursor is connected, ask it to explain that execution
 using Flowmark MCP and follow its supporting Studio link.
 
-If it is missing, follow [troubleshooting](/docs/troubleshooting). A missing
+If an expected execution is missing, follow [troubleshooting](/docs/troubleshooting). A missing
 terminal event is not proof the business operation failed.
 
 ## Where to go next
