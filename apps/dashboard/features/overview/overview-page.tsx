@@ -17,6 +17,7 @@ import { PageSections } from "../shared/page-sections"
 import { Refresh } from "../shared/refresh"
 import { ExpectationAttention } from "../expectations/expectation-attention"
 import { useSnapshot } from "../projects/queries"
+import { NoRecordedExecutions } from "../projects/no-recorded-executions"
 import { RunsTable } from "../runs/explorer/runs-table"
 import {
   AttentionSummary,
@@ -24,29 +25,6 @@ import {
   WorkflowOverview,
 } from "./overview-panels"
 import { useIntelligence } from "./queries"
-
-function EmptyOverview() {
-  return (
-    <Card className="border-dashed">
-      <CardHeader>
-        <CardTitle>No runs recorded yet</CardTitle>
-        <CardDescription>
-          Once your application reports its first execution, this overview will
-          show volume, outcomes, duration, and failure evidence.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="grid gap-6">
-        <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border pt-5">
-          <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
-            Install the SDK, add a write key to your server environment, and
-            report one real process to start filling this view.
-          </p>
-          <ViewLink href="/settings?section=projects">Open setup</ViewLink>
-        </div>
-      </CardContent>
-    </Card>
-  )
-}
 
 export function DashboardOverview() {
   const snapshot = useSnapshot()
@@ -56,28 +34,38 @@ export function DashboardOverview() {
     void snapshot.refetch()
     void intelligence.refetch()
   }
+  const heading = (
+    <PageHeading
+      title="Overview"
+      description="Check reported execution health, see what needs attention, then open a workflow or run to investigate."
+    >
+      <div className="flex flex-wrap items-center gap-3 sm:flex-col sm:items-end sm:gap-2">
+        <Refresh
+          fetching={snapshot.isFetching || intelligence.isFetching}
+          onClick={refresh}
+        />
+        <span className="text-xs text-muted-foreground">
+          Auto-refresh · every 3 seconds
+        </span>
+      </div>
+    </PageHeading>
+  )
+  if (snapshot.isSuccess && data && data.metrics.totalRuns === 0) {
+    return (
+      <div className="grid min-w-0 gap-7">
+        {heading}
+        <NoRecordedExecutions />
+      </div>
+    )
+  }
   return (
     <div className="grid min-w-0 gap-7">
-      <PageHeading
-        title="Overview"
-        description="Check reported execution health, see what needs attention, then open a workflow or run to investigate."
-      >
-        <div className="flex flex-wrap items-center gap-3 sm:flex-col sm:items-end sm:gap-2">
-          <Refresh
-            fetching={snapshot.isFetching || intelligence.isFetching}
-            onClick={refresh}
-          />
-          <span className="text-xs text-muted-foreground">
-            Auto-refresh · every 3 seconds
-          </span>
-        </div>
-      </PageHeading>
+      {heading}
       <DataState
         pending={snapshot.isPending}
         error={snapshot.error}
         retry={refresh}
       />
-      {data && data.metrics.totalRuns === 0 && <EmptyOverview />}
       <PageSections
         label="Overview sections"
         defaultValue="health"

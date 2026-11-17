@@ -3,7 +3,33 @@ title: Quickstart
 description: Add your first workflow run around the business logic you already have.
 ---
 
-## Before you start
+## Set up with your AI agent · recommended
+
+Create a project in Studio and save its ingestion write key. In onboarding, open
+**Get setup instructions** and choose **Copy setup prompt**. Paste it into
+your AI agent's chat with your application's repository available. You can reopen
+the setup guide from the Studio account menu later.
+
+The prompt asks your AI agent to fetch the instrumentation guide from your
+Flowmark API, read the actual SDK documentation, install the SDK and help instrument one useful
+process. Your agent uses its normal coding tools to edit your repository. Set the
+write key in your application's server environment yourself.
+
+Choose **Open Studio** whenever you are ready; onboarding does not wait for SDK
+installation, a release or application traffic. Install and deploy on your own
+schedule. When the instrumented process runs and sends evidence, its executions
+appear in Studio. **No MCP connection is needed for setup.** You can also follow
+the manual instructions below.
+
+Once your application reports evidence, [connect Cursor with MCP](/docs/mcp) if
+you want it to investigate executions, failures and business outcomes. This is a
+separate read-only connection.
+
+## Manual SDK setup
+
+No AI client is required. Follow these steps to instrument the application yourself.
+
+### Before you start
 
 You need a running Flowmark API, a project server-write key, and the SDK.
 The published `@flowmarkdev/node` README is the implementation contract for
@@ -17,7 +43,7 @@ That pulls `@flowmarkdev/core` automatically. Account recovery depends on the
 deployment's configured email delivery. For local services, read
 [local development](/docs/local-development).
 
-## 1. Configure the server
+### 1. Configure the server
 
 Set these in your server environment, not in browser-visible variables:
 
@@ -30,7 +56,7 @@ The URL is the API origin, not `/v1/events`. Use your own deployment address
 when self-hosting. Production requires an explicit URL. See
 [configuration](/docs/configuration) for defaults and overrides.
 
-## 2. Create one shared client
+### 2. Create one shared client
 
 ```ts
 // lib/flowmark.ts (server only)
@@ -42,7 +68,7 @@ export const flowmark = createFlowmark()
 Using Next.js? Import from `@flowmarkdev/node/next` instead and follow the
 [Next.js guide](/docs/nextjs) for automatic request-lifecycle delivery.
 
-## 3. Add markers to an existing function
+### 3. Add markers to an existing function
 
 `loadInvoices`, `saveValidInvoices`, and `logger` below are your application's
 existing helpers, not SDK APIs. No business work moves into Flowmark.
@@ -73,7 +99,7 @@ independent run; `step()` records a milestone; `done()` attaches a bounded
 business summary; `fail()` reports failure without throwing. Your function
 keeps ownership of its return value and original exception.
 
-## 4. Drain delivery at a process boundary
+### 4. Drain delivery at a process boundary
 
 Markers queue delivery automatically. In a plain Node.js script or worker,
 drain the client before the process exits:
@@ -91,13 +117,26 @@ For a long-running process, use `flush()` without closing the client.
 An explicit drain can reject; handle that separately from the business result.
 The [Next.js adapter](/docs/nextjs) handles draining after the response.
 
-## 5. Inspect the run
+### 5. Inspect reported evidence
 
-Open your dashboard connected to the same project. Find `invoice.import`,
-then open the run. You should see the source checkpoint, a completed or failed
-outcome, and a result summary on successful completion.
+Your application may not run this process until hours or days after deployment.
+Studio does not need to stay open: it shows **No recorded executions** until the
+application reports one. **Setup instructions** reopens the guide whenever you
+need it.
 
-If it is missing, follow [troubleshooting](/docs/troubleshooting). A missing
+For an optional delivery check, use an existing test or safe application action
+that runs the actual instrumented process. Local checks alone do not prove a
+deployment or delivery. If there is no safe way to run it now, wait for normal
+activity; do not create artificial executions or trigger business operations just
+to populate Studio.
+
+Once an execution arrives, open **Explore** in Studio with the same project selected. Choose `invoice.import`
+to see its execution history, then open the execution. **Outcome** shows reported
+results, including imported and skipped counts; **Timeline** shows milestones,
+operations and failures. If Cursor is connected, ask it to explain that execution
+using Flowmark MCP and follow its supporting Studio link.
+
+If an expected execution is missing, follow [troubleshooting](/docs/troubleshooting). A missing
 terminal event is not proof the business operation failed.
 
 ## Where to go next

@@ -35,6 +35,9 @@ export function DeclaredWorkflows({
     Array.flatMap(discovered.data?.pages ?? [], (page) => page.workflows),
     (workflow) => !Array.contains(recorded, workflow.name),
   )
+  if (discovered.isSuccess && names.length === 0 && !discovered.hasNextPage) {
+    return null
+  }
   return (
     <Card>
       <CardHeader>

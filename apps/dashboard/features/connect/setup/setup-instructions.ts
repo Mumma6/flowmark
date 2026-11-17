@@ -14,26 +14,23 @@ export function serverEnvironmentSnippet(apiOrigin: string): string {
 }
 
 export function manualWorkflowSnippet(apiOrigin: string): string {
-  return `${npmInstallCommand()}
-
-${serverEnvironmentSnippet(apiOrigin)}
-
+  return `// Server only. Set FLOWMARK_API_URL=${apiOrigin} in your environment.
 import { createFlowmark } from "@flowmarkdev/node"
 
 const flowmark = createFlowmark()
 
+// importBatch is your existing application function, not a Flowmark API.
 export async function importCustomers(batchId: string) {
   const flow = flowmark.workflow("customer.import", {
     properties: { batchId },
   })
   try {
     const imported = await flow.operation("import-batch", async () => {
-      // existing application work
-      return { imported: 988, skipped: 12 }
+      // Replace with your existing import and its actual result.
+      return await importBatch(batchId)
     })
     flow.done({
-      outcome: "partial",
-      result: imported,
+      result: { imported: imported.imported, skipped: imported.skipped },
     })
     return imported
   } catch (error) {

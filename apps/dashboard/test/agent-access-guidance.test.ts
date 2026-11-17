@@ -6,6 +6,7 @@ import {
   cursorMcpRedirectUris,
 } from "../features/connect/access/cursor-mcp-client"
 import {
+  cursorConnectionPrompt,
   agentAccessIntroCopy,
   agentClientGuides,
   agentExampleQuestions,
@@ -18,20 +19,25 @@ it("keeps the Cursor public client aligned with the auth registration", () => {
     ...CURSOR_MCP_PUBLIC_CLIENT.redirectUris,
   ])
   const config = cursorMcpConfig("https://api.example.test/mcp")
-  expect(config).toContain(CURSOR_MCP_PUBLIC_CLIENT.clientId)
+  expect(JSON.parse(config)).toEqual({
+    mcpServers: {
+      flowmark: {
+        url: "https://api.example.test/mcp",
+        auth: {
+          CLIENT_ID: CURSOR_MCP_PUBLIC_CLIENT.clientId,
+          scopes: ["openid", "offline_access", "flowmark:read"],
+        },
+      },
+    },
+  })
   expect(config).toContain("offline_access")
   expect(config).toContain("flowmark:read")
   expect(config).not.toContain("CLIENT_SECRET")
 })
 
-it("covers four manual client paths without ingestion secrets", () => {
+it("offers only the verified Cursor path without ingestion secrets", () => {
   const guides = agentClientGuides()
-  expect(guides.map((guide) => guide.id)).toEqual([
-    "codex",
-    "cursor",
-    "claude-code",
-    "custom",
-  ])
+  expect(guides.map((guide) => guide.id)).toEqual(["cursor"])
   for (const guide of guides) {
     expect(guide.steps.length).toBeGreaterThan(0)
     const blob = [guide.summary, ...guide.steps, guide.pasteHint].join("\n")
@@ -86,7 +92,9 @@ it("points an enabled deployment at the read-only MCP tools", () => {
   expect(handoff).toContain("https://studio.example.test/")
   expect(handoff).not.toContain("/explore")
   expect(handoff).not.toContain("Paste the summary")
-  expect(agentAccessIntroCopy("enabled").body).toContain("available")
+  expect(agentAccessIntroCopy("enabled").body).toContain(
+    "choose which projects",
+  )
   expect(agentAccessIntroCopy("unavailable").body).toContain(
     "could not be confirmed",
   )
@@ -94,11 +102,27 @@ it("points an enabled deployment at the read-only MCP tools", () => {
 
 it("gives an enabled deployment its endpoint without writing client files", () => {
   const guides = agentClientGuides("https://api.example.test/mcp")
-  expect(guides).toHaveLength(4)
+  expect(guides).toHaveLength(1)
   for (const guide of guides) {
     const blob = [guide.summary, ...guide.steps, guide.pasteHint].join("\n")
-    expect(blob).toContain("https://api.example.test/mcp")
+    expect(blob).toContain(".cursor/mcp.json")
     expect(blob).toContain("does not write")
     expect(blob).not.toContain("FLOWMARK_API_KEY")
   }
+})
+
+it("checks an exact project before telemetry exists without confusing empty history with denied access", () => {
+  const prompt = cursorConnectionPrompt({
+    id: "project-id",
+    name: 'Billing "EU"',
+  })
+  expect(prompt).toContain("get_connection")
+  expect(prompt).toContain("list_workflows")
+  expect(prompt).toContain("project ID: project-id")
+  expect(prompt).toContain("An empty workflow list is fine")
+  expect(prompt).toContain("If access is denied")
+  expect(prompt).not.toContain("find_runs")
+  expect(cursorConnectionPrompt(null)).toContain(
+    "Ask me which authorized project",
+  )
 })

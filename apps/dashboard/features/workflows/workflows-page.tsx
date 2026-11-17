@@ -8,19 +8,34 @@ import {
 import { PageSections } from "../shared/page-sections"
 import { Refresh } from "../shared/refresh"
 import { useSnapshot } from "../projects/queries"
+import { NoRecordedExecutions } from "../projects/no-recorded-executions"
 import { WorkflowDirectory } from "./workflow-directory"
 import { DeclaredWorkflows } from "./declared-workflows"
 
 export function ProjectWorkflows() {
   const { data, isPending, error, isFetching, refetch } = useSnapshot()
+  const heading = (
+    <PageHeading
+      title="Workflows"
+      description="Choose the process you want to inspect. Each workflow brings together its execution history, reported results and diagnostic evidence."
+    >
+      <Refresh fetching={isFetching} onClick={() => void refetch()} />
+    </PageHeading>
+  )
+  if (data && !error && data.metrics.totalRuns === 0) {
+    return (
+      <div className="grid min-w-0 gap-6">
+        {heading}
+        <NoRecordedExecutions />
+        <DeclaredWorkflows
+          recorded={data.workflows.map((workflow) => workflow.name)}
+        />
+      </div>
+    )
+  }
   return (
     <div className="grid min-w-0 gap-6">
-      <PageHeading
-        title="Workflows"
-        description="Choose the process you want to inspect. Each workflow brings together its execution history, reported results and diagnostic evidence."
-      >
-        <Refresh fetching={isFetching} onClick={() => void refetch()} />
-      </PageHeading>
+      {heading}
       <DataState
         pending={isPending}
         error={error}

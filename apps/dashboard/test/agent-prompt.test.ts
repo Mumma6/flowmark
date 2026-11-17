@@ -8,9 +8,11 @@ it("tells the agent to fetch the API guide for this origin", () => {
     "Fetch and follow https://api.flowmark.dev/v1/instrumentation",
   )
   expect(prompt).not.toContain("/v1/events")
-  expect(prompt).toContain("does not connect an agent")
+  expect(prompt).not.toMatch(/MCP|Cursor|Claude/)
   expect(prompt).not.toContain("defineWorkflow")
-  expect(prompt).not.toContain("FLOWMARK_API_KEY")
+  expect(prompt).toContain(
+    "never read, print, commit or request the key in chat",
+  )
   expect(prompt).not.toMatch(/fm_[A-Za-z0-9]+/)
 })
 
@@ -18,4 +20,22 @@ it("keeps the local API origin on the fetched URL", () => {
   expect(flowmarkAgentPrompt("http://127.0.0.1:3003")).toContain(
     "Fetch and follow http://127.0.0.1:3003/v1/instrumentation",
   )
+})
+
+it("scopes instrumentation and evidence verification to the selected project", () => {
+  const scoped = flowmarkAgentPrompt("https://staging.example.test", {
+    id: "project-id",
+    name: "Billing",
+  })
+  expect(scoped).toContain("project ID: project-id")
+  expect(scoped).toContain("actual @flowmarkdev/node README")
+  expect(scoped).toContain("Preserve return values, original errors")
+  expect(scoped).toContain("imported, skipped or rejected counts")
+  expect(scoped).toContain("Flowmark Studio")
+  expect(scoped).toContain("documented SDK delivery diagnostics")
+  expect(scoped).not.toMatch(
+    /MCP|get_connection|list_workflows|find_runs|get_run|OAuth/,
+  )
+  expect(scoped).toContain("FLOWMARK_API_URL=https://staging.example.test")
+  expect(scoped).not.toContain("https://api.flowmark.dev")
 })

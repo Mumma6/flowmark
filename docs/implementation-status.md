@@ -30,8 +30,10 @@ funnel, and release associations do not establish causality.
 
 ## Explicit deferrals and limitations
 
-- Full Cursor/Claude/custom-client lifecycle certification, client showcase and
-  cross-client acceptance remain deferred. Reference HTTP/Codex evidence is not
+- Cursor is the primary supported MCP client. The maintainer verified its
+  Staging connection with real MCP calls against application data (reported
+  17 November 2026). Full cross-version and cross-client lifecycle certification
+  and the client showcase remain deferred. Reference HTTP/Codex evidence is not
   proof of compatibility with every commercial client. Use each compatibility
   document's exact tested versions and limitations.
 - Broad whole-product accessibility, assistive-technology, reduced-motion and
@@ -53,8 +55,8 @@ and [release](./releases.md) workflows. Preserve separate approval for hosted
 operations and every npm publish.
 
 Remaining records include email plan/quota/cost and bounce/complaint monitoring;
-operator/privacy disclosures and rights/incident/backup procedures; a hosted
-Cursor sign-in smoke after this server revision is deployed; and capture/cleanup
+operator/privacy disclosures and rights/incident/backup procedures; continued environment-specific
+Cursor sign-in checks after server changes; and capture/cleanup
 operating cadence. MCP itself is no longer behind an environment flag.
 These are explicit follow-ups, not additional Product 2.0 feature requirements.
 

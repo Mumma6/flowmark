@@ -2,7 +2,9 @@
 
 import { Badge, Button, Input } from "@flowmark/ui"
 import { PageSections } from "../../shared/page-sections"
+import { NoRecordedExecutions } from "../../projects/no-recorded-executions"
 import { Search } from "lucide-react"
+import { Array as EffectArray } from "effect"
 import { DataState, FilterSelect } from "../../shared/dashboard-components"
 import {
   explorerDefaults,
@@ -42,6 +44,25 @@ export function RunExplorer({
     nextCursor,
   } = useRunExplorer(workflow)
   const filterSection = selectRunFilterGroup(filters)
+  const unfilteredHistory =
+    !workflow &&
+    pageIndex === 0 &&
+    EffectArray.every(
+      EffectArray.fromIterable(Object.entries(filters)),
+      ([key, value]) =>
+        value === explorerDefaults[key as keyof ExplorerFilters],
+    )
+  if (unfilteredHistory && total === 0) {
+    return list.isSuccess ? (
+      <NoRecordedExecutions />
+    ) : (
+      <DataState
+        pending={list.isPending}
+        error={list.error}
+        retry={() => void list.refetch()}
+      />
+    )
+  }
   return (
     <div>
       {filters.expectationState !== "all" &&

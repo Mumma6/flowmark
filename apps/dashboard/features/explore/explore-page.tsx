@@ -17,7 +17,6 @@ import {
   ArrowLeft,
   ArrowRight,
   ArrowUpRight,
-  BookOpen,
   CircleDot,
   RotateCw,
   Search,
@@ -34,11 +33,14 @@ import {
 } from "../runs/investigation/investigation-selection"
 import { RunInspector } from "../runs/investigation/run-inspector"
 import { ReferenceJourney } from "../journeys/reference-journey"
-import { startJourneyHref } from "../journeys/journey-selection"
-import { publicConfig } from "../platform/config-public"
+import {
+  journeyQueryKey,
+  startJourneyHref,
+} from "../journeys/journey-selection"
 import { useProject } from "../projects/project-context"
 import { SaveInvestigation } from "../investigations/save-investigation"
 import { useSnapshot } from "../projects/queries"
+import { NoRecordedExecutions } from "../projects/no-recorded-executions"
 import {
   explorerDefaults,
   explorerFilterLabels,
@@ -88,6 +90,15 @@ function ExploreWorkspace() {
     EffectArray.fromIterable(Object.entries(filters)),
     ([key, value]) => value !== explorerDefaults[key as keyof ExplorerFilters],
   )
+  const emptyProject =
+    snapshot.isSuccess &&
+    snapshot.data.metrics.totalRuns === 0 &&
+    list.isSuccess &&
+    total === 0 &&
+    pageIndex === 0 &&
+    activeFilters.length === 0 &&
+    periodSelection._tag === "Absent" &&
+    !params.has(journeyQueryKey)
   const historyParams = new URLSearchParams(params.toString())
   historyParams.delete(exploreAnalyticsQueryKey)
   historyParams.set("view", "runs")
@@ -98,36 +109,49 @@ function ExploreWorkspace() {
   }
   const exploreFrom = `${pathname}${params.size ? `?${params}` : ""}`
 
-  return (
-    <div id="explore-workspace" className="grid gap-7">
-      <div className="flex flex-wrap items-end justify-between gap-5">
-        <div>
-          <p className="mb-3 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-            <span
-              className="size-1.5 rounded-full bg-highlight"
-              aria-hidden="true"
-            />
-            Studio / Explore
-          </p>
-          <h1 className="text-3xl font-medium tracking-[-0.045em] sm:text-[40px] sm:leading-tight">
-            Follow the work.
-          </h1>
+  const heading = (
+    <div className="flex flex-wrap items-end justify-between gap-5">
+      <div>
+        <p className="mb-3 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+          <span
+            className="size-1.5 rounded-full bg-highlight"
+            aria-hidden="true"
+          />
+          Studio / Explore
+        </p>
+        <h1 className="text-3xl font-medium tracking-[-0.045em] sm:text-[40px] sm:leading-tight">
+          Follow the work.
+        </h1>
+        {!emptyProject && (
           <p className="mt-3 max-w-lg text-xs leading-6 text-muted-foreground">
             Start with a process. Find its reported outcomes and the execution
             evidence behind them.
           </p>
-        </div>
-        <Button
-          asChild
-          variant="ghost"
-          className="h-9 px-0 text-xs text-muted-foreground"
-        >
-          <Link href="/overview">
-            Project overview
-            <ArrowUpRight aria-hidden="true" className="size-3.5" />
-          </Link>
-        </Button>
+        )}
       </div>
+      <Button
+        asChild
+        variant="ghost"
+        className="h-9 px-0 text-xs text-muted-foreground"
+      >
+        <Link href="/overview">
+          Project overview
+          <ArrowUpRight aria-hidden="true" className="size-3.5" />
+        </Link>
+      </Button>
+    </div>
+  )
+  if (emptyProject) {
+    return (
+      <div id="explore-workspace" className="grid gap-7">
+        {heading}
+        <NoRecordedExecutions />
+      </div>
+    )
+  }
+  return (
+    <div id="explore-workspace" className="grid gap-7">
+      {heading}
       {periodSelection._tag === "Rejected" ? (
         <Alert>
           <AlertTitle>Period selection not applied</AlertTitle>
@@ -191,12 +215,9 @@ function ExploreWorkspace() {
         }
       >
         <div className="grid min-w-0 gap-6 bg-background/50 p-3 sm:p-5">
-          <div className="order-2 min-w-0 lg:order-1">
-            <ExploreAnalyticsContext exploreFrom={exploreFrom} />
-          </div>
           <section
             aria-labelledby="evidence-title"
-            className="order-1 min-w-0 overflow-hidden rounded-xl border border-primary/30 bg-card shadow-sm lg:order-2"
+            className="min-w-0 overflow-hidden rounded-xl border border-primary/30 bg-card shadow-sm"
           >
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-[linear-gradient(110deg,hsl(var(--primary)/0.10),transparent_65%)] px-5 py-4 sm:px-6">
               <div className="flex items-center gap-2.5">
@@ -359,12 +380,12 @@ function ExploreWorkspace() {
                 <h3 className="text-base font-medium">
                   {activeFilters.length
                     ? "No evidence matches this view."
-                    : "Your first process starts here."}
+                    : "No executions in this view."}
                 </h3>
                 <p className="max-w-sm text-xs leading-6 text-muted-foreground">
                   {activeFilters.length
                     ? "Try another process or clear the conditions to search the recorded history."
-                    : "Instrument the work your application already owns. Its executions and reported results will appear here."}
+                    : "Recorded executions will appear here. Refresh to check again."}
                 </p>
                 {activeFilters.length ? (
                   <Button
@@ -374,14 +395,7 @@ function ExploreWorkspace() {
                   >
                     Clear filters
                   </Button>
-                ) : (
-                  <Button asChild variant="outline" className="mt-2 text-xs">
-                    <a href={publicConfig.documentationUrl}>
-                      <BookOpen aria-hidden="true" className="size-3.5" />
-                      Instrumentation guide
-                    </a>
-                  </Button>
-                )}
+                ) : null}
               </div>
             ) : null}
             <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-5 py-4 text-[10px] text-muted-foreground sm:px-6">
@@ -422,6 +436,7 @@ function ExploreWorkspace() {
               </div>
             </div>
           </section>
+          <ExploreAnalyticsContext exploreFrom={exploreFrom} />
         </div>
       </StudioWorkspace>
       <p className="flex items-start gap-2 text-[10px] leading-6 text-muted-foreground">
