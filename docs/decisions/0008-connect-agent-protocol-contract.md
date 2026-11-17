@@ -114,7 +114,7 @@ via hooks designed in TASK-004; dashboard sign-out ends the browser session only
 | ----------------------------- | ------------------------------------------------------------------------------------------------------------ |
 | **Primary**                   | **CIMD** with `metadataProfile: "mcp-2026-07-28"` and application-owned metadata fetch with SSRF protections |
 | **DCR**                       | **Off by default**; enable only after TASK-008+ names a client that demonstrably requires it                 |
-| **Predefined public clients** | Allowed for reference/self-host docs when CIMD is unavailable                                                |
+| **Predefined public clients** | Allowed for reference client documentation when CIMD is unavailable                                          |
 | **Desktop config**            | **No client secrets** in copied `mcp.json` / snippets                                                        |
 
 **Redirect policy:**

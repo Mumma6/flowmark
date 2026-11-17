@@ -1,4 +1,5 @@
 {
+  "license": "FSL-1.1-ALv2",
   "name": "@flowmark/internal-docs",
   "version": "0.1.0",
   "private": true,

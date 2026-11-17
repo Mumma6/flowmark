@@ -3,7 +3,7 @@
 Flowmark uses GitHub for deterministic verification and a local Codex automation
 for contextual review and organizational learning. The repository owns the
 commands, review procedure, result contract and scheduler prompt. No new provider,
-hosted AI credential, database, task service or self-hosted GitHub runner is needed.
+hosted AI credential, database, task service or dedicated GitHub runner is needed.
 The AI model still uses the existing Codex connection; local execution is not
 an offline model or unlimited/free model usage.
 

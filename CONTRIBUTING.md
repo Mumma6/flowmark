@@ -1,6 +1,6 @@
 # Contributing
 
-Flowmark is an open-source process-intelligence platform for people and agents.
+Flowmark is a source-available process-intelligence platform for people and agents.
 This repository contains its SDK, application services and current web interface,
 which is evolving into Flowmark Studio. You can explore and change it without
 access to maintainer-only planning or infrastructure notes.
@@ -118,9 +118,8 @@ safe local demo mode; **never** run seed or demo setup against hosted
 production, staging, preview, or other shared databases.
 
 Neon and Vercel host the maintained product at [flowmark.dev](https://flowmark.dev);
-they are not required for local contributions. Open source provides code
-transparency and extension examples; this contributor path does not promise a
-supported self-host deployment topology.
+they are not required for local contributions. The public source provides code
+transparency and extension examples for the hosted product.
 
 See [ADR 0006](./docs/decisions/0006-mvp-0.1-infrastructure.md) for
 infrastructure choices that apply to the reference deployment.
@@ -132,4 +131,8 @@ paste secrets, tokens, or connection strings into issues or pull requests.
 
 ## License
 
-Contributions are licensed under the repository [MIT License](./LICENSE).
+Contributions use the license applicable to the files being changed:
+[FSL-1.1-ALv2](./LICENSE) for platform code, including its Apache-2.0 future
+license grant, and Apache-2.0 for the public SDK, documentation and examples.
+Submit only material you have the right to contribute, and preserve third-party
+licenses and attribution. See [licensing scope](./docs/licensing.md).
