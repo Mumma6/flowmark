@@ -8,22 +8,19 @@ declare function createShipment(orderId: string): Promise<Shipment>
 
 /** Record an order the application is already completing. */
 export async function completeCheckout(orderId: string): Promise<Shipment> {
-  const flow = flowmark.workflow("checkout.order", {
-    properties: { orderId },
-  })
-
-  try {
-    flow.step("payment-captured", { properties: { orderId } })
-    const shipment = await flow.operation("create-shipment", () =>
-      createShipment(orderId),
-    )
-    flow.done({
-      outcome: "complete",
-      result: { shipmentId: shipment.id },
-    })
-    return shipment
-  } catch (cause) {
-    flow.fail({ code: "CHECKOUT_FAILED" })
-    throw cause
-  }
+  return flowmark.workflow(
+    "checkout.order",
+    async (flow) => {
+      flow.step("payment-captured", { properties: { orderId } })
+      const shipment = await flow.operation("create-shipment", () =>
+        createShipment(orderId),
+      )
+      flow.done({
+        outcome: "complete",
+        result: { shipmentId: shipment.id },
+      })
+      return shipment
+    },
+    { properties: { orderId } },
+  )
 }

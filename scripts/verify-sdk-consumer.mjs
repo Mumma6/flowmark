@@ -51,6 +51,7 @@ const environment = {
 let child
 let logs = ""
 const received = []
+const completedBookings = new Set()
 let retryEnvelope
 let retrySent = false
 const receiver = createServer(async (request, response) => {
@@ -102,6 +103,18 @@ const receiver = createServer(async (request, response) => {
     retryEnvelope = envelope
     response.writeHead(503).end()
     return
+  }
+  // The continuation example deliberately submits a conflicting terminal.
+  // This receiver checks delivery contracts; it is not a hosted API substitute.
+  if (
+    envelope.event.workflow === "booking.create" &&
+    ["completed", "failed"].includes(envelope.event.type)
+  ) {
+    if (completedBookings.has(envelope.event.runId)) {
+      response.writeHead(409).end()
+      return
+    }
+    completedBookings.add(envelope.event.runId)
   }
   response.writeHead(202, { "content-type": "application/json" }).end(
     JSON.stringify({
@@ -375,6 +388,53 @@ try {
   console.log(
     "PASS packed manifests, public exports, declaration consumer and actual served guide examples",
   )
+  await writeFile(
+    join(consumer, "examples.tsconfig.json"),
+    JSON.stringify({
+      extends: join(root, "packages/config/typescript/base.json"),
+      compilerOptions: {
+        paths: {
+          "@flowmarkdev/node": [
+            join(consumer, "node_modules/@flowmarkdev/node/dist/index.d.ts"),
+          ],
+          "@flowmarkdev/node/next": [
+            join(
+              consumer,
+              "node_modules/@flowmarkdev/node/dist/adapters/next.d.ts",
+            ),
+          ],
+          "@flowmarkdev/node/read": [
+            join(
+              consumer,
+              "node_modules/@flowmarkdev/node/dist/reads/index.d.ts",
+            ),
+          ],
+          "@flowmark/evidence-view/public-read": [
+            join(root, "packages/evidence-view/src/public-read.ts"),
+          ],
+        },
+        types: ["node"],
+        jsx: "react-jsx",
+      },
+      include: [
+        join(root, "examples/**/*.ts"),
+        join(root, "packages/sdk/examples/**/*.ts"),
+      ],
+    }),
+  )
+  await run(
+    process.execPath,
+    [
+      join(root, "node_modules/typescript/bin/tsc"),
+      "-p",
+      "examples.tsconfig.json",
+    ],
+    consumer,
+  )
+  console.log(
+    "PASS all TypeScript examples against packed SDK public declarations",
+  )
+
   const buildArgs = [join(consumer, "node_modules/next/dist/bin/next"), "build"]
   try {
     await run(process.execPath, buildArgs, consumer)
@@ -691,6 +751,49 @@ try {
   )
   console.log(
     "PASS Node and Next default failure privacy through real HTTP, preserving application errors",
+  )
+  const scripts = (await readdir(join(root, "packages/sdk/examples"))).filter(
+    (file) => file.endsWith(".mjs"),
+  )
+  await mkdir(join(consumer, "sdk-examples"))
+  for (const file of scripts) {
+    const source = await readFile(
+      join(root, "packages/sdk/examples", file),
+      "utf8",
+    )
+    await writeFile(
+      join(consumer, "sdk-examples", file),
+      source.replaceAll('"../dist/index.js"', '"@flowmarkdev/node"'),
+    )
+    await run(process.execPath, [`sdk-examples/${file}`], consumer, {
+      ...environment,
+      ...runtimeEnv,
+    })
+  }
+  for (const mode of ["resolve", "cancel"]) {
+    const reference = JSON.parse(
+      (
+        await run(
+          process.execPath,
+          ["sdk-examples/durable-expectations.mjs"],
+          consumer,
+          { ...environment, ...runtimeEnv },
+        )
+      ).trim(),
+    )
+    await run(
+      process.execPath,
+      ["sdk-examples/durable-expectations.mjs", mode],
+      consumer,
+      {
+        ...environment,
+        ...runtimeEnv,
+        FLOWMARK_EXPECTATION_REFERENCE: JSON.stringify(reference),
+      },
+    )
+  }
+  console.log(
+    `PASS all ${scripts.length} runnable SDK examples with packed exports, including expectation settlement modes`,
   )
 } finally {
   await stop()

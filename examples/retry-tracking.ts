@@ -15,22 +15,18 @@ export async function retryImport(
   previous: WorkflowRetryReference,
   batchId: string,
 ): Promise<RemainingImport & { readonly runId: string }> {
-  const flow = flowmark.workflow("customer.import", {
-    retryOf: previous,
-    properties: { batchId },
-  })
-
-  try {
-    const imported = await flow.operation("import-remaining", () =>
-      importRemaining(batchId),
-    )
-    flow.done({
-      outcome: "complete",
-      result: { imported: imported.imported },
-    })
-    return { runId: flow.runId, imported: imported.imported }
-  } catch (cause) {
-    flow.fail({ code: "IMPORT_RETRY_FAILED" })
-    throw cause
-  }
+  return flowmark.workflow(
+    "customer.import",
+    async (flow) => {
+      const imported = await flow.operation("import-remaining", () =>
+        importRemaining(batchId),
+      )
+      flow.done({
+        outcome: "complete",
+        result: { imported: imported.imported },
+      })
+      return { runId: flow.runId, imported: imported.imported }
+    },
+    { retryOf: previous, properties: { batchId } },
+  )
 }

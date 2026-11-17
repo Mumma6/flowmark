@@ -21,10 +21,10 @@ export async function importPrices(fileId: string): Promise<number> {
   const flow = flowmark.workflow("catalog.price-import", {
     properties: { fileId },
   })
-  const rows = await readPriceRows(fileId)
   let completed = 0
 
   try {
+    const rows = await readPriceRows(fileId)
     for (const row of rows) {
       await upsertPrice(row)
       completed += 1
