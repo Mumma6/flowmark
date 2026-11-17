@@ -80,13 +80,12 @@ features (`auth`, `platform`, `runs` and `reporting`).
 - **Account and workspace:** the shared Sheet holds navigation to history,
   overview, Connect, settings and the setup guide, alongside appearance and sign-out.
   Project loading failures show retry feedback rather than an empty account.
-- **Onboarding:** four SDK-first steps guide project creation, saving the ingestion
-  key, instrumentation and first evidence. The user's coding agent fetches the
-  instrumentation guide, install the SDK and edit the repository; manual SDK steps
-  remain available. Onboarding neither probes nor configures MCP. Existing step
-  identifiers and project/key completion gates are retained; saved `install`
-  progress resumes at instrumentation. After evidence arrives, Connect is offered
-  as an optional next action for AI investigation.
+- **Onboarding:** three steps cover project creation, saving the ingestion key
+  and obtaining AI-assisted or manual SDK instructions. It does not query telemetry
+  or wait for installation, releases or executions. Open Studio completes setup
+  with the existing owner/write-key checks. Saved `install` and `run` progress
+  resumes at instructions. Evidence arrival and optional MCP investigation belong
+  in Studio and Connect after onboarding.
   Completed users can revisit `/onboarding?mode=guide`; that mode changes only
   local step navigation and never rewrites completed onboarding state.
 

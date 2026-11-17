@@ -384,12 +384,12 @@ function ExploreWorkspace() {
                 <h3 className="text-base font-medium">
                   {activeFilters.length
                     ? "No evidence matches this view."
-                    : "Your first process starts here."}
+                    : "No executions received yet."}
                 </h3>
                 <p className="max-w-sm text-xs leading-6 text-muted-foreground">
                   {activeFilters.length
                     ? "Try another process or clear the conditions to search the recorded history."
-                    : "Use the AI setup prompt or manual SDK steps to instrument one process. Run your application to see its reported result here."}
+                    : "Install and deploy the SDK on your own schedule. Executions appear here when your application sends evidence."}
                 </p>
                 {activeFilters.length ? (
                   <Button

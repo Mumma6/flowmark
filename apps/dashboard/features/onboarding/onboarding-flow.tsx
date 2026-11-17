@@ -13,7 +13,6 @@ import { useOnboarding } from "./use-onboarding"
 import { guidance } from "./onboarding-guidance"
 import { KeyStep } from "./step-views/key-step"
 import { InstrumentStep } from "./step-views/instrument-step"
-import { RunStep } from "./step-views/run-step"
 import { ProjectStep } from "./step-views/project-step"
 function OnboardingContent({
   email,
@@ -27,7 +26,6 @@ function OnboardingContent({
   const {
     current,
     projects,
-    snapshot,
     keys,
     origin,
     step,
@@ -36,12 +34,10 @@ function OnboardingContent({
     setCreatedSecret,
     currentStep,
     hasWriteKey,
-    hasRuns,
     advance,
     complete,
     snippet,
     next,
-    investigate,
   } = useOnboarding(initialStep, reviewMode)
   const projectState = useProject()
   const titleRef = useRef<HTMLHeadingElement>(null)
@@ -145,9 +141,8 @@ function OnboardingContent({
             <br className="hidden sm:block" /> understandable.
           </h1>
           <p className="mt-4 max-w-lg text-xs leading-7 text-muted-foreground">
-            Copy the setup prompt into your AI agent or follow the manual SDK
-            steps. Run one useful process and see its evidence in Studio. Aim
-            for your first insight in about 15 minutes.
+            Create a project, save its key and get your SDK setup instructions.
+            You can install and deploy on your own schedule.
           </p>
         </div>
         <div className="grid items-start gap-8 lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-12">
@@ -159,7 +154,7 @@ function OnboardingContent({
               aria-valuemax={steps.length}
               aria-valuenow={step + 1}
               aria-valuetext={`Step ${step + 1} of ${steps.length}: ${currentStep.title}`}
-              className="mb-5 grid grid-cols-4 gap-1.5"
+              className="mb-5 grid grid-cols-3 gap-1.5"
             >
               {steps.map((item, index) => (
                 <span
@@ -249,7 +244,7 @@ function OnboardingContent({
                   setCreatedSecret={setCreatedSecret}
                 />
               ) : null}
-              {!reviewMode && currentStep.id === "run" && (
+              {!reviewMode && currentStep.id === "instrument" && (
                 <>
                   <DataState
                     pending={keys.isPending}
@@ -278,14 +273,6 @@ function OnboardingContent({
               )}
               {currentStep.id === "instrument" ? (
                 <InstrumentStep origin={origin} snippet={snippet} />
-              ) : null}
-              {currentStep.id === "run" ? (
-                <RunStep
-                  snapshot={snapshot}
-                  hasRuns={hasRuns}
-                  onInvestigate={investigate}
-                  disabled={blocked}
-                />
               ) : null}
               <div className="border-l border-primary/25 pl-4">
                 <p className="text-[11px] font-medium">
@@ -320,12 +307,10 @@ function OnboardingContent({
               >
                 {busy
                   ? "Saving…"
-                  : currentStep.id === "run"
-                    ? hasRuns
-                      ? "Open Studio"
-                      : "Finish setup"
+                  : currentStep.id === "instrument"
+                    ? "Open Studio"
                     : currentStep.id === "key"
-                      ? "Continue to instrumentation"
+                      ? "Get setup instructions"
                       : "Continue"}
                 <ArrowRight aria-hidden="true" className="size-3.5" />
               </Button>

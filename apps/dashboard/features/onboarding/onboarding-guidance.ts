@@ -1,4 +1,4 @@
-import { KeyRound, Radio, Workflow } from "lucide-react"
+import { KeyRound, Workflow } from "lucide-react"
 export const guidance = {
   project: {
     icon: Workflow,
@@ -19,17 +19,9 @@ export const guidance = {
   instrument: {
     icon: Workflow,
     description:
-      "Copy the setup prompt into your AI agent. It reads the SDK documentation, installs the SDK and helps instrument one useful process. You can also follow the manual SDK steps.",
-    note: "One process, one useful result.",
+      "Copy a setup prompt for your AI agent, or follow the manual SDK instructions. You can reopen these instructions from Studio whenever you need them.",
+    note: "Continue to Studio whenever you're ready.",
     detail:
-      "Capture a result your application already knows, such as imported and skipped counts. Your AI agent writes the instrumentation code; the SDK sends evidence when your application runs.",
-  },
-  run: {
-    icon: Radio,
-    description:
-      "Run the process in your application, then check for its execution here.",
-    note: "Read the result, then follow the evidence.",
-    detail:
-      "Completion means the application reported completion. Check the reported result for skipped or rejected work, then inspect operations and failures.",
+      "Install, deploy and run your application on your own schedule. Evidence appears in Studio when your application sends it.",
   },
 } as const

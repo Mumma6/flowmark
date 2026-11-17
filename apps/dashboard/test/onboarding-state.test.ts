@@ -34,15 +34,10 @@ describe("selected-project setup state", () => {
   })
 })
 
-it("resumes the retired install step at instrumentation while retaining the existing persisted IDs", () => {
-  expect(steps.map((step) => step.id)).toEqual([
-    "project",
-    "key",
-    "instrument",
-    "run",
-  ])
+it("resumes retired install and waiting steps at instructions without requiring telemetry", () => {
+  expect(steps.map((step) => step.id)).toEqual(["project", "key", "instrument"])
   expect(steps[stepIndex("install")]?.id).toBe("instrument")
   expect(steps[stepIndex("key")]?.id).toBe("key")
-  expect(steps[stepIndex("run")]?.id).toBe("run")
+  expect(steps[stepIndex("run")]?.id).toBe("instrument")
   expect(steps[stepIndex("unknown")]?.id).toBe("project")
 })

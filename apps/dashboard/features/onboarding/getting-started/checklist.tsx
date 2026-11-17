@@ -29,13 +29,13 @@ export function GettingStartedChecklist({
           {hasRuns
             ? "Explore your process evidence"
             : current
-              ? "See your first process execution"
+              ? "Waiting for application data"
               : "Create your first project"}
         </CardTitle>
         <CardDescription>
           {hasRuns
             ? "Start with the reported result, then inspect the work behind it."
-            : "Start with one useful process. Your AI agent can help you add the SDK; manual setup is always available."}
+            : "Install and deploy the SDK when you are ready. Executions appear here when your application sends evidence."}
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-4">
@@ -72,8 +72,9 @@ export function GettingStartedChecklist({
                     and instrument one process, or follow the manual SDK steps.
                   </li>
                   <li>
-                    Run the process in your application, then return to Explore
-                    to open its reported result.
+                    Deploy through your usual release process. When the
+                    instrumented process runs and sends evidence, its executions
+                    appear in Studio.
                   </li>
                 </>
               )}
@@ -85,9 +86,7 @@ export function GettingStartedChecklist({
                     hasRuns ? "/" : "/onboarding?mode=guide&step=instrument"
                   }
                 >
-                  {hasRuns
-                    ? "Explore executions"
-                    : "Instrument your application"}
+                  {hasRuns ? "Explore executions" : "SDK setup instructions"}
                 </Link>
               </Button>
               {!compact ? (
