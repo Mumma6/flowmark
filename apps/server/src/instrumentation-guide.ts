@@ -1,38 +1,20 @@
-/** Versioned public instructions. The live route targets the installable npm SDK. */
-export function instrumentationGuide(
-  apiOrigin: string,
-  sdkVersion: "0.3.0" | "0.4.0" = "0.3.0",
-): string {
-  const preview = sdkVersion === "0.4.0"
+/** Public setup instructions for the current published SDK. */
+export function instrumentationGuide(apiOrigin: string): string {
   const urlEnvironment =
-    !preview || apiOrigin !== "https://api.flowmark.dev"
-      ? `\n\`FLOWMARK_API_URL=${apiOrigin}\``
-      : ""
-  const operationOptions = preview
-    ? ""
-    : ', { mapError: () => ({ code: "IMPORT_OPERATION_FAILED" }) }'
-  const body = `    const invoices = await flow.operation("load-invoices", () => loadInvoices(batchId)${operationOptions})
+    apiOrigin === "https://api.flowmark.dev"
+      ? ""
+      : `\n\`FLOWMARK_API_URL=${apiOrigin}\``
+  const process = `export function importInvoices(flowmark: Pick<FlowmarkClient, "workflow">, batchId: string) {
+  return flowmark.workflow("invoice.import", async flow => {
+    const invoices = await flow.operation("load-invoices", () => loadInvoices(batchId))
     flow.step("source-loaded", { properties: { count: invoices.length } })
-    const result = await flow.operation("save-invoices", () => saveInvoices(invoices)${operationOptions})
+    const result = await flow.operation("save-invoices", () => saveInvoices(invoices))
     flow.done({
       outcome: result.rejected > 0 ? "partial" : "complete",
       result: { imported: result.imported, rejected: result.rejected },
     })
-    return result`
-  const process = preview
-    ? `export function importInvoices(flowmark: Pick<FlowmarkClient, "workflow">, batchId: string) {
-  return flowmark.workflow("invoice.import", async flow => {
-${body}
+    return result
   }, { properties: { batchId } })
-}`
-    : `export async function importInvoices(flowmark: Pick<FlowmarkClient, "workflow">, batchId: string) {
-  const flow = flowmark.workflow("invoice.import", { properties: { batchId } })
-  try {
-${body}
-  } catch (error) {
-    flow.fail({ code: "IMPORT_FAILED" })
-    throw error
-  }
 }`
   return `# Instrument one process with Flowmark
 
@@ -40,17 +22,13 @@ Flowmark observes work your application already runs. It does not schedule or re
 
 ## 1. Install and set server credentials
 
-${
-  preview
-    ? "**Unreleased SDK 0.4.0 evaluation.** Install the supplied local core/SDK tarballs. This version is not available from npm; do not substitute the published package. The callback API below is new in 0.4.0."
-    : "This guide targets published **@flowmarkdev/node@0.3.0**. Install with `npm i @flowmarkdev/node@0.3.0` (Node >=20.19; Next >=16 for the Next adapter)."
-}
+Install with \`npm i @flowmarkdev/node\` (Node >=20.19; Next >=16 for the Next adapter). This guide uses SDK 0.4.0 or newer.
 
 Ask the developer to set these server variables. Never read, print, commit or request the key in chat. Never use NEXT_PUBLIC_*.
 
 \`FLOWMARK_API_KEY=<project server-write key>\`${urlEnvironment}
 
-The URL is an API origin, not a path ending in \`/v1/events\`. ${preview ? "0.4.0 hosted users may omit the URL; the default is https://api.flowmark.dev. Local/staging APIs need their explicit origin." : "0.3.0 requires an explicit production URL; set it locally too when using hosted Flowmark."} Next loads its env files; a standalone script must inherit or load its environment before creating the client.
+The URL is an API origin, not a path ending in \`/v1/events\`. Hosted users may omit the URL; the default is https://api.flowmark.dev. Local/staging APIs need their explicit origin. Next loads its env files; a standalone script must inherit or load its environment before creating the client.
 
 ## 2. Choose the entry point, then share business logic
 
@@ -95,9 +73,9 @@ export async function POST(request: Request) {
 
 A Server Action calls the same shared function with its Next client. An application's scheduler owns invoking the cron endpoint and deciding retries; Flowmark does neither.
 
-${preview ? "The callback form observes one complete invocation: normal return requests completion; an unhandled exception records `workflow_failed` and rethrows the same original value. Explicit `done({ outcome, result })` supplies business meaning; explicit `fail({ code, outcome?, result? })` supplies a known failure. Use manual `workflow(name, options)` when the process continues in another invocation." : "`workflow()` starts an execution. Only `done()`/`fail()` close it; preserve the application's original exception by rethrowing it after `fail()`."}
+The callback form observes one complete invocation: normal return requests completion; an unhandled exception records \`workflow_failed\` and rethrows the same original value. Explicit \`done({ outcome, result })\` supplies business meaning; explicit \`fail({ code, outcome?, result? })\` supplies a known failure. Use manual \`workflow(name, options)\` when the process continues in another invocation.
 
-\`step()\` is an instant milestone; \`operation()\` measures work and preserves its value or original rejection. A failed operation alone does not fail the workflow: the application may recover and finish with a partial result. ${preview ? "Synchronous operation callbacks also work; await their returned Promise. Raw exception fields are never copied by default; use mapError only for deliberately selected safe details." : "In 0.3.0, keep the shown mapError callbacks: otherwise exception messages/fields are copied. Select fixed safe codes, not raw exceptions."}
+\`step()\` is an instant milestone; \`operation()\` measures work and preserves its value or original rejection. A failed operation alone does not fail the workflow: the application may recover and finish with a partial result. Synchronous operation callbacks also work; await their returned Promise. Raw exception fields are never copied by default; use mapError only for deliberately selected safe details.
 
 Completion describes execution; \`outcome\` describes the application's reported business result. Use codes like complete, partial or no-change with known counts. A technical failure after useful work may use \`fail({ code: "IMPORT_FAILED", outcome: "partial", result: { imported: 8 } })\`. Outcomes match \`^[a-z][a-z0-9_-]{0,63}$\`. Keep summaries small and JSON-safe; leave credentials, raw exceptions and personal data out.
 

@@ -62,10 +62,8 @@ project receives a write key only.
 
 ## Operation callback exceptions
 
-Published **0.3.0** records bounded structured failures and `Error.message`
-without a mapper. **Unreleased 0.4.0** records only `{ code: "operation_failed" }`
-by default and does not inspect the exception. Do not assume arbitrary exception
-messages are safe when using an older release.
+Operation callbacks record only `{ code: "operation_failed" }` by default and do
+not inspect the exception. Workflow callbacks use `{ code: "workflow_failed" }`.
 Use per-operation `mapError` to choose an existing failure code, safe message and
 retryability without appending the original exception message or stack. Mapper
 failures retain only a bounded diagnostic reason and emit a generic failure;

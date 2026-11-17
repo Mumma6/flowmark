@@ -4,10 +4,9 @@ description: Start workflows in Route Handlers or Server Actions; let Next own d
 ---
 
 Use Next.js 16 or newer with the Node.js runtime. Install `@flowmarkdev/node`.
-For published **0.3.0**, set `FLOWMARK_API_KEY` and
-`FLOWMARK_API_URL=https://api.flowmark.dev` in the server environment. Local or
-staging Flowmark APIs use their own explicit origin. Never use `NEXT_PUBLIC_*`
-for a private key. See [configuration](/docs/configuration) for release-specific defaults.
+Set `FLOWMARK_API_KEY` in the server environment. Hosted delivery is the default;
+local or staging Flowmark APIs use an explicit `FLOWMARK_API_URL`. Never use
+`NEXT_PUBLIC_*` for a private key. See [configuration](/docs/configuration).
 
 ## Create one shared client
 
@@ -35,35 +34,25 @@ import { flowmark } from "@/lib/flowmark"
 export const runtime = "nodejs"
 
 export async function POST() {
-  const flow = flowmark.workflow("invoice.import")
-  try {
+  const result = await flowmark.workflow("invoice.import", async (flow) => {
     flow.step("file-validated")
-    const result = await flow.operation("save-invoices", () => saveInvoices(), {
-      mapError: () => ({ code: "SAVE_FAILED" }),
-    })
+    const result = await flow.operation("save-invoices", () => saveInvoices())
     flow.done({
       outcome: result.rejected > 0 ? "partial" : "complete",
       result: { imported: result.imported, rejected: result.rejected },
     })
-    return Response.json(result)
-  } catch (error) {
-    flow.fail({ code: "IMPORT_FAILED" })
-    throw error
-  }
+    return result
+  })
+  return Response.json(result)
 }
 ```
 
 `operation()` measures work and preserves its return value or original rejection.
 It closes its operation, but a rejected operation does not fail the workflow.
-The catch above reports terminal failure and preserves the application's error.
-`done()` means execution completed; `outcome: "partial"` and counts describe its
-business result. See [completion](/docs/reference/completion).
-
-The **unreleased 0.4.0** candidate adds an optional
-[workflow callback](/docs/reference/workflow#callback-workflows--unreleased-040)
-that completes on return and fails/rethrows on an unexpected exception. It removes
-the terminal try/catch for a process contained in one invocation. It is not
-available in published 0.3.0; the example above targets that published version.
+An unexpected callback exception records a generic workflow failure and preserves
+the application's original exception. `done()` supplies the reported business
+outcome; a partial outcome can still be a completed execution. See
+[completion](/docs/reference/completion).
 
 ## Server Actions
 
@@ -77,12 +66,11 @@ import { importInvoices } from "@/business/import-invoices"
 
 export async function importAction() {
   // Preserve the action's existing authorization and validation here.
-  const flow = flowmark.workflow("invoice.import")
-  return importInvoices(flow)
+  return importInvoices(flowmark)
 }
 ```
 
-The shared business function records operations and terminal markers, as shown in
+The shared business function owns its workflow callback, operations and outcome, as shown in
 the [Node.js guide](/docs/nodejs#share-business-logic-with-nextjs). It imports neither
 runtime adapter. A standalone script creates a Node client and owns shutdown;
 it never imports the Next client module or probes request scope with exceptions.
@@ -109,11 +97,11 @@ For intentional post-response business work:
 ```ts
 import { after } from "next/server"
 import { flowmark } from "@/lib/flowmark"
+import { importInvoices } from "@/business/import-invoices"
 
 export async function POST() {
   after(async () => {
-    const flow = flowmark.workflow("invoice.import")
-    await importInvoices(flow)
+    await importInvoices(flowmark)
   })
   return Response.json({ accepted: true })
 }

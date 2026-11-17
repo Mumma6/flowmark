@@ -54,8 +54,9 @@ it("keeps copied, configured, and observed setup stages separate", () => {
 
 it("builds manual setup snippets and recovery copy for the validated origin", () => {
   const origin = "https://api.flowmark.dev"
-  expect(serverEnvironmentSnippet(origin)).toBe(
-    "FLOWMARK_API_KEY=<write key>\nFLOWMARK_API_URL=https://api.flowmark.dev",
+  expect(serverEnvironmentSnippet(origin)).toBe("FLOWMARK_API_KEY=<write key>")
+  expect(serverEnvironmentSnippet("http://127.0.0.1:3003")).toBe(
+    "FLOWMARK_API_KEY=<write key>\nFLOWMARK_API_URL=http://127.0.0.1:3003",
   )
   expect(instrumentationGuideUrl(origin)).toBe(
     "https://api.flowmark.dev/v1/instrumentation",
@@ -69,7 +70,11 @@ it("builds manual setup snippets and recovery copy for the validated origin", ()
   expect(snippet).toContain("importBatch(batchId)")
   expect(snippet).toContain("skipped: imported.skipped")
   expect(snippet).toContain("return imported")
-  expect(snippet).toContain("throw error")
+  expect(snippet).toContain(
+    'outcome: imported.skipped > 0 ? "partial" : "complete"',
+  )
+  expect(snippet).toContain('workflow("customer.import", async (flow)')
+  expect(snippet).not.toContain("throw error")
   expect(snippet).toContain("await flowmark.flush()")
   expect(snippet).not.toContain("shutdown()")
   expect(snippet).not.toContain("npm i")

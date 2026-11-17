@@ -1,89 +1,37 @@
 # Flowmark examples
 
-Illustrative TypeScript excerpts for [`@flowmarkdev/node`](https://www.npmjs.com/package/@flowmarkdev/node).
-They show where Flowmark fits into application code that already does the work.
+TypeScript examples for [@flowmarkdev/node](https://www.npmjs.com/package/@flowmarkdev/node).
+Most are excerpts: application helpers are declared so the code focuses on
+instrumentation. Flowmark observes work; the application owns execution and retries.
 
-Except for the runnable `read-run.ts` consumer below, these files are not applications, tests, or scripts. Helper functions such as
-`upsertCustomer()` are declared so the snippet can focus on instrumentation.
-Every Flowmark call matches the current SDK. `tsconfig.json` maps
-`@flowmarkdev/node` to the SDK in this repository so the editor can resolve
-those imports. It does not install or publish a package.
+## Start here
 
-Flowmark observes a run. It does not execute, schedule, or retry the work.
+- [Shared Node client](./flowmark.ts) and [checkout workflow](./basic-workflow.ts).
+- [Next.js server action](./next-route.ts) with automatic delivery.
+- [Typed customer import](./customer-import.ts) with complete/partial outcomes.
+- [Worker delivery and shutdown](./background-job.ts).
+- [Concurrent operations](./concurrent-operations.ts),
+  [progress](./batch-progress.ts) and [intermediate results](./intermediate-reporting.ts).
 
-Runnable loopback scripts live separately in `packages/sdk/examples/`.
+The callback form observes one invocation. The
+[continuation](./workflow-continuation.ts) and [webhook](./webhook-processing.ts)
+examples deliberately use manual markers across requests. The
+[error handling](./error-handling.ts), [CRM retry](./crm-sync.ts),
+[retry link](./retry-tracking.ts) and [related workflows](./correlated-workflows.ts)
+examples show explicit application decisions.
 
-[`SETUP-DEMO.md`](./SETUP-DEMO.md) documents a **memory-first** runnable demo
-for `booking-process.ts` (optional loopback delivery for Studio verification).
-Run it with `pnpm --filter @flowmarkdev/node test booking-setup-demo`.
+## Advanced examples
 
-The [explicit trace-reference recipe](../packages/sdk/examples/trace-context/README.md)
-links operation evidence to an application's existing tracing context through
-selected properties. Its memory-only synthetic proof needs no tracing provider.
+- [Booking expectations](./booking-process.ts), [runnable demo](./SETUP-DEMO.md)
+  and [code-owned metadata](./code-owned-booking.ts).
+- [Explicit trace references](../packages/sdk/examples/trace-context/README.md).
+- [Public read consumer](./read-run.ts):
+  [setup and limits](../docs/sdk/public-run-read.md#run-the-repository-consumer).
+- [Portable evidence](./portable-evidence/README.md).
 
-For optional metadata kept beside code, preview/apply
-[`booking-definition.json`](./booking-definition.json) in **Settings → Process
-metadata** and use [`code-owned-booking.ts`](./code-owned-booking.ts) to explicitly
-report its revision. See the [import guide](../docs/definition-imports.md).
-Starting a workflow never imports a definition.
+Runnable SDK scripts live in `packages/sdk/examples/`. Their HTTP demonstrations
+require an explicit loopback API and synthetic write key; the outcomes example
+uses memory only. The packed-consumer check compiles these TypeScript examples
+against the package exports and runs the SDK scripts against a loopback receiver.
 
-## Scenarios
-
-| Example                      | Situation                        | SDK concepts                                                              |
-| ---------------------------- | -------------------------------- | ------------------------------------------------------------------------- |
-| `flowmark.ts`                | Shared Node.js client            | `defineConfig`, `createFlowmark`, instrumentation errors                  |
-| `basic-workflow.ts`          | Checkout                         | `workflow`, `step`, `operation`, `done`, `fail`                           |
-| `customer-import.ts`         | Typed customer import            | `defineWorkflow`, `start`, outcomes `complete` and `partial`              |
-| `intermediate-reporting.ts`  | Page-by-page import              | `report` replaces the non-final snapshot; `done` carries the final result |
-| `batch-progress.ts`          | Price file                       | Absolute `progress`; `delivery.progress: "latest"`                        |
-| `crm-sync.ts`                | Account push with a second try   | Operation `attempt`, `mapError`; the application owns the retry           |
-| `retry-tracking.ts`          | A later import run               | `retryOf` starts a new run and does not continue the previous one         |
-| `booking-process.ts`         | Booking and provider evidence    | `expect`, `resolveExpectation`, `cancelExpectation`                       |
-| `booking-setup-scenarios.ts` | Shared booking demo helpers      | Same markers as `booking-process.ts`; see SETUP-DEMO.md                   |
-| `workflow-continuation.ts`   | Draft, then a later review       | Same name and `id`; `setProperties` while the run is open                 |
-| `webhook-processing.ts`      | Payment callback                 | Continue a stored `runId`; terminal `done` or `fail`                      |
-| `background-job.ts`          | Invoice reconciliation           | `flush`, `shutdown`, `deliveryHealth`                                     |
-| `error-handling.ts`          | Campaign delivery fallback       | `operation` rethrows; `error` stays non-terminal; `fail` ends the run     |
-| `concurrent-operations.ts`   | Inventory and payment together   | Overlapping operations; `done` waits for open handles                     |
-| `correlated-workflows.ts`    | Fulfillment and a shipping label | Explicit `correlationId` and `parentRunId`                                |
-| `next-route.ts`              | Next.js server action            | `@flowmarkdev/node/next`, `onDeliveryHealth`; no manual `shutdown`        |
-
-## Usage notes
-
-Create one client for the process. Pass durable ids such as an order or batch
-id in `properties`, and keep one execution's id in `runId`. An `outcome` is the
-business result your code reports. It is independent of whether the run
-completed or failed.
-
-Browser delivery (`@flowmarkdev/node/browser`), the server proxy, and custom
-transports are client setup rather than workflow scenarios, so they are not
-included here.
-
-## Public read consumer
-
-`read-run.ts` is a runnable server-side consumer of `@flowmarkdev/node/read`.
-It reads one Studio selection JSON file and an optional continuation cursor;
-`FLOWMARK_API_URL` and `FLOWMARK_READ_KEY` are environment-only configuration.
-See [setup, limits and errors](../docs/sdk/public-run-read.md#run-the-repository-consumer).
-The subpath is implemented in repository source; npm publication is separate.
-
-The same consumer also accepts a version-1 technical period selection, comparing
-current and previous windows with explicit coverage and empty-baseline guidance.
-See [the supported question and limits](../docs/sdk/public-period-read.md).
-
-For run selections, `--snapshot /absolute/path/new-evidence.json` exports the
-current authorized metadata page for the existing supplied-data viewer. See the
-[read-to-view walkthrough](./portable-evidence/README.md#read-a-real-authorized-selection-into-the-view).
-
-The [public client guide](../apps/docs/content/docs/public-reads.mdx) documents
-local read-key creation, error recovery and packaging/version boundaries without
-requiring hosted credentials or private plans.
-
-## Portable evidence
-
-[Portable run evidence](./portable-evidence/README.md) contains a copyable synthetic
-snapshot, supplied-data harness setup, the approved MCP Apps reference-host patch,
-a real non-UI fallback verifier and a dated compatibility record. It reuses the
-shared run presentation without ingestion keys or autonomous fetching. This is a
-local repository example; hosted availability and named commercial-client support
-are separate verification questions.
+[SDK guides](https://docs.flowmark.dev/docs/sdk) · [Apache-2.0](./LICENSE)

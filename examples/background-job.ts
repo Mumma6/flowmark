@@ -20,29 +20,31 @@ const flowmark = createFlowmark({
 export async function reconcileInvoices(
   period: string,
 ): Promise<Reconciliation> {
-  const flow = flowmark.workflow("billing.reconcile", {
-    properties: { period },
-  })
-
-  let summary: Reconciliation
   try {
-    summary = await flow.operation("compare-ledger", () =>
-      compareLedger(period),
-    )
-    flow.done({
-      outcome: summary.mismatches === 0 ? "balanced" : "mismatched",
-      result: {
-        invoices: summary.invoices,
-        mismatches: summary.mismatches,
+    return await flowmark.workflow(
+      "billing.reconcile",
+      async (flow) => {
+        const summary = await flow.operation("compare-ledger", () =>
+          compareLedger(period),
+        )
+        flow.done({
+          outcome: summary.mismatches === 0 ? "balanced" : "mismatched",
+          result: {
+            invoices: summary.invoices,
+            mismatches: summary.mismatches,
+          },
+        })
+        return summary
       },
-    })
-  } catch (cause) {
-    flow.fail({ code: "RECONCILE_FAILED" })
-    throw cause
+      { properties: { period } },
+    )
+  } finally {
+    try {
+      await flowmark.flush()
+    } catch (error) {
+      console.error("Flowmark delivery failed", error)
+    }
   }
-
-  await flowmark.flush()
-  return summary
 }
 
 export async function stopBillingWorker(): Promise<void> {

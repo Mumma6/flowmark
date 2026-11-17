@@ -6,10 +6,17 @@ description: Start a new execution under a stable workflow name.
 ## Signature
 
 ```ts
+flowmark.workflow<Value>(
+  name: string,
+  callback: (flow: Flow) => Value | PromiseLike<Value>,
+  options?: WorkflowRunOptions,
+): Promise<Value>
 flowmark.workflow(name: string, options?: WorkflowRunOptions): Flow
 ```
 
-Each call immediately queues a start event and returns a run handle.
+Use a callback for one complete invocation; its Promise preserves the business
+return value. The manual form returns a run handle for explicit lifecycle markers.
+Both queue a start event.
 
 ## Example
 
@@ -73,10 +80,10 @@ See [Attempts and retries](/docs/reference/attempts) for operation `attempt: { g
 
 See [Expected confirmations](/docs/reference/expectations) for `flow.expect()`, client-level `resolveExpectation()` and `cancelExpectation()`, the serializable reference, bounded deadlines and delivery/runtime restrictions. These reports remain separate from execution status and final run results.
 
-## Callback workflows — unreleased 0.4.0
+## Callback workflows
 
 For a process that finishes in one invocation, the same `workflow` method can
-observe a callback. This overload is not in published 0.3.0.
+observe a callback.
 
 ```ts
 const result = await flowmark.workflow(
