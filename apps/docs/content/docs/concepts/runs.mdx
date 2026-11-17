@@ -31,6 +31,29 @@ entity ID that outlives one execution; put those in properties.
 The dashboard also has its own internal run UUID for queries and navigation;
 it is different from the external SDK `runId`.
 
+## When application code changes
+
+The workflow's identity is its project and stable name, not a source file,
+function name or line number. Moving or renaming application functions does not
+change the workflow when `workflow("invoice.import")` keeps the same name.
+
+Changing that string creates a different workflow. Existing runs remain under
+the old name; there is no automatic rename, alias or history migration. Adding,
+removing or reordering steps changes only the evidence future executions report.
+Previously recorded events are not rewritten to match the latest source code.
+
+Removing instrumentation stops new evidence from that code. It does not delete
+the workflow or its stored runs, automatically archive it, or mark unfinished
+runs failed. No new telemetry can mean unused code, lost delivery or many other
+things; it does not prove the process was removed or stopped. Recorded evidence
+is still subject to explicit data deletion and retention operations.
+
+Use `release` to distinguish application deployments while keeping the workflow
+name stable. If the business meaning of result fields changes, version the
+corresponding result declaration explicitly; `properties.definitionRevision`
+selects that meaning. Neither deployment metadata nor `defineWorkflow()` uploads
+your source code or synchronizes a workflow definition with the server.
+
 ## Continue across requests
 
 Transport a plain `WorkflowRunReference` explicitly in application-owned storage

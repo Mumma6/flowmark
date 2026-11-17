@@ -32,7 +32,7 @@ No AI client is required. Follow these steps to instrument the application yours
 ### Before you start
 
 You need a running Flowmark API, a project server-write key, and the SDK.
-The published `@flowmarkdev/node` README is the implementation contract for
+The published **0.3.0** `@flowmarkdev/node` README is the implementation contract for
 adding markers in an existing app.
 
 ```bash
@@ -52,7 +52,8 @@ FLOWMARK_API_KEY=<your-project-server-write-key>
 FLOWMARK_API_URL=https://api.flowmark.dev
 ```
 
-The URL is the API origin, not `/v1/events`. Production requires an explicit URL. See
+The URL is the API origin, not `/v1/events`. Published 0.3.0 requires an explicit
+production URL. See
 [configuration](/docs/configuration) for defaults and overrides.
 
 ### 2. Create one shared client
@@ -82,8 +83,17 @@ async function importInvoices(batchId: string) {
   try {
     const invoices = await loadInvoices(batchId)
     run.step("source-loaded", { properties: { count: invoices.length } })
-    const result = await saveValidInvoices(invoices)
-    run.done({ result: { imported: result.imported, skipped: result.skipped } })
+    const result = await run.operation(
+      "save-invoices",
+      () => saveValidInvoices(invoices),
+      {
+        mapError: () => ({ code: "SAVE_FAILED" }),
+      },
+    )
+    run.done({
+      outcome: result.skipped > 0 ? "partial" : "complete",
+      result: { imported: result.imported, skipped: result.skipped },
+    })
     return result
   } catch (error) {
     run.fail({ code: "IMPORT_FAILED" })
@@ -93,7 +103,7 @@ async function importInvoices(batchId: string) {
 }
 ```
 
-Four markers: start, checkpoint, completion, failure. `workflow()` starts an
+Markers cover start, checkpoint, timed operation, completion and failure. `workflow()` starts an
 independent run; `step()` records a milestone; `done()` attaches a bounded
 business summary; `fail()` reports failure without throwing. Your function
 keeps ownership of its return value and original exception.
@@ -144,3 +154,6 @@ terminal event is not proof the business operation failed.
 - [Business results](/docs/concepts/results): choose useful outcome summaries.
 - [SDK reference](/docs/reference): signatures, parameters, and behavior.
 - [Delivery and diagnostics](/docs/delivery): shutdown, errors, and limits.
+
+For a CLI or worker, follow [Node.js scripts and workers](/docs/nodejs), including
+process-owned shutdown and business logic shared with Next.js.

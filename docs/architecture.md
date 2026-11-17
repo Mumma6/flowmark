@@ -130,6 +130,14 @@ or create a distributed trace. Related-run queries and parent matches remain
 scoped to the authorized project; shared correlation is grouping, not proof of
 causation. Browser-supplied links remain untrusted.
 
+The public SDK also offers an optional single-invocation callback overload of
+`workflow`, sharing the marker API's run state and terminal guards. It preserves
+business values/causes and adds observation at callback settlement, never scheduling
+or retries. `done`/`fail` remain explicit for business meaning; manual handles own
+multi-request continuations. Runtime adapters only supply a manual start boundary;
+the shared public API composes callbacks and typed definitions once without adding
+a service or execution runtime.
+
 The SDK groups its internal domains directly under `src/workflows/` and
 `src/delivery/`, without an extra `features/` directory. The workflow engine
 coordinates `WorkflowRuns` for terminal event coordination and `WorkflowEvents`

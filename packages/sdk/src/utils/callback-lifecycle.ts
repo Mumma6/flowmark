@@ -1,13 +1,9 @@
-import type { WorkflowOperation } from "../types/index.js"
-import { failureFromUnknown } from "./failure-from-unknown.js"
-
-export function withOperationCallback<T>(
-  operation: WorkflowOperation,
-  callback: () => PromiseLike<T>,
-  failCallback: (cause: unknown) => void = (cause) =>
-    operation.fail(failureFromUnknown(cause)),
+export function withCallbackLifecycle<T>(
+  lifecycle: { readonly done: () => void },
+  callback: () => T | PromiseLike<T>,
+  failCallback: (cause: unknown) => void,
 ): Promise<T> {
-  let result: PromiseLike<T>
+  let result: T | PromiseLike<T>
   try {
     result = callback()
   } catch (cause) {
@@ -16,7 +12,7 @@ export function withOperationCallback<T>(
   }
   return Promise.resolve(result).then(
     (value) => {
-      operation.done()
+      lifecycle.done()
       return value
     },
     (cause: unknown) => {

@@ -395,6 +395,14 @@ pnpm build
 
 Prettier enforces semicolon-free formatting. ESLint requires braces around all control-flow bodies, including single-line `if` statements.
 
+Packed SDK verification (`pnpm --filter @flowmarkdev/node test:consumer`, also
+run by `pnpm test`) installs local tarballs into an isolated external Next.js/Node
+application. It builds without credentials, invokes real Route Handlers and a
+Server Action, and verifies synthetic loopback delivery, business outcomes and
+Node shutdown. It requires loopback socket access, reuses cached dependencies
+when available and resolves missing fixture dependencies/metadata from npm. It
+does not require a database or hosted credentials.
+
 SDK and core behavior are covered with Vitest, including HTTP failures and the
 Next.js delivery lifecycle. Domain validation and delivery are composed as
 Effects; only explicit application/SDK boundaries execute them. Apps can build

@@ -18,7 +18,7 @@ import { WorkflowTransport } from "../delivery/ports/workflow-transport.js"
 import { WorkflowEngine } from "../workflows/workflow-engine.js"
 import { WorkflowEvents } from "../workflows/workflow-events.js"
 import { WorkflowRuns } from "../workflows/run-lifecycle.js"
-import { withOperationCallback } from "../utils/operation-callback.js"
+import { withCallbackLifecycle } from "../utils/callback-lifecycle.js"
 import { splitOperationArgs } from "../utils/operation-args.js"
 import type {
   DeliveryOptions,
@@ -145,7 +145,9 @@ export function makeClient(
         ),
       ),
     )
-  return withWorkflowDefinitions<Omit<InternalClient, "defineWorkflow">>({
+  return withWorkflowDefinitions<
+    Omit<InternalClient, "defineWorkflow" | "workflow">
+  >({
     resolveExpectation: (reference, options = {}) =>
       settle(reference, options, "expectation_resolved"),
     cancelExpectation: (reference, options) =>
@@ -185,12 +187,13 @@ export function makeClient(
       ): WorkflowOperation
       function operation<T>(
         name: WorkflowStepName,
-        callback: () => PromiseLike<T>,
+        callback: () => T | PromiseLike<T>,
         options?: WorkflowOperationOptions,
       ): Promise<T>
       function operation<T>(
         name: WorkflowStepName,
-        callbackOrOptions?: (() => PromiseLike<T>) | WorkflowOperationOptions,
+        callbackOrOptions?:
+          (() => T | PromiseLike<T>) | WorkflowOperationOptions,
         options?: WorkflowOperationOptions,
       ): WorkflowOperation | Promise<T> {
         const args = splitOperationArgs(callbackOrOptions, options)
@@ -210,7 +213,7 @@ export function makeClient(
         if (args.callback === undefined) {
           return operationHandle
         }
-        return withOperationCallback(
+        return withCallbackLifecycle(
           operationHandle,
           args.callback,
           effectHandle.observeCallbackFailure

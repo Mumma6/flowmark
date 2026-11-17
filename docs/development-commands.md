@@ -28,7 +28,7 @@ embedded WASM bytes and isolated traced bindings. These commands do not deploy.
 | `pnpm db:generate`                                                             | Generates Drizzle SQL and metadata from schema changes. Does not apply SQL.                                                                                                                                                                                           |
 | `pnpm db:studio`                                                               | Starts only the guarded database browser on loopback port 4983. `dev:stack` starts this same task with the applications.                                                                                                                                              |
 | `pnpm db:reset-local-telemetry -- --confirm-local-telemetry`                   | Deletes only the operations project's local telemetry. Requires separate user approval; not onboarding or test cleanup.                                                                                                                                               |
-| `pnpm test`                                                                    | Discovers root `scripts/*.test.mjs`, then runs workspace unit tests through Turbo. No configured test target is required.                                                                                                                                             |
+| `pnpm test`                                                                    | Discovers root `scripts/*.test.mjs`, runs workspace unit tests through Turbo, then verifies packed SDK artifacts in an external Next.js/Node consumer. Requires loopback sockets; no configured database target.                                                      |
 | `pnpm test:integration`                                                        | Owns a unique Compose tmpfs PostgreSQL, builds/migrates/runs db and server suites, checks complete reports, removes only its containers/network. No seed or persistent volume.                                                                                        |
 | `pnpm build`                                                                   | Dependency-ordered workspace builds; needed for app artifacts and SDK packaging.                                                                                                                                                                                      |
 | `pnpm lint`                                                                    | Workspace ESLint checks.                                                                                                                                                                                                                                              |
@@ -180,3 +180,19 @@ resources, secrets, migration history or deployment activation are changed.
 
 See [Software Factory](./software-factory.md) for the local Codex schedule,
 private memory, limits and human-approved proposal workflow.
+
+### Packed SDK consumer verification
+
+`pnpm --filter @flowmarkdev/node test:consumer` builds and packs core/SDK, installs
+the tarballs in a temporary external application, preferring the local pnpm store, and
+runs public declaration checks, a real production Next build/server, Route
+Handlers, a Server Action and a standalone script. It tests automatic delivery,
+partial outcomes, failures, retries and explicit shutdown with a synthetic-key
+loopback receiver. It sends no hosted telemetry and removes only its own fixture
+and servers. Run `pnpm install --frozen-lockfile` first and stop this checkout's
+watchers; the command owns core/SDK build outputs while it runs. Missing registry
+metadata/dependencies are resolved from npm; SDK/core themselves always come from
+freshly built local tarballs. The command is part
+of `pnpm test` and therefore `pnpm check`. Next may request a one-time repeat
+after an upgrade advisory; the harness logs the first failure, repeats the exact
+build once and fails if the error persists.

@@ -187,7 +187,9 @@ export function createFlowmark(
     return client
   }
 
-  return withWorkflowDefinitions<Omit<FlowmarkClient, "defineWorkflow">>({
+  return withWorkflowDefinitions<
+    Omit<FlowmarkClient, "defineWorkflow" | "workflow">
+  >({
     deliveryHealth: () => client?.deliveryHealth() ?? emptyDeliveryHealth(),
     workflow: (name, options) => getClient().workflow(name, options),
     resolveExpectation: (reference, options) =>

@@ -28,7 +28,8 @@ it("scopes instrumentation and evidence verification to the selected project", (
     name: "Billing",
   })
   expect(scoped).toContain("project ID: project-id")
-  expect(scoped).toContain("actual @flowmarkdev/node README")
+  expect(scoped).toContain("Use that versioned guide for the first integration")
+  expect(scoped).toContain("only when a specific question remains")
   expect(scoped).toContain("Preserve return values, original errors")
   expect(scoped).toContain("imported, skipped or rejected counts")
   expect(scoped).toContain("Flowmark Studio")

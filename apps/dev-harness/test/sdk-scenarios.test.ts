@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest"
-import { MemoryTransport, workflow } from "@flowmarkdev/node"
+import { createFlowmarkWithTransport, MemoryTransport } from "@flowmarkdev/node"
 import { runScenario, scenarioIds, scenarios } from "../lib/sdk-scenarios"
 
 describe("SDK scenario composition", () => {
@@ -10,15 +10,9 @@ describe("SDK scenario composition", () => {
     "%s preserves lifecycle order and scenario evidence",
     async (id) => {
       const transport = new MemoryTransport()
-      const client = {
-        workflow: (name: string, options?: Parameters<typeof workflow>[1]) =>
-          workflow(name, {
-            ...options,
-            id: options?.id ?? crypto.randomUUID(),
-            transport,
-          }),
-      }
+      const client = createFlowmarkWithTransport({ transport })
       const result = await runScenario(client, id, "browser")
+      await client.shutdown()
       await vi.waitFor(() =>
         expect(
           transport.events.some(
