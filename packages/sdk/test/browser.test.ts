@@ -8,6 +8,53 @@ afterEach(() => {
 })
 
 describe("browser client", () => {
+  it("shares the callback workflow API without leaking a server lifecycle", async () => {
+    vi.stubGlobal("location", { origin: "https://customer.example" })
+    const fetcher = vi.fn<typeof fetch>(
+      async () => new Response(null, { status: 202 }),
+    )
+    vi.stubGlobal("fetch", fetcher)
+    const client = createFlowmark({})
+    await expect(
+      client.workflow("submit", (flow) => {
+        flow.done({ outcome: "partial", result: { saved: 8, rejected: 2 } })
+        return 8
+      }),
+    ).resolves.toBe(8)
+    await client.shutdown()
+    const events = fetcher.mock.calls.map(
+      ([, options]) => JSON.parse(String(options?.body)).event,
+    )
+    expect(events.map((event) => event.type)).toEqual(["started", "completed"])
+    expect(events.at(-1)).toMatchObject({
+      workflow: "submit",
+      outcome: "partial",
+      result: { saved: 8, rejected: 2 },
+    })
+  })
+  it("keeps raw callback failures private without requiring a mapper", async () => {
+    vi.stubGlobal("location", { origin: "https://customer.example" })
+    const fetcher = vi.fn<typeof fetch>(
+      async () => new Response(null, { status: 202 }),
+    )
+    vi.stubGlobal("fetch", fetcher)
+    const client = createFlowmark({})
+    const flow = client.workflow("default-error")
+    const original = new Error("BROWSER_PRIVATE_EXCEPTION")
+    await expect(
+      flow.operation("request", () => Promise.reject(original)),
+    ).rejects.toBe(original)
+    flow.fail({ code: "REQUEST_FAILED" })
+    await client.shutdown()
+    const envelopes = fetcher.mock.calls.map(([, options]) =>
+      JSON.parse(String(options?.body)),
+    )
+    expect(
+      envelopes.find(({ event }) => event.type === "operation_failed").event
+        .failure,
+    ).toEqual({ code: "operation_failed" })
+    expect(JSON.stringify(envelopes)).not.toContain("BROWSER_PRIVATE_EXCEPTION")
+  })
   it("carries attempt and retry references through the browser transport with capability acknowledgment", async () => {
     vi.stubGlobal("location", { origin: "https://customer.example" })
     const fetcher = vi.fn<typeof fetch>(async () =>

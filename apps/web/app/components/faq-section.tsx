@@ -39,7 +39,7 @@ const questions: ReadonlyArray<{
   {
     value: "open",
     title: "How can I get access?",
-    body: "Join the waitlist with your email. Flowmark is preparing for public access. You can also explore the SDK, architecture and source on GitHub under the MIT license.",
+    body: "Join the waitlist with your email. Flowmark is preparing for public access. You can also explore the architecture and source on GitHub. The SDK uses Apache 2.0; the platform uses FSL 1.1 with Apache 2.0 after two years.",
   },
 ]
 

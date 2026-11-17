@@ -72,3 +72,37 @@ See [Attempts and retries](/docs/reference/attempts) for operation `attempt: { g
 ## Expected confirmations
 
 See [Expected confirmations](/docs/reference/expectations) for `flow.expect()`, client-level `resolveExpectation()` and `cancelExpectation()`, the serializable reference, bounded deadlines and delivery/runtime restrictions. These reports remain separate from execution status and final run results.
+
+## Callback workflows — unreleased 0.4.0
+
+For a process that finishes in one invocation, the same `workflow` method can
+observe a callback. This overload is not in published 0.3.0.
+
+```ts
+const result = await flowmark.workflow(
+  "invoice.import",
+  async (flow) => {
+    const result = await flow.operation("save", () => saveInvoices())
+    flow.done({ outcome: result.rejected ? "partial" : "complete", result })
+    return result
+  },
+  { properties: { batchId } },
+)
+```
+
+Normal callback return requests completion. An unhandled synchronous throw,
+Promise rejection or thenable rejection reports `{ code: "workflow_failed" }`
+and preserves the original thrown value. The SDK does not inspect the exception
+or infer a business outcome from the callback's return value. Use `done`/`fail`
+for an explicit result/outcome; the first accepted terminal still wins. Put the
+explicit terminal at the final decision point, immediately before returning or
+throwing. Rejection can supersede completion still waiting on open operations.
+
+The returned Promise preserves the business value; it is not a delivery receipt.
+Await all application work. Already-open manual operation handles still need to
+close before completion can be sent. Node clients still drain at their process
+boundary; Next clients still drain automatically. No work is scheduled or retried.
+
+Use manual `workflow(name, options)` for multi-request continuations. Next, Node
+and browser share both signatures; typed `defineWorkflow(...).start(callback, options)`
+also keeps its context, result and outcome types.

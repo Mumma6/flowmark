@@ -29,9 +29,8 @@ Dashboard
 The reference API is `https://api.flowmark.dev` and the dashboard is
 `https://app.flowmark.dev`. Maintainer operating notes for that deployment
 stay outside the public tree. The same application shape runs locally with checkout-owned Docker Compose.
-Neon and Vercel are the reference hosted stack. A supported self-host distribution
-is not a project goal; configurable PostgreSQL and origins preserve adapter
-boundaries rather than certify an arbitrary deployment ([ADR 0006](./decisions/0006-mvp-0.1-infrastructure.md)).
+Neon and Vercel host the maintained product. Configurable PostgreSQL and origins
+preserve adapter boundaries for local development and maintained environments ([ADR 0006](./decisions/0006-mvp-0.1-infrastructure.md)).
 Flowmark is software you deploy; it is not a separate hosted enterprise product
 or SSO platform. The server application is a replaceable HTTP/framework shell;
 API use cases, ports, and persistence adapters live in the separate
@@ -130,6 +129,14 @@ controlled propagation. The SDK does not inject headers, propagate context,
 or create a distributed trace. Related-run queries and parent matches remain
 scoped to the authorized project; shared correlation is grouping, not proof of
 causation. Browser-supplied links remain untrusted.
+
+The public SDK also offers an optional single-invocation callback overload of
+`workflow`, sharing the marker API's run state and terminal guards. It preserves
+business values/causes and adds observation at callback settlement, never scheduling
+or retries. `done`/`fail` remain explicit for business meaning; manual handles own
+multi-request continuations. Runtime adapters only supply a manual start boundary;
+the shared public API composes callbacks and typed definitions once without adding
+a service or execution runtime.
 
 The SDK groups its internal domains directly under `src/workflows/` and
 `src/delivery/`, without an extra `features/` directory. The workflow engine

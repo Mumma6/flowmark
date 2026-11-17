@@ -8,6 +8,56 @@ afterEach(() => {
 })
 
 describe("configured HTTP client", () => {
+  it.each(["development", "production", "test"])(
+    "defaults to hosted ingestion in %s with only a write key",
+    async (environment) => {
+      vi.stubEnv("NODE_ENV", environment)
+      vi.stubEnv("FLOWMARK_API_KEY", "synthetic-write-key")
+      vi.stubEnv("FLOWMARK_API_URL", undefined)
+      const fetcher = vi.fn<typeof fetch>(
+        async () => new Response(null, { status: 202 }),
+      )
+      vi.stubGlobal("fetch", fetcher)
+      const client = createFlowmark()
+      client.workflow("hosted.default").done()
+      await client.shutdown()
+      expect(fetcher.mock.calls.map(([url]) => String(url))).toEqual([
+        "https://api.flowmark.dev/v1/events",
+        "https://api.flowmark.dev/v1/events",
+      ])
+    },
+  )
+
+  it("prefers explicit settings to environment values and rejects explicit empty configuration", async () => {
+    vi.stubEnv("FLOWMARK_API_KEY", "environment-key")
+    vi.stubEnv("FLOWMARK_API_URL", "https://staging.example")
+    const fetcher = vi.fn<typeof fetch>(
+      async () => new Response(null, { status: 202 }),
+    )
+    vi.stubGlobal("fetch", fetcher)
+    const environment = createFlowmark()
+    environment.workflow("environment").done()
+    await environment.shutdown()
+    expect(String(fetcher.mock.calls[0]?.[0])).toBe(
+      "https://staging.example/v1/events",
+    )
+    const explicit = createFlowmark({
+      apiKey: "explicit-key",
+      apiUrl: "http://127.0.0.1:3003",
+    })
+    explicit.workflow("explicit").done()
+    await explicit.shutdown()
+    expect(String(fetcher.mock.calls[2]?.[0])).toBe(
+      "http://127.0.0.1:3003/v1/events",
+    )
+    expect(
+      new Headers(fetcher.mock.calls[2]?.[1]?.headers).get("authorization"),
+    ).toBe("Bearer explicit-key")
+    expect(() => createFlowmark({ apiKey: "" })).toThrow(FlowmarkConfigError)
+    expect(() => createFlowmark({ apiKey: "   " })).toThrow(FlowmarkConfigError)
+    expect(() => createFlowmark({ apiUrl: "" })).toThrow(FlowmarkConfigError)
+  })
+
   it("keeps each client's captured fetch implementation independent", async () => {
     const firstFetch = vi.fn<typeof fetch>(
       async () => new Response(null, { status: 202 }),

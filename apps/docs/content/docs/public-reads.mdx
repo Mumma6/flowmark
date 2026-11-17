@@ -162,7 +162,7 @@ They never yield an empty run/page/report.
 ## Compatibility and evidence boundaries
 
 - Explicit HTTPS API origin/base path; HTTP is allowed only on loopback. A
-  self-hosted path prefix is preserved. URL credentials, query and fragment are
+  configured path prefix is preserved. URL credentials, query and fragment are
   rejected. Redirects are disabled, so a redirect cannot forward a read key.
   Cookies are omitted. API and Studio origins may differ.
 - URL major and body `version` remain 1. Requests reject unknown fields/modes;

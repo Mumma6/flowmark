@@ -279,7 +279,7 @@ HTTP response exists. Validate success responses. Preserve unknown server error
 codes safely; never substitute empty evidence. Do not retry automatically.
 
 Require explicit HTTPS API base URL; allow HTTP only for loopback development.
-Reject URL credentials, query and fragment. Preserve a self-hosted base path
+Reject URL credentials, query and fragment. Preserve a configured base path
 when appending `v1/read/run`; do not infer cloud hosts. Disable redirects and use
 `credentials: "omit"`. Keep read keys out of browser code, command-line arguments,
 URLs and diagnostics. No browser CORS enablement is implied.

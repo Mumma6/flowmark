@@ -1,8 +1,8 @@
 {
   "name": "@flowmarkdev/core",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Shared workflow event contracts for Flowmark",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

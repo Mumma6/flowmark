@@ -1,4 +1,5 @@
 import { expect, it } from "vitest"
+import { flowmarkAgentPrompt } from "../features/onboarding/agent-prompt"
 import {
   connectSetupStages,
   markSetupCopied,
@@ -9,6 +10,24 @@ import {
   serverEnvironmentSnippet,
   setupRecoveryCopy,
 } from "../features/connect/setup/setup-instructions"
+
+it("gives onboarding agents explicit runtime ownership and business-outcome guidance", () => {
+  const prompt = flowmarkAgentPrompt("https://api.flowmark.dev")
+  expect(prompt).toContain("https://api.flowmark.dev/v1/instrumentation")
+  expect(prompt).toContain(
+    "@flowmarkdev/node/next client with automatic delivery",
+  )
+  expect(prompt).toContain("Standalone scripts and workers create their own")
+  expect(prompt).toContain("Shared business logic accepts a Flow")
+  expect(prompt).toContain(
+    "callback form for a process that finishes in one invocation",
+  )
+  expect(prompt).toContain("Read linked references")
+  expect(prompt).toContain("meaningful business outcome")
+  expect(prompt).toContain("partial results")
+  expect(prompt).toContain("configuration errors must remain visible")
+  expect(prompt).not.toContain("create one shared client")
+})
 
 it("keeps copied, configured, and observed setup stages separate", () => {
   const copiedOnly = connectSetupStages({

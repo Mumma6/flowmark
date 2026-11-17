@@ -31,7 +31,9 @@ close it at the process boundary. Creating it validates server settings and
 can throw `FlowmarkConfigError`. Starting a workflow can also throw for invalid
 run context or a closed client.
 
-See [configuration](/docs/configuration) for URL rules and precedence.
+These defaults describe published 0.3.0. The unreleased source now defaults to
+hosted delivery in every environment; see [configuration](/docs/configuration)
+for availability, URL rules and precedence.
 
 ## Next.js
 
@@ -48,7 +50,9 @@ Server Action contexts; `after()` drains after the response.
 Pass `onDeliveryHealth(health)` to the Next `createFlowmark()` or `defineConfig()` to observe
 final request-local counters after each workflow drains; it runs on failed drains
 too and callback errors are contained. This option belongs to `NextFlowmarkConfig`.
-Invalid configuration/context can throw when starting the run.
+Construction is inert and safe during build without credentials. Invalid
+configuration/context can throw when starting the run. Standalone scripts own a
+separate Node client; pass a Flow into shared business logic.
 See [Next.js integration](/docs/nextjs).
 
 ## Browser

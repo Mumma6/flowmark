@@ -395,6 +395,14 @@ pnpm build
 
 Prettier enforces semicolon-free formatting. ESLint requires braces around all control-flow bodies, including single-line `if` statements.
 
+Packed SDK verification (`pnpm --filter @flowmarkdev/node test:consumer`, also
+run by `pnpm test`) installs local tarballs into an isolated external Next.js/Node
+application. It builds without credentials, invokes real Route Handlers and a
+Server Action, and verifies synthetic loopback delivery, business outcomes and
+Node shutdown. It requires loopback socket access, reuses cached dependencies
+when available and resolves missing fixture dependencies/metadata from npm. It
+does not require a database or hosted credentials.
+
 SDK and core behavior are covered with Vitest, including HTTP failures and the
 Next.js delivery lifecycle. Domain validation and delivery are composed as
 Effects; only explicit application/SDK boundaries execute them. Apps can build
@@ -415,9 +423,9 @@ integration coverage runs with `pnpm --filter @flowmark/server test` and needs
 
 ## Environment and database
 
-Self-hosting uses the same apps and committed migrations with any PostgreSQL
-you control. The reference deployment on Neon and Vercel is documented for
-maintainers, not as a second product tier you must purchase to run the code.
+Local development uses checkout-owned Docker Compose PostgreSQL and the committed
+migrations. The hosted product uses Neon and Vercel; its operating procedures
+are documented for maintainers.
 
 Local demo and the reference deployment are different environments. Do not
 copy Vercel values into `.env.local`, and do not point local demo at Neon.
@@ -458,8 +466,8 @@ runtime error rather than silently choosing localhost. Error messages name the
 setting without including its configured value.
 
 Branch Preview deployments continue deriving sibling API/dashboard origins from
-the Git branch. Staging continues requiring its dedicated staging origins; these
-checks do not restrict self-hosted production instances to Flowmark's domains.
+the Git branch. Staging continues requiring its dedicated staging origins.
+Production origins are validated from explicit configuration.
 Demo mode remains forbidden in Production and Preview, including Staging.
 Validation runs on requests rather than module import: server and dashboard builds
 do not require a database, auth secret, or hosted origin configuration. Database

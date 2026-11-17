@@ -45,7 +45,7 @@ tRPC router, database types or the Effect runtime. `readRun` accepts an optional
 `{ signal: AbortSignal }` argument. Aborts and failures reject; the client never
 retries or turns an error into empty evidence.
 
-The API base URL is explicit, supports a self-hosted path prefix and requires
+The API base URL is explicit, supports a configured path prefix and requires
 HTTPS except on loopback. Redirects and ambient cookies are disabled. The Studio
 origin can be different: `evidence.runPath` is a relative scoped navigation link,
 not permission to read a project.

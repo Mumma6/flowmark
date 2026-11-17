@@ -300,7 +300,6 @@ describe("workflow", () => {
       operationName: "charge-payment",
       failure: {
         code: "operation_failed",
-        message: "application callback failed",
       },
     })
     expect(transport.events[5]).toMatchObject({ type: "completed" })
@@ -331,12 +330,11 @@ describe("workflow", () => {
       type: "operation_failed",
       failure: {
         code: "operation_failed",
-        message: "synchronous callback failure",
       },
     })
   })
 
-  it("records a structured callback rejection as the operation failure", async () => {
+  it("keeps a structured callback rejection private by default", async () => {
     const transport = new MemoryTransport()
     const flow = workflow("checkout", {
       id: "order_structured_operation_callback",
@@ -357,8 +355,9 @@ describe("workflow", () => {
     await vi.waitFor(() => expect(transport.events).toHaveLength(4))
     expect(transport.events[2]).toMatchObject({
       type: "operation_failed",
-      failure: original,
+      failure: { code: "operation_failed" },
     })
+    expect(JSON.stringify(transport.events)).not.toContain("SKU-9")
   })
 
   it("keeps explicit workflow failure terminal when an operation is still open", async () => {
