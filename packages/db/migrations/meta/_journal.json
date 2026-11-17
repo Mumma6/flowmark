@@ -253,6 +253,13 @@
       "when": 1794744724510,
       "tag": "0035_omniscient_azazel",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1794919054993,
+      "tag": "0036_abnormal_lilandra",
+      "breakpoints": true
     }
   ]
 }

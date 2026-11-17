@@ -27,6 +27,7 @@ const link = {
 }
 
 export const EmailMessage = Schema.Union([
+  Schema.Struct({ ...link, kind: Schema.Literal("registration-invitation") }),
   Schema.Struct({
     ...common,
     kind: Schema.Literal("project-invitation"),

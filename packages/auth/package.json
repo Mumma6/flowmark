@@ -48,7 +48,8 @@
     "typecheck": "tsc -p tsconfig.json",
     "db:seed": "pnpm --filter @flowmark/db... build && tsx src/cli/seed.ts",
     "db:setup": "pnpm --filter @flowmark/db... build && tsx src/cli/setup.ts",
-    "dev": "tsc -p tsconfig.json --watch --preserveWatchOutput"
+    "dev": "tsc -p tsconfig.json --watch --preserveWatchOutput",
+    "invite": "pnpm --filter @flowmark/auth^... build && tsx src/cli/invite.ts"
   },
   "dependencies": {
     "@better-auth/cimd": "1.7.17",

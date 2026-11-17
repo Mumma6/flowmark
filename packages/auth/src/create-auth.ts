@@ -8,6 +8,7 @@ import { emailChangeBoundary } from "./email-change/provider-boundary.js"
 import { createAccountEmailChanges } from "./email-change/create-email-changes.js"
 import { createAccountSessions } from "./sessions/account-sessions.js"
 import { accountRateLimits } from "./account-rate-limits.js"
+import { registrationHooks } from "./registration/registration-hooks.js"
 import { accountLifecycle } from "./account-lifecycle.js"
 import {
   AUTH_CLIENT_IP_HEADER,
@@ -136,8 +137,8 @@ export function createFlowmarkAuth(options: {
     emailVerification: email?.emailVerification,
     emailAndPassword: {
       enabled: true,
-      // Vercel uses NODE_ENV=production for Preview/Staging too.
-      disableSignUp: process.env.VERCEL_ENV === "production",
+      // Account creation is guarded by registrationHooks below.
+      disableSignUp: false,
       minPasswordLength: 8,
       autoSignIn: true,
       requireEmailVerification: false,
@@ -150,6 +151,10 @@ export function createFlowmarkAuth(options: {
         await email?.emailAndPassword?.onPasswordReset?.(data, request)
       },
     },
+    databaseHooks: registrationHooks(
+      options.db,
+      process.env.VERCEL_ENV === "production",
+    ),
     rateLimit: {
       enabled: true,
       window: 60,
