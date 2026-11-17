@@ -18,7 +18,9 @@ run.operation<T>(
 
 Published **0.3.0** copies structured exception fields or `Error.message` unless
 `mapError` is supplied. **Unreleased 0.4.0** changes the default to only
-`{ code: "operation_failed" }`, without inspecting the original exception. Use
+`{ code: "operation_failed" }`, without inspecting the original exception. Its callback also accepts synchronous
+return values, so ordinary validation/transformation functions need no `async`
+adapter; `operation()` still returns a Promise and must be awaited. Use
 `mapError` below for explicit, safe details on either version.
 
 ## Promise callback

@@ -19,7 +19,10 @@ it("gives onboarding agents explicit runtime ownership and business-outcome guid
   )
   expect(prompt).toContain("Standalone scripts and workers create their own")
   expect(prompt).toContain("Shared business logic accepts a Flow")
-  expect(prompt).toContain("finish with done() or fail()")
+  expect(prompt).toContain(
+    "callback form for a process that finishes in one invocation",
+  )
+  expect(prompt).toContain("Read linked references")
   expect(prompt).toContain("meaningful business outcome")
   expect(prompt).toContain("partial results")
   expect(prompt).toContain("configuration errors must remain visible")

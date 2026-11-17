@@ -206,7 +206,7 @@ export interface Flow {
   ): WorkflowOperation
   operation<T>(
     name: WorkflowStepName,
-    callback: () => PromiseLike<T>,
+    callback: () => T | PromiseLike<T>,
     options?: WorkflowOperationOptions,
   ): Promise<T>
   /** Records an absolute progress snapshot; invalid values are rejected by validation. */
@@ -262,6 +262,15 @@ export interface WorkflowDefinition<
   Result extends object,
   Outcome extends string = string,
 > {
+  /** Observe one complete invocation; return values and thrown causes are preserved. */
+  start<Value>(
+    callback: (
+      flow: TypedFlow<Context, Result, Outcome>,
+    ) => Value | PromiseLike<Value>,
+    ...args: Record<never, never> extends Context
+      ? [options?: TypedWorkflowOptions<Context>]
+      : [options: TypedWorkflowOptions<Context>]
+  ): Promise<Value>
   start(
     ...args: Record<never, never> extends Context
       ? [options?: TypedWorkflowOptions<Context>]
@@ -291,6 +300,18 @@ export interface FlowmarkClient {
     name: WorkflowName,
   ): WorkflowDefinition<Context, Result, Outcome>
 
+  /**
+   * Observe a process that finishes in this invocation. Normal return requests
+   * completion; an unhandled throw records { code: "workflow_failed" } and
+   * rethrows the original cause. Report explicit outcome/result with flow.done().
+   * Does not schedule, retry, flush or shut down the client. Use manual markers
+   * for a process that continues in another invocation.
+   */
+  workflow<Value>(
+    name: WorkflowName,
+    callback: (flow: Flow) => Value | PromiseLike<Value>,
+    options?: WorkflowRunOptions,
+  ): Promise<Value>
   /**
    * Starts a run, or continues one when `options.id` matches an existing run
    * of the same workflow name. Omit `id` for a new execution.

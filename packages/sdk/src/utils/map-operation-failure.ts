@@ -2,7 +2,7 @@ import { Effect, Schema } from "effect"
 import { WorkflowFailureSchema, type WorkflowFailure } from "@flowmarkdev/core"
 import { FlowmarkErrorMappingError } from "../errors/index.js"
 import type { WorkflowOperationOptions } from "../types/index.js"
-import { observeInvalidMapperPromise } from "./operation-callback.js"
+import { observeInvalidMapperPromise } from "./callback-lifecycle.js"
 
 export const genericOperationFailure: WorkflowFailure = {
   code: "operation_failed",

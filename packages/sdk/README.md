@@ -88,46 +88,57 @@ construction is inert and safe during builds without credentials.
 ```ts
 import { flowmark } from "./flowmark"
 
-export async function completeCheckout(orderId: string) {
-  const flow = flowmark.workflow("checkout.order", {
-    properties: { orderId },
-  })
-  try {
-    flow.step("payment-captured")
-    const shipment = await flow.operation("create-shipment", () =>
-      createShipment(orderId),
-    )
-    flow.done({
-      outcome: "complete",
-      result: { shipmentId: shipment.id },
-    })
-    return shipment
-  } catch (error) {
-    flow.fail({ code: "CHECKOUT_FAILED" })
-    throw error
-  }
+export function completeCheckout(orderId: string) {
+  return flowmark.workflow(
+    "checkout.order",
+    async (flow) => {
+      flow.step("payment-captured")
+      const shipment = await flow.operation("create-shipment", () =>
+        createShipment(orderId),
+      )
+      flow.done({ outcome: "complete", result: { shipmentId: shipment.id } })
+      return shipment
+    },
+    { properties: { orderId } },
+  )
 }
 ```
 
 ## Next.js and scripts in the same application
 
-Let each entry point own its client. Shared business logic accepts a `Flow`:
+Let each entry point own its client. Shared business logic accepts only the
+workflow-capable dependency, with no runtime-specific imports:
 
 ```ts
-import type { Flow } from "@flowmarkdev/node"
+import type { FlowmarkClient } from "@flowmarkdev/node"
 
-export async function importInvoices(flow: Flow) {
-  // Existing application work, operation()/step(), then done() or fail().
+export function importInvoices(flowmark: Pick<FlowmarkClient, "workflow">) {
+  return flowmark.workflow("invoice.import", async (flow) => {
+    const result = await flow.operation("save-invoices", () => saveInvoices())
+    flow.done({
+      outcome: result.rejected > 0 ? "partial" : "complete",
+      result: { imported: result.imported, rejected: result.rejected },
+    })
+    return result
+  })
 }
 ```
 
-The Route Handler starts a run with its Next client and passes it in. The CLI
-starts a run with its Node client, passes it to the same function, then drains:
+`saveInvoices` is existing application code. Callback workflows are new in
+**unreleased 0.4.0**: normal return requests completion; an unhandled throw records
+`workflow_failed` and preserves the original rejection. No retries, scheduling or
+client shutdown are added. Explicit `done`/`fail` choose business meaning; call a
+terminal marker at the final decision point. Use the manual marker API when a
+process continues in another invocation. Operation callbacks accept synchronous
+values or Promises and always return a Promise. Always await measured work.
+
+The Route Handler passes its Next client to the function. The CLI passes its
+Node client to the same function, then drains:
 
 ```ts
 const flowmark = createFlowmark() // Node entry point
 try {
-  await importInvoices(flowmark.workflow("invoice.import"))
+  await importInvoices(flowmark)
 } finally {
   try {
     await flowmark.shutdown()

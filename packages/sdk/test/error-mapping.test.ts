@@ -20,6 +20,26 @@ function setup() {
   return { client, events, diagnostic }
 }
 describe("per-operation safe callback failure mapping", () => {
+  it("measures synchronous application work without an async adapter", async () => {
+    const { client, events } = setup()
+    const flow = client.workflow("synchronous-work")
+    const result = flow.operation("select-stories", () => ({ selected: 3 }))
+    expectTypeOf(result).toEqualTypeOf<Promise<{ selected: number }>>()
+    await expect(result).resolves.toEqual({ selected: 3 })
+    await expect(
+      flow.operation("empty", () => undefined),
+    ).resolves.toBeUndefined()
+    flow.done({ outcome: "complete" })
+    await client.shutdown()
+    expect(events.map((event) => event.type)).toEqual([
+      "started",
+      "operation_started",
+      "operation_completed",
+      "operation_started",
+      "operation_completed",
+      "completed",
+    ])
+  })
   it.each(["sync", "promise", "thenable"])(
     "preserves original %s rejection while emitting only selected fields",
     async (kind) => {

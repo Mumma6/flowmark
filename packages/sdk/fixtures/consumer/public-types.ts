@@ -24,6 +24,21 @@ const shared = (flow: Flow) => {
 }
 shared(next.workflow("types.next"))
 shared(node.workflow("types.node"))
+const scoped: Promise<{ stories: number }> = node.workflow(
+  "types.scope",
+  (flow) => {
+    flow.done({ outcome: "partial", result: { stories: 8, rejected: 2 } })
+    return { stories: 8 }
+  },
+)
+const nextScoped: Promise<number> = next.workflow(
+  "types.next-scope",
+  async (flow) => {
+    return flow.operation("select", () => 8)
+  },
+)
+void scoped
+void nextScoped
 void createBrowserFlowmark
 void createFlowmarkReadClient
 // @ts-expect-error Next owns delivery and exposes no shutdown method.

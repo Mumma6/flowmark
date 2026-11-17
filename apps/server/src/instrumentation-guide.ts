@@ -1,74 +1,84 @@
-/** Public, credential-free setup guide for the API origin the caller fetched. */
-export function instrumentationGuide(apiOrigin: string): string {
-  return `# Instrument one meaningful process with Flowmark
-
-Flowmark records evidence from work the application already runs. It does not execute, schedule, or retry that work. Fetching this guide does not connect an agent.
-
-## Install and configure
-
-The published SDK is \`@flowmarkdev/node@0.3.0\` (Node.js >=20.19; Next.js >=16 for the Next adapter):
-
-\`\`\`sh
-npm i @flowmarkdev/node@0.3.0
-\`\`\`
-
-Ask the human to set these in the **server environment**, including local development. Never commit, print, or paste the write key into chat; never use \`NEXT_PUBLIC_*\`.
-
-\`\`\`dotenv
-FLOWMARK_API_KEY=<project server-write key from Studio Settings>
-FLOWMARK_API_URL=${apiOrigin}
-\`\`\`
-
-\`FLOWMARK_API_URL\` is the API origin, not a path ending in \`/v1/events\`. Set it explicitly for published 0.3.0, which requires it in production. Use the API this project belongs to. The SDK does not load .env files; Next loads its own env files, while a script must load or inherit its environment before client creation.
-
-## Choose the entry point that owns this invocation
-
-| Application entry point | Import | Delivery owner |
-| --- | --- | --- |
-| Next App Router Route Handler or Server Action | \`@flowmarkdev/node/next\` | Adapter drains with Next \`after()\` |
-| Node script, worker, or long-lived server | \`@flowmarkdev/node\` | Process/job calls \`flush()\` or \`shutdown()\` |
-
-For Next, create one server-only module:
-
-\`\`\`ts
-// lib/flowmark.ts
-import { createFlowmark } from "@flowmarkdev/node/next"
-export const flowmark = createFlowmark()
-\`\`\`
-
-Importing/constructing this Next client and defining typed workflows emits nothing and needs no credentials during builds. Start instrumentation inside the handler/action, where credentials are checked. Do not call \`shutdown()\` yourself. Its methods are \`workflow\`, \`defineWorkflow\`, \`resolveExpectation\`, and \`cancelExpectation\`.
-
-Use the Next adapter in the Node.js runtime. Server Components can import the module, but render is not a reliable business-execution boundary: rendering can repeat or happen during build/revalidation. Start the business process in its handler/action instead. Module initialization, standalone scripts, Pages API routes, browser code and Edge/Proxy execution are not supported contexts for this adapter. There is no automatic fallback to another runtime.
-
-## A complete process, including business meaning
-
-Choose a process whose operations and outcome someone needs to understand: an import, checkout, document generation, or external synchronization. Start with one process. Plain CRUD often needs only a request log.
-
-Keep shared business logic independent of the adapter. Pass a \`Flow\` into it. The functions \`loadInvoices\` and \`saveInvoices\` below are existing application helpers:
-
-\`\`\`ts
-// business/import-invoices.ts
-import type { Flow } from "@flowmarkdev/node"
-
-export async function importInvoices(flow: Flow) {
-  try {
-    const invoices = await flow.operation("load-invoices", () => loadInvoices(), {
-      mapError: () => ({ code: "SOURCE_UNAVAILABLE", retryable: true }),
-    })
+/** Versioned public instructions. The live route targets the installable npm SDK. */
+export function instrumentationGuide(
+  apiOrigin: string,
+  sdkVersion: "0.3.0" | "0.4.0" = "0.3.0",
+): string {
+  const preview = sdkVersion === "0.4.0"
+  const urlEnvironment =
+    !preview || apiOrigin !== "https://api.flowmark.dev"
+      ? `\n\`FLOWMARK_API_URL=${apiOrigin}\``
+      : ""
+  const operationOptions = preview
+    ? ""
+    : ', { mapError: () => ({ code: "IMPORT_OPERATION_FAILED" }) }'
+  const body = `    const invoices = await flow.operation("load-invoices", () => loadInvoices(batchId)${operationOptions})
     flow.step("source-loaded", { properties: { count: invoices.length } })
-    const result = await flow.operation("save-invoices", () => saveInvoices(invoices), {
-      mapError: () => ({ code: "SAVE_FAILED" }),
-    })
+    const result = await flow.operation("save-invoices", () => saveInvoices(invoices)${operationOptions})
     flow.done({
       outcome: result.rejected > 0 ? "partial" : "complete",
       result: { imported: result.imported, rejected: result.rejected },
     })
-    return result
+    return result`
+  const process = preview
+    ? `export function importInvoices(flowmark: Pick<FlowmarkClient, "workflow">, batchId: string) {
+  return flowmark.workflow("invoice.import", async flow => {
+${body}
+  }, { properties: { batchId } })
+}`
+    : `export async function importInvoices(flowmark: Pick<FlowmarkClient, "workflow">, batchId: string) {
+  const flow = flowmark.workflow("invoice.import", { properties: { batchId } })
+  try {
+${body}
   } catch (error) {
     flow.fail({ code: "IMPORT_FAILED" })
     throw error
   }
+}`
+  return `# Instrument one process with Flowmark
+
+Flowmark observes work your application already runs. It does not schedule or retry it. Fetching this guide does not connect an agent.
+
+## 1. Install and set server credentials
+
+${
+  preview
+    ? "**Unreleased SDK 0.4.0 evaluation.** Install the supplied local core/SDK tarballs. This version is not available from npm; do not substitute the published package. The callback API below is new in 0.4.0."
+    : "This guide targets published **@flowmarkdev/node@0.3.0**. Install with `npm i @flowmarkdev/node@0.3.0` (Node >=20.19; Next >=16 for the Next adapter)."
 }
+
+Ask the developer to set these server variables. Never read, print, commit or request the key in chat. Never use NEXT_PUBLIC_*.
+
+\`FLOWMARK_API_KEY=<project server-write key>\`${urlEnvironment}
+
+The URL is an API origin, not a path ending in \`/v1/events\`. ${preview ? "0.4.0 hosted users may omit the URL; the default is https://api.flowmark.dev. Local/staging APIs need their explicit origin." : "0.3.0 requires an explicit production URL; set it locally too when using hosted Flowmark."} Next loads its env files; a standalone script must inherit or load its environment before creating the client.
+
+## 2. Choose the entry point, then share business logic
+
+- **Next App Router Route Handler, Server Action or HTTP cron endpoint:** use \`@flowmarkdev/node/next\` in one shared server-only module. The adapter owns delivery. Do not call \`shutdown()\` yourself.
+- **Standalone CLI, worker or other Node server:** use \`@flowmarkdev/node\`. The process owns its client and shutdown.
+- **Both in one app:** use those two entry points and pass the client into shared business logic. The business module imports only SDK types. No runtime adapter or runtime detection is needed.
+
+\`\`\`ts
+// lib/flowmark.ts — imported only by Next server entry points
+import { createFlowmark } from "@flowmarkdev/node/next"
+export const flowmark = createFlowmark()
+\`\`\`
+
+Next client construction and typed definitions are inert and need no credentials during builds. Start workflows inside a handler/action, not module initialization or render. Rendering can repeat during build/revalidation. Use the Node.js runtime; this adapter does not support Pages API routes, Edge/Proxy or standalone scripts.
+
+**Configuration errors are deliberate errors:** missing keys or invalid settings throw at Node creation or the first Next workflow/settlement call. Let them remain visible; fix configuration. **Marker validation and delivery failures are diagnostics:** ordinary markers contain them, so no nullable client, fallback client or per-marker catch is needed. Only explicit Node drains can reject for delivery failures.
+
+## 3. Add meaningful evidence
+
+Choose one real process, such as an import or briefing generation. Keep its existing authentication, inputs, return values, exceptions and retry behavior. \`loadInvoices\` and \`saveInvoices\` here represent existing application helpers:
+
+Start observation before the process's first I/O call. Put known job IDs in initial properties; if an attempt number becomes known later, call \`flow.setProperties({ attempt })\` inside the workflow instead of moving preparation outside it.
+
+\`\`\`ts
+// business/import-invoices.ts
+import type { FlowmarkClient } from "@flowmarkdev/node"
+
+${process}
 
 // app/api/import/route.ts
 import { flowmark } from "@/lib/flowmark"
@@ -76,35 +86,30 @@ import { importInvoices } from "@/business/import-invoices"
 
 export const runtime = "nodejs"
 
-export async function POST() {
-  // Keep the application's existing authentication/validation before this call.
-  const flow = flowmark.workflow("invoice.import")
-  return Response.json(await importInvoices(flow))
+export async function POST(request: Request) {
+  // Keep existing authentication and validation before starting the process.
+  const { batchId } = await request.json()
+  return Response.json(await importInvoices(flowmark, batchId))
 }
 \`\`\`
 
-A Server Action uses the same two calls: start a workflow, then await the shared function. Keep existing return values, response mapping, authentication, and exceptions. There is no \`track()\`, \`span()\`, or \`metric()\`.
+A Server Action calls the same shared function with its Next client. An application's scheduler owns invoking the cron endpoint and deciding retries; Flowmark does neither.
 
-- \`workflow(name, options?)\` starts one execution; an id is generated by default.
-- \`step(name, { properties? })\` records an instantaneous milestone.
-- \`operation(name, callback, { mapError? })\` measures work, returns its value or rethrows the original error, and closes its operation handle. A failed operation does **not** automatically fail the workflow. Use manual \`operation(name)\` only when you will close the returned handle with \`done()\` or \`fail({ code })\`.
-- \`done({ outcome?, result? })\` completes execution. \`fail({ code, outcome?, result? })\` reports terminal failure without throwing; rethrow the application's error yourself. Only \`done()\` and \`fail()\` set the final reported outcome. Open operations delay completion.
+${preview ? "The callback form observes one complete invocation: normal return requests completion; an unhandled exception records `workflow_failed` and rethrows the same original value. Explicit `done({ outcome, result })` supplies business meaning; explicit `fail({ code, outcome?, result? })` supplies a known failure. Use manual `workflow(name, options)` when the process continues in another invocation." : "`workflow()` starts an execution. Only `done()`/`fail()` close it; preserve the application's original exception by rethrowing it after `fail()`."}
 
-A completed run is application-reported evidence, not proof every record succeeded. Report meaningful \`outcome\` codes such as \`complete\`, \`partial\`, or \`no-change\`, and the counts the application knows. Outcomes match \`^[a-z][a-z0-9_-]{0,63}$\` and are independent of execution status. If processing throws after useful work, \`fail({ code: "IMPORT_FAILED", outcome: "partial", result: { imported: 8, rejected: 2 } })\` can report the known partial result.
+\`step()\` is an instant milestone; \`operation()\` measures work and preserves its value or original rejection. A failed operation alone does not fail the workflow: the application may recover and finish with a partial result. ${preview ? "Synchronous operation callbacks also work; await their returned Promise. Raw exception fields are never copied by default; use mapError only for deliberately selected safe details." : "In 0.3.0, keep the shown mapError callbacks: otherwise exception messages/fields are copied. Select fixed safe codes, not raw exceptions."}
 
-Use small JSON-safe summaries. Do not send raw exceptions, provider messages, credentials, identities, request bodies, or database records. Published 0.3.0 copies exception fields or messages when \`mapError\` is omitted; keep the explicit mappings in these examples. Unreleased 0.4.0 uses a generic failure code by default without copying the exception. \`mapError\` selects safe failure fields; keep original exceptions in the application's own error handling.
+Completion describes execution; \`outcome\` describes the application's reported business result. Use codes like complete, partial or no-change with known counts. A technical failure after useful work may use \`fail({ code: "IMPORT_FAILED", outcome: "partial", result: { imported: 8 } })\`. Outcomes match \`^[a-z][a-z0-9_-]{0,63}$\`. Keep summaries small and JSON-safe; leave credentials, raw exceptions and personal data out.
 
-## The same process from a Node script
-
-The script creates its own Node client. It imports the shared business function, not \`lib/flowmark.ts\` from Next:
+## 4. CLI: same business function, process-owned delivery
 
 \`\`\`ts
 import { createFlowmark } from "@flowmarkdev/node"
 import { importInvoices } from "./business/import-invoices"
 
-const flowmark = createFlowmark() // validates credentials now
+const flowmark = createFlowmark()
 try {
-  await importInvoices(flowmark.workflow("invoice.import"))
+  await importInvoices(flowmark, "batch-id")
 } finally {
   try {
     await flowmark.shutdown()
@@ -114,44 +119,18 @@ try {
 }
 \`\`\`
 
-The inner catch makes delivery failure visible without replacing the business exception. A long-lived Node process reuses its client; \`flush()\` drains without closing it, and \`shutdown()\` belongs at the final process/job boundary after all work finishes. The SDK installs no process signal handlers. Let the existing process owner drain during graceful shutdown.
+That catch preserves the application's original error or successful result while making delivery failure visible. Long-lived processes reuse the client, may \`flush()\` between jobs, and shut down after all work finishes. The SDK installs no signal handlers. Next does this draining automatically through \`after()\`, even if a handler throws; developers do not need to call it for normal instrumentation.
 
-Two entry points own two clients; shared business logic takes a Flow or a narrow workflow-capable dependency. Do not put both runtime adapters behind one application module, probe \`after()\` with exceptions, or match framework error messages. No custom lifecycle adapter is needed.
+If the application intentionally does business work after its response, put that work in its own \`after(async () => { await importInvoices(flowmark, batchId) })\`. A separate worker uses Node. Host duration limits still apply; unawaited promises do not establish a lifetime. Delivery is best-effort memory storage, not a durable queue. HTTP timeout is 3 seconds, transient errors retry at most twice; authentication errors are not retried. See [delivery](https://docs.flowmark.dev/docs/delivery).
 
-## Delivery and background processing
+## 5. Verify once, then expand only when useful
 
-Markers queue best-effort in-memory delivery; they are not delivery receipts. Delivery/marker failures must never change business behavior. Configuration errors are different: missing credentials or invalid URLs throw explicitly (at Node client creation or the first Next workflow/settlement call). Fix configuration rather than hiding it with a null client. Configure server credentials at runtime; builds that merely import the Next module need none.
+Run a safe existing success, partial result and failure. Compare application results/exit status before and after instrumentation; verify operation evidence and final outcome/result. Build Next without runtime keys, then run with credentials. Check delivery diagnostics and Studio evidence; installation alone proves no delivery. Do not trigger destructive or external business actions merely to generate telemetry.
 
-Next registers a separate delivery drain for each workflow/settlement call. Its \`after()\` runs even when the handler throws. Delivery failure is logged without replacing the application response. Pass \`onDeliveryHealth\` for final local counters if needed. The host's maximum request duration still applies.
+A scheduler retry is a **new run**: omit id and put the durable job/order ID plus attempt count in properties. Persist a prior run reference only if retryOf linkage is useful. A multi-request continuation instead reuses the same workflow name and execution id and completes only when the whole process ends. [Attempts and retries](https://docs.flowmark.dev/docs/reference/attempts) covers retryOf and operation attempts (requires attempts-v1).
 
-Await business work in the handler/action. If the application deliberately runs business work after its response, put that work in the application's own \`after(async () => { ... })\` callback and start the workflow **inside** that callback; nested \`after()\` is supported. Unawaited promises and timers do not establish a lifetime. A separate worker uses the Node entry point. Flowmark does not keep arbitrary jobs alive.
+Keep workflow names stable across refactors; release identifies a deployment. Removing instrumentation does not delete history or fail unfinished runs. [Workflow lifecycle](https://docs.flowmark.dev/docs/concepts/runs) explains continuations and code changes.
 
-Node \`flush()\` and \`shutdown()\` reject with \`FlowmarkDeliveryError\` when delivery fails. \`deliveryHealth()\` gives cumulative local counters, not proof of persistence or business success. HTTP requests time out after 3 seconds and retry transient failures at most twice with the same envelope/event id. Authentication failures are not retried. There is no durable offline queue; process termination can lose evidence. See [delivery](https://docs.flowmark.dev/docs/delivery).
-
-## Continuations, attempts and optional evidence
-
-For a process spanning requests, persist a fresh execution id and pass \`workflow(name, { id: executionId })\` on each continuation. The same name + id continues one run; call \`done()\` or \`fail()\` only when the whole process ends. Put durable entity ids in \`properties\`; reusing one as an execution id conflates separate executions.
-
-A retry after terminal failure is a **new** run: \`workflow("invoice.import", { retryOf: { workflow: "invoice.import", runId: previousRunId } })\`. Omit \`id\` to generate a fresh id. Within a run, \`operation(name, callback, { attempt: { groupId: "save-batch", number: 2 } })\` describes an application-owned attempt. Flowmark never retries business work. Both attempt options require an accepting server that acknowledges \`attempts-v1\`.
-
-Keep workflow names stable when moving or refactoring code; use \`release\` to distinguish deployments. Changing the workflow name creates a different workflow, not a historical rename. Removing instrumentation stops new evidence; it does not delete history or automatically fail unfinished runs. See [code changes and workflow history](https://docs.flowmark.dev/docs/concepts/runs#when-application-code-changes).
-
-Use these only when the application has this evidence:
-
-- \`progress({ completed, total?, unit? })\`: absolute progress, not a heartbeat.
-- \`error({ code, handled, retryable? })\`: non-terminal observation.
-- \`setProperties(properties)\`: shallow run-context amendment before completion.
-- \`flow.report(snapshot)\`: absolute non-final business snapshot; omitted fields become unknown. It is not inherited by the final result, so repeat known final counts in \`done()\` or \`fail()\`.
-- \`defineWorkflow<Context, Result, Outcome>(name).start(options)\`: optional typed handle, same lifecycle, no uploaded dashboard declaration.
-- Explicit \`correlationId\` / \`parentRunId\`: application-owned relationships; use the parent's \`flow.runId\`, not a Studio UUID. Nothing propagates automatically.
-- \`flow.expect(name, options)\`, client \`resolveExpectation\` / \`cancelExpectation\`: later evidence, not verified success or an execution engine. Requires \`expectations-v1\`; settlement can happen after the run ends without replacing its final result.
-
-Browser code uses \`@flowmarkdev/node/browser\` from event handlers/effects with a separate public key and explicit apiUrl, or a same-origin \`@flowmarkdev/node/proxy\`. It never reads server \`FLOWMARK_*\` variables. Keep the server write key out of browser bundles. Browser evidence is untrusted; keepalive does not guarantee unload/offline delivery.
-
-## Verify the integration
-
-Run a representative success, a partial result and a failure. Confirm each execution has the intended steps/operations and final outcome/result. Check a retry gets a new execution id. Build Next without runtime credentials, then execute with server credentials. For a CLI, verify it drains before exit and preserves the original business error. Check diagnostics and the project's evidence in Studio; installation alone is not delivery proof.
-
-Public references: [Next.js](https://docs.flowmark.dev/docs/nextjs), [Node scripts](https://docs.flowmark.dev/docs/nodejs), [configuration](https://docs.flowmark.dev/docs/configuration), [workflow lifecycle](https://docs.flowmark.dev/docs/reference/workflow), [operations](https://docs.flowmark.dev/docs/reference/operation), [completion/outcomes](https://docs.flowmark.dev/docs/reference/completion), [attempts](https://docs.flowmark.dev/docs/reference/attempts).
+Optional references: [progress](https://docs.flowmark.dev/docs/reference/progress), [business snapshots](https://docs.flowmark.dev/docs/reference/report), [typed workflows](https://docs.flowmark.dev/docs/reference/define-workflow), [expectations](https://docs.flowmark.dev/docs/reference/expectations) (requires expectations-v1), [relationships](https://docs.flowmark.dev/docs/concepts/related-runs), [browser integration](https://docs.flowmark.dev/docs/browser). Read these only when the process needs that evidence; this guide is sufficient for the first server integration.
 `
 }

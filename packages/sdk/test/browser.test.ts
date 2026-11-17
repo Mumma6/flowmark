@@ -8,6 +8,30 @@ afterEach(() => {
 })
 
 describe("browser client", () => {
+  it("shares the callback workflow API without leaking a server lifecycle", async () => {
+    vi.stubGlobal("location", { origin: "https://customer.example" })
+    const fetcher = vi.fn<typeof fetch>(
+      async () => new Response(null, { status: 202 }),
+    )
+    vi.stubGlobal("fetch", fetcher)
+    const client = createFlowmark({})
+    await expect(
+      client.workflow("submit", (flow) => {
+        flow.done({ outcome: "partial", result: { saved: 8, rejected: 2 } })
+        return 8
+      }),
+    ).resolves.toBe(8)
+    await client.shutdown()
+    const events = fetcher.mock.calls.map(
+      ([, options]) => JSON.parse(String(options?.body)).event,
+    )
+    expect(events.map((event) => event.type)).toEqual(["started", "completed"])
+    expect(events.at(-1)).toMatchObject({
+      workflow: "submit",
+      outcome: "partial",
+      result: { saved: 8, rejected: 2 },
+    })
+  })
   it("keeps raw callback failures private without requiring a mapper", async () => {
     vi.stubGlobal("location", { origin: "https://customer.example" })
     const fetcher = vi.fn<typeof fetch>(

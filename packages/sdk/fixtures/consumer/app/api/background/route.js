@@ -4,8 +4,9 @@ import { importInvoices } from "../../../lib/import-invoices.js"
 
 export async function POST() {
   after(async () => {
-    const flow = flowmark.workflow("consumer.background")
-    await importInvoices(flow, "partial")
+    await flowmark.workflow("consumer.background", (flow) =>
+      importInvoices(flow, "partial"),
+    )
   })
   return Response.json({ accepted: true })
 }

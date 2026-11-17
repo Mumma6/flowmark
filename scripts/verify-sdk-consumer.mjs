@@ -5,7 +5,15 @@
 import assert from "node:assert/strict"
 import { spawn } from "node:child_process"
 import { createServer } from "node:http"
-import { cp, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises"
+import {
+  cp,
+  mkdtemp,
+  mkdir,
+  readFile,
+  readdir,
+  rm,
+  writeFile,
+} from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { fileURLToPath } from "node:url"
@@ -21,7 +29,15 @@ const cleanEnv = Object.fromEntries(
   Object.entries(process.env).filter(
     ([key]) =>
       !key.startsWith("FLOWMARK_") &&
-      !["DATABASE_URL", "TEST_DATABASE_URL", "NODE_ENV", "PORT"].includes(key),
+      ![
+        "DATABASE_URL",
+        "TEST_DATABASE_URL",
+        "NODE_ENV",
+        "PORT",
+        "PROVIDER_API_URL",
+        "JOB_STATE_DIRECTORY",
+        "CRON_SECRET",
+      ].includes(key),
   ),
 )
 // This is an automated fixture, including when invoked locally. Avoid interactive
@@ -38,6 +54,39 @@ const received = []
 let retryEnvelope
 let retrySent = false
 const receiver = createServer(async (request, response) => {
+  const provider = new URL(request.url, "http://127.0.0.1")
+  if (["/news", "/repositories", "/editor"].includes(provider.pathname)) {
+    const jobId = provider.searchParams.get("jobId") ?? ""
+    const attempt = Number(provider.searchParams.get("attempt"))
+    response.setHeader("content-type", "application/json")
+    if (
+      (provider.pathname === "/repositories" && jobId.startsWith("partial-")) ||
+      (provider.pathname === "/editor" &&
+        jobId.startsWith("retry-") &&
+        attempt === 1)
+    ) {
+      response
+        .writeHead(503)
+        .end(JSON.stringify({ error: "synthetic-provider-failure" }))
+    } else {
+      response.end(
+        JSON.stringify(
+          provider.pathname === "/editor"
+            ? jobId.startsWith("partial-")
+              ? { stories: 1, rejected: 1 }
+              : { stories: 3, rejected: 0 }
+            : Array.from(
+                { length: provider.pathname === "/news" ? 2 : 1 },
+                (_, index) => ({
+                  id: `${provider.pathname}-${index}`,
+                  title: "Synthetic article",
+                }),
+              ),
+        ),
+      )
+    }
+    return
+  }
   const chunks = []
   for await (const chunk of request) chunks.push(chunk)
   const envelope = JSON.parse(Buffer.concat(chunks).toString())
@@ -213,6 +262,17 @@ try {
         next: await version("next"),
         react: await version("react"),
         "react-dom": await version("react-dom"),
+        tsx: JSON.parse(
+          await readFile(
+            join(root, "packages/db/node_modules/tsx/package.json"),
+            "utf8",
+          ),
+        ).version,
+      },
+      devDependencies: {
+        typescript: await version("typescript"),
+        "@types/node": await version("@types/node"),
+        "@types/react": await version("@types/react"),
       },
       pnpm: { overrides: { "@flowmarkdev/core": `file:${core}` } },
     }),
@@ -266,28 +326,38 @@ try {
   )
   // Compile the actual served guide, not a separately maintained copy. Only
   // supply application helpers and resolve the example's application aliases.
-  const snippets = [
-    ...instrumentationGuide(runtimeEnv.FLOWMARK_API_URL).matchAll(
-      /```ts\n([\s\S]*?)```/g,
-    ),
-  ].map(([, code]) => code)
-  assert.equal(snippets.length, 3)
-  const [business, route] = snippets[1].split("// app/api/import/route.ts\n")
-  await writeFile(join(consumer, "guide-client.ts"), snippets[0])
-  await writeFile(
-    join(consumer, "guide-business.ts"),
-    `${business}\ndeclare function loadInvoices(): Promise<unknown[]>\ndeclare function saveInvoices(invoices: unknown[]): Promise<{ imported: number; rejected: number }>\n`,
-  )
-  await writeFile(
-    join(consumer, "guide-route.ts"),
-    route
-      .replaceAll("@/lib/flowmark", "./guide-client.js")
-      .replaceAll("@/business/import-invoices", "./guide-business.js"),
-  )
-  await writeFile(
-    join(consumer, "guide-script.ts"),
-    snippets[2].replaceAll("./business/import-invoices", "./guide-business.js"),
-  )
+  const guideFiles = []
+  for (const sdkVersion of ["0.3.0", "0.4.0"]) {
+    const guideDirectory = `guide-${sdkVersion}`
+    await mkdir(join(consumer, guideDirectory))
+    const snippets = [
+      ...instrumentationGuide(runtimeEnv.FLOWMARK_API_URL, sdkVersion).matchAll(
+        /```ts\n([\s\S]*?)```/g,
+      ),
+    ].map(([, code]) => code)
+    assert.equal(snippets.length, 3)
+    const [business, route] = snippets[1].split("// app/api/import/route.ts\n")
+    await writeFile(join(consumer, guideDirectory, "client.ts"), snippets[0])
+    await writeFile(
+      join(consumer, guideDirectory, "business.ts"),
+      `${business}\ndeclare function loadInvoices(batchId: string): Promise<unknown[]>\ndeclare function saveInvoices(invoices: unknown[]): Promise<{ imported: number; rejected: number }>\n`,
+    )
+    await writeFile(
+      join(consumer, guideDirectory, "route.ts"),
+      route
+        .replaceAll("@/lib/flowmark", "./client.js")
+        .replaceAll("@/business/import-invoices", "./business.js"),
+    )
+    await writeFile(
+      join(consumer, guideDirectory, "script.ts"),
+      snippets[2].replaceAll("./business/import-invoices", "./business.js"),
+    )
+    guideFiles.push(
+      ...["client.ts", "business.ts", "route.ts", "script.ts"].map(
+        (file) => `${guideDirectory}/${file}`,
+      ),
+    )
+  }
   await run(
     process.execPath,
     [
@@ -300,10 +370,7 @@ try {
       "--target",
       "ES2022",
       "public-types.ts",
-      "guide-client.ts",
-      "guide-business.ts",
-      "guide-route.ts",
-      "guide-script.ts",
+      ...guideFiles,
     ],
     consumer,
   )
@@ -339,7 +406,115 @@ try {
     "visible runtime configuration error",
   )
   await stop()
-  const origin = await start(runtimeEnv)
+  const briefingEnvironment = {
+    ...runtimeEnv,
+    PROVIDER_API_URL: runtimeEnv.FLOWMARK_API_URL,
+    CRON_SECRET: "synthetic-cron-key",
+    JOB_STATE_DIRECTORY: join(directory, "briefing-http-state"),
+  }
+  const tsx = join(consumer, "node_modules/tsx/dist/cli.mjs")
+  const cases = ["daily", "partial-daily", "retry-daily", "retry-daily"]
+  const resultsFrom = async (entry, state) => {
+    const results = []
+    for (const jobId of cases) {
+      try {
+        const output = await run(
+          process.execPath,
+          [tsx, entry, jobId],
+          consumer,
+          {
+            ...briefingEnvironment,
+            JOB_STATE_DIRECTORY: join(directory, state),
+          },
+        )
+        results.push({
+          code: 0,
+          result: JSON.parse(
+            output
+              .trim()
+              .split("\n")
+              .findLast((line) => line.startsWith("{")),
+          ),
+        })
+      } catch (error) {
+        assert.match(error.message, /briefing-unavailable/)
+        results.push({ code: 1 })
+      }
+    }
+    return results
+  }
+  const control = await resultsFrom("control/generate.ts", "briefing-control")
+  const beforeBriefing = received.length
+  assert.deepEqual(
+    await resultsFrom("scripts/generate.ts", "briefing-cli"),
+    control,
+  )
+  assert.deepEqual(
+    control.map((value) => value.code),
+    [0, 0, 1, 0],
+  )
+  const invalidState = join(directory, "invalid-state")
+  await writeFile(invalidState, "synthetic file, not a directory")
+  await assert.rejects(
+    run(
+      process.execPath,
+      [tsx, "scripts/generate.ts", "prepare-failure"],
+      consumer,
+      { ...briefingEnvironment, JOB_STATE_DIRECTORY: invalidState },
+    ),
+    /briefing-unavailable/,
+  )
+  assert.ok(
+    received.slice(beforeBriefing).some(({ event }) => event.type === "failed"),
+  )
+  const origin = await start(briefingEnvironment)
+  const cron = async (
+    jobId,
+    authorization = `Bearer ${briefingEnvironment.CRON_SECRET}`,
+  ) =>
+    fetch(`${origin}/api/cron`, {
+      method: "POST",
+      headers: { authorization },
+      body: JSON.stringify({ jobId }),
+    })
+  assert.equal((await cron("unauthorized", "invalid")).status, 401)
+  for (const [index, jobId] of cases.entries()) {
+    const response = await cron(jobId)
+    assert.equal(response.status, control[index].code === 0 ? 200 : 503)
+    if (response.ok)
+      assert.deepEqual(await response.json(), control[index].result)
+  }
+  await eventually(
+    () =>
+      received
+        .slice(beforeBriefing)
+        .filter(
+          ({ event }) =>
+            event.workflow === "briefing.generate" &&
+            ["completed", "failed"].includes(event.type),
+        ).length === 9,
+    "briefing CLI, preparation failure and scheduler request drains",
+  )
+  const briefingStarts = received
+    .slice(beforeBriefing)
+    .filter(
+      ({ event }) =>
+        event.workflow === "briefing.generate" && event.type === "started",
+    )
+  assert.equal(new Set(briefingStarts.map(({ event }) => event.runId)).size, 9)
+  assert.ok(
+    received
+      .slice(beforeBriefing)
+      .some(
+        ({ event }) =>
+          event.workflow === "briefing.generate" &&
+          event.outcome === "partial" &&
+          event.result.unavailableSources === 1,
+      ),
+  )
+  console.log(
+    "PASS independent briefing control vs CLI/cron: sources, partial outcome, fresh retry runs and preparation failure",
+  )
   const post = async (body) => {
     const response = await fetch(`${origin}/api/import`, {
       method: "POST",

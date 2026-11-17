@@ -59,6 +59,12 @@ The catch above reports terminal failure and preserves the application's error.
 `done()` means execution completed; `outcome: "partial"` and counts describe its
 business result. See [completion](/docs/reference/completion).
 
+The **unreleased 0.4.0** candidate adds an optional
+[workflow callback](/docs/reference/workflow#callback-workflows--unreleased-040)
+that completes on return and fails/rethrows on an unexpected exception. It removes
+the terminal try/catch for a process contained in one invocation. It is not
+available in published 0.3.0; the example above targets that published version.
+
 ## Server Actions
 
 An action uses the same shared client and marker API:

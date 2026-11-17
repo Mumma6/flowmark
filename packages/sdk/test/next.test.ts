@@ -18,6 +18,32 @@ afterEach(() => {
 })
 
 describe("Next.js integration", () => {
+  it("owns the lifetime of callback workflows and records thrown application failures", async () => {
+    const fetcher = vi.fn<typeof fetch>(
+      async () => new Response(null, { status: 202 }),
+    )
+    vi.stubGlobal("fetch", fetcher)
+    const client = createFlowmark({ apiKey: "key", apiUrl: "http://localhost" })
+    const original = new Error("PRIVATE_CALLBACK_DETAIL")
+    await expect(
+      client.workflow("callback.failure", async (flow) => {
+        await flow.operation("select", () => 3)
+        throw original
+      }),
+    ).rejects.toBe(original)
+    await callbacks[0]()
+    const events = fetcher.mock.calls.map(
+      ([, options]) => JSON.parse(String(options?.body)).event,
+    )
+    expect(events.map((event) => event.type)).toEqual([
+      "started",
+      "operation_started",
+      "operation_completed",
+      "failed",
+    ])
+    expect(events.at(-1).failure).toEqual({ code: "workflow_failed" })
+    expect(JSON.stringify(events)).not.toContain("PRIVATE_CALLBACK_DETAIL")
+  })
   it("defers credentials until instrumentation runs and reads the runtime environment", async () => {
     vi.stubEnv("FLOWMARK_API_KEY", undefined)
     vi.stubEnv("FLOWMARK_API_URL", undefined)

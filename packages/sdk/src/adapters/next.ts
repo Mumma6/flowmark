@@ -105,10 +105,7 @@ export function createFlowmark(
     return client
   }
   return withWorkflowDefinitions<
-    Pick<
-      FlowmarkClient,
-      "workflow" | "resolveExpectation" | "cancelExpectation"
-    >
+    Pick<FlowmarkClient, "resolveExpectation" | "cancelExpectation">
   >({
     workflow: (name, options) => requestClient().workflow(name, options),
     resolveExpectation: (reference, options) =>

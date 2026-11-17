@@ -68,6 +68,12 @@ needed. Keep Next-only imports out of the shared business module.
 
 See the [Next.js guide](/docs/nextjs) for the matching request entry point.
 
+The **unreleased 0.4.0** candidate also accepts a
+[workflow callback](/docs/reference/workflow#callback-workflows--unreleased-040),
+so the business function can own its workflow without manual failure/rethrow
+handling. Process-owned shutdown still applies. Published 0.3.0 uses the manual
+markers shown above.
+
 ## Long-lived workers and servers
 
 Reuse the process client across jobs. `await flowmark.flush()` drains pending

@@ -52,6 +52,24 @@ export function compileTimeContract(client: FlowmarkClient) {
   // @ts-expect-error invalid context category
   definition.start({ properties: { batchId: "42", provider: "unknown" } })
   const flow = definition.start({ properties: { batchId: "42" } })
+  const scoped = definition.start(
+    (flow) => {
+      flow.done({ outcome: "partial", result: { imported: 3 } })
+      return 3
+    },
+    { properties: { batchId: "42" } },
+  )
+  expectTypeOf(scoped).toEqualTypeOf<Promise<number>>()
+  // @ts-expect-error Callback form still requires the declared context.
+  definition.start(() => 3)
+  definition.start(
+    (flow) => {
+      // @ts-expect-error Callback outcomes retain the typed declaration.
+      flow.done({ outcome: "unknown" })
+      return 3
+    },
+    { properties: { batchId: "42" } },
+  )
   flow.report({})
   flow.report({ imported: 20 })
   flow.done()

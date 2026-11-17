@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest"
-import { MemoryTransport, workflow } from "@flowmarkdev/node"
+import { createFlowmarkWithTransport, MemoryTransport } from "@flowmarkdev/node"
 import { runBusinessScenario } from "../lib/business-scenarios"
 import { businessScenarios, ExecutionSchema } from "../lib/operations-catalog"
 import { Schema } from "effect"
@@ -8,15 +8,9 @@ describe("operations application scenarios", () => {
   for (const scenario of businessScenarios) {
     it(`${scenario.id} records the application's actual outcome`, async () => {
       const transport = new MemoryTransport()
-      const client = {
-        workflow: (name: string, options?: Parameters<typeof workflow>[1]) =>
-          workflow(name, {
-            ...options,
-            id: options?.id ?? crypto.randomUUID(),
-            transport,
-          }),
-      }
+      const client = createFlowmarkWithTransport({ transport })
       const execution = await runBusinessScenario(client, scenario.id)
+      await client.shutdown()
       expect(Schema.decodeUnknownSync(ExecutionSchema)(execution)).toEqual(
         execution,
       )
