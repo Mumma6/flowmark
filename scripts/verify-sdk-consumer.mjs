@@ -161,6 +161,9 @@ try {
     FLOWMARK_API_URL: `http://127.0.0.1:${port}`,
   }
   await run("pnpm", ["--filter", "@flowmarkdev/core", "build"])
+  // This command owns SDK build outputs (watchers must be stopped). Pack a
+  // clean build so removed implementation files cannot survive in the tarball.
+  await rm(join(root, "packages/sdk/dist"), { recursive: true, force: true })
   await run("pnpm", ["--filter", "@flowmarkdev/node", "build"])
   await run("pnpm", [
     "--filter",
@@ -218,10 +221,15 @@ try {
     join(consumer, "next.config.mjs"),
     "export default { experimental: { cpus: 2 } }\n",
   )
-  await run("pnpm", ["install", "--offline", "--ignore-scripts"], consumer, {
-    ...environment,
-    NODE_ENV: "development",
-  })
+  await run(
+    "pnpm",
+    ["install", "--prefer-offline", "--ignore-scripts"],
+    consumer,
+    {
+      ...environment,
+      NODE_ENV: "development",
+    },
+  )
   const manifest = JSON.parse(
     await readFile(
       join(consumer, "node_modules/@flowmarkdev/node/package.json"),
@@ -229,6 +237,21 @@ try {
     ),
   )
   assert.ok(!JSON.stringify(manifest).includes("workspace:"))
+  const sourceManifest = JSON.parse(
+    await readFile(join(root, "packages/sdk/package.json"), "utf8"),
+  )
+  const installedCore = JSON.parse(
+    await readFile(
+      join(consumer, "node_modules/@flowmarkdev/core/package.json"),
+      "utf8",
+    ),
+  )
+  assert.equal(manifest.version, sourceManifest.version)
+  assert.equal(installedCore.version, manifest.version)
+  assert.equal(
+    manifest.dependencies["@flowmarkdev/core"],
+    installedCore.version,
+  )
   await Promise.all(
     Object.values(manifest.exports).map(async (exported) => {
       await Promise.all(
@@ -482,6 +505,19 @@ try {
   )
   console.log(
     "PASS standalone Node script, original application error, flush/reuse, shutdown/idempotency and failed delivery",
+  )
+  const operationFailures = received.filter(
+    ({ event }) => event.type === "operation_failed",
+  )
+  assert.ok(operationFailures.length > 0)
+  operationFailures.forEach(({ event }) =>
+    assert.deepEqual(event.failure, { code: "operation_failed" }),
+  )
+  assert.ok(
+    !JSON.stringify(received).includes("SYNTHETIC_PRIVATE_PROVIDER_DETAIL"),
+  )
+  console.log(
+    "PASS Node and Next default failure privacy through real HTTP, preserving application errors",
   )
 } finally {
   await stop()

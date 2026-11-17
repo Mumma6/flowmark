@@ -184,13 +184,15 @@ private memory, limits and human-approved proposal workflow.
 ### Packed SDK consumer verification
 
 `pnpm --filter @flowmarkdev/node test:consumer` builds and packs core/SDK, installs
-the tarballs in a temporary external application from the local pnpm store, and
+the tarballs in a temporary external application, preferring the local pnpm store, and
 runs public declaration checks, a real production Next build/server, Route
 Handlers, a Server Action and a standalone script. It tests automatic delivery,
 partial outcomes, failures, retries and explicit shutdown with a synthetic-key
 loopback receiver. It sends no hosted telemetry and removes only its own fixture
 and servers. Run `pnpm install --frozen-lockfile` first and stop this checkout's
-watchers; the command owns core/SDK build outputs while it runs. It is also part
+watchers; the command owns core/SDK build outputs while it runs. Missing registry
+metadata/dependencies are resolved from npm; SDK/core themselves always come from
+freshly built local tarballs. The command is part
 of `pnpm test` and therefore `pnpm check`. Next may request a one-time repeat
 after an upgrade advisory; the harness logs the first failure, repeats the exact
 build once and fails if the error persists.

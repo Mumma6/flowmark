@@ -3,7 +3,6 @@ import { WorkflowFailureSchema, type WorkflowFailure } from "@flowmarkdev/core"
 import { FlowmarkErrorMappingError } from "../errors/index.js"
 import type { WorkflowOperationOptions } from "../types/index.js"
 import { observeInvalidMapperPromise } from "./operation-callback.js"
-import { failureFromUnknown } from "./failure-from-unknown.js"
 
 export const genericOperationFailure: WorkflowFailure = {
   code: "operation_failed",
@@ -17,10 +16,7 @@ export const mapOperationFailure = Effect.fn("Flowmark.mapOperationFailure")(
       catch: () => new FlowmarkErrorMappingError({ reason: "threw" }),
     })
     if (mapper === undefined) {
-      return yield* Effect.try({
-        try: () => failureFromUnknown(cause),
-        catch: () => new FlowmarkErrorMappingError({ reason: "threw" }),
-      })
+      return genericOperationFailure
     }
     const mapped = yield* Effect.try({
       try: () => mapper(cause),

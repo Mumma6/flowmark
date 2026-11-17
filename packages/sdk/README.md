@@ -13,7 +13,7 @@ failures never replace your return value or thrown error.
 npm i @flowmarkdev/node
 ```
 
-Source package version: **0.3.0** (version bump pending; changes below are unreleased) (see `package.json`). It depends on `@flowmarkdev/core` at the
+Source package version: **0.4.0 (unreleased)** (see `package.json`). It depends on `@flowmarkdev/core` at the
 same version. Node.js 20.19 or newer is required. Next.js 16 or newer is an
 optional peer for `@flowmarkdev/node/next`.
 
@@ -73,7 +73,7 @@ FLOWMARK_API_URL=https://api.flowmark.dev
 ```
 
 The environment example above works with published **0.3.0** and this source.
-**Unreleased default change:** the next SDK release will use
+**Unreleased 0.4.0 default change:** the next SDK release will use
 `https://api.flowmark.dev` in every environment when `apiUrl`/`FLOWMARK_API_URL`
 is omitted. Hosted users will need only `FLOWMARK_API_KEY`. Local and staging
 users must supply their API origin when upgrading. Published 0.3.0 still requires
@@ -284,7 +284,10 @@ await flow.operation("push-to-crm", () => pushToCrm(), {
 ```
 
 Attempt groups are scoped to one run and operation name. `mapError` is
-synchronous and replaces automatic error copying for that callback. Only
+synchronous and explicitly selects failure fields for that callback. In 0.4.0,
+an unmapped callback failure records only `{ code: "operation_failed" }`; the
+original exception is never inspected or copied. Published 0.3.0 still copies
+structured fields or `Error.message`, so keep `mapError` when using that release. Only
 validated `code`, optional `message`, and optional `retryable` are sent.
 `retryable` describes the failure. Flowmark does not retry the work.
 

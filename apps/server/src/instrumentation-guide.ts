@@ -92,7 +92,7 @@ A Server Action uses the same two calls: start a workflow, then await the shared
 
 A completed run is application-reported evidence, not proof every record succeeded. Report meaningful \`outcome\` codes such as \`complete\`, \`partial\`, or \`no-change\`, and the counts the application knows. Outcomes match \`^[a-z][a-z0-9_-]{0,63}$\` and are independent of execution status. If processing throws after useful work, \`fail({ code: "IMPORT_FAILED", outcome: "partial", result: { imported: 8, rejected: 2 } })\` can report the known partial result.
 
-Use small JSON-safe summaries. Do not send raw exceptions, provider messages, credentials, identities, request bodies, or database records. \`mapError\` selects safe failure fields for operations; keep original exceptions in the application's own error handling.
+Use small JSON-safe summaries. Do not send raw exceptions, provider messages, credentials, identities, request bodies, or database records. Published 0.3.0 copies exception fields or messages when \`mapError\` is omitted; keep the explicit mappings in these examples. Unreleased 0.4.0 uses a generic failure code by default without copying the exception. \`mapError\` selects safe failure fields; keep original exceptions in the application's own error handling.
 
 ## The same process from a Node script
 
@@ -133,6 +133,8 @@ Node \`flush()\` and \`shutdown()\` reject with \`FlowmarkDeliveryError\` when d
 For a process spanning requests, persist a fresh execution id and pass \`workflow(name, { id: executionId })\` on each continuation. The same name + id continues one run; call \`done()\` or \`fail()\` only when the whole process ends. Put durable entity ids in \`properties\`; reusing one as an execution id conflates separate executions.
 
 A retry after terminal failure is a **new** run: \`workflow("invoice.import", { retryOf: { workflow: "invoice.import", runId: previousRunId } })\`. Omit \`id\` to generate a fresh id. Within a run, \`operation(name, callback, { attempt: { groupId: "save-batch", number: 2 } })\` describes an application-owned attempt. Flowmark never retries business work. Both attempt options require an accepting server that acknowledges \`attempts-v1\`.
+
+Keep workflow names stable when moving or refactoring code; use \`release\` to distinguish deployments. Changing the workflow name creates a different workflow, not a historical rename. Removing instrumentation stops new evidence; it does not delete history or automatically fail unfinished runs. See [code changes and workflow history](https://docs.flowmark.dev/docs/concepts/runs#when-application-code-changes).
 
 Use these only when the application has this evidence:
 

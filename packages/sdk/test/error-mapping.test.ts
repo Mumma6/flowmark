@@ -196,7 +196,7 @@ describe("per-operation safe callback failure mapping", () => {
     })
   })
 
-  it("preserves default conversion, success inference and manual failure semantics", async () => {
+  it("keeps default failures private and preserves success inference and explicit manual failure fields", async () => {
     const { client, events } = setup()
     const flow = client.workflow("compatibility")
     const success = flow.operation(
@@ -219,9 +219,55 @@ describe("per-operation safe callback failure mapping", () => {
     flow.done()
     await client.shutdown()
     expect(mapper).not.toHaveBeenCalled()
-    expect(JSON.stringify(events)).toContain("original default message")
+    expect(JSON.stringify(events)).not.toContain("original default message")
+    expect(
+      events.find(
+        (event) =>
+          event.type === "operation_failed" &&
+          event.operationName === "default",
+      ),
+    ).toMatchObject({
+      failure: { code: "operation_failed" },
+    })
     expect(JSON.stringify(events)).toContain("MANUAL")
   })
+
+  it.each(["sync", "promise", "thenable"])(
+    "never inspects an opaque %s failure without an explicit mapper",
+    async (kind) => {
+      const { client, events, diagnostic } = setup()
+      const read = vi.fn(() => {
+        throw new Error("SYNTHETIC_GETTER_SECRET")
+      })
+      const original = Object.create(null, {
+        code: { get: read },
+        message: { get: read },
+        retryable: { get: read },
+      })
+      const flow = client.workflow("opaque.failure")
+      await expect(
+        flow.operation("request", () => {
+          if (kind === "sync") {
+            throw original
+          }
+          if (kind === "thenable") {
+            return {
+              then: (_resolve: unknown, reject: (cause: unknown) => void) =>
+                reject(original),
+            } as PromiseLike<never>
+          }
+          return Promise.reject(original)
+        }),
+      ).rejects.toBe(original)
+      flow.fail({ code: "REQUEST_FAILED" })
+      await client.shutdown()
+      expect(
+        events.find((event) => event.type === "operation_failed"),
+      ).toMatchObject({ failure: { code: "operation_failed" } })
+      expect(read).not.toHaveBeenCalled()
+      expect(diagnostic).not.toHaveBeenCalled()
+    },
+  )
 
   it("preserves opaque callback rejections after an advanced run has already ended", async () => {
     const events: WorkflowEvent[] = []

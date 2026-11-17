@@ -129,7 +129,7 @@ export type OperationErrorMapper = (cause: unknown) => WorkflowFailure
 export interface WorkflowOperationOptions {
   /** Explicit opt-in: requires the TASK-009 accepting server. Group is scoped to this run and operation name. */
   readonly attempt?: WorkflowAttempt
-  /** Callback overload only. Omitted: existing automatic conversion. Manual fail() is unchanged. */
+  /** Callback overload only. Omitted: only { code: "operation_failed" } is recorded; the original exception is never inspected or copied. Manual fail() is unchanged. */
   readonly mapError?: OperationErrorMapper
   readonly properties?: WorkflowProperties
 }
