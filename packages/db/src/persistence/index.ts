@@ -118,3 +118,5 @@ export {
   DataExportStore,
   DataExportRejected,
 } from "./data-exports/data-export-store.js"
+
+export { RegistrationInvitationStore } from "./registration-invitations/registration-invitation-store.js"

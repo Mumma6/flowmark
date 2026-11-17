@@ -109,6 +109,27 @@ it("reports provider transport failure as unavailable", async () => {
   })
 })
 
+it("forwards the invite privately to the provider without returning it", async () => {
+  handler.mockResolvedValue(Response.json({ token: "private-session" }))
+  const token = "a".repeat(43)
+  const response = await registerOwner(
+    request({
+      name: "Invited",
+      email: "invited@example.test",
+      password: "test-only-password",
+      invitationToken: token,
+    }),
+  )
+  const forwarded = handler.mock.calls[0][0] as Request
+  expect(forwarded.headers.get("x-flowmark-registration-invite")).toBe(token)
+  expect(await forwarded.json()).toEqual({
+    name: "Invited",
+    email: "invited@example.test",
+    password: "test-only-password",
+  })
+  expect(await response.json()).toEqual({ ok: true })
+})
+
 it("rejects invalid registration input before invoking the provider", async () => {
   const response = await registerOwner(
     request({ email: "owner@example.test", password: "short" }),

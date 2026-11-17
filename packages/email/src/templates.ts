@@ -30,6 +30,11 @@ export const renderEmail = Effect.fn("Email.render")(function* (
       ? undefined
       : `${environmentName} environment. Links in this message open ${trustedOrigin}.`
   const copy = Match.value(message).pipe(
+    Match.when({ kind: "registration-invitation" }, () => ({
+      subject: "You’re invited to Flowmark",
+      body: "Create your Flowmark account using the email address this invitation was sent to. This private link only allows registration for that address.",
+      action: "Create your account",
+    })),
     Match.when(
       { kind: "project-invitation" },
       ({ projectName, inviterName, role }) => ({

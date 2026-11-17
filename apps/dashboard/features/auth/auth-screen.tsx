@@ -31,11 +31,13 @@ export function AuthScreen({
   registrationEnabled,
   localAccount,
   returnTo,
+  invitationToken,
 }: {
   registrationEnabled: boolean
   mode: "sign-in" | "sign-up"
   localAccount?: { readonly email: string; readonly password: string }
   returnTo?: string
+  invitationToken?: string
 }) {
   const router = useRouter()
   const cache = useQueryClient()
@@ -52,7 +54,7 @@ export function AuthScreen({
     setError(null)
     setPending(true)
     const result = await runBrowserAuth(
-      authenticate(mode, { name, email, password }),
+      authenticate(mode, { name, email, password, invitationToken }),
     )
     Result.match(result, {
       onFailure: (failure) => setError(failure.reason),

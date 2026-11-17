@@ -1,4 +1,7 @@
 export enum DatabaseOperation {
+  ReadRegistrationInvitation = "read-registration-invitation",
+  CreateRegistrationInvitation = "create-registration-invitation",
+  RemoveRegistrationInvitation = "remove-registration-invitation",
   JoinWaitlist = "join-waitlist",
   SubmitWaitlistWelcome = "submit-waitlist-welcome",
   EvidenceCaptures = "evidence-captures",

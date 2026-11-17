@@ -24,10 +24,25 @@ Array.forEach(
           trustedOrigins: ["https://app.example.test"],
         })
         const { options } = await auth.$context
-        assert.equal(
-          options.emailAndPassword?.disableSignUp,
-          environment === "production",
-        )
+        assert.equal(options.emailAndPassword?.disableSignUp, false)
+        const create = options.databaseHooks?.user?.create?.before
+        assert.ok(create)
+        const candidate = {
+          id: "test",
+          name: "Test",
+          email: "test@example.test",
+          emailVerified: false,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        }
+        if (environment === "production") {
+          await assert.rejects(
+            create(candidate, null),
+            (error: { status?: string }) => error.status === "FORBIDDEN",
+          )
+        } else {
+          assert.equal(await create(candidate, null), undefined)
+        }
         assert.equal(options.emailAndPassword?.enabled, true)
         assert.equal(options.emailAndPassword?.requireEmailVerification, false)
         assert.equal(
