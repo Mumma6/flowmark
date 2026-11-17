@@ -4,24 +4,29 @@ import {
   withCommandDatabase,
   readLocalDevelopmentDatabaseUrl,
 } from "@flowmark/db/commands"
-import { Email, EmailError, emailSettings, resendLayer } from "@flowmark/email"
+import { EmailError, emailSettings, resendLayer } from "@flowmark/email"
 import { invite } from "../registration/invite.js"
+import { hashInvitationToken } from "../registration/invitation-token.js"
+import {
+  InvitationCommandError,
+  readInvitationEnvironment,
+} from "./invitation-environment.js"
 
-// Uses explicitly supplied server settings; never loads a different environment
-// or changes hosted configuration. This command does not migrate or seed.
+// Operator-only configuration reads stay in memory. No migrate, seed, or hosted settings writes.
 const program = Effect.gen(function* () {
   const [email, ...extra] = process.argv.slice(2)
-  if (!email || extra.length) {
-    return yield* new EmailError({
-      operation: "validation",
-      reason: "invalid-message",
+  const check = extra.length === 1 && extra[0] === "--check"
+  if (!email || email.startsWith("--") || (extra.length && !check)) {
+    return yield* new InvitationCommandError({
+      reason: "Usage: pnpm invite user@example.com [--check]",
     })
   }
-  const settings = yield* emailSettings(process.env)
+  const environment: NodeJS.ProcessEnv = yield* readInvitationEnvironment()
+  const settings = yield* emailSettings(environment)
   const url =
     settings.environment === "local"
-      ? yield* readLocalDevelopmentDatabaseUrl()
-      : process.env.DATABASE_URL
+      ? yield* readLocalDevelopmentDatabaseUrl(environment)
+      : environment.DATABASE_URL
   const validOrigin = Match.value(settings.environment).pipe(
     Match.when(
       "production",
@@ -57,8 +62,8 @@ const program = Effect.gen(function* () {
         ["postgres:", "postgresql:"].includes(target.protocol) &&
         (settings.environment === "local" ||
           (target.hostname.endsWith(".neon.tech") &&
-            process.env.NEON_BRANCH === settings.environment)) &&
-        !process.env.DATABASE_MIGRATION_URL
+            environment.NEON_BRANCH === settings.environment)) &&
+        !environment.DATABASE_MIGRATION_URL
       )
     },
     catch: () =>
@@ -68,32 +73,75 @@ const program = Effect.gen(function* () {
       }),
   })
   if (!validTarget || !url) {
-    return yield* new EmailError({
-      operation: "configuration",
-      reason: "invalid-configuration",
+    return yield* new InvitationCommandError({
+      reason:
+        "Invitation target does not match its email environment. Check NEON_BRANCH, DATABASE_URL and BETTER_AUTH_URL; DATABASE_MIGRATION_URL must be unset.",
     })
   }
-  const delivery = yield* Email
+  yield* Effect.sync(() =>
+    console.log(
+      `Invitation target: ${settings.environment} (${settings.origin}).`,
+    ),
+  )
   const result = yield* withCommandDatabase(url, (db) =>
-    invite(email, settings.origin).pipe(
+    (check
+      ? RegistrationInvitationStore.use((store) =>
+          store.get(email, hashInvitationToken("configuration-check")),
+        ).pipe(Effect.as("checked" as const))
+      : invite(email, settings.origin).pipe(
+          Effect.provide(resendLayer(environment)),
+        )
+    ).pipe(
       Effect.provide(RegistrationInvitationStore.layer),
       Effect.provideService(Database, db),
-      Effect.provideService(Email, delivery),
     ),
   )
   yield* Effect.sync(() =>
     console.log(
-      result === "invited"
-        ? "Invitation sent. The link expires in 24 hours."
-        : "Already invited or registered. No email sent.",
+      Match.value(result).pipe(
+        Match.when(
+          "checked",
+          () =>
+            "Configuration and invitation database check passed. No invitation created and no email sent.",
+        ),
+        Match.when(
+          "invited",
+          () => "Invitation sent. The link expires in 24 hours.",
+        ),
+        Match.when(
+          "already-invited-or-registered",
+          () => "Already invited or registered. No email sent.",
+        ),
+        Match.exhaustive,
+      ),
     ),
   )
 }).pipe(
-  Effect.provide(resendLayer(process.env)),
+  Effect.catchTags({
+    InvitationCommandError: (error) =>
+      Effect.sync(() => {
+        console.error(error.reason)
+        process.exitCode = 1
+      }),
+    EmailError: (error) =>
+      Effect.sync(() => {
+        console.error(
+          `Invitation email failed: ${error.operation}/${error.reason}${error.status ? ` (HTTP ${error.status})` : ""}. No automatic retry.`,
+        )
+        process.exitCode = 1
+      }),
+    DatabaseError: (error) =>
+      Effect.sync(() => {
+        console.error(
+          `Invitation database operation failed: ${error.operation}. Check the target connection and that migration 0036 is applied. No automatic retry.`,
+        )
+        process.exitCode = 1
+      }),
+  }),
   Effect.catchCause(() =>
     Effect.sync(() => {
       console.error(
-        "Invitation failed. Check the email, database target, and existing email settings. No automatic retry.",
+        "Invitation failed unexpectedly. No automatic retry; credentials and private links are never logged.",
       )
       process.exitCode = 1
     }),
