@@ -1,6 +1,6 @@
 # Security policy
 
-Flowmark is open source workflow observability software. If you believe you
+Flowmark is source-available process intelligence software. If you believe you
 have found a security vulnerability, report it privately so we can investigate
 before public disclosure.
 

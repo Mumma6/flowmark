@@ -24,7 +24,7 @@
 
 - Flowmark observes application-owned work; it never executes, schedules, or
   retries that work. Preserve the workflow/run abstraction.
-- Flowmark Product 1.0 is an open-source, programmable process-intelligence
+- Flowmark Product 1.0 is a source-available, programmable process-intelligence
   platform for people and AI agents. Platform, Studio and Everywhere are
   dimensions of one product. Serve organization-wide questions over shared
   authorized evidence; preserve workflow/run semantics. Follow the local vision

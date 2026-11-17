@@ -32,7 +32,8 @@ export function SiteFooter() {
         <div>
           <BrandLink />
           <p className="mt-3 max-w-xs text-sm leading-6 text-muted-foreground">
-            Process intelligence for people and agents. Open source under MIT.
+            Process intelligence for people and agents. Source-available
+            platform. Apache-2.0 SDK.
           </p>
         </div>
         {columns.map((column) => (

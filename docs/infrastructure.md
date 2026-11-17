@@ -26,7 +26,7 @@ environments must be changed through the existing [Pulumi project](../infrastruc
 This includes new and existing resources, temporary cloud branches, environment
 bindings and secrets, domains/DNS, access/protection settings, and persistent
 CI/provider configuration. New providers follow the same rule. This policy does
-not prescribe infrastructure tooling for SDK customers or independent self-hosts.
+not prescribe infrastructure tooling for SDK customers.
 
 Provider connectors, CLIs and dashboards are useful for inventory, documentation,
 logs and verification. They are not an alternative writer: do not create or
