@@ -1,25 +1,27 @@
 ---
 title: Connect Cursor with MCP
-description: Connect Cursor, approve a project and check read access before instrumenting your first process.
+description: Give Cursor read access to Flowmark evidence and investigate executions, failures and reported outcomes.
 ---
 
-MCP lets Cursor read Flowmark evidence alongside your application code. It helps
-you verify instrumentation and investigate what happened. Cursor is the recommended
-AI client; it has been verified against real application data in Staging.
+MCP lets Cursor read Flowmark evidence alongside your application code. Use it to
+investigate executions, failures and reported business outcomes. Cursor is the
+recommended MCP client; it has been verified against real application data in Staging.
 
-Cursor edits your repository using its own coding tools. The **SDK sends evidence**;
-**MCP reads it**. Flowmark does not execute, schedule or retry your application work.
-You can also follow the [manual SDK quickstart](/docs/sdk#manual-sdk-setup) without Cursor.
+**SDK instrumentation collects evidence. MCP reads that evidence.** The
+[SDK quickstart](/docs/sdk) helps you install and instrument an application with
+your coding agent or manually, without MCP. Connecting MCP does not install the SDK or modify
+your repository. Flowmark does not execute, schedule or retry application work.
 
-## 1. Create a project
+## 1. Choose a project
 
-Sign in to Studio and create a project for your application. Save the write key
-for your application's server environment. Keep it out of Cursor chat and MCP
-configuration.
+Sign in to Studio and select the project whose evidence you want to investigate.
+If your application is not reporting yet, complete the [SDK quickstart](/docs/sdk)
+to see a useful first execution. You can also connect to an empty project; the
+connection check will return an empty process list.
 
 ## 2. Add Flowmark to Cursor
 
-Open **Connect** in Studio (or the Cursor step during onboarding). Copy the
+Open **Connect** in Studio. Copy the
 configuration shown for that environment into your repository's `.cursor/mcp.json`.
 Create the file if needed; merge with any existing `mcpServers` entries.
 
@@ -45,7 +47,7 @@ or **Sign in** when prompted. Labels can vary by Cursor version. See
 [Cursor's MCP documentation](https://cursor.com/docs/mcp) for configuration locations.
 
 If Studio cannot confirm the endpoint, retry its connection check. You can
-continue with manual SDK setup while the API connection is unavailable.
+continue exploring evidence in Studio while the MCP connection is unavailable.
 
 ## 3. Sign in and approve your project
 
@@ -66,20 +68,16 @@ An empty process list is expected before you instrument anything. A copied
 configuration or Studio's **Connection authenticated** status alone does not
 verify a successful project read.
 
-## 5. Instrument one useful process
+## 5. Investigate your evidence
 
-In Studio, continue to **Instrument one process**. Set your saved write key and
-the displayed API origin in your application's server environment yourself.
-Copy the instrumentation prompt into Cursor in that application's repository.
+In Connect, expand **Investigate with Cursor** and copy a starter question.
+Ask Cursor to explain an execution, investigate a failure code or compare reported
+business outcomes. The tools read the projects you approved and return links to
+supporting Studio evidence.
 
-The prompt asks Cursor to inspect your application, read the actual SDK docs,
-install the SDK and add markers to one useful process. Start with an import,
-checkout or background job with a result someone cares about. Preserve existing
-return values, exceptions and retry behavior. Capture small reported results,
-such as imported and skipped counts, without sensitive payloads.
-
-Run your application to trigger that process. Cursor can then use MCP to find the
-execution, inspect its outcome and operations, and return the Studio link.
+For example: “Use Flowmark to find an execution in my project during this UTC
+window. Explain its reported result, operations and failures, and give me the
+Studio link.” Keep facts and hypotheses separate.
 
 ## Explore your first evidence
 
@@ -120,7 +118,7 @@ client registration stays off. Cursor desktop uses
 `https://www.cursor.com/agents/mcp/oauth/callback`. Custom-scheme callbacks are
 rejected. The configuration does not require a client secret.
 
-Cursor is the primary verified setup path. The Staging verification covers real
+Cursor is the primary verified MCP connection. The Staging verification covers real
 MCP tool calls against application data; it does not certify every Cursor
 version, surface, or Flowmark deployment. Other clients are outside this setup
 guide. MCP Apps rendering has its own

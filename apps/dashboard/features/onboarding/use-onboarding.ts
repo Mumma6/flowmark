@@ -40,14 +40,24 @@ export function useOnboarding(initialStep: string, reviewMode = false) {
       onSuccess: () => undefined,
     }),
   )
-  const complete = useMutation(
-    trpc.onboarding.complete.mutationOptions({
-      onSuccess: () => {
-        router.push("/")
-        router.refresh()
-      },
-    }),
-  )
+  const complete = useMutation(trpc.onboarding.complete.mutationOptions())
+  const finish = (destination: "/" | "/connect") => {
+    if (reviewMode) {
+      router.push(destination)
+      return
+    }
+    if (current) {
+      complete.mutate(
+        { projectId: current.id },
+        {
+          onSuccess: () => {
+            router.push(destination)
+            router.refresh()
+          },
+        },
+      )
+    }
+  }
   const origin = useApiOrigin()
   const snippet = useMemo(
     () => flowmarkAgentPrompt(origin, current),
@@ -70,16 +80,14 @@ export function useOnboarding(initialStep: string, reviewMode = false) {
   const next = () => {
     if (reviewMode) {
       if (step === steps.length - 1) {
-        router.push("/")
+        finish("/")
         return
       }
       setStep((value) => value + 1)
       return
     }
     if (step === steps.length - 1) {
-      if (current) {
-        complete.mutate({ projectId: current.id })
-      }
+      finish("/")
       return
     }
     goTo(step + 1)
@@ -102,5 +110,6 @@ export function useOnboarding(initialStep: string, reviewMode = false) {
     complete,
     snippet,
     next,
+    investigate: () => finish("/connect"),
   }
 }

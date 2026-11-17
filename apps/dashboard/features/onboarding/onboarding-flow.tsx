@@ -12,8 +12,6 @@ import { steps } from "./steps"
 import { useOnboarding } from "./use-onboarding"
 import { guidance } from "./onboarding-guidance"
 import { KeyStep } from "./step-views/key-step"
-import { CursorConnectionSetup } from "../connect/setup/cursor-connection-setup"
-import type { RemoteAgentAccessDeployment } from "../connect/access/agent-access-capability"
 import { InstrumentStep } from "./step-views/instrument-step"
 import { RunStep } from "./step-views/run-step"
 import { ProjectStep } from "./step-views/project-step"
@@ -43,6 +41,7 @@ function OnboardingContent({
     complete,
     snippet,
     next,
+    investigate,
   } = useOnboarding(initialStep, reviewMode)
   const projectState = useProject()
   const titleRef = useRef<HTMLHeadingElement>(null)
@@ -146,9 +145,9 @@ function OnboardingContent({
             <br className="hidden sm:block" /> understandable.
           </h1>
           <p className="mt-4 max-w-lg text-xs leading-7 text-muted-foreground">
-            Start with one useful process. Connect Cursor for guided setup, or
-            use the manual SDK steps. Aim for your first insight in about 15
-            minutes.
+            Copy the setup prompt into your AI agent or follow the manual SDK
+            steps. Run one useful process and see its evidence in Studio. Aim
+            for your first insight in about 15 minutes.
           </p>
         </div>
         <div className="grid items-start gap-8 lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-12">
@@ -242,23 +241,13 @@ function OnboardingContent({
                 />
               ) : null}
               {currentStep.id === "key" ? (
-                <>
-                  <CursorConnectionSetup />
-                  <DataState
-                    pending={keys.isPending}
-                    error={keys.error}
-                    retry={() => void keys.refetch()}
-                  />
-                  {keys.isSuccess && !hasWriteKey ? (
-                    <KeyStep
-                      keys={keys}
-                      createdSecret={createdSecret}
-                      hasWriteKey={hasWriteKey}
-                      current={current}
-                      setCreatedSecret={setCreatedSecret}
-                    />
-                  ) : null}
-                </>
+                <KeyStep
+                  keys={keys}
+                  createdSecret={createdSecret}
+                  hasWriteKey={hasWriteKey}
+                  current={current}
+                  setCreatedSecret={setCreatedSecret}
+                />
               ) : null}
               {!reviewMode && currentStep.id === "run" && (
                 <>
@@ -278,7 +267,7 @@ function OnboardingContent({
                         <Button
                           type="button"
                           variant="outline"
-                          onClick={() => setStep(2)}
+                          onClick={() => setStep(1)}
                         >
                           Set up application key
                         </Button>
@@ -288,19 +277,15 @@ function OnboardingContent({
                 </>
               )}
               {currentStep.id === "instrument" ? (
-                <>
-                  <KeyStep
-                    keys={keys}
-                    createdSecret={createdSecret}
-                    hasWriteKey={hasWriteKey}
-                    current={current}
-                    setCreatedSecret={setCreatedSecret}
-                  />
-                  <InstrumentStep origin={origin} snippet={snippet} />
-                </>
+                <InstrumentStep origin={origin} snippet={snippet} />
               ) : null}
               {currentStep.id === "run" ? (
-                <RunStep snapshot={snapshot} hasRuns={hasRuns} />
+                <RunStep
+                  snapshot={snapshot}
+                  hasRuns={hasRuns}
+                  onInvestigate={investigate}
+                  disabled={blocked}
+                />
               ) : null}
               <div className="border-l border-primary/25 pl-4">
                 <p className="text-[11px] font-medium">
@@ -355,16 +340,12 @@ function OnboardingContent({
 export function OnboardingFlow(props: {
   readonly userId: string
   readonly apiOrigin: string
-  readonly agentAccess: RemoteAgentAccessDeployment
   readonly email: string
   readonly initialStep: string
   readonly reviewMode?: boolean
 }) {
   return (
-    <RuntimeConfigProvider
-      apiOrigin={props.apiOrigin}
-      agentAccess={props.agentAccess}
-    >
+    <RuntimeConfigProvider apiOrigin={props.apiOrigin}>
       <ProjectProvider key={props.userId}>
         <OnboardingContent {...props} />
       </ProjectProvider>

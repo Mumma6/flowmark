@@ -35,7 +35,7 @@ export function GettingStartedChecklist({
         <CardDescription>
           {hasRuns
             ? "Start with the reported result, then inspect the work behind it."
-            : "Start with one useful process. Cursor can help you add the SDK; manual setup is always available."}
+            : "Start with one useful process. Your AI agent can help you add the SDK; manual setup is always available."}
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-4">
@@ -64,14 +64,12 @@ export function GettingStartedChecklist({
               ) : (
                 <>
                   <li>
-                    Open Connect, add Flowmark to Cursor, sign in and approve{" "}
-                    <strong>{current.name}</strong>. You can skip Cursor for
-                    manual SDK setup.
+                    Save the ingestion key for <strong>{current.name}</strong>{" "}
+                    in your application's server environment.
                   </li>
                   <li>
-                    Copy the instrumentation prompt or follow the SDK steps.
-                    Save your project write key in your application's server
-                    environment.
+                    Copy the setup prompt into your AI agent to install the SDK
+                    and instrument one process, or follow the manual SDK steps.
                   </li>
                   <li>
                     Run the process in your application, then return to Explore
@@ -82,8 +80,14 @@ export function GettingStartedChecklist({
             </ol>
             <div className="flex flex-wrap gap-2">
               <Button asChild>
-                <Link href={hasRuns ? "/" : "/connect"}>
-                  {hasRuns ? "Explore executions" : "Set up with Cursor or SDK"}
+                <Link
+                  href={
+                    hasRuns ? "/" : "/onboarding?mode=guide&step=instrument"
+                  }
+                >
+                  {hasRuns
+                    ? "Explore executions"
+                    : "Instrument your application"}
                 </Link>
               </Button>
               {!compact ? (

@@ -54,7 +54,7 @@ const verificationCopy = (verification: AgentReadVerification): string =>
     ),
   )
 
-/** Shared by first-time onboarding and Connect; it never changes authorization. */
+/** MCP read access in Connect; independent of SDK installation. */
 export function CursorConnectionSetup() {
   const router = useRouter()
   const access = useAgentAccess()
@@ -88,8 +88,8 @@ export function CursorConnectionSetup() {
             Retry connection check
           </Button>
           <p>
-            Cursor is optional. Continue with the SDK steps to send evidence and
-            explore it in Studio.
+            You can keep exploring evidence in Studio while the MCP connection
+            is unavailable.
           </p>
         </AlertDescription>
       </Alert>

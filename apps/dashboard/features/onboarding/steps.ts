@@ -5,9 +5,9 @@ export const steps: ReadonlyArray<{
   readonly title: string
 }> = [
   { id: "project", title: "Create a project" },
-  { id: "key", title: "Connect Cursor" },
-  { id: "instrument", title: "Instrument one process" },
-  { id: "run", title: "Explore your first execution" },
+  { id: "key", title: "Save your ingestion key" },
+  { id: "instrument", title: "Instrument your application" },
+  { id: "run", title: "See your first execution" },
 ]
 
 export const stepIndex = (value: string): number => {

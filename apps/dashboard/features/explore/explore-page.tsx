@@ -389,7 +389,7 @@ function ExploreWorkspace() {
                 <p className="max-w-sm text-xs leading-6 text-muted-foreground">
                   {activeFilters.length
                     ? "Try another process or clear the conditions to search the recorded history."
-                    : "Connect Cursor for guided setup, or follow the manual SDK steps. Run one process in your application to see its reported result here."}
+                    : "Use the AI setup prompt or manual SDK steps to instrument one process. Run your application to see its reported result here."}
                 </p>
                 {activeFilters.length ? (
                   <Button
@@ -401,7 +401,9 @@ function ExploreWorkspace() {
                   </Button>
                 ) : (
                   <Button asChild variant="outline" className="mt-2 text-xs">
-                    <Link href="/connect">Set up your first process</Link>
+                    <Link href="/onboarding?mode=guide&step=instrument">
+                      Set up your first process
+                    </Link>
                   </Button>
                 )}
               </div>

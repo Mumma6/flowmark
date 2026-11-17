@@ -6,7 +6,12 @@ import type { useOnboarding } from "../use-onboarding"
 export function RunStep({
   snapshot,
   hasRuns,
-}: Pick<ReturnType<typeof useOnboarding>, "snapshot" | "hasRuns">) {
+  onInvestigate,
+  disabled,
+}: Pick<ReturnType<typeof useOnboarding>, "snapshot" | "hasRuns"> & {
+  readonly onInvestigate: () => void
+  readonly disabled: boolean
+}) {
   return (
     <div className="grid gap-4">
       <DataState
@@ -45,11 +50,24 @@ export function RunStep({
                 Open an execution: Outcome shows reported results; Timeline
                 shows operations and failures.
               </li>
-              <li>
-                Ask Cursor to explain the execution with Flowmark MCP and follow
-                the returned Studio link.
-              </li>
+              <li>Check the reported result for skipped or rejected work.</li>
             </ol>
+          ) : null}
+          {hasRuns ? (
+            <div className="mt-4 grid gap-3">
+              <p className="text-xs leading-6 text-muted-foreground">
+                Your first run is here. Connect Cursor to investigate it.
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                className="justify-self-start"
+                disabled={disabled}
+                onClick={onInvestigate}
+              >
+                Connect Cursor
+              </Button>
+            </div>
           ) : null}
           {!hasRuns && (
             <Button

@@ -29,10 +29,10 @@ export function AgentPromptCard() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Set up with Cursor</CardTitle>
+        <CardTitle>Set up with your AI agent</CardTitle>
         <CardDescription>
-          Copy the prompt into Cursor to instrument one process. Keep the write
-          key in your server environment.
+          Copy the prompt into your AI agent to instrument one process. Keep the
+          write key in your server environment.
         </CardDescription>
       </CardHeader>
       <CardContent>

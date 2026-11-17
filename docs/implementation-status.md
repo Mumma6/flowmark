@@ -30,7 +30,7 @@ funnel, and release associations do not establish causality.
 
 ## Explicit deferrals and limitations
 
-- Cursor is the primary supported setup path. The maintainer verified its
+- Cursor is the primary supported MCP client. The maintainer verified its
   Staging connection with real MCP calls against application data (reported
   17 November 2026). Full cross-version and cross-client lifecycle certification
   and the client showcase remain deferred. Reference HTTP/Codex evidence is not

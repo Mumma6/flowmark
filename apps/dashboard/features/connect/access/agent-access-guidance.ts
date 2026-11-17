@@ -166,7 +166,7 @@ export function agentAccessIntroCopy(kind: AgentAccessKind): {
   readonly body: string
   readonly separation: string
 } {
-  const title = "Connect Cursor · recommended"
+  const title = "Read evidence with Cursor"
   return Match.value(kind).pipe(
     Match.when("enabled", () => ({
       title,
@@ -176,7 +176,7 @@ export function agentAccessIntroCopy(kind: AgentAccessKind): {
     })),
     Match.when("unavailable", () => ({
       title,
-      body: "The Cursor connection could not be confirmed for this environment. Retry the check or continue with manual SDK setup.",
+      body: "The MCP endpoint could not be confirmed for this environment. Retry the check. Your application can still report evidence through the SDK.",
       separation:
         "Your application can still report evidence through the SDK. Use the endpoint shown here when the connection is available.",
     })),
@@ -185,7 +185,7 @@ export function agentAccessIntroCopy(kind: AgentAccessKind): {
 }
 
 export function connectPageDescription(): string {
-  return "Connect Cursor, add the SDK and explore your first execution. Manual setup is available below."
+  return "Give Cursor read access to your Flowmark data. Investigate executions, failures and reported business outcomes alongside your code."
 }
 
 export function agentHandoffPresentation(kind: AgentAccessKind): {

@@ -46,7 +46,7 @@ export function connectSetupStages(
       label: instructionsCopied ? "Instructions copied" : "Copy instructions",
       detail: instructionsCopied
         ? "Instructions copied. Follow them in your application, then run the process to verify instrumentation."
-        : "Choose Cursor or manual SDK setup below.",
+        : "Choose AI-assisted or manual SDK setup below.",
       complete: instructionsCopied,
     },
     {

@@ -188,8 +188,8 @@ export function ConnectPage() {
           <AlertTitle>Create a project first</AlertTitle>
           <AlertDescription className="grid gap-3">
             <p>
-              Projects own ingestion keys and recorded evidence. Create one in
-              Settings before you configure an application.
+              Create a project in Settings, then choose which evidence Cursor
+              can read.
             </p>
             <Button asChild size="sm" className="justify-self-start">
               <Link href="/settings?section=projects">Go to Projects</Link>
@@ -207,17 +207,22 @@ export function ConnectPage() {
           </p>
           <div className="grid gap-6">
             <AgentAccessGuide />
-            <hr className="border-border" />
-            <div id="instrumentation" className="grid gap-2 scroll-mt-6">
-              <h2 className="text-lg font-semibold tracking-tight">
-                Instrument one process
-              </h2>
-              <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
-                Let Cursor add the SDK, or follow the manual steps. Then run
-                your application and open Explore.
+            <details>
+              <summary className="cursor-pointer text-xs text-muted-foreground">
+                Need to instrument your application first?
+              </summary>
+              <p className="mt-3 text-xs leading-5 text-muted-foreground">
+                Use the{" "}
+                <Link
+                  href="/onboarding?mode=guide&step=instrument"
+                  className="text-primary underline underline-offset-4"
+                >
+                  SDK setup guide
+                </Link>{" "}
+                to copy an AI setup prompt or follow the manual steps. SDK
+                installation works independently of MCP.
               </p>
-            </div>
-            <ConnectSetupPanel />
+            </details>
           </div>
         </>
       )}

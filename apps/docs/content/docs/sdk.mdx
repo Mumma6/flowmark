@@ -3,16 +3,25 @@ title: Quickstart
 description: Add your first workflow run around the business logic you already have.
 ---
 
-## Set up with Cursor · recommended
+## Set up with your AI agent · recommended
 
-Create a project in Studio, then follow [Connect Cursor](/docs/mcp). Sign in,
-approve your project and copy the ready-to-use instrumentation prompt from Studio.
-Cursor reads the SDK documentation, helps instrument one meaningful process and
-uses MCP to inspect the evidence after you run your application.
+Create a project in Studio and save its ingestion write key. In onboarding, open
+**Instrument your application** and choose **Copy setup prompt**. Paste it into
+your AI agent's chat with your application's repository available. You can reopen
+the setup guide from the Studio account menu later.
 
-Keep the write key in your application's server environment yourself. Cursor's
-coding tools edit your code; MCP only reads Flowmark evidence. Start small and
-aim for your first useful execution in about 15 minutes.
+The prompt asks your AI agent to fetch the instrumentation guide from your
+Flowmark API, read the actual SDK documentation, install the SDK and help instrument one useful
+process. Your agent uses its normal coding tools to edit your repository. Set the
+write key in your application's server environment yourself.
+
+Run that process, then open its execution in Studio. Start small and aim for your
+first useful execution in about 15 minutes. **No MCP connection is needed for any
+of these steps.** You can also follow the manual instructions below.
+
+Once your application reports evidence, [connect Cursor with MCP](/docs/mcp) if
+you want it to investigate executions, failures and business outcomes. This is a
+separate read-only connection.
 
 ## Manual SDK setup
 

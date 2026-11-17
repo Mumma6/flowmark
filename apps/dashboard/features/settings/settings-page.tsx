@@ -63,7 +63,7 @@ const sectionHelp: Record<SettingsSection, string> = {
     "Create or select the project that owns the work you want to observe. Switch projects in the Studio header to inspect their runs.",
   keys: "Create project write keys for ingestion or secret read keys for a server-side read client. Browser ingestion keys never grant reads. Use Connect for delegated agent access.",
   setup:
-    "Open Connect to set up Cursor, then instrument one process with the ready-to-copy prompt. Manual SDK instructions are also available here.",
+    "Copy the AI setup prompt or follow the manual SDK steps to instrument your application. Connect separately gives Cursor MCP read access to the evidence.",
   account:
     "Update the identity and credentials you use to sign in to the dashboard.",
 }

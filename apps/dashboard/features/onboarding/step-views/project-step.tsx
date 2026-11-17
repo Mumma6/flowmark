@@ -86,8 +86,8 @@ export function ProjectStep({
               {current?.name ?? "Selecting your project…"}
             </p>
             <p className="mt-2 text-xs leading-6 text-muted-foreground">
-              Your project is ready. Next, connect Cursor or continue with
-              manual SDK setup.
+              Your project is ready. Save its ingestion key, then add the SDK
+              with your AI agent or follow the manual steps.
             </p>
           </div>
         </div>

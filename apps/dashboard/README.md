@@ -10,7 +10,7 @@ captures are implemented. Capture admission and physical cleanup have separate
 operational gates. Connect supports setup, consent and own-connection revocation;
 copying instructions alone never establishes a connection. Connect shows the
 MCP endpoint when this deployment returns protected-resource metadata, including
-the Cursor public client id. Cursor is the recommended verified setup path. A failed metadata check keeps the manual handoff
+the Cursor public client id. Cursor is the recommended verified MCP client. A failed metadata check keeps the manual handoff
 and does not describe MCP as a future feature. Studio does not render
 the landing's synthetic examples. See [implementation status](../../docs/implementation-status.md).
 
@@ -63,12 +63,13 @@ features (`auth`, `platform`, `runs` and `reporting`).
   result; Outcome, Timeline, Context, Compare and Related runs tabs. Timeline
   offers a waterfall and paginated event table. Peer sample size and recorded
   links remain explicit; raw data/exports are available without dominating.
-- **Connect (`/connect`):** Cursor configuration → browser sign-in/project approval
-  → connection-check prompt → instrumentation prompt or manual SDK steps. An empty
-  process list can verify reads before telemetry exists. Connection management,
-  investigation examples, protocol details and recovery use progressive disclosure.
-  The deployment probe supplies the endpoint; copied configuration, authenticated
-  connections and observed executions remain distinct. Empty Explore links here.
+- **Connect (`/connect`):** a separate MCP read-access journey: Cursor configuration
+  → browser sign-in/project approval → connection-check prompt → investigation of
+  executions, failures and reported outcomes. An empty process list can verify
+  reads before telemetry exists. Connection management, investigation examples and
+  protocol details use progressive disclosure. SDK setup is linked separately.
+  Copied configuration, authenticated connections and observed executions remain
+  distinct. Empty Explore links to the SDK setup guide.
 - **Settings:** project creation/rename, write/browser key management, Connect setup help
   and account controls. Project switching stays in the navigation.
 - **Search:** the navbar command palette opens with ⌘K / Ctrl+K. Pages and
@@ -79,11 +80,13 @@ features (`auth`, `platform`, `runs` and `reporting`).
 - **Account and workspace:** the shared Sheet holds navigation to history,
   overview, Connect, settings and the setup guide, alongside appearance and sign-out.
   Project loading failures show retry feedback rather than an empty account.
-- **Onboarding:** four steps guide project creation, optional Cursor connection,
-  instrumentation and first evidence. Existing step identifiers and project/key
-  completion gates are retained; saved `install` progress resumes at instrumentation.
-  The metadata probe and Cursor configuration are shared with Connect. The
-  project-specific prompt reads SDK docs and keeps credentials out of chat.
+- **Onboarding:** four SDK-first steps guide project creation, saving the ingestion
+  key, instrumentation and first evidence. The user's coding agent fetches the
+  instrumentation guide, install the SDK and edit the repository; manual SDK steps
+  remain available. Onboarding neither probes nor configures MCP. Existing step
+  identifiers and project/key completion gates are retained; saved `install`
+  progress resumes at instrumentation. After evidence arrives, Connect is offered
+  as an optional next action for AI investigation.
   Completed users can revisit `/onboarding?mode=guide`; that mode changes only
   local step navigation and never rewrites completed onboarding state.
 

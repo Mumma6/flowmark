@@ -72,7 +72,7 @@ export function CreateProjectForm({
       </form>
       <p className="text-xs leading-6 text-muted-foreground">
         Your project includes a write key for sending evidence. Save it for your
-        application’s server environment; keep it out of Cursor chat and browser
+        application’s server environment; keep it out of AI chats and browser
         code.
       </p>
       {secret ? (

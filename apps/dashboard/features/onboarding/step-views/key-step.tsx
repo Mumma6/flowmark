@@ -58,8 +58,8 @@ export function KeyStep({
         </Alert>
       ) : null}
       <p className="text-xs leading-6 text-muted-foreground">
-        Replace the placeholder with your saved write key. Keep the key out of
-        Cursor chat, source control and browser code.
+        Save the key for the server environment in the next step. Keep it out of
+        AI chats, source control and browser code.
       </p>
       {!keys.isPending && !keys.error && (
         <details>

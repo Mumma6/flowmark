@@ -8,7 +8,7 @@ it("tells the agent to fetch the API guide for this origin", () => {
     "Fetch and follow https://api.flowmark.dev/v1/instrumentation",
   )
   expect(prompt).not.toContain("/v1/events")
-  expect(prompt).toContain("MCP gives you read access")
+  expect(prompt).not.toMatch(/MCP|Cursor|Claude/)
   expect(prompt).not.toContain("defineWorkflow")
   expect(prompt).toContain(
     "never read, print, commit or request the key in chat",
@@ -31,9 +31,11 @@ it("scopes instrumentation and evidence verification to the selected project", (
   expect(scoped).toContain("actual @flowmarkdev/node README")
   expect(scoped).toContain("Preserve return values, original errors")
   expect(scoped).toContain("imported, skipped or rejected counts")
-  expect(scoped).toContain("get_connection")
-  expect(scoped).toContain("get_run")
-  expect(scoped).toContain("If MCP is unavailable")
+  expect(scoped).toContain("Flowmark Studio")
+  expect(scoped).toContain("documented SDK delivery diagnostics")
+  expect(scoped).not.toMatch(
+    /MCP|get_connection|list_workflows|find_runs|get_run|OAuth/,
+  )
   expect(scoped).toContain("FLOWMARK_API_URL=https://staging.example.test")
   expect(scoped).not.toContain("https://api.flowmark.dev")
 })

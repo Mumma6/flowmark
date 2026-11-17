@@ -1,4 +1,4 @@
-import { Code2, Radio, Workflow } from "lucide-react"
+import { KeyRound, Radio, Workflow } from "lucide-react"
 export const guidance = {
   project: {
     icon: Workflow,
@@ -9,20 +9,20 @@ export const guidance = {
       "Name your project after your application. You can create more projects later.",
   },
   key: {
-    icon: Code2,
+    icon: KeyRound,
     description:
-      "Recommended: let Cursor investigate Flowmark evidence alongside your code. Add the configuration, sign in and approve this project.",
-    note: "Cursor is optional.",
+      "Your project includes a server write key. Save it for the application that will send evidence to Flowmark.",
+    note: "Keep the key in your server environment.",
     detail:
-      "Continue to instrumentation to use Cursor or follow the manual SDK steps. You can connect later from Connect in Studio.",
+      "The full value is shown only once. Keep it out of browser code, source control and AI chats. You can create another here if needed.",
   },
   instrument: {
     icon: Workflow,
     description:
-      "Save your application key, then give Cursor the prompt below. It will inspect your code and help you instrument one useful process. Manual SDK steps are available alongside it.",
+      "Copy the setup prompt into your AI agent. It reads the SDK documentation, installs the SDK and helps instrument one useful process. You can also follow the manual SDK steps.",
     note: "One process, one useful result.",
     detail:
-      "Capture a result your application already knows, such as imported and skipped counts. Cursor edits the code; the SDK sends evidence; MCP reads it.",
+      "Capture a result your application already knows, such as imported and skipped counts. Your AI agent writes the instrumentation code; the SDK sends evidence when your application runs.",
   },
   run: {
     icon: Radio,
