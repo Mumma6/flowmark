@@ -168,6 +168,9 @@
 - Keep validation at trust boundaries, errors explicit, and project scoping
   enforced. Never turn a failed operation into a success-shaped fallback.
 - Keep private server keys out of browser bundles. Browser telemetry is untrusted.
+- Before creating or editing a README, apply
+  [readme](./.agents/skills/readme/SKILL.md). Keep it a concise entry point;
+  detailed references and release history belong in their dedicated docs.
 - Update directly related docs. Use the narrowest relevant tests, typecheck,
   lint, and build; inspect UI in a browser when available.
 - See [README.md](./README.md) and [development guide](./docs/development.md)

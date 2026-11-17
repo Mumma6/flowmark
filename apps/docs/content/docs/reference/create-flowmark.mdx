@@ -19,7 +19,7 @@ const flowmark = createFlowmark({
 | Option                   | Type                               | Required                                   |
 | ------------------------ | ---------------------------------- | ------------------------------------------ |
 | `apiKey`                 | `string`                           | Option or `FLOWMARK_API_KEY`               |
-| `apiUrl`                 | `string`                           | Option or `FLOWMARK_API_URL` in production |
+| `apiUrl`                 | `string`                           | No; defaults to `https://api.flowmark.dev` |
 | `environment`            | `string`                           | No                                         |
 | `release`                | `string`                           | No                                         |
 | `delivery`               | `{ progress?: "all" \| "latest" }` | No; defaults to per-call progress          |
@@ -31,9 +31,7 @@ close it at the process boundary. Creating it validates server settings and
 can throw `FlowmarkConfigError`. Starting a workflow can also throw for invalid
 run context or a closed client.
 
-These defaults describe published 0.3.0. The unreleased source now defaults to
-hosted delivery in every environment; see [configuration](/docs/configuration)
-for availability, URL rules and precedence.
+See [configuration](/docs/configuration) for URL rules and precedence.
 
 ## Next.js
 

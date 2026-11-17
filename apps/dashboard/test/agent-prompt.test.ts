@@ -10,6 +10,7 @@ it("tells the agent to fetch the API guide for this origin", () => {
   expect(prompt).not.toContain("/v1/events")
   expect(prompt).not.toMatch(/MCP|Cursor|Claude/)
   expect(prompt).not.toContain("defineWorkflow")
+  expect(prompt).not.toContain("FLOWMARK_API_URL=")
   expect(prompt).toContain(
     "never read, print, commit or request the key in chat",
   )
@@ -28,7 +29,7 @@ it("scopes instrumentation and evidence verification to the selected project", (
     name: "Billing",
   })
   expect(scoped).toContain("project ID: project-id")
-  expect(scoped).toContain("Use that versioned guide for the first integration")
+  expect(scoped).toContain("Use that guide for the first integration")
   expect(scoped).toContain("only when a specific question remains")
   expect(scoped).toContain("Preserve return values, original errors")
   expect(scoped).toContain("imported, skipped or rejected counts")

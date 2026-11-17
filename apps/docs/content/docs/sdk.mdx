@@ -11,7 +11,7 @@ your AI agent's chat with your application's repository available. You can reope
 the setup guide from the Studio account menu later.
 
 The prompt asks your AI agent to fetch the instrumentation guide from your
-Flowmark API, read the actual SDK documentation, install the SDK and help instrument one useful
+Flowmark API, install the SDK and help instrument one useful
 process. Your agent uses its normal coding tools to edit your repository. Set the
 write key in your application's server environment yourself.
 
@@ -32,16 +32,10 @@ No AI client is required. Follow these steps to instrument the application yours
 ### Before you start
 
 You need a running Flowmark API, a project server-write key, and the SDK.
-The published **0.3.0** `@flowmarkdev/node` README is the implementation contract for
-adding markers in an existing app.
 
 ```bash
 npm i @flowmarkdev/node
 ```
-
-That pulls `@flowmarkdev/core` automatically. Account recovery depends on the
-deployment's configured email delivery. For local services, read
-[local development](/docs/local-development).
 
 ### 1. Configure the server
 
@@ -49,12 +43,10 @@ Set these in your server environment, not in browser-visible variables:
 
 ```bash
 FLOWMARK_API_KEY=<your-project-server-write-key>
-FLOWMARK_API_URL=https://api.flowmark.dev
 ```
 
-The URL is the API origin, not `/v1/events`. Published 0.3.0 requires an explicit
-production URL. See
-[configuration](/docs/configuration) for defaults and overrides.
+Hosted delivery is the default. Set `FLOWMARK_API_URL` for local or staging APIs;
+use the API origin, not `/v1/events`. See [configuration](/docs/configuration).
 
 ### 2. Create one shared client
 
@@ -70,43 +62,38 @@ Using Next.js? Import from `@flowmarkdev/node/next` instead and follow the
 
 ### 3. Add markers to an existing function
 
-`loadInvoices`, `saveValidInvoices`, and `logger` below are your application's
+`loadInvoices` and `saveValidInvoices` below are your application's
 existing helpers, not SDK APIs. No business work moves into Flowmark.
 
 ```ts
 import { flowmark } from "./lib/flowmark"
 
-async function importInvoices(batchId: string) {
-  const run = flowmark.workflow("invoice.import", {
-    properties: { batchId },
-  })
-  try {
-    const invoices = await loadInvoices(batchId)
-    run.step("source-loaded", { properties: { count: invoices.length } })
-    const result = await run.operation(
-      "save-invoices",
-      () => saveValidInvoices(invoices),
-      {
-        mapError: () => ({ code: "SAVE_FAILED" }),
-      },
-    )
-    run.done({
-      outcome: result.skipped > 0 ? "partial" : "complete",
-      result: { imported: result.imported, skipped: result.skipped },
-    })
-    return result
-  } catch (error) {
-    run.fail({ code: "IMPORT_FAILED" })
-    logger.error({ batchId, error }, "Import failed")
-    throw error
-  }
+function importInvoices(batchId: string) {
+  return flowmark.workflow(
+    "invoice.import",
+    async (run) => {
+      const invoices = await run.operation("load-invoices", () =>
+        loadInvoices(batchId),
+      )
+      run.step("source-loaded", { properties: { count: invoices.length } })
+      const result = await run.operation("save-invoices", () =>
+        saveValidInvoices(invoices),
+      )
+      run.done({
+        outcome: result.skipped > 0 ? "partial" : "complete",
+        result: { imported: result.imported, skipped: result.skipped },
+      })
+      return result
+    },
+    { properties: { batchId } },
+  )
 }
 ```
 
-Markers cover start, checkpoint, timed operation, completion and failure. `workflow()` starts an
-independent run; `step()` records a milestone; `done()` attaches a bounded
-business summary; `fail()` reports failure without throwing. Your function
-keeps ownership of its return value and original exception.
+The callback completes on return and records unexpected failure while preserving
+the original exception. `step()` records a milestone; `operation()` measures work;
+`done()` supplies the business outcome and result. Use manual markers for a
+process that continues across requests.
 
 ### 4. Drain delivery at a process boundary
 

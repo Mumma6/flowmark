@@ -10,32 +10,33 @@ export function npmInstallCommand(): string {
 }
 
 export function serverEnvironmentSnippet(apiOrigin: string): string {
-  return `FLOWMARK_API_KEY=<write key>\nFLOWMARK_API_URL=${apiOrigin}`
+  return apiOrigin === "https://api.flowmark.dev"
+    ? "FLOWMARK_API_KEY=<write key>"
+    : `FLOWMARK_API_KEY=<write key>\nFLOWMARK_API_URL=${apiOrigin}`
 }
 
 export function manualWorkflowSnippet(apiOrigin: string): string {
-  return `// Server only. Set FLOWMARK_API_URL=${apiOrigin} in your environment.
+  const configuration =
+    apiOrigin === "https://api.flowmark.dev"
+      ? "Set FLOWMARK_API_KEY in your server environment."
+      : `Set FLOWMARK_API_KEY and FLOWMARK_API_URL=${apiOrigin} in your server environment.`
+  return `// Node.js only. ${configuration}
+// For Next.js, use @flowmarkdev/node/next with automatic delivery instead.
 import { createFlowmark } from "@flowmarkdev/node"
 
 const flowmark = createFlowmark()
 
 // importBatch is your existing application function, not a Flowmark API.
 export async function importCustomers(batchId: string) {
-  const flow = flowmark.workflow("customer.import", {
-    properties: { batchId },
-  })
   try {
-    const imported = await flow.operation("import-batch", async () => {
-      // Replace with your existing import and its actual result.
-      return await importBatch(batchId)
-    })
-    flow.done({
-      result: { imported: imported.imported, skipped: imported.skipped },
-    })
-    return imported
-  } catch (error) {
-    flow.fail({ code: "IMPORT_FAILED" })
-    throw error
+    return await flowmark.workflow("customer.import", async (flow) => {
+      const imported = await flow.operation("import-batch", () => importBatch(batchId))
+      flow.done({
+        outcome: imported.skipped > 0 ? "partial" : "complete",
+        result: { imported: imported.imported, skipped: imported.skipped },
+      })
+      return imported
+    }, { properties: { batchId } })
   } finally {
     try {
       await flowmark.flush()

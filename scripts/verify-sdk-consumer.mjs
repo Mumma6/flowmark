@@ -327,37 +327,35 @@ try {
   // Compile the actual served guide, not a separately maintained copy. Only
   // supply application helpers and resolve the example's application aliases.
   const guideFiles = []
-  for (const sdkVersion of ["0.3.0", "0.4.0"]) {
-    const guideDirectory = `guide-${sdkVersion}`
-    await mkdir(join(consumer, guideDirectory))
-    const snippets = [
-      ...instrumentationGuide(runtimeEnv.FLOWMARK_API_URL, sdkVersion).matchAll(
-        /```ts\n([\s\S]*?)```/g,
-      ),
-    ].map(([, code]) => code)
-    assert.equal(snippets.length, 3)
-    const [business, route] = snippets[1].split("// app/api/import/route.ts\n")
-    await writeFile(join(consumer, guideDirectory, "client.ts"), snippets[0])
-    await writeFile(
-      join(consumer, guideDirectory, "business.ts"),
-      `${business}\ndeclare function loadInvoices(batchId: string): Promise<unknown[]>\ndeclare function saveInvoices(invoices: unknown[]): Promise<{ imported: number; rejected: number }>\n`,
-    )
-    await writeFile(
-      join(consumer, guideDirectory, "route.ts"),
-      route
-        .replaceAll("@/lib/flowmark", "./client.js")
-        .replaceAll("@/business/import-invoices", "./business.js"),
-    )
-    await writeFile(
-      join(consumer, guideDirectory, "script.ts"),
-      snippets[2].replaceAll("./business/import-invoices", "./business.js"),
-    )
-    guideFiles.push(
-      ...["client.ts", "business.ts", "route.ts", "script.ts"].map(
-        (file) => `${guideDirectory}/${file}`,
-      ),
-    )
-  }
+  const guideDirectory = "guide"
+  await mkdir(join(consumer, guideDirectory))
+  const snippets = [
+    ...instrumentationGuide(runtimeEnv.FLOWMARK_API_URL).matchAll(
+      /```ts\n([\s\S]*?)```/g,
+    ),
+  ].map(([, code]) => code)
+  assert.equal(snippets.length, 3)
+  const [business, route] = snippets[1].split("// app/api/import/route.ts\n")
+  await writeFile(join(consumer, guideDirectory, "client.ts"), snippets[0])
+  await writeFile(
+    join(consumer, guideDirectory, "business.ts"),
+    `${business}\ndeclare function loadInvoices(batchId: string): Promise<unknown[]>\ndeclare function saveInvoices(invoices: unknown[]): Promise<{ imported: number; rejected: number }>\n`,
+  )
+  await writeFile(
+    join(consumer, guideDirectory, "route.ts"),
+    route
+      .replaceAll("@/lib/flowmark", "./client.js")
+      .replaceAll("@/business/import-invoices", "./business.js"),
+  )
+  await writeFile(
+    join(consumer, guideDirectory, "script.ts"),
+    snippets[2].replaceAll("./business/import-invoices", "./business.js"),
+  )
+  guideFiles.push(
+    ...["client.ts", "business.ts", "route.ts", "script.ts"].map(
+      (file) => `${guideDirectory}/${file}`,
+    ),
+  )
   await run(
     process.execPath,
     [
