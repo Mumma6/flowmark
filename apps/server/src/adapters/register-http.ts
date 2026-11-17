@@ -10,6 +10,9 @@ class RegistrationUnavailable extends Data.TaggedError(
 }> {}
 
 const RegisterBody = Schema.Struct({
+  invitationToken: Schema.optional(
+    Schema.String.check(Schema.isMaxLength(128)),
+  ),
   name: Schema.optional(Schema.String),
   email: Schema.NonEmptyString,
   password: Schema.String.pipe(Schema.check(Schema.isMinLength(8))),
@@ -30,6 +33,9 @@ export const handleRegister = Effect.fn("handleRegister")(function* (
   const headers = new Headers(request.headers)
   headers.set("content-type", "application/json")
   headers.delete("content-length")
+  if (body.invitationToken !== undefined) {
+    headers.set("x-flowmark-registration-invite", body.invitationToken)
+  }
   const response = yield* Effect.tryPromise({
     try: () =>
       auth.handler(

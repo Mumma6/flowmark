@@ -86,6 +86,26 @@ test("capture is caller-owned, deduplicates retries and can clear bearer links",
   )
 })
 
+test("registration invitations use the private signup link and environment label", async () => {
+  const actionUrl = `${origin}/sign-up?invite=${"a".repeat(43)}`
+  const mail = await Effect.runPromise(
+    renderEmail(
+      {
+        ...message,
+        kind: "registration-invitation",
+        actionUrl,
+        expiresInMinutes: 1440,
+      },
+      origin,
+      "staging",
+    ),
+  )
+  assert.match(mail.subject, /^\[Staging\]/)
+  assert.ok(mail.text.includes(actionUrl))
+  assert.match(mail.text, /email address this invitation was sent to/)
+  assert.match(mail.text, /expires in 1440 minutes/)
+})
+
 test("all Staging templates are visibly labeled and cannot collide with Production messages", async () => {
   await Effect.runPromise(
     Effect.forEach(

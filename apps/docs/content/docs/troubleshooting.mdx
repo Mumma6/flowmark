@@ -5,13 +5,14 @@ description: Diagnose missing runs, incomplete timelines, and reported failures.
 
 ## Resume setup or recover a lost key
 
-Open **Setup and key recovery** from Studio's Getting started checklist. During
+Open **Setup instructions** in the empty Studio view, **Setup guide** from the
+account menu, or **Settings → Setup help** for the AI setup prompt and manual SDK steps. During
 initial setup, progress is saved to your account; refreshing does not preserve
 the one-time key value.
 
 Choose the project you own before continuing. Setup requires a **server write
 key** for that project; read keys and browser keys cannot authorize server SDK
-ingestion. If you lost the secret or revoked the key, return to the key step and
+ingestion. If you lost the secret or revoked the key, open **Save your ingestion key**, expand **Need a new write key?** and
 choose **Create another server write key**. Existing keys keep working. Save the
 new value in your server environment, never in browser code or local storage.
 
@@ -20,12 +21,18 @@ different from an empty project. If copying is unavailable, select and copy the
 displayed text manually. Account, security and setup help remain reachable from
 the setup header.
 
-Installing the SDK or finishing the guide does not prove a connection. The run
-step checks for a received run in the selected project. You can finish setup
-before reporting a run and return to the guide later. If a run remains missing,
-check the project, API origin, key permissions and revocation state below;
-rate-limited requests need to respect the server's retry guidance. Flowmark
-does not execute your application to generate a test run.
+Onboarding ends at **Get setup instructions**. Choose **Open Studio** without
+waiting for installation, deployment or telemetry. You can reopen the guide later.
+Studio shows an empty state until your application sends evidence after your
+normal release process and actual process execution. You can close Studio and
+return later; an empty view does not establish whether the SDK is installed or
+deployed.
+
+Installing the SDK does not prove that evidence arrived. If executions remain
+missing when your application should have sent them, check the project, API
+origin, key permissions and revocation state below. Flowmark does not execute
+your application to generate a test run. MCP read access is a separate connection
+in Connect.
 
 ## Studio access or session errors
 

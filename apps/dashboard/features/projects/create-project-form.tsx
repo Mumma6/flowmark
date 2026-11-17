@@ -71,8 +71,9 @@ export function CreateProjectForm({
         </Button>
       </form>
       <p className="text-xs leading-6 text-muted-foreground">
-        Creating a project also issues the first server write key. Put that key
-        in your app environment — not in the browser.
+        Your project includes a write key for sending evidence. Save it for your
+        application’s server environment; keep it out of AI chats and browser
+        code.
       </p>
       {secret ? (
         <SecretAlert secret={secret} label="The new project write key is" />

@@ -7,19 +7,15 @@ export const cursorMcpRedirectUris = [
 ] as const
 
 export function cursorMcpConfig(mcpUrl: string): string {
-  return JSON.stringify(
-    {
-      mcpServers: {
-        flowmark: {
-          url: mcpUrl,
-          auth: {
-            CLIENT_ID: cursorMcpClientId,
-            scopes: ["openid", "offline_access", "flowmark:read"],
-          },
-        },
-      },
-    },
-    null,
-    2,
-  )
+  return `{
+  "mcpServers": {
+    "flowmark": {
+      "url": ${JSON.stringify(mcpUrl)},
+      "auth": {
+        "CLIENT_ID": "${cursorMcpClientId}",
+        "scopes": ["openid", "offline_access", "flowmark:read"]
+      }
+    }
+  }
+}`
 }

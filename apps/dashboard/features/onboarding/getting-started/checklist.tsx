@@ -1,7 +1,6 @@
 "use client"
 
 import {
-  Badge,
   Button,
   Card,
   CardContent,
@@ -9,59 +8,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@flowmark/ui"
-import { Check } from "lucide-react"
 import Link from "next/link"
-import { type ReactNode } from "react"
-import { CopyButton, DataState } from "../../shared/dashboard-components"
-import { projectListState } from "../../projects/project-list-state"
-import { useApiOrigin } from "../../platform/runtime-config"
+import { DataState } from "../../shared/dashboard-components"
 import { CreateProjectForm } from "../../projects/create-project-form"
-import { useProjectKeys } from "../../projects/keys-query"
 import { useProject } from "../../projects/project-context"
-import { hasServerWriteKey } from "../onboarding-state"
-import {
-  manualWorkflowSnippet,
-  serverEnvironmentSnippet,
-} from "../../connect/setup/setup-instructions"
-import { AgentPromptBody } from "./agent-prompt-card"
 
-function ChecklistRow({
-  done,
-  title,
-  required,
-  children,
-}: {
-  done: boolean
-  title: string
-  required?: boolean
-  children: ReactNode
-}) {
-  return (
-    <li className="grid gap-3 rounded-lg border border-border p-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <Badge
-          variant={done ? "success" : "secondary"}
-          className="inline-flex items-center gap-1"
-        >
-          {done ? (
-            <>
-              <Check size={12} aria-hidden="true" /> Done
-            </>
-          ) : required ? (
-            "Required"
-          ) : (
-            "Next"
-          )}
-        </Badge>
-        <h3 className="text-sm font-medium">{title}</h3>
-      </div>
-      <div className="grid gap-3 text-sm leading-6 text-muted-foreground">
-        {children}
-      </div>
-    </li>
-  )
-}
-
+/** A short route back into setup, rather than a second copy of every SDK step. */
 export function GettingStartedChecklist({
   hasRuns,
   compact = false,
@@ -69,162 +21,82 @@ export function GettingStartedChecklist({
   hasRuns: boolean
   compact?: boolean
 }) {
-  const { current, projects, pending, error, retry } = useProject()
-  const list = projectListState({
-    pending,
-    failed: error !== null,
-    count: projects.length,
-  })
-  const hasProject = list === "ready"
-  const keys = useProjectKeys()
-  const hasWriteKey = hasServerWriteKey(keys.data?.apiKeys ?? [])
-  const origin = useApiOrigin()
-  const snippet = manualWorkflowSnippet(origin)
-
+  const { current, pending, error, retry } = useProject()
   return (
     <Card>
       <CardHeader>
         <CardTitle>
-          {list === "unavailable"
-            ? "Projects could not be loaded"
-            : !hasProject
-              ? "Create a project to continue"
-              : hasRuns
-                ? "Getting started"
-                : "No runs yet — get started"}
+          {hasRuns
+            ? "Explore your process evidence"
+            : current
+              ? "Waiting for application data"
+              : "Create your first project"}
         </CardTitle>
         <CardDescription>
-          {list === "unavailable"
-            ? "The project list failed. This is not an empty account."
-            : !hasProject
-              ? "Sign-up only creates your account. A project holds runs and ingestion keys — create one before you can instrument an app."
-              : "Flowmark observes work your application already runs. It does not execute, schedule, or retry that work. Completed means the application reported completion — not that every record succeeded."}
+          {hasRuns
+            ? "Start with the reported result, then inspect the work behind it."
+            : "Install and deploy the SDK when you are ready. Executions appear here when your application sends evidence."}
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        <Button asChild variant="outline" className="mb-4">
-          <Link href="/onboarding?mode=guide">Open setup and key recovery</Link>
-        </Button>
-        <ol className="grid gap-3" aria-label="Getting started checklist">
-          <ChecklistRow
-            done={hasProject}
-            required={!hasProject}
-            title="Create a project"
-          >
-            {hasProject ? (
-              <p>
-                Active project: <strong>{current?.name ?? "Selected"}</strong>.
-                Add another in{" "}
+      <CardContent className="grid gap-4">
+        <DataState pending={pending} error={error} retry={retry} />
+        {!pending && !error && !current ? <CreateProjectForm /> : null}
+        {current ? (
+          <>
+            <ol
+              className="grid list-decimal gap-3 pl-5 text-sm leading-6 text-muted-foreground"
+              aria-label="Getting started checklist"
+            >
+              {hasRuns ? (
+                <>
+                  <li>
+                    Select a process in Explore to see its execution history.
+                  </li>
+                  <li>
+                    Open an execution. Outcome shows reported results; Timeline
+                    shows operations and failures.
+                  </li>
+                  <li>
+                    Ask Cursor to investigate with Flowmark MCP and follow the
+                    supporting Studio links.
+                  </li>
+                </>
+              ) : (
+                <>
+                  <li>
+                    Save the ingestion key for <strong>{current.name}</strong>{" "}
+                    in your application's server environment.
+                  </li>
+                  <li>
+                    Copy the setup prompt into your AI agent to install the SDK
+                    and instrument one process, or follow the manual SDK steps.
+                  </li>
+                  <li>
+                    Deploy through your usual release process. When the
+                    instrumented process runs and sends evidence, its executions
+                    appear in Studio.
+                  </li>
+                </>
+              )}
+            </ol>
+            <div className="flex flex-wrap gap-2">
+              <Button asChild>
                 <Link
-                  href="/settings?section=projects"
-                  className="text-primary underline"
+                  href={
+                    hasRuns ? "/" : "/onboarding?mode=guide&step=instrument"
+                  }
                 >
-                  Settings → Projects
+                  {hasRuns ? "Explore executions" : "SDK setup instructions"}
                 </Link>
-                .
-              </p>
-            ) : list === "unavailable" || list === "pending" ? (
-              <DataState
-                pending={list === "pending"}
-                error={list === "unavailable" ? error : null}
-                retry={retry}
-              />
-            ) : (
-              <CreateProjectForm />
-            )}
-          </ChecklistRow>
-          <ChecklistRow done={hasWriteKey} title="Keep the write key">
-            <p>
-              Creating a project issues the first server write key. Create more
-              or rotate keys in{" "}
-              <Link
-                href="/settings?section=keys"
-                className="text-primary underline"
-              >
-                Settings → Ingestion keys
-              </Link>
-              . Studio sign-in is a different credential.
-            </p>
-            {hasWriteKey ? (
-              <p>This project already has at least one write key.</p>
-            ) : hasProject ? (
-              <Button asChild size="sm" className="justify-self-start">
-                <Link href="/settings?section=keys">Open ingestion keys</Link>
               </Button>
-            ) : (
-              <p>Finish creating a project above to receive the first key.</p>
-            )}
-          </ChecklistRow>
-          <ChecklistRow
-            done={hasRuns}
-            title="Install the SDK and set environment"
-          >
-            <p>
-              Put the key on the server only. <code>FLOWMARK_API_URL</code> is
-              the API origin, not <code>/v1/events</code>.
-            </p>
-            <pre className="overflow-x-auto rounded-lg border border-border bg-muted p-4 text-xs leading-6">
-              {serverEnvironmentSnippet(origin)}
-            </pre>
-            <CopyButton
-              value={serverEnvironmentSnippet(origin)}
-              label="Copy env"
-            />
-          </ChecklistRow>
-          <ChecklistRow done={hasRuns} title="Mark one process">
-            <p>
-              Wrap a real process — not ordinary CRUD. Prefer work with
-              operations, progress, or a useful reported result.
-            </p>
-            {!compact && hasProject && (
-              <>
-                <pre className="overflow-x-auto rounded-lg border border-border bg-muted p-4 text-xs leading-6">
-                  {snippet}
-                </pre>
-                <div className="flex flex-wrap gap-2">
-                  <CopyButton value={snippet} label="Copy snippet" />
-                </div>
-                <AgentPromptBody />
-              </>
-            )}
-            {compact && (
-              <p>
-                Use agent or manual setup in{" "}
-                <Link href="/connect" className="text-primary underline">
-                  Connect
-                </Link>{" "}
-                or{" "}
-                <Link
-                  href="/settings?section=setup"
-                  className="text-primary underline"
-                >
-                  Settings → Setup help
-                </Link>
-                .
-              </p>
-            )}
-            {!hasProject && (
-              <p>Create a project first, then install the SDK.</p>
-            )}
-          </ChecklistRow>
-          <ChecklistRow done={hasRuns} title="Open the first run">
-            {hasRuns ? (
-              <p>
-                Runs are arriving. Open{" "}
-                <Link href="/runs" className="text-primary underline">
-                  Runs
-                </Link>{" "}
-                or a workflow to inspect timeline, operations, and reported
-                outcomes.
-              </p>
-            ) : (
-              <p>
-                When the API receives telemetry, the run appears here. Refresh
-                Overview after your app reports one execution.
-              </p>
-            )}
-          </ChecklistRow>
-        </ol>
+              {!compact ? (
+                <Button asChild variant="outline">
+                  <Link href="/onboarding?mode=guide">Reopen setup guide</Link>
+                </Button>
+              ) : null}
+            </div>
+          </>
+        ) : null}
       </CardContent>
     </Card>
   )

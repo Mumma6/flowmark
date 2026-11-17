@@ -10,7 +10,7 @@ captures are implemented. Capture admission and physical cleanup have separate
 operational gates. Connect supports setup, consent and own-connection revocation;
 copying instructions alone never establishes a connection. Connect shows the
 MCP endpoint when this deployment returns protected-resource metadata, including
-the Cursor public client id. A failed metadata check keeps the manual handoff
+the Cursor public client id. Cursor is the recommended verified MCP client. A failed metadata check keeps the manual handoff
 and does not describe MCP as a future feature. Studio does not render
 the landing's synthetic examples. See [implementation status](../../docs/implementation-status.md).
 
@@ -44,6 +44,11 @@ features (`auth`, `platform`, `runs` and `reporting`).
   `view` or history `view=runs`. Search/process/status filters stay in the URL; all applied conditions remain visible. All filters
   opens the existing history with the exact same conditions. Process selection
   becomes a compact selector on mobile. Run links preserve the return cohort.
+  A confirmed empty project shows one calm **No recorded executions** state and
+  a **Setup instructions** link, without empty analytics, filters or pagination.
+  Failed reads and empty filtered results remain distinct. When evidence arrives,
+  the existing polling restores the normal workspace with execution evidence
+  before period analytics; no completion gate or celebration is added.
 - **Overview (`/overview`):** four seven-day execution metrics from `project.intelligence`,
   all-recorded workflow summaries, failures within the latest-100 snapshot,
   five recent runs with reported results, 30-day trend charts, observed-change
@@ -63,7 +68,13 @@ features (`auth`, `platform`, `runs` and `reporting`).
   result; Outcome, Timeline, Context, Compare and Related runs tabs. Timeline
   offers a waterfall and paginated event table. Peer sample size and recorded
   links remain explicit; raw data/exports are available without dominating.
-- **Connect (`/connect`):** agent and manual SDK setup with separate copied, configured, and observed states, instrumentation guide links, and recovery for lost keys or wrong project/origin. Explore links use `/`. Remote MCP copy follows the deployment probe: the endpoint and Cursor public client when metadata matches, and a manual handoff when metadata could not be confirmed.
+- **Connect (`/connect`):** a separate MCP read-access journey: Cursor configuration
+  → browser sign-in/project approval → connection-check prompt → investigation of
+  executions, failures and reported outcomes. An empty process list can verify
+  reads before telemetry exists. Connection management, investigation examples and
+  protocol details use progressive disclosure. SDK setup is linked separately.
+  Copied configuration, authenticated connections and observed executions remain
+  distinct. Empty Explore links to the SDK setup guide.
 - **Settings:** project creation/rename, write/browser key management, Connect setup help
   and account controls. Project switching stays in the navigation.
 - **Search:** the navbar command palette opens with ⌘K / Ctrl+K. Pages and
@@ -74,9 +85,12 @@ features (`auth`, `platform`, `runs` and `reporting`).
 - **Account and workspace:** the shared Sheet holds navigation to history,
   overview, Connect, settings and the setup guide, alongside appearance and sign-out.
   Project loading failures show retry feedback rather than an empty account.
-- **Onboarding:** five persisted setup steps retain the existing project/key
-  and completion logic. Installation uses the validated API origin. Agent
-  instructions contain no write key and do not establish an agent connection.
+- **Onboarding:** three steps cover project creation, saving the ingestion key
+  and obtaining AI-assisted or manual SDK instructions. It does not query telemetry
+  or wait for installation, releases or executions. Open Studio completes setup
+  with the existing owner/write-key checks. Saved `install` and `run` progress
+  resumes at instructions. Evidence arrival and optional MCP investigation belong
+  in Studio and Connect after onboarding.
   Completed users can revisit `/onboarding?mode=guide`; that mode changes only
   local step navigation and never rewrites completed onboarding state.
 

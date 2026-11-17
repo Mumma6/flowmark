@@ -12,7 +12,10 @@ export class DashboardAuthError extends Data.TaggedError("DashboardAuthError")<{
 }> {}
 
 export type SignInInput = { readonly email: string; readonly password: string }
-export type RegistrationInput = SignInInput & { readonly name: string }
+export type RegistrationInput = SignInInput & {
+  readonly name: string
+  readonly invitationToken?: string
+}
 export type PasswordInput = {
   readonly currentPassword: string
   readonly newPassword: string

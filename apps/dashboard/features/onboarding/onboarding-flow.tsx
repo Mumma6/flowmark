@@ -12,9 +12,7 @@ import { steps } from "./steps"
 import { useOnboarding } from "./use-onboarding"
 import { guidance } from "./onboarding-guidance"
 import { KeyStep } from "./step-views/key-step"
-import { InstallStep } from "./step-views/install-step"
 import { InstrumentStep } from "./step-views/instrument-step"
-import { RunStep } from "./step-views/run-step"
 import { ProjectStep } from "./step-views/project-step"
 function OnboardingContent({
   email,
@@ -28,7 +26,6 @@ function OnboardingContent({
   const {
     current,
     projects,
-    snapshot,
     keys,
     origin,
     step,
@@ -37,7 +34,6 @@ function OnboardingContent({
     setCreatedSecret,
     currentStep,
     hasWriteKey,
-    hasRuns,
     advance,
     complete,
     snippet,
@@ -145,8 +141,8 @@ function OnboardingContent({
             <br className="hidden sm:block" /> understandable.
           </h1>
           <p className="mt-4 max-w-lg text-xs leading-7 text-muted-foreground">
-            A few deliberate signals are enough to begin. Set up your
-            application, report one execution, and explore what happened.
+            Create a project, save its key and get your SDK setup instructions.
+            You can install and deploy on your own schedule.
           </p>
         </div>
         <div className="grid items-start gap-8 lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-12">
@@ -158,7 +154,7 @@ function OnboardingContent({
               aria-valuemax={steps.length}
               aria-valuenow={step + 1}
               aria-valuetext={`Step ${step + 1} of ${steps.length}: ${currentStep.title}`}
-              className="mb-5 grid grid-cols-5 gap-1.5"
+              className="mb-5 grid grid-cols-3 gap-1.5"
             >
               {steps.map((item, index) => (
                 <span
@@ -248,10 +244,7 @@ function OnboardingContent({
                   setCreatedSecret={setCreatedSecret}
                 />
               ) : null}
-              {currentStep.id === "install" ? (
-                <InstallStep origin={origin} />
-              ) : null}
-              {!reviewMode && step > 1 && (
+              {!reviewMode && currentStep.id === "instrument" && (
                 <>
                   <DataState
                     pending={keys.isPending}
@@ -271,7 +264,7 @@ function OnboardingContent({
                           variant="outline"
                           onClick={() => setStep(1)}
                         >
-                          Return to key recovery
+                          Set up application key
                         </Button>
                       </AlertDescription>
                     </Alert>
@@ -279,15 +272,7 @@ function OnboardingContent({
                 </>
               )}
               {currentStep.id === "instrument" ? (
-                <InstrumentStep
-                  current={current}
-                  origin={origin}
-                  snippet={snippet}
-                  recoverKey={() => setStep(1)}
-                />
-              ) : null}
-              {currentStep.id === "run" ? (
-                <RunStep snapshot={snapshot} hasRuns={hasRuns} />
+                <InstrumentStep origin={origin} snippet={snippet} />
               ) : null}
               <div className="border-l border-primary/25 pl-4">
                 <p className="text-[11px] font-medium">
@@ -322,11 +307,11 @@ function OnboardingContent({
               >
                 {busy
                   ? "Saving…"
-                  : currentStep.id === "run"
-                    ? hasRuns
-                      ? "Open Studio"
-                      : "Finish setup"
-                    : "Continue"}
+                  : currentStep.id === "instrument"
+                    ? "Open Studio"
+                    : currentStep.id === "key"
+                      ? "Get setup instructions"
+                      : "Continue"}
                 <ArrowRight aria-hidden="true" className="size-3.5" />
               </Button>
             </div>

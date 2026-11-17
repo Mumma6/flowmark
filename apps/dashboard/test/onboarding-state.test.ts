@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest"
+import { stepIndex, steps } from "../features/onboarding/steps"
 import {
   hasServerWriteKey,
   initialSetupStep,
@@ -31,4 +32,12 @@ describe("selected-project setup state", () => {
     expect(setupSecretForProject(pending, "new-project")).toBe(value)
     expect(setupSecretForProject(null, "new-project")).toBeNull()
   })
+})
+
+it("resumes retired install and waiting steps at instructions without requiring telemetry", () => {
+  expect(steps.map((step) => step.id)).toEqual(["project", "key", "instrument"])
+  expect(steps[stepIndex("install")]?.id).toBe("instrument")
+  expect(steps[stepIndex("key")]?.id).toBe("key")
+  expect(steps[stepIndex("run")]?.id).toBe("instrument")
+  expect(steps[stepIndex("unknown")]?.id).toBe("project")
 })

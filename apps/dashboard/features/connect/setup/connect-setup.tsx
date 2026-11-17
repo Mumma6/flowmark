@@ -19,7 +19,6 @@ import { projectListState } from "../../projects/project-list-state"
 import type { ConnectSetupStage } from "./connect-setup-state"
 import { setupRecoveryCopy } from "./setup-instructions"
 import { connectPageDescription } from "../access/agent-access-guidance"
-import { useAgentAccessDeployment } from "../../platform/runtime-config"
 import { AgentAccessGuide } from "./agent-access-guide"
 import { SetupPathTabs } from "./setup-path-tabs"
 import { useConnectSetup } from "./use-connect-setup"
@@ -36,10 +35,10 @@ function ConnectRecovery({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Recovery</CardTitle>
+        <CardTitle>Application setup help</CardTitle>
         <CardDescription>
-          Common setup mistakes stay actionable without claiming an agent
-          connection or OAuth grant.
+          Check the write key, selected project and API URL if evidence is
+          missing.
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-4 text-sm leading-6 text-muted-foreground">
@@ -117,7 +116,14 @@ export function ConnectSetupPanel({ compact = false }: { compact?: boolean }) {
 
   return (
     <div className="grid gap-6">
-      <ConnectSetupStages stages={stages} />
+      <details>
+        <summary className="cursor-pointer text-sm font-medium">
+          Application setup progress
+        </summary>
+        <div className="mt-4">
+          <ConnectSetupStages stages={stages} />
+        </div>
+      </details>
       <DataState
         pending={keys.isPending}
         error={keys.error}
@@ -145,17 +151,23 @@ export function ConnectSetupPanel({ compact = false }: { compact?: boolean }) {
         onCopied={markCopied}
       />
       {!compact ? (
-        <ConnectRecovery
-          apiOrigin={origin}
-          projectName={current?.name ?? null}
-        />
+        <details>
+          <summary className="cursor-pointer text-sm font-medium">
+            Troubleshoot application setup
+          </summary>
+          <div className="mt-4">
+            <ConnectRecovery
+              apiOrigin={origin}
+              projectName={current?.name ?? null}
+            />
+          </div>
+        </details>
       ) : null}
     </div>
   )
 }
 
 export function ConnectPage() {
-  const deployment = useAgentAccessDeployment()
   const { current, projects, pending, error, retry } = useProject()
   const list = projectListState({
     pending,
@@ -163,11 +175,8 @@ export function ConnectPage() {
     count: projects.length,
   })
   return (
-    <div className="grid min-w-0 gap-6">
-      <PageHeading
-        title="Connect"
-        description={connectPageDescription(deployment.kind)}
-      />
+    <div className="grid min-w-0 gap-5 text-xs [&_h1]:text-2xl [&_h2]:text-base [&_h3]:text-xs [&_p]:text-xs [&_p]:leading-5 [&_li]:text-xs [&_li]:leading-5 [&_summary]:text-xs [&_pre]:text-[11px] [&_pre]:leading-5 [&_button]:h-8 [&_button]:min-h-8 [&_button]:px-3 [&_button]:text-[11px] [&_a.inline-flex]:h-8 [&_a.inline-flex]:min-h-8 [&_a.inline-flex]:text-[11px]">
+      <PageHeading title="Connect" description={connectPageDescription()} />
       {list === "unavailable" || list === "pending" ? (
         <DataState
           pending={list === "pending"}
@@ -179,8 +188,8 @@ export function ConnectPage() {
           <AlertTitle>Create a project first</AlertTitle>
           <AlertDescription className="grid gap-3">
             <p>
-              Projects own ingestion keys and recorded evidence. Create one in
-              Settings before you configure an application.
+              Create a project in Settings, then choose which evidence Cursor
+              can read.
             </p>
             <Button asChild size="sm" className="justify-self-start">
               <Link href="/settings?section=projects">Go to Projects</Link>
@@ -194,22 +203,26 @@ export function ConnectPage() {
             <strong className="text-foreground">
               {current?.name ?? "Selected"}
             </strong>
-            . Switch projects in the header when you change which application
-            you are configuring.
+            .
           </p>
-          <div className="grid gap-8">
-            <div className="grid gap-2">
-              <h2 className="text-lg font-semibold tracking-tight">
-                Instrument your application
-              </h2>
-              <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
-                Add telemetry with a coding agent or manual SDK steps. This uses
-                ingestion write keys — not agent read access.
-              </p>
-            </div>
-            <ConnectSetupPanel />
-            <hr className="border-border" />
+          <div className="grid gap-6">
             <AgentAccessGuide />
+            <details>
+              <summary className="cursor-pointer text-xs text-muted-foreground">
+                Need to instrument your application first?
+              </summary>
+              <p className="mt-3 text-xs leading-5 text-muted-foreground">
+                Use the{" "}
+                <Link
+                  href="/onboarding?mode=guide&step=instrument"
+                  className="text-primary underline underline-offset-4"
+                >
+                  SDK setup guide
+                </Link>{" "}
+                to copy an AI setup prompt or follow the manual steps. SDK
+                installation works independently of MCP.
+              </p>
+            </details>
           </div>
         </>
       )}

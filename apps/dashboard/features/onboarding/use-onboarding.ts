@@ -1,6 +1,6 @@
 "use client"
 
-import { useMutation, useQuery } from "@tanstack/react-query"
+import { useMutation } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
 import { useMemo, useState } from "react"
 import { useApiOrigin } from "../platform/runtime-config"
@@ -28,28 +28,35 @@ export function useOnboarding(initialStep: string, reviewMode = false) {
     setSecret({ value, projectId })
   const currentStep = steps[step] ?? steps[0]!
   const keys = useProjectKeys({ retry: false })
-  const snapshot = useQuery({
-    ...trpc.onboarding.snapshot.queryOptions(current?.id ?? ""),
-    enabled: Boolean(current?.id),
-    retry: false,
-  })
   const hasWriteKey = keys.isSuccess && hasServerWriteKey(keys.data.apiKeys)
-  const hasRuns = snapshot.isSuccess && snapshot.data.metrics.totalRuns > 0
   const advance = useMutation(
     trpc.onboarding.advance.mutationOptions({
       onSuccess: () => undefined,
     }),
   )
-  const complete = useMutation(
-    trpc.onboarding.complete.mutationOptions({
-      onSuccess: () => {
-        router.push("/")
-        router.refresh()
-      },
-    }),
-  )
+  const complete = useMutation(trpc.onboarding.complete.mutationOptions())
+  const finish = () => {
+    if (reviewMode) {
+      router.push("/")
+      return
+    }
+    if (current) {
+      complete.mutate(
+        { projectId: current.id },
+        {
+          onSuccess: () => {
+            router.push("/")
+            router.refresh()
+          },
+        },
+      )
+    }
+  }
   const origin = useApiOrigin()
-  const snippet = useMemo(() => flowmarkAgentPrompt(origin), [origin])
+  const snippet = useMemo(
+    () => flowmarkAgentPrompt(origin, current),
+    [origin, current],
+  )
 
   const goTo = (next: number) => {
     const nextStep = steps[next]
@@ -67,16 +74,14 @@ export function useOnboarding(initialStep: string, reviewMode = false) {
   const next = () => {
     if (reviewMode) {
       if (step === steps.length - 1) {
-        router.push("/")
+        finish()
         return
       }
       setStep((value) => value + 1)
       return
     }
     if (step === steps.length - 1) {
-      if (current) {
-        complete.mutate({ projectId: current.id })
-      }
+      finish()
       return
     }
     goTo(step + 1)
@@ -85,7 +90,6 @@ export function useOnboarding(initialStep: string, reviewMode = false) {
   return {
     current,
     projects,
-    snapshot,
     keys,
     origin,
     step,
@@ -94,7 +98,6 @@ export function useOnboarding(initialStep: string, reviewMode = false) {
     setCreatedSecret,
     currentStep,
     hasWriteKey,
-    hasRuns,
     advance,
     complete,
     snippet,

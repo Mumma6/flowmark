@@ -45,8 +45,8 @@ export function connectSetupStages(
       id: "instructions",
       label: instructionsCopied ? "Instructions copied" : "Copy instructions",
       detail: instructionsCopied
-        ? "Copied locally in this browser. That is not a connection, authorization, or proof of instrumentation."
-        : "Choose the coding-agent or manual path below and copy the instructions you need.",
+        ? "Instructions copied. Follow them in your application, then run the process to verify instrumentation."
+        : "Choose AI-assisted or manual SDK setup below.",
       complete: instructionsCopied,
     },
     {
@@ -64,7 +64,7 @@ export function connectSetupStages(
       label: progress.hasRuns ? "Evidence observed" : "Awaiting first evidence",
       detail: progress.hasRuns
         ? "This project has recorded runs. Open Runs to inspect timeline and reported outcomes."
-        : "Copying instructions or creating a key does not prove telemetry. Run your process and return when evidence arrives.",
+        : "Run your process in the application, then open Explore. A saved key alone does not prove telemetry is arriving.",
       complete: progress.hasRuns,
     },
   ]

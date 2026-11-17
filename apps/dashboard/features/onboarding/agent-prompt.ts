@@ -2,10 +2,25 @@ export function instrumentationGuideUrl(apiOrigin: string): string {
   return `${apiOrigin}/v1/instrumentation`
 }
 
-/** Short instruction copied into an agent chat. The guide itself is fetched from the API. */
-export function flowmarkAgentPrompt(apiOrigin: string): string {
+/** Public documentation and project context only. Never include credentials. */
+export function flowmarkAgentPrompt(
+  apiOrigin: string,
+  project?: { readonly id: string; readonly name: string } | null,
+): string {
   return [
-    `Fetch and follow ${instrumentationGuideUrl(apiOrigin)}`,
-    "Put the write key in the server environment yourself. Fetching this guide does not connect an agent.",
-  ].join("\n")
+    `Fetch and follow ${instrumentationGuideUrl(apiOrigin)} to help me install Flowmark in this repository.`,
+    ...(project
+      ? [
+          `Flowmark project: ${JSON.stringify(project.name)} (project ID: ${project.id}).`,
+        ]
+      : []),
+    "Read the actual @flowmarkdev/node README and the SDK documentation the guide references. If you cannot read them, stop and tell me; do not invent APIs.",
+    "1. Inspect the repository, framework, package manager and existing telemetry. Suggest one useful process (for example an import, checkout or background job), explain what we will learn, and keep the first change small.",
+    "2. Install @flowmarkdev/node with this repo's package manager and create one shared client using the documented Node or Next.js entry point. Ask me to put the project write key in the server environment myself; never read, print, commit or request the key in chat.",
+    `Use FLOWMARK_API_URL=${apiOrigin}. Keep all server credentials out of browser bundles and prompts.`,
+    "3. Add a workflow run around existing work, a few useful milestones or operations, and explicit completion/failure markers. Report a small business result the application already knows, such as imported, skipped or rejected counts. Preserve return values, original errors and existing execution/retry behavior. Handle telemetry delivery separately at the documented runtime boundary.",
+    "4. Run the relevant local checks. If an existing test or safe application action runs the actual instrumented process, explain how I can use it to check delivery. Do not create artificial executions or add verification APIs. Do not run destructive or external business actions without asking. If this process cannot safely run now, explain what was checked locally and leave delivery unverified; I can deploy and wait for real activity.",
+    "5. When a real execution has been reported, guide me to this project in Flowmark Studio. Select the instrumented process in Explore, open its execution, and check the reported result, operations and failures. If no execution appears, check the application configuration and documented SDK delivery diagnostics. A successful install alone does not verify that evidence arrived.",
+    "You edit this repository using your normal coding tools. The SDK sends telemetry when the application runs. Completion is application-reported, not verified business success; missing terminal telemetry does not prove activity or failure. Do not add advanced declarations, relationships or expectations unless this first process needs them.",
+  ].join("\n\n")
 }

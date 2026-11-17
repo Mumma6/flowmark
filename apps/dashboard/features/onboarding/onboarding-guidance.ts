@@ -1,43 +1,27 @@
-import { Code2, KeyRound, Radio, Workflow } from "lucide-react"
+import { KeyRound, Workflow } from "lucide-react"
 export const guidance = {
   project: {
     icon: Workflow,
     description:
-      "Give your application a home. A project keeps its evidence, access and ingestion keys together.",
-    note: "One application, one context.",
+      "Start with the application you want to understand. A project keeps its process evidence and access together.",
+    note: "Start small.",
     detail:
-      "You can create more projects later. Start with the application and environment you want to understand first.",
+      "Name your project after your application. You can create more projects later.",
   },
   key: {
     icon: KeyRound,
     description:
-      "Save the credential your application uses to send evidence. Your Studio account and your write key have different jobs.",
-    note: "Your key stays on your server.",
+      "Your project includes a server write key. Save it for the application that will send evidence to Flowmark.",
+    note: "Keep the key in your server environment.",
     detail:
-      "Store it in your application's server environment. Keep it out of browser bundles, Git, agent prompts and chat messages.",
-  },
-  install: {
-    icon: Code2,
-    description:
-      "Add the TypeScript SDK to the application you already own. Keep your runtime, framework and business logic.",
-    note: "Built around your application.",
-    detail:
-      "Use the Node client for workers and servers, or the Next.js adapter for request-lifecycle delivery. The API URL is the origin, without /v1/events.",
+      "The full value is shown only once. Keep it out of browser code, source control and AI chats. You can create another here if needed.",
   },
   instrument: {
     icon: Workflow,
     description:
-      "Choose one process worth understanding. Use your coding agent to add meaningful context and reported outcomes.",
-    note: "Give the agent guidance, not secrets.",
+      "Copy a setup prompt for your AI agent, or follow the manual SDK instructions. You can reopen these instructions from Studio whenever you need them.",
+    note: "Continue to Studio whenever you're ready.",
     detail:
-      "These instructions work with Codex, Cursor, Claude Code or your coding agent. Copying a prompt does not connect or authorize an agent.",
-  },
-  run: {
-    icon: Radio,
-    description:
-      "Run your application normally, then follow the execution evidence into Studio.",
-    note: "Completion is one piece of evidence.",
-    detail:
-      "Reported results and expected confirmations tell you more. A completed execution does not prove every record succeeded.",
+      "Install, deploy and run your application on your own schedule. Evidence appears in Studio when your application sends it.",
   },
 } as const

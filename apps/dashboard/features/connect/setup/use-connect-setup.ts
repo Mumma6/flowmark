@@ -14,6 +14,7 @@ import {
   type ConnectSetupTransient,
   type SetupPath,
 } from "./connect-setup-state"
+import { hasServerWriteKey } from "../../onboarding/onboarding-state"
 import { flowmarkAgentPrompt } from "./setup-instructions"
 
 export function useConnectSetup() {
@@ -30,9 +31,12 @@ export function useConnectSetup() {
     ...trpc.project.snapshot.queryOptions(),
     enabled: Boolean(current?.id),
   })
-  const hasWriteKey = (keys.data?.apiKeys.length ?? 0) > 0
+  const hasWriteKey = hasServerWriteKey(keys.data?.apiKeys ?? [])
   const hasRuns = (snapshot.data?.metrics.totalRuns ?? 0) > 0
-  const agentPrompt = useMemo(() => flowmarkAgentPrompt(origin), [origin])
+  const agentPrompt = useMemo(
+    () => flowmarkAgentPrompt(origin, current),
+    [origin, current],
+  )
 
   useEffect(() => {
     setTransient(clearConnectSetupTransient())

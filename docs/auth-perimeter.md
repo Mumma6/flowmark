@@ -400,3 +400,47 @@ If confirmation fails, the status remains unknown and **Refresh connections**
 only repeats the read. It never resends the mutation. Connection-detail loading,
 failures and missing authority have separate states; unavailable cached rows
 are not offered as current management targets.
+
+## Invite-only Production registration
+
+Production (`VERCEL_ENV=production`) permits account creation only with an
+unexpired private invitation link and its matching email address. The normal
+`/sign-up` page redirects to sign-in without a link; sign-in has no public signup
+navigation. Both `/api/register` and Better Auth's signup API reach the provider's
+`user.create.before` database hook, which checks the private PostgreSQL allowlist.
+The check compares normalized, case-insensitive mailboxes and a SHA-256 token
+hash. Raw tokens are sent only in the invitation email and registration request,
+never stored in PostgreSQL or logged by the CLI. No invitation lookup endpoint is
+exposed. The invitation is removed after account creation. Links expire after 24
+hours.
+
+From a trusted operator shell configured with the target's existing server email
+and database settings, run:
+
+```sh
+pnpm invite user@example.com
+```
+
+Supply `DATABASE_URL`, `BETTER_AUTH_URL`, `RESEND_API_KEY`,
+`FLOWMARK_EMAIL_FROM`, `FLOWMARK_EMAIL_REPLY_TO`, and
+`FLOWMARK_EMAIL_ENVIRONMENT` from the existing approved environment. For hosted
+targets, also set the existing `NEON_BRANCH` selector to the same environment
+(`production`, `staging`, or `preview`); leave `DATABASE_MIGRATION_URL` unset.
+The command does not pull credentials, load local env files, migrate, or seed.
+Local targets must pass the checkout-owned Compose guard. Check the target
+database and canonical dashboard origin before running: the branch selector is
+an operator assertion, not a provider lookup.
+
+Duplicate active invitations and existing accounts send no email. Running the
+command after expiry issues a new link and invalidates the old one. A reported
+email-submission failure removes that reservation for an explicit retry; an
+ambiguous network failure may already have delivered an email, whose link is then
+invalid. No automatic retries occur. Keep operator secrets out of shell history,
+source control, and chat.
+
+Existing sign-in, optional email verification, recovery, Preview/Staging signup,
+and the anonymous waitlist remain unchanged. Invitations never mark an address
+verified or grant project access. Apply migration `0036` before app rollout using
+the approved ordered migration/deployment workflow. Verify shared Preview before
+merge; Production migration, deployment, and sending invitations require the
+maintainer's approval.

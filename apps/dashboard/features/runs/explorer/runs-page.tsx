@@ -120,18 +120,35 @@ export function ProjectRuns({
     workflow && data ? data.runs.filter((run) => run.workflow === workflow) : []
   const outliers =
     workflow && workflowRuns.length > 0 ? workflowOutliers(workflowRuns) : null
+  const heading = (
+    <PageHeading
+      title={workflow ?? "Runs"}
+      description={
+        workflow
+          ? "Reported results and execution history for this workflow."
+          : "Find an execution by run ID, workflow, failure code or recorded correlation."
+      }
+    >
+      <Refresh fetching={isFetching} onClick={() => void refetch()} />
+    </PageHeading>
+  )
+  if (
+    data &&
+    !error &&
+    data.metrics.totalRuns === 0 &&
+    !workflow &&
+    !hasRunFilters
+  ) {
+    return (
+      <div className="grid min-w-0 gap-6">
+        {heading}
+        <RunExplorer />
+      </div>
+    )
+  }
   return (
     <div className="grid min-w-0 gap-6">
-      <PageHeading
-        title={workflow ?? "Runs"}
-        description={
-          workflow
-            ? "Reported results and execution history for this workflow."
-            : "Find an execution by run ID, workflow, failure code or recorded correlation."
-        }
-      >
-        <Refresh fetching={isFetching} onClick={() => void refetch()} />
-      </PageHeading>
+      {heading}
       <DataState
         pending={isPending}
         error={error}

@@ -1,17 +1,17 @@
-type OnboardingStep = "project" | "key" | "install" | "instrument" | "run"
+type OnboardingStep = "project" | "key" | "instrument"
 
 export const steps: ReadonlyArray<{
   readonly id: OnboardingStep
   readonly title: string
 }> = [
   { id: "project", title: "Create a project" },
-  { id: "key", title: "Secure your write key" },
-  { id: "install", title: "Install the SDK" },
-  { id: "instrument", title: "Instrument a process" },
-  { id: "run", title: "Explore your evidence" },
+  { id: "key", title: "Save your ingestion key" },
+  { id: "instrument", title: "Get setup instructions" },
 ]
 
 export const stepIndex = (value: string): number => {
-  const index = steps.findIndex((step) => step.id === value)
+  // Resume former install/waiting steps at the final instructions; never wait for telemetry.
+  const id = value === "install" || value === "run" ? "instrument" : value
+  const index = steps.findIndex((step) => step.id === id)
   return index >= 0 ? index : 0
 }
