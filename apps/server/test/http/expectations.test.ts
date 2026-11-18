@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto"
-import { Effect } from "effect"
+import { Array as EffectArray, Effect } from "effect"
 import { eq } from "drizzle-orm"
 import {
   afterAll,
@@ -17,7 +17,13 @@ import {
   workflowExpectations,
   workflows,
 } from "@flowmark/db"
-import { Database, rebuildExpectations } from "@flowmark/db/persistence"
+import {
+  Database,
+  ExpectationObservationClock,
+  rebuildExpectations,
+  WorkflowStore,
+  type WorkflowStoreService,
+} from "@flowmark/db/persistence"
 import { POST as register } from "../../app/api/register/route"
 import { POST as auth } from "../../app/api/auth/[...all]/route"
 import {
@@ -95,6 +101,22 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
   "durable expectations through SDK/authorized HTTP/storage/read models",
   () => {
     let connection: ReturnType<typeof createDatabase>
+    let store: WorkflowStoreService
+    const persistHealthEvents = async (
+      projectId: string,
+      events: readonly Parameters<WorkflowStoreService["append"]>[2][],
+    ) => {
+      const dispositions = await Effect.runPromise(
+        Effect.forEach(events, (event) =>
+          store.append(projectId, randomUUID(), event),
+        ).pipe(
+          Effect.provideService(ExpectationObservationClock, {
+            now: () => Effect.sync(() => new Date(clock.value)),
+          }),
+        ),
+      )
+      expect(dispositions).toEqual(EffectArray.map(events, () => "recorded"))
+    }
     let primary: Awaited<ReturnType<typeof owner>>,
       foreign: Awaited<ReturnType<typeof owner>>
     const api = () => caller(primary.cookie, primary.project.id)
@@ -124,21 +146,21 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
       withinMs = 300000,
     ) => ({
       ...base(runId),
-      type: "expectation_declared",
+      type: "expectation_declared" as const,
       expectationId: id,
       name: "provider-response",
       withinMs,
     })
     const resolve = (runId: string, id = "confirmation") => ({
       ...base(runId),
-      type: "expectation_resolved",
+      type: "expectation_resolved" as const,
       expectationId: id,
       outcome: "no-availability",
       result: { reserved: 0 },
     })
     const cancel = (runId: string, id = "confirmation") => ({
       ...base(runId),
-      type: "expectation_cancelled",
+      type: "expectation_cancelled" as const,
       expectationId: id,
       code: "BOOKING_CANCELLED",
     })
@@ -155,6 +177,9 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
       vi.stubEnv("FLOWMARK_DASHBOARD_ORIGIN", origin)
       vi.stubEnv("VERCEL_ENV", "")
       connection = createDatabase(process.env.TEST_DATABASE_URL!)
+      store = await Effect.runPromise(
+        WorkflowStore.make.pipe(Effect.provideService(Database, connection.db)),
+      )
       primary = await owner("TASK014 expectation verification")
       foreign = await owner("TASK014 isolated project")
     }, 15000)
@@ -166,6 +191,255 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
       await connection?.close()
       vi.unstubAllEnvs()
       vi.unstubAllGlobals()
+    })
+
+    it("assesses a workflow and pages declaration identities across live observations", async () => {
+      const workflow = "booking.process-health"
+      const current = "2026-10-31T12:00:00.000Z"
+      const baseline = "2026-10-30T12:00:00.000Z"
+      const record = async (
+        runId: string,
+        revision: string,
+        deadlines: number[],
+        projectId = primary.project.id,
+      ) => {
+        const event = base(runId, workflow)
+        await persistHealthEvents(projectId, [
+          {
+            ...event,
+            type: "started",
+            properties: { definitionRevision: revision },
+          },
+          ...EffectArray.map(deadlines, (withinMs, index) => ({
+            ...declare(runId, `confirmation-${index}`, withinMs),
+            workflow,
+          })),
+          {
+            ...event,
+            type: "completed",
+            outcome: "submitted",
+            result: { private: 7 },
+          },
+        ])
+      }
+      clock.value = baseline
+      await record("same-revision", "v1", [5])
+      clock.value = "2026-10-30T13:00:00.000Z"
+      await record("other-revision", "v2", [5])
+      clock.value = current
+      await record("two-confirmations", "v1", [100, 100, 1_000])
+      await record("missing-confirmation", "v1", [])
+      await record("foreign", "v1", [100, 100, 100], foreign.project.id)
+      clock.value = "2026-10-31T12:00:00.100Z"
+      const query = {
+        workflow,
+        expectationName: "provider-response",
+        window: {
+          startedAfter: current,
+          startedBefore: "2026-11-01T00:00:00.000Z",
+        },
+        limit: 1,
+      }
+      const atDeadline = await api().workflow.processHealth(query)
+      expect(atDeadline).toMatchObject({
+        status: "assessed",
+        observedAt: clock.value,
+        attention: "zero-denominator",
+        current: { expectations: { mature: 0, overdue: 0, pending: 3 } },
+        evidence: { total: 0, records: [] },
+      })
+      clock.value = "2026-10-31T12:00:00.101Z"
+      const first = await api().workflow.processHealth(query)
+      expect(first.status).toBe("assessed")
+      if (first.status !== "assessed" || !first.evidence.nextCursor) {
+        throw new Error("Expected continuation")
+      }
+      expect(first).toMatchObject({
+        attention: "overdue",
+        current: {
+          execution: { completed: 2, failed: 0, withoutTerminal: 0 },
+          businessOutcomes: {
+            reported: [{ outcome: "submitted", runs: 2 }],
+            missing: 0,
+          },
+          evidenceQuality: {
+            revisions: ["v1"],
+            runsWithoutDeclaration: 1,
+            intendedCoverage: "unknown",
+          },
+          expectations: { mature: 2, overdue: 2, pending: 1 },
+        },
+        evidence: { total: 2 },
+      })
+      const next = await api().workflow.processHealth({
+        ...query,
+        cursor: first.evidence.nextCursor,
+      })
+      expect(next.status).toBe("assessed")
+      if (next.status !== "assessed") {
+        throw new Error("Expected second page")
+      }
+      expect(next.freshness).toBe("unchanged")
+      expect(next.evidence).toMatchObject({ total: 2, nextCursor: null })
+      const declarations = [...first.evidence.records, ...next.evidence.records]
+      expect(
+        declarations.map(({ expectationId }) => expectationId).sort(),
+      ).toEqual(["confirmation-0", "confirmation-1"])
+      const persisted = await api().run.expectationsPage({
+        runId: declarations[0]!.runId,
+      })
+      expect(
+        declarations.every((row) => row.runId === declarations[0]!.runId),
+      ).toBe(true)
+      expect(
+        persisted.expectations.map((row) => row.reference.expectationId),
+      ).toEqual(
+        expect.arrayContaining(declarations.map((row) => row.expectationId)),
+      )
+
+      await expect(
+        caller(foreign.cookie, foreign.project.id).workflow.processHealth({
+          ...query,
+          cursor: first.evidence.nextCursor,
+        }),
+      ).rejects.toMatchObject({ code: "BAD_REQUEST" })
+      await expect(
+        api().workflow.processHealth({ ...query, release: "r1" }),
+      ).rejects.toMatchObject({
+        code: "BAD_REQUEST",
+        message: expect.stringContaining("Unsupported"),
+      })
+      expect(
+        await api().workflow.processHealth({
+          ...query,
+          workflow: "unobserved",
+        }),
+      ).toEqual({ status: "unsupported-scope" })
+      expect(
+        await api().workflow.processHealth({
+          ...query,
+          baseline: { startedAfter: baseline, startedBefore: current },
+        }),
+      ).toMatchObject({ comparison: { status: "incompatible-revisions" } })
+      expect(
+        await api().workflow.processHealth({
+          ...query,
+          baseline: {
+            startedAfter: baseline,
+            startedBefore: "2026-10-30T13:00:00.000Z",
+          },
+        }),
+      ).toMatchObject({ comparison: { status: "thin-history" } })
+      // An adjacent empty half-open baseline excludes the current start.
+      expect(
+        await api().workflow.processHealth({
+          ...query,
+          baseline: {
+            startedAfter: "2026-10-31T00:00:00.000Z",
+            startedBefore: current,
+          },
+        }),
+      ).toMatchObject({ comparison: { status: "zero-denominator" } })
+
+      clock.value = "2026-10-31T12:00:00.200Z"
+      expect(
+        (
+          await send({
+            ...resolve("two-confirmations", "confirmation-0"),
+            workflow,
+          })
+        ).status,
+      ).toBe(202)
+      const refreshed = await api().workflow.processHealth({
+        ...query,
+        cursor: first.evidence.nextCursor,
+      })
+      expect(refreshed).toMatchObject({
+        freshness: "refreshed",
+        observedAt: clock.value,
+        current: { expectations: { mature: 2, overdue: 1, metLate: 1 } },
+        evidence: {
+          total: 1,
+          records: [{ expectationId: "confirmation-1" }],
+          nextCursor: null,
+        },
+      })
+      expect(
+        await api().workflow.processHealth({
+          ...query,
+          previousObservation: first.observation,
+        }),
+      ).toEqual(refreshed)
+    }, 30_000)
+
+    it("keeps a quiet mature cohort distinct from omissions and exclusions", async () => {
+      const workflow = "booking.process-health-quiet"
+      await persistHealthEvents(primary.project.id, [
+        { ...base("reported", workflow), type: "started" },
+        { ...base("omitted", workflow), type: "started" },
+        ...EffectArray.map(
+          ["met", "cancelled", "unavailable", "other"],
+          (expectationId) => ({
+            ...declare("reported", expectationId, 100),
+            workflow,
+            name:
+              expectationId === "other"
+                ? "different-signal"
+                : "provider-response",
+          }),
+        ),
+        { ...resolve("reported", "met"), workflow },
+        { ...cancel("reported", "cancelled"), workflow },
+        { ...resolve("reported", "unmatched"), workflow },
+      ])
+      const run = await find("reported", workflow)
+      const projections = await connection.db
+        .select()
+        .from(workflowExpectations)
+        .where(eq(workflowExpectations.runId, run.id))
+      const unavailable = projections.find(
+        (row) => row.expectationId === "unavailable",
+      )
+      await connection.db
+        .update(workflowEvents)
+        .set({ expectationEffective: false })
+        .where(eq(workflowEvents.id, unavailable!.declarationEventId!))
+      clock.value = "2026-10-31T12:00:00.200Z"
+      const health = await api().workflow.processHealth({
+        workflow,
+        expectationName: "provider-response",
+        window: {
+          startedAfter: "2026-10-31T12:00:00.000Z",
+          startedBefore: "2026-11-01T00:00:00.000Z",
+        },
+        evidence: "mature",
+      })
+      expect(health).toMatchObject({
+        attention: "quiet",
+        current: {
+          execution: { withoutTerminal: 2 },
+          evidenceQuality: {
+            runsWithoutDeclaration: 1,
+            unavailableProjections: 1,
+            otherExpectationDeclarations: 1,
+            settlementsWithoutDeclaration: 1,
+            intendedCoverage: "unknown",
+          },
+          expectations: {
+            mature: 1,
+            overdue: 0,
+            metOnTime: 1,
+            metLate: 0,
+            cancelled: 1,
+          },
+        },
+        evidence: {
+          total: 1,
+          records: [
+            { runId: run.id, expectationId: "met", state: "met-on-time" },
+          ],
+        },
+      })
     })
 
     it("rejects legacy proxy forwarding even with a valid server key and leaves ordinary telemetry unchanged", async () => {

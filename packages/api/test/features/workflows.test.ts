@@ -55,6 +55,7 @@ const input = {
 
 function repository(overrides: Partial<WorkflowRepositoryService> = {}) {
   return WorkflowRepository.of({
+    processHealth: () => Effect.die("Not used by this fixture"),
     linkedComparison: () => Effect.die("Not used by this fixture"),
     linkedEvidence: () => Effect.die("Not used by this fixture"),
     referenceJourney: () => Effect.die("Not used by this fixture"),

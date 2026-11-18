@@ -10,6 +10,12 @@ import type {
   LinkedEvidenceQuery,
   LinkedEvidencePage,
 } from "@flowmarkdev/core"
+import {
+  getProcessHealth,
+  type ProcessHealthEvidence,
+  type ProcessHealthBudgetExceeded,
+} from "./queries/get-process-health.js"
+import type { ProcessHealthQuery } from "@flowmarkdev/core"
 import { getPeriodRead } from "./queries/get-period-read.js"
 import type { PeriodReadInput, PeriodReadResponse } from "@flowmarkdev/core"
 import { getRunRead } from "./queries/get-run-read.js"
@@ -78,6 +84,13 @@ import type {
 } from "./types.js"
 
 export interface WorkflowStoreService {
+  readonly processHealth: (
+    projectId: string,
+    query: ProcessHealthQuery,
+  ) => Effect.Effect<
+    ProcessHealthEvidence,
+    DatabaseError | InvalidResultQuery | ProcessHealthBudgetExceeded
+  >
   readonly linkedComparison: (
     projectId: string,
     query: LinkedComparisonQuery,
@@ -197,6 +210,10 @@ export class WorkflowStore extends Context.Service<WorkflowStore>()(
         yield* DatabaseCancellation,
       )
       return {
+        processHealth: (projectId, query) =>
+          provide(
+            withActiveProject(projectId, getProcessHealth(projectId, query)),
+          ),
         linkedComparison: (projectId, query) =>
           provide(
             withActiveProject(projectId, getLinkedComparison(projectId, query)),

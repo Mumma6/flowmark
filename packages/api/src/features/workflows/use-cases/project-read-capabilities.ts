@@ -1,3 +1,4 @@
+import type { ProcessHealth } from "@flowmarkdev/core"
 import type {
   ReferenceJourneyQuery,
   ReferenceJourneyPage,
@@ -122,6 +123,13 @@ export interface ProjectReadRuns {
 }
 
 export interface ProjectReadAnalytics {
+  readonly processHealth: (
+    reader: ProjectReader,
+    input: unknown,
+  ) => Effect.Effect<
+    ProcessHealth,
+    Unauthorized | PersistenceError | InvalidInput
+  >
   readonly linkedComparison: (
     reader: ProjectReader,
     input: unknown,
