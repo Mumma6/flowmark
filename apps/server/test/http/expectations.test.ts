@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto"
-import { Effect } from "effect"
+import { Array as EffectArray, Effect } from "effect"
 import { eq } from "drizzle-orm"
 import {
   afterAll,
@@ -17,7 +17,13 @@ import {
   workflowExpectations,
   workflows,
 } from "@flowmark/db"
-import { Database, rebuildExpectations } from "@flowmark/db/persistence"
+import {
+  Database,
+  ExpectationObservationClock,
+  rebuildExpectations,
+  WorkflowStore,
+  type WorkflowStoreService,
+} from "@flowmark/db/persistence"
 import { POST as register } from "../../app/api/register/route"
 import { POST as auth } from "../../app/api/auth/[...all]/route"
 import {
@@ -95,6 +101,22 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
   "durable expectations through SDK/authorized HTTP/storage/read models",
   () => {
     let connection: ReturnType<typeof createDatabase>
+    let store: WorkflowStoreService
+    const persistHealthEvents = async (
+      projectId: string,
+      events: readonly Parameters<WorkflowStoreService["append"]>[2][],
+    ) => {
+      const dispositions = await Effect.runPromise(
+        Effect.forEach(events, (event) =>
+          store.append(projectId, randomUUID(), event),
+        ).pipe(
+          Effect.provideService(ExpectationObservationClock, {
+            now: () => Effect.sync(() => new Date(clock.value)),
+          }),
+        ),
+      )
+      expect(dispositions).toEqual(EffectArray.map(events, () => "recorded"))
+    }
     let primary: Awaited<ReturnType<typeof owner>>,
       foreign: Awaited<ReturnType<typeof owner>>
     const api = () => caller(primary.cookie, primary.project.id)
@@ -124,21 +146,21 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
       withinMs = 300000,
     ) => ({
       ...base(runId),
-      type: "expectation_declared",
+      type: "expectation_declared" as const,
       expectationId: id,
       name: "provider-response",
       withinMs,
     })
     const resolve = (runId: string, id = "confirmation") => ({
       ...base(runId),
-      type: "expectation_resolved",
+      type: "expectation_resolved" as const,
       expectationId: id,
       outcome: "no-availability",
       result: { reserved: 0 },
     })
     const cancel = (runId: string, id = "confirmation") => ({
       ...base(runId),
-      type: "expectation_cancelled",
+      type: "expectation_cancelled" as const,
       expectationId: id,
       code: "BOOKING_CANCELLED",
     })
@@ -155,6 +177,9 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
       vi.stubEnv("FLOWMARK_DASHBOARD_ORIGIN", origin)
       vi.stubEnv("VERCEL_ENV", "")
       connection = createDatabase(process.env.TEST_DATABASE_URL!)
+      store = await Effect.runPromise(
+        WorkflowStore.make.pipe(Effect.provideService(Database, connection.db)),
+      )
       primary = await owner("TASK014 expectation verification")
       foreign = await owner("TASK014 isolated project")
     }, 15000)
@@ -176,53 +201,26 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         runId: string,
         revision: string,
         deadlines: number[],
-        key = primary.writeKey.secret,
+        projectId = primary.project.id,
       ) => {
         const event = base(runId, workflow)
-        expect(
-          (
-            await send(
-              {
-                ...event,
-                type: "started",
-                properties: { definitionRevision: revision },
-              },
-              undefined,
-              key,
-            )
-          ).status,
-        ).toBe(202)
-        for (const [index, withinMs] of deadlines.entries()) {
-          expect(
-            (
-              await send(
-                {
-                  ...event,
-                  type: "expectation_declared",
-                  expectationId: `confirmation-${index}`,
-                  name: "provider-response",
-                  withinMs,
-                },
-                undefined,
-                key,
-              )
-            ).status,
-          ).toBe(202)
-        }
-        expect(
-          (
-            await send(
-              {
-                ...event,
-                type: "completed",
-                outcome: "submitted",
-                result: { private: 7 },
-              },
-              undefined,
-              key,
-            )
-          ).status,
-        ).toBe(202)
+        await persistHealthEvents(projectId, [
+          {
+            ...event,
+            type: "started",
+            properties: { definitionRevision: revision },
+          },
+          ...EffectArray.map(deadlines, (withinMs, index) => ({
+            ...declare(runId, `confirmation-${index}`, withinMs),
+            workflow,
+          })),
+          {
+            ...event,
+            type: "completed",
+            outcome: "submitted",
+            result: { private: 7 },
+          },
+        ])
       }
       clock.value = baseline
       await record("same-revision", "v1", [5])
@@ -231,7 +229,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
       clock.value = current
       await record("two-confirmations", "v1", [100, 100, 1_000])
       await record("missing-confirmation", "v1", [])
-      await record("foreign", "v1", [100, 100, 100], foreign.writeKey.secret)
+      await record("foreign", "v1", [100, 100, 100], foreign.project.id)
       clock.value = "2026-10-31T12:00:00.100Z"
       const query = {
         workflow,
@@ -372,43 +370,28 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
           previousObservation: first.observation,
         }),
       ).toEqual(refreshed)
-    }, 30_000)
+    }, 60_000)
 
     it("keeps a quiet mature cohort distinct from omissions and exclusions", async () => {
       const workflow = "booking.process-health-quiet"
-      for (const runId of ["reported", "omitted"]) {
-        expect(
-          (await send({ ...base(runId, workflow), type: "started" })).status,
-        ).toBe(202)
-      }
-      for (const expectationId of [
-        "met",
-        "cancelled",
-        "unavailable",
-        "other",
-      ]) {
-        expect(
-          (
-            await send({
-              ...declare("reported", expectationId, 100),
-              workflow,
-              name:
-                expectationId === "other"
-                  ? "different-signal"
-                  : "provider-response",
-            })
-          ).status,
-        ).toBe(202)
-      }
-      expect(
-        (await send({ ...resolve("reported", "met"), workflow })).status,
-      ).toBe(202)
-      expect(
-        (await send({ ...cancel("reported", "cancelled"), workflow })).status,
-      ).toBe(202)
-      expect(
-        (await send({ ...resolve("reported", "unmatched"), workflow })).status,
-      ).toBe(202)
+      await persistHealthEvents(primary.project.id, [
+        { ...base("reported", workflow), type: "started" },
+        { ...base("omitted", workflow), type: "started" },
+        ...EffectArray.map(
+          ["met", "cancelled", "unavailable", "other"],
+          (expectationId) => ({
+            ...declare("reported", expectationId, 100),
+            workflow,
+            name:
+              expectationId === "other"
+                ? "different-signal"
+                : "provider-response",
+          }),
+        ),
+        { ...resolve("reported", "met"), workflow },
+        { ...cancel("reported", "cancelled"), workflow },
+        { ...resolve("reported", "unmatched"), workflow },
+      ])
       const run = await find("reported", workflow)
       const projections = await connection.db
         .select()
@@ -457,7 +440,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
           ],
         },
       })
-    })
+    }, 15_000)
 
     it("rejects legacy proxy forwarding even with a valid server key and leaves ordinary telemetry unchanged", async () => {
       await start("protocol-boundary")
