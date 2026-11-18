@@ -170,6 +170,47 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         publication,
       }
     }
+    it("checks diagnostic projection again before returning a health continuation", async () => {
+      const f = await fixture()
+      const query = {
+        workflow,
+        expectationName: "private-confirmation",
+        window: {
+          startedAfter: new Date(Date.now() - 86_400_000).toISOString(),
+          startedBefore: new Date(Date.now() + 86_400_000).toISOString(),
+        },
+      }
+      await f.publish()
+      await expect(
+        f.reader.workflow.processHealth(query),
+      ).rejects.toMatchObject({ code: "UNAUTHORIZED" })
+      const health = await f.viewer.workflow.processHealth(query)
+      if (health.status !== "assessed") {
+        throw new Error("Expected authorized assessment")
+      }
+      await f.admin.projectSharing.remove({
+        projectId: f.projectId,
+        userId: f.diagnostic.userId,
+      })
+      await connection.db.insert(projectMembers).values({
+        projectId: f.projectId,
+        userId: f.diagnostic.userId,
+        role: "business",
+      })
+      await expect(
+        f.viewer.workflow.processHealth({
+          ...query,
+          previousObservation: health.observation,
+        }),
+      ).rejects.toMatchObject({ code: "UNAUTHORIZED" })
+      expect(
+        await f.viewer.businessEvidence.read({ kind: "run", runId: f.id }),
+      ).toMatchObject({
+        projection: { depth: "business" },
+        data: { fields: [{ label: "Accepted bookings", value: 3 }] },
+      })
+    })
+
     it("defaults to metadata only and projects exactly published result/reference evidence", async () => {
       const f = await fixture()
       const before = await f.reader.businessEvidence.read({

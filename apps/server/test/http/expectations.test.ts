@@ -168,6 +168,297 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
       vi.unstubAllGlobals()
     })
 
+    it("assesses a workflow and pages declaration identities across live observations", async () => {
+      const workflow = "booking.process-health"
+      const current = "2026-10-31T12:00:00.000Z"
+      const baseline = "2026-10-30T12:00:00.000Z"
+      const record = async (
+        runId: string,
+        revision: string,
+        deadlines: number[],
+        key = primary.writeKey.secret,
+      ) => {
+        const event = base(runId, workflow)
+        expect(
+          (
+            await send(
+              {
+                ...event,
+                type: "started",
+                properties: { definitionRevision: revision },
+              },
+              undefined,
+              key,
+            )
+          ).status,
+        ).toBe(202)
+        for (const [index, withinMs] of deadlines.entries()) {
+          expect(
+            (
+              await send(
+                {
+                  ...event,
+                  type: "expectation_declared",
+                  expectationId: `confirmation-${index}`,
+                  name: "provider-response",
+                  withinMs,
+                },
+                undefined,
+                key,
+              )
+            ).status,
+          ).toBe(202)
+        }
+        expect(
+          (
+            await send(
+              {
+                ...event,
+                type: "completed",
+                outcome: "submitted",
+                result: { private: 7 },
+              },
+              undefined,
+              key,
+            )
+          ).status,
+        ).toBe(202)
+      }
+      clock.value = baseline
+      await record("same-revision", "v1", [5])
+      clock.value = "2026-10-30T13:00:00.000Z"
+      await record("other-revision", "v2", [5])
+      clock.value = current
+      await record("two-confirmations", "v1", [100, 100, 1_000])
+      await record("missing-confirmation", "v1", [])
+      await record("foreign", "v1", [100, 100, 100], foreign.writeKey.secret)
+      clock.value = "2026-10-31T12:00:00.100Z"
+      const query = {
+        workflow,
+        expectationName: "provider-response",
+        window: {
+          startedAfter: current,
+          startedBefore: "2026-11-01T00:00:00.000Z",
+        },
+        limit: 1,
+      }
+      const atDeadline = await api().workflow.processHealth(query)
+      expect(atDeadline).toMatchObject({
+        status: "assessed",
+        observedAt: clock.value,
+        attention: "zero-denominator",
+        current: { expectations: { mature: 0, overdue: 0, pending: 3 } },
+        evidence: { total: 0, records: [] },
+      })
+      clock.value = "2026-10-31T12:00:00.101Z"
+      const first = await api().workflow.processHealth(query)
+      expect(first.status).toBe("assessed")
+      if (first.status !== "assessed" || !first.evidence.nextCursor) {
+        throw new Error("Expected continuation")
+      }
+      expect(first).toMatchObject({
+        attention: "overdue",
+        current: {
+          execution: { completed: 2, failed: 0, withoutTerminal: 0 },
+          businessOutcomes: {
+            reported: [{ outcome: "submitted", runs: 2 }],
+            missing: 0,
+          },
+          evidenceQuality: {
+            revisions: ["v1"],
+            runsWithoutDeclaration: 1,
+            intendedCoverage: "unknown",
+          },
+          expectations: { mature: 2, overdue: 2, pending: 1 },
+        },
+        evidence: { total: 2 },
+      })
+      const next = await api().workflow.processHealth({
+        ...query,
+        cursor: first.evidence.nextCursor,
+      })
+      expect(next.status).toBe("assessed")
+      if (next.status !== "assessed") {
+        throw new Error("Expected second page")
+      }
+      expect(next.freshness).toBe("unchanged")
+      expect(next.evidence).toMatchObject({ total: 2, nextCursor: null })
+      const declarations = [...first.evidence.records, ...next.evidence.records]
+      expect(
+        declarations.map(({ expectationId }) => expectationId).sort(),
+      ).toEqual(["confirmation-0", "confirmation-1"])
+      const persisted = await api().run.expectationsPage({
+        runId: declarations[0]!.runId,
+      })
+      expect(
+        declarations.every((row) => row.runId === declarations[0]!.runId),
+      ).toBe(true)
+      expect(
+        persisted.expectations.map((row) => row.reference.expectationId),
+      ).toEqual(
+        expect.arrayContaining(declarations.map((row) => row.expectationId)),
+      )
+
+      await expect(
+        caller(foreign.cookie, foreign.project.id).workflow.processHealth({
+          ...query,
+          cursor: first.evidence.nextCursor,
+        }),
+      ).rejects.toMatchObject({ code: "BAD_REQUEST" })
+      await expect(
+        api().workflow.processHealth({ ...query, release: "r1" }),
+      ).rejects.toMatchObject({
+        code: "BAD_REQUEST",
+        message: expect.stringContaining("Unsupported"),
+      })
+      expect(
+        await api().workflow.processHealth({
+          ...query,
+          workflow: "unobserved",
+        }),
+      ).toEqual({ status: "unsupported-scope" })
+      expect(
+        await api().workflow.processHealth({
+          ...query,
+          baseline: { startedAfter: baseline, startedBefore: current },
+        }),
+      ).toMatchObject({ comparison: { status: "incompatible-revisions" } })
+      expect(
+        await api().workflow.processHealth({
+          ...query,
+          baseline: {
+            startedAfter: baseline,
+            startedBefore: "2026-10-30T13:00:00.000Z",
+          },
+        }),
+      ).toMatchObject({ comparison: { status: "thin-history" } })
+      // An adjacent empty half-open baseline excludes the current start.
+      expect(
+        await api().workflow.processHealth({
+          ...query,
+          baseline: {
+            startedAfter: "2026-10-31T00:00:00.000Z",
+            startedBefore: current,
+          },
+        }),
+      ).toMatchObject({ comparison: { status: "zero-denominator" } })
+
+      clock.value = "2026-10-31T12:00:00.200Z"
+      expect(
+        (
+          await send({
+            ...resolve("two-confirmations", "confirmation-0"),
+            workflow,
+          })
+        ).status,
+      ).toBe(202)
+      const refreshed = await api().workflow.processHealth({
+        ...query,
+        cursor: first.evidence.nextCursor,
+      })
+      expect(refreshed).toMatchObject({
+        freshness: "refreshed",
+        observedAt: clock.value,
+        current: { expectations: { mature: 2, overdue: 1, metLate: 1 } },
+        evidence: {
+          total: 1,
+          records: [{ expectationId: "confirmation-1" }],
+          nextCursor: null,
+        },
+      })
+      expect(
+        await api().workflow.processHealth({
+          ...query,
+          previousObservation: first.observation,
+        }),
+      ).toEqual(refreshed)
+    }, 30_000)
+
+    it("keeps a quiet mature cohort distinct from omissions and exclusions", async () => {
+      const workflow = "booking.process-health-quiet"
+      for (const runId of ["reported", "omitted"]) {
+        expect(
+          (await send({ ...base(runId, workflow), type: "started" })).status,
+        ).toBe(202)
+      }
+      for (const expectationId of [
+        "met",
+        "cancelled",
+        "unavailable",
+        "other",
+      ]) {
+        expect(
+          (
+            await send({
+              ...declare("reported", expectationId, 100),
+              workflow,
+              name:
+                expectationId === "other"
+                  ? "different-signal"
+                  : "provider-response",
+            })
+          ).status,
+        ).toBe(202)
+      }
+      expect(
+        (await send({ ...resolve("reported", "met"), workflow })).status,
+      ).toBe(202)
+      expect(
+        (await send({ ...cancel("reported", "cancelled"), workflow })).status,
+      ).toBe(202)
+      expect(
+        (await send({ ...resolve("reported", "unmatched"), workflow })).status,
+      ).toBe(202)
+      const run = await find("reported", workflow)
+      const projections = await connection.db
+        .select()
+        .from(workflowExpectations)
+        .where(eq(workflowExpectations.runId, run.id))
+      const unavailable = projections.find(
+        (row) => row.expectationId === "unavailable",
+      )
+      await connection.db
+        .update(workflowEvents)
+        .set({ expectationEffective: false })
+        .where(eq(workflowEvents.id, unavailable!.declarationEventId!))
+      clock.value = "2026-10-31T12:00:00.200Z"
+      const health = await api().workflow.processHealth({
+        workflow,
+        expectationName: "provider-response",
+        window: {
+          startedAfter: "2026-10-31T12:00:00.000Z",
+          startedBefore: "2026-11-01T00:00:00.000Z",
+        },
+        evidence: "mature",
+      })
+      expect(health).toMatchObject({
+        attention: "quiet",
+        current: {
+          execution: { withoutTerminal: 2 },
+          evidenceQuality: {
+            runsWithoutDeclaration: 1,
+            unavailableProjections: 1,
+            otherExpectationDeclarations: 1,
+            settlementsWithoutDeclaration: 1,
+            intendedCoverage: "unknown",
+          },
+          expectations: {
+            mature: 1,
+            overdue: 0,
+            metOnTime: 1,
+            metLate: 0,
+            cancelled: 1,
+          },
+        },
+        evidence: {
+          total: 1,
+          records: [
+            { runId: run.id, expectationId: "met", state: "met-on-time" },
+          ],
+        },
+      })
+    })
+
     it("rejects legacy proxy forwarding even with a valid server key and leaves ordinary telemetry unchanged", async () => {
       await start("protocol-boundary")
       const response = await POST(

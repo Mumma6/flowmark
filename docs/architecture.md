@@ -469,6 +469,9 @@ window. The local harness simulates invoice, inventory and order work per
 execution, while workflow history is persistent. Technical SDK diagnostics use a
 separate local project.
 
+The [process health read](./process-health.md) extends the period read model with
+a bounded diagnostic assessment and its contributing declaration selection.
+
 The reference deployment is the four public hostnames in the
 [infrastructure guide](./infrastructure.md). Durable SDK delivery and general retention
 scheduling are not implemented. Bounded erasure and captured-evidence expiry

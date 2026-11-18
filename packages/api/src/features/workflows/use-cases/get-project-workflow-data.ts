@@ -1,3 +1,8 @@
+import { ProcessHealthQuerySchema, type ProcessHealth } from "@flowmarkdev/core"
+import {
+  compareProcessHealth,
+  processHealthAttention,
+} from "../rules/assess-process-health.js"
 import { calculateReferenceJourney } from "./calculate-reference-journey.js"
 import { CurrentProjectReader } from "../models/current-project-reader.js"
 import { Engine } from "@flowmark/engine"
@@ -238,6 +243,40 @@ export class GetProjectWorkflowData extends Context.Service<
       })
 
       return GetProjectWorkflowData.of({
+        processHealth: Effect.fn("GetProjectWorkflowData.processHealth")(
+          function* (reader, input) {
+            const projectId = yield* authorizeReader(reader)
+            const query = yield* Schema.decodeUnknownEffect(
+              ProcessHealthQuerySchema,
+              {
+                onExcessProperty: "error",
+              },
+            )(input).pipe(
+              Effect.mapError(
+                () =>
+                  new InvalidInput({
+                    cause:
+                      "Unsupported process health selection. Select one workflow, an expectation name, and bounded UTC windows.",
+                  }),
+              ),
+            )
+            const evidence = yield* repository
+              .processHealth(projectId, query)
+              .pipe(Effect.provideService(CurrentProjectReader, reader))
+            return Match.value(evidence).pipe(
+              Match.when({ status: "unsupported-scope" }, (result) => result),
+              Match.when({ status: "assessed" }, (result) => ({
+                ...result,
+                attention: processHealthAttention(result.current),
+                comparison: compareProcessHealth(
+                  result.current,
+                  result.baseline,
+                ),
+              })),
+              Match.exhaustive,
+            ) satisfies ProcessHealth
+          },
+        ),
         linkedComparison: Effect.fn("GetProjectWorkflowData.linkedComparison")(
           function* (reader, input) {
             const projectId = yield* authorizeReader(reader)

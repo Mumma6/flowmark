@@ -28,6 +28,7 @@ export enum DatabaseOperation {
   RebuildExpectations = "rebuild-expectations",
   ReadBusinessInsights = "read-business-insights",
   ReadLinkedComparison = "read-linked-comparison",
+  ReadProcessHealth = "read-process-health",
   ReadLinkedEvidence = "read-linked-evidence",
   VerifyMigrations = "verify-migrations",
   ReadResultDeclarations = "read-result-declarations",
