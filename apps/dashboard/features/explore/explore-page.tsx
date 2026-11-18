@@ -50,6 +50,7 @@ import { useRunExplorer } from "../runs/explorer/use-run-explorer"
 import { DataState, FilterSelect } from "../shared/dashboard-components"
 import { ExploreAnalyticsContext } from "./explore-analytics-context"
 import { exploreAnalyticsQueryKey } from "./explore-analytics-query"
+import { ProcessHealthPanel } from "./process-health-panel"
 import { ExploreRunList } from "./explore-run-list"
 
 const executionStates = [
@@ -215,6 +216,9 @@ function ExploreWorkspace() {
         }
       >
         <div className="grid min-w-0 gap-6 bg-background/50 p-3 sm:p-5">
+          {current && current.role !== "business" && (
+            <ProcessHealthPanel projectId={current.id} filters={filters} />
+          )}
           <section
             aria-labelledby="evidence-title"
             className="min-w-0 overflow-hidden rounded-xl border border-primary/30 bg-card shadow-sm"

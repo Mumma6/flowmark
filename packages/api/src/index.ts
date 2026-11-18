@@ -112,7 +112,10 @@ export {
 
 export { PeerSelectionSchema } from "@flowmarkdev/core"
 
-export { ExpectationStateSchema } from "@flowmarkdev/core"
+export {
+  ExpectationIdentifierSchema,
+  ExpectationStateSchema,
+} from "@flowmarkdev/core"
 export type { RunExpectations, ExpectationAttention } from "@flowmarkdev/core"
 
 export { ExpectationSourceForbidden } from "./errors.js"
