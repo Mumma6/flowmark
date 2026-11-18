@@ -77,7 +77,8 @@ export const processHealthSql = (
       coalesce(r.definition_revision, f.revision) AS revision
     FROM run_facts r LEFT JOIN raw_facts f ON f.run_id = r.id
     WHERE (SELECT exceeded IS NULL FROM budget)
-  ), effective AS (
+  ), effective AS MATERIALIZED (
+    -- Reuse the canonical state calculation across classification and maturity.
     SELECT x.id, x.run_id, x.period, x.expectation_id, x.deadline_at,
       d.expectation ->> 'name' AS name,
       x.declaration_event_id IS NULL AND ${validExpectationProjectionSql} AS settlement_only,

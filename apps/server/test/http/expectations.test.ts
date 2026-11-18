@@ -370,7 +370,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
           previousObservation: first.observation,
         }),
       ).toEqual(refreshed)
-    }, 60_000)
+    }, 30_000)
 
     it("keeps a quiet mature cohort distinct from omissions and exclusions", async () => {
       const workflow = "booking.process-health-quiet"
@@ -440,7 +440,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
           ],
         },
       })
-    }, 15_000)
+    })
 
     it("rejects legacy proxy forwarding even with a valid server key and leaves ordinary telemetry unchanged", async () => {
       await start("protocol-boundary")

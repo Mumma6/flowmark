@@ -87,7 +87,9 @@ export const getProcessHealth = Effect.fn("getProcessHealth")(function* (
   const db = yield* Database
   yield* runQuery(DatabaseOperation.ReadProcessHealth, () =>
     db.execute(
-      sql`SELECT set_config('statement_timeout', ${String(bounds.statementTimeoutMs)}, true)`,
+      // The population is capped. JIT startup can dominate a read if statistics overestimate it.
+      sql`SELECT set_config('statement_timeout', ${String(bounds.statementTimeoutMs)}, true),
+                 set_config('jit', 'off', true)`,
     ),
   )
   const clock = yield* ExpectationObservationClock

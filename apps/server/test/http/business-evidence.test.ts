@@ -209,7 +209,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         projection: { depth: "business" },
         data: { fields: [{ label: "Accepted bookings", value: 3 }] },
       })
-    }, 15_000)
+    })
 
     it("defaults to metadata only and projects exactly published result/reference evidence", async () => {
       const f = await fixture()
@@ -696,6 +696,6 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         userId: f.business.userId,
       })
       await expect(run(admittedBeforeRemoval)).rejects.toThrow()
-    }, 15_000)
+    })
   },
 )
