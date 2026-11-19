@@ -139,6 +139,11 @@ const assertRunInProject = Effect.fn("assertRunInProjectForExpectationsPage")(
 export const getRunExpectationsPage = Effect.fn("getRunExpectationsPage")(
   function* (projectId: string, query: RunExpectationsPageQuery) {
     yield* assertRunInProject(projectId, query.runId)
+    if (query.expectationId !== undefined && query.cursor !== undefined) {
+      return yield* new InvalidResultQuery({
+        message: "An exact expectation selection cannot be paged.",
+      })
+    }
     const decoded = decodeExpectationsPageCursor(query.cursor)
     if (query.cursor && !decoded) {
       return yield* new InvalidResultQuery({
@@ -149,6 +154,14 @@ export const getRunExpectationsPage = Effect.fn("getRunExpectationsPage")(
       BOUNDED_SECTION_MAX_LIMIT,
       Math.max(1, query.limit ?? BOUNDED_SECTION_DEFAULT_LIMIT),
     )
+    const selected =
+      query.expectationId === undefined
+        ? sql`true`
+        : sql`x.expectation_id = ${query.expectationId}`
+    const selectedEvent =
+      query.expectationId === undefined
+        ? sql`true`
+        : sql`e.expectation->>'expectationId' = ${query.expectationId}`
     const db = yield* Database
     const clock = yield* ExpectationObservationClock
     return yield* runTransaction(
@@ -167,7 +180,7 @@ export const getRunExpectationsPage = Effect.fn("getRunExpectationsPage")(
       JOIN workflows w ON w.id = r.workflow_id
       WHERE w.project_id = ${projectId}
         AND r.id = ${query.runId}
-        AND ${validExpectationProjectionSql}
+        AND ${validExpectationProjectionSql} AND ${selected}
     `),
           )
           const cursorFilter =
@@ -185,7 +198,7 @@ export const getRunExpectationsPage = Effect.fn("getRunExpectationsPage")(
       FROM workflow_expectations x JOIN workflow_runs r ON r.id = x.run_id JOIN workflows w ON w.id = r.workflow_id
       LEFT JOIN workflow_events d ON d.id = x.declaration_event_id LEFT JOIN workflow_events s ON s.id = x.settlement_event_id
       WHERE w.project_id = ${projectId} AND r.id = ${query.runId} AND ${validExpectationProjectionSql}
-        AND ${cursorFilter}
+        AND ${selected} AND ${cursorFilter}
       ORDER BY x.declared_at NULLS LAST, x.expectation_id
       LIMIT ${limit + 1}
     `),
@@ -196,7 +209,7 @@ export const getRunExpectationsPage = Effect.fn("getRunExpectationsPage")(
               tx.execute<{ count: number }>(sql`
       SELECT count(DISTINCT e.expectation->>'expectationId')::int as count FROM workflow_events e
       JOIN workflow_runs r ON r.id = e.run_id JOIN workflows w ON w.id = r.workflow_id
-      WHERE w.project_id = ${projectId} AND r.id = ${query.runId} AND e.expectation IS NOT NULL
+      WHERE w.project_id = ${projectId} AND r.id = ${query.runId} AND e.expectation IS NOT NULL AND ${selectedEvent}
         AND NOT EXISTS (SELECT 1 FROM workflow_expectations x WHERE x.run_id = r.id AND x.expectation_id = e.expectation->>'expectationId' AND ${validExpectationProjectionSql})
     `),
           )

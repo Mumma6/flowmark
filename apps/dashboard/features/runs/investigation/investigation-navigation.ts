@@ -2,6 +2,11 @@ import type { RunInvestigationSelection } from "@flowmarkdev/core"
 import { Array as EffectArray, Match, Result, Schema } from "effect"
 import { explorerDefaults } from "../explorer/explorer-filters"
 import { runSelectionQueryKey } from "./investigation-selection"
+import {
+  healthExpectationQueryKey,
+  healthPeriodQueryKey,
+} from "../../explore/process-health-selection"
+import { exploreAnalyticsQueryKey } from "../../explore/explore-analytics-query"
 import { journeyQueryKey } from "../../journeys/journey-selection"
 
 const InvestigationSource = Schema.String.check(
@@ -75,6 +80,10 @@ export function runInvestigationPath(
       [
         ...EffectArray.fromIterable(Object.keys(explorerDefaults)),
         journeyQueryKey,
+        "days",
+        exploreAnalyticsQueryKey,
+        healthExpectationQueryKey,
+        healthPeriodQueryKey,
       ],
       (key) => {
         const value = cohort.get(key)
@@ -97,4 +106,21 @@ export function runInvestigationPath(
     params.set(runSelectionQueryKey, JSON.stringify(selection))
   }
   return `/runs/${encodeURIComponent(id)}${params.size ? `?${params}` : ""}`
+}
+
+export const confirmationQueryKey = "confirmation"
+
+export function confirmationInvestigationPath(
+  runId: string,
+  expectationId: string,
+  source: string,
+) {
+  const [path, search] = runInvestigationPath(
+    runId,
+    source,
+    "confirmations",
+  ).split("?")
+  const params = new URLSearchParams(search)
+  params.set(confirmationQueryKey, expectationId)
+  return `${path}?${params}`
 }

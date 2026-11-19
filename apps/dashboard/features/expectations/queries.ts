@@ -7,7 +7,11 @@ import { useProject } from "../projects/project-context"
 
 export function useRunExpectations(
   id: string,
-  page?: { readonly cursor?: string; readonly limit?: number },
+  page?: {
+    readonly cursor?: string
+    readonly limit?: number
+    readonly expectationId?: string
+  },
 ) {
   const trpc = useTRPC()
   const client = useTRPCClient()
@@ -19,12 +23,18 @@ export function useRunExpectations(
         projectId: current?.id ?? null,
         cursor: page?.cursor ?? null,
         limit: page?.limit ?? null,
+        expectationId: page?.expectationId ?? null,
       },
     ],
     initialPageParam: page?.cursor,
     queryFn: ({ pageParam, signal }) =>
       client.run.expectationsPage.query(
-        { runId: id, cursor: pageParam, limit: page?.limit },
+        {
+          runId: id,
+          cursor: pageParam,
+          limit: page?.limit,
+          expectationId: page?.expectationId,
+        },
         { signal },
       ),
     getNextPageParam: (page) => page.nextCursor ?? undefined,

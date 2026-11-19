@@ -59,9 +59,10 @@ comparison of retained observations.
 The default `evidence` selection pages overdue declarations. Set it to `mature`
 for every contributing record in the denominator. The page includes the exact
 total, scoped run IDs, declaration identities, deadlines, states and an optional
-`nextCursor`. A declaration can be found by `expectationId` in the selected
-run's existing `run.expectationsPage`. The default page size is 25, with a
-maximum of 100.
+`nextCursor`. Pass `runId` and `expectationId` to
+`run.expectationsPage` to inspect exactly that retained declaration under
+current diagnostic authority. An exact selection does not accept a cursor.
+The default page size for the health evidence list is 25, with a maximum of 100.
 
 Each call reads a new database snapshot and stamps it with a single server
 `observedAt` used for classification. Pass `nextCursor` as `cursor` with the

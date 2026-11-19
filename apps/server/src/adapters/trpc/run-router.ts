@@ -1,4 +1,7 @@
-import { ExpectationStateSchema } from "@flowmark/api"
+import {
+  ExpectationIdentifierSchema,
+  ExpectationStateSchema,
+} from "@flowmark/api"
 import { PeerSelectionSchema } from "@flowmark/api"
 import {
   BusinessTimestampSchema,
@@ -140,6 +143,7 @@ export const runRouter = t.router({
       Schema.toStandardSchemaV1(
         Schema.Struct({
           runId: UuidSchema,
+          expectationId: Schema.optional(ExpectationIdentifierSchema),
           cursor: Schema.optional(Schema.String),
           limit: Schema.optional(
             Schema.Number.pipe(

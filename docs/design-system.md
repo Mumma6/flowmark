@@ -278,6 +278,16 @@ Keep all evidence modes available on mobile. Reuse `RunDetailContent` and
 `RunInvestigation`; project changes discard the panel and scoped URL state.
 Detail, relationship, comparison and expectation queries stay project-keyed.
 
+Process health follows the selected workflow and displays its own exact UTC
+bounds and expectation name above execution history. Supported exact time
+bounds carry through to the assessment. Other history filters block the
+assessment and are named beside the period controls. Execution, reported
+outcomes and evidence quality stay visually distinct. Label quiet, unmeasured,
+unavailable and failed reads in text. Declaration links open the Confirmations
+tab with an exact identity and return focus to the initiating row across
+inspector dismissal and browser Back. Use the projected workspace for business
+access.
+
 Authentication pairs a focused form with the product story. Setup uses a
 five-step rail, compact mobile progress, a distinct content panel and real
 loading/error states. Each step change focuses its heading. Code panels use the

@@ -297,6 +297,32 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         expect.arrayContaining(declarations.map((row) => row.expectationId)),
       )
 
+      const selected = declarations[1]!
+      const exactQuery = {
+        runId: selected.runId,
+        expectationId: selected.expectationId,
+      }
+      const exact = await api().run.expectationsPage(exactQuery)
+      expect(exact.totalRecords).toBe(1)
+      expect(exact.nextCursor).toBeNull()
+      expect(
+        exact.expectations.map(({ reference }) => reference.expectationId),
+      ).toEqual([selected.expectationId])
+      const missing = await api().run.expectationsPage({
+        ...exactQuery,
+        expectationId: "unknown",
+      })
+      expect(missing).toMatchObject({
+        expectations: [],
+        totalRecords: 0,
+        nextCursor: null,
+      })
+      await expect(
+        caller(foreign.cookie, foreign.project.id).run.expectationsPage(
+          exactQuery,
+        ),
+      ).rejects.toMatchObject({ code: "BAD_REQUEST" })
+
       await expect(
         caller(foreign.cookie, foreign.project.id).workflow.processHealth({
           ...query,
