@@ -81,6 +81,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
               path: ["accepted"],
               label: "Accepted bookings",
               kind: "count",
+              unit: "bookings",
               aggregate: true,
             },
             {
@@ -383,6 +384,164 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
           query: { ...query, path: ["private"] },
         }),
       ).rejects.toThrow("withheld")
+    })
+    it("shares published counts and pages the exact contributing population under current access", async () => {
+      const f = await fixture()
+      await f.publish()
+      const end = Date.now() + 3_600_000
+      const day = 86_400_000
+      const timestamp = (time: number) => new Date(time).toISOString()
+      const append = async (
+        time: number,
+        revision: string,
+        result?: Record<string, string | number>,
+      ) => {
+        const runId = randomUUID()
+        const started = timestamp(time)
+        await run(
+          f.store.append(f.projectId, randomUUID(), {
+            type: "started",
+            workflow,
+            runId,
+            timestamp: started,
+            properties: { definitionRevision: revision },
+          }),
+        )
+        if (result) {
+          await run(
+            f.store.append(f.projectId, randomUUID(), {
+              type: "completed",
+              workflow,
+              runId,
+              timestamp: started,
+              result,
+            }),
+          )
+        }
+      }
+      await append(end - day, "v1", { accepted: 0 })
+      await append(end - day + 1000, "v1", { accepted: "invalid" })
+      await append(end - day + 2000, "v1", { private: 999 })
+      await append(end - day + 3000, "v2", { accepted: 999 })
+      await append(end - day + 4000, "v1")
+      await append(end, "v1", { accepted: 999 })
+
+      const publishedCount = { revision: "v1", path: ["accepted"] }
+      const countQuestion = {
+        kind: "insights" as const,
+        query: {
+          workflow,
+          ...publishedCount,
+          currentStartedAfter: timestamp(end - day),
+          currentStartedBefore: timestamp(end),
+          previousStartedAfter: timestamp(end - 2 * day),
+          previousStartedBefore: timestamp(end - day),
+        },
+      }
+      const evidence = {
+        kind: "runs" as const,
+        query: {
+          workflow,
+          publishedCount,
+          startedAfter: countQuestion.query.currentStartedAfter,
+          startedBefore: countQuestion.query.currentStartedBefore,
+          limit: 1,
+        },
+      }
+      const report = await f.reader.businessEvidence.read(countQuestion)
+      expect(report.data).toMatchObject({
+        kind: "insights",
+        report: {
+          field: { label: "Accepted bookings", unit: "bookings" },
+          windows: [
+            {
+              scope: "current",
+              total: "3",
+              totalRuns: 6,
+              knownRuns: 2,
+              wrongType: 1,
+              missingField: 1,
+              incompatibleRevision: 1,
+              openRuns: 1,
+            },
+            { scope: "previous", total: null, knownRuns: 0 },
+          ],
+        },
+      })
+      const first = (await f.reader.businessEvidence.read(evidence)).data
+      if (first.kind !== "runs" || !first.nextCursor) {
+        throw new Error("Expected a second page of contributing runs")
+      }
+      expect(first).toMatchObject({ total: 2, runs: [{ id: f.id }] })
+      const next = {
+        ...evidence,
+        query: { ...evidence.query, cursor: first.nextCursor },
+      }
+      expect((await f.reader.businessEvidence.read(next)).data).toMatchObject({
+        total: 2,
+        runs: [{ startedAt: evidence.query.startedAfter }],
+        nextCursor: null,
+      })
+      expect(JSON.stringify([report.data, first])).not.toContain(canary)
+
+      const hidden = {
+        ...evidence,
+        query: {
+          ...evidence.query,
+          publishedCount: { ...publishedCount, path: ["private"] },
+        },
+      }
+      await expect(f.reader.businessEvidence.read(hidden)).rejects.toThrow(
+        "withheld",
+      )
+      await expect(
+        f.reader.sharedInvestigations.create({
+          projectId: f.projectId,
+          command: {
+            title: "Hidden count",
+            selection: { version: 1, depth: "business", query: hidden },
+          },
+        }),
+      ).rejects.toThrow("withheld")
+      const shared = await Promise.all(
+        [countQuestion, evidence].map((query) =>
+          f.reader.sharedInvestigations.create({
+            projectId: f.projectId,
+            command: {
+              title: "How many bookings were accepted?",
+              selection: { version: 1, depth: "business", query },
+            },
+          }),
+        ),
+      )
+      const reopen = async (id: string) => {
+        const question = await f.viewer.sharedInvestigations.get({
+          projectId: f.projectId,
+          id,
+        })
+        if (question.selection?.depth !== "business") {
+          throw new Error("Expected a published question")
+        }
+        return f.viewer.businessEvidence.read(question.selection.query)
+      }
+      expect((await reopen(shared[0]!.id)).data).toEqual(report.data)
+      expect((await reopen(shared[1]!.id)).data).toMatchObject({ total: 2 })
+      await f.admin.businessEvidence.replace({
+        projectId: f.projectId,
+        expectedRevision: 1,
+        publication: { ...f.publication, results: [] },
+      })
+      await expect(reopen(shared[0]!.id)).rejects.toThrow("unavailable")
+      await expect(reopen(shared[1]!.id)).rejects.toThrow("unavailable")
+      await expect(f.reader.businessEvidence.read(next)).rejects.toThrow(
+        "withheld",
+      )
+      await f.publish(2)
+      await f.admin.projectSharing.remove({
+        projectId: f.projectId,
+        userId: f.diagnostic.userId,
+      })
+      await expect(reopen(shared[0]!.id)).rejects.toThrow()
     })
     it("serializes publication replacements and immediately removes previously published values", async () => {
       const f = await fixture()

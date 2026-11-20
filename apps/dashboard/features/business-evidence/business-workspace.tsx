@@ -136,12 +136,18 @@ export function BusinessWorkspace({
           </p>
         ) : null}
       </header>
-      <ShareQuestion
-        key={JSON.stringify(selection)}
-        projectId={projectId}
-        selection={{ version: 1, depth: "business", query: selection }}
-        initialTitle="Published business question"
-      />
+      {!(selection.kind === "runs" && selection.query.cursor) && (
+        <ShareQuestion
+          key={JSON.stringify(selection)}
+          projectId={projectId}
+          selection={{ version: 1, depth: "business", query: selection }}
+          initialTitle={
+            value.data.kind === "insights"
+              ? value.data.report.field.label
+              : "Published business question"
+          }
+        />
+      )}
       <BusinessData
         value={value}
         selection={selection}

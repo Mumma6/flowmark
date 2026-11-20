@@ -78,7 +78,21 @@ export const readBusinessData = Effect.fn("readBusinessData")(function* (
             cause: "Invalid projected evidence cursor.",
           })
         }
-        const page = yield* access.runs({ ...selection, cursor: inner })
+        const { publishedCount, startedBefore, ...filters } = selection
+        const page = yield* access.runs({
+          ...filters,
+          cursor: inner,
+          ...(publishedCount
+            ? {
+                startedBeforeExclusive: startedBefore,
+                resultSelection: {
+                  ...publishedCount,
+                  operator: "gte",
+                  value: 0,
+                },
+              }
+            : { startedBefore }),
+        })
         return {
           kind: "runs" as const,
           runs: Array.map(page.runs, projectBusinessSummary),
