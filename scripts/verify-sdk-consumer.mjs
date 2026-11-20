@@ -337,9 +337,7 @@ try {
       )
     }),
   )
-  // Compile the actual served guide, not a separately maintained copy. Only
-  // supply application helpers and resolve the example's application aliases.
-  const guideFiles = []
+  // Compile the actual served guide with a stand-in for the existing job.
   const guideDirectory = "guide"
   await mkdir(join(consumer, guideDirectory))
   const snippets = [
@@ -348,26 +346,24 @@ try {
     ),
   ].map(([, code]) => code)
   assert.equal(snippets.length, 3)
-  const [business, route] = snippets[1].split("// app/api/import/route.ts\n")
   await writeFile(join(consumer, guideDirectory, "client.ts"), snippets[0])
   await writeFile(
-    join(consumer, guideDirectory, "business.ts"),
-    `${business}\ndeclare function loadInvoices(batchId: string): Promise<unknown[]>\ndeclare function saveInvoices(invoices: unknown[]): Promise<{ imported: number; rejected: number }>\n`,
+    join(consumer, guideDirectory, "import-invoices.ts"),
+    "export async function importInvoices() { return { imported: 2 } }\n",
   )
   await writeFile(
     join(consumer, guideDirectory, "route.ts"),
-    route
-      .replaceAll("@/lib/flowmark", "./client.js")
-      .replaceAll("@/business/import-invoices", "./business.js"),
+    `import { flowmark } from "./client.js"
+import { importInvoices } from "./import-invoices.js"
+export async function POST() {
+${snippets[1]}
+return Response.json(result)
+}
+`,
   )
   await writeFile(
     join(consumer, guideDirectory, "script.ts"),
-    snippets[2].replaceAll("./business/import-invoices", "./business.js"),
-  )
-  guideFiles.push(
-    ...["client.ts", "business.ts", "route.ts", "script.ts"].map(
-      (file) => `${guideDirectory}/${file}`,
-    ),
+    snippets[2].replaceAll("./import-invoices", "./import-invoices.js"),
   )
   await run(
     process.execPath,
@@ -381,7 +377,8 @@ try {
       "--target",
       "ES2022",
       "public-types.ts",
-      ...guideFiles,
+      `${guideDirectory}/route.ts`,
+      `${guideDirectory}/script.ts`,
     ],
     consumer,
   )

@@ -86,3 +86,24 @@ See the [auth perimeter](../auth-perimeter.md) and
 [composed security audit](../agent-access-security-audit.md) for server-side
 authority and cost boundaries. Business results remain application-reported
 evidence; Completed does not establish that every record succeeded.
+
+## First-run retest on Codex CLI 0.169.1
+
+Local retest on 20 November 2026 using an isolated CLI profile, a registered
+public client with the exact loopback callback, and a separate Node app with
+SDK 0.4.1 packed and installed. This version reads a pre-registered
+`client_id` and `callback_url` from the `[mcp_servers.flowmark.oauth]` block.
+With the older flat client setting, automatic discovery attempted client
+metadata authorization and the provider denied the request.
+
+After explicit project consent, `get_connection` confirmed the selected
+project and `list_workflows` confirmed it was empty. The app then exercised
+its existing partial, empty and failure cases. `find_runs` returned the
+three recorded runs. `get_run` confirmed that one run completed with two
+reported imports and one rejection. A one-event page returned a cursor.
+Wrong-project, unsupported section and revoked reads were denied.
+
+The `find_runs` and `get_run` calls took 154 ms combined locally, with
+serialized tool responses of 3,172 and 4,816 bytes. This was a direct
+app-server tool round trip and did not measure a model's answer or test
+repository discovery by a fresh coding agent.

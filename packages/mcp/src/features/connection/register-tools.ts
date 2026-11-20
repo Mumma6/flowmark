@@ -122,7 +122,7 @@ const registerFindRunsTool = (
     {
       title: "Find runs",
       description:
-        "Page run history for an authorized project inside an explicit startedAfter/startedBefore window (max 31 days). Filter by workflow, status, externalId (customer id) or internal run id via cursor pages; unsupported cursors fail closed.",
+        "Find runs in an authorized project using an explicit UTC startedAfter/startedBefore window (max 31 days). Filter by workflow, status or an application-supplied externalId. Use a returned runs[].id with get_run; continue the same search with its next cursor.",
       inputSchema: fromJsonSchema(findRunsInputJsonSchema),
       annotations: { readOnlyHint: true, destructiveHint: false },
     },
@@ -147,7 +147,7 @@ const registerGetRunTool = (
     {
       title: "Get run",
       description:
-        "Read one authorized run as a compact summary plus one bounded page. section is events (default), related, expectations, or operations. Continue with nextCursor. Run status, recorded duration, and operation status stay distinct.",
+        "Read one authorized run by its Flowmark run ID as a compact summary plus one bounded page. Choose events (default), related, expectations, or operations for the question. Use nextCursor only if more evidence is needed. Recorded completion and application-reported results are separate.",
       inputSchema: fromJsonSchema(getRunInputJsonSchema),
       annotations: { readOnlyHint: true, destructiveHint: false },
     },

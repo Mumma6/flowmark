@@ -60,8 +60,9 @@ export function SetupPathTabs({
       </TabsList>
       <TabsContent value="agent" className="mt-6 grid gap-4">
         <p className="text-sm leading-6 text-muted-foreground">
-          Copy this prompt into your AI agent's chat. It fetches the guide,
-          installs the SDK and helps instrument your application.
+          Copy this prompt into a coding agent that can read your repository. It
+          should propose where to start and show the first change for your
+          review before installing anything.
         </p>
         <div className="grid gap-2">
           <div className="flex flex-wrap items-center justify-between gap-2">
