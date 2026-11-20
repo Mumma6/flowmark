@@ -89,7 +89,7 @@ export function agentExampleQuestions(
       {
         id: "explain-run",
         label: "Explain one run",
-        prompt: `For ${project}, use the authorized Flowmark MCP connection. Call get_connection, then list_workflows for one authorized project. Use find_runs with the UTC window I specify (at most 31 days), then get_run for one returned run. Explain the reported outcome from the tool result and separate facts from hypotheses. Do not paste an ingestion key or invent tools.`,
+        prompt: `Explain what happened in one recorded run for ${project}. Confirm the project and available tools with get_connection. If the process is unknown, use list_workflows. Use find_runs with the UTC window I specify (at most 31 days), then get_run for the returned run ID and the relevant page. Cite the run and evidence link when available. Separate recorded facts, inferences from source and recommendations. If the read is empty, incomplete or denied, explain what remains unknown.`,
       },
       {
         id: "failure-code",
@@ -144,8 +144,8 @@ export function manualEvidenceHandoffIntro(
         "Remote MCP read tools are available on this deployment. Copying this text does not grant access.",
         "Steps:",
         "1. Register the MCP endpoint shown in Studio. Use OAuth and approve only the projects you select.",
-        "2. Call get_connection, then list_workflows for an authorized project.",
-        "3. Call find_runs with an explicit UTC window of at most 31 days, then get_run for one run. compare_run and get_workflow_insights are the other read-only tools.",
+        "2. Confirm the authorized project and tools with get_connection. Use list_workflows when the process is unknown.",
+        "3. Call find_runs with an explicit UTC window of at most 31 days. Pass a returned run ID to get_run for the summary and a relevant evidence page.",
         "4. Open a returned Studio link when you want the supporting evidence on screen. A link grants no access.",
         "Do not paste an ingestion key, browser key, or dashboard cookie. Business correctness is not verified by Flowmark.",
       ].join("\n"),

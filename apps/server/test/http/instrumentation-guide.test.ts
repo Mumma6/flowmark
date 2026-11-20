@@ -20,24 +20,24 @@ it("returns the instrumentation guide for the API origin that was fetched", asyn
     "FLOWMARK_API_URL=https://api.flowmark.dev/v1/events",
   )
   expect(body).toContain("not a path ending in `/v1/events`")
-  expect(body).toContain("npm i @flowmarkdev/node")
+  expect(body).toContain("npm i @flowmarkdev/node@0.4")
+  expect(body).toContain("Wait for approval before installing")
+  expect(body).toContain("before its first relevant I/O")
   expect(body).toContain(
     'import { createFlowmark } from "@flowmarkdev/node/next"',
   )
   expect(body).toContain('import { createFlowmark } from "@flowmarkdev/node"')
-  expect(body).toContain("Do not call `shutdown()` yourself")
-  expect(body).toContain('flow.operation("save-invoices"')
   expect(body).toContain(
-    'outcome: result.rejected > 0 ? "partial" : "complete"',
+    "The adapter delivers after the request and owns shutdown",
   )
   expect(body).toContain("await flowmark.shutdown()")
   expect(body).not.toContain("throw error")
-  expect(body).toContain("Configuration errors are deliberate errors")
-  expect(body).toContain("no nullable client")
   expect(body).toContain(
-    "this guide is sufficient for the first server integration",
+    'flowmark.workflow("invoice.import", () => importInvoices())',
   )
-  expect(body).toContain('flowmark.workflow("invoice.import", async flow')
+  expect(body).toContain("Report what ran, what arrived and what you read back")
+  expect(body).toContain("Separate recorded observations, source")
+  expect(body).toContain("use Studio if MCP is unavailable")
   expect(body).not.toMatch(/fm_[A-Za-z0-9]+/)
 })
 
