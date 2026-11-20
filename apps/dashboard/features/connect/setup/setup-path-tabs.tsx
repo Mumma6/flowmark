@@ -47,17 +47,16 @@ export function SetupPathTabs({
   onCopied: (path: SetupPath) => void
 }) {
   const envSnippet = serverEnvironmentSnippet(origin)
-  const manualSnippet = manualWorkflowSnippet(origin)
 
   return (
-    <Tabs defaultValue="agent">
+    <Tabs defaultValue="manual">
       <TabsList
         variant="line"
         aria-label="Instrumentation setup paths"
         className="h-auto w-full flex-wrap justify-start gap-1 border-b border-border pb-2 [&_[data-slot=tabs-trigger]]:after:bg-highlight"
       >
-        <TabsTrigger value="agent">AI-assisted · recommended</TabsTrigger>
-        <TabsTrigger value="manual">Manual SDK</TabsTrigger>
+        <TabsTrigger value="manual">Set up with the SDK</TabsTrigger>
+        <TabsTrigger value="agent">Set up with a coding agent</TabsTrigger>
       </TabsList>
       <TabsContent value="agent" className="mt-6 grid gap-4">
         <p className="text-sm leading-6 text-muted-foreground">
@@ -88,10 +87,9 @@ export function SetupPathTabs({
       </TabsContent>
       <TabsContent value="manual" className="mt-6 grid gap-4">
         <p className="text-sm leading-6 text-muted-foreground">
-          No AI client required. Install the SDK, set your server environment,
-          then add markers to one process your application already runs. For
-          Next.js, use the Next.js adapter described in the instrumentation
-          guide.
+          Start with one existing import, sync or job. This example uses a
+          Next.js Route Handler or Server Action in the Node.js runtime. The
+          Next.js adapter handles delivery after the request.
         </p>
         <SetupCode
           title="Install"
@@ -108,15 +106,17 @@ export function SetupPathTabs({
         {!compact ? (
           <SetupCode
             title="First process example"
-            value={manualSnippet}
+            value={manualWorkflowSnippet}
             copyLabel="Copy snippet"
             onCopied={() => onCopied("manual")}
           />
         ) : null}
         <div className="flex flex-wrap gap-2">
           <Button asChild variant="outline" size="sm">
-            <a href={publicConfig.documentationUrl}>
-              Open documentation
+            <a
+              href={new URL("/docs/nodejs", publicConfig.documentationUrl).href}
+            >
+              Set up a Node.js script or worker
               <ArrowUpRight aria-hidden="true" className="size-3.5" />
             </a>
           </Button>

@@ -1,13 +1,14 @@
 "use client"
 
-import { useMutation } from "@tanstack/react-query"
+import { useMutation, useQuery } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
 import { useMemo, useState } from "react"
 import { useApiOrigin } from "../platform/runtime-config"
-import { useTRPC } from "../platform/api-trpc"
+import { useTRPC, useTRPCClient } from "../platform/api-trpc"
 import { useProjectKeys } from "../projects/keys-query"
 import { useProject } from "../projects/project-context"
 import type { CreatedSecret } from "../projects/types"
+import { runInvestigationPath } from "../runs/investigation/investigation-navigation"
 import { flowmarkAgentPrompt } from "./agent-prompt"
 import { stepIndex, steps } from "./steps"
 import {
@@ -18,6 +19,7 @@ import {
 
 export function useOnboarding(initialStep: string, reviewMode = false) {
   const trpc = useTRPC()
+  const client = useTRPCClient()
   const router = useRouter()
   const { current, projects } = useProject()
   const [requestedStep, setStep] = useState(() => stepIndex(initialStep))
@@ -27,6 +29,24 @@ export function useOnboarding(initialStep: string, reviewMode = false) {
   const setCreatedSecret = (value: CreatedSecret, projectId: string) =>
     setSecret({ value, projectId })
   const currentStep = steps[step] ?? steps[0]!
+  const canCheckRun =
+    currentStep.id === "instrument" &&
+    (current?.role === "owner" || current?.role === "viewer")
+  const firstRunInput = {
+    limit: 1,
+    namespace: "application" as const,
+  }
+  const firstRun = useQuery({
+    queryKey: [
+      ...trpc.run.list.queryKey(firstRunInput),
+      { projectId: current?.id ?? null },
+    ],
+    queryFn: ({ signal }) => client.run.list.query(firstRunInput, { signal }),
+    enabled: canCheckRun,
+    refetchInterval: false,
+  })
+  const recordedRun =
+    canCheckRun && firstRun.isSuccess ? firstRun.data.runs[0] : undefined
   const keys = useProjectKeys({ retry: false })
   const hasWriteKey = keys.isSuccess && hasServerWriteKey(keys.data.apiKeys)
   const advance = useMutation(
@@ -36,8 +56,9 @@ export function useOnboarding(initialStep: string, reviewMode = false) {
   )
   const complete = useMutation(trpc.onboarding.complete.mutationOptions())
   const finish = () => {
+    const href = recordedRun ? runInvestigationPath(recordedRun.id, "/") : "/"
     if (reviewMode) {
-      router.push("/")
+      router.push(href)
       return
     }
     if (current) {
@@ -45,7 +66,7 @@ export function useOnboarding(initialStep: string, reviewMode = false) {
         { projectId: current.id },
         {
           onSuccess: () => {
-            router.push("/")
+            router.push(href)
             router.refresh()
           },
         },
@@ -98,6 +119,9 @@ export function useOnboarding(initialStep: string, reviewMode = false) {
     setCreatedSecret,
     currentStep,
     hasWriteKey,
+    canCheckRun,
+    firstRun,
+    recordedRun,
     advance,
     complete,
     snippet,

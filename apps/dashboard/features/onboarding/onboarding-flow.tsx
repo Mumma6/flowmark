@@ -13,6 +13,7 @@ import { useOnboarding } from "./use-onboarding"
 import { guidance } from "./onboarding-guidance"
 import { KeyStep } from "./step-views/key-step"
 import { InstrumentStep } from "./step-views/instrument-step"
+import { RecordedRunCheck } from "./step-views/recorded-run-check"
 import { ProjectStep } from "./step-views/project-step"
 function OnboardingContent({
   email,
@@ -34,6 +35,9 @@ function OnboardingContent({
     setCreatedSecret,
     currentStep,
     hasWriteKey,
+    canCheckRun,
+    firstRun,
+    recordedRun,
     advance,
     complete,
     snippet,
@@ -271,9 +275,19 @@ function OnboardingContent({
                   )}
                 </>
               )}
-              {currentStep.id === "instrument" ? (
-                <InstrumentStep origin={origin} snippet={snippet} />
-              ) : null}
+              {currentStep.id === "instrument" && (
+                <>
+                  <InstrumentStep origin={origin} snippet={snippet} />
+                  {canCheckRun && (
+                    <RecordedRunCheck
+                      run={recordedRun}
+                      checking={firstRun.isFetching}
+                      failed={firstRun.isError}
+                      check={() => void firstRun.refetch()}
+                    />
+                  )}
+                </>
+              )}
               <div className="border-l border-primary/25 pl-4">
                 <p className="text-[11px] font-medium">
                   {currentGuidance.note}
@@ -308,7 +322,9 @@ function OnboardingContent({
                 {busy
                   ? "Saving…"
                   : currentStep.id === "instrument"
-                    ? "Open Studio"
+                    ? recordedRun
+                      ? "Open recorded run"
+                      : "Open Studio"
                     : currentStep.id === "key"
                       ? "Get setup instructions"
                       : "Continue"}
