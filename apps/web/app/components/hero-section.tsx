@@ -29,16 +29,14 @@ export function HeroSection() {
           id="hero-title"
           className="mt-7 max-w-5xl text-[clamp(3.1rem,7.4vw,6.25rem)] leading-[1.02] font-medium tracking-[-.065em] motion-safe:animate-arrive"
         >
-          Understand what
-          <br className="hidden sm:block" /> your software
-          <br className="sm:hidden" />{" "}
-          <span className="text-primary">actually does.</span>
+          See what happened when{" "}
+          <span className="text-primary">your app ran a job.</span>
         </h1>
         <div className="mt-7 flex flex-col justify-between gap-7 sm:mt-9 lg:flex-row lg:items-end">
           <p className="max-w-lg text-sm leading-7 text-muted-foreground sm:text-[15px]">
-            Discover processes with your coding agent. Connect execution to
-            business outcomes, spot changes, and keep instrumentation current as
-            your code evolves.
+            Record an import, sync or webhook. See how it finished and what the
+            application reported. Share published results with your team in
+            Studio or investigate the evidence with your coding agent.
           </p>
           <div className="flex flex-wrap items-center gap-3">
             <Button
@@ -54,12 +52,31 @@ export function HeroSection() {
               variant="ghost"
               className="h-12 px-4 text-xs text-muted-foreground"
             >
-              <a href="#experience">
-                Follow the process <span aria-hidden="true">↓</span>
+              <a href="#example-run">
+                See an example run <span aria-hidden="true">↓</span>
               </a>
             </Button>
           </div>
         </div>
+        <section
+          id="example-run"
+          aria-labelledby="example-run-title"
+          className="mt-10 grid gap-3 rounded-xl border border-border bg-card p-5 sm:p-6"
+        >
+          <h2 id="example-run-title" className="text-base font-medium">
+            Example run · Invoice import
+          </h2>
+          <dl className="flex flex-wrap gap-x-8 gap-y-3 text-sm">
+            <div>
+              <dt className="text-muted-foreground">Execution</dt>
+              <dd>Completed in 1.8 seconds</dd>
+            </div>
+            <div>
+              <dt className="text-muted-foreground">Reported result</dt>
+              <dd>988 imported · 12 skipped</dd>
+            </div>
+          </dl>
+        </section>
         <div id="experience" className="mt-12 sm:mt-16">
           <ProcessLandscape />
         </div>

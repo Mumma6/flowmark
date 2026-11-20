@@ -66,18 +66,12 @@ it("builds manual setup snippets and recovery copy for the validated origin", ()
   expect(recovery.wrongProject).toContain("Production app")
   expect(recovery.wrongOrigin).toContain(origin)
   expect(recovery.copyFailure).toContain("clipboard")
-  const snippet = manualWorkflowSnippet(origin)
-  expect(snippet).toContain("importBatch(batchId)")
-  expect(snippet).toContain("skipped: imported.skipped")
-  expect(snippet).toContain("return imported")
-  expect(snippet).toContain(
-    'outcome: imported.skipped > 0 ? "partial" : "complete"',
+  expect(manualWorkflowSnippet).toContain('"@flowmarkdev/node/next"')
+  expect(manualWorkflowSnippet).toContain(
+    'workflow("invoice.import", () => importInvoices())',
   )
-  expect(snippet).toContain('workflow("customer.import", async (flow)')
-  expect(snippet).not.toContain("throw error")
-  expect(snippet).toContain("await flowmark.flush()")
-  expect(snippet).not.toContain("shutdown()")
-  expect(snippet).not.toContain("npm i")
-  expect(snippet).not.toContain("FLOWMARK_API_KEY=")
-  expect(snippet).not.toMatch(/fm_[A-Za-z0-9]+/)
+  expect(manualWorkflowSnippet).not.toMatch(
+    /\.flush\(|\.shutdown\(|\.operation\(|\.done\(/,
+  )
+  expect(manualWorkflowSnippet).not.toMatch(/fm_[A-Za-z0-9]+/)
 })

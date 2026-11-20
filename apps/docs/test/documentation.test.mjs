@@ -108,10 +108,8 @@ import { createFlowmark as createBrowserFlowmark } from "../src/browser/index.js
 import { createFlowmark as createNextFlowmark } from "../src/adapters/next.js"
 import { createFlowmarkProxy } from "../src/adapters/proxy.js"
 declare const confirmationId: string
-declare const batchId: string
 declare const logger: { error(context: unknown, message: string): void }
-declare function loadInvoices(id: string): Promise<unknown[]>
-declare function saveValidInvoices(invoices: unknown[]): Promise<{imported: number; skipped: number}>
+declare function importInvoices(): Promise<{ imported: number; skipped: number }>
 declare function chargeCustomer(): Promise<{receiptId: string}>
 declare function reserveStock(): Promise<void>
 declare function canRecordWorkflow(request: Request): Promise<boolean>
@@ -121,7 +119,14 @@ declare function updateStock(page: unknown[]): Promise<void>
 declare const supplierId: string
 const flowmark = createFlowmark()
 const run = flowmark.workflow("test.run")
-${blocks("/docs/sdk")[1].replace(/^import .+$/gm, "")}
+async function quickstartExample() {
+${blocks("/docs/sdk")[0]
+  .replace(/^import .+$/gm, "")
+  .replace("export const", "const")
+  .replace("createFlowmark(", "createNextFlowmark(")}
+${blocks("/docs/sdk")[1]}
+return result
+}
 function expectationExamples() {
 ${blocks("/docs/reference/expectations")[0]}
 ${blocks("/docs/reference/expectations")[2]}

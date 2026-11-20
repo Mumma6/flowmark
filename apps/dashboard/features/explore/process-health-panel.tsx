@@ -158,8 +158,9 @@ export function ProcessHealthPanel({
               />
             ) : (
               <p className="text-sm text-muted-foreground">
-                Health is unmeasured until you select the name of a reported
-                expectation.
+                Confirmation health needs a reported confirmation name. Open a
+                recorded run and look under Confirmations for the name to use
+                here.
               </p>
             )}
           </>

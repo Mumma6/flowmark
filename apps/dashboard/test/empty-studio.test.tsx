@@ -57,7 +57,8 @@ beforeEach(() => {
 it("offers a calm empty project without analytics, filters or pagination", () => {
   const html = render()
   expect(html).toContain("No recorded executions")
-  expect(html).toContain("You can close Studio and return later.")
+  expect(html).toContain("and return later.")
+  expect(html).toContain("invoice import")
   expect(html).toContain("/onboarding?mode=guide&amp;step=instrument")
   expect(html).not.toMatch(
     /Period analytics|All filters|Previous|Install|verified/,
