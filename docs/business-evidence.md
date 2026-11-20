@@ -35,6 +35,15 @@ reference journeys, result comparisons and recorded peers. A run may be saved as
 a private live selection: reopening it checks current membership and publication.
 The owner can preview the business view from publication settings.
 
+Use **Compare a published business result** to answer a question such as how
+many bookings were reported accepted. A published count shows the declared
+unit, the two exact UTC windows, the number of contributing runs and coverage
+exclusions. **View contributing runs** opens the same count, workflow and
+definition revision within the selected half-open period. It includes finished
+runs with a valid reported count, including zero. Each run opens its published
+result. The aggregate and list are live observations and can change between
+reads. Diagnostic expectations supply neither the business total nor its order.
+
 The API's `businessEvidence` reads and the existing MCP tools use the same
 projection rules. MCP technical modes remain unavailable to business readers.
 Portable run views refresh through the current authorized tool call. Copying

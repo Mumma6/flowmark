@@ -12,14 +12,46 @@ export const validateBusinessSelection = Effect.fn("validateBusinessSelection")(
         workflow,
         key,
       )
+    const aggregate = (
+      workflow: string | undefined,
+      revision: string,
+      path: readonly string[],
+      countOnly = false,
+    ) =>
+      Array.some(
+        meaning.results,
+        (e) =>
+          e.workflow === workflow &&
+          e.revision === revision &&
+          Array.some(
+            e.fields,
+            (f) =>
+              f.aggregate &&
+              (!countOnly || f.kind === "count") &&
+              JSON.stringify(f.path) === JSON.stringify(path),
+          ),
+      )
+        ? Effect.void
+        : Effect.fail(
+            new InvalidInput({
+              cause: "This result selector is withheld from business evidence.",
+            }),
+          )
     yield* Match.value(input).pipe(
       Match.when({ kind: "overview" }, () => Effect.void),
       Match.when({ kind: "run" }, () => Effect.void),
       Match.when({ kind: "compare" }, () => Effect.void),
       Match.when({ kind: "runs" }, ({ query }) =>
-        query.businessKey === undefined
-          ? Effect.void
-          : reference(query.workflow, query.businessKey),
+        query.publishedCount
+          ? aggregate(
+              query.workflow,
+              query.publishedCount.revision,
+              query.publishedCount.path,
+              true,
+            )
+          : query.businessKey === undefined
+            ? Effect.void
+            : reference(query.workflow, query.businessKey),
       ),
       Match.when({ kind: "journey" }, ({ query }) =>
         Effect.gen(function* () {
@@ -45,26 +77,7 @@ export const validateBusinessSelection = Effect.fn("validateBusinessSelection")(
               ...(query.numerator ? [query.numerator] : []),
               ...(query.denominator ? [query.denominator] : []),
             ],
-            (path) =>
-              Array.some(
-                meaning.results,
-                (e) =>
-                  e.workflow === query.workflow &&
-                  e.revision === query.revision &&
-                  Array.some(
-                    e.fields,
-                    (f) =>
-                      f.aggregate &&
-                      JSON.stringify(f.path) === JSON.stringify(path),
-                  ),
-              )
-                ? Effect.void
-                : Effect.fail(
-                    new InvalidInput({
-                      cause:
-                        "This result selector is withheld from business evidence.",
-                    }),
-                  ),
+            (path) => aggregate(query.workflow, query.revision, path),
           )
         }),
       ),

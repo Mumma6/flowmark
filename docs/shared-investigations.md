@@ -26,6 +26,12 @@ questions require diagnostic depth until an explicit business representation is
 supported. Saved continuation cursors cannot be shared; return to the first page
 and save that question. Sharing never silently removes a filter or cursor.
 
+From a published count comparison, use **Share live question** to share the
+measure and its absolute windows. The first page of **View contributing runs**
+can also be shared. Recipients reopen under current project membership and
+publication. Removing the published measure makes both shared questions
+unavailable, including their titles and selection metadata.
+
 Questions recompute when opened. Absolute comparison windows stay absolute;
 relative peer-day questions remain live. Missing source evidence is an unavailable
 or empty observation, not a newly stored result or proof of activity. Completed
