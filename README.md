@@ -17,9 +17,19 @@
 
 Your agent knows the code. Flowmark remembers what happened in production.
 
-Today, authorized coding agents can use MCP to find and inspect recorded runs,
-attempts, outcomes and later confirmations. Automatic lookup of relevant
-evidence from a ticket, diff, file or symbol is in development.
+Every code change starts with a decision about which behavior to preserve,
+what to fix, and what to test. Production history can inform that decision.
+It can show which paths actually ran, which attempts belonged together, and
+which outcomes arrived after the original execution ended.
+
+We’re building Flowmark so an agent can start with a ticket, diff, file or
+symbol and retrieve the production cases that matter for its next change.
+The team sets intent and approves the change. The agent uses the evidence to
+implement and test it. Once the application runs again, its observations
+become evidence for future agents.
+
+Authorized agents can already use MCP to find and inspect recorded executions.
+Automatic retrieval from a code change is in development.
 
 ## Start here
 
