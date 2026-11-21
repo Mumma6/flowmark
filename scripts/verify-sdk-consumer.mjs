@@ -18,6 +18,7 @@ import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { fileURLToPath } from "node:url"
 import { setTimeout as delay } from "node:timers/promises"
+import { runCaptureBenchmark } from "./benchmark-capture.mjs"
 
 const root = fileURLToPath(new URL("../", import.meta.url))
 const { instrumentationGuide } = await import(
@@ -51,11 +52,24 @@ const environment = {
 let child
 let logs = ""
 const received = []
+const captureBatches = []
+let captureUnavailable = false
 const completedBookings = new Set()
 let retryEnvelope
 let retrySent = false
 const receiver = createServer(async (request, response) => {
   const provider = new URL(request.url, "http://127.0.0.1")
+  if (
+    request.method === "GET" &&
+    provider.pathname.startsWith("/capture-fixture/")
+  ) {
+    const primary = provider.pathname === "/capture-fixture/primary"
+    response.writeHead(primary ? 429 : 200, {
+      "content-type": "application/json",
+    })
+    response.end(JSON.stringify(primary ? { limited: true } : { imported: 2 }))
+    return
+  }
   if (["/news", "/repositories", "/editor"].includes(provider.pathname)) {
     const jobId = provider.searchParams.get("jobId") ?? ""
     const attempt = Number(provider.searchParams.get("attempt"))
@@ -90,7 +104,24 @@ const receiver = createServer(async (request, response) => {
   }
   const chunks = []
   for await (const chunk of request) chunks.push(chunk)
-  const envelope = JSON.parse(Buffer.concat(chunks).toString())
+  const bytes = Buffer.concat(chunks)
+  const envelope = JSON.parse(bytes.toString())
+  if (
+    provider.pathname === "/capture-fixture/observations" ||
+    provider.pathname === "/v1/traces"
+  ) {
+    captureBatches.push({
+      envelope,
+      bytes: bytes.length,
+      accepted: !captureUnavailable,
+    })
+    response
+      .writeHead(captureUnavailable ? 503 : 200, {
+        "content-type": "application/json",
+      })
+      .end("{}")
+    return
+  }
   received.push(envelope)
   assert.equal(request.url, "/v1/events")
   if (request.headers.authorization === "Bearer synthetic-rejected") {
@@ -337,9 +368,7 @@ try {
       )
     }),
   )
-  // Compile the actual served guide, not a separately maintained copy. Only
-  // supply application helpers and resolve the example's application aliases.
-  const guideFiles = []
+  // Compile the actual served guide with a stand-in for the existing job.
   const guideDirectory = "guide"
   await mkdir(join(consumer, guideDirectory))
   const snippets = [
@@ -348,26 +377,24 @@ try {
     ),
   ].map(([, code]) => code)
   assert.equal(snippets.length, 3)
-  const [business, route] = snippets[1].split("// app/api/import/route.ts\n")
   await writeFile(join(consumer, guideDirectory, "client.ts"), snippets[0])
   await writeFile(
-    join(consumer, guideDirectory, "business.ts"),
-    `${business}\ndeclare function loadInvoices(batchId: string): Promise<unknown[]>\ndeclare function saveInvoices(invoices: unknown[]): Promise<{ imported: number; rejected: number }>\n`,
+    join(consumer, guideDirectory, "import-invoices.ts"),
+    "export async function importInvoices() { return { imported: 2 } }\n",
   )
   await writeFile(
     join(consumer, guideDirectory, "route.ts"),
-    route
-      .replaceAll("@/lib/flowmark", "./client.js")
-      .replaceAll("@/business/import-invoices", "./business.js"),
+    `import { flowmark } from "./client.js"
+import { importInvoices } from "./import-invoices.js"
+export async function POST() {
+${snippets[1]}
+return Response.json(result)
+}
+`,
   )
   await writeFile(
     join(consumer, guideDirectory, "script.ts"),
-    snippets[2].replaceAll("./business/import-invoices", "./business.js"),
-  )
-  guideFiles.push(
-    ...["client.ts", "business.ts", "route.ts", "script.ts"].map(
-      (file) => `${guideDirectory}/${file}`,
-    ),
+    snippets[2].replaceAll("./import-invoices", "./import-invoices.js"),
   )
   await run(
     process.execPath,
@@ -381,7 +408,8 @@ try {
       "--target",
       "ES2022",
       "public-types.ts",
-      ...guideFiles,
+      `${guideDirectory}/route.ts`,
+      `${guideDirectory}/script.ts`,
     ],
     consumer,
   )
@@ -795,6 +823,27 @@ try {
   console.log(
     `PASS all ${scripts.length} runnable SDK examples with packed exports, including expectation settlement modes`,
   )
+  if (process.env.FLOWMARK_CAPTURE_BENCHMARK === "1") {
+    await stop()
+    await runCaptureBenchmark({
+      consumer,
+      start: () => start(runtimeEnv),
+      stop,
+      eventsFor,
+      eventually,
+      captureBatches,
+      setUnavailable: (value) => {
+        captureUnavailable = value
+      },
+      runNode: (trials) =>
+        run(
+          process.execPath,
+          ["scripts/capture-probe.mjs", JSON.stringify(trials)],
+          consumer,
+          { ...environment, ...runtimeEnv },
+        ).then(JSON.parse),
+    })
+  }
 } finally {
   await stop()
   receiver.closeAllConnections()

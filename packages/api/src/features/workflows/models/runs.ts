@@ -197,6 +197,7 @@ export interface RelatedRunsPage {
 
 export interface RunExpectationsPageQuery {
   readonly runId: string
+  readonly expectationId?: string
   readonly cursor?: string
   readonly limit?: number
 }

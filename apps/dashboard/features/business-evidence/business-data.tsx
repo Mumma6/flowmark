@@ -1,8 +1,13 @@
 "use client"
+import {
+  MeaningProposals,
+  ProposeMeaning,
+} from "../results/proposals/meaning-proposals"
 import { Button, Card, CardContent, CardHeader, CardTitle } from "@flowmark/ui"
 import { CaptureRun } from "../evidence-captures/capture-run"
 import { BusinessRunView } from "@flowmark/ui/business-run"
 import type { BusinessEvidence, BusinessEvidenceQuery } from "@flowmarkdev/core"
+import { BusinessPeriodChange } from "./business-period-change"
 import { BusinessJourneyForm, BusinessInsightForm } from "./question-forms"
 import { SaveInvestigation } from "../investigations/save-investigation"
 export function BusinessData({
@@ -21,6 +26,7 @@ export function BusinessData({
     <>
       {data.kind === "overview" ? (
         <>
+          <BusinessInsightForm meaning={data.meaning} choose={choose} />
           <Card>
             <CardHeader>
               <CardTitle>Project activity</CardTitle>
@@ -68,13 +74,17 @@ export function BusinessData({
             </CardContent>
           </Card>
           <BusinessJourneyForm meaning={data.meaning} choose={choose} />
-          <BusinessInsightForm meaning={data.meaning} choose={choose} />
         </>
       ) : null}
       {data.kind === "runs" ? (
         <Card>
           <CardHeader>
-            <CardTitle>{data.total} recorded runs</CardTitle>
+            <CardTitle>
+              {data.total}{" "}
+              {selection.kind === "runs" && selection.query.publishedCount
+                ? "contributing runs"
+                : "recorded runs"}
+            </CardTitle>
           </CardHeader>
           <CardContent className="grid gap-3">
             {data.runs.length === 0 ? (
@@ -134,6 +144,13 @@ export function BusinessData({
             revision={value.projection.publicationRevision}
             observedAt={value.projection.observedAt}
           />
+          <ProposeMeaning
+            key={`${projectId}:${data.summary.id}:${value.projection.publicationRevision}`}
+            projectId={projectId}
+            runId={data.summary.id}
+            fields={data.fields}
+          />
+          <MeaningProposals key={projectId} projectId={projectId} />
           <CaptureRun
             key={`${projectId}:${data.summary.id}`}
             projectId={projectId}
@@ -268,41 +285,143 @@ export function BusinessData({
       {data.kind === "insights" ? (
         <Card>
           <CardHeader>
-            <CardTitle>
-              {data.report.field.label} · reported comparison
-            </CardTitle>
+            <CardTitle>{data.report.field.label}</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-4">
-            {data.report.windows.map((w) => (
-              <section
-                className="rounded-lg border border-border p-4"
-                key={w.scope}
-              >
-                <h3 className="font-semibold capitalize">{w.scope}</h3>
-                <p className="text-2xl">
-                  {w.total ?? "No permitted numeric total"}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {w.knownRuns} known result observations / {w.totalRuns} runs.{" "}
-                  {w.missingResult} missing results, {w.missingField} missing
-                  fields, {w.incompatibleRevision} incompatible revisions,{" "}
-                  {w.wrongType} invalid types, {w.unknownCategory} unknown
-                  categories.
-                </p>
-                {w.categories.map((c) => (
-                  <p className="text-sm" key={c.value}>
-                    {c.value}: {c.runs} runs
-                    {c.total === null ? "" : ` · ${c.total}`}
+            <BusinessPeriodChange report={data.report} />
+            {data.report.windows.map((w) => {
+              const { query, field } = data.report
+              const previous = w.scope === "previous"
+              const startedAfter = previous
+                ? query.previousStartedAfter
+                : query.currentStartedAfter
+              const startedBefore = previous
+                ? query.previousStartedBefore
+                : query.currentStartedBefore
+              return (
+                <section
+                  className="grid gap-2 rounded-lg border border-border p-4"
+                  key={w.scope}
+                >
+                  <h3 className="font-semibold capitalize">{w.scope} period</h3>
+                  <p className="text-sm text-muted-foreground">
+                    {startedAfter} to {startedBefore} (end excluded)
                   </p>
-                ))}
-              </section>
-            ))}
+                  <p className="text-2xl">
+                    {w.total === null ? (
+                      "No reported total"
+                    ) : (
+                      <>
+                        {w.total}
+                        {field.unit && (
+                          <span className="text-base"> {field.unit}</span>
+                        )}
+                      </>
+                    )}
+                  </p>
+                  <p className="text-sm">
+                    {w.failedRuns.toLocaleString()} failed of{" "}
+                    {w.finishedRuns.toLocaleString()} terminal runs ·{" "}
+                    {w.openRuns.toLocaleString()} without a terminal report
+                  </p>
+                  {(w.scope === "current" || previous) && w.failedRuns > 0 && (
+                    <Button
+                      variant="outline"
+                      className="justify-self-start"
+                      aria-label={`View failed runs for the ${w.scope} period`}
+                      onClick={() =>
+                        choose({
+                          kind: "runs",
+                          query: {
+                            workflow: query.workflow,
+                            startedAfter,
+                            startedBeforeExclusive: startedBefore,
+                            status: "Failed",
+                            businessKey: query.businessKey,
+                            businessValue: query.businessValue,
+                            limit: 25,
+                          },
+                        })
+                      }
+                    >
+                      View failed runs
+                    </Button>
+                  )}
+                  <p className="text-sm text-muted-foreground">
+                    {w.knownRuns} of {w.totalRuns} recorded runs reported a
+                    usable result.
+                  </p>
+                  {w.knownRuns !== w.totalRuns && (
+                    <details className="text-sm text-muted-foreground">
+                      <summary className="cursor-pointer">
+                        Why some runs were excluded
+                      </summary>
+                      <ul className="list-disc pl-5">
+                        {w.openRuns > 0 && (
+                          <li>{w.openRuns} without a recorded finish</li>
+                        )}
+                        {w.missingResult > 0 && (
+                          <li>{w.missingResult} without a reported result</li>
+                        )}
+                        {w.missingField > 0 && (
+                          <li>{w.missingField} without this measure</li>
+                        )}
+                        {w.incompatibleRevision > 0 && (
+                          <li>
+                            {w.incompatibleRevision} under a different or
+                            unknown definition
+                          </li>
+                        )}
+                        {w.wrongType > 0 && (
+                          <li>{w.wrongType} with an invalid value</li>
+                        )}
+                        {w.unknownCategory > 0 && (
+                          <li>
+                            {w.unknownCategory} with an unrecognized category
+                          </li>
+                        )}
+                      </ul>
+                    </details>
+                  )}
+                  {(w.scope === "current" || previous) &&
+                    field.kind === "count" &&
+                    query.businessKey === undefined &&
+                    w.knownRuns > 0 && (
+                      <Button
+                        variant="outline"
+                        className="justify-self-start"
+                        aria-label={`View contributing runs for the ${w.scope} period`}
+                        onClick={() =>
+                          choose({
+                            kind: "runs",
+                            query: {
+                              workflow: query.workflow,
+                              startedAfter,
+                              startedBefore,
+                              publishedCount: {
+                                revision: query.revision,
+                                path: field.path,
+                              },
+                              limit: 25,
+                            },
+                          })
+                        }
+                      >
+                        View contributing runs
+                      </Button>
+                    )}
+                  {w.categories.map((c) => (
+                    <p className="text-sm" key={c.value}>
+                      {c.value}: {c.runs} runs
+                      {c.total === null ? "" : ` · ${c.total}`}
+                    </p>
+                  ))}
+                </section>
+              )
+            })}
             <p className="text-xs text-muted-foreground">
-              Exact windows: {data.report.query.currentStartedAfter} –{" "}
-              {data.report.query.currentStartedBefore}; previous{" "}
-              {data.report.query.previousStartedAfter} –{" "}
-              {data.report.query.previousStartedBefore}. Missing observations
-              are not zero business value.
+              Totals use the results reported by the application. Missing
+              observations do not count as zero.
             </p>
           </CardContent>
         </Card>

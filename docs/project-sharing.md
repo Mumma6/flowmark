@@ -29,6 +29,12 @@ bindings. Rejoining requires another invitation and does not restore old agent
 grants. Other projects remain accessible. Private saved selections remain personal;
 access to their evidence still requires current project membership.
 
+Business readers and diagnostic viewers can send a [label proposal backed by a
+published run](definition-imports.md#propose-a-label-from-a-published-example). They can
+review their own submissions. The project owner can review and resolve all
+proposals and applies any resulting definition revision separately. Delegated
+agent sessions cannot submit or resolve proposals.
+
 Copied API keys are separate credentials: removing a member does not rotate them.
 Revoke or rotate any keys that person obtained separately when needed.
 

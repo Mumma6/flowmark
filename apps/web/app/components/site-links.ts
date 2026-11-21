@@ -11,3 +11,10 @@ export const appUrl =
     : "https://app.flowmark.dev")
 
 export const githubUrl = "https://github.com/Mumma6/flowmark"
+
+export const navigation = [
+  { label: "How it works", href: "#how-it-works" },
+  { label: "The loop", href: "#loop" },
+  { label: "For agents", href: "#for-agents" },
+  { label: "Docs", href: docsUrl },
+] as const

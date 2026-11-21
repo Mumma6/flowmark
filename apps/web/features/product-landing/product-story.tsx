@@ -1,215 +1,205 @@
 import { FlowmarkMark } from "@flowmark/ui"
 import { Arrow } from "../../app/components/brand"
+import { docsUrl } from "../../app/components/site-links"
 import {
   overlineClassName,
   sectionTitleClassName,
   shellClassName,
 } from "../../app/components/shell"
-import { githubUrl } from "../../app/components/site-links"
-import { WorkflowCodeBlock } from "../../app/components/workflow-code-block"
-import { DiscoveryField } from "./discovery-field"
-import { EvidenceNetwork } from "./evidence-network"
-import { EvolutionExperience } from "./evolution-experience"
-import { customerSyncCode } from "./instrumentation-example"
-import { JourneyTimeline } from "./journey-timeline"
-import { OutcomeField } from "./outcome-field"
-import { SectionTrace } from "./motion"
+import copy from "../../public/landing-page-copy.en.json"
+import { MotionScene, SignalPath } from "./motion"
+import { MemoryConstellation } from "./memory-constellation"
+import { ProcessIcon } from "./process-icon"
+import { StepIllustration } from "./step-illustrations"
 
-export function DiscoverSection() {
+export function HowSection() {
   return (
     <section
-      id="discover"
-      className="relative border-y border-border/60 py-20 sm:py-28"
-      aria-labelledby="discover-title"
+      id="how-it-works"
+      aria-labelledby="how-title"
+      className={`${shellClassName} py-14 sm:py-20`}
     >
-      <div className={shellClassName}>
-        <div className="grid gap-6 lg:grid-cols-[1.3fr_.7fr] lg:items-end lg:gap-16">
-          <div>
-            <p className={overlineClassName}>01 / Find the process</p>
-            <h2 id="discover-title" className={`${sectionTitleClassName} mt-5`}>
-              It’s already in your code.
-              <br />
-              <span className="text-primary">Bring it into view.</span>
-            </h2>
-          </div>
-          <p className="max-w-sm text-sm leading-7 text-muted-foreground">
-            Discover useful technical context automatically. Let your coding
-            agent identify meaningful processes and add the business signals
-            that explain them.
-          </p>
-        </div>
-        <DiscoveryField
-          code={
-            <WorkflowCodeBlock
-              title="app/sync-customers.ts"
-              value={customerSyncCode}
-            />
-          }
-        />
-      </div>
-    </section>
-  )
-}
-
-export function JourneySection() {
-  return (
-    <section
-      id="journey"
-      className={`${shellClassName} py-20 sm:py-32`}
-      aria-labelledby="journey-title"
-    >
-      <div className="relative grid gap-14 lg:grid-cols-[.9fr_1.1fr] lg:gap-24">
-        <div className="self-start lg:sticky lg:top-36">
-          <p className={overlineClassName}>02 / Follow the story</p>
-          <h2 id="journey-title" className={`${sectionTitleClassName} mt-5`}>
-            Follow the process.
-            <br />
-            <span className="text-muted-foreground">
-              Across services and time.
-            </span>
-          </h2>
-          <p className="mt-6 max-w-sm text-sm leading-7 text-muted-foreground">
-            Connect executions through shared business references. Follow
-            imports, payments, background jobs and bookings across services,
-            callbacks and time.
-          </p>
-          <div className="mt-9 border-l border-primary/40 pl-5">
-            <p className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground">
-              One booking journey
+      <h2 id="how-title" className={sectionTitleClassName}>
+        {copy.how.heading}
+      </h2>
+      <ol className="mt-7 grid gap-x-4 gap-y-7 min-[360px]:grid-cols-2 lg:grid-cols-4 lg:gap-6">
+        {copy.how.steps.map((step, index) => (
+          <li key={step.title}>
+            <StepIllustration index={index} />
+            <h3 className="text-lg font-medium tracking-tight">{step.title}</h3>
+            <p className="mt-1.5 max-w-xs text-sm leading-6 text-muted-foreground">
+              {step.detail}
             </p>
-            <p className="mt-3 font-mono text-xs text-primary">BOOK-2049</p>
-            <p className="mt-3 text-xs text-muted-foreground">
-              Select a moment to see its evidence.
-            </p>
-          </div>
-          <p className="mt-10 max-w-xs text-xl leading-relaxed tracking-tight">
-            Your code ran.
-            <br />
-            <span className="text-primary">Did the business move forward?</span>
-          </p>
-        </div>
-        <JourneyTimeline />
-      </div>
+          </li>
+        ))}
+      </ol>
     </section>
   )
 }
 
-export function IntelligenceSection() {
-  return (
-    <section
-      id="understand"
-      className="relative isolate border-y border-border/60 bg-secondary/10 py-20 sm:py-28"
-      aria-labelledby="intelligence-title"
-    >
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_90%_35%,hsl(var(--highlight)/0.04),transparent_60%)]"
-      />
-      <div className={shellClassName}>
-        <div className="grid gap-6 lg:grid-cols-[1.2fr_.8fr] lg:items-end lg:gap-16">
-          <div>
-            <p className={overlineClassName}>03 / Notice what matters</p>
-            <h2
-              id="intelligence-title"
-              className={`${sectionTitleClassName} mt-5`}
-            >
-              Spot changes in outcomes.
-              <br />
-              <span className="text-primary">
-                Even when execution looks healthy.
-              </span>
-            </h2>
-          </div>
-          <p className="max-w-sm text-sm leading-7 text-muted-foreground">
-            Flowmark proactively surfaces changing outcomes and connects
-            findings to evidence. Compare releases with execution health and
-            reporting coverage in view.
-          </p>
-        </div>
-        <OutcomeField />
-      </div>
-    </section>
-  )
-}
+const loopIcons = [
+  <ProcessIcon key="intent" name="person" />,
+  <ProcessIcon key="build" name="request" />,
+  <ProcessIcon key="run" name="integration" />,
+  <FlowmarkMark key="memory" className="size-6" />,
+  <ProcessIcon key="change" name="branch" />,
+]
 
-export function EvolveSection() {
+export function FactorySection() {
   return (
     <section
-      id="evolve"
-      className={`${shellClassName} py-20 sm:py-28`}
-      aria-labelledby="evolve-title"
+      id="loop"
+      aria-labelledby="loop-title"
+      className="border-y border-border bg-card/50"
     >
-      <div className="relative lg:pl-8">
-        <SectionTrace />
-        <div className="grid gap-6 lg:grid-cols-[1.2fr_.8fr] lg:items-end lg:gap-16">
-          <div>
-            <p className={overlineClassName}>04 / Keep understanding alive</p>
-            <h2 id="evolve-title" className={`${sectionTitleClassName} mt-5`}>
-              Detect instrumentation drift.
-              <br />
-              <span className="text-muted-foreground">
-                Keep process evidence current.
-              </span>
-            </h2>
-          </div>
-          <p className="max-w-sm text-sm leading-7 text-muted-foreground">
-            Detect code changes that leave process evidence incomplete. Your
-            coding agent proposes instrumentation updates; your team reviews and
-            verifies them.
-          </p>
-        </div>
-      </div>
-      <EvolutionExperience />
-    </section>
-  )
-}
-
-export function EverywhereSection() {
-  return (
-    <section
-      id="everywhere"
-      className="border-y border-border/60 py-20 sm:py-28"
-      aria-labelledby="everywhere-title"
-    >
-      <div className={shellClassName}>
-        <div className="mx-auto max-w-3xl text-center">
-          <p className={overlineClassName}>
-            Built for people. Native to agents.
-          </p>
-          <h2 id="everywhere-title" className={`${sectionTitleClassName} mt-5`}>
-            For your team and your agents.
-            <br />
-            <span className="text-primary">One shared source of evidence.</span>
-          </h2>
-          <p className="mx-auto mt-5 max-w-lg text-sm leading-7 text-muted-foreground">
-            Developers, product teams and operations investigate the same
-            evidence. Coding agents use that context to explain behavior and
-            improve instrumentation.
-          </p>
-        </div>
-        <EvidenceNetwork />
-        <div
-          id="platform"
-          className="mt-16 grid gap-6 border-t border-border pt-8 sm:grid-cols-[1fr_auto] sm:items-center"
+      <div className={`${shellClassName} py-14 sm:py-20`}>
+        <p className={overlineClassName}>{copy.loop.eyebrow}</p>
+        <h2
+          id="loop-title"
+          className={`mt-3 max-w-3xl ${sectionTitleClassName}`}
         >
-          <div className="flex items-center gap-4">
-            <FlowmarkMark className="size-6 shrink-0 text-primary" />
-            <div>
-              <p className="text-sm">Intelligence you can build on.</p>
-              <p className="mt-2 font-mono text-[9px] leading-6 text-muted-foreground">
-                TypeScript SDK <span className="px-2 text-primary">→</span> Rust
-                + PostgreSQL <span className="px-2 text-primary">→</span> API +
-                MCP
-              </p>
-            </div>
-          </div>
-          <a
-            href={githubUrl}
-            className="inline-flex min-h-10 items-center gap-2 text-xs text-muted-foreground hover:text-primary"
+          {copy.loop.heading}
+        </h2>
+        <MotionScene className="mt-8 sm:mt-12">
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 1000 52"
+            preserveAspectRatio="none"
+            className="pointer-events-none absolute inset-x-0 top-0 hidden h-12 w-full md:block"
           >
-            Explore the source <Arrow diagonal />
-          </a>
-        </div>
+            <SignalPath d="M100 26 H900" />
+            {[200, 400, 600, 800].map((x) => (
+              <path
+                key={x}
+                d={`M${x - 4} 21l5 5-5 5`}
+                fill="none"
+                stroke="var(--accent)"
+                strokeOpacity=".65"
+              />
+            ))}
+          </svg>
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 100 100"
+            preserveAspectRatio="none"
+            className="pointer-events-none absolute inset-y-0 left-5 h-full w-[calc(100%-1.5rem)] md:hidden"
+          >
+            <SignalPath d="M1 9 V90" />
+            <SignalPath
+              d="M5 90 H91 Q97 90 97 85 V35 Q97 30 91 30 H5"
+              delay="[animation-delay:3s]"
+            />
+            <path
+              d="m8 29-3 1 3 1"
+              fill="none"
+              stroke="var(--accent)"
+              vectorEffect="non-scaling-stroke"
+            />
+          </svg>
+          <ol className="relative grid gap-5 md:grid-cols-5 md:gap-0">
+            {copy.loop.steps.map((step, i) => (
+              <li
+                key={step.title}
+                className="flex min-h-14 items-center gap-4 pr-5 md:flex-col md:px-2 md:text-center"
+              >
+                <span className="relative flex size-11 shrink-0 items-center justify-center rounded-xl border border-primary/30 bg-card text-primary md:size-12">
+                  {i === 3 && (
+                    <svg
+                      aria-hidden="true"
+                      viewBox="0 0 48 48"
+                      className="pointer-events-none absolute inset-0 size-full"
+                    >
+                      <rect
+                        x="1"
+                        y="1"
+                        width="46"
+                        height="46"
+                        rx="11"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        pathLength="100"
+                        strokeDasharray="18 82"
+                        strokeLinecap="round"
+                        className="group-data-[playing=true]/scene:animate-memory-border"
+                      />
+                    </svg>
+                  )}
+                  {loopIcons[i]}
+                </span>
+                <div>
+                  <h3 className="text-base font-medium">{step.title}</h3>
+                  <p className="mt-1 max-w-[15rem] text-sm leading-5 text-muted-foreground">
+                    {step.detail}
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ol>
+          <svg
+            aria-hidden="true"
+            className="mt-2 hidden h-9 w-full md:block"
+            viewBox="0 0 1000 36"
+            preserveAspectRatio="none"
+          >
+            <SignalPath
+              d="M900 2 V12 Q900 28 883 28 H317 Q300 28 300 12 V3"
+              delay="[animation-delay:3s]"
+            />
+            <path
+              d="m295 9 5-6 5 6"
+              fill="none"
+              stroke="var(--accent)"
+              strokeWidth="1.25"
+            />
+          </svg>
+          <p className="mt-4 pl-[3.75rem] font-mono text-xs text-primary md:mt-1 md:pl-[20%] md:text-center">
+            <span aria-hidden="true">↺ </span>
+            {copy.loop.returnLabel}
+          </p>
+        </MotionScene>
+      </div>
+    </section>
+  )
+}
+
+export function AgentsSection() {
+  return (
+    <section
+      id="for-agents"
+      aria-labelledby="agents-title"
+      className={`${shellClassName} grid gap-8 py-14 sm:py-20 lg:grid-cols-[.85fr_1.15fr] lg:items-center lg:gap-x-14 lg:gap-y-10`}
+    >
+      <div>
+        <h2 id="agents-title" className={sectionTitleClassName}>
+          {copy.agents.heading}
+        </h2>
+        <p className="mt-4 max-w-lg text-base leading-7 text-muted-foreground">
+          {copy.agents.body}
+        </p>
+        <a
+          href={docsUrl}
+          className="mt-3 inline-flex min-h-11 items-center gap-2 text-sm text-primary hover:underline"
+        >
+          {copy.agents.link} <Arrow />
+        </a>
+      </div>
+      <MemoryConstellation
+        views={copy.agents.views}
+        label={copy.agents.viewLabel}
+      />
+      <div className="grid gap-y-2 border-t border-border pt-6 lg:col-span-2 lg:grid-cols-[.85fr_1.15fr] lg:gap-x-14">
+        <h3 className="text-xl font-medium tracking-tight">
+          {copy.coverage.heading}
+        </h3>
+        <p className="max-w-xl text-sm leading-6 text-muted-foreground">
+          {copy.coverage.body}
+        </p>
+        <ul className="mt-2 flex flex-wrap gap-x-3 gap-y-1 font-mono text-[11px] text-muted-foreground lg:col-start-2">
+          {copy.coverage.states.map((state) => (
+            <li key={state}>{state}</li>
+          ))}
+        </ul>
       </div>
     </section>
   )

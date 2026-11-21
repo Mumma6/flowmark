@@ -1,7 +1,6 @@
 # Flowmark
 
-Process observability for TypeScript. Record workflows, operations and business
-outcomes around the work your application already runs.
+The TypeScript runtime for Flowmark application memory. Adapters and repository agents use it to record selected decisions, execution outcomes and later confirmations around application-owned work. This is the integration reference for the existing runtime. See the [agent operating model](../../docs/agent-workflow.md) for the intended installation and maintenance flow.
 
 ```sh
 npm install @flowmarkdev/node

@@ -12,11 +12,15 @@ import {
   CardTitle,
 } from "@flowmark/ui"
 import Link from "next/link"
+import { useSearchParams } from "next/navigation"
 import { DataState } from "../shared/dashboard-components"
 import { JsonData } from "../shared/json-data"
 import { formatTimestamp } from "../shared/format"
 import { useRunExpectations } from "./queries"
-import { runInvestigationPath } from "../runs/investigation/investigation-navigation"
+import {
+  confirmationQueryKey,
+  runInvestigationPath,
+} from "../runs/investigation/investigation-navigation"
 import { expectationLabel } from "./expectation-presentation"
 
 export { expectationLabel } from "./expectation-presentation"
@@ -32,7 +36,16 @@ export function RunExpectations({
   replace?: boolean
   page?: { readonly cursor?: string; readonly limit?: number }
 }) {
-  const query = useRunExpectations(id, page)
+  const confirmation = useSearchParams().get(confirmationQueryKey)
+  const query = useRunExpectations(
+    id,
+    confirmation === null
+      ? page
+      : {
+          expectationId: confirmation,
+          limit: 1,
+        },
+  )
   const firstPage = query.data?.pages[0]
   const expectations =
     query.data?.pages.flatMap((page) => page.expectations) ?? []
@@ -43,10 +56,15 @@ export function RunExpectations({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Expected confirmations</CardTitle>
+        <CardTitle>
+          {confirmation === null
+            ? "Expected confirmations"
+            : "Selected confirmation"}
+        </CardTitle>
         <CardDescription>
-          Observed evidence, evaluated on read. A completed run does not fulfill
-          a confirmation. No background notification is sent.
+          {confirmation === null
+            ? "Observed evidence, evaluated on read. A completed run does not fulfill a confirmation. No background notification is sent."
+            : confirmation}
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-4">
@@ -76,8 +94,9 @@ export function RunExpectations({
             )}
             {expectations.length + unmatched.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                No retained expectation evidence. Absence does not prove
-                business success or failure.
+                {confirmation === null
+                  ? "No retained expectation evidence. Absence does not prove business success or failure."
+                  : "The selected declaration is unavailable in the retained evidence."}
               </p>
             ) : null}
             {[...expectations, ...unmatched].map((record) => (

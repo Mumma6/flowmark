@@ -1,3 +1,4 @@
+import copy from "../../public/landing-page-copy.en.json"
 import { FlowmarkMark } from "@flowmark/ui"
 import { shellClassName } from "./shell"
 import { WaitlistForm } from "../../features/waitlist/waitlist-form"
@@ -39,22 +40,15 @@ export function ClosingSection() {
             <FlowmarkMark className="size-8 text-primary" />
           </div>
         </MotionScene>
-        <p className="mx-auto mt-7 max-w-lg text-balance text-xs leading-6 text-muted-foreground">
-          The faster we build software, the more important it becomes to
-          understand what it actually does.
-        </p>
         <h2
           id="closing-title"
-          className="mx-auto mt-8 max-w-4xl text-balance text-[clamp(2.8rem,6.4vw,5.5rem)] leading-[1.05] font-medium tracking-[-0.06em]"
+          className="mx-auto mt-7 max-w-3xl text-balance text-[clamp(2.5rem,5.4vw,4.5rem)] leading-[1.05] font-medium tracking-[-.055em]"
         >
-          Build faster.
-          <br />
-          <span className="text-primary">Understand deeper.</span>
+          Bring production memory to{" "}
+          <span className="text-primary">your next change.</span>
         </h2>
-        <p className="mx-auto mt-6 max-w-md text-sm leading-7 text-muted-foreground">
-          A living understanding of your software.
-          <br />
-          For everyone building it. And everyone depending on it.
+        <p className="mx-auto mt-4 max-w-lg text-sm leading-6 text-muted-foreground">
+          {copy.waitlist.intro}
         </p>
         <WaitlistForm endpoint={waitlistEndpoint()} />
       </div>

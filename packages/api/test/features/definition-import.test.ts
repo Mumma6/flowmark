@@ -48,6 +48,8 @@ const fixture = () => {
         Layer.succeed(
           ResultDeclarations,
           ResultDeclarations.of({
+            processSnapshot: () =>
+              Effect.die("Legacy preview has no composed process"),
             apply: () => Effect.die("Preview must not apply definitions"),
             find,
             searchFields,

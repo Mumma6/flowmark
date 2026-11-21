@@ -1,68 +1,63 @@
+import copy from "../../public/landing-page-copy.en.json"
 import { Button } from "@flowmark/ui"
-import { ProcessLandscape } from "../../features/product-landing/process-landscape"
+import { MemoryMap } from "../../features/product-landing/memory-map"
 import { MotionScene } from "../../features/product-landing/motion"
 import { BackgroundBeams } from "./background-beams"
 import { Arrow } from "./brand"
 import { shellClassName } from "./shell"
+import { githubUrl } from "./site-links"
 import { SpotlightWash } from "./spotlight-wash"
 
 export function HeroSection() {
   return (
     <section
-      className="relative isolate overflow-hidden pt-14 pb-16 sm:pt-20 sm:pb-24"
       aria-labelledby="hero-title"
+      className="relative isolate overflow-hidden border-b border-border"
     >
-      <MotionScene className="pointer-events-none absolute inset-0 -z-10 overflow-hidden [mask-image:linear-gradient(to_bottom,#000_20%,transparent_75%)]">
-        <div
-          aria-hidden="true"
-          className="absolute inset-0 bg-[radial-gradient(ellipse_at_25%_0%,var(--hero-glow),transparent_60%)]"
-        />
-        <SpotlightWash className="opacity-35" />
-        <BackgroundBeams className="opacity-30" />
+      <MotionScene className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+        <SpotlightWash className="opacity-55" />
+        <BackgroundBeams className="opacity-45" />
       </MotionScene>
-      <div className={shellClassName}>
-        <p className="flex items-center gap-3 font-mono text-[9px] uppercase tracking-[.12em] text-muted-foreground sm:text-[10px] sm:tracking-[.2em]">
-          <span className="size-1.5 shrink-0 rounded-full bg-primary shadow-[0_0_12px_#b9f59760]" />
-          Process intelligence for people and agents
-        </p>
-        <h1
-          id="hero-title"
-          className="mt-7 max-w-5xl text-[clamp(3.1rem,7.4vw,6.25rem)] leading-[1.02] font-medium tracking-[-.065em] motion-safe:animate-arrive"
-        >
-          Understand what
-          <br className="hidden sm:block" /> your software
-          <br className="sm:hidden" />{" "}
-          <span className="text-primary">actually does.</span>
-        </h1>
-        <div className="mt-7 flex flex-col justify-between gap-7 sm:mt-9 lg:flex-row lg:items-end">
-          <p className="max-w-lg text-sm leading-7 text-muted-foreground sm:text-[15px]">
-            Discover processes with your coding agent. Connect execution to
-            business outcomes, spot changes, and keep instrumentation current as
-            your code evolves.
+      <div
+        className={`${shellClassName} grid items-center gap-6 py-8 sm:gap-12 sm:py-16 lg:grid-cols-[1.02fr_1fr] lg:gap-9 lg:py-20 xl:py-24`}
+      >
+        <div>
+          <p className="flex items-center gap-2.5 text-xs font-medium tracking-wide text-primary">
+            <span aria-hidden="true" className="h-px w-6 bg-primary" />
+            {copy.hero.category}
           </p>
-          <div className="flex flex-wrap items-center gap-3">
+          <h1
+            id="hero-title"
+            className="mt-6 text-[clamp(2.9rem,6.15vw,5.25rem)] leading-[0.99] font-medium tracking-[-.065em] motion-safe:animate-arrive"
+          >
+            Production memory
+            <br />
+            for <span className="text-primary">coding agents.</span>
+          </h1>
+          <p className="mt-6 max-w-[29rem] text-base leading-relaxed text-foreground sm:text-lg">
+            {copy.hero.tagline}
+          </p>
+          <p className="mt-3 max-w-[29rem] text-base leading-relaxed text-muted-foreground">
+            {copy.hero.body}
+          </p>
+          <div className="mt-7 flex flex-wrap items-center gap-x-6 gap-y-3">
             <Button
               asChild
-              className="h-12 rounded-lg px-6 text-xs shadow-[0_0_30px_-12px_#b9f59765]"
+              className="h-11 rounded-lg px-5 shadow-[0_0_28px_-12px_var(--accent)]"
             >
-              <a href="#waitlist">
-                Join the Waitlist <Arrow />
+              <a href="#how-it-works">
+                {copy.hero.actions[0]} <Arrow />
               </a>
             </Button>
-            <Button
-              asChild
-              variant="ghost"
-              className="h-12 px-4 text-xs text-muted-foreground"
+            <a
+              href={githubUrl}
+              className="inline-flex min-h-11 items-center gap-1.5 text-sm text-foreground transition-colors hover:text-primary"
             >
-              <a href="#experience">
-                Follow the process <span aria-hidden="true">↓</span>
-              </a>
-            </Button>
+              {copy.hero.actions[1]} <Arrow diagonal />
+            </a>
           </div>
         </div>
-        <div id="experience" className="mt-12 sm:mt-16">
-          <ProcessLandscape />
-        </div>
+        <MemoryMap />
       </div>
     </section>
   )

@@ -4,7 +4,7 @@ The dashboard presents application-reported workflow telemetry. It does not
 execute or retry application work. Technical completion, reported business
 results and missing terminal evidence remain separate concepts.
 
-## Product 1.0: first Studio workspace
+## Existing Studio composition
 
 Studio evolves in the existing `apps/dashboard` application. Reusing its
 authenticated request boundary, project selection, typed tRPC/React Query clients
@@ -35,8 +35,7 @@ it walks local steps without advancing/completing onboarding again. Fresh
 onboarding retains its persisted mutations. Step changes focus the new heading.
 
 No entity schema, shared-query framework, MCP handler, agent authorization or
-backend execution behavior is added by this slice. The contextual inspector and
-further Studio flows keep their existing roadmap owners.
+backend execution behavior is added by this slice. The [product definition](../../docs/product.md#the-smallest-useful-studio) owns future Studio composition.
 
 ## Responsibilities and dependency direction
 

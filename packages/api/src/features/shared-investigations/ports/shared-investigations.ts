@@ -1,5 +1,9 @@
 import { Context, type Effect } from "effect"
-import type { ShareInvestigation } from "@flowmarkdev/core"
+import type {
+  MeaningProposalResolution,
+  StoredMeaningProposal,
+  ShareInvestigation,
+} from "@flowmarkdev/core"
 import type {
   InvalidInput,
   PersistenceError,
@@ -22,6 +26,39 @@ export interface SharedQuestionAccess {
   readonly publication: unknown
   readonly choices: () => Effect.Effect<
     PublicationChoices,
+    SharedInvestigationFailure
+  >
+  readonly proposalExample: (id: string) => Effect.Effect<
+    {
+      workflow: string
+      definitionRevision: string | null
+      result: unknown
+    } | null,
+    SharedInvestigationFailure
+  >
+  readonly proposalHead: (
+    workflow: string,
+  ) => Effect.Effect<
+    { revision: string; source: string | null } | null,
+    SharedInvestigationFailure
+  >
+  readonly proposals: (id?: string) => Effect.Effect<
+    readonly {
+      id: string
+      creatorId: string
+      proposal: StoredMeaningProposal | null
+      resolution: MeaningProposalResolution | null
+    }[],
+    SharedInvestigationFailure
+  >
+  readonly submitProposal: (
+    proposal: StoredMeaningProposal,
+  ) => Effect.Effect<{ id: string }, SharedInvestigationFailure>
+  readonly resolveProposal: (
+    id: string,
+    resolution: MeaningProposalResolution,
+  ) => Effect.Effect<
+    { id: string; resolution: MeaningProposalResolution },
     SharedInvestigationFailure
   >
   readonly records: () => Effect.Effect<

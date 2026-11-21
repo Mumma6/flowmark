@@ -9,7 +9,11 @@ import { createResultDeclaration } from "./writes/create-result-declaration.js"
 import { getSearchFields } from "./queries/get-search-fields.js"
 import { setSearchFields } from "./writes/set-search-fields.js"
 import { applyDefinitionImport } from "./writes/apply-definition-import.js"
-import type { DefinitionImportApply } from "@flowmarkdev/core"
+import { getProcessDefinitionSnapshot } from "./queries/get-process-definition-snapshot.js"
+import type {
+  DefinitionImportApply,
+  ProcessDefinition,
+} from "@flowmarkdev/core"
 import type { SearchFields, ResultDeclaration } from "@flowmarkdev/core"
 export class ResultDeclarationStore extends Context.Service<ResultDeclarationStore>()(
   "@flowmark/db/ResultDeclarationStore",
@@ -20,6 +24,18 @@ export class ResultDeclarationStore extends Context.Service<ResultDeclarationSto
         yield* DatabaseCancellation,
       )
       return {
+        processSnapshot: (
+          userId: string,
+          projectId: string,
+          definition: ProcessDefinition,
+        ) =>
+          provide(
+            withOwnerProject(
+              userId,
+              projectId,
+              getProcessDefinitionSnapshot(projectId, definition),
+            ),
+          ),
         apply: (
           userId: string,
           projectId: string,

@@ -1,0 +1,176 @@
+{
+  "brand": "flowmark.",
+  "navigation": {
+    "skip": "Skip to content",
+    "home": "Flowmark home",
+    "label": "Main navigation",
+    "playMotion": "Play animations",
+    "pauseMotion": "Pause animations",
+    "links": ["How it works", "The loop", "For agents", "Docs"],
+    "cta": "Join the waitlist",
+    "mobile": {
+      "open": "Open navigation",
+      "close": "Close navigation",
+      "title": "Explore Flowmark",
+      "description": "Application memory for AI-native software teams.",
+      "label": "Mobile navigation",
+      "additionalLinks": ["GitHub", "Join the waitlist"]
+    }
+  },
+  "hero": {
+    "category": "Application memory for AI-native software teams",
+    "headline": "Production memory for coding agents.",
+    "tagline": "Mark runtime behavior so future coding agents can remember it.",
+    "body": "Your agent knows the code. Flowmark remembers what happened in production.",
+    "actions": ["How it works", "View on GitHub"]
+  },
+  "context": {
+    "source": {
+      "title": "Source context",
+      "detail": "What the code can do"
+    },
+    "runtime": {
+      "title": "Runtime memory",
+      "detail": "What the application actually did"
+    },
+    "result": "Your agent’s next change"
+  },
+  "how": {
+    "heading": "How it works",
+    "steps": [
+      {
+        "title": "Connect",
+        "detail": "Connect your application and give your coding agent scoped access."
+      },
+      {
+        "title": "Observe",
+        "detail": "Capture meaningful behavior as your application runs."
+      },
+      {
+        "title": "Remember",
+        "detail": "Keep observed paths and outcomes as structured history."
+      },
+      {
+        "title": "Retrieve",
+        "detail": "Let the agent read that history as it plans a change."
+      }
+    ]
+  },
+  "loop": {
+    "eyebrow": "The Flowmark loop",
+    "heading": "What runs today informs the next change.",
+    "steps": [
+      {
+        "title": "Human sets intent",
+        "detail": "Define constraints and access."
+      },
+      {
+        "title": "Agent builds",
+        "detail": "Implement, test and review."
+      },
+      {
+        "title": "Application runs",
+        "detail": "A human merges. The change ships."
+      },
+      {
+        "title": "Flowmark remembers",
+        "detail": "Record what actually happened."
+      },
+      {
+        "title": "Next agent retrieves",
+        "detail": "Bring production history into the next change."
+      }
+    ],
+    "returnLabel": "Back to the next build"
+  },
+  "agents": {
+    "heading": "Runtime context for coding agents.",
+    "body": "Start with a ticket, diff, file or symbol. Your agent can read production history through MCP today. Automatic lookup for each change is in development.",
+    "link": "Read the docs",
+    "viewLabel": "Explore what a coding agent can read",
+    "views": [
+      {
+        "label": "Paths",
+        "detail": "Follow the route the application actually took."
+      },
+      {
+        "label": "Attempts",
+        "detail": "See where work repeated within the same execution."
+      },
+      {
+        "label": "Outcomes",
+        "detail": "Find the result the application reported at the end of each path."
+      }
+    ]
+  },
+  "coverage": {
+    "heading": "Runtime memory coverage",
+    "body": "Planned coverage checks ask whether your agent has enough evidence to answer a runtime question. A tested observation is ready for traffic. An observed one has recorded real behavior.",
+    "states": [
+      "Discovered",
+      "Capture ready",
+      "Observed",
+      "Unknown",
+      "Unsupported"
+    ]
+  },
+  "faq": {
+    "heading": "Frequently asked questions",
+    "items": [
+      {
+        "question": "Who maintains the observations?",
+        "answer": "Repository agents can add observations in a normal pull request today. Planned adapters will reuse existing events and help agents repair gaps as the code changes. Your team sets collection policy and approves the merge."
+      },
+      {
+        "question": "What is Studio for?",
+        "answer": "See what your coding agents know about runtime. Studio lets people inspect evidence and manage access. The planned setup also brings environments, integrations, policies and gaps into one place."
+      },
+      {
+        "question": "Can I inspect the source?",
+        "answer": "Yes. You can run Flowmark locally. The SDK and core are open source under Apache 2.0, and the platform source is available under the Functional Source License."
+      }
+    ]
+  },
+  "waitlist": {
+    "heading": "Bring production memory to your next change.",
+    "intro": "Join the waitlist for automatic runtime context on your next change.",
+    "label": "Your email address",
+    "placeholder": "you@company.com",
+    "button": "Join the Waitlist",
+    "pending": "Joining…",
+    "note": "Join for early access. Just your email, no account needed.",
+    "unavailable": "The waitlist is temporarily unavailable. Please try again later.",
+    "success": {
+      "heading": "You’re on the list.",
+      "body": "Your place is saved. Check your inbox for a welcome email from Flowmark."
+    },
+    "errors": [
+      "Could not join the waitlist. Please try again.",
+      "Too many requests. Please try again shortly.",
+      "Could not join the waitlist. Please check your email address and try again.",
+      "Could not confirm your request. Please try again."
+    ]
+  },
+  "footer": {
+    "label": "Footer",
+    "links": ["Documentation", "GitHub", "Back to top ↑"]
+  },
+  "metadata": {
+    "title": "Flowmark — Application memory for AI-native software teams",
+    "description": "Flowmark gives coding agents a memory of how the application actually behaved in production, so they can use runtime history when changing code.",
+    "applicationName": "Flowmark",
+    "keywords": [
+      "runtime memory",
+      "coding agents",
+      "production evidence",
+      "MCP"
+    ],
+    "socialImage": {
+      "alt": "Flowmark — Application memory for AI-native software teams",
+      "brand": "flowmark.",
+      "headline": "Application memory for AI-native software teams.",
+      "promise": "Give your coding agent a memory of what your application actually did in production.",
+      "caption": "Source context + runtime memory → the next change"
+    }
+  }
+}

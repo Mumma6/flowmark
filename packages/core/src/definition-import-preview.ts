@@ -1,3 +1,8 @@
+import {
+  canonicalProcessDefinition,
+  previewProcessDefinition,
+  type ReviewedProcessDefinition,
+} from "./process-definition.js"
 import { Array, Match, Option } from "effect"
 import type { DefinitionImport } from "./definition-import.js"
 import type { ResultDeclaration } from "./results.js"
@@ -6,6 +11,11 @@ import type { SearchFields } from "./search-fields.js"
 export interface DefinitionImportSnapshot {
   readonly result: Option.Option<ResultDeclaration>
   readonly searchFields: SearchFields
+  readonly process?: {
+    readonly previous: ReviewedProcessDefinition | null
+    readonly requestedRevision?: ReviewedProcessDefinition
+    readonly observedWorkflows: readonly string[]
+  }
 }
 
 /** Stable property order; optional aggregate=false and absence mean the same thing. */
@@ -80,9 +90,26 @@ export const previewDefinitionImport = (
   const proposedFields = Array.appendAll(current.searchFields, additions)
   const capacityExceeded = proposedFields.length > 8
   const result = resultAction(input.result, current.result)
+  const process =
+    input.process && current.process
+      ? previewProcessDefinition(
+          input.process,
+          input.source,
+          current.process.previous,
+          current.process.observedWorkflows,
+        )
+      : null
   const status = Match.value({
-    conflict: result === "Conflict" || conflicts.length > 0 || capacityExceeded,
-    changed: result === "Create" || additions.length > 0,
+    conflict:
+      (input.process !== undefined && process === null) ||
+      process?.action === "Conflict" ||
+      result === "Conflict" ||
+      conflicts.length > 0 ||
+      capacityExceeded,
+    changed:
+      process?.action === "Create" ||
+      result === "Create" ||
+      additions.length > 0,
   }).pipe(
     Match.when({ conflict: true }, () => "Conflict" as const),
     Match.when({ changed: true }, () => "Reviewable" as const),
@@ -90,6 +117,14 @@ export const previewDefinitionImport = (
   )
   return {
     status,
+    ...(process
+      ? {
+          process: {
+            ...process,
+            requestedRevision: current.process?.requestedRevision,
+          },
+        }
+      : {}),
     result: {
       action: result,
       current: Option.getOrNull(current.result),
@@ -125,6 +160,9 @@ export const definitionImportReviewContent = (
     identity,
     manifest: {
       ...identity,
+      ...(input.process
+        ? { process: canonicalProcessDefinition(input.process) }
+        : {}),
       result: input.result ? canonicalResultDeclaration(input.result) : null,
       searchFields:
         input.searchFields === undefined
@@ -133,6 +171,7 @@ export const definitionImportReviewContent = (
     },
     base: {
       ...identity,
+      ...(input.process ? { process: snapshot.process ?? null } : {}),
       requestedRevision: input.result?.revision ?? null,
       result: Option.match(snapshot.result, {
         onNone: () => null,

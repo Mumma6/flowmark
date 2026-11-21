@@ -19,9 +19,9 @@ export const guidance = {
   instrument: {
     icon: Workflow,
     description:
-      "Copy a setup prompt for your AI agent, or follow the manual SDK instructions. You can reopen these instructions from Studio whenever you need them.",
+      "Wrap an existing invoice import or another process with one SDK call. A coding agent can help with the same setup.",
     note: "Continue to Studio whenever you're ready.",
     detail:
-      "Install, deploy and run your application on your own schedule. Evidence appears in Studio when your application sends it.",
+      "Run an existing safe application path to check delivery, or open Studio and wait for normal traffic.",
   },
 } as const

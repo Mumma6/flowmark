@@ -2,6 +2,7 @@ import { Schema } from "effect"
 import {
   ResultPathSchema,
   BusinessInsightsQuerySchema,
+  BusinessTimestampSchema,
   type BusinessInsights,
 } from "./business-insights.js"
 import { BusinessKeySchema } from "./search-fields.js"
@@ -48,6 +49,13 @@ export const BusinessRunListSchema = Schema.Struct({
   outcome: Schema.optional(WorkflowOutcomeSchema),
   startedAfter: Schema.optional(Timestamp),
   startedBefore: Schema.optional(Timestamp),
+  startedBeforeExclusive: Schema.optional(BusinessTimestampSchema),
+  publishedCount: Schema.optional(
+    Schema.Struct({
+      revision: WorkflowOutcomeSchema,
+      path: ResultPathSchema,
+    }),
+  ),
   businessKey: Schema.optional(BusinessKeySchema),
   businessValue: Schema.optional(
     Schema.String.check(Schema.isMinLength(1), Schema.isMaxLength(256)),
@@ -62,6 +70,40 @@ export const BusinessRunListSchema = Schema.Struct({
         q.businessValue !== undefined &&
         q.workflow !== undefined),
   ),
+  Schema.makeFilter((q) => {
+    if (q.startedBeforeExclusive === undefined) {
+      return true
+    }
+    if (
+      q.workflow === undefined ||
+      q.startedBefore !== undefined ||
+      q.publishedCount !== undefined ||
+      !Schema.is(BusinessTimestampSchema)(q.startedAfter)
+    ) {
+      return false
+    }
+    const width =
+      Date.parse(q.startedBeforeExclusive) - Date.parse(q.startedAfter)
+    return width > 0 && width <= 31 * 86400000
+  }),
+  Schema.makeFilter((q) => {
+    if (!q.publishedCount) {
+      return true
+    }
+    const isTimestamp = Schema.is(BusinessTimestampSchema)
+    if (!isTimestamp(q.startedAfter) || !isTimestamp(q.startedBefore)) {
+      return false
+    }
+    const width = Date.parse(q.startedBefore) - Date.parse(q.startedAfter)
+    return (
+      q.workflow !== undefined &&
+      q.status === undefined &&
+      q.outcome === undefined &&
+      q.businessKey === undefined &&
+      width > 0 &&
+      width <= 31 * 86400000
+    )
+  }),
 )
 export type BusinessRunList = typeof BusinessRunListSchema.Type
 export const BusinessEvidenceQuerySchema = Schema.Union([

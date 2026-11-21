@@ -1,9 +1,6 @@
 # Implementation status
 
-**Product 1.0: implementation-complete.** This inventory describes repository
-source at `81097ba` (15 November 2026), not a fresh hosted-environment inspection.
-Product milestone names are independent of application tags and npm versions.
-Package manifests are authoritative for source versions and exports.
+Source inventory at staging `01cf413`, 21 November 2026. This is the baseline for the [product contract](product.md). Hosted activation and client compatibility have separate verification records.
 
 ## Implemented foundation
 
@@ -57,22 +54,14 @@ Remaining records include email plan/quota/cost and bounce/complaint monitoring;
 operator/privacy disclosures and rights/incident/backup procedures; continued environment-specific
 Cursor sign-in checks after server changes; and capture/cleanup
 operating cadence. MCP itself is no longer behind an environment flag.
-These are explicit follow-ups, not additional Product 2.0 feature requirements.
 
-## Product 2.0 boundary
+## More recent implemented work
 
-Process Health, proactive findings, automatic technical capture, assisted process
-and meaning discovery, and continuous instrumentation verification are future
-work. Reuse the foundation above rather than rebuild its SDK, Studio, analytics,
-authorization, investigation, MCP or persistence capabilities. A built-in Studio
-assistant is not an implemented Product 1.0 feature.
+- Agent-guided setup serves compiled SDK examples and reads the first stored run through the existing MCP connection. A loopback Codex client exercised delegated reads. Maintained repo installation and independent model-driven repair are still delivery work. [Served guide](../apps/server/src/instrumentation-guide.ts)
+- Scoped process-health queries separate terminal execution, reported outcome and evidence quality. Outcome comparisons retain exact populations and drilldowns. Reuse these mechanics for change evidence. [Process health](process-health.md)
+- Reviewed process definitions and candidate review distinguish source suggestions from recorded examples. The Studio gap handoff can prepare an SDK patch brief. It needs a durable mapping to the artifact that ran. [Definitions](definition-imports.md)
+- A local compatibility probe compared explicit operation, selected dependency signals and trace references. The explicit operation already explained the primary provider failure. General automatic collection remains unshipped. [Probe results](sdk/capture-compatibility-probe.md)
 
-## Closeout review scope
+## Planned product capabilities
 
-The documentation closeout inspected all app/package manifests and exports,
-application and protocol entry points, API/persistence ownership, Rust/WASM
-modules, migration history, Pulumi declarations, Actions workflows and repository
-skills. Local documentation targets and referenced workspace scripts were checked
-automatically. This was a source/documentation consistency review, not a new full
-security audit, vendor certification or hosted verification phase. Historical ADRs
-and feature-introduction versions retain their original context.
+Repository and environment installation, trusted artifact manifests, change-to-case lookup, policy-driven instrumentation repairs, question-level coverage and post-deploy verification are design targets. Today the MCP entry points are `get_connection`, `list_workflows`, `find_runs`, `get_run`, `compare_run` and `get_workflow_insights`. Current Studio includes analytics and collaboration routes slated for removal. See [target surfaces](product.md) and the [coverage contract](runtime-memory.md).

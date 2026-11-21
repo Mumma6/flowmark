@@ -1,5 +1,7 @@
 # Software Factory
 
+This guide owns the engineering automation that operates this repository. The [product operating model](agent-workflow.md) defines how a customer’s coding agent consumes runtime memory during a change.
+
 Flowmark uses GitHub for deterministic verification and a local Codex automation
 for contextual review and organizational learning. The repository owns the
 commands, review procedure, result contract and scheduler prompt. No new provider,

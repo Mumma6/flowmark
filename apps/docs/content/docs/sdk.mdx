@@ -1,146 +1,74 @@
 ---
-title: Quickstart
-description: Add your first workflow run around the business logic you already have.
+title: SDK integration guide
+description: Give a repository agent a supported capture path and verify what the application reported.
 ---
 
-## Set up with your AI agent · recommended
+Use this guide in the application repository. The agent inspects the change, chooses a consequential observation and prepares the patch within the team's policy. The human supplies the authorized server credential through the environment. The current installation path is agent-guided. Managed installation and continuous repair are planned. [Connect a reader](/docs/mcp) to verify the resulting evidence.
 
-Create a project in Studio and save its ingestion write key. In onboarding, open
-**Get setup instructions** and choose **Copy setup prompt**. Paste it into
-your AI agent's chat with your application's repository available. You can reopen
-the setup guide from the Studio account menu later.
+## Record an invoice import in Next.js
 
-The prompt asks your AI agent to fetch the instrumentation guide from your
-Flowmark API, install the SDK and help instrument one useful
-process. Your agent uses its normal coding tools to edit your repository. Set the
-write key in your application's server environment yourself.
-
-Choose **Open Studio** whenever you are ready; onboarding does not wait for SDK
-installation, a release or application traffic. Install and deploy on your own
-schedule. When the instrumented process runs and sends evidence, its executions
-appear in Studio. **No MCP connection is needed for setup.** You can also follow
-the manual instructions below.
-
-Once your application reports evidence, [connect Cursor with MCP](/docs/mcp) if
-you want it to investigate executions, failures and business outcomes. This is a
-separate read-only connection.
-
-## Manual SDK setup
-
-No AI client is required. Follow these steps to instrument the application yourself.
-
-### Before you start
-
-You need a running Flowmark API, a project server-write key, and the SDK.
+Create a Studio project and save its server write key. Install the SDK:
 
 ```bash
 npm i @flowmarkdev/node
 ```
 
-### 1. Configure the server
+Set `FLOWMARK_API_KEY` in your server environment. For a local or staging
+Flowmark API, set `FLOWMARK_API_URL` to its origin. Keep the key out of
+`NEXT_PUBLIC_*` variables and client code.
 
-Set these in your server environment, not in browser-visible variables:
-
-```bash
-FLOWMARK_API_KEY=<your-project-server-write-key>
-```
-
-Hosted delivery is the default. Set `FLOWMARK_API_URL` for local or staging APIs;
-use the API origin, not `/v1/events`. See [configuration](/docs/configuration).
-
-### 2. Create one shared client
+Create one shared server-only client:
 
 ```ts
-// lib/flowmark.ts (server only)
-import { createFlowmark } from "@flowmarkdev/node"
+// lib/flowmark.ts
+import { createFlowmark } from "@flowmarkdev/node/next"
 
 export const flowmark = createFlowmark()
 ```
 
-Using Next.js? Import from `@flowmarkdev/node/next` instead and follow the
-[Next.js guide](/docs/nextjs) for automatic request-lifecycle delivery.
-
-### 3. Add markers to an existing function
-
-`loadInvoices` and `saveValidInvoices` below are your application's
-existing helpers, not SDK APIs. No business work moves into Flowmark.
+In an existing Route Handler or Server Action on the Node.js runtime, import that
+client and wrap your application's existing function. Keep the handler's usual
+authorization, validation and response behavior.
 
 ```ts
-import { flowmark } from "./lib/flowmark"
-
-function importInvoices(batchId: string) {
-  return flowmark.workflow(
-    "invoice.import",
-    async (run) => {
-      const invoices = await run.operation("load-invoices", () =>
-        loadInvoices(batchId),
-      )
-      run.step("source-loaded", { properties: { count: invoices.length } })
-      const result = await run.operation("save-invoices", () =>
-        saveValidInvoices(invoices),
-      )
-      run.done({
-        outcome: result.skipped > 0 ? "partial" : "complete",
-        result: { imported: result.imported, skipped: result.skipped },
-      })
-      return result
-    },
-    { properties: { batchId } },
-  )
-}
+const result = await flowmark.workflow("invoice.import", () => importInvoices())
 ```
 
-The callback completes on return and records unexpected failure while preserving
-the original exception. `step()` records a milestone; `operation()` measures work;
-`done()` supplies the business outcome and result. Use manual markers for a
-process that continues across requests.
+The callback reports completion on return and records unexpected failures while
+preserving the original error. Next.js handles delivery after the request.
+For a standalone script or worker, use the [Node.js guide](/docs/nodejs) and
+its process-owned delivery steps.
 
-### 4. Drain delivery at a process boundary
+## Open the recorded run
 
-Markers queue delivery automatically. In a plain Node.js script or worker,
-drain the client before the process exits:
+Use a safe existing application action or test that runs the instrumented path.
+In Studio, select the project that owns the write key. Under **Setup instructions**,
+select **Check for a run**, then **Open recorded run** when a run appears.
+You can also open it from the run list in **Explore**.
 
-```ts
-try {
-  await flowmark.shutdown()
-} catch (error) {
-  console.error("Flowmark delivery failed", error)
-}
-```
+If the job cannot run safely now, open Studio and return after normal traffic.
+If an expected run still does not appear, verify the project write key, API origin
+and [SDK delivery diagnostics](/docs/troubleshooting). Studio distinguishes a waiting
+project from a failed read.
 
-Do this once at the job/process boundary, not inside every shared function.
-For a long-running process, use `flush()` without closing the client.
-An explicit drain can reject; handle that separately from the business result.
-The [Next.js adapter](/docs/nextjs) handles draining after the response.
+The basic callback reports timing and execution status. To see how many invoices
+were imported or skipped, add the [reported result](/docs/reference/completion)
+your application already knows. In Studio, **Reported results** shows those values
+and **Timeline** shows any milestones or operations you add.
 
-### 5. Inspect reported evidence
+## Use a coding agent
 
-Your application may not run this process until hours or days after deployment.
-Studio does not need to stay open: it shows **No recorded executions** until the
-application reports one. **Setup instructions** reopens the guide whenever you
-need it.
+Choose **Set up with a coding agent** in Studio and copy the setup prompt into a
+client that can inspect your application repository. Ask it to shortlist two or
+three processes. Review the resulting patch and the fields it records in the normal PR. The current setup prompt also asks for explicit approval before editing. Set the write key in your server environment, outside the chat.
+Ask the agent to distinguish what it tested, what reached Flowmark and what it
+could read back.
 
-For an optional delivery check, use an existing test or safe application action
-that runs the actual instrumented process. Local checks alone do not prove a
-deployment or delivery. If there is no safe way to run it now, wait for normal
-activity; do not create artificial executions or trigger business operations just
-to populate Studio.
+After evidence arrives, you can separately [connect a read-only MCP client](/docs/mcp)
+to investigate the recorded run.
 
-Once an execution arrives, open **Explore** in Studio with the same project selected. Choose `invoice.import`
-to see its execution history, then open the execution. **Outcome** shows reported
-results, including imported and skipped counts; **Timeline** shows milestones,
-operations and failures. If Cursor is connected, ask it to explain that execution
-using Flowmark MCP and follow its supporting Studio link.
+## Go further
 
-If an expected execution is missing, follow [troubleshooting](/docs/troubleshooting). A missing
-terminal event is not proof the business operation failed.
-
-## Where to go next
-
-- [Workflows and runs](/docs/concepts/runs): names, IDs, and lifecycle.
-- [Business results](/docs/concepts/results): choose useful outcome summaries.
-- [SDK reference](/docs/reference): signatures, parameters, and behavior.
-- [Delivery and diagnostics](/docs/delivery): shutdown, errors, and limits.
-
-For a CLI or worker, follow [Node.js scripts and workers](/docs/nodejs), including
-process-owned shutdown and business logic shared with Next.js.
+- [Next.js integration](/docs/nextjs) and [Node.js scripts and workers](/docs/nodejs)
+- [Workflow and run lifecycle](/docs/concepts/runs)
+- [SDK reference](/docs/reference) and [delivery diagnostics](/docs/delivery)

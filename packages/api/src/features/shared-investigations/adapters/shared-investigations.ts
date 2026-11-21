@@ -63,6 +63,14 @@ export const SharedInvestigationsLive = Layer.effect(
                 revision: access.revision,
                 publication: access.publication,
                 choices: () => persist(access.choices()),
+                proposalExample: (id) => persist(access.proposalExample(id)),
+                proposalHead: (workflow) =>
+                  persist(access.proposalHead(workflow)),
+                proposals: (id) => persist(access.proposals(id)),
+                submitProposal: (proposal) =>
+                  persist(access.submitProposal(proposal)),
+                resolveProposal: (id, resolution) =>
+                  persist(access.resolveProposal(id, resolution)),
                 records: () => persist(access.records()),
                 create: (input) => persist(access.create(input)),
                 revoke: (id) => persist(access.revoke(id)),

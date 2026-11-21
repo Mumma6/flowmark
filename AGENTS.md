@@ -2,21 +2,9 @@
 
 ## Start here
 
-- Product direction, roadmap, and infrastructure operating notes live in the
-  local-only `private/` folder. Product 1.0 is implementation-complete;
-  `plans/product-1-0/HANDOVER.md` owns its closeout and explicit follow-ups.
-  `plans/product-2-0/{VISION,SPEC,ARCHITECTURE,ROADMAP}.md` own the next product
-  direction. Preserve the historical 1.0 vision/specification and accepted ADRs. `INFRASTRUCTURE-ROADMAP.md` and
-  `docs/infrastructure.md` retain operational ownership. That folder is listed in
-  `.gitignore` and is not in the public Git tree. Confirmed provider
-  and auth choices are in
-  [ADR 0006](./docs/decisions/0006-mvp-0.1-infrastructure.md). Neon and the
-  four Vercel projects exist. Local demo stays on loopback. Do not seed Neon.
-  npm publish, backup restore, and retention cleanup are not automatically
-  approved.
-- Public contributors do not need the private planning tree. Use
-  [implementation status](./docs/implementation-status.md), subject guides and
-  source when local-only plans are unavailable.
+- Start with the [product definition](docs/product.md), [agent operating model](docs/agent-workflow.md), [runtime memory contract](docs/runtime-memory.md) and [implemented capabilities](docs/implementation-status.md). Maintainers enter local strategy and the single product task queue through the ignored planning tree's START-HERE file. Public contributors can work entirely from the tracked contracts.
+- Infrastructure and operations retain their existing owners. Neon and the four Vercel projects exist. Keep the demo on loopback. Never seed Neon. npm publication, backup restore and retention cleanup require their documented approval.
+
 - Read applicable nested `AGENTS.md` files. Next.js apps require checking the
   installed Next.js documentation before framework changes.
 
@@ -24,12 +12,9 @@
 
 - Flowmark observes application-owned work; it never executes, schedules, or
   retries that work. Preserve the workflow/run abstraction.
-- Flowmark Product 1.0 is a source-available, programmable process-intelligence
-  platform for people and AI agents. Platform, Studio and Everywhere are
-  dimensions of one product. Serve organization-wide questions over shared
-  authorized evidence; preserve workflow/run semantics. Follow the local vision
-  rather than retired MVP scope limits. This direction does not authorize
-  enterprise identity/billing, an execution engine or hosted operations.
+- Flowmark is application memory for AI-native software teams. Start changes from intent, source and relevant authorized runtime cases. Record cases that affect a decision, preserve counterexamples and maintain evidence tests in the feature PR. Distinguish source inference, fixture readiness and observed production behavior. Use today's bounded reads until the change-facing interface ships.
+- Coding agents own routine instrumentation and mapping maintenance. Humans own intent, policy, credentials, exceptional decisions and merge. Studio is for access, evidence inspection and gaps. Keep telemetry scoped to the decisions it can inform.
+
 - Business results are application-reported evidence, not verified correctness.
   Completed does not mean every record succeeded. Progress is last reported;
   missing terminal telemetry does not prove a run is active or failed.

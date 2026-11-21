@@ -1,9 +1,6 @@
 # Contributing
 
-Flowmark is a source-available process-intelligence platform for people and agents.
-This repository contains its SDK, application services and current web interface,
-which is evolving into Flowmark Studio. You can explore and change it without
-access to maintainer-only planning or infrastructure notes.
+Flowmark is source-available application memory for AI-native software teams. Read the [product definition](docs/product.md) and [agent workflow](docs/agent-workflow.md) before choosing a feature. See [implementation status](docs/implementation-status.md) for capabilities present in source.
 
 ## Get started locally
 

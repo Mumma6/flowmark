@@ -7,18 +7,25 @@ import {
 } from "../shared/dashboard-components"
 import { PageSections } from "../shared/page-sections"
 import { Refresh } from "../shared/refresh"
+import { useProject } from "../projects/project-context"
 import { useSnapshot } from "../projects/queries"
 import { NoRecordedExecutions } from "../projects/no-recorded-executions"
 import { WorkflowDirectory } from "./workflow-directory"
 import { DeclaredWorkflows } from "./declared-workflows"
 
 export function ProjectWorkflows() {
+  const { current } = useProject()
   const { data, isPending, error, isFetching, refetch } = useSnapshot()
   const heading = (
     <PageHeading
       title="Workflows"
       description="Choose the process you want to inspect. Each workflow brings together its execution history, reported results and diagnostic evidence."
     >
+      {current?.role === "owner" && (
+        <ViewLink href="/settings?section=definitions&candidate=review#process-candidate">
+          Review a process candidate
+        </ViewLink>
+      )}
       <Refresh fetching={isFetching} onClick={() => void refetch()} />
     </PageHeading>
   )

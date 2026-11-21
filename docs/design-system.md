@@ -1,9 +1,6 @@
 # Flowmark design system
 
-Flowmark helps people understand what application workflows report accomplishing,
-then follow that result to recorded evidence. Its interface should feel calm,
-precise and recognizably Flowmark: charcoal surfaces, restrained lime emphasis,
-clear typography and useful information before technical detail.
+Studio lets a human inspect the evidence their coding agent saw, set access and resolve observation gaps. Use charcoal surfaces, restrained lime emphasis and accessible shared components.
 
 ## Product meaning comes first
 
@@ -23,10 +20,7 @@ missing telemetry alone establishes neither. Business analytics use declared
 fields, immutable revisions, exact cohorts and visible coverage. These capabilities
 already exist; preserve their semantics when composing Studio views.
 
-Product 1.0 introduces a contextual Studio over this foundation. Preserve the
-current palette, mark, shared components and accessibility. Context, answer and
-evidence should form one continuous interaction. Existing page compositions below
-describe current behavior, not a permanent navigation constraint.
+Design for [connections and policy, runtime evidence, and coverage and exceptions](product.md#the-smallest-useful-studio). Retain source labels, return navigation and visible uncertainty when reusing an existing view.
 
 ## Foundations
 
@@ -121,7 +115,7 @@ import { Badge, Button, TabsList } from "@flowmark/ui"
 Most icons are neutral Lucide icons at 16 px. Decorative icons are hidden from
 assistive technology. Navigation and evidence use real links with visible focus.
 Keep appearance, project settings and documentation accessible without competing
-with the primary Explore → Processes → Insights → Attention navigation.
+with the evidence behind a cited case.
 
 ### shadcn workflow
 
@@ -139,17 +133,7 @@ shared primitive; do not upgrade styling frameworks for a dashboard redesign.
 
 ## Information hierarchy and data scope
 
-Explore is the entry point: process selection, full recorded execution history,
-visible filter conditions and links into evidence. Its process-summary and
-run-list loading/error states are independent. All filters preserves the same
-cohort in the existing history. The retained Overview at `/overview` shows one
-four-metric execution strip, a short link to Issues, the
-workflow list and the latest runs. Insights owns period trends, workflow
-comparisons and declared business outcomes. Issues owns derived failure groups
-and the runs behind them. Workflow detail leads with run history and reported
-results before diagnostics. Run detail starts with reported outcome/result and
-progressively reveals timeline, context, comparison and explicitly related runs.
-All audiences use the same facts.
+The existing Explore, Overview, Insights and Issues screens have different populations. Preserve the selection, denominator and return link when reusing these reads in a citation or comparison.
 
 Every metric needs its period, cohort and denominator:
 
@@ -199,49 +183,7 @@ commands in the [dashboard README](../apps/dashboard/README.md).
 
 ## Product landing direction
 
-The landing presents the complete Flowmark product vision through discovery,
-observation, understanding and continuous evolution. Keep charcoal, the Flowmark
-mark/accent dot, system fonts, lime actions and restrained lavender emphasis.
-The public site is dark-only; authenticated surfaces retain existing themes.
-
-Use oversized editorial typography, short explanations, structural rules and
-purpose-built visualizations. The hero is an open application topology with moving
-signals and a selectable missing-confirmation scenario. It has no dashboard chrome.
-Discovery converges code paths into a process; a vertical journey connects separate
-executions; an outcome dot field compares historical populations; a review loop
-connects code changes, agents and evidence. People, agents and tools share a final
-connected evidence diagram. Avoid repetitive grids of feature cards.
-
-Keep business outcomes, execution behavior and evidence quality separate. The
-outcome illustration uses 100 dots representing seven bookings each: 92% before
-and 76% after the illustrative release. Health rings preserve the distinct
-execution and field-coverage measures. Expose denominators, observation windows
-and tabular values; association does not establish causality.
-
-Product illustrations are local and synthetic. They do not connect repositories,
-run tests, publish definitions or establish deployed capability. Three independent
-instrumentation entrances remain explicit; candidate meaning requires human review.
-Preserve unknowns and distinguish execution completion from later confirmations.
-
-Static narrative stays server-rendered. Local selection state and motion policy
-belong to small client components. Reuse shared Button, Input, Sheet and Accordion.
-Diagram nodes use accessible buttons with selected/expanded states. Code and tables
-scroll within bounded containers; layouts reflow at 320 px without page overflow.
-
-Aceternity's Background Lines, Tracing Beam, Timeline, Glowing Effect and Moving
-Border informed the visual direction. Existing attributed beams and spotlights
-remain; original SVG signal trails, node activation and scroll traces communicate
-relationships. Native CSS handles frames, with no per-frame React updates or new
-animation dependency. A visibility subscription and viewport observers
-suspend offscreen/hidden scenes. Diagram loops play automatically without a playback control.
-Finite entrances, hover movement and scroll traces remain motion-safe. Unsupported
-view timelines render their complete path. Anchor scrolling respects reduced motion.
-
-**Join the Waitlist** is the primary conversion in the header, hero and closing.
-The closing email form uses the existing endpoint, preserves loading and explicit
-failure states, and acknowledges success only after the API confirms it. Avoid
-competing public signup or Studio-launch actions. Documentation and source remain
-quiet secondary resources.
+Lead with the promise in the [product definition](product.md). Show repository context and runtime history feeding the next code change in a simple diagram. Separate implemented agent reads from planned change lookup. Preserve the existing waitlist, accessibility, loading and delivery error states.
 
 ## Studio workspace, authentication and setup
 
@@ -251,7 +193,7 @@ headings may use 30–40 px editorial type. Dense execution rows use 13–14 px 
 identity and 10–12 px for secondary metadata; keep long explanations readable.
 Separate reported lifecycle, business results and absent confirmations.
 
-Studio has horizontal product navigation and a contextual process pane rather
+The current Studio has horizontal product navigation and a contextual process pane rather
 than the old global sidebar. A real project selector and the existing command
 palette remain visible; settings, theme, setup help and sign-out are grouped in
 the account Sheet. Keep the source of filtered evidence visible and provide
@@ -277,6 +219,16 @@ so Close/Escape/back return to the original cohort, cursor page and row focus.
 Keep all evidence modes available on mobile. Reuse `RunDetailContent` and
 `RunInvestigation`; project changes discard the panel and scoped URL state.
 Detail, relationship, comparison and expectation queries stay project-keyed.
+
+Process health follows the selected workflow and displays its own exact UTC
+bounds and expectation name above execution history. Supported exact time
+bounds carry through to the assessment. Other history filters block the
+assessment and are named beside the period controls. Execution, reported
+outcomes and evidence quality stay visually distinct. Label quiet, unmeasured,
+unavailable and failed reads in text. Declaration links open the Confirmations
+tab with an exact identity and return focus to the initiating row across
+inspector dismissal and browser Back. Use the projected workspace for business
+access.
 
 Authentication pairs a focused form with the product story. Setup uses a
 five-step rail, compact mobile progress, a distinct content panel and real

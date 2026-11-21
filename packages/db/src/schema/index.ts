@@ -29,6 +29,9 @@ import type {
   WorkflowProperties,
   WorkflowResult,
   ResultDeclaration,
+  ReviewedProcessDefinition,
+  StoredMeaningProposal,
+  MeaningProposalResolution,
   SearchFields,
 } from "@flowmarkdev/core"
 
@@ -445,6 +448,16 @@ export const sharedInvestigations = pgTable(
       .notNull()
       .references(() => projects.id, { onDelete: "cascade" }),
     title: text("title").notNull(),
+    meaningProposal: jsonb("meaning_proposal").$type<StoredMeaningProposal>(),
+    proposalResolution: text(
+      "proposal_resolution",
+    ).$type<MeaningProposalResolution>(),
+    proposalResolvedBy: text("proposal_resolved_by").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    proposalResolvedAt: timestamp("proposal_resolved_at", {
+      withTimezone: true,
+    }),
     selection: jsonb("selection").$type<unknown>().notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
@@ -590,6 +603,10 @@ export const workflowDefinitionImports = pgTable(
       onDelete: "set null",
     }),
     resultRevision: text("result_revision"),
+    processKey: text("process_key"),
+    processRevision: integer("process_revision"),
+    reviewedProcess:
+      jsonb("reviewed_process").$type<ReviewedProcessDefinition>(),
     addedSearchKeys: jsonb("added_search_keys")
       .$type<ReadonlyArray<string>>()
       .notNull(),
@@ -598,6 +615,15 @@ export const workflowDefinitionImports = pgTable(
       .notNull(),
   },
   (table) => [
+    uniqueIndex("workflow_definition_imports_process_revision_uidx").on(
+      table.projectId,
+      table.processKey,
+      table.processRevision,
+    ),
+    check(
+      "workflow_definition_imports_process_fields",
+      sql`(${table.processKey} IS NULL AND ${table.processRevision} IS NULL AND ${table.reviewedProcess} IS NULL) OR (${table.processKey} IS NOT NULL AND ${table.processRevision} IS NOT NULL AND ${table.reviewedProcess} IS NOT NULL)`,
+    ),
     uniqueIndex("workflow_definition_imports_review_uidx").on(
       table.projectId,
       table.workflow,

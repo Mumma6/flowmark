@@ -5,6 +5,15 @@ import { t } from "./context"
 import { readQuery } from "./execution"
 
 export const workflowRouter = t.router({
+  processHealth: t.procedure
+    .input(Schema.toStandardSchemaV1(Schema.Unknown))
+    .query(({ ctx, input }) =>
+      readQuery(ctx.request, (reader) =>
+        GetProjectWorkflowData.use((queries) =>
+          queries.processHealth(reader, input),
+        ),
+      ),
+    ),
   linkedComparison: t.procedure
     .input(Schema.toStandardSchemaV1(Schema.Unknown))
     .query(({ ctx, input }) =>

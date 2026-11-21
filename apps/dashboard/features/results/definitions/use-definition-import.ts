@@ -40,7 +40,7 @@ export function useDefinitionImport(projectId: string, workflow?: string) {
     Result.match(decodeDefinitionDocument(document), {
       onFailure: () =>
         setValidation(
-          "Enter valid definition JSON using version 1 and the existing result/search field limits. Unknown properties are not accepted.",
+          "Enter valid definition JSON using version 1 and the process, result and search field limits. Unknown properties are not accepted.",
         ),
       onSuccess: (definition) => {
         if (workflow && definition.workflow !== workflow) {

@@ -1,5 +1,6 @@
 "use client"
 
+import type { ReviewedProcessDefinition } from "@flowmarkdev/core"
 import { ProjectOwnerOnly } from "../../project-sharing/project-owner-only"
 
 import {
@@ -13,6 +14,8 @@ import {
 } from "@flowmark/ui"
 import { useProject } from "../../projects/project-context"
 import { ViewLink } from "../../shared/dashboard-components"
+import { MeaningProposals } from "../proposals/meaning-proposals"
+import { CandidateReview } from "./candidate-review"
 import { useDefinitionImport } from "./use-definition-import"
 import { WorkflowMeaning } from "./workflow-meaning"
 import {
@@ -21,13 +24,57 @@ import {
 } from "./definition-document"
 import example from "../../../../../examples/booking-definition.json"
 
-function DefinitionImportPanelContent({ workflow }: { workflow?: string }) {
+function ProcessRevision({
+  title,
+  revision,
+}: {
+  title: string
+  revision: ReviewedProcessDefinition
+}) {
+  return (
+    <div className="grid gap-2">
+      <p className="break-words font-medium">
+        {title} · Revision {revision.definition.revision}
+      </p>
+      <ul className="grid gap-1 pl-4">
+        {revision.matches.map(({ role, status, observed, missing }) => (
+          <li className="break-words" key={role}>
+            {role} · {status}
+            {observed.length > 0 && (
+              <ul className="grid gap-1 pl-4">
+                {observed.map((name) => (
+                  <li key={name}>
+                    <ViewLink
+                      href={`/runs?workflow=${encodeURIComponent(name)}`}
+                    >
+                      Inspect {name}
+                    </ViewLink>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {missing.length > 0 && ` · No observation: ${missing.join(", ")}`}
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+function DefinitionImportPanelContent({
+  workflow,
+  reviewCandidate,
+}: {
+  workflow?: string
+  reviewCandidate?: boolean
+}) {
   const { current } = useProject()
   return current ? (
     <ImportForm
       key={`${current.id}:${workflow ?? "any"}`}
       projectId={current.id}
       workflow={workflow}
+      reviewCandidate={reviewCandidate}
     />
   ) : (
     <p className="text-sm text-muted-foreground">
@@ -39,9 +86,11 @@ function DefinitionImportPanelContent({ workflow }: { workflow?: string }) {
 function ImportForm({
   projectId,
   workflow,
+  reviewCandidate,
 }: {
   projectId: string
   workflow?: string
+  reviewCandidate?: boolean
 }) {
   const form = useDefinitionImport(projectId, workflow)
   const review = form.preview.data
@@ -49,6 +98,12 @@ function ImportForm({
   const visibleWorkflow = receipt?.workflow ?? workflow ?? review?.workflow
   return (
     <div className="grid min-w-0 gap-5">
+      <MeaningProposals projectId={projectId} />
+      <CandidateReview
+        projectId={projectId}
+        workflow={workflow}
+        initiallyOpen={reviewCandidate}
+      />
       <Card>
         <CardHeader>
           <CardTitle>Import process metadata</CardTitle>
@@ -130,6 +185,38 @@ function ImportForm({
                     ? "This metadata is already configured. Its existing ownership is preserved."
                     : "Review these changes before applying them."}
               </p>
+              {review.process && (
+                <section
+                  aria-label="Process definition review"
+                  className="grid gap-3"
+                >
+                  <h3 className="break-words font-medium">
+                    {review.process.proposed.definition.key}
+                  </h3>
+                  {review.process.action === "Conflict" && (
+                    <p role="alert">
+                      Only the original source can import the next revision.
+                      Review the accepted revisions below.
+                    </p>
+                  )}
+                  {review.process.previous && (
+                    <ProcessRevision
+                      title="Current accepted interpretation"
+                      revision={review.process.previous}
+                    />
+                  )}
+                  {review.process.requestedRevision && (
+                    <ProcessRevision
+                      title="Previously accepted interpretation"
+                      revision={review.process.requestedRevision}
+                    />
+                  )}
+                  <ProcessRevision
+                    title="Proposed interpretation of observed workflows"
+                    revision={review.process.proposed}
+                  />
+                </section>
+              )}
               <p>
                 Result revision{" "}
                 {review.result.requested?.revision ?? "not requested"}:{" "}
@@ -228,6 +315,8 @@ function ImportForm({
               </p>
               <p className="break-words text-xs text-muted-foreground">
                 Receipt {receipt.receiptId} · {receipt.appliedAt}
+                {receipt.processRevision !== undefined &&
+                  ` · Process revision ${receipt.processRevision}`}
               </p>
               <ViewLink
                 href={`/runs?workflow=${encodeURIComponent(receipt.workflow)}`}
@@ -245,10 +334,19 @@ function ImportForm({
   )
 }
 
-export function DefinitionImportPanel({ workflow }: { workflow?: string }) {
+export function DefinitionImportPanel({
+  workflow,
+  reviewCandidate,
+}: {
+  workflow?: string
+  reviewCandidate?: boolean
+}) {
   return (
     <ProjectOwnerOnly>
-      <DefinitionImportPanelContent workflow={workflow} />
+      <DefinitionImportPanelContent
+        workflow={workflow}
+        reviewCandidate={reviewCandidate}
+      />
     </ProjectOwnerOnly>
   )
 }

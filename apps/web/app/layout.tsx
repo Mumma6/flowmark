@@ -1,9 +1,8 @@
 import type { Metadata } from "next"
+import copy from "../public/landing-page-copy.en.json"
 import "./globals.css"
 
-const title = "Flowmark — Understand what your software actually does"
-const description =
-  "AI-native process intelligence for people and agents. Discover application processes, investigate changing outcomes, and keep instrumentation current as code evolves."
+const { title, description, keywords } = copy.metadata
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://flowmark.dev"),
@@ -11,16 +10,7 @@ export const metadata: Metadata = {
   description,
   applicationName: "Flowmark",
   alternates: { canonical: "/" },
-  keywords: [
-    "process intelligence",
-    "workflow observability",
-    "TypeScript",
-    "SDK",
-    "source available",
-    "AI agents",
-    "MCP",
-    "Flowmark Studio",
-  ],
+  keywords,
   openGraph: {
     title,
     description,

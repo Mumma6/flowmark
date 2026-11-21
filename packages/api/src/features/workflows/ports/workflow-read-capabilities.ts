@@ -1,3 +1,4 @@
+import type { ProcessHealth, ProcessHealthQuery } from "@flowmarkdev/core"
 import type { ReferenceJourneyEvidence } from "../types.js"
 import type { ReferenceJourneyQuery } from "@flowmarkdev/core"
 import type {
@@ -102,6 +103,17 @@ export interface WorkflowRepositoryRuns {
 }
 
 export interface WorkflowRepositoryAnalytics {
+  readonly processHealth: (
+    projectId: string,
+    query: ProcessHealthQuery,
+  ) => Effect.Effect<
+    | Extract<ProcessHealth, { status: "unsupported-scope" }>
+    | Omit<
+        Extract<ProcessHealth, { status: "assessed" }>,
+        "attention" | "comparison"
+      >,
+    PersistenceError | InvalidInput
+  >
   readonly linkedComparison: (
     projectId: string,
     query: LinkedComparisonQuery,

@@ -3,7 +3,7 @@ title: Connect Cursor with MCP
 description: Give Cursor read access to Flowmark evidence and investigate executions, failures and reported outcomes.
 ---
 
-MCP lets Cursor read Flowmark evidence alongside your application code. Use it to
+Start with the ticket and source. In today's adapter, use workflow discovery, run search and the run inspector to find evidence for the change. Direct ticket, diff and symbol resolution is planned. MCP lets Cursor read Flowmark evidence alongside your application code. Use it to
 investigate executions, failures and reported business outcomes. Cursor is the
 recommended MCP client; it has been verified against real application data in Staging.
 
@@ -75,9 +75,15 @@ Ask Cursor to explain an execution, investigate a failure code or compare report
 business outcomes. The tools read the projects you approved and return links to
 supporting Studio evidence.
 
-For example: “Use Flowmark to find an execution in my project during this UTC
-window. Explain its reported result, operations and failures, and give me the
-Studio link.” Keep facts and hypotheses separate.
+Start with `get_connection` to confirm the project and available tools. If you
+don't know the process name, use `list_workflows`. Run `find_runs` for a short
+UTC window and pass its returned run ID to `get_run`. Read the summary and the
+page relevant to your question. Follow a cursor only if you need more evidence.
+
+Ask the agent to cite the recorded run and any returned Studio link. Keep
+recorded observations, inferences from source code and recommendations
+separate. You can investigate in Cursor once the grant works. Studio is
+available for visual inspection or when the MCP read is unavailable.
 
 ## Explore your first evidence
 

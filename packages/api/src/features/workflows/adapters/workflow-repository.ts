@@ -2,6 +2,7 @@ import { withReadSubject } from "./with-read-subject.js"
 import { InvalidInput } from "../../../errors.js"
 import {
   PublicReadFailure,
+  isReadStatementTimeout,
   publicStorageFailure,
 } from "../../public-reads/errors.js"
 import { Effect, Layer, Option, Redacted } from "effect"
@@ -21,6 +22,27 @@ export const WorkflowRepositoryLive = Layer.effect(
   Effect.gen(function* () {
     const store = yield* WorkflowStore
     return WorkflowRepository.of({
+      processHealth: (projectId, query) =>
+        withReadSubject(store.processHealth(projectId, query)).pipe(
+          Effect.catchTags({
+            InvalidResultQuery: toInvalidInput,
+            ProcessHealthBudgetExceeded: ({ budget }) =>
+              Effect.fail(
+                new InvalidInput({
+                  cause: `Process health exceeds its ${budget} budget. Choose a narrower window.`,
+                }),
+              ),
+            DatabaseError: (error) =>
+              Effect.fail(
+                isReadStatementTimeout(error)
+                  ? new InvalidInput({
+                      cause:
+                        "Process health exceeds its statement-time budget. Choose a narrower window.",
+                    })
+                  : toPersistenceError(error),
+              ),
+          }),
+        ),
       linkedComparison: (projectId, query) =>
         withReadSubject(store.linkedComparison(projectId, query)).pipe(
           Effect.catchTags({

@@ -1,12 +1,8 @@
 # Architecture
 
-This document describes the implemented Product 1.0 foundation. Studio, public
-reads, MCP and portable views reuse authorized use cases and evidence semantics.
-Studio runs in `apps/dashboard`; private/shared investigations, business-reader
-projections, account controls and exports are implemented. See
-[implementation status](./implementation-status.md) for limitations and operational
-follow-ups. Product milestones do not rename packages, replace the workflow/run
-model or establish environment rollout.
+The evidence backend supports the [runtime memory product](product.md). Current app observations flow through the SDK, API and project-scoped PostgreSQL stores. Delegated queries flow through the MCP adapter into the same API use cases. Studio is a human inspector and control surface. See [implementation status](implementation-status.md) for the current boundary.
+
+The target adds a repository-scoped installation, a build manifest, environment deployment bindings and an indexed change-to-behavior lookup. Source associations carry their provenance. Artifact-aware queries join those mappings to observed executions. Read grants, ingestion keys and repository patch authority are separate. PostgreSQL owns cohort selection and matching drilldowns, TypeScript/Effect owns authorization and orchestration, and the Rust engine remains available for deterministic bounded computations. [Evidence contract](runtime-memory.md)
 
 ```text
 Customer server application
@@ -468,6 +464,9 @@ for a half-open start window of at most 31 days, compared with the previous
 window. The local harness simulates invoice, inventory and order work per
 execution, while workflow history is persistent. Technical SDK diagnostics use a
 separate local project.
+
+The [process health read](./process-health.md) extends the period read model with
+a bounded diagnostic assessment and its contributing declaration selection.
 
 The reference deployment is the four public hostnames in the
 [infrastructure guide](./infrastructure.md). Durable SDK delivery and general retention
