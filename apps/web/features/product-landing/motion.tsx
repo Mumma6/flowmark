@@ -9,15 +9,29 @@ import {
   useSyncExternalStore,
   type ReactNode,
 } from "react"
-import { cn } from "@flowmark/ui"
+import { Button, cn } from "@flowmark/ui"
+import copy from "../../public/landing-page-copy.en.json"
 
-const MotionContext = createContext({ hidden: true })
+const MotionContext = createContext<{
+  hidden: boolean
+  enabled: boolean
+  toggle: () => void
+} | null>(null)
 const subscribeVisibility = (notify: () => void) => {
   document.addEventListener("visibilitychange", notify)
   return () => document.removeEventListener("visibilitychange", notify)
 }
 const pageHidden = () => document.hidden
 const serverHidden = () => true
+const motionPreference = () =>
+  window.matchMedia("(prefers-reduced-motion: no-preference)")
+const prefersMotion = () => motionPreference().matches
+const serverMotion = () => false
+const subscribePreference = (notify: () => void) => {
+  const query = motionPreference()
+  query.addEventListener("change", notify)
+  return () => query.removeEventListener("change", notify)
+}
 
 export function LandingMotion({ children }: { children: ReactNode }) {
   const hidden = useSyncExternalStore(
@@ -25,8 +39,17 @@ export function LandingMotion({ children }: { children: ReactNode }) {
     pageHidden,
     serverHidden,
   )
+  const systemMotion = useSyncExternalStore(
+    subscribePreference,
+    prefersMotion,
+    serverMotion,
+  )
+  const [override, setOverride] = useState<boolean | null>(null)
+  const enabled = override ?? systemMotion
   return (
-    <MotionContext.Provider value={{ hidden }}>
+    <MotionContext.Provider
+      value={{ hidden, enabled, toggle: () => setOverride(!enabled) }}
+    >
       <div
         data-paused={hidden}
         className="[&[data-paused=true]_*]:[animation-play-state:paused]"
@@ -34,6 +57,39 @@ export function LandingMotion({ children }: { children: ReactNode }) {
         {children}
       </div>
     </MotionContext.Provider>
+  )
+}
+
+export function MotionToggle() {
+  const motion = useContext(MotionContext)
+  if (!motion) {
+    return null
+  }
+  const label = motion.enabled
+    ? copy.navigation.pauseMotion
+    : copy.navigation.playMotion
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      onClick={motion.toggle}
+      aria-label={label}
+      title={label}
+      className="size-10 rounded-full p-0 text-muted-foreground hover:text-primary"
+    >
+      <svg
+        aria-hidden="true"
+        viewBox="0 0 24 24"
+        className="size-5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinejoin="round"
+      >
+        <circle cx="12" cy="12" r="9" />
+        <path d={motion.enabled ? "M10 8.5v7m4-7v7" : "m10 8 6 4-6 4Z"} />
+      </svg>
+    </Button>
   )
 }
 
@@ -49,7 +105,7 @@ export function MotionScene({
 }) {
   const ref = useRef<HTMLDivElement>(null)
   const [visible, setVisible] = useState(false)
-  const { hidden } = useContext(MotionContext)
+  const motion = useContext(MotionContext)
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => setVisible(entry.isIntersecting),
@@ -65,7 +121,7 @@ export function MotionScene({
       ref={ref}
       role={label ? "region" : undefined}
       aria-label={label}
-      data-playing={visible && !hidden}
+      data-playing={Boolean(visible && motion?.enabled && !motion.hidden)}
       data-visible={visible}
       className={cn(
         "group/scene relative [&[data-playing=false]_*]:[animation-play-state:paused]",
@@ -142,16 +198,5 @@ export function SignalPath({
         </>
       )}
     </g>
-  )
-}
-
-export function SectionTrace() {
-  return (
-    <div
-      aria-hidden="true"
-      className="pointer-events-none absolute inset-y-0 left-0 hidden w-px bg-border/40 lg:block"
-    >
-      <div className="h-full w-px origin-top bg-linear-to-b from-primary/0 via-primary/70 to-highlight/10 motion-safe:supports-[animation-timeline:view()]:animate-scroll-trace motion-safe:supports-[animation-timeline:view()]:[animation-timeline:view()] motion-safe:supports-[animation-timeline:view()]:[animation-range:entry_20%_exit_20%]" />
-    </div>
   )
 }

@@ -27,15 +27,16 @@
     ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
     "Segoe UI Symbol", "Noto Color Emoji";
   --font-mono: ui-monospace, SFMono-Regular, Consolas, monospace;
-  --animate-trace: trace 1.6s ease-out both;
   --animate-signal: signal 7s linear infinite;
-  --animate-node-signal: node-signal 7s ease-out infinite;
-  --animate-orbit-trace: orbit-trace 12s linear infinite;
-  --animate-scan-line: scan-line 5s ease-in-out infinite;
-  --animate-evidence-pulse: evidence-pulse 3s ease-out infinite;
-  --animate-timeline-grow: timeline-grow 900ms cubic-bezier(0.2, 0.7, 0.3, 1)
-    both;
-  --animate-scroll-trace: scroll-trace linear both;
+  --animate-context-float: context-float 5.8s ease-in-out infinite;
+  --animate-couple: couple 4.8s ease-in-out infinite;
+  --animate-memory-light: memory-light 4.8s ease-in-out infinite;
+  --animate-observation-scan: observation-scan 4.6s ease-in-out infinite
+    alternate;
+  --animate-memory-file: memory-file 5.4s ease-in-out infinite;
+  --animate-retrieve: retrieve 4.2s ease-in-out infinite;
+  --animate-starlight: starlight 4.5s ease-in-out infinite alternate;
+  --animate-memory-border: memory-border 5s linear infinite;
   --animate-arrive: arrive 700ms cubic-bezier(0.2, 0.7, 0.3, 1) both;
   --animate-beam-travel: beam-travel 16s linear infinite;
   --animate-spotlight-pan: spotlight-pan 24s ease-in-out infinite;
@@ -59,7 +60,6 @@
   --success: 152 42% 65%;
   --success-foreground: 152 42% 65%;
   --hero-glow: #a2d28824;
-  --studio-glow: hsl(var(--highlight) / 0.12);
 }
 
 @layer base {
@@ -130,17 +130,6 @@
   }
 }
 
-@keyframes trace {
-  from {
-    stroke-dasharray: 1;
-    stroke-dashoffset: 1;
-  }
-  to {
-    stroke-dasharray: 1;
-    stroke-dashoffset: 0;
-  }
-}
-
 @keyframes signal {
   0% {
     stroke-dashoffset: 1;
@@ -157,73 +146,81 @@
   }
 }
 
-@keyframes node-signal {
-  0%,
-  40%,
-  100% {
-    opacity: 0;
-    transform: scale(1);
-  }
-  12% {
-    opacity: 0.65;
-    transform: scale(1);
-  }
-  35% {
-    opacity: 0;
-    transform: scale(1.25);
-  }
-}
-
-@keyframes orbit-trace {
-  from {
-    stroke-dashoffset: 1;
-    opacity: 0.7;
-  }
-  to {
-    stroke-dashoffset: 0;
-    opacity: 0.7;
-  }
-}
-
-@keyframes scan-line {
+@keyframes context-float {
   0%,
   100% {
-    transform: scaleY(0.1);
-    opacity: 0.25;
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+@keyframes couple {
+  0%,
+  16%,
+  100% {
+    transform: translateX(-7px);
   }
   45%,
-  65% {
-    transform: scaleY(1);
-    opacity: 0.8;
+  75% {
+    transform: translateX(10px);
   }
 }
-
-@keyframes evidence-pulse {
-  0% {
-    transform: scale(1);
-    opacity: 0.5;
-  }
-  70%,
+@keyframes memory-light {
+  0%,
+  18%,
   100% {
-    transform: scale(3);
-    opacity: 0;
+    opacity: 0.3;
+  }
+  45%,
+  78% {
+    opacity: 1;
   }
 }
-
-@keyframes timeline-grow {
+@keyframes observation-scan {
   from {
-    transform: scaleX(0);
+    transform: translateX(-76px);
   }
   to {
-    transform: scaleX(1);
+    transform: translateX(91px);
   }
 }
-
-@keyframes scroll-trace {
+@keyframes memory-file {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  32%,
+  52% {
+    transform: translate(6px, -12px);
+  }
+  76% {
+    transform: translate(0, 0);
+  }
+}
+@keyframes retrieve {
+  0%,
+  12%,
+  100% {
+    transform: translateX(0);
+  }
+  46%,
+  72% {
+    transform: translateX(20px);
+  }
+}
+@keyframes starlight {
   from {
-    transform: scaleY(0);
+    opacity: 0.28;
   }
   to {
-    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+/* SVG perimeter adaptation of Aceternity UI Moving Border.
+   https://ui.aceternity.com/components/moving-border */
+@keyframes memory-border {
+  to {
+    stroke-dashoffset: -100;
   }
 }

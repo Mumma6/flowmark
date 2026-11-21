@@ -1,73 +1,39 @@
-import type { ReactNode } from "react"
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@flowmark/ui"
-import {
-  overlineClassName,
-  sectionTitleClassName,
-  shellClassName,
-} from "./shell"
+import { sectionTitleClassName, shellClassName } from "./shell"
 
-const questions: ReadonlyArray<{
-  value: string
-  title: string
-  body: ReactNode
-}> = [
-  {
-    value: "identity",
-    title: "What is process intelligence?",
-    body: "An understanding of how your software’s processes behave and what they report accomplishing. Flowmark connects code, executions, business outcomes and history so you can follow a changed result back to its evidence — and keep that understanding current as the application changes.",
-  },
-  {
-    value: "execution",
-    title: "How does Flowmark fit into my application?",
-    body: "Use automatic technical context, agent-assisted instrumentation, or precise SDK markers independently or together. Follow imports, synchronization, payments, external integrations and AI-driven workflows. Your application keeps its runtime, execution and business logic; Flowmark records observations and connects them to meaningful processes.",
-  },
-  {
-    value: "agents",
-    title: "Do I need an AI agent to use Flowmark?",
-    body: "Studio is a visual workspace for exploring processes, outcomes and evidence. You can browse, compare and investigate directly. Intelligence also helps discover processes, surface changing outcomes and detect instrumentation drift. Coding agents investigate and prepare updates alongside your code through scoped MCP access.",
-  },
-  {
-    value: "evidence",
-    title: "What does a reported outcome actually tell me?",
-    body: "It tells you what the application reported. A completed execution can include rejected records or an outstanding confirmation. Flowmark keeps execution status, business results, expectations and evidence distinct, so an answer can say what is known and what remains unknown.",
-  },
-  {
-    value: "open",
-    title: "How can I get access?",
-    body: "Join the waitlist with your email. Flowmark is preparing for public access. You can also explore the architecture and source on GitHub. The SDK uses Apache 2.0; the platform uses FSL 1.1 with Apache 2.0 after two years.",
-  },
-]
+import copy from "../../public/landing-page-copy.en.json"
+
+const questions = copy.faq.items
 
 export function FaqSection() {
   return (
     <section
       id="faq"
-      className={`${shellClassName} grid gap-8 py-16 sm:py-[6.25rem] lg:grid-cols-[0.8fr_1.2fr] lg:gap-20`}
       aria-labelledby="faq-title"
+      className="border-t border-border"
     >
-      <div>
-        <p className={overlineClassName}>Questions</p>
-        <h2 id="faq-title" className={`${sectionTitleClassName} mt-4`}>
-          A little more context.
+      <div
+        className={`${shellClassName} grid gap-6 py-16 sm:py-20 lg:grid-cols-[.8fr_1.2fr] lg:gap-16`}
+      >
+        <h2 id="faq-title" className={sectionTitleClassName}>
+          {copy.faq.heading}
         </h2>
+        <Accordion multiple defaultValue={[questions[0].question]}>
+          {questions.map(({ question, answer }) => (
+            <AccordionItem value={question} key={question}>
+              <AccordionTrigger className="aria-expanded:text-primary">
+                {question}
+              </AccordionTrigger>
+              <AccordionContent>{answer}</AccordionContent>
+            </AccordionItem>
+          ))}
+        </Accordion>
       </div>
-      <Accordion multiple>
-        {questions.map((question) => (
-          <AccordionItem value={question.value} key={question.value}>
-            <AccordionTrigger className="data-[panel-open]:text-highlight [&_svg]:text-highlight">
-              {question.title}
-            </AccordionTrigger>
-            <AccordionContent>
-              <p>{question.body}</p>
-            </AccordionContent>
-          </AccordionItem>
-        ))}
-      </Accordion>
     </section>
   )
 }

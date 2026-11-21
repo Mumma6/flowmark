@@ -1,8 +1,9 @@
 import { Button } from "@flowmark/ui"
+import { MotionToggle } from "../../features/product-landing/motion"
 import { Arrow, BrandLink } from "./brand"
 import { MobileNavigation } from "./mobile-navigation"
 import { shellClassName } from "./shell"
-import { docsUrl } from "./site-links"
+import { navigation } from "./site-links"
 
 export function SiteHeader() {
   return (
@@ -15,12 +16,7 @@ export function SiteHeader() {
           aria-label="Main navigation"
           className="hidden items-center gap-7 text-xs text-muted-foreground md:flex"
         >
-          {[
-            { label: "Platform", href: "#experience" },
-            { label: "Discover", href: "#discover" },
-            { label: "Evolve", href: "#evolve" },
-            { label: "Docs", href: docsUrl },
-          ].map((item) => (
+          {navigation.map((item) => (
             <a
               key={item.label}
               className="py-3 transition-colors hover:text-foreground"
@@ -31,13 +27,14 @@ export function SiteHeader() {
           ))}
         </nav>
         <div className="flex items-center gap-1 sm:gap-2">
+          <MotionToggle />
           <Button
             asChild
             variant="outline"
-            className="h-10 border-primary/25 bg-primary/5 px-3 text-[11px] text-primary sm:px-4"
+            className="hidden h-10 border-primary/25 bg-primary/5 px-3 text-[11px] text-primary min-[400px]:inline-flex sm:px-4"
           >
             <a href="#waitlist">
-              Join the Waitlist{" "}
+              Join the waitlist{" "}
               <span className="hidden sm:block">
                 <Arrow />
               </span>

@@ -20,13 +20,13 @@ existing environment-specific overrides.
 
 ## Product messaging
 
-The approved public headline is **Application memory for AI-native software teams.** The promise is **Give your coding agent the production cases its next change needs to handle.** The [product contract](../../docs/product.md) owns positioning and the [implementation inventory](../../docs/implementation-status.md) owns availability. The existing rendered site still presents the previous product. Replace that narrative with the booking redelivery and legitimate second-change example when implementing the landing task. Keep illustrations explicitly synthetic.
+The landing page introduces **application memory for AI-native software teams**. The hero diagram joins repository context with observed application behavior. The loop shows how production history informs the next change. The [page copy](public/landing-page-copy.en.json) includes the diagram labels, FAQ and waitlist states. The [product contract](../../docs/product.md) owns positioning and the [implementation inventory](../../docs/implementation-status.md) owns availability.
 
-The existing landing uses server sections, client-side illustrative diagrams and a waitlist. Preserve keyboard/mobile access, reduced-motion behavior and the environment-specific submission contract when replacing the story.
+Use the shared controls, viewport-aware signal paths and reduced-motion presentation. Keep the main explanation visible without interaction.
 
 ## Waitlist
 
-The hero links to an email form in the closing section. It submits without cookies
+The header links to an email form in the closing section. It submits without cookies
 to `/api/waitlist` on the existing `NEXT_PUBLIC_FLOWMARK_APP_URL` Studio origin
 (local default: `http://localhost:3001`). The dashboard uses its existing API proxy;
 no database credentials or new hosted settings are needed in the web app.
