@@ -197,3 +197,22 @@ proposal. Preview an older revision to inspect its saved matches. The run's
 recorded workflow name and its reported result revision continue to govern
 historical run reads. Old SDKs can continue to emit ordinary workflow markers
 before and after an import.
+
+## Review a process candidate in Studio
+
+From **Workflows**, choose **Review a process candidate**. Start with a question,
+an observed workflow or a local coding-agent suggestion. Studio offers names
+from the first discovery page and can check one recent recorded run for the exact
+workflow you select. An empty or unavailable read leaves that evidence open.
+
+Add the proposed name, source locator and revision together to review a local
+shortlist alongside the recorded run. The review distinguishes source-only and
+recorded-only support, agreement on the name, and differing names. An agreement on
+a name still leaves process membership and business meaning for review. A source
+comment or locator is reviewer-supplied context.
+
+Edit or rename the candidate, accept it locally, or dismiss and restore it. The
+review lives in the current tab. The selected exact workflow reaches the
+authorized project read. The candidate question, source details and unknowns
+stay in the browser. Use the separate definition import to review and save
+authorized process metadata.

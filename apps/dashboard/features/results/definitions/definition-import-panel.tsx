@@ -14,6 +14,7 @@ import {
 } from "@flowmark/ui"
 import { useProject } from "../../projects/project-context"
 import { ViewLink } from "../../shared/dashboard-components"
+import { CandidateReview } from "./candidate-review"
 import { useDefinitionImport } from "./use-definition-import"
 import { WorkflowMeaning } from "./workflow-meaning"
 import {
@@ -59,13 +60,20 @@ function ProcessRevision({
   )
 }
 
-function DefinitionImportPanelContent({ workflow }: { workflow?: string }) {
+function DefinitionImportPanelContent({
+  workflow,
+  reviewCandidate,
+}: {
+  workflow?: string
+  reviewCandidate?: boolean
+}) {
   const { current } = useProject()
   return current ? (
     <ImportForm
       key={`${current.id}:${workflow ?? "any"}`}
       projectId={current.id}
       workflow={workflow}
+      reviewCandidate={reviewCandidate}
     />
   ) : (
     <p className="text-sm text-muted-foreground">
@@ -77,9 +85,11 @@ function DefinitionImportPanelContent({ workflow }: { workflow?: string }) {
 function ImportForm({
   projectId,
   workflow,
+  reviewCandidate,
 }: {
   projectId: string
   workflow?: string
+  reviewCandidate?: boolean
 }) {
   const form = useDefinitionImport(projectId, workflow)
   const review = form.preview.data
@@ -87,6 +97,11 @@ function ImportForm({
   const visibleWorkflow = receipt?.workflow ?? workflow ?? review?.workflow
   return (
     <div className="grid min-w-0 gap-5">
+      <CandidateReview
+        projectId={projectId}
+        workflow={workflow}
+        initiallyOpen={reviewCandidate}
+      />
       <Card>
         <CardHeader>
           <CardTitle>Import process metadata</CardTitle>
@@ -317,10 +332,19 @@ function ImportForm({
   )
 }
 
-export function DefinitionImportPanel({ workflow }: { workflow?: string }) {
+export function DefinitionImportPanel({
+  workflow,
+  reviewCandidate,
+}: {
+  workflow?: string
+  reviewCandidate?: boolean
+}) {
   return (
     <ProjectOwnerOnly>
-      <DefinitionImportPanelContent workflow={workflow} />
+      <DefinitionImportPanelContent
+        workflow={workflow}
+        reviewCandidate={reviewCandidate}
+      />
     </ProjectOwnerOnly>
   )
 }
