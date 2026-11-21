@@ -33,3 +33,23 @@ Count each eligible logical case once. Compute the numerator by joining resolved
 3. **Runtime.** Reconcile independent activity with evidence. Delay conclusions until the window matures. A queue reporting completed work with repeatedly missing joins is a capture gap. A provider with no delivery receipts is an unsupported question.
 4. **Repair.** Record the question, affected site, observed symptom and smallest useful change. Deduplicate proposals by repo, behavior, question and failing revision. Attach the fix and its test to the open feature PR when applicable, otherwise open one scoped repair PR. Suppress repeats while open and re-evaluate after merge and deploy. Only fixture readback establishes restored readiness. Only eligible live cases establish restored observed answerability.
 5. **Presentation.** MCP returns the three results independently with reason codes, revision, count units and citations. Studio renders the same response with labels, last observation and repair link. Rechecking after expiry, late arrival or revocation can change what the viewer can establish.
+
+### Build artifact manifest
+
+The version 1 manifest records a repository, full Git revision, SHA-256 digest
+of the built file and up to 1,024 declared probes. Keep the probe and behavior
+IDs when moving code. Update the behavior revision when its meaning changes.
+Mark generated locations and list candidate paths and symbols when the source
+location is ambiguous.
+
+Build the core package, then produce the manifest alongside the build artifact.
+The booking fixture provides an example declaration file.
+
+```sh
+pnpm --filter @flowmarkdev/core build
+node scripts/build-artifact-manifest.mjs path/to/built-file \
+  examples/booking-redelivery-probes.json "$(git rev-parse HEAD)" > artifact-manifest.json
+```
+
+The manifest describes the build. Deployment identity requires a separate
+trusted receipt.

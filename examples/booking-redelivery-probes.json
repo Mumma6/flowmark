@@ -1,0 +1,15 @@
+{
+  "repository": "Mumma6/flowmark",
+  "probes": [
+    {
+      "probeId": "booking-reschedule-delivery",
+      "behaviorId": "booking.reschedule",
+      "behaviorRevision": "1",
+      "location": {
+        "kind": "source",
+        "path": "examples/booking-redelivery.ts",
+        "symbol": "recordBookingRedeliveries"
+      }
+    }
+  ]
+}
