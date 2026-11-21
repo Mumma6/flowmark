@@ -32,13 +32,13 @@ export const createDashboardQueryClient = (
   return client
 }
 
-export const createDashboardTRPCClient = () =>
+export const createDashboardTRPCClient = (explicitProjectId?: string) =>
   createTRPCClient<AppRouter>({
     links: [
       httpBatchLink({
         url: publicConfig.trpcPath,
         headers() {
-          const projectId = readStoredProjectId()
+          const projectId = explicitProjectId ?? readStoredProjectId()
           return projectId ? { "x-flowmark-project-id": projectId } : {}
         },
         fetch: dashboardTrpcFetch,

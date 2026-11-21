@@ -166,7 +166,9 @@ function SettingsPageInner() {
           <AccountSecurity />
         </TabsContent>
         <TabsContent value="definitions" className="mt-6">
-          <DefinitionImportPanel />
+          <DefinitionImportPanel
+            reviewCandidate={searchParams.get("candidate") === "review"}
+          />
         </TabsContent>
         <TabsContent value="privacy" className="mt-6">
           <DataPrivacyPanel />
