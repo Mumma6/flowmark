@@ -84,3 +84,8 @@ export type {
 } from "./process-definition.js"
 
 export * from "./meaning-proposal.js"
+export {
+  ArtifactManifestSchema,
+  createArtifactManifest,
+  type ArtifactManifest,
+} from "./artifact-manifest.js"
