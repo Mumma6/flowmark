@@ -37,7 +37,7 @@ export const getErasureCounts = Effect.fn("getErasureCounts")(function* (
         (SELECT jsonb_agg(to_jsonb(i) ORDER BY i.id) FROM workflow_definition_imports i WHERE project_id = ${projectId}::uuid),
         (SELECT jsonb_agg(to_jsonb(s) ORDER BY s.id) FROM saved_investigations s WHERE project_id = ${projectId}::uuid),
         (SELECT jsonb_agg(to_jsonb(c) ORDER BY c.id) FROM captures c),
-        (SELECT jsonb_agg(jsonb_build_array(s.id,s.creator_id,s.created_at) ORDER BY s.id) FROM shared_investigations s WHERE project_id=${projectId}::uuid))::text) AS revision
+        (SELECT jsonb_agg(jsonb_build_array(s.id,s.creator_id,s.created_at,s.proposal_resolution,s.proposal_resolved_at) ORDER BY s.id) FROM shared_investigations s WHERE project_id=${projectId}::uuid))::text) AS revision
     FROM evidence CROSS JOIN configuration`),
   )
   return row

@@ -216,3 +216,41 @@ review lives in the current tab. The selected exact workflow reaches the
 authorized project read. The candidate question, source details and unknowns
 stay in the browser. Use the separate definition import to review and save
 authorized process metadata.
+
+## Propose a label from a published example
+
+Open a published run from the current definition with an available result and choose **Propose a label
+change**. Owners, diagnostic viewers and business readers can submit a proposal
+in Studio using a published field they can read. A proposal records the
+reviewed field, example, base revision, author and requested label. Readers see
+their own proposals. The owner reviews them in **Process metadata**.
+
+Open **Review example** to compare the original reported value and unit with
+the proposed label. Accepting a proposal records the review decision. For a
+code-owned definition, use **Copy source patch brief** to prepare a new revision
+in the application repository, then review it through the existing owner
+import. For a Studio-owned definition, create a new result revision in Studio.
+If the
+publication or definition changed, request a new proposal against current
+evidence. The old run retains its original recorded result.
+
+Proposal access follows project membership and the current publication.
+The owner’s project export includes proposals. Project and account erasure
+follow the shared-investigation lifecycle. Changed publication hides stale
+proposal details. The MCP tool connection remains read-only.
+
+## Verify a change in recorded evidence
+
+From a run's handoff, open **Close an evidence gap**. Phrase one question,
+optionally enter the expected definition revision and confirmation ID, then
+copy the patch brief or follow manual SDK setup. Review the diff in the
+application workspace and approve it before editing. Use a safe application
+execution and compare its return value, error and concurrency with the
+ordinary behavior.
+
+Start verification before that execution. Check new runs in Studio and open
+each relevant success, partial result or failure. Use the exact confirmation
+ID to check an independent declaration and settlement. The verification
+lists a bounded set of recorded runs from the chosen start time and any
+explicit revision. An unexercised callback stays unverified. A deadline must
+come from recorded or deliberately defined process meaning.

@@ -196,7 +196,7 @@ export const exportCategories = (userId: string, projectId: string | null) => {
     ),
     category(
       "shared_investigations",
-      "id creator_id project_id title selection created_at",
+      "id creator_id project_id title selection created_at meaning_proposal proposal_resolution proposal_resolved_by proposal_resolved_at",
       project,
     ),
   ]

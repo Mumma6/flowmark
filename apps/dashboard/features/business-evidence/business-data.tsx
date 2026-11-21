@@ -1,4 +1,8 @@
 "use client"
+import {
+  MeaningProposals,
+  ProposeMeaning,
+} from "../results/proposals/meaning-proposals"
 import { Button, Card, CardContent, CardHeader, CardTitle } from "@flowmark/ui"
 import { CaptureRun } from "../evidence-captures/capture-run"
 import { BusinessRunView } from "@flowmark/ui/business-run"
@@ -139,6 +143,13 @@ export function BusinessData({
             revision={value.projection.publicationRevision}
             observedAt={value.projection.observedAt}
           />
+          <ProposeMeaning
+            key={`${projectId}:${data.summary.id}:${value.projection.publicationRevision}`}
+            projectId={projectId}
+            runId={data.summary.id}
+            fields={data.fields}
+          />
+          <MeaningProposals key={projectId} projectId={projectId} />
           <CaptureRun
             key={`${projectId}:${data.summary.id}`}
             projectId={projectId}

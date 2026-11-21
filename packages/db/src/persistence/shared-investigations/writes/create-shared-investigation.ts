@@ -13,7 +13,7 @@ export const createSharedInvestigation = Effect.fn("createSharedInvestigation")(
       DatabaseOperation.SharedInvestigations,
       () =>
         db.execute<{ total: number; owned: number }>(sql`
-    SELECT count(*)::int AS total,count(*) FILTER(WHERE creator_id=${creatorId})::int AS owned FROM shared_investigations WHERE project_id=${projectId}::uuid`),
+    SELECT count(*)::int AS total,count(*) FILTER(WHERE creator_id=${creatorId})::int AS owned FROM shared_investigations WHERE project_id=${projectId}::uuid AND meaning_proposal IS NULL`),
     )
     if (!count || count.total >= 100 || count.owned >= 25) {
       return yield* new SharedInvestigationRejected({ reason: "Limit" })

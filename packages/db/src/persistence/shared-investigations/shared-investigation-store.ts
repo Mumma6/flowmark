@@ -14,7 +14,20 @@ import { getSharedInvestigations } from "./queries/get-shared-investigations.js"
 import { createSharedInvestigation } from "./writes/create-shared-investigation.js"
 import { revokeSharedInvestigation } from "./writes/revoke-shared-investigation.js"
 import { SharedInvestigationRejected } from "./types.js"
-import type { ShareInvestigation } from "@flowmarkdev/core"
+import { readBusinessRunSource } from "../business-evidence/queries/read-run.js"
+import {
+  getMeaningProposals,
+  getMeaningProposalHead,
+} from "./queries/get-meaning-proposals.js"
+import {
+  resolveMeaningProposal,
+  saveMeaningProposal,
+} from "./writes/save-meaning-proposal.js"
+import type {
+  MeaningProposalResolution,
+  StoredMeaningProposal,
+  ShareInvestigation,
+} from "@flowmarkdev/core"
 const accessSharedInvestigations = Effect.fn("accessSharedInvestigations")(
   function* (projectId: string, write: boolean) {
     const subject = yield* ProjectReadSubject
@@ -46,6 +59,32 @@ const accessSharedInvestigations = Effect.fn("accessSharedInvestigations")(
       publication: publication.publication,
       choices: () => provide(readPublicationChoices(projectId)),
       records: () => provide(getSharedInvestigations(projectId)),
+      proposalExample: (id: string) =>
+        provide(readBusinessRunSource(projectId, id)),
+      proposalHead: (workflow: string) =>
+        provide(getMeaningProposalHead(projectId, workflow)),
+      proposals: (id?: string) =>
+        provide(
+          getMeaningProposals(
+            projectId,
+            member.role === "owner" ? undefined : subject.userId,
+            id,
+          ),
+        ),
+      submitProposal: (proposal: StoredMeaningProposal) =>
+        write && subject.kind === "user"
+          ? provide(saveMeaningProposal(projectId, subject.userId, proposal))
+          : Effect.fail(
+              new SharedInvestigationRejected({ reason: "Unauthorized" }),
+            ),
+      resolveProposal: (id: string, resolution: MeaningProposalResolution) =>
+        write && subject.kind === "user" && member.role === "owner"
+          ? provide(
+              resolveMeaningProposal(projectId, subject.userId, id, resolution),
+            )
+          : Effect.fail(
+              new SharedInvestigationRejected({ reason: "Unauthorized" }),
+            ),
       create: (input: ShareInvestigation) =>
         write && subject.kind === "user"
           ? provide(createSharedInvestigation(projectId, subject.userId, input))

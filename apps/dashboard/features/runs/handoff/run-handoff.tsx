@@ -1,5 +1,7 @@
 "use client"
 
+import { CoverageReview } from "./coverage-review"
+import { ProposeMeaningFromRun } from "../../results/proposals/meaning-proposals"
 import { SaveInvestigation } from "../../investigations/save-investigation"
 
 import {
@@ -131,6 +133,20 @@ export function RunHandoff({
   }
   return (
     <div className="grid gap-6">
+      {current && events[0] && (
+        <CoverageReview
+          key={`coverage:${current.id}:${runId}`}
+          projectId={current.id}
+          workflow={events[0].workflow}
+        />
+      )}
+      {current && (
+        <ProposeMeaningFromRun
+          key={`proposal:${current.id}:${runId}`}
+          projectId={current.id}
+          runId={runId}
+        />
+      )}
       {runSelection && Result.isSuccess(runSelection) && (
         <SaveInvestigation selection={runSelection.success} />
       )}

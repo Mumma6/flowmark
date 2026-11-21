@@ -227,3 +227,5 @@ export {
   type ExportRequest,
   type ExportPart,
 } from "./features/data-exports/ports/data-exports.js"
+
+export { MeaningProposalSchema } from "@flowmarkdev/core"

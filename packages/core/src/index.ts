@@ -82,3 +82,5 @@ export type {
   ProcessDefinition,
   ReviewedProcessDefinition,
 } from "./process-definition.js"
+
+export * from "./meaning-proposal.js"

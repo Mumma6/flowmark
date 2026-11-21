@@ -130,6 +130,167 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         publicQuestion,
       }
     }
+    it("reviews published label proposals without expanding reader access", async () => {
+      const f = await fixture()
+      const revision = "published-v1"
+      const declaration = {
+        revision,
+        fields: [
+          {
+            path: ["count"],
+            label: "Confirmed orders",
+            kind: "count" as const,
+            unit: "orders",
+          },
+          {
+            path: ["private"],
+            label: "Private field",
+            kind: "category" as const,
+            values: [canary],
+          },
+        ],
+      }
+      const scope = { projectId: f.projectId, workflow }
+      await f.admin.resultDeclarations.create({ ...scope, declaration })
+      await f.admin.businessEvidence.replace({
+        projectId: f.projectId,
+        expectedRevision: 0,
+        publication: {
+          results: [{ workflow, revision, paths: [["count"]] }],
+          references: [],
+        },
+      })
+      const source = await run(
+        WorkflowStore.make.pipe(Effect.provideService(Database, connection.db)),
+      )
+      const externalId = randomUUID()
+      const timestamp = new Date().toISOString()
+      await run(
+        source.append(f.projectId, randomUUID(), {
+          type: "started",
+          workflow,
+          runId: externalId,
+          timestamp,
+          properties: { definitionRevision: revision },
+        }),
+      )
+      await run(
+        source.append(f.projectId, randomUUID(), {
+          type: "completed",
+          workflow,
+          runId: externalId,
+          timestamp,
+          result: { count: 3, private: canary },
+        }),
+      )
+      const { runs } = await f.admin.run.list({ workflow, externalId })
+      const project = { projectId: f.projectId }
+      const command = {
+        id: randomUUID(),
+        runId: runs[0]!.id,
+        path: ["count"],
+        label: "Reported confirmations",
+        reason: "The report counts confirmations.",
+      }
+      const submit = (value = command) =>
+        f.limited.sharedInvestigations.submitProposal({
+          ...project,
+          command: value,
+        })
+      await expect(
+        submit({ ...command, id: randomUUID(), path: ["private"] }),
+      ).rejects.toThrow()
+      expect(await submit()).toEqual({ id: command.id })
+      expect(await submit()).toEqual({ id: command.id })
+      const author = await f.limited.sharedInvestigations.listProposals(project)
+      expect(author).toMatchObject({
+        canResolve: false,
+        items: [
+          {
+            id: command.id,
+            resolution: null,
+            proposal: { beforeLabel: "Confirmed orders" },
+          },
+        ],
+      })
+      expect(JSON.stringify(author)).not.toContain("headRevision")
+      expect(JSON.stringify(author)).not.toContain(canary)
+      expect(
+        (await f.reader.sharedInvestigations.listProposals(project)).items,
+      ).toEqual([])
+      expect(
+        (await f.admin.sharedInvestigations.list({ ...project, query: {} }))
+          .items,
+      ).toEqual([])
+      const accept = {
+        ...project,
+        id: command.id,
+        resolution: "accepted" as const,
+      }
+      await expect(
+        f.limited.sharedInvestigations.resolveProposal(accept),
+      ).rejects.toThrow()
+      expect(
+        await f.admin.sharedInvestigations.resolveProposal(accept),
+      ).toMatchObject({ resolution: "accepted" })
+      expect(
+        await f.admin.sharedInvestigations.resolveProposal(accept),
+      ).toMatchObject({ resolution: "accepted" })
+      expect(await f.admin.resultDeclarations.list(scope)).toEqual([
+        declaration,
+      ])
+      await expect(
+        connection.db
+          .update(sharedInvestigations)
+          .set({ title: "Changed evidence" })
+          .where(eq(sharedInvestigations.id, command.id)),
+      ).rejects.toThrow()
+      const stale = { ...command, id: randomUUID(), label: "Settled orders" }
+      await submit(stale)
+      await expect(
+        f.admin.sharedInvestigations.resolveProposal({
+          ...project,
+          id: stale.id,
+          resolution: "accepted",
+        }),
+      ).rejects.toThrow("already accepted")
+      await f.admin.resultDeclarations.create({
+        ...scope,
+        declaration: { ...declaration, revision: "published-v2" },
+      })
+      await expect(
+        f.admin.sharedInvestigations.resolveProposal({
+          ...project,
+          id: stale.id,
+          resolution: "rejected",
+        }),
+      ).rejects.toThrow("changed")
+      await f.admin.businessEvidence.replace({
+        ...project,
+        expectedRevision: 1,
+        publication: { results: [], references: [] },
+      })
+      const staleList =
+        await f.limited.sharedInvestigations.listProposals(project)
+      expect(staleList.items).toHaveLength(2)
+      expect(staleList.items.every(({ proposal }) => proposal === null)).toBe(
+        true,
+      )
+      await connection.db
+        .delete(projectMembers)
+        .where(
+          and(
+            eq(projectMembers.projectId, f.projectId),
+            eq(projectMembers.userId, f.business.userId),
+          ),
+        )
+      await expect(
+        f.limited.sharedInvestigations.listProposals(project),
+      ).rejects.toThrow()
+      expect(
+        (await f.admin.sharedInvestigations.listProposals(project)).items,
+      ).toEqual([])
+    })
     it("shares an immutable copy without exposing private originals or diagnostic metadata to business members", async () => {
       const f = await fixture()
       const original = await f.admin.investigations.save({

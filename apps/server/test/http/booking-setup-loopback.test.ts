@@ -92,6 +92,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
           liveRunId?: string
         }>
       }>("../../../../packages/sdk/test/booking-setup-demo.runtime")
+      const startedAfter = new Date(Date.now() - 1000).toISOString()
       const demo = await runBookingSetupDemo({
         deliver: true,
         apiUrl: origin,
@@ -106,6 +107,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
       const listed = await read<RouterOutputs["run"]["list"]>("run.list", {
         workflow: "booking.create",
         externalId: demo.liveRunId,
+        startedAfter,
       })
       expect(listed.runs).toHaveLength(1)
       const events = await read<RouterOutputs["run"]["detail"]>("run.detail", {
@@ -131,6 +133,28 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         outcome: "confirmed",
         result: { reserved: 1 },
       })
+      const selection = {
+        runId: listed.runs[0]!.id,
+        expectationId: confirmations.expectations[0]!.reference.expectationId,
+        limit: 1,
+      }
+      const checked = await read<RouterOutputs["run"]["expectationsPage"]>(
+        "run.expectationsPage",
+        selection,
+      )
+      expect(checked.expectations).toHaveLength(1)
+      expect(checked.expectations[0]?.settlement?.event).toMatchObject({
+        outcome: "confirmed",
+      })
+      const unexercised = await read<RouterOutputs["run"]["expectationsPage"]>(
+        "run.expectationsPage",
+        {
+          ...selection,
+          expectationId: "unexercised-webhook",
+        },
+      )
+      expect(unexercised.expectations).toEqual([])
+      expect(unexercised.unmatched).toEqual([])
     }, 15000)
   },
 )
