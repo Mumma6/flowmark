@@ -7,6 +7,7 @@ import { Button, Card, CardContent, CardHeader, CardTitle } from "@flowmark/ui"
 import { CaptureRun } from "../evidence-captures/capture-run"
 import { BusinessRunView } from "@flowmark/ui/business-run"
 import type { BusinessEvidence, BusinessEvidenceQuery } from "@flowmarkdev/core"
+import { BusinessPeriodChange } from "./business-period-change"
 import { BusinessJourneyForm, BusinessInsightForm } from "./question-forms"
 import { SaveInvestigation } from "../investigations/save-investigation"
 export function BusinessData({
@@ -287,6 +288,7 @@ export function BusinessData({
             <CardTitle>{data.report.field.label}</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-4">
+            <BusinessPeriodChange report={data.report} />
             {data.report.windows.map((w) => {
               const { query, field } = data.report
               const previous = w.scope === "previous"
@@ -317,6 +319,34 @@ export function BusinessData({
                       </>
                     )}
                   </p>
+                  <p className="text-sm">
+                    {w.failedRuns.toLocaleString()} failed of{" "}
+                    {w.finishedRuns.toLocaleString()} terminal runs ·{" "}
+                    {w.openRuns.toLocaleString()} without a terminal report
+                  </p>
+                  {(w.scope === "current" || previous) && w.failedRuns > 0 && (
+                    <Button
+                      variant="outline"
+                      className="justify-self-start"
+                      aria-label={`View failed runs for the ${w.scope} period`}
+                      onClick={() =>
+                        choose({
+                          kind: "runs",
+                          query: {
+                            workflow: query.workflow,
+                            startedAfter,
+                            startedBeforeExclusive: startedBefore,
+                            status: "Failed",
+                            businessKey: query.businessKey,
+                            businessValue: query.businessValue,
+                            limit: 25,
+                          },
+                        })
+                      }
+                    >
+                      View failed runs
+                    </Button>
+                  )}
                   <p className="text-sm text-muted-foreground">
                     {w.knownRuns} of {w.totalRuns} recorded runs reported a
                     usable result.

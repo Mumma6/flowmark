@@ -747,6 +747,97 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
           .where(eq(projectEvidencePublications.projectId, f.projectId)),
       ).toHaveLength(1)
     }, 30000)
+    it("pages a compared failure population without including the next period", async () => {
+      const f = await fixture()
+      await f.publish()
+      const start = Date.now() - 60_000
+      const offset = 10_000
+      const stamp = (time: number) => new Date(time).toISOString()
+      await run(
+        Effect.forEach([0, offset - 1, offset], (ms) =>
+          Effect.gen(function* () {
+            const base = {
+              workflow,
+              runId: randomUUID(),
+              timestamp: stamp(start + ms),
+            }
+            yield* f.store.append(f.projectId, randomUUID(), {
+              ...base,
+              type: "started",
+              properties: { definitionRevision: "v1" },
+            })
+            yield* f.store.append(f.projectId, randomUUID(), {
+              ...base,
+              type: "failed",
+              failure: { code: canary },
+            })
+          }),
+        ),
+      )
+      const startedAfter = stamp(start)
+      const startedBeforeExclusive = stamp(start + offset)
+      const report = await f.reader.businessEvidence.read({
+        kind: "insights",
+        query: {
+          workflow,
+          revision: "v1",
+          path: ["accepted"],
+          currentStartedAfter: startedAfter,
+          currentStartedBefore: startedBeforeExclusive,
+          previousStartedAfter: stamp(start - offset),
+          previousStartedBefore: startedAfter,
+        },
+      })
+      expect(report.data).toMatchObject({
+        kind: "insights",
+        report: {
+          windows: [
+            { scope: "current", failedRuns: 2 },
+            { scope: "previous", failedRuns: 0 },
+          ],
+        },
+      })
+      const query = {
+        workflow,
+        status: "Failed" as const,
+        startedAfter,
+        startedBeforeExclusive,
+        limit: 1,
+      }
+      const first = (
+        await f.reader.businessEvidence.read({
+          kind: "runs",
+          query,
+        })
+      ).data
+      expect(first).toMatchObject({
+        kind: "runs",
+        total: 2,
+        runs: [{ startedAt: stamp(start + offset - 1) }],
+      })
+      if (first.kind !== "runs" || !first.nextCursor) {
+        throw new Error("Expected another page of failures")
+      }
+      const second = (
+        await f.reader.businessEvidence.read({
+          kind: "runs",
+          query: { ...query, cursor: first.nextCursor },
+        })
+      ).data
+      expect(second).toMatchObject({
+        kind: "runs",
+        total: 2,
+        runs: [{ startedAt: startedAfter }],
+        nextCursor: null,
+      })
+      expect(JSON.stringify([report, first, second])).not.toContain(canary)
+      await expect(
+        f.reader.businessEvidence.read({
+          kind: "runs",
+          query: { ...query, startedBefore: startedBeforeExclusive },
+        }),
+      ).rejects.toThrow()
+    })
     it("binds real pages to publication and serializes concurrent policy changes", async () => {
       const f = await fixture()
       await f.publish()
