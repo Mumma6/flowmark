@@ -1,105 +1,20 @@
 ---
-title: Introduction
-description: Process intelligence for people and agents, built on application-reported evidence.
+title: Application memory for coding agents
+description: Give your coding agent the production cases its next change needs to handle.
 ---
 
-**Understand what your software actually does.**
+**Flowmark is application memory for AI-native software teams.** Your agent reads the code to understand what could happen. Flowmark records what the application reported when it ran, including partial results, retries and later confirmations.
 
-Flowmark is a source-available process-intelligence platform with an Apache-2.0
-public SDK. The platform uses FSL-1.1-ALv2; see the
-[licensing guide](https://github.com/Mumma6/flowmark/blob/main/docs/licensing.md). Instrument the processes
-your application already runs, collect execution evidence, and understand technical
-and reported business outcomes over time.
+## Start with the change
 
-A completed import can still have skipped records. A failed order can already
-have captured a payment. A completed request can still have an outstanding
-confirmation. Flowmark keeps those observations distinct and lets you inspect
-the evidence behind them. Your application owns execution, scheduling and retries.
+Suppose two booking callbacks arrive for the same booking. One repeats a change and the other moves the booking again. Seeing both cases can keep an agent from suppressing a legitimate update. Source, execution and provider acknowledgments each answer different questions.
 
-## Start with one process
+## Use the current agent interface
 
-```ts
-const run = flowmark.workflow("invoice.import", { properties: { batchId } })
-run.step("source-loaded", { properties: { count: 1000 } })
-run.done({ outcome: "partial", result: { imported: 988, skipped: 12 } })
-```
+Give the coding agent [read-only project access](/docs/mcp). It can use the existing workflow discovery and bounded run reads to find cases, compare peers and inspect the observations that support a decision. If the application needs an observation, the agent can use the [SDK integration guide](/docs/sdk) and verify the emitted result. The application continues to own its work and retries.
 
-This is an instrumentation sketch. The [quickstart](/docs/sdk) shows shared-client
-setup, real work, failure handling and delivery. Configure a server write key
-outside browser bundles and use an API that accepts the markers you enable.
+The planned change-facing interface will accept a ticket, diff, file or symbol directly. Managed repository installation, autonomous repair and release-specific coverage are in development planning. Today's tools and access steps are listed in the [MCP guide](/docs/mcp).
 
-```bash
-npm i @flowmarkdev/node
-```
+## Human controls
 
-## What you can use today
-
-- **Record executions:** workflows, milestones, overlapping operations, handled
-  errors, absolute progress and context amendments.
-- **Describe business evidence:** explicit final outcomes/results and non-final
-  reports. Typed definitions provide reusable instrumentation handles.
-- **Follow related work:** continue a run across requests, or explicitly link
-  distinct runs and application-owned attempts.
-- **Inspect confirmations:** declare an expectation and report its resolution or
-  cancellation. Deadlines are evaluated on read; there is no background alerting.
-- **Investigate history:** search enabled references, filter runs, compare peers
-  and examine timelines in Studio.
-- **Analyze reported outcomes:** declared fields, revisions, coverage, reasons,
-  weighted ratios and release comparisons, with links to the matching runs.
-
-SDK marker availability depends on the deployed accepting server. Missing values
-are not zero; completion is not verified business success. Browser reports remain
-untrusted. See [delivery](/docs/delivery) and [metric meanings](/docs/concepts/insights).
-
-## Platform, Studio and Everywhere
-
-Flowmark is one platform with three dimensions:
-
-- **Platform:** the SDK, evidence, contextual relationships, analysis and
-  programmable access.
-- **Studio:** the workspace for exploring processes, business references,
-  comparisons and supporting evidence.
-- **Everywhere:** agents, embedded views and custom tools.
-
-Studio is the current web interface. It opens in Explore and keeps the same
-filters when you inspect a run. The API includes six read-only MCP tools for an
-authorized project when the deployment returns the connection endpoint. Use **Connect** to set up
-Cursor, sign in and approve your project. A shared run view works in a
-supplied-data host and one verified patched MCP Apps reference host; see
-[portable evidence](/docs/portable-evidence) for the example and exact limits.
-Saved investigations and a Studio assistant are not built. Engineering, Product,
-Customer Success, Sales and Operations use the same recorded evidence.
-
-## Where to go next
-
-- [Quickstart](/docs/sdk): instrument your first meaningful process.
-- [Concepts](/docs/concepts/runs): workflows, executions and reported outcomes.
-- [Studio](/docs/concepts/dashboard): find an answer and inspect evidence.
-- [Next.js](/docs/nextjs) and [browser](/docs/browser): integration boundaries.
-- [SDK reference](/docs/reference): actual methods and types.
-- [Portable evidence](/docs/portable-evidence): supplied snapshots, the local MCP App example and verified host limits.
-- [Public read client](/docs/public-reads): server-side run/period reads, local setup and compatibility.
-- [Local development](/docs/local-development): run the local contributor stack.
-
-Hosted reference addresses are [flowmark.dev](https://flowmark.dev),
-[app.flowmark.dev](https://app.flowmark.dev) and
-[api.flowmark.dev](https://api.flowmark.dev).
-Sign-up creates an account; onboarding creates the first project/write key.
-Email recovery and verification depend on configured deployment email delivery.
-
-## Implementation and availability
-
-Product 1.0 is implementation-complete in repository source. Hosted availability
-depends on the deployed revision, enabled capabilities and current permissions.
-Vendor-client compatibility and hosted capture/cleanup activation have separate
-verification and operational gates. Process Health, automatic capture and assisted
-process discovery belong to Product 2.0 and are not available merely because the
-underlying evidence APIs exist.
-
-## Choose your next step
-
-- [Instrument an application](/docs/sdk) to report your first evidence.
-- [Connect an agent](/docs/mcp) to investigate with MCP.
-- [Set project access](/docs/project-access) for colleagues and business readers.
-- [Save and share investigations](/docs/investigations) without copying access rights.
-- [Manage account and data](/docs/account-data) for sessions, exports and deletion.
+Humans define intent, connect and authorize access, set collection policy, protect secrets and merge changes. Studio exposes [project access](/docs/project-access), [account and data controls](/docs/account-data) and an [execution inspector](/docs/concepts/dashboard). A completed run with skipped items is still partial work. Missing telemetry leaves the result unknown.

@@ -1,10 +1,6 @@
 # Documentation
 
-Flowmark is **Process Intelligence for People and Agents**. Product 1.0 is
-implementation-complete; [implementation status](./implementation-status.md)
-separates source capabilities, deliberate deferrals and operational follow-ups.
-The [architecture](./architecture.md) owns package boundaries. Customer-facing
-product and SDK guidance lives in `apps/docs`; maintainer plans stay private.
+Start with [the product definition](product.md), [agent workflow](agent-workflow.md) and [runtime memory and coverage](runtime-memory.md). [Implementation status](implementation-status.md) describes the current source. [Architecture](architecture.md) owns the engineering boundaries.
 
 Contributor guides that ship with the public repository:
 
@@ -66,7 +62,7 @@ The repository root `README.md` is the shared entry point. Package details are
 in `packages/sdk/README.md`, `packages/core/README.md`, `packages/api/README.md`,
 `packages/auth/README.md`, `packages/db/README.md`, and `packages/mcp/README.md`.
 
-## Process intelligence and collaboration
+## Evidence and access contracts in the current implementation
 
 - [Definition imports](./definition-imports.md): reviewed code-owned meaning.
 - [Reference journeys](./reference-journeys.md): qualified lookup and ambiguity.

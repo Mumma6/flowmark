@@ -1,7 +1,7 @@
 # Flowmark documentation
 
 The public documentation app uses Next.js, Fumadocs, and MDX. It documents
-the SDK, dashboard insights, and how to run the stack locally.
+agent access, runtime memory, SDK integration and local development.
 
 ## Run and validate
 
@@ -18,14 +18,7 @@ Existing documentation URLs are preserved.
 
 ## Content structure
 
-- **Getting started:** introduction, quickstart, configuration.
-- **Core concepts:** workflows/runs (including the Flow lifecycle diagrams),
-  business results, dashboard interpretation, explicit run links.
-- **Use Studio:** project roles/publication, private/shared investigations, account sessions and data controls.
-- **Integrations:** MCP connection lifecycle and tool overview, Next.js and browser guides.
-- **SDK reference:** client creation/configuration, delivery lifecycle, run
-  markers, types/bounds, proxy, advanced transports/errors.
-- **Operations:** local development, HTTP API, security/privacy, troubleshooting.
+Lead with the change, agent access and evidence semantics. Keep SDK examples as a technical reference for agents and adapters. Document today's Studio access controls and implementation limits accurately. The [product contract](../../docs/product.md) owns the target.
 
 MDX lives in `content/docs`. Each folder's `meta.json` controls sidebar order
 and grouping. The SDK reference has its own nested navigation with client,

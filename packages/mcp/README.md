@@ -10,8 +10,7 @@ OAuth, grant families, and issuer discovery stay in `@flowmark/auth`. This
 package calls those use cases; it does not execute, schedule, or retry
 application work.
 
-Agent access stays off unless the deployment enables it. A disabled deployment
-answers MCP HTTP with an explicit not-found response.
+This adapter exposes the six current project-scoped reads. The [target agent interface](../../docs/product.md#agent-interface-contract) starts at the change and adds artifact-aware case retrieval. Consult the deployed resource metadata and the current grant to establish access.
 
 ## User setup versus adapter internals
 

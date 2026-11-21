@@ -220,4 +220,4 @@ Does **not** authorize package installation (still gated per ADR 0007).
 - Dependencies: [ADR 0007](./0007-connect-agent-mcp-dependencies.md)
 - Machine-readable: `packages/auth/src/agent-access/` (re-exported as `@flowmark/auth/agent-access`)
 - Perimeter: [Authentication boundaries](../auth-perimeter.md)
-- Connect feature spec (maintainer-local `private/plans/connect-your-agent/SPEC.md`)
+- Shipped adapter contract: [MCP tools and bounds](../../packages/mcp/README.md)
