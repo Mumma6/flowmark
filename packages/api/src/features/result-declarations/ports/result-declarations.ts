@@ -3,6 +3,8 @@ import type {
   SearchFields,
   ResultDeclaration,
   DefinitionImportApply,
+  DefinitionImportSnapshot,
+  ProcessDefinition,
   DefinitionImportReceipt,
 } from "@flowmarkdev/core"
 import type {
@@ -12,6 +14,14 @@ import type {
 } from "../../../errors.js"
 
 export interface ResultDeclarationsService {
+  readonly processSnapshot: (
+    userId: string,
+    projectId: string,
+    definition: ProcessDefinition,
+  ) => Effect.Effect<
+    NonNullable<DefinitionImportSnapshot["process"]>,
+    PersistenceError
+  >
   readonly apply: (
     userId: string,
     projectId: string,

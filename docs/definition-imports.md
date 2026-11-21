@@ -116,9 +116,9 @@ read-only permissions remain. No extra tool or credential is needed.
 
 ## Scope and bounds
 
-One document describes one workflow. `version` must be `1`; `source` is a
+One document targets one workflow for result labels and search fields. `version` must be `1`; `source` is a
 lowercase code of 1–64 characters (`[a-z][a-z0-9_-]*`); workflow is nonblank and
-at most 200 characters. At least `result` or `searchFields` must be present.
+at most 200 characters. Include at least one of `result`, `searchFields` or `process`.
 Unknown properties, including nested ones, are rejected. Existing declaration
 limits apply: 12 result fields, path depth 5, eight unique search keys and 20
 dimension values. The union with existing search keys must also fit eight.
@@ -150,3 +150,50 @@ revision. Existing `booking-v1` runs keep their original meaning.
 The preview is an advisory read, not a transaction or reservation. Apply owns
 the fresh authorization, locking, stale check and atomic write. Application
 execution remains entirely outside Flowmark.
+
+## Review a composed process definition
+
+An optional `process` section groups exact observed workflow names into roles.
+It uses the same owner-only preview, apply and receipt. A process-only import
+can omit `result` and `searchFields`. The top-level `workflow` identifies the
+metadata editor's workflow. The stable `process.key` identifies the composition
+within the project, including when an observed workflow name changes.
+
+```json
+{
+  "version": 1,
+  "source": "booking-app",
+  "workflow": "reservation.request",
+  "process": {
+    "key": "reservation",
+    "revision": 2,
+    "members": [
+      { "role": "request", "workflows": ["reservation.request"] },
+      {
+        "role": "confirmation",
+        "workflows": ["reservation.confirm", "reservation.verify"]
+      },
+      { "role": "delivery", "workflows": ["reservation.deliver"] }
+    ]
+  }
+}
+```
+
+Begin with revision 1 and advance by one. The source that created the process
+owns its subsequent imports. The project owner reviews and applies them. A
+process has up to eight distinct roles, with up to four exact workflow names
+per role. Use each workflow name at most once in a definition.
+
+Each role preview shows which candidate names have been observed in the
+project. Zero matches are **Excluded**, one is **Matched**, and multiple are
+**Ambiguous**. Studio links observed names to their recorded runs. A match
+describes membership in this reviewed interpretation. Review the linked runs
+for actual execution and business outcomes.
+
+The receipt preserves the accepted definition and the matches observed at
+review. When proposing a rename, submit the next revision with the new
+workflow name. The review shows the current accepted interpretation beside the
+proposal. Preview an older revision to inspect its saved matches. The run's
+recorded workflow name and its reported result revision continue to govern
+historical run reads. Old SDKs can continue to emit ordinary workflow markers
+before and after an import.

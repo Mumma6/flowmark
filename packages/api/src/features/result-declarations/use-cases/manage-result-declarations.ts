@@ -113,7 +113,18 @@ const make = Effect.gen(function* () {
               ),
           },
         )
-        return importPreview(authorized, definition, { result, searchFields })
+        const process = definition.process
+          ? yield* declarations.processSnapshot(
+              userId,
+              authorized,
+              definition.process,
+            )
+          : undefined
+        return importPreview(authorized, definition, {
+          result,
+          searchFields,
+          process,
+        })
       },
     ),
     searchFields: Effect.fn("ManageResultDeclarations.searchFields")(function* (

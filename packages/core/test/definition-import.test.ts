@@ -41,6 +41,42 @@ describe("explicit definition import preview", () => {
     })
   })
 
+  it("preserves the accepted matches when new workflow names appear", () => {
+    const composed = {
+      ...definition,
+      process: {
+        key: "reservation",
+        revision: 1,
+        members: [
+          { role: "request", workflows: ["booking.create", "booking.request"] },
+        ],
+      },
+    }
+    const first = previewDefinitionImport(composed, {
+      ...empty,
+      process: { previous: null, observedWorkflows: ["booking.create"] },
+    }).process
+    expect(first?.proposed.matches).toEqual([
+      {
+        role: "request",
+        status: "Matched",
+        observed: ["booking.create"],
+        missing: ["booking.request"],
+      },
+    ])
+    const repeat = previewDefinitionImport(composed, {
+      ...empty,
+      process: {
+        previous: first!.proposed,
+        observedWorkflows: ["booking.create", "booking.request"],
+      },
+    })
+    expect(repeat.process).toMatchObject({
+      action: "Unchanged",
+      proposed: first?.proposed,
+    })
+  })
+
   it("keeps historical revisions immutable and requires a new revision for changed meaning", () => {
     const current = { ...empty, result: Option.some(result) }
     const changed = { ...definition, result: { ...result, fields: [] } }

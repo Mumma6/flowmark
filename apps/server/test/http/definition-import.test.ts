@@ -204,5 +204,140 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
       expect(await api.run.detail({ id: storedRun.id })).toEqual(before)
       expect(before[0]).toMatchObject({ properties: started.properties })
     })
+    it("reviews a composed rename, serializes competing changes and preserves the original interpretation", async () => {
+      const api = owner()
+      const projectId = fixture.projectId
+      const oldWorkflow = "reservation.submit"
+      const renamed = "reservation.request"
+      const runId = randomUUID()
+      const send = async (workflow: string, id: string) => {
+        const response = await ingest(
+          new Request("http://localhost:3001/v1/events", {
+            method: "POST",
+            headers: {
+              authorization: `Bearer ${fixture.writeKey}`,
+              "content-type": "application/json",
+            },
+            body: JSON.stringify({
+              eventId: randomUUID(),
+              event: {
+                type: "started",
+                workflow,
+                runId: id,
+                timestamp: new Date().toISOString(),
+              },
+            }),
+          }),
+        )
+        expect(response.status).toBe(202)
+      }
+      await send(oldWorkflow, runId)
+      await send("reservation.confirm", randomUUID())
+      await send("reservation.verify", randomUUID())
+      const page = await api.run.list({
+        workflow: oldWorkflow,
+        externalId: runId,
+      })
+      const original = { id: Array.head(page.runs).pipe(Option.getOrThrow).id }
+      const before = await api.run.detail(original)
+      const first = {
+        version: 1,
+        source: "booking-app",
+        workflow: oldWorkflow,
+        process: {
+          key: "reservation",
+          revision: 1,
+          members: [
+            { role: "request", workflows: [oldWorkflow] },
+            {
+              role: "confirmation",
+              workflows: ["reservation.confirm", "reservation.verify"],
+            },
+            { role: "delivery", workflows: ["reservation.deliver"] },
+          ],
+        },
+      }
+      const review = (input: typeof first) =>
+        api.resultDeclarations.previewImport({ projectId, definition: input })
+      const command = async (input: typeof first) => {
+        const preview = await review(input)
+        return {
+          definition: input,
+          manifestFingerprint: preview.manifestFingerprint,
+          baseFingerprint: preview.baseFingerprint,
+        }
+      }
+      const apply = (input: Awaited<ReturnType<typeof command>>) =>
+        api.resultDeclarations.applyImport({ projectId, command: input })
+      expect((await review(first)).process?.proposed.matches).toMatchObject([
+        { status: "Matched", observed: [oldWorkflow] },
+        {
+          status: "Ambiguous",
+          observed: ["reservation.confirm", "reservation.verify"],
+        },
+        { status: "Excluded", missing: ["reservation.deliver"] },
+      ])
+      const firstCommand = await command(first)
+      const accepted = await apply(firstCommand)
+      expect(accepted).toMatchObject({ status: "Applied", processRevision: 1 })
+      await send(renamed, randomUUID())
+      const proposed = {
+        ...first,
+        workflow: renamed,
+        process: {
+          ...first.process,
+          revision: 2,
+          members: [
+            { role: "request", workflows: [renamed] },
+            { role: "confirmation", workflows: ["reservation.confirm"] },
+          ],
+        },
+      }
+      const alternative = {
+        ...proposed,
+        workflow: oldWorkflow,
+        process: {
+          ...proposed.process,
+          members: [{ role: "request", workflows: [renamed] }],
+        },
+      }
+      const [next, competing] = await Promise.all([
+        command(proposed),
+        command(alternative),
+      ])
+      const outcomes = await Promise.allSettled([apply(next), apply(competing)])
+      expect(outcomes.map((outcome) => outcome.status).sort()).toEqual([
+        "fulfilled",
+        "rejected",
+      ])
+      const historical = await review(first)
+      expect(historical).toMatchObject({
+        status: "Conflict",
+        process: {
+          previous: { definition: { revision: 2 } },
+          requestedRevision: { definition: { revision: 1 } },
+        },
+      })
+      expect(historical.process?.previous?.matches[0]?.observed).toEqual([
+        renamed,
+      ])
+      expect(
+        historical.process?.requestedRevision?.matches[0]?.observed,
+      ).toEqual([oldWorkflow])
+      expect(await apply(firstCommand)).toMatchObject({
+        status: "AlreadyApplied",
+        receiptId: accepted.receiptId,
+      })
+      expect(await api.run.detail(original)).toEqual(before)
+      expect(
+        (
+          await review({
+            ...proposed,
+            source: "other-app",
+            process: { ...proposed.process, revision: 3 },
+          })
+        ).status,
+      ).toBe("Conflict")
+    })
   },
 )

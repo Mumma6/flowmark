@@ -1,0 +1,5 @@
+ALTER TABLE "workflow_definition_imports" ADD COLUMN "process_key" text;--> statement-breakpoint
+ALTER TABLE "workflow_definition_imports" ADD COLUMN "process_revision" integer;--> statement-breakpoint
+ALTER TABLE "workflow_definition_imports" ADD COLUMN "reviewed_process" jsonb;--> statement-breakpoint
+CREATE UNIQUE INDEX "workflow_definition_imports_process_revision_uidx" ON "workflow_definition_imports" USING btree ("project_id","process_key","process_revision");--> statement-breakpoint
+ALTER TABLE "workflow_definition_imports" ADD CONSTRAINT "workflow_definition_imports_process_fields" CHECK (("workflow_definition_imports"."process_key" IS NULL AND "workflow_definition_imports"."process_revision" IS NULL AND "workflow_definition_imports"."reviewed_process" IS NULL) OR ("workflow_definition_imports"."process_key" IS NOT NULL AND "workflow_definition_imports"."process_revision" IS NOT NULL AND "workflow_definition_imports"."reviewed_process" IS NOT NULL));

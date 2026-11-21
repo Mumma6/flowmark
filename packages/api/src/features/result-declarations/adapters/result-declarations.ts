@@ -61,6 +61,8 @@ export const ResultDeclarationsLive = Layer.effect(
   Effect.gen(function* () {
     const store = yield* ResultDeclarationStore
     return ResultDeclarations.of({
+      processSnapshot: (userId, projectId, definition) =>
+        persist(store.processSnapshot(userId, projectId, definition)),
       apply: (userId, projectId, input) =>
         declarationWrite(store.apply(userId, projectId, input)),
       find: (userId, projectId, workflow, revision) =>
