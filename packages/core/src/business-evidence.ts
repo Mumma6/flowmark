@@ -49,6 +49,7 @@ export const BusinessRunListSchema = Schema.Struct({
   outcome: Schema.optional(WorkflowOutcomeSchema),
   startedAfter: Schema.optional(Timestamp),
   startedBefore: Schema.optional(Timestamp),
+  startedBeforeExclusive: Schema.optional(BusinessTimestampSchema),
   publishedCount: Schema.optional(
     Schema.Struct({
       revision: WorkflowOutcomeSchema,
@@ -69,6 +70,22 @@ export const BusinessRunListSchema = Schema.Struct({
         q.businessValue !== undefined &&
         q.workflow !== undefined),
   ),
+  Schema.makeFilter((q) => {
+    if (q.startedBeforeExclusive === undefined) {
+      return true
+    }
+    if (
+      q.workflow === undefined ||
+      q.startedBefore !== undefined ||
+      q.publishedCount !== undefined ||
+      !Schema.is(BusinessTimestampSchema)(q.startedAfter)
+    ) {
+      return false
+    }
+    const width =
+      Date.parse(q.startedBeforeExclusive) - Date.parse(q.startedAfter)
+    return width > 0 && width <= 31 * 86400000
+  }),
   Schema.makeFilter((q) => {
     if (!q.publishedCount) {
       return true

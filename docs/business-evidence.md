@@ -44,6 +44,13 @@ runs with a valid reported count, including zero. Each run opens its published
 result. The aggregate and list are live observations and can change between
 reads. Diagnostic expectations supply neither the business total nor its order.
 
+The comparison shows the change in the reported total and the share of
+terminal runs that failed. Both periods need observations for a change to be
+available. Check the volume, result coverage and runs without a terminal report
+in each period. **View failed runs** opens the same workflow, reference filter
+when present and half-open start window used in the report. The link supplies
+published run summaries under current access.
+
 The API's `businessEvidence` reads and the existing MCP tools use the same
 projection rules. MCP technical modes remain unavailable to business readers.
 Portable run views refresh through the current authorized tool call. Copying
