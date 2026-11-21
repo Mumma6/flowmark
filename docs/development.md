@@ -1,5 +1,7 @@
 # Development guide
 
+For feature work, follow the [agent operating model](agent-workflow.md). Exercise observation fixtures alongside application tests. Keep test and staging evidence labeled by environment.
+
 Rust is a permanent architectural option alongside the primary TypeScript/Effect
 platform and PostgreSQL. Choose ownership for computation and data-processing
 changes using [architecture](./architecture.md#typescript-postgresql-and-rust);

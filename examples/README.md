@@ -4,6 +4,8 @@ TypeScript examples for [@flowmarkdev/node](https://www.npmjs.com/package/@flowm
 Most are excerpts: application helpers are declared so the code focuses on
 instrumentation. Flowmark observes work; the application owns execution and retries.
 
+For a change involving retries or partial results, give the coding agent the closest case below. Use the sample as a capture fixture, then verify the actual application result and an authorized persisted read. These are synthetic examples. The duplicate-reschedule demonstration is planned.
+
 ## Start here
 
 - [Shared Node client](./flowmark.ts) and [checkout workflow](./basic-workflow.ts).

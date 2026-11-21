@@ -1,6 +1,6 @@
 # Flowmark Studio
 
-The authenticated Studio workspace. It starts in Explore: select a process,
+The human control and evidence inspection surface for application memory. The [product definition](../../docs/product.md#the-smallest-useful-studio) owns the target. The following documents the existing application. It starts in Explore: select a process,
 search its execution evidence, inspect a run and return to the same filters.
 The package name remains `dashboard`. Hosting and domains keep their existing
 configuration.
@@ -33,7 +33,7 @@ compose views from `features/`; shared dashboard presentation lives in
 `features/shared/`, and runtime adapters/configuration live beside their owning
 features (`auth`, `platform`, `runs` and `reporting`).
 
-## Pages and populations
+## Current routes and population contracts
 
 - **Explore (`/`):** the first Studio workspace. Its process rail uses the
   existing project snapshot; execution evidence uses full, cursor-paginated

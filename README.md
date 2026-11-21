@@ -5,8 +5,8 @@
 <h1 align="center">flowmark.</h1>
 
 <p align="center">
-  <strong>Process Intelligence for People and Agents.</strong><br />
-  Understand what your software actually does.
+  <strong>Application memory for AI-native software teams.</strong><br />
+  Give your coding agent the production cases its next change needs to handle.
 </p>
 
 <p align="center">
@@ -15,149 +15,20 @@
   <a href="https://flowmark.dev"><img alt="flowmark.dev" src="https://img.shields.io/badge/flowmark.dev-0d1311" /></a>
 </p>
 
-Flowmark is a source-available process-intelligence platform for people and AI
-agents. Instrument the processes your application already runs, collect execution
-evidence, and understand technical and reported business outcomes over time.
+A coding agent begins with a ticket, plan, diff, file or symbol. Flowmark's product is the runtime evidence for that change: what ran, which decisions the application reported, which attempts belonged together, which outcomes arrived later and where evidence is missing. The human owns intent, access, policy and merge. The agent owns the implementation, tests and observation maintenance.
 
-Today, the TypeScript SDK and web interface support workflow investigation,
-related executions, progress, outcomes, confirmations and historical business
-analytics. Your application keeps ownership of execution.
+A booking can be rescheduled twice. A partner can also redeliver the first change under a new callback ID. Deduplicating by booking would lose a legitimate update. Deduplicating by envelope would keep the duplicate. Flowmark exists to give the agent both cases before it chooses a key.
 
-Platform supplies the programmable foundation, Studio is the investigation
-workspace, and Everywhere brings authorized evidence into agents, custom tools
-and portable interfaces. These are dimensions of one product.
+## Start here
 
-Product 1.0 is **implementation-complete** in this repository. Studio includes
-reference journeys, linked comparisons, private and shared investigations,
-business-reader projections, account controls and data exports. The API provides
-public read endpoints and six read-only MCP tools when the deployment enables
-agent access. See [implementation status](./docs/implementation-status.md) for
-source boundaries and deliberate limitations.
+- [Product definition and target agent tools](docs/product.md)
+- [Using runtime memory in the software factory](docs/agent-workflow.md)
+- [Runtime evidence and coverage](docs/runtime-memory.md)
+- [Implemented capabilities and outstanding work](docs/implementation-status.md)
+- [Connect a coding agent using today's MCP interface](https://docs.flowmark.dev/docs/mcp)
+- [SDK integration reference for agents and adapters](packages/sdk/README.md)
 
-Implementation completion is not a blanket deployment or compatibility claim.
-Vendor-client support, hosted capture/cleanup activation and operational acceptance
-remain separately recorded. Product 2.0 will build on this foundation with process
-health, easier discovery/capture and maintained process meaning; those are future
-capabilities, not promises about today's deployment.
-
-## Choose your path
-
-- **Instrument your application:** [SDK quickstart](https://docs.flowmark.dev/docs/sdk).
-- **Investigate with an agent:** [MCP connection guide](https://docs.flowmark.dev/docs/mcp).
-- **Work with colleagues:** [project access](https://docs.flowmark.dev/docs/project-access) and [saved/shared investigations](https://docs.flowmark.dev/docs/investigations).
-- **Manage your account or data:** [sessions, exports and deletion](https://docs.flowmark.dev/docs/account-data).
-- **Build a custom consumer:** [public reads](https://docs.flowmark.dev/docs/public-reads) and [portable evidence](https://docs.flowmark.dev/docs/portable-evidence).
-- **Contribute:** [local setup and contribution guide](./CONTRIBUTING.md).
-
-## Getting started
-
-Requires Node.js 20.19 or newer.
-
-```sh
-npm i @flowmarkdev/node
-```
-
-Create one shared client. Keep the write key on the server. Never place it in
-`NEXT_PUBLIC_*` or a browser bundle. `FLOWMARK_API_URL` is the API origin, not
-a path such as `/v1/events`.
-
-```bash
-FLOWMARK_API_KEY=<project write key>
-FLOWMARK_API_URL=https://api.flowmark.dev
-```
-
-```ts
-// Next.js Route Handler or Server Action
-import { createFlowmark } from "@flowmarkdev/node/next"
-
-export const flowmark = createFlowmark()
-```
-
-```ts
-// Node.js worker or long-lived server
-import { createFlowmark } from "@flowmarkdev/node"
-
-export const flowmark = createFlowmark()
-```
-
-```ts
-export async function completeCheckout(orderId: string) {
-  const flow = flowmark.workflow("checkout.order", {
-    properties: { orderId },
-  })
-
-  try {
-    flow.step("payment-captured")
-    const shipment = await flow.operation("create-shipment", () =>
-      createShipment(orderId),
-    )
-    flow.done({
-      outcome: "complete",
-      result: { shipmentId: shipment.id },
-    })
-    return shipment
-  } catch (error) {
-    flow.fail({ code: "CHECKOUT_FAILED" })
-    throw error
-  }
-}
-```
-
-The function keeps its return value and its thrown errors. In Node.js, call
-`await flowmark.shutdown()` before the process exits. The Next.js client drains
-delivery with `after()`.
-
-Create a project and a write key in the
-[dashboard](https://app.flowmark.dev), run the code, and open the recorded
-execution. Browser setup, typed workflows, and the rest of the API are in the
-[documentation](https://docs.flowmark.dev).
-
-## Capabilities
-
-**Follow one execution.** Open a run and see the sequence of milestones and
-operations, where time was spent, the latest progress, and the errors your code
-recorded along the way.
-
-**Read the reported result.** `done()` and `fail()` can carry a business
-outcome and a small JSON summary: imported and skipped counts, a shipment id,
-how far a sync got. The same facts are available on the run and across recent
-history.
-
-**See what changed.** Workflow views show volume, completion, duration, and
-reported outcomes over time. Compare a recent window, then open the runs behind
-the change.
-
-**Find a specific case.** Search run history by an enabled business reference,
-such as an order or customer id, and continue from that run into the timeline.
-
-**Connect related work.** Continue one run across later requests with the same
-workflow name and id. Pass `correlationId` or `parentRunId` when separate runs
-belong together.
-
-## How it works
-
-Your application keeps running the work. Flowmark records the markers you add
-around it.
-
-```text
-Your application
-  -> @flowmarkdev/node
-  -> https://api.flowmark.dev
-  -> a project in the dashboard
-```
-
-A workflow is a stable name, such as `checkout.order`. A run is one execution
-of that name. Steps are milestones. Operations are timed pieces of work and may
-overlap. Progress is an absolute snapshot. An outcome is the business result
-your code chooses to report, alongside technical completion or failure.
-
-The same markers work from a Node.js process, a Next.js server, or the browser.
-Browser clients use a public browser key, or a same-origin proxy that keeps the
-server write key private. See
-[browser integration](https://docs.flowmark.dev/docs/browser).
-
-Flowmark is a hosted product. The public repository supports code inspection,
-learning and local development for contributions.
+The current runtime records workflows, runs, attempts, outcomes and confirmations. Authorized agents can search and inspect this evidence using the existing MCP tools. Repository installation, artifact-backed change lookup and continuous observation repair are planned. The application owns execution and retries. Human inspection and access management live in Studio.
 
 ## Documentation
 
