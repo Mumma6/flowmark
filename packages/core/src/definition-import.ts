@@ -1,4 +1,5 @@
 import { Schema } from "effect"
+import { ProcessDefinitionSchema } from "./process-definition.js"
 import { IngestionIdentifierSchema } from "./identifiers.js"
 import { ResultDeclarationSchema, WorkflowOutcomeSchema } from "./results.js"
 import { SearchFieldsSchema } from "./search-fields.js"
@@ -8,11 +9,15 @@ export const DefinitionImportSchema = Schema.Struct({
   version: Schema.Literal(1),
   source: WorkflowOutcomeSchema,
   workflow: IngestionIdentifierSchema,
+  process: Schema.optional(ProcessDefinitionSchema),
   result: Schema.optional(ResultDeclarationSchema),
   searchFields: Schema.optional(SearchFieldsSchema),
 }).check(
   Schema.makeFilter(
-    (input) => input.result !== undefined || input.searchFields !== undefined,
+    (input) =>
+      input.result !== undefined ||
+      input.searchFields !== undefined ||
+      input.process !== undefined,
   ),
 )
 
@@ -34,6 +39,7 @@ export interface DefinitionImportReceipt {
   readonly appliedAt: string
   readonly source: string
   readonly workflow: string
+  readonly processRevision?: number
   readonly resultRevision: string | null
   readonly addedSearchKeys: ReadonlyArray<string>
 }

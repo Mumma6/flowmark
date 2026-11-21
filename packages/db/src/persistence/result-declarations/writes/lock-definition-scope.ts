@@ -13,10 +13,11 @@ export const lockDefinitionScope = Effect.fn("lockDefinitionScope")(function* (
   tx: DefinitionTransaction,
   projectId: string,
   workflow: string,
+  kind: "definition" | "process-definition" = "definition",
 ) {
   yield* runQuery(DatabaseOperation.ApplyDefinitionImport, () =>
     tx.execute(
-      sql`select pg_advisory_xact_lock(hashtextextended(${JSON.stringify(["definition", projectId, workflow])}, 0))`,
+      sql`select pg_advisory_xact_lock(hashtextextended(${JSON.stringify([kind, projectId, workflow])}, 0))`,
     ),
   )
 })

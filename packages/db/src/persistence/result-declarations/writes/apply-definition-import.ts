@@ -19,6 +19,7 @@ import { runQuery } from "../../run-query.js"
 import { runTransaction } from "../../run-transaction.js"
 import { DefinitionImportRejected } from "../definition-import-error.js"
 import { getDefinitionSnapshot } from "../queries/get-definition-snapshot.js"
+import { getProcessDefinitionSnapshot } from "../queries/get-process-definition-snapshot.js"
 import { lockDefinitionScope } from "./lock-definition-scope.js"
 
 const fingerprint = (value: unknown) =>
@@ -32,6 +33,9 @@ const receiptResult = (
   appliedAt: row.createdAt.toISOString(),
   source: row.source,
   workflow: row.workflow,
+  ...(row.processRevision === null
+    ? {}
+    : { processRevision: row.processRevision }),
   resultRevision: row.resultRevision,
   addedSearchKeys: row.addedSearchKeys,
 })
@@ -68,6 +72,14 @@ export const applyDefinitionImport = Effect.fn("applyDefinitionImport")(
           }
           const definition = input.definition
           yield* lockDefinitionScope(tx, projectId, definition.workflow)
+          if (definition.process) {
+            yield* lockDefinitionScope(
+              tx,
+              projectId,
+              definition.process.key,
+              "process-definition",
+            )
+          }
           const requestContent = definitionImportReviewContent(
             projectId,
             definition,
@@ -109,11 +121,18 @@ export const applyDefinitionImport = Effect.fn("applyDefinitionImport")(
             return receiptResult(previous.value, "AlreadyApplied")
           }
 
-          const snapshot = yield* getDefinitionSnapshot(
+          const metadata = yield* getDefinitionSnapshot(
             tx,
             projectId,
             definition,
           )
+          const process = definition.process
+            ? yield* getProcessDefinitionSnapshot(
+                projectId,
+                definition.process,
+              ).pipe(Effect.provideService(Database, tx))
+            : undefined
+          const snapshot = { ...metadata, process }
           const content = definitionImportReviewContent(
             projectId,
             definition,
@@ -173,6 +192,8 @@ export const applyDefinitionImport = Effect.fn("applyDefinitionImport")(
                 }),
             )
           }
+          const reviewed =
+            plan.process?.action === "Create" ? plan.process.proposed : null
           const receipts = yield* runQuery(
             DatabaseOperation.ApplyDefinitionImport,
             () =>
@@ -185,6 +206,9 @@ export const applyDefinitionImport = Effect.fn("applyDefinitionImport")(
                   actorId: userId,
                   manifestFingerprint: input.manifestFingerprint,
                   baseFingerprint: input.baseFingerprint,
+                  processKey: reviewed?.definition.key ?? null,
+                  processRevision: reviewed?.definition.revision ?? null,
+                  reviewedProcess: reviewed,
                   resultRevision: newRevision?.revision ?? null,
                   addedSearchKeys: Array.map(
                     plan.searchFields.additions,
