@@ -1,4 +1,4 @@
-import { and, eq, or } from "drizzle-orm"
+import { and, eq, isNull, or } from "drizzle-orm"
 import { Effect } from "effect"
 import { sharedInvestigations } from "../../../schema/index.js"
 import { Database } from "../../database.js"
@@ -15,6 +15,7 @@ export const revokeSharedInvestigation = Effect.fn("revokeSharedInvestigation")(
           and(
             eq(sharedInvestigations.projectId, projectId),
             eq(sharedInvestigations.id, id),
+            isNull(sharedInvestigations.meaningProposal),
             owner ? undefined : or(eq(sharedInvestigations.creatorId, userId)),
           ),
         )

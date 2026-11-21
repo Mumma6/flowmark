@@ -30,6 +30,8 @@ import type {
   WorkflowResult,
   ResultDeclaration,
   ReviewedProcessDefinition,
+  StoredMeaningProposal,
+  MeaningProposalResolution,
   SearchFields,
 } from "@flowmarkdev/core"
 
@@ -446,6 +448,16 @@ export const sharedInvestigations = pgTable(
       .notNull()
       .references(() => projects.id, { onDelete: "cascade" }),
     title: text("title").notNull(),
+    meaningProposal: jsonb("meaning_proposal").$type<StoredMeaningProposal>(),
+    proposalResolution: text(
+      "proposal_resolution",
+    ).$type<MeaningProposalResolution>(),
+    proposalResolvedBy: text("proposal_resolved_by").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    proposalResolvedAt: timestamp("proposal_resolved_at", {
+      withTimezone: true,
+    }),
     selection: jsonb("selection").$type<unknown>().notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()

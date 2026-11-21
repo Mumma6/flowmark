@@ -14,6 +14,7 @@ import {
 } from "@flowmark/ui"
 import { useProject } from "../../projects/project-context"
 import { ViewLink } from "../../shared/dashboard-components"
+import { MeaningProposals } from "../proposals/meaning-proposals"
 import { CandidateReview } from "./candidate-review"
 import { useDefinitionImport } from "./use-definition-import"
 import { WorkflowMeaning } from "./workflow-meaning"
@@ -97,6 +98,7 @@ function ImportForm({
   const visibleWorkflow = receipt?.workflow ?? workflow ?? review?.workflow
   return (
     <div className="grid min-w-0 gap-5">
+      <MeaningProposals projectId={projectId} />
       <CandidateReview
         projectId={projectId}
         workflow={workflow}

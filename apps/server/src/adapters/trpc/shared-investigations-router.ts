@@ -1,6 +1,7 @@
 import { Schema } from "effect"
 import {
   ManageSharedInvestigations,
+  MeaningProposalSchema,
   ShareInvestigationSchema,
   SharedInvestigationListSchema,
 } from "@flowmark/api"
@@ -15,6 +16,66 @@ const input = <S extends Schema.ConstraintDecoder<unknown>>(schema: S) =>
   })
 const scope = { projectId: UuidSchema }
 export const sharedInvestigationsRouter = t.router({
+  submitProposal: studioMutation
+    .input(input(Schema.Struct({ ...scope, command: MeaningProposalSchema })))
+    .mutation(({ ctx, input }) =>
+      sessionQuery(ctx.request, (userId) =>
+        native(
+          ctx.request,
+          userId,
+          ManageSharedInvestigations.use((service) =>
+            service.submitProposal(
+              { _tag: "User", userId, projectId: input.projectId },
+              input.projectId,
+              input.command,
+            ),
+          ),
+        ),
+      ),
+    ),
+  listProposals: t.procedure
+    .input(input(Schema.Struct(scope)))
+    .query(({ ctx, input }) =>
+      sessionQuery(ctx.request, (userId) =>
+        native(
+          ctx.request,
+          userId,
+          ManageSharedInvestigations.use((service) =>
+            service.listProposals(
+              { _tag: "User", userId, projectId: input.projectId },
+              input.projectId,
+            ),
+          ),
+        ),
+      ),
+    ),
+  resolveProposal: studioMutation
+    .input(
+      input(
+        Schema.Struct({
+          ...scope,
+          id: UuidSchema,
+          resolution: Schema.Literals(["accepted", "rejected"]),
+        }),
+      ),
+    )
+    .mutation(({ ctx, input }) =>
+      sessionQuery(ctx.request, (userId) =>
+        native(
+          ctx.request,
+          userId,
+          ManageSharedInvestigations.use((service) =>
+            service.resolveProposal(
+              { _tag: "User", userId, projectId: input.projectId },
+              input.projectId,
+              input.id,
+              input.resolution,
+            ),
+          ),
+        ),
+      ),
+    ),
+
   create: studioMutation
     .input(
       input(Schema.Struct({ ...scope, command: ShareInvestigationSchema })),
