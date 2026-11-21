@@ -29,7 +29,7 @@ export function BackgroundBeams({
   return (
     <svg
       className={cn(
-        "pointer-events-none absolute inset-0 z-0 h-full w-full opacity-70 motion-reduce:opacity-20",
+        "pointer-events-none absolute inset-0 z-0 h-full w-full opacity-70 group-data-[playing=false]/scene:opacity-20",
         className,
       )}
       viewBox="0 0 696 316"
@@ -50,7 +50,7 @@ export function BackgroundBeams({
           key={`${path}-travel`}
           d={path}
           className={cn(
-            "motion-safe:animate-beam-travel",
+            "group-data-[playing=true]/scene:animate-beam-travel",
             index === 1 && "[animation-delay:1.6s]",
             index === 2 && "[animation-delay:3.2s]",
             index === 3 &&

@@ -5,11 +5,9 @@ import { SiteFooter } from "./components/site-footer"
 import { SiteHeader } from "./components/site-header"
 import { LandingMotion } from "../features/product-landing/motion"
 import {
-  DiscoverSection,
-  EverywhereSection,
-  EvolveSection,
-  IntelligenceSection,
-  JourneySection,
+  HowSection,
+  FactorySection,
+  AgentsSection,
 } from "../features/product-landing/product-story"
 
 export default function HomePage() {
@@ -24,11 +22,9 @@ export default function HomePage() {
       <SiteHeader />
       <main id="main" tabIndex={-1}>
         <HeroSection />
-        <DiscoverSection />
-        <JourneySection />
-        <IntelligenceSection />
-        <EvolveSection />
-        <EverywhereSection />
+        <HowSection />
+        <FactorySection />
+        <AgentsSection />
         <FaqSection />
         <ClosingSection />
       </main>

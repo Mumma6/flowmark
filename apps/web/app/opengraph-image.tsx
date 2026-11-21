@@ -1,6 +1,7 @@
 import { ImageResponse } from "next/og"
+import copy from "../public/landing-page-copy.en.json"
 
-export const alt = "Flowmark — Understand what your software actually does"
+export const alt = copy.metadata.socialImage.alt
 export const size = { width: 1200, height: 630 }
 export const contentType = "image/png"
 
@@ -65,7 +66,7 @@ export default function OpenGraphImage() {
             maxWidth: 900,
           }}
         >
-          Understand what your software actually does.
+          {copy.metadata.socialImage.headline}
         </div>
         <div
           style={{
@@ -75,14 +76,11 @@ export default function OpenGraphImage() {
             maxWidth: 760,
           }}
         >
-          Process intelligence for people and agents.
+          {copy.metadata.socialImage.promise}
         </div>
       </div>
       <div style={{ display: "flex", gap: 28, color: "#b9f597", fontSize: 20 }}>
-        <span>Discover</span>
-        <span>Observe</span>
-        <span>Understand</span>
-        <span>Evolve</span>
+        <span>{copy.metadata.socialImage.caption}</span>
       </div>
     </div>,
     size,

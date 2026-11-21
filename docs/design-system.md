@@ -183,7 +183,7 @@ commands in the [dashboard README](../apps/dashboard/README.md).
 
 ## Product landing direction
 
-Lead with the promise in the [product definition](product.md). Use a labeled synthetic change and two real-to-the-scenario cases that would lead to different code. Separate implemented agent reads from planned change lookup. Preserve the existing waitlist, accessibility, loading and delivery error states.
+Lead with the promise in the [product definition](product.md). Show repository context and runtime history feeding the next code change in a simple diagram. Separate implemented agent reads from planned change lookup. Preserve the existing waitlist, accessibility, loading and delivery error states.
 
 ## Studio workspace, authentication and setup
 
