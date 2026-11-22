@@ -1,7 +1,7 @@
 {
   "name": "@flowmarkdev/core",
   "version": "0.4.1",
-  "description": "Shared workflow event contracts for Flowmark",
+  "description": "Shared event and runtime evidence contracts for Flowmark",
   "license": "Apache-2.0",
   "type": "module",
   "main": "./dist/index.js",

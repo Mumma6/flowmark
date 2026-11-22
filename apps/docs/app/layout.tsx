@@ -6,7 +6,7 @@ import type { Metadata } from "next"
 export const metadata: Metadata = {
   title: { default: "Flowmark documentation", template: "%s | Flowmark Docs" },
   description:
-    "Get started with Flowmark, instrument TypeScript workflows, and explore the SDK API.",
+    "Connect your coding agent to recorded runtime evidence and learn how to capture application behavior with Flowmark.",
 }
 
 export default function RootLayout({

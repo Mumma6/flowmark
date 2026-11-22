@@ -370,6 +370,8 @@ test("waitlist welcome uses the landing brand without account-security messaging
   assert.match(rendered.html, /https:\/\/flowmark.dev\//)
   assert.doesNotMatch(rendered.html, /ACCOUNT SECURITY|Verify email|expires in/)
   assert.match(rendered.text, /We’ll email you when access opens/)
+  assert.match(rendered.text, /Production memory for coding agents/)
+  assert.match(rendered.html, /Production memory for coding agents/)
   const staging = await Effect.runPromise(
     renderEmail(welcome, origin, "staging"),
   )
