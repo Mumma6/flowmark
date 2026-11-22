@@ -86,6 +86,8 @@ function repository(overrides: Partial<WorkflowRepositoryService> = {}) {
         failureCodes: [],
       }),
     workflows: () => Effect.succeed([]),
+    compareBehavior: () =>
+      Effect.succeed({ status: "unsupported", reason: "deployment-not-found" }),
     artifactMappings: () => Effect.succeed({ mappings: [], truncated: false }),
     listRuns: () =>
       Effect.succeed({

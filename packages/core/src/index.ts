@@ -106,3 +106,13 @@ export {
   type RuntimeReferenceKind,
   type StoredRuntimeObservation,
 } from "./runtime-observation.js"
+
+export {
+  BehaviorComparisonSchema,
+  behaviorComparisonMetrics,
+  type BehaviorComparison,
+  type BehaviorComparisonCohort,
+  type BehaviorComparisonExample,
+  type BehaviorComparisonMetric,
+  type BehaviorComparisonQuery,
+} from "./behavior-comparison.js"

@@ -74,6 +74,7 @@ export enum DatabaseOperation {
   ReadRecentRuns = "read-recent-runs",
   ReadReferenceJourney = "read-reference-journey",
   ReadRelatedRuns = "read-related-runs",
+  ReadBehaviorComparison = "read-behavior-comparison",
   ReadRun = "read-run",
   ReadWorkflowSummaries = "read-workflow-summaries",
   ReadWorkflowDiscovery = "read-workflow-discovery",

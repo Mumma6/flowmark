@@ -567,6 +567,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         [...(tools.result?.tools?.map((tool) => tool.name) ?? [])].sort(),
       ).toEqual(
         [
+          "compare_behavior",
           "compare_run",
           "context_for_change",
           "explain_execution",
@@ -611,6 +612,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         "find_executions",
         "explain_execution",
         "context_for_change",
+        "compare_behavior",
       ])
       const resourceUri = "ui://flowmark/run-evidence/v1.html"
       const uiMeta = {
@@ -1330,6 +1332,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         left.name.localeCompare(right.name),
       )
       expect(toolNames.map((tool) => tool.name)).toEqual([
+        "compare_behavior",
         "compare_run",
         "context_for_change",
         "explain_execution",
@@ -1387,7 +1390,11 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         path: "src/bookings/reschedule.ts",
         symbol: "applyReschedule",
       } as const
-      const deploy = async (id: string, letter: string) => {
+      const deploy = async (
+        id: string,
+        letter: string,
+        behaviorRevision = "1",
+      ) => {
         const artifactDigest = `sha256:${letter.repeat(64)}`
         const revision = letter.repeat(40)
         const result = await recordDeployment(
@@ -1409,7 +1416,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
                   {
                     probeId: "booking-delivery",
                     behaviorId: "booking.reschedule",
-                    behaviorRevision: "1",
+                    behaviorRevision,
                     location: site,
                   },
                 ],
@@ -1815,6 +1822,224 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
       expect(mixed.result?.structuredContent).toMatchObject({
         status: "mixed-artifacts",
       })
+      const comparisonWorkflow = "acceptance.runtime.comparison"
+      const comparisonQuery = {
+        version: 1,
+        projectId: project.projectId,
+        bindingId: runtimeBinding.bindingId,
+        workflow: comparisonWorkflow,
+        behaviorId: "booking.reschedule",
+        fallbackStep: "fallback.used",
+        normalStep: "primary.used",
+        partialOutcome: "partial",
+        before: {
+          deploymentId: originalProbe.deploymentId,
+          startedAfter: windows.previousStartedAfter,
+          startedBefore: windows.previousStartedBefore,
+          samplingPolicy: "all-v1",
+        },
+        after: {
+          deploymentId: parallelProbe.deploymentId,
+          startedAfter: windows.currentStartedAfter,
+          startedBefore: windows.currentStartedBefore,
+          samplingPolicy: "all-v1",
+        },
+      }
+      const comparisonRun = async (
+        key: string,
+        timestamp: string,
+        probe: typeof originalProbe,
+        recovered: boolean,
+      ) => {
+        const run = { workflow: comparisonWorkflow, timestamp, runId: key }
+        await store({ ...run, type: "started" })
+        await store({
+          ...run,
+          type: "step",
+          step: "runtime.observation",
+          observation: { kind: "observation", probe, references: [] },
+        })
+        if (recovered) {
+          await store({
+            ...run,
+            type: "error",
+            error: { code: "retry", handled: true },
+          })
+          await store({
+            ...run,
+            type: "error",
+            error: { code: "provider", handled: true },
+          })
+        }
+        await store({
+          ...run,
+          type: "step",
+          step: recovered ? "fallback.used" : "primary.used",
+        })
+        await store({
+          ...run,
+          type: "completed",
+          outcome: recovered ? "partial" : "confirmed",
+        })
+      }
+      for (const index of [0, 1, 2, 3, 4]) {
+        await comparisonRun(
+          `before-${index}`,
+          "2026-10-27T00:00:00.000Z",
+          originalProbe,
+          index < 2,
+        )
+        await comparisonRun(
+          `after-${index}`,
+          timestamp,
+          parallelProbe,
+          index < 1,
+        )
+      }
+      const comparison = await callTool(
+        111,
+        "compare_behavior",
+        comparisonQuery,
+      )
+      expect(comparison.result?.structuredContent).toMatchObject({
+        status: "comparable-recorded-cohorts",
+        environment: "production",
+        before: { eligibleRuns: 5 },
+        after: { eligibleRuns: 5 },
+        limitations: [],
+      })
+      for (const [metric, beforeTotal, afterTotal] of [
+        ["handledError", 2, 1],
+        ["fallback", 2, 1],
+        ["partialOutcome", 2, 1],
+        ["normalPath", 3, 4],
+      ] as const) {
+        for (const [cohort, total] of [
+          ["before", beforeTotal],
+          ["after", afterTotal],
+        ] as const) {
+          // A distinct MCP request proves the drilldown matches the reported population.
+          const compared = await callTool(112, "compare_behavior", {
+            ...comparisonQuery,
+            drilldown: { cohort, metric },
+          })
+          expect(compared.result?.structuredContent).toMatchObject({
+            [cohort]: { counts: { [metric]: { total } } },
+            drilldown: {
+              total,
+              examples: expect.any(Array),
+              nextAfterRunId: null,
+            },
+          })
+          const drilldown = compared.result?.structuredContent?.drilldown as {
+            examples: Array<{
+              runId: string
+              observationEventId: string
+              signalEventId: string
+            }>
+          }
+          expect(
+            new Set(drilldown.examples.map(({ runId }) => runId)).size,
+          ).toBe(total)
+          const [example] = drilldown.examples
+          assert.ok(example)
+          const supportingRun = await callTool(113, "explain_execution", {
+            version: 1,
+            projectId: project.projectId,
+            runId: example.runId,
+            section: "events",
+          })
+          expect(supportingRun.result?.structuredContent).toMatchObject({
+            evidence: {
+              events: expect.arrayContaining([
+                expect.objectContaining({ id: example.observationEventId }),
+                expect.objectContaining({ id: example.signalEventId }),
+              ]),
+            },
+          })
+        }
+      }
+      await comparisonRun("overlap-old", timestamp, originalProbe, false)
+      const ambiguousRun = {
+        workflow: comparisonWorkflow,
+        runId: "overlap-both",
+        timestamp,
+      }
+      await store({ ...ambiguousRun, type: "started" })
+      for (const probe of [originalProbe, parallelProbe]) {
+        await store({
+          ...ambiguousRun,
+          type: "step",
+          step: "runtime.observation",
+          observation: { kind: "observation", probe, references: [] },
+        })
+      }
+      const lossRun = {
+        workflow: comparisonWorkflow,
+        runId: "capture-gap",
+        timestamp,
+      }
+      await store({ ...lossRun, type: "started" })
+      await store({
+        ...lossRun,
+        type: "step",
+        step: "runtime.observation",
+        observation: { kind: "loss", probe: parallelProbe, count: 3 },
+      })
+      const limited = await callTool(114, "compare_behavior", {
+        ...comparisonQuery,
+        after: { ...comparisonQuery.after, samplingPolicy: "sampled-v2" },
+      })
+      expect(limited.result?.structuredContent).toMatchObject({
+        status: "limited",
+        after: {
+          eligibleRuns: 5,
+          otherDeploymentRuns: 2,
+          ambiguousRuns: 1,
+          unattributedRuns: 1,
+          reportedLoss: 3,
+        },
+        limitations: expect.arrayContaining([
+          "sampling-changed",
+          "mixed-deployment-traffic",
+          "unattributed-runs",
+          "reported-loss",
+        ]),
+      })
+      const thin = await callTool(117, "compare_behavior", {
+        ...comparisonQuery,
+        after: {
+          ...comparisonQuery.after,
+          startedBefore: "2026-11-02T00:00:00.000Z",
+          samplingPolicy: undefined,
+        },
+      })
+      expect(thin.result?.structuredContent).toMatchObject({
+        status: "limited",
+        after: { eligibleRuns: 0 },
+        limitations: expect.arrayContaining([
+          "sampling-unknown",
+          "thin-evidence",
+        ]),
+      })
+      const incompatible = await deploy("rollout-new-meaning", "d", "2")
+      const refused = await callTool(115, "compare_behavior", {
+        ...comparisonQuery,
+        after: {
+          ...comparisonQuery.after,
+          deploymentId: incompatible.deploymentId,
+        },
+      })
+      expect(refused.result?.structuredContent).toMatchObject({
+        status: "unsupported",
+        reason: "incompatible-behavior-revisions",
+      })
+      const deniedComparison = await callTool(116, "compare_behavior", {
+        ...comparisonQuery,
+        projectId: foreign.projectId,
+      })
+      expect(deniedComparison.result?.isError).toBe(true)
+      expect(deniedComparison.result?.structuredContent).toBeUndefined()
       const aborted = new AbortController()
       aborted.abort()
       const cancelledRequest = mcpRequest(
@@ -1855,6 +2080,14 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
       expect(capped.result?.isError).toBe(true)
       expect(capped.result?.structuredContent).toBeUndefined()
       expect(capped.result?.content?.[0]?.text).toContain("1,000")
+      const cappedComparison = await callTool(118, "compare_behavior", {
+        ...comparisonQuery,
+        workflow: "acceptance.runtime.cap",
+      })
+      expect(cappedComparison.result?.structuredContent).toMatchObject({
+        status: "unsupported",
+        reason: "read-budget",
+      })
       await connection.db
         .delete(workflowRuns)
         .where(eq(workflowRuns.workflowId, cappedWorkflow))

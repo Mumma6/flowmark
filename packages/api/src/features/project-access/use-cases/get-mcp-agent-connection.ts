@@ -31,6 +31,7 @@ const MCP_TOOLS_ENABLED = [
   "find_executions",
   "explain_execution",
   "context_for_change",
+  "compare_behavior",
 ] as const
 const MCP_TOOLS_PENDING = [] as const
 

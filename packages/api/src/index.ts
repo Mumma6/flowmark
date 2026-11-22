@@ -248,3 +248,5 @@ export {
   resolveRuntimeCitation,
   sealRuntimeCitation,
 } from "./features/workflows/use-cases/runtime-citations.js"
+
+export { BehaviorComparisonSchema } from "@flowmarkdev/core"

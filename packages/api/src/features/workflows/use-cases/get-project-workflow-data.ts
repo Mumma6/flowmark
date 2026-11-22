@@ -1,3 +1,4 @@
+import type { BehaviorComparisonQuery } from "@flowmarkdev/core"
 import type { ArtifactMappingScope } from "@flowmarkdev/core"
 import { ProcessHealthQuerySchema, type ProcessHealth } from "@flowmarkdev/core"
 import {
@@ -103,6 +104,14 @@ export class GetProjectWorkflowData extends Context.Service<
             .pipe(Effect.provideService(CurrentProjectReader, reader))
         },
       )
+      const compareBehavior = Effect.fn(
+        "GetProjectWorkflowData.compareBehavior",
+      )(function* (reader: ProjectReader, query: BehaviorComparisonQuery) {
+        const projectId = yield* authorizeReader(reader)
+        return yield* repository
+          .compareBehavior(projectId, query)
+          .pipe(Effect.provideService(CurrentProjectReader, reader))
+      })
       const artifactMappings = Effect.fn(
         "GetProjectWorkflowData.artifactMappings",
       )(function* (reader: ProjectReader, scope: ArtifactMappingScope) {
@@ -340,6 +349,7 @@ export class GetProjectWorkflowData extends Context.Service<
         businessInsights,
         snapshot,
         workflows,
+        compareBehavior,
         artifactMappings,
         listRuns,
         search,

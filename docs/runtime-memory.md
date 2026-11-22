@@ -165,3 +165,38 @@ The sample stays pinned when new events arrive. Citations expire after 24 hours
 and become invalid after an auth secret rotation. If the underlying observations
 have been removed, request a new citation. Project erasure or access revocation
 prevents further reads.
+
+### Compare two deployments of a behavior
+
+`compare_behavior` version 1 selects one authorized project, deployment
+`bindingId`, workflow and `behaviorId`. Supply `before` and `after` with
+distinct deployment IDs and ordered, non-overlapping run-start windows of up
+to 31 days. Windows include their start and exclude their end. The binding
+fixes the repository, service and environment. Both receipts must declare the
+same behavior revision with a source probe. Change that revision when the
+meaning of the signals changes.
+
+Specify the same `fallbackStep`, `normalStep` and `partialOutcome` for both
+deployments. An eligible run has a bound observation for the selected
+deployment, artifact and behavior revision. Runs with competing deployment
+observations under that binding are excluded. Counts are per eligible recorded
+run and categories may overlap.
+
+- `handledError` requires a recorded error marked handled.
+- `fallback` requires the named step.
+- `partialOutcome` requires a terminal event with the requested outcome code.
+- `normalPath` requires the named step and a recorded completion outside
+  that partial outcome. Absence of a fallback marker never establishes normal.
+
+Each count includes matching examples with the bound observation and signal
+event IDs. Repeat the selection with `drilldown: { cohort, metric }` to page
+those executions, passing `nextAfterRunId` as `afterRunId` on the next call.
+Use `explain_execution` for the surrounding evidence. A call reads both
+cohorts from one database snapshot. Later calls read current retained evidence.
+
+Changed or unknown caller-declared `samplingPolicy`, fewer than five eligible
+runs on either side, mixed traffic, unattributed runs and known reported loss
+produce explicit limits. The tool reports retained counts and examples.
+It cannot verify a sampling policy, estimate rates across all traffic or
+attribute a difference to the deployment. If either window exceeds 1,000
+candidate runs or 20,000 events, narrow the selection to get a complete count.
