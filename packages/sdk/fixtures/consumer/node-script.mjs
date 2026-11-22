@@ -1,18 +1,46 @@
 import assert from "node:assert/strict"
-import { createFlowmark, FlowmarkConfigError } from "@flowmarkdev/node"
+import {
+  createFlowmark,
+  createRuntimeObservationEmitter,
+  FlowmarkConfigError,
+} from "@flowmarkdev/node"
 import { importInvoices, originalFailure } from "./lib/import-invoices.js"
 
+import {
+  observationPolicy,
+  observationValues,
+} from "./lib/runtime-observation.mjs"
+
+const emitter = createRuntimeObservationEmitter(observationPolicy)
+const disabledEmitter = createRuntimeObservationEmitter({
+  ...observationPolicy,
+  enabled: false,
+})
 const client = createFlowmark()
 const rejectedDelivery = process.argv.includes("--reject-delivery")
 const first = client.workflow("consumer.script")
 await assert.rejects(
-  importInvoices(first, "failure"),
+  (async () => {
+    disabledEmitter.observe(first, observationValues)
+    return importInvoices(first, "failure")
+  })(),
   (error) => error === originalFailure,
+)
+const originalValue = { result: "original" }
+assert.equal(
+  await client.workflow("consumer.disabled-observation", (flow) => {
+    disabledEmitter.observe(flow, observationValues)
+    disabledEmitter.reportLoss(flow, 1)
+    return originalValue
+  }),
+  originalValue,
 )
 const retry = client.workflow("consumer.script", {
   retryOf: { workflow: "consumer.script", runId: first.runId },
 })
 assert.notEqual(retry.runId, first.runId)
+emitter.observe(retry, observationValues)
+emitter.reportLoss(retry, 1)
 assert.deepEqual(await importInvoices(retry, "partial"), {
   imported: 8,
   rejected: 2,

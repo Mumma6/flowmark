@@ -141,6 +141,8 @@ test(
     `)
 
       assert.deepEqual(await Effect.runPromise(reading(query.workflow)), before)
+      // Use statistics for the skew fixture rather than whatever autovacuum sampled.
+      await db.execute(sql`ANALYZE workflow_runs`)
       const explain = async (workflow: string) => {
         const rows = await db.execute<{
           "QUERY PLAN": [{ Plan: ExplainNode }]
@@ -162,6 +164,7 @@ test(
         sparse.some(
           (node) => node["Index Name"] === "workflow_runs_workflow_started_idx",
         ),
+        JSON.stringify(sparse),
       )
       assert.ok(
         sparse.some(

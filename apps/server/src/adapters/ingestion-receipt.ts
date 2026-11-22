@@ -1,5 +1,8 @@
 import { Match } from "effect"
-import type { AppendDisposition } from "@flowmark/api"
+import {
+  RUNTIME_OBSERVATION_CAPABILITY,
+  type AppendDisposition,
+} from "@flowmark/api"
 
 /** Acknowledges only authorized effective facts; no foreign identifiers. */
 export const ingestionReceipt = (disposition: AppendDisposition) =>
@@ -46,7 +49,11 @@ export const ingestionReceipt = (disposition: AppendDisposition) =>
         {
           accepted: value !== "ignored",
           disposition: value,
-          capabilities: ["attempts-v1", "expectations-v1"],
+          capabilities: [
+            "attempts-v1",
+            "expectations-v1",
+            RUNTIME_OBSERVATION_CAPABILITY,
+          ],
         },
         { status: 202 },
       ),

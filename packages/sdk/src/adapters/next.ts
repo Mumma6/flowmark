@@ -122,3 +122,5 @@ export type {
   ExpectationResolution,
   ExpectationCancellation,
 } from "@flowmarkdev/core"
+
+export { createRuntimeObservationEmitter } from "../workflows/runtime-observations.js"

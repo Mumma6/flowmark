@@ -26,6 +26,7 @@ import { user } from "./auth.js"
 import { oauthClient, oauthConsent } from "./oauth-provider.js"
 import type {
   ArtifactManifest,
+  StoredRuntimeObservation,
   WorkflowError,
   WorkflowFailure,
   WorkflowProperties,
@@ -209,6 +210,9 @@ export const workflowEvents = pgTable(
     error: jsonb("error").$type<StoredWorkflowError>(),
     result: jsonb("result").$type<WorkflowResult>(),
     outcome: text("outcome"),
+    runtimeObservation: jsonb(
+      "runtime_observation",
+    ).$type<StoredRuntimeObservation>(),
     occurredAt: timestamp("occurred_at", { withTimezone: true }).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()

@@ -1,3 +1,4 @@
+import { RuntimeObservationSchema } from "./runtime-observation.js"
 import {
   ExpectationDeclaredSchema,
   ExpectationResolvedSchema,
@@ -62,7 +63,13 @@ const StepEventSchema = Schema.Struct({
   step: WorkflowStepNameSchema,
   timestamp: Schema.String,
   properties: Schema.optional(WorkflowPropertiesSchema),
-})
+  observation: Schema.optional(RuntimeObservationSchema),
+}).check(
+  Schema.makeFilter(
+    ({ properties, observation }) =>
+      observation === undefined || properties === undefined,
+  ),
+)
 
 const PropertiesEventSchema = Schema.Struct({
   type: Schema.Literal("properties"),

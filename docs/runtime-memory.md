@@ -80,3 +80,47 @@ Project owners can read an exact receipt through `project.deploymentReceipt`.
 A receipt proves that a credential scoped to the binding reported the
 deployment. Keep credentials off browsers and ordinary application
 instrumentation. Provider-specific setup is separate.
+
+### Recording a bound observation
+
+On the server, create an emitter from the Node or Next SDK entry point. Pass the
+deployment binding ID, deployment instance ID, artifact digest and stable probe
+ID from the build and deployment configuration. Supply a project-specific
+reference key of at least 32 characters from the application secret store and
+declare the entity, logical change and envelope namespaces collection policy
+allows. Keep raw values out of ordinary workflow properties.
+
+```ts
+const emitter = createRuntimeObservationEmitter({
+  key: referenceKey,
+  namespaces: [
+    { kind: "entity", namespace: "booking" },
+    { kind: "change", namespace: "reschedule" },
+  ],
+  probe: {
+    bindingId,
+    deploymentId,
+    artifactDigest,
+    probeId: "booking-delivery",
+  },
+})
+
+emitter.observe(flow, {
+  entity: { booking: bookingRef },
+  change: { reschedule: changeId },
+})
+```
+
+The emitter only sends HMACs for declared references. It neither sends the key
+nor copies the supplied object into telemetry. With `enabled: false`, the emitter
+does no work. Application code keeps ownership of its return values and errors.
+
+The accepting server joins the submitted probe to a receipt owned by the same
+project. Missing receipts, conflicting environments, digest mismatches and
+unsupported probe locations leave the binding unknown. The observation still
+has its own event ID, occurrence time and receipt time. An HTTP retry preserves
+the event ID. An application retry has its own execution and events.
+
+Application collectors can call `emitter.reportLoss(flow, count)` to report a
+known omission while delivery is available. Transport errors and queue drops
+also remain visible in SDK delivery health.

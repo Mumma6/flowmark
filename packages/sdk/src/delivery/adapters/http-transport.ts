@@ -2,6 +2,7 @@ import { HttpClient, HttpClientRequest, HttpClientResponse } from "effect/http"
 import {
   isExpectationEvent,
   EXPECTATION_CAPABILITY,
+  RUNTIME_OBSERVATION_CAPABILITY,
   IngestionReceiptSchema,
 } from "@flowmarkdev/core"
 import { Effect, Schedule, Schema, Result, type Redacted } from "effect"
@@ -44,11 +45,15 @@ export const makeHttpTransport = Effect.fn("Flowmark.HttpTransport.make")(
       const requiresAttempts =
         ("attempt" in event && event.attempt !== undefined) ||
         (event.type === "started" && event.retryOf !== undefined)
+      const runtimeObservation =
+        event.type === "step" && event.observation !== undefined
       const capability = isExpectationEvent(event)
         ? EXPECTATION_CAPABILITY
-        : requiresAttempts
-          ? "attempts-v1"
-          : undefined
+        : runtimeObservation
+          ? RUNTIME_OBSERVATION_CAPABILITY
+          : requiresAttempts
+            ? "attempts-v1"
+            : undefined
       yield* Effect.scoped(
         client.execute(request).pipe(
           Effect.mapError(
@@ -96,12 +101,15 @@ export const makeHttpTransport = Effect.fn("Flowmark.HttpTransport.make")(
                         }),
                     ),
                     Effect.flatMap((receipt) =>
-                      receipt.capabilities?.includes(capability)
+                      receipt.capabilities?.includes(capability) &&
+                      (!runtimeObservation || receipt.accepted)
                         ? Effect.void
                         : Effect.fail(
                             new FlowmarkHttpError({
                               status: response.status,
-                              cause: `Server did not acknowledge ${capability}; upgrade the accepting server before opting in.`,
+                              cause: runtimeObservation
+                                ? "Server did not accept the runtime observation."
+                                : `Server did not acknowledge ${capability}; upgrade the accepting server before opting in.`,
                             }),
                           ),
                     ),
