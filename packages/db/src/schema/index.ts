@@ -19,11 +19,13 @@ import {
   text,
   timestamp,
   uuid,
+  unique,
   uniqueIndex,
 } from "drizzle-orm/pg-core"
 import { user } from "./auth.js"
 import { oauthClient, oauthConsent } from "./oauth-provider.js"
 import type {
+  ArtifactManifest,
   WorkflowError,
   WorkflowFailure,
   WorkflowProperties,
@@ -762,3 +764,50 @@ export { waitlist } from "./waitlist.js"
 export { dataExportRequests } from "./data-exports.js"
 
 export { registrationInvitations } from "./registration-invitations.js"
+
+/** Owner-created scope for a single repository service and runtime environment. */
+export const deploymentBindings = pgTable(
+  "deployment_bindings",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    repository: text("repository").notNull(),
+    service: text("service").notNull(),
+    environment: text("environment").notNull(),
+    secretHash: text("secret_hash").notNull(),
+  },
+  (table) => [
+    unique().on(
+      table.projectId,
+      table.repository,
+      table.service,
+      table.environment,
+    ),
+    unique().on(table.projectId, table.id),
+  ],
+)
+
+export const deploymentReceipts = pgTable(
+  "deployment_receipts",
+  {
+    projectId: uuid("project_id").notNull(),
+    bindingId: uuid("binding_id").notNull(),
+    deploymentId: text("deployment_id").notNull(),
+    manifestDigest: text("manifest_digest").notNull(),
+    manifest: jsonb("manifest").$type<ArtifactManifest>().notNull(),
+    receivedAt: timestamp("received_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    primaryKey({
+      columns: [table.projectId, table.bindingId, table.deploymentId],
+    }),
+    foreignKey({
+      columns: [table.projectId, table.bindingId],
+      foreignColumns: [deploymentBindings.projectId, deploymentBindings.id],
+    }).onDelete("cascade"),
+  ],
+)

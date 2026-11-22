@@ -229,3 +229,8 @@ export {
 } from "./features/data-exports/ports/data-exports.js"
 
 export { MeaningProposalSchema } from "@flowmarkdev/core"
+export {
+  Deployments,
+  DeploymentBindingInput,
+  DeploymentReadInput,
+} from "./features/runtime-deployment/use-cases/deployments.js"

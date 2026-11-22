@@ -1,3 +1,5 @@
+import { DeploymentRepositoryLive } from "./features/runtime-deployment/adapters/deployment-repository.js"
+import { Deployments } from "./features/runtime-deployment/use-cases/deployments.js"
 import { DataExportStore } from "@flowmark/db/persistence"
 import { DataExportsLive } from "./features/data-exports/adapters/data-exports.js"
 import { ManageDataExports } from "./features/data-exports/use-cases/manage-data-exports.js"
@@ -48,6 +50,7 @@ import { GetProjectWorkflowData } from "./features/workflows/use-cases/get-proje
 import { IngestBrowserWorkflowEvents } from "./features/workflows/use-cases/ingest-browser-events.js"
 import {
   AgentAccessStore,
+  DeploymentStore,
   ProjectCredentialsStore,
   WorkflowStore,
 } from "@flowmark/db/persistence"
@@ -63,6 +66,7 @@ import { JoinWaitlist } from "./features/waitlist/join-waitlist.js"
 import { WaitlistRepositoryLive } from "./features/waitlist/waitlist-live.js"
 
 const persistence = Layer.mergeAll(
+  DeploymentStore.layer,
   WaitlistStore.layer,
   SharedInvestigationStore.layer,
   EvidenceCaptureStore.layer,
@@ -78,6 +82,7 @@ const persistence = Layer.mergeAll(
   AgentAccessStore.layer,
 ).pipe(Layer.provide(DatabaseLive))
 const databaseAdapters = Layer.mergeAll(
+  DeploymentRepositoryLive,
   SharedInvestigationsLive,
   EvidenceCapturesLive,
   EvidenceCaptureAdmissionLive,
@@ -107,6 +112,7 @@ const agentAccessAdapter = Layer.mergeAll(
 )
 
 export const ApiLive = Layer.mergeAll(
+  Deployments.layer,
   JoinWaitlist.layer.pipe(
     Layer.provide(WaitlistWelcomeEmailLive),
     Layer.provide(WaitlistRepositoryLive.pipe(Layer.provide(persistence))),
@@ -141,6 +147,7 @@ export function runApi<A, E>(
   operation: Effect.Effect<
     A,
     E,
+    | Deployments
     | JoinWaitlist
     | ManageSharedInvestigations
     | ManageEvidenceCaptures

@@ -1,5 +1,8 @@
 import {
   BusinessInsightsQuerySchema,
+  DeploymentBindingInput,
+  DeploymentReadInput,
+  Deployments,
   PeriodReportQuerySchema,
 } from "@flowmark/api"
 import { Effect, Schema } from "effect"
@@ -64,6 +67,24 @@ const IntelligenceInput = Schema.toStandardSchemaV1(
 )
 
 export const projectRouter = t.router({
+  rotateDeploymentBinding: t.procedure
+    .input(Schema.toStandardSchemaV1(DeploymentBindingInput))
+    .mutation(({ ctx, input }) =>
+      sessionQuery(ctx.request, (userId) =>
+        Effect.flatMap(Deployments, (deployments) =>
+          deployments.rotateBinding(userId, input),
+        ),
+      ),
+    ),
+  deploymentReceipt: t.procedure
+    .input(Schema.toStandardSchemaV1(DeploymentReadInput))
+    .query(({ ctx, input }) =>
+      sessionQuery(ctx.request, (userId) =>
+        Effect.flatMap(Deployments, (deployments) =>
+          deployments.read(userId, input),
+        ),
+      ),
+    ),
   businessInsights: t.procedure
     .input(Schema.toStandardSchemaV1(BusinessInsightsQuerySchema))
     .query(({ ctx, input }) =>

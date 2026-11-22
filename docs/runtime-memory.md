@@ -53,3 +53,30 @@ node scripts/build-artifact-manifest.mjs path/to/built-file \
 
 The manifest describes the build. Deployment identity requires a separate
 trusted receipt.
+
+### Deployment receipts
+
+A project owner uses the Studio API mutation `project.rotateDeploymentBinding`
+to create or rotate a credential scoped to a project, repository, service and
+environment. Store the returned token in the secret store of the deployment
+system that can attest which artifact it deployed. Rotating the token keeps
+the binding ID and its receipt history. The system stores a hash of the token.
+
+After a successful deployment, that system sends `POST /v1/deployments` with
+`Authorization: Bearer <token>` and a JSON body of up to 64 KiB:
+
+```text
+{ bindingId, deploymentId, manifest }
+```
+
+Use the provider's deployment instance identifier for `deploymentId`. Repeat
+callbacks with equivalent manifests return the same receipt. Reusing an ID
+with different evidence returns HTTP 409. A rollback uses a new deployment ID
+with the original artifact manifest. Multiple artifacts can remain in the
+history at once. The receipt records callback arrival time and does not
+establish a serving interval.
+
+Project owners can read an exact receipt through `project.deploymentReceipt`.
+A receipt proves that a credential scoped to the binding reported the
+deployment. Keep credentials off browsers and ordinary application
+instrumentation. Provider-specific setup is separate.
