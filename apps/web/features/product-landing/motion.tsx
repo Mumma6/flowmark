@@ -9,29 +9,15 @@ import {
   useSyncExternalStore,
   type ReactNode,
 } from "react"
-import { Button, cn } from "@flowmark/ui"
-import copy from "../../public/landing-page-copy.en.json"
+import { cn } from "@flowmark/ui"
 
-const MotionContext = createContext<{
-  hidden: boolean
-  enabled: boolean
-  toggle: () => void
-} | null>(null)
+const PageHiddenContext = createContext(true)
 const subscribeVisibility = (notify: () => void) => {
   document.addEventListener("visibilitychange", notify)
   return () => document.removeEventListener("visibilitychange", notify)
 }
 const pageHidden = () => document.hidden
 const serverHidden = () => true
-const motionPreference = () =>
-  window.matchMedia("(prefers-reduced-motion: no-preference)")
-const prefersMotion = () => motionPreference().matches
-const serverMotion = () => false
-const subscribePreference = (notify: () => void) => {
-  const query = motionPreference()
-  query.addEventListener("change", notify)
-  return () => query.removeEventListener("change", notify)
-}
 
 export function LandingMotion({ children }: { children: ReactNode }) {
   const hidden = useSyncExternalStore(
@@ -39,57 +25,15 @@ export function LandingMotion({ children }: { children: ReactNode }) {
     pageHidden,
     serverHidden,
   )
-  const systemMotion = useSyncExternalStore(
-    subscribePreference,
-    prefersMotion,
-    serverMotion,
-  )
-  const [override, setOverride] = useState<boolean | null>(null)
-  const enabled = override ?? systemMotion
   return (
-    <MotionContext.Provider
-      value={{ hidden, enabled, toggle: () => setOverride(!enabled) }}
-    >
+    <PageHiddenContext.Provider value={hidden}>
       <div
         data-paused={hidden}
         className="[&[data-paused=true]_*]:[animation-play-state:paused]"
       >
         {children}
       </div>
-    </MotionContext.Provider>
-  )
-}
-
-export function MotionToggle() {
-  const motion = useContext(MotionContext)
-  if (!motion) {
-    return null
-  }
-  const label = motion.enabled
-    ? copy.navigation.pauseMotion
-    : copy.navigation.playMotion
-  return (
-    <Button
-      type="button"
-      variant="ghost"
-      onClick={motion.toggle}
-      aria-label={label}
-      title={label}
-      className="size-10 rounded-full p-0 text-muted-foreground hover:text-primary"
-    >
-      <svg
-        aria-hidden="true"
-        viewBox="0 0 24 24"
-        className="size-5"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinejoin="round"
-      >
-        <circle cx="12" cy="12" r="9" />
-        <path d={motion.enabled ? "M10 8.5v7m4-7v7" : "m10 8 6 4-6 4Z"} />
-      </svg>
-    </Button>
+    </PageHiddenContext.Provider>
   )
 }
 
@@ -105,7 +49,7 @@ export function MotionScene({
 }) {
   const ref = useRef<HTMLDivElement>(null)
   const [visible, setVisible] = useState(false)
-  const motion = useContext(MotionContext)
+  const hidden = useContext(PageHiddenContext)
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => setVisible(entry.isIntersecting),
@@ -121,7 +65,7 @@ export function MotionScene({
       ref={ref}
       role={label ? "region" : undefined}
       aria-label={label}
-      data-playing={Boolean(visible && motion?.enabled && !motion.hidden)}
+      data-playing={visible && !hidden}
       data-visible={visible}
       className={cn(
         "group/scene relative [&[data-playing=false]_*]:[animation-play-state:paused]",
