@@ -28,6 +28,8 @@ const MCP_TOOLS_ENABLED = [
   "get_run",
   "compare_run",
   "get_workflow_insights",
+  "find_executions",
+  "explain_execution",
 ] as const
 const MCP_TOOLS_PENDING = [] as const
 

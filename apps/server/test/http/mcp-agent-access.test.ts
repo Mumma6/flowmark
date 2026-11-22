@@ -8,7 +8,7 @@ import {
 import { handleAgentConsent } from "../../src/adapters/agent-consent"
 import { createHash, randomBytes, randomUUID } from "node:crypto"
 import assert from "node:assert/strict"
-import { and, eq, like } from "drizzle-orm"
+import { and, eq, like, sql } from "drizzle-orm"
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest"
 import {
   createDatabase,
@@ -1586,6 +1586,30 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
       })
       expect(tooWide.result?.isError).toBe(true)
       expect(tooWide.result?.structuredContent).toBeUndefined()
+      const cappedWorkflow = randomUUID()
+      await connection.db.insert(workflows).values({
+        id: cappedWorkflow,
+        projectId: project.projectId,
+        name: "acceptance.runtime.cap",
+      })
+      await connection.db.execute(sql`
+        INSERT INTO workflow_runs (workflow_id, external_id, started_at)
+        SELECT ${cappedWorkflow}::uuid, 'capped-' || n, ${timestamp}::timestamptz
+        FROM generate_series(1, 1001) n
+      `)
+      const capped = await callTool(94, "find_executions", {
+        ...executionSearch,
+        workflow: "acceptance.runtime.cap",
+      })
+      expect(capped.result?.isError).toBe(true)
+      expect(capped.result?.structuredContent).toBeUndefined()
+      expect(capped.result?.content?.[0]?.text).toContain("1,000")
+      await connection.db
+        .delete(workflowRuns)
+        .where(eq(workflowRuns.workflowId, cappedWorkflow))
+      await connection.db
+        .delete(workflows)
+        .where(eq(workflows.id, cappedWorkflow))
       const found = await callTool(5, "find_runs", findInput)
       const studioRuns = await studio.run.list({
         workflow: findInput.workflow,
