@@ -5,7 +5,7 @@ import "./globals.css"
 export const metadata: Metadata = {
   title: "Flowmark Studio",
   description:
-    "Explore your application's processes, outcomes and execution evidence.",
+    "Inspect recorded application behavior and manage your coding agent’s access to runtime evidence.",
 }
 
 export default function RootLayout({

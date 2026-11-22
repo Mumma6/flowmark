@@ -89,19 +89,13 @@ export function AuthScreen({
             Flowmark Studio
           </p>
           <p className="mt-6 text-[clamp(2.5rem,4.1vw,4.25rem)] font-medium leading-[1.06] tracking-[-0.05em]">
-            The work happens
+            Production memory
             <br />
-            in your software.
-            <br />
-            <span className="text-muted-foreground">
-              Understanding
-              <br />
-              happens here.
-            </span>
+            <span className="text-muted-foreground">for coding agents.</span>
           </p>
           <p className="mt-7 max-w-sm text-sm leading-7 text-muted-foreground">
-            Follow your processes from application behavior to reported business
-            outcomes. One shared context for your team and your agents.
+            Inspect what your application did in production and manage what your
+            coding agent can read.
           </p>
           <div className="mt-10 grid gap-0 border-y border-border">
             {[
@@ -117,8 +111,8 @@ export function AuthScreen({
               },
               {
                 icon: Sparkle,
-                title: "Shared understanding",
-                detail: "Studio, agents and the tools you build",
+                title: "Agent access",
+                detail: "Scoped access to recorded runtime evidence",
               },
             ].map(({ icon: Icon, title: itemTitle, detail }, index) => (
               <div
@@ -145,7 +139,7 @@ export function AuthScreen({
           </div>
         </div>
         <p className="text-[11px] text-muted-foreground">
-          Source-available process intelligence for people and agents.
+          Application memory for AI-native software teams.
         </p>
       </aside>
 

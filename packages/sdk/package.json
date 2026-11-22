@@ -1,7 +1,7 @@
 {
   "name": "@flowmarkdev/node",
   "version": "0.4.1",
-  "description": "Workflow observability for processes your Node.js and Next.js apps already run",
+  "description": "Record application behavior for coding agents in Node.js and Next.js",
   "license": "Apache-2.0",
   "type": "module",
   "main": "./dist/index.js",
