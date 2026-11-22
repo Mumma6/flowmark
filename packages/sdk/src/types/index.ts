@@ -102,6 +102,8 @@ export interface WorkflowRunOptions {
 
 /** Optional context attached to a semantic step without executing business logic. */
 export interface WorkflowStepOptions {
+  /** Use the server runtime-observation emitter to prepare this bounded payload. */
+  readonly observation?: import("@flowmarkdev/core").RuntimeObservation
   readonly properties?: WorkflowProperties
 }
 

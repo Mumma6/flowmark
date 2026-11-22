@@ -59,6 +59,9 @@ export function makeMarkers(run: RunLifecycle, workflow: string) {
         ...(options?.properties === undefined
           ? {}
           : { properties: options.properties }),
+        ...(options?.observation === undefined
+          ? {}
+          : { observation: options.observation }),
       })),
     error: (error: WorkflowError) => whenOpen(() => ({ type: "error", error })),
     progress: (progress: WorkflowProgress) =>

@@ -1,3 +1,4 @@
+import { resolveRuntimeProbe } from "../queries/resolve-runtime-probe.js"
 import { lockActiveProjectOwners } from "../../account-lifecycle/active-account.js"
 import { runTransaction } from "../../run-transaction.js"
 import { ExpectationObservationClock } from "../observation-clock.js"
@@ -285,6 +286,21 @@ export const appendEvent = Effect.fn("appendEvent")(function* (
             return "conflict" as const
           }
         }
+        const observation =
+          event.type === "step" && credential?.kind !== "browser"
+            ? event.observation
+            : undefined
+        const runtimeObservation = observation
+          ? {
+              observation,
+              binding: yield* resolveRuntimeProbe(
+                tx,
+                projectId,
+                run.environment,
+                observation.probe,
+              ),
+            }
+          : null
         const failure = eventFailure(event)
         const error = eventError(event, failure)
         const properties = eventProperties(event)
@@ -294,6 +310,7 @@ export const appendEvent = Effect.fn("appendEvent")(function* (
             .insert(workflowEvents)
             .values({
               eventId,
+              runtimeObservation,
               runId: run.id,
               type: event.type,
               occurredAt: new Date(event.timestamp),

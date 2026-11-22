@@ -92,7 +92,10 @@ export {
   BusinessValueSchema,
 } from "@flowmarkdev/core"
 
-export type { AppendDisposition } from "@flowmarkdev/core"
+export {
+  RUNTIME_OBSERVATION_CAPABILITY,
+  type AppendDisposition,
+} from "@flowmarkdev/core"
 export type {
   LinkedComparison,
   LinkedComparisonQuery,

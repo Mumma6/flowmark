@@ -89,3 +89,15 @@ export {
   createArtifactManifest,
   type ArtifactManifest,
 } from "./artifact-manifest.js"
+export {
+  RUNTIME_OBSERVATION_CAPABILITY,
+  RuntimeObservationSchema,
+  RuntimeProbeReferenceSchema,
+  RuntimeReferenceKindSchema,
+  RuntimeReferenceNamespaceSchema,
+  type RuntimeObservation,
+  type RuntimeObservationBinding,
+  type RuntimeProbeReference,
+  type RuntimeReferenceKind,
+  type StoredRuntimeObservation,
+} from "./runtime-observation.js"

@@ -281,6 +281,13 @@
       "when": 1795344816913,
       "tag": "0039_runtime-deployment-receipts",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1795345991227,
+      "tag": "0040_bound-runtime-observations",
+      "breakpoints": true
     }
   ]
 }
