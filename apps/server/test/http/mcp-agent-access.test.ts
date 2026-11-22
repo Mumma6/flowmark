@@ -47,6 +47,7 @@ import {
 } from "@flowmark/mcp"
 import { runMcpRoute } from "../../src/mcp-run"
 import { POST as mcpPost } from "../../app/mcp/route"
+import { POST as recordDeployment } from "../../app/v1/deployments/route"
 import { POST as ingestEvents } from "../../app/v1/events/route"
 import {
   handleMcpPost,
@@ -565,6 +566,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
       ).toEqual(
         [
           "compare_run",
+          "context_for_change",
           "explain_execution",
           "find_executions",
           "find_runs",
@@ -606,6 +608,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         "get_workflow_insights",
         "find_executions",
         "explain_execution",
+        "context_for_change",
       ])
       const resourceUri = "ui://flowmark/run-evidence/v1.html"
       const uiMeta = {
@@ -1325,6 +1328,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
       )
       expect(toolNames.map((tool) => tool.name)).toEqual([
         "compare_run",
+        "context_for_change",
         "explain_execution",
         "find_executions",
         "find_runs",
@@ -1368,6 +1372,58 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
       expect(workflowsResult.result?.structuredContent?.discovery).toEqual(
         await studio.workflow.discover({}),
       )
+      const repository = "example/bookings"
+      const runtimeBinding = await ownerStudio.project.rotateDeploymentBinding({
+        projectId: project.projectId,
+        repository,
+        service: "worker",
+        environment: "production",
+      })
+      const site = {
+        kind: "source",
+        path: "src/bookings/reschedule.ts",
+        symbol: "applyReschedule",
+      } as const
+      const deploy = async (id: string, letter: string) => {
+        const artifactDigest = `sha256:${letter.repeat(64)}`
+        const revision = letter.repeat(40)
+        const result = await recordDeployment(
+          new Request(`${testOrigin}/v1/deployments`, {
+            method: "POST",
+            headers: {
+              authorization: `Bearer ${runtimeBinding.token}`,
+              "content-type": "application/json",
+            },
+            body: JSON.stringify({
+              bindingId: runtimeBinding.bindingId,
+              deploymentId: id,
+              manifest: {
+                version: 1,
+                repository,
+                artifactDigest,
+                revision,
+                probes: [
+                  {
+                    probeId: "booking-delivery",
+                    behaviorId: "booking.reschedule",
+                    behaviorRevision: "1",
+                    location: site,
+                  },
+                ],
+              },
+            }),
+          }),
+        )
+        expect(result.status).toBe(200)
+        return {
+          bindingId: runtimeBinding.bindingId,
+          deploymentId: id,
+          artifactDigest,
+          probeId: "booking-delivery",
+        }
+      }
+      const originalProbe = await deploy("rollout-a", "a")
+      const parallelProbe = await deploy("rollout-b", "b")
       const executionStore = await Effect.runPromise(
         WorkflowStore.make.pipe(Effect.provideService(Database, connection.db)),
       )
@@ -1404,6 +1460,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
           observation: {
             kind: "observation",
             references: [booking, change, reference("envelope", envelope)],
+            probe: originalProbe,
           },
         })
       }
@@ -1427,6 +1484,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         timestamp: "2026-11-03T00:01:02.000Z",
         outcome: "confirmed",
       })
+      await store({ ...second, type: "completed", outcome: "confirmed" })
       const executionSearch = {
         version: 1,
         projectId: project.projectId,
@@ -1564,6 +1622,146 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
       })
       expect(foreignExecution.result?.isError).toBe(true)
       expect(foreignExecution.result?.structuredContent).toBeUndefined()
+      const contextScope = {
+        version: 1,
+        projectId: project.projectId,
+        repository,
+        environment: "production",
+        startedAfter: windows.currentStartedAfter,
+        startedBefore: windows.currentStartedBefore,
+      }
+      const ticketContext = await callTool(101, "context_for_change", {
+        ...contextScope,
+        ticket: "Handle repeated envelopes during booking reschedule",
+      })
+      expect(ticketContext.result?.structuredContent).toMatchObject({
+        status: "observed",
+        candidates: expect.arrayContaining([
+          expect.objectContaining({
+            match: expect.objectContaining({
+              strength: "adjacent",
+              reason: "lexical",
+            }),
+            deployment: expect.objectContaining({ revision: "a".repeat(40) }),
+            examples: [
+              expect.objectContaining({ selection: "representative" }),
+              expect.objectContaining({
+                selection: "contrasting",
+                observedShape: "multiple-envelopes-for-one-change",
+              }),
+            ],
+          }),
+        ]),
+      })
+      const renameContext = await callTool(102, "context_for_change", {
+        ...contextScope,
+        diff: "rename from src/bookings/reschedule.ts\nrename to src/domain/move.ts",
+      })
+      expect(renameContext.result?.structuredContent?.candidates).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            match: expect.objectContaining({
+              strength: "linked",
+              reason: "rename",
+            }),
+          }),
+        ]),
+      )
+      const exactDiff = await callTool(103, "context_for_change", {
+        ...contextScope,
+        diff: "+++ b/src/bookings/reschedule.ts\n+const SYNTHETIC_DIFF_CANARY = true",
+      })
+      expect(exactDiff.result?.structuredContent?.candidates).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            match: expect.objectContaining({
+              strength: "exact",
+              reason: "file",
+            }),
+          }),
+        ]),
+      )
+      expect(JSON.stringify(exactDiff)).not.toContain("SYNTHETIC_DIFF_CANARY")
+      const exactSymbol = await callTool(104, "context_for_change", {
+        ...contextScope,
+        symbols: ["applyReschedule"],
+        revision: "a".repeat(40),
+      })
+      expect(exactSymbol.result?.structuredContent?.candidates).toEqual([
+        expect.objectContaining({
+          match: expect.objectContaining({
+            strength: "exact",
+            reason: "symbol",
+          }),
+          deployment: expect.objectContaining({ revision: "a".repeat(40) }),
+        }),
+        expect.objectContaining({
+          match: expect.objectContaining({
+            strength: "adjacent",
+            otherRevision: true,
+          }),
+        }),
+      ])
+      const unreleased = await callTool(105, "context_for_change", {
+        ...contextScope,
+        files: ["src/domain/reschedule-next.ts"],
+        revision: "c".repeat(40),
+      })
+      expect(unreleased.result?.structuredContent).toMatchObject({
+        uncertainty: { requestedRevisionSeen: false },
+        candidates: [
+          expect.objectContaining({
+            match: expect.objectContaining({
+              strength: "adjacent",
+              otherRevision: true,
+            }),
+          }),
+          expect.objectContaining({
+            match: expect.objectContaining({
+              strength: "adjacent",
+              otherRevision: true,
+            }),
+          }),
+        ],
+      })
+      const unknownContext = await callTool(106, "context_for_change", {
+        ...contextScope,
+        plan: "Change orbit altitude",
+      })
+      expect(unknownContext.result?.structuredContent).toMatchObject({
+        status: "no-observed-cases",
+        candidates: [],
+      })
+      const deniedContext = await callTool(107, "context_for_change", {
+        ...contextScope,
+        projectId: foreign.projectId,
+        symbols: ["applyReschedule"],
+      })
+      expect(deniedContext.result?.isError).toBe(true)
+      expect(deniedContext.result?.structuredContent).toBeUndefined()
+      const parallelRun = {
+        ...first,
+        runId: "runtime-parallel",
+        workflow: "acceptance.runtime.parallel",
+      }
+      await store({ ...parallelRun, type: "started" })
+      await store({
+        ...parallelRun,
+        type: "step",
+        step: "runtime.observation",
+        observation: {
+          kind: "observation",
+          probe: parallelProbe,
+          references: [],
+        },
+      })
+      const mixed = await callTool(108, "context_for_change", {
+        ...contextScope,
+        files: [site.path],
+      })
+      expect(mixed.result?.structuredContent).toMatchObject({
+        status: "mixed-artifacts",
+      })
       const aborted = new AbortController()
       aborted.abort()
       const cancelledRequest = mcpRequest(
@@ -2313,7 +2511,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
       await connection.db
         .delete(verification)
         .where(like(verification.value, `%"userId":"${session.user.id}"%`))
-    })
+    }, 45_000)
 
     it("masks provider storage failures in responses and diagnostics", async () => {
       const { getAuth } = await import("../../src/auth.js")

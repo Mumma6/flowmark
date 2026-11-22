@@ -277,16 +277,31 @@ export const executionSearchCandidateCountSql = (
 const executionPredicate = (selector?: ExecutionSelector) => {
   if (
     !selector ||
-    (!selector.reference && !selector.artifactDigest && !selector.behaviorId)
+    (!selector.reference &&
+      !selector.artifactDigest &&
+      !selector.behaviorId &&
+      !selector.bindingId &&
+      !selector.deploymentId &&
+      !selector.probeId)
   ) {
     return sql`true`
   }
+  const needsBinding =
+    selector.probeId ||
+    selector.bindingId ||
+    selector.deploymentId ||
+    selector.artifactDigest ||
+    selector.behaviorId
   return sql`EXISTS (
     SELECT 1 FROM workflow_events observation_event
     WHERE observation_event.run_id = runs.id
       AND observation_event.runtime_observation -> 'observation' ->> 'kind' = 'observation'
+      AND ${needsBinding ? sql`observation_event.runtime_observation -> 'binding' ->> 'status' = 'bound'` : sql`true`}
+      AND ${selector.probeId ? sql`observation_event.runtime_observation #>> '{observation,probe,probeId}' = ${selector.probeId}` : sql`true`}
+      AND ${selector.bindingId ? sql`observation_event.runtime_observation #>> '{observation,probe,bindingId}' = ${selector.bindingId}` : sql`true`}
+      AND ${selector.deploymentId ? sql`observation_event.runtime_observation #>> '{observation,probe,deploymentId}' = ${selector.deploymentId}` : sql`true`}
       AND ${selector.reference ? sql`observation_event.runtime_observation -> 'observation' -> 'references' @> ${JSON.stringify([selector.reference])}::jsonb` : sql`true`}
-      AND ${selector.artifactDigest ? sql`observation_event.runtime_observation -> 'binding' ->> 'status' = 'bound' AND observation_event.runtime_observation #>> '{observation,probe,artifactDigest}' = ${selector.artifactDigest}` : sql`true`}
+      AND ${selector.artifactDigest ? sql`observation_event.runtime_observation #>> '{observation,probe,artifactDigest}' = ${selector.artifactDigest}` : sql`true`}
       AND ${selector.behaviorId ? sql`observation_event.runtime_observation #>> '{binding,behaviorId}' = ${selector.behaviorId}` : sql`true`}
   )`
 }

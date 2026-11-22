@@ -239,3 +239,6 @@ export {
 } from "./features/runtime-deployment/use-cases/deployments.js"
 
 export { ExecutionSelectorSchema } from "@flowmarkdev/core"
+
+export type { DeployedArtifactMapping } from "@flowmarkdev/core"
+export { rankChangeMappings } from "./features/workflows/models/change-matching.js"

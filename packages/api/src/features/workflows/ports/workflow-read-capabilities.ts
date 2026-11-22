@@ -1,3 +1,7 @@
+import type {
+  ArtifactMappingScope,
+  DeployedArtifactMapping,
+} from "@flowmarkdev/core"
 import type { ProcessHealth, ProcessHealthQuery } from "@flowmarkdev/core"
 import type { ReferenceJourneyEvidence } from "../types.js"
 import type { ReferenceJourneyQuery } from "@flowmarkdev/core"
@@ -63,6 +67,16 @@ export interface WorkflowRepositoryRuns {
   readonly workflows: (
     projectId: string,
   ) => Effect.Effect<ReadonlyArray<WorkflowSummary>, PersistenceError>
+  readonly artifactMappings: (
+    projectId: string,
+    scope: ArtifactMappingScope,
+  ) => Effect.Effect<
+    {
+      readonly mappings: readonly DeployedArtifactMapping[]
+      readonly truncated: boolean
+    },
+    PersistenceError
+  >
   readonly listRuns: (
     projectId: string,
     query: ListRunsQuery,

@@ -1,3 +1,8 @@
+import { artifactMappings } from "./queries/artifact-mappings.js"
+import type {
+  ArtifactMappingScope,
+  DeployedArtifactMapping,
+} from "@flowmarkdev/core"
 import type { ReferenceJourneyEvidence } from "./types.js"
 import { withActiveProject } from "../data-lifecycle/with-active-project.js"
 import type { ReferenceJourneyQuery } from "@flowmarkdev/core"
@@ -140,6 +145,16 @@ export interface WorkflowStoreService {
   readonly workflows: (
     projectId: string,
   ) => Effect.Effect<ReadonlyArray<WorkflowSummary>, DatabaseError>
+  readonly artifactMappings: (
+    projectId: string,
+    scope: ArtifactMappingScope,
+  ) => Effect.Effect<
+    {
+      readonly mappings: readonly DeployedArtifactMapping[]
+      readonly truncated: boolean
+    },
+    DatabaseError
+  >
   readonly listRuns: (
     projectId: string,
     query: ListRunsQuery,
@@ -254,6 +269,10 @@ export class WorkflowStore extends Context.Service<WorkflowStore>()(
         workflows: (projectId) =>
           provide(
             withActiveProject(projectId, getWorkflowSummaries(projectId)),
+          ),
+        artifactMappings: (projectId, scope) =>
+          provide(
+            withActiveProject(projectId, artifactMappings(projectId, scope)),
           ),
         listRuns: (projectId, query) =>
           provide(withActiveProject(projectId, listRuns(projectId, query))),

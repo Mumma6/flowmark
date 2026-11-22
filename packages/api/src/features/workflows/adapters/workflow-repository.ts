@@ -130,6 +130,10 @@ export const WorkflowRepositoryLive = Layer.effect(
       workflows: Effect.fn("WorkflowRepositoryLive.workflows")((projectId) =>
         persist(withReadSubject(store.workflows(projectId))),
       ),
+      artifactMappings: Effect.fn("WorkflowRepositoryLive.artifactMappings")(
+        (projectId, scope) =>
+          persist(withReadSubject(store.artifactMappings(projectId, scope))),
+      ),
       listRuns: Effect.fn("WorkflowRepositoryLive.listRuns")(
         (projectId, query) =>
           withReadSubject(store.listRuns(projectId, query)).pipe(

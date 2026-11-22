@@ -88,6 +88,8 @@ export {
   ArtifactManifestSchema,
   createArtifactManifest,
   type ArtifactManifest,
+  type ArtifactMappingScope,
+  type DeployedArtifactMapping,
 } from "./artifact-manifest.js"
 export {
   RUNTIME_OBSERVATION_CAPABILITY,

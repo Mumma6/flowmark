@@ -30,6 +30,7 @@ const MCP_TOOLS_ENABLED = [
   "get_workflow_insights",
   "find_executions",
   "explain_execution",
+  "context_for_change",
 ] as const
 const MCP_TOOLS_PENDING = [] as const
 

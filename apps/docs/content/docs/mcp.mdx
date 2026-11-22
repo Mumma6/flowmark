@@ -132,16 +132,17 @@ guide. MCP Apps rendering has its own
 
 ### Available read tools
 
-| Tool                    | Use                                                                                                                                                   |
-| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `get_connection`        | Check available project scope and investigation tools.                                                                                                |
-| `list_workflows`        | Discover processes and their recorded meaning.                                                                                                        |
-| `find_executions`       | Search recorded application executions by workflow, scoped reference digest, artifact or behavior. Requires diagnostic access and `version: 1`.       |
-| `explain_execution`     | Read one execution with a bounded page of observations, events, related runs, operations or settlements. Requires diagnostic access and `version: 1`. |
-| `find_runs`             | Find executions in an explicit UTC start window of at most 31 days.                                                                                   |
-| `get_run`               | Read a summary and a page of events, operations, related runs or expectations.                                                                        |
-| `compare_run`           | Compare one execution with a bounded peer selection.                                                                                                  |
-| `get_workflow_insights` | Read period comparisons or declared business-result insights.                                                                                         |
+| Tool                    | Use                                                                                                                                                          |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `get_connection`        | Check available project scope and investigation tools.                                                                                                       |
+| `list_workflows`        | Discover processes and their recorded meaning.                                                                                                               |
+| `context_for_change`    | Retrieve observed cases for a ticket, plan, diff, file or symbol in an authorized repository. Requires diagnostic access, `version: 1` and a bounded window. |
+| `find_executions`       | Search recorded application executions by workflow, scoped reference digest, artifact or behavior. Requires diagnostic access and `version: 1`.              |
+| `explain_execution`     | Read one execution with a bounded page of observations, events, related runs, operations or settlements. Requires diagnostic access and `version: 1`.        |
+| `find_runs`             | Find executions in an explicit UTC start window of at most 31 days.                                                                                          |
+| `get_run`               | Read a summary and a page of events, operations, related runs or expectations.                                                                               |
+| `compare_run`           | Compare one execution with a bounded peer selection.                                                                                                         |
+| `get_workflow_insights` | Read period comparisons or declared business-result insights.                                                                                                |
 
 Results are bounded pages. Keep the same project and query when using a returned
 cursor. Business readers receive only permitted projections. See
