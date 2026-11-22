@@ -3,11 +3,10 @@ import {
   ArtifactManifestSchema,
   createArtifactManifest,
 } from "@flowmarkdev/core"
-import { DeploymentStore } from "@flowmark/db/persistence"
+import { DeploymentRepository } from "../ports/deployment-repository.js"
 import { Context, Effect, Layer, Schema } from "effect"
-import { persist } from "../../adapters/persistence-error.js"
-import { InvalidInput, Unauthorized } from "../../errors.js"
-import { AuthorizeProject } from "../project-access/use-cases/authorize-project.js"
+import { InvalidInput, Unauthorized } from "../../../errors.js"
+import { AuthorizeProject } from "../../project-access/use-cases/authorize-project.js"
 
 const Uuid = Schema.String.check(Schema.isUUID())
 const DeploymentId = Schema.String.check(
@@ -41,7 +40,7 @@ export class Deployments extends Context.Service<Deployments>()(
   "@flowmark/api/Deployments",
   {
     make: Effect.gen(function* () {
-      const store = yield* DeploymentStore
+      const store = yield* DeploymentRepository
       const authorization = yield* AuthorizeProject
       return {
         rotateBinding: Effect.fn("Deployments.rotateBinding")(function* (
@@ -50,8 +49,10 @@ export class Deployments extends Context.Service<Deployments>()(
         ) {
           yield* authorization.authorizeOwner(userId, scope.projectId)
           const token = `fmd_${randomBytes(32).toString("hex")}`
-          const binding = yield* persist(
-            store.rotateBinding(userId, scope, sha256(token)),
+          const binding = yield* store.rotateBinding(
+            userId,
+            scope,
+            sha256(token),
           )
           return { bindingId: binding.id, token }
         }),
@@ -73,14 +74,12 @@ export class Deployments extends Context.Service<Deployments>()(
             ),
           )
           const manifest = createArtifactManifest(input.manifest)
-          const result = yield* persist(
-            store.record({
-              ...input,
-              manifest,
-              manifestDigest: `sha256:${sha256(JSON.stringify(manifest))}`,
-              secretHash: sha256(header.slice("Bearer ".length)),
-            }),
-          )
+          const result = yield* store.record({
+            ...input,
+            manifest,
+            manifestDigest: `sha256:${sha256(JSON.stringify(manifest))}`,
+            secretHash: sha256(header.slice("Bearer ".length)),
+          })
           if (result.status === "denied") {
             return yield* new Unauthorized({ permission: "write" })
           }
@@ -91,13 +90,11 @@ export class Deployments extends Context.Service<Deployments>()(
           input: typeof DeploymentReadInput.Type,
         ) {
           yield* authorization.authorizeOwner(userId, input.projectId)
-          return yield* persist(
-            store.read(
-              userId,
-              input.projectId,
-              input.bindingId,
-              input.deploymentId,
-            ),
+          return yield* store.read(
+            userId,
+            input.projectId,
+            input.bindingId,
+            input.deploymentId,
           )
         }),
       }
