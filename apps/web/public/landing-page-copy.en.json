@@ -4,8 +4,6 @@
     "skip": "Skip to content",
     "home": "Flowmark home",
     "label": "Main navigation",
-    "playMotion": "Play animations",
-    "pauseMotion": "Pause animations",
     "links": ["How it works", "The loop", "For agents", "Docs"],
     "cta": "Join the waitlist",
     "mobile": {

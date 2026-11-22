@@ -22,7 +22,7 @@ existing environment-specific overrides.
 
 The landing page introduces **application memory for AI-native software teams**. The hero diagram joins repository context with observed application behavior. The loop shows how production history informs the next change. The [page copy](public/landing-page-copy.en.json) includes the diagram labels, FAQ and waitlist states. The [product contract](../../docs/product.md) owns positioning and the [implementation inventory](../../docs/implementation-status.md) owns availability.
 
-Use the shared controls, viewport-aware signal paths and reduced-motion presentation. Keep the main explanation visible without interaction.
+Landing illustrations start automatically near the viewport and pause in a hidden tab. Keep the main explanation visible without interaction.
 
 ## Waitlist
 
