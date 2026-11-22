@@ -2582,12 +2582,15 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
       })
       for (
         let index = 0;
-        index < 20 && progress.state !== "live_data_deleted";
+        index < 80 && progress.state !== "live_data_deleted";
         index++
       ) {
         progress = await ownerStudio.dataLifecycle.resume(erasureInput)
       }
-      expect(progress.state).toBe("live_data_deleted")
+      expect(progress).toMatchObject({
+        state: "live_data_deleted",
+        failureCode: null,
+      })
       await expect(reopen()).rejects.toMatchObject({ code: "UNAUTHORIZED" })
       await connection.db
         .delete(verification)
