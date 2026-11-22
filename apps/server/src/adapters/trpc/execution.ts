@@ -2,6 +2,7 @@ import { TRPCError } from "@trpc/server"
 import { Effect, Exit, Match, Option, Schema } from "effect"
 import {
   AgentAccess,
+  Deployments,
   ManageProjectSharing,
   ManageDataExports,
   ManageDataLifecycle,
@@ -80,6 +81,7 @@ async function executeQuery<A>(
     | AgentAccess
     | GetProjectWorkflowData
     | ManageProject
+    | Deployments
     | Onboarding
     | ManageResultDeclarations
   >,
@@ -229,6 +231,7 @@ export function sessionQuery<A>(
     | ManageDataLifecycle
     | GetProjectWorkflowData
     | ManageProject
+    | Deployments
     | ManageResultDeclarations
     | AgentAccess
   >,

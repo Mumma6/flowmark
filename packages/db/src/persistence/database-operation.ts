@@ -10,6 +10,8 @@ export enum DatabaseOperation {
   ProjectSharing = "project-sharing",
   AccountEmailChange = "account-email-change",
   DataLifecycle = "data-lifecycle",
+  DeploymentBinding = "deployment-binding",
+  DeploymentReceipt = "deployment-receipt",
   ProjectReadFence = "project-read-fence",
   EnsureCursorMcpClient = "ensure-cursor-mcp-client",
   GetAgentConsentClient = "get-agent-consent-client",
