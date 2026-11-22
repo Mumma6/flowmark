@@ -106,6 +106,7 @@ export type ListedRunsPage = {
 }
 
 export interface RunEventPageQuery {
+  readonly eventIds?: ReadonlyArray<string>
   readonly observationsOnly?: boolean
   readonly runId: string
   readonly cursor?: string

@@ -219,6 +219,7 @@ export function sessionQuery<A>(
     | Unauthorized
     | PersistenceError
     | EngineError
+    | ConfigurationError
     | InvalidInput
     | ManagementRateLimited,
     | ManageSharedInvestigations

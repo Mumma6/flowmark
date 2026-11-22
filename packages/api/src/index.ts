@@ -242,3 +242,9 @@ export { ExecutionSelectorSchema } from "@flowmarkdev/core"
 
 export type { DeployedArtifactMapping } from "@flowmarkdev/core"
 export { rankChangeMappings } from "./features/workflows/models/change-matching.js"
+
+export {
+  RUNTIME_CITATION_MAX_LENGTH,
+  resolveRuntimeCitation,
+  sealRuntimeCitation,
+} from "./features/workflows/use-cases/runtime-citations.js"

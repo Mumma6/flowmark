@@ -1,3 +1,4 @@
+import { readAuthSecret } from "@flowmark/auth"
 import {
   ExpectationIdentifierSchema,
   ExpectationStateSchema,
@@ -11,12 +12,37 @@ import {
   BusinessValueSchema,
 } from "@flowmark/api"
 import { Effect, Schema } from "effect"
-import { GetProjectWorkflowData } from "@flowmark/api"
+import {
+  ConfigurationError,
+  GetProjectWorkflowData,
+  RUNTIME_CITATION_MAX_LENGTH,
+  resolveRuntimeCitation,
+} from "@flowmark/api"
 import { t } from "./context"
 import { UuidSchema } from "./schemas"
-import { readQuery } from "./execution"
+import { readQuery, sessionQuery } from "./execution"
 
 export const runRouter = t.router({
+  citation: t.procedure
+    .input(
+      Schema.toStandardSchemaV1(
+        Schema.Struct({
+          handle: Schema.String.check(
+            Schema.isMaxLength(RUNTIME_CITATION_MAX_LENGTH),
+          ),
+        }),
+      ),
+    )
+    .mutation(({ ctx, input }) =>
+      sessionQuery(ctx.request, (userId) =>
+        readAuthSecret().pipe(
+          Effect.mapError((error) => new ConfigurationError({ cause: error })),
+          Effect.flatMap((secret) =>
+            resolveRuntimeCitation(userId, secret, input.handle),
+          ),
+        ),
+      ),
+    ),
   list: t.procedure
     .input(
       Schema.toStandardSchemaV1(

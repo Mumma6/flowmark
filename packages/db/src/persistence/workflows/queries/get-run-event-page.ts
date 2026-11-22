@@ -1,5 +1,5 @@
 import type { FlowmarkDatabase } from "../../../client.js"
-import { and, eq, isNotNull, sql } from "drizzle-orm"
+import { and, eq, inArray, isNotNull, sql } from "drizzle-orm"
 import { Effect } from "effect"
 import {
   workflowEvents,
@@ -94,6 +94,9 @@ export const getRunEventPage = Effect.fn("getRunEventPage")(function* (
   const db = yield* Database
   const scope = and(
     runTimelineJoins(projectId, query.runId),
+    query.eventIds
+      ? inArray(workflowEvents.eventId, query.eventIds)
+      : undefined,
     query.observationsOnly
       ? isNotNull(workflowEvents.runtimeObservation)
       : undefined,
