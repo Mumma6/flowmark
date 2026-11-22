@@ -171,6 +171,12 @@ export function StudioShell({
           />
           <a
             href="#studio-main"
+            onClick={(event) => {
+              if (pathname === "/runs/citation") {
+                event.preventDefault()
+                document.getElementById("studio-main")?.focus()
+              }
+            }}
             className="sr-only z-[100] rounded-md bg-card px-4 py-3 focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:ring-2 focus:ring-ring"
           >
             Skip to content

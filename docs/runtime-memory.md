@@ -151,3 +151,17 @@ artifacts, and no observed cases. Evidence across artifacts can come from
 different times within the window. When scope exceeds a read limit, narrow
 the environment or window. Missing observations and truncated samples
 remain explicit.
+
+### Cite runtime evidence in a pull request
+
+When a `context_for_change` candidate includes examples, copy its `citation`
+URL into the PR. Keep execution IDs, payloads and entity references out of the
+PR. The URL contains an encrypted reference to the selected observations,
+artifact, time window and sample size. Studio checks the reviewer's current
+diagnostic access to the cited project before showing those observations. If
+prompted to sign in, reopen the original PR link after signing in.
+
+The sample stays pinned when new events arrive. Citations expire after 24 hours
+and become invalid after an auth secret rotation. If the underlying observations
+have been removed, request a new citation. Project erasure or access revocation
+prevents further reads.

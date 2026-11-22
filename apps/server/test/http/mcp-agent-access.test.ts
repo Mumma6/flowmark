@@ -38,6 +38,8 @@ import {
   runSelectionToolInput,
   studioRunSelection,
 } from "../../../dashboard/features/runs/investigation/investigation-selection"
+import { readAuthSecret } from "@flowmark/auth"
+import { resolveRuntimeCitation, runApi } from "@flowmark/api"
 import { appRouter } from "../../src/adapters/trpc/router"
 import {
   LATEST_PROTOCOL_VERSION,
@@ -1133,6 +1135,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         .from(oauthRefreshToken)
         .where(eq(oauthRefreshToken.clientId, clientId))
       assert.ok(authorizationCodeId)
+      const ownerPassword = randomUUID()
       const ownerSignup = await auth.handler(
         new Request(`${testOrigin}/api/auth/sign-up/email`, {
           method: "POST",
@@ -1140,7 +1143,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
           body: JSON.stringify({
             name: "Fixed project owner",
             email: `${randomUUID()}@example.test`,
-            password: randomUUID(),
+            password: ownerPassword,
           }),
         }),
       )
@@ -1653,6 +1656,56 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
           }),
         ]),
       })
+      const citationCandidates = ticketContext.result?.structuredContent
+        ?.candidates as Array<{
+        citation: string | null
+        examples: Array<{ eventIds: string[] }>
+      }>
+      const cited = citationCandidates.find(({ citation }) => citation !== null)
+      assert.ok(cited?.citation)
+      const citationUrl = new URL(cited.citation)
+      expect(citationUrl.pathname).toBe("/runs/citation")
+      expect(citationUrl.search).toBe("")
+      const handle = citationUrl.hash.slice(1)
+      expect(cited.citation).not.toContain(project.projectId)
+      expect(cited.citation).not.toContain(booking.digest)
+      const reopen = () => ownerStudio.run.citation({ handle })
+      const originalCitation = await reopen()
+      assert.equal(originalCitation.status, "exact")
+      expect(
+        originalCitation.examples.map(({ events }) =>
+          events.map(({ id }) => id),
+        ),
+      ).toEqual(cited.examples.map(({ eventIds }) => eventIds))
+      await expect(
+        ownerStudio.run.citation({ handle: handle + "A" }),
+      ).resolves.toEqual({ status: "expired-or-invalid" })
+      const secret = await Effect.runPromise(readAuthSecret())
+      const expired = await runApi(
+        resolveRuntimeCitation(
+          fixedOwner,
+          secret,
+          handle,
+          Date.now() + 86_400_001,
+        ),
+      )
+      expect(expired).toMatchObject({
+        _tag: "Success",
+        value: { status: "expired-or-invalid" },
+      })
+      // A late event with an earlier occurrence time stays outside the pinned sample.
+      await store({
+        ...first,
+        timestamp: "2026-11-02T23:59:59.000Z",
+        type: "step",
+        step: "runtime.late-observation",
+        observation: {
+          kind: "observation",
+          references: [],
+          probe: originalProbe,
+        },
+      })
+      await expect(reopen()).resolves.toEqual(originalCitation)
       const renameContext = await callTool(102, "context_for_change", {
         ...contextScope,
         diff: "rename from src/bookings/reschedule.ts\nrename to src/domain/move.ts",
@@ -2337,6 +2390,9 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
             eq(projectMembers.projectId, project.projectId),
           ),
         )
+      await expect(studio.run.citation({ handle })).rejects.toMatchObject({
+        code: "UNAUTHORIZED",
+      })
       const lostMembership = await callTool(54, "get_run", {
         projectId: project.projectId,
         runId,
@@ -2508,6 +2564,34 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
       expect(await ownerStudio.run.investigationSummary({ id: runId })).toEqual(
         selected.result?.structuredContent?.summary,
       )
+      await expect(studio.run.citation({ handle })).rejects.toMatchObject({
+        code: "UNAUTHORIZED",
+      })
+      const erasure = await ownerStudio.dataLifecycle.preview({
+        projectId: project.projectId,
+        scope: { kind: "project" },
+      })
+      const erasureInput = {
+        projectId: project.projectId,
+        operationId: erasure.id,
+      }
+      let progress = await ownerStudio.dataLifecycle.confirm({
+        ...erasureInput,
+        confirmation: "Acceptance project",
+        password: ownerPassword,
+      })
+      for (
+        let index = 0;
+        index < 80 && progress.state !== "live_data_deleted";
+        index++
+      ) {
+        progress = await ownerStudio.dataLifecycle.resume(erasureInput)
+      }
+      expect(progress).toMatchObject({
+        state: "live_data_deleted",
+        failureCode: null,
+      })
+      await expect(reopen()).rejects.toMatchObject({ code: "UNAUTHORIZED" })
       await connection.db
         .delete(verification)
         .where(like(verification.value, `%"userId":"${session.user.id}"%`))

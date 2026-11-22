@@ -1,7 +1,9 @@
+import { readAuthSecret } from "@flowmark/auth"
 import { requireAgentAccessProjectId } from "@flowmark/auth/agent-access"
 import {
   GetProjectWorkflowData,
   rankChangeMappings,
+  sealRuntimeCitation,
   type AuthorizeAgentRead,
   type ProjectReader,
 } from "@flowmark/api"
@@ -175,6 +177,14 @@ export const contextForChangeForMcp: (
       scope,
     )
     const ranked = rankChangeMappings(input, mappings)
+    const citationSecret = yield* readAuthSecret().pipe(
+      Effect.mapError(
+        () =>
+          new McpToolReadError({
+            reason: "Runtime citations are not configured.",
+          }),
+      ),
+    )
     const candidates = yield* Effect.forEach(ranked.candidates, (candidate) =>
       Effect.gen(function* () {
         const { deployment, probe, strength, reason, terms, otherRevision } =
@@ -201,10 +211,60 @@ export const contextForChangeForMcp: (
                 item.status !== ordinary.status)),
         )
         const examples = [
-          ...(ordinary ? [{ ...ordinary, selection: "representative" }] : []),
-          ...(contrast ? [{ ...contrast, selection: "contrasting" }] : []),
+          ...(ordinary
+            ? [{ ...ordinary, selection: "representative" as const }]
+            : []),
+          ...(contrast
+            ? [{ ...contrast, selection: "contrasting" as const }]
+            : []),
         ]
+        const sampleIncomplete =
+          sampled.total > sampled.cases.length ||
+          sampled.cases.some(
+            ({ evidencePageTruncated }) => evidencePageTruncated,
+          )
+        const citation =
+          examples.length === 0
+            ? null
+            : new URL(
+                "/runs/citation#" +
+                  sealRuntimeCitation(citationSecret, {
+                    projectId: input.projectId,
+                    probe: {
+                      bindingId: deployment.bindingId,
+                      deploymentId: deployment.deploymentId,
+                      artifactDigest: deployment.manifest.artifactDigest,
+                      probeId: probe.probeId,
+                    },
+                    revision: deployment.manifest.revision,
+                    environment: deployment.environment,
+                    startedAfter: input.startedAfter,
+                    startedBefore: input.startedBefore,
+                    asOf: Date.now(),
+                    matchedRuns: sampled.total,
+                    sampleIncomplete,
+                    examples: examples.map(
+                      ({
+                        runId,
+                        startedAt,
+                        status,
+                        outcome,
+                        selection,
+                        eventIds,
+                      }) => ({
+                        runId,
+                        startedAt,
+                        status,
+                        outcome,
+                        selection,
+                        eventIds,
+                      }),
+                    ),
+                  }),
+                identity.issuer,
+              ).href
         return {
+          citation,
           behaviorId: probe.behaviorId,
           behaviorRevision: probe.behaviorRevision,
           probeId: probe.probeId,
@@ -226,11 +286,7 @@ export const contextForChangeForMcp: (
             deploymentId: deployment.deploymentId,
           },
           matchedRuns: sampled.total,
-          sampleIncomplete:
-            sampled.total > sampled.cases.length ||
-            sampled.cases.some(
-              ({ evidencePageTruncated }) => evidencePageTruncated,
-            ),
+          sampleIncomplete,
           examples,
         }
       }),
