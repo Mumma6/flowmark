@@ -1,3 +1,10 @@
+import {
+  ExplainExecutionSchema,
+  FindExecutionsSchema,
+  explainExecutionForMcp,
+  findExecutionsForMcp,
+} from "../workflows/execution-reads.js"
+import { toJsonSchemaDocument } from "effect/Schema"
 import type { AuthorizeAgentRead } from "@flowmark/api"
 import { GetProjectWorkflowData, GetBusinessEvidence } from "@flowmark/api"
 import {
@@ -208,6 +215,62 @@ const registerWorkflowInsightsTool = (
   )
 }
 
+const registerExecutionReadTools = (
+  server: McpServer,
+  identity: FlowmarkMcpAuthInfo,
+) => {
+  server.registerTool(
+    "find_executions",
+    {
+      title: "Find executions",
+      description:
+        "Version 1 diagnostic read. Find application executions in a bounded project window by workflow, scoped reference digest, artifact, or behavior. Use the returned run ID with explain_execution.",
+      inputSchema: fromJsonSchema(
+        toJsonSchemaDocument(FindExecutionsSchema).schema as Parameters<
+          typeof fromJsonSchema
+        >[0],
+      ),
+      annotations: { readOnlyHint: true, destructiveHint: false },
+    },
+    async (input, extra) =>
+      toolResult(
+        await runMcpTool(
+          identity,
+          input,
+          true,
+          readPagedTool(input, (page) => findExecutionsForMcp(identity, page)),
+          extra.mcpReq.signal,
+        ),
+      ),
+  )
+  server.registerTool(
+    "explain_execution",
+    {
+      title: "Explain execution",
+      description:
+        "Version 1 diagnostic read. Inspect one execution and one bounded section: observations, events, related, expectations, or operations.",
+      inputSchema: fromJsonSchema(
+        toJsonSchemaDocument(ExplainExecutionSchema).schema as Parameters<
+          typeof fromJsonSchema
+        >[0],
+      ),
+      annotations: { readOnlyHint: true, destructiveHint: false },
+    },
+    async (input, extra) =>
+      toolResult(
+        await runMcpTool(
+          identity,
+          input,
+          true,
+          readPagedTool(input, (page) =>
+            explainExecutionForMcp(identity, page),
+          ),
+          extra.mcpReq.signal,
+        ),
+      ),
+  )
+}
+
 export const registerFlowmarkTools = (
   server: McpServer,
   identity: FlowmarkMcpAuthInfo,
@@ -216,6 +279,7 @@ export const registerFlowmarkTools = (
   registerConnectionTool(server, identity)
   registerListWorkflowsTool(server, identity)
   registerFindRunsTool(server, identity)
+  registerExecutionReadTools(server, identity)
   registerGetRunTool(server, identity, uiSupported)
   registerEvidenceResource(server, async (signal) => {
     const admitted = await runMcpResourceRead(identity, signal)

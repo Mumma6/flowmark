@@ -10,7 +10,7 @@ export const RuntimeReferenceKindSchema = Schema.Literals([
 export const RuntimeReferenceNamespaceSchema = Schema.String.check(
   Schema.isPattern(/^[a-z][a-z0-9._-]{0,63}$/),
 )
-const RuntimeReferenceSchema = Schema.Struct({
+export const RuntimeReferenceSchema = Schema.Struct({
   kind: RuntimeReferenceKindSchema,
   namespace: RuntimeReferenceNamespaceSchema,
   digest: Schema.String.check(Schema.isPattern(/^hmac-sha256:[a-f0-9]{64}$/)),
@@ -66,3 +66,12 @@ export type StoredRuntimeObservation = {
   readonly observation: RuntimeObservation
   readonly binding: RuntimeObservationBinding
 }
+
+export const ExecutionSelectorSchema = Schema.Struct({
+  reference: Schema.optional(RuntimeReferenceSchema),
+  artifactDigest: Schema.optional(
+    RuntimeProbeReferenceSchema.fields.artifactDigest,
+  ),
+  behaviorId: Schema.optional(RuntimeProbeReferenceSchema.fields.probeId),
+})
+export type ExecutionSelector = typeof ExecutionSelectorSchema.Type

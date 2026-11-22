@@ -8,7 +8,7 @@ import {
 import { handleAgentConsent } from "../../src/adapters/agent-consent"
 import { createHash, randomBytes, randomUUID } from "node:crypto"
 import assert from "node:assert/strict"
-import { and, eq, like } from "drizzle-orm"
+import { and, eq, like, sql } from "drizzle-orm"
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest"
 import {
   createDatabase,
@@ -26,6 +26,7 @@ import {
 } from "@flowmark/db"
 import {
   createOwnedProject,
+  WorkflowStore,
   Database,
   submitAgentAccessConsent,
   revokeAgentAccessConnection,
@@ -490,7 +491,18 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
                       jsonrpc: "2.0",
                       id: 98,
                       method: "tools/call",
-                      params: { name: "get_connection", arguments: {} },
+                      params:
+                        mutation.label === "expired access"
+                          ? {
+                              name: "find_executions",
+                              arguments: {
+                                version: 1,
+                                projectId,
+                                startedAfter: "2026-11-01T00:00:00.000Z",
+                                startedBefore: "2026-11-08T00:00:00.000Z",
+                              },
+                            }
+                          : { name: "get_connection", arguments: {} },
                     },
                     {
                       ...sessionHeaders,
@@ -553,6 +565,8 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
       ).toEqual(
         [
           "compare_run",
+          "explain_execution",
+          "find_executions",
           "find_runs",
           "get_connection",
           "get_run",
@@ -590,6 +604,8 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         "get_run",
         "compare_run",
         "get_workflow_insights",
+        "find_executions",
+        "explain_execution",
       ])
       const resourceUri = "ui://flowmark/run-evidence/v1.html"
       const uiMeta = {
@@ -977,7 +993,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         .delete(verification)
         .where(like(verification.value, `%"userId":"${session.user.id}"%`))
     })
-    it("accepts six-tool reference investigation and denies adjacent authority", async () => {
+    it("accepts reference investigation and denies adjacent authority", async () => {
       const { getAuth } = await import("../../src/auth.js")
       const redirectUri = "http://127.0.0.1:4313/callback"
       const clientId = `mcp-accept-${randomUUID()}`
@@ -1309,6 +1325,8 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
       )
       expect(toolNames.map((tool) => tool.name)).toEqual([
         "compare_run",
+        "explain_execution",
+        "find_executions",
         "find_runs",
         "get_connection",
         "get_run",
@@ -1350,6 +1368,248 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
       expect(workflowsResult.result?.structuredContent?.discovery).toEqual(
         await studio.workflow.discover({}),
       )
+      const executionStore = await Effect.runPromise(
+        WorkflowStore.make.pipe(Effect.provideService(Database, connection.db)),
+      )
+      const reference = (
+        kind: "entity" | "change" | "envelope",
+        label: string,
+      ) => ({
+        kind,
+        namespace: "booking",
+        digest: `hmac-sha256:${createHash("sha256").update(label).digest("hex")}`,
+      })
+      const booking = reference("entity", "same-booking")
+      const firstChange = reference("change", "C41")
+      const nextChange = reference("change", "C42")
+      const workflow = "acceptance.runtime.booking"
+      const timestamp = "2026-11-03T00:00:00.000Z"
+      const first = { workflow, runId: "runtime-first", timestamp }
+      const second = { ...first, runId: "runtime-second" }
+      const store = (event: Parameters<typeof executionStore.append>[2]) =>
+        Effect.runPromise(
+          executionStore.append(project.projectId, randomUUID(), event),
+        )
+      await store({ ...first, type: "started" })
+      await store({ ...second, type: "started" })
+      for (const [run, change, envelope] of [
+        [first, firstChange, "E11"],
+        [first, firstChange, "E12"],
+        [second, nextChange, "E13"],
+      ] as const) {
+        await store({
+          ...run,
+          type: "step",
+          step: "runtime.observation",
+          observation: {
+            kind: "observation",
+            references: [booking, change, reference("envelope", envelope)],
+          },
+        })
+      }
+      await store({
+        ...first,
+        type: "expectation_declared",
+        expectationId: "partner",
+        name: "provider-confirmed",
+        withinMs: 60000,
+      })
+      await store({
+        ...first,
+        type: "completed",
+        outcome: "partial",
+        result: { skipped: 12 },
+      })
+      await store({
+        ...first,
+        type: "expectation_resolved",
+        expectationId: "partner",
+        timestamp: "2026-11-03T00:01:02.000Z",
+        outcome: "confirmed",
+      })
+      const executionSearch = {
+        version: 1,
+        projectId: project.projectId,
+        workflow,
+        startedAfter: windows.currentStartedAfter,
+        startedBefore: windows.currentStartedBefore,
+        selector: { reference: booking },
+      }
+      const runtimeFirst = await callTool(81, "find_executions", {
+        ...executionSearch,
+        limit: 1,
+      })
+      const runtimePage = runtimeFirst.result?.structuredContent
+      expect(runtimePage).toMatchObject({
+        version: 1,
+        total: 2,
+        executions: [expect.objectContaining({ workflow })],
+      })
+      const runtimeCursor = runtimePage?.nextCursor
+      assert.equal(typeof runtimeCursor, "string")
+      const runtimeSecond = await callTool(82, "find_executions", {
+        ...executionSearch,
+        limit: 1,
+        cursor: runtimeCursor,
+      })
+      expect(runtimeSecond.result?.structuredContent).toMatchObject({
+        total: 2,
+        executions: [expect.objectContaining({ workflow })],
+        nextCursor: null,
+      })
+      expect(runtimeSecond.result?.structuredContent?.executions).not.toEqual(
+        runtimePage?.executions,
+      )
+      const altered = await callTool(83, "find_executions", {
+        ...executionSearch,
+        selector: { reference: firstChange },
+        cursor: runtimeCursor,
+      })
+      expect(altered.result?.isError).toBe(true)
+      expect(altered.result?.structuredContent).toBeUndefined()
+      const excessive = await callTool(84, "find_executions", {
+        ...executionSearch,
+        limit: 26,
+      })
+      expect(
+        excessive.result?.isError === true || excessive.error !== undefined,
+      ).toBe(true)
+
+      const firstCase = await callTool(85, "find_executions", {
+        ...executionSearch,
+        selector: { reference: firstChange },
+      })
+      const cases = firstCase.result?.structuredContent?.executions as Array<{
+        runId: string
+      }>
+      expect(cases).toHaveLength(1)
+      const execution = {
+        version: 1,
+        projectId: project.projectId,
+        runId: cases[0]!.runId,
+      }
+      const detail = await callTool(86, "explain_execution", execution)
+      expect(detail.result?.structuredContent).toMatchObject({
+        summary: { status: "Completed", outcome: "partial" },
+        evidence: {
+          totalEvents: 2,
+          events: [
+            {
+              runtimeObservation: {
+                observation: {
+                  references: [
+                    booking,
+                    firstChange,
+                    reference("envelope", "E11"),
+                  ],
+                },
+              },
+            },
+            {
+              runtimeObservation: {
+                observation: {
+                  references: [
+                    booking,
+                    firstChange,
+                    reference("envelope", "E12"),
+                  ],
+                },
+              },
+            },
+          ],
+        },
+      })
+      const otherChange = await callTool(87, "find_executions", {
+        ...executionSearch,
+        selector: { reference: nextChange },
+      })
+      const secondCase = otherChange.result?.structuredContent
+        ?.executions as Array<{ runId: string }>
+      expect(secondCase).toHaveLength(1)
+      const otherDetail = await callTool(88, "explain_execution", {
+        ...execution,
+        runId: secondCase[0]!.runId,
+      })
+      expect(otherDetail.result?.structuredContent).toMatchObject({
+        evidence: {
+          totalEvents: 1,
+          events: [
+            {
+              runtimeObservation: {
+                observation: {
+                  references: [
+                    booking,
+                    nextChange,
+                    reference("envelope", "E13"),
+                  ],
+                },
+              },
+            },
+          ],
+        },
+      })
+      const settlement = await callTool(89, "explain_execution", {
+        ...execution,
+        section: "expectations",
+      })
+      expect(settlement.result?.structuredContent?.summary).toMatchObject({
+        outcome: "partial",
+      })
+      expect(
+        JSON.stringify(settlement.result?.structuredContent?.evidence),
+      ).toContain('"outcome":"confirmed"')
+      const foreignExecution = await callTool(90, "explain_execution", {
+        ...execution,
+        projectId: foreign.projectId,
+      })
+      expect(foreignExecution.result?.isError).toBe(true)
+      expect(foreignExecution.result?.structuredContent).toBeUndefined()
+      const aborted = new AbortController()
+      aborted.abort()
+      const cancelledRequest = mcpRequest(
+        {
+          jsonrpc: "2.0",
+          id: 92,
+          method: "tools/call",
+          params: { name: "find_executions", arguments: executionSearch },
+        },
+        sessionHeaders,
+      )
+      await expect(
+        handleMcpPost(
+          new Request(cancelledRequest, { signal: aborted.signal }),
+        ),
+      ).rejects.toThrow()
+      const tooWide = await callTool(93, "find_executions", {
+        ...executionSearch,
+        startedAfter: "2025-11-01T00:00:00.000Z",
+      })
+      expect(tooWide.result?.isError).toBe(true)
+      expect(tooWide.result?.structuredContent).toBeUndefined()
+      const cappedWorkflow = randomUUID()
+      await connection.db.insert(workflows).values({
+        id: cappedWorkflow,
+        projectId: project.projectId,
+        name: "acceptance.runtime.cap",
+      })
+      await connection.db.execute(sql`
+        INSERT INTO workflow_runs (workflow_id, external_id, started_at)
+        SELECT ${cappedWorkflow}::uuid, 'capped-' || n, ${timestamp}::timestamptz
+        FROM generate_series(1, 1001) n
+      `)
+      const capped = await callTool(94, "find_executions", {
+        ...executionSearch,
+        workflow: "acceptance.runtime.cap",
+      })
+      expect(capped.result?.isError).toBe(true)
+      expect(capped.result?.structuredContent).toBeUndefined()
+      expect(capped.result?.content?.[0]?.text).toContain("1,000")
+      await connection.db
+        .delete(workflowRuns)
+        .where(eq(workflowRuns.workflowId, cappedWorkflow))
+      await connection.db
+        .delete(workflows)
+        .where(eq(workflows.id, cappedWorkflow))
       const found = await callTool(5, "find_runs", findInput)
       const studioRuns = await studio.run.list({
         workflow: findInput.workflow,
@@ -2029,6 +2289,13 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
       expect(independentAfterRevoke.result?.structuredContent).toBeUndefined()
       const revoked = await callTool(14, "get_connection", {})
       expect(revoked.result?.isError).toBe(true)
+      const revokedExecution = await callTool(
+        91,
+        "explain_execution",
+        execution,
+      )
+      expect(revokedExecution.result?.isError).toBe(true)
+      expect(revokedExecution.result?.structuredContent).toBeUndefined()
       const revokedPage = await callTool(15, "get_run", {
         projectId: project.projectId,
         runId,

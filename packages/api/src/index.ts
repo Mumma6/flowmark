@@ -237,3 +237,5 @@ export {
   DeploymentBindingInput,
   DeploymentReadInput,
 } from "./features/runtime-deployment/use-cases/deployments.js"
+
+export { ExecutionSelectorSchema } from "@flowmarkdev/core"

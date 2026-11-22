@@ -1,6 +1,7 @@
 import { rawRunFactFields } from "./run-fact-fields.js"
 import { expectationMatchSql, expectationStateSql } from "./expectations.js"
 import type {
+  ExecutionSelector,
   RatioSelection,
   ResultDeclaration,
   ResultSelection,
@@ -228,6 +229,7 @@ export const peerRunsSql = (
 `
 
 export type ListRunsFilter = {
+  readonly executionSelector?: ExecutionSelector
   readonly expectationState?: import("@flowmarkdev/core").ExpectationState
   readonly asOf?: string
   readonly ratioSelection?: RatioSelection
@@ -256,11 +258,53 @@ export type ListRunsFilter = {
   readonly limit: number
 }
 
+export const EXECUTION_SEARCH_RUN_CAP = 1000
+
+export const executionSearchCandidateCountSql = (
+  projectId: string,
+  filter: ListRunsFilter,
+) => sql`
+  SELECT count(*)::int AS count FROM (
+    SELECT 1 FROM workflow_runs r JOIN workflows w ON w.id = r.workflow_id
+    WHERE w.project_id = ${projectId} AND w.name NOT LIKE 'browser.%'
+      AND (${filter.workflow ?? null}::text IS NULL OR w.name = ${filter.workflow ?? null})
+      AND r.started_at >= ${filter.startedAfter}::timestamptz
+      AND r.started_at <= ${filter.startedBefore}::timestamptz
+    LIMIT ${EXECUTION_SEARCH_RUN_CAP + 1}
+  ) candidates
+`
+
+const executionPredicate = (selector?: ExecutionSelector) => {
+  if (
+    !selector ||
+    (!selector.reference && !selector.artifactDigest && !selector.behaviorId)
+  ) {
+    return sql`true`
+  }
+  return sql`EXISTS (
+    SELECT 1 FROM workflow_events observation_event
+    WHERE observation_event.run_id = runs.id
+      AND observation_event.runtime_observation -> 'observation' ->> 'kind' = 'observation'
+      AND ${selector.reference ? sql`observation_event.runtime_observation -> 'observation' -> 'references' @> ${JSON.stringify([selector.reference])}::jsonb` : sql`true`}
+      AND ${selector.artifactDigest ? sql`observation_event.runtime_observation -> 'binding' ->> 'status' = 'bound' AND observation_event.runtime_observation #>> '{observation,probe,artifactDigest}' = ${selector.artifactDigest}` : sql`true`}
+      AND ${selector.behaviorId ? sql`observation_event.runtime_observation #>> '{binding,behaviorId}' = ${selector.behaviorId}` : sql`true`}
+  )`
+}
+
+export const executionSearchCountSql = (
+  projectId: string,
+  filter: ListRunsFilter,
+) => sql`
+  ${projectRunSummaries(projectId, filter)}
+  SELECT count(*)::int AS count FROM runs WHERE ${listedRunsPredicate(filter)}
+`
+
 const listedRunsPredicate = (filter: Omit<ListRunsFilter, "limit">) => {
   const search = filter.search?.trim()
   const like =
     search && search.length > 0 ? `%${search.replaceAll("%", "")}%` : null
   return sql`    ${resultPredicate(filter.resultSelection, filter.resultField)}
+    AND ${executionPredicate(filter.executionSelector)}
     AND ${filter.ratioSelection ? sql`${resultPredicate({ revision: filter.ratioSelection.revision, path: filter.ratioSelection.numerator, operator: "gte", value: 0 })} AND ${resultPredicate({ revision: filter.ratioSelection.revision, path: filter.ratioSelection.denominator, operator: "gte", value: 0 })}` : sql`true`}
     AND (${filter.outcome ?? null}::text IS NULL OR outcome = ${filter.outcome ?? null})
     AND (${filter.definitionRevision ?? null}::text IS NULL OR "definitionRevision" = ${filter.definitionRevision ?? null})
