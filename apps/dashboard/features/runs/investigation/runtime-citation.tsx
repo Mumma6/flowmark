@@ -28,7 +28,7 @@ export function RuntimeCitation() {
   const result = citation.data
 
   return (
-    <main className="mx-auto grid w-full max-w-4xl gap-6 p-6">
+    <section className="mx-auto grid w-full max-w-4xl gap-6 p-6">
       <h1 className="text-2xl font-semibold">Cited runtime evidence</h1>
       {!handle && <p>Open the complete citation link from the pull request.</p>}
       <DataState pending={citation.isLoading} error={citation.error} />
@@ -112,6 +112,6 @@ export function RuntimeCitation() {
           ))}
         </>
       )}
-    </main>
+    </section>
   )
 }

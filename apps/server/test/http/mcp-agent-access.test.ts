@@ -1656,12 +1656,13 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
           }),
         ]),
       })
-      const [cited] = ticketContext.result?.structuredContent
+      const citationCandidates = ticketContext.result?.structuredContent
         ?.candidates as Array<{
-        citation: string
+        citation: string | null
         examples: Array<{ eventIds: string[] }>
       }>
-      assert.ok(cited)
+      const cited = citationCandidates.find(({ citation }) => citation !== null)
+      assert.ok(cited?.citation)
       const citationUrl = new URL(cited.citation)
       expect(citationUrl.pathname).toBe("/runs/citation")
       expect(citationUrl.search).toBe("")
