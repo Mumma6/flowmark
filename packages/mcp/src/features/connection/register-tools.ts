@@ -1,4 +1,8 @@
 import {
+  ContextForChangeSchema,
+  contextForChangeForMcp,
+} from "../workflows/context-for-change.js"
+import {
   ExplainExecutionSchema,
   FindExecutionsSchema,
   explainExecutionForMcp,
@@ -276,6 +280,30 @@ export const registerFlowmarkTools = (
   identity: FlowmarkMcpAuthInfo,
   uiSupported = false,
 ) => {
+  server.registerTool(
+    "context_for_change",
+    {
+      title: "Context for change",
+      description:
+        "Version 1 diagnostic read. Retrieve bounded production examples from a ticket, plan, diff, file or symbol in an authorized repository and project. Results label revision differences and uncertainty.",
+      inputSchema: fromJsonSchema(
+        toJsonSchemaDocument(ContextForChangeSchema).schema as Parameters<
+          typeof fromJsonSchema
+        >[0],
+      ),
+      annotations: { readOnlyHint: true, destructiveHint: false },
+    },
+    async (input, extra) =>
+      toolResult(
+        await runMcpTool(
+          identity,
+          input,
+          true,
+          contextForChangeForMcp(identity, input),
+          extra.mcpReq.signal,
+        ),
+      ),
+  )
   registerConnectionTool(server, identity)
   registerListWorkflowsTool(server, identity)
   registerFindRunsTool(server, identity)

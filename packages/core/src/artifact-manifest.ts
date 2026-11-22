@@ -80,3 +80,18 @@ export function createArtifactManifest(input: unknown): ArtifactManifest {
       .sort((left, right) => compare(left.probeId, right.probeId)),
   }
 }
+
+export type DeployedArtifactMapping = {
+  readonly bindingId: string
+  readonly deploymentId: string
+  readonly environment: string
+  readonly service: string
+  readonly manifestDigest: string
+  readonly manifest: ArtifactManifest
+  readonly receivedAt: string
+}
+
+export type ArtifactMappingScope = {
+  readonly repository: string
+  readonly environment?: string
+}

@@ -86,6 +86,7 @@ function repository(overrides: Partial<WorkflowRepositoryService> = {}) {
         failureCodes: [],
       }),
     workflows: () => Effect.succeed([]),
+    artifactMappings: () => Effect.succeed({ mappings: [], truncated: false }),
     listRuns: () =>
       Effect.succeed({
         runs: [],

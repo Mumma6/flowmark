@@ -74,4 +74,8 @@ export const ExecutionSelectorSchema = Schema.Struct({
   ),
   behaviorId: Schema.optional(RuntimeProbeReferenceSchema.fields.probeId),
 })
-export type ExecutionSelector = typeof ExecutionSelectorSchema.Type
+export type ExecutionSelector = typeof ExecutionSelectorSchema.Type & {
+  readonly probeId?: string
+  readonly bindingId?: string
+  readonly deploymentId?: string
+}

@@ -62,6 +62,18 @@ operating cadence. MCP itself is no longer behind an environment flag.
 - Reviewed process definitions and candidate review distinguish source suggestions from recorded examples. The Studio gap handoff can prepare an SDK patch brief. It needs a durable mapping to the artifact that ran. [Definitions](definition-imports.md)
 - A local compatibility probe compared explicit operation, selected dependency signals and trace references. The explicit operation already explained the primary provider failure. General automatic collection remains unshipped. [Probe results](sdk/capture-compatibility-probe.md)
 
+## Runtime context for coding agents
+
+Diagnostic agents can use `find_executions` and `explain_execution` to retrieve
+scoped runtime cases with observations and delayed settlements. See the
+[versioned tool contract](decisions/0021-runtime-execution-reads.md).
+`context_for_change` retrieves bounded candidates and cases from deployment
+receipts for an explicit repository and time window. Ticket and plan matching
+use lexical hints. The existing MCP investigation tools remain available.
+
 ## Planned product capabilities
 
-Repository and environment installation, automatic change-to-case lookup, policy-driven instrumentation repairs, question-level coverage and post-deploy verification are design targets. Today the MCP entry points are `get_connection`, `list_workflows`, `find_runs`, `get_run`, `compare_run` and `get_workflow_insights`. Diagnostic agents can also use `find_executions` and `explain_execution` to retrieve scoped runtime cases with recorded observations and settlements. See the [versioned tool contract](decisions/0021-runtime-execution-reads.md). Current Studio includes analytics and collaboration routes slated for removal. See [target surfaces](product.md) and the [coverage contract](runtime-memory.md).
+Repository and environment installation, policy-driven instrumentation repairs,
+question-level coverage and post-deploy verification remain planned. Current
+Studio includes analytics and collaboration routes slated for removal. See
+[the target surfaces](product.md) and [coverage](runtime-memory.md).

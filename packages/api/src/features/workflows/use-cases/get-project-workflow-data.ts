@@ -1,3 +1,4 @@
+import type { ArtifactMappingScope } from "@flowmarkdev/core"
 import { ProcessHealthQuerySchema, type ProcessHealth } from "@flowmarkdev/core"
 import {
   compareProcessHealth,
@@ -102,6 +103,14 @@ export class GetProjectWorkflowData extends Context.Service<
             .pipe(Effect.provideService(CurrentProjectReader, reader))
         },
       )
+      const artifactMappings = Effect.fn(
+        "GetProjectWorkflowData.artifactMappings",
+      )(function* (reader: ProjectReader, scope: ArtifactMappingScope) {
+        const projectId = yield* authorizeReader(reader)
+        return yield* repository
+          .artifactMappings(projectId, scope)
+          .pipe(Effect.provideService(CurrentProjectReader, reader))
+      })
       const listRuns = Effect.fn("GetProjectWorkflowData.listRuns")(function* (
         reader: ProjectReader,
         query: ListRunsQuery,
@@ -331,6 +340,7 @@ export class GetProjectWorkflowData extends Context.Service<
         businessInsights,
         snapshot,
         workflows,
+        artifactMappings,
         listRuns,
         search,
         timeline,

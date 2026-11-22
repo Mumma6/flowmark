@@ -124,3 +124,30 @@ the event ID. An application retry has its own execution and events.
 Application collectors can call `emitter.reportLoss(flow, count)` to report a
 known omission while delivery is available. Transport errors and queue drops
 also remain visible in SDK delivery health.
+
+### Context for a code change
+
+`context_for_change` version 1 accepts an authorized project ID, repository,
+a run-start window of up to 31 days, and a ticket, plan, diff, relative file
+path or symbol. An optional environment narrows the deployment scope. Pass
+the checkout's full Git revision when available.
+
+The tool ranks exact source mappings ahead of explicit Git renames and
+lexical ticket or plan matches. Mappings from other revisions remain
+adjacent evidence. Ambiguity is visible when competing candidates tie or an
+artifact cannot identify a unique source location. The tool only inspects
+diff paths and rename headers and leaves patch text out of its response.
+
+It considers up to 12 deployment receipts and reads up to four ranked probe
+candidates. Each supported candidate can return a representative example
+and a contrasting example with recorded event IDs. The comparison uses
+recorded outcomes, status or multiple envelope references for one recorded
+change. That last shape shows several envelopes, while their business
+meaning still depends on the application. Use `explain_execution` with a
+returned run ID to inspect the evidence.
+
+The response distinguishes one observed artifact, evidence across multiple
+artifacts, and no observed cases. Evidence across artifacts can come from
+different times within the window. When scope exceeds a read limit, narrow
+the environment or window. Missing observations and truncated samples
+remain explicit.
