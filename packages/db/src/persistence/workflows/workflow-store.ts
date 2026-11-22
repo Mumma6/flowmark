@@ -1,3 +1,8 @@
+import type {
+  BehaviorComparison,
+  BehaviorComparisonQuery,
+} from "@flowmarkdev/core"
+import { getBehaviorComparison } from "./queries/get-behavior-comparison.js"
 import { artifactMappings } from "./queries/artifact-mappings.js"
 import type {
   ArtifactMappingScope,
@@ -145,6 +150,10 @@ export interface WorkflowStoreService {
   readonly workflows: (
     projectId: string,
   ) => Effect.Effect<ReadonlyArray<WorkflowSummary>, DatabaseError>
+  readonly compareBehavior: (
+    projectId: string,
+    query: BehaviorComparisonQuery,
+  ) => Effect.Effect<BehaviorComparison, DatabaseError>
   readonly artifactMappings: (
     projectId: string,
     scope: ArtifactMappingScope,
@@ -269,6 +278,13 @@ export class WorkflowStore extends Context.Service<WorkflowStore>()(
         workflows: (projectId) =>
           provide(
             withActiveProject(projectId, getWorkflowSummaries(projectId)),
+          ),
+        compareBehavior: (projectId, query) =>
+          provide(
+            withActiveProject(
+              projectId,
+              getBehaviorComparison(projectId, query),
+            ),
           ),
         artifactMappings: (projectId, scope) =>
           provide(

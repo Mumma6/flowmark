@@ -1,5 +1,7 @@
 import type {
   ArtifactMappingScope,
+  BehaviorComparison,
+  BehaviorComparisonQuery,
   DeployedArtifactMapping,
 } from "@flowmarkdev/core"
 import type { ProcessHealth } from "@flowmarkdev/core"
@@ -63,6 +65,10 @@ export interface ProjectReadRuns {
     ProjectSnapshot["workflows"],
     Unauthorized | PersistenceError
   >
+  readonly compareBehavior: (
+    reader: ProjectReader,
+    query: BehaviorComparisonQuery,
+  ) => Effect.Effect<BehaviorComparison, Unauthorized | PersistenceError>
   readonly artifactMappings: (
     reader: ProjectReader,
     scope: ArtifactMappingScope,

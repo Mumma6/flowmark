@@ -14,7 +14,7 @@ Source inventory at staging `01cf413`, 21 November 2026. This is the baseline fo
 | Fixed project owner, diagnostic viewers and owner-published business-reader evidence                                              | API project-sharing/business-evidence features; [sharing](./project-sharing.md), [projections](./business-evidence.md)                                              |
 | Account recovery, optional email verification, password/session controls and verified email changes                               | `packages/auth`, API account features; [auth boundary](./auth-perimeter.md), [account security](./account-security.md), [email changes](./account-email-changes.md) |
 | Bounded account/project exports, erasure fencing and resumable deletion                                                           | API lifecycle/export features and DB stores; [exports](./data-exports.md), [lifecycle](./data-lifecycle.md)                                                         |
-| Delegated OAuth discovery, project grants, refresh/revocation and six bounded read-only MCP tools                                 | `packages/auth`, `packages/mcp`, server adapters; [MCP](../packages/mcp/README.md), [security audit](./agent-access-security-audit.md)                              |
+| Delegated OAuth discovery, project grants, refresh/revocation and bounded read-only MCP tools                                     | `packages/auth`, `packages/mcp`, server adapters; [MCP](../packages/mcp/README.md), [security audit](./agent-access-security-audit.md)                              |
 | Ordinary TypeScript public read client and standalone query-to-view example                                                       | `@flowmarkdev/node/read`, server `/v1/read/run` and `/v1/read/period`; [run reads](./sdk/public-run-read.md), [period reads](./sdk/public-period-read.md)           |
 | Supplied-data portable view and one locally tested MCP Apps reference-host boundary                                               | `packages/evidence-view`; [compatibility](../examples/portable-evidence/COMPATIBILITY.md)                                                                           |
 | Deterministic operation summaries, percentiles, peer comparison and cycle detection                                               | Rust `crates/flowmark-engine`, TypeScript `packages/engine`; [Engine](./engine.md)                                                                                  |
@@ -69,7 +69,9 @@ scoped runtime cases with observations and delayed settlements. See the
 [versioned tool contract](decisions/0021-runtime-execution-reads.md).
 `context_for_change` retrieves bounded candidates and cases from deployment
 receipts for an explicit repository and time window. Ticket and plan matching
-use lexical hints. The existing MCP investigation tools remain available.
+use lexical hints. `compare_behavior` compares retained run counts and
+matching cases across two deployment windows with compatible behavior revisions.
+The existing MCP investigation tools remain available.
 
 ## Planned product capabilities
 

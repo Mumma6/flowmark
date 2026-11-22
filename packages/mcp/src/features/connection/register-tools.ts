@@ -1,4 +1,8 @@
 import {
+  CompareBehaviorSchema,
+  compareBehaviorForMcp,
+} from "../workflows/compare-behavior.js"
+import {
   ContextForChangeSchema,
   contextForChangeForMcp,
 } from "../workflows/context-for-change.js"
@@ -300,6 +304,30 @@ export const registerFlowmarkTools = (
           input,
           true,
           contextForChangeForMcp(identity, input),
+          extra.mcpReq.signal,
+        ),
+      ),
+  )
+  server.registerTool(
+    "compare_behavior",
+    {
+      title: "Compare behavior",
+      description:
+        "Version 1 diagnostic read. Compare retained executions across two deployment windows of the same behavior. Returns exact recorded counts, matching execution examples, and evidence limitations.",
+      inputSchema: fromJsonSchema(
+        toJsonSchemaDocument(CompareBehaviorSchema).schema as Parameters<
+          typeof fromJsonSchema
+        >[0],
+      ),
+      annotations: { readOnlyHint: true, destructiveHint: false },
+    },
+    async (input, extra) =>
+      toolResult(
+        await runMcpTool(
+          identity,
+          input,
+          true,
+          compareBehaviorForMcp(identity, input),
           extra.mcpReq.signal,
         ),
       ),
