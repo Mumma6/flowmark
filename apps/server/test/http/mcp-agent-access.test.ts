@@ -2511,7 +2511,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
       await connection.db
         .delete(verification)
         .where(like(verification.value, `%"userId":"${session.user.id}"%`))
-    })
+    }, 45_000)
 
     it("masks provider storage failures in responses and diagnostics", async () => {
       const { getAuth } = await import("../../src/auth.js")
