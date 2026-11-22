@@ -154,7 +154,7 @@ export function AuthScreen({
             flowmark<span className="-ml-2 text-primary">.</span>
           </a>
           <span className="hidden text-[11px] text-muted-foreground lg:inline">
-            A workspace for understanding your application
+            Runtime evidence and agent access
           </span>
           <a
             href={publicConfig.documentationUrl}
@@ -175,7 +175,7 @@ export function AuthScreen({
             <p className="mt-3 text-xs leading-6 text-muted-foreground">
               {isSignUp
                 ? "Create your account, then connect the application you want to understand."
-                : "Sign in to explore your processes and pick up the evidence."}
+                : "Sign in to inspect recorded executions and manage agent access."}
             </p>
           </div>
           <form className="grid gap-5" onSubmit={onSubmit}>
@@ -299,7 +299,7 @@ export function AuthScreen({
           ) : null}
         </div>
         <p className="text-center text-[10px] leading-6 text-muted-foreground">
-          Your application owns the work. Flowmark makes it understandable.
+          Application memory for AI-native software teams.
         </p>
       </div>
     </main>
