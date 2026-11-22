@@ -5,7 +5,13 @@ import { Effect } from "effect"
 import { Database, InvalidResultQuery } from "../../database.js"
 import { DatabaseOperation } from "../../database-operation.js"
 import { runQuery } from "../../run-query.js"
-import { listRunsCountSql, listRunsSql } from "../sql/run-summaries.js"
+import {
+  EXECUTION_SEARCH_RUN_CAP,
+  executionSearchCandidateCountSql,
+  executionSearchCountSql,
+  listRunsCountSql,
+  listRunsSql,
+} from "../sql/run-summaries.js"
 import type { ListedRun, ListedRunsPage, ListRunsQuery } from "../types.js"
 
 const DEFAULT_LIMIT = 50
@@ -57,6 +63,7 @@ export const listRuns = Effect.fn("listRuns")(function* (
   const limit = Math.min(MAX_LIMIT, Math.max(1, query.limit ?? DEFAULT_LIMIT))
   const cursor = decodeCursor(query.cursor)
   const filter = {
+    executionSelector: query.executionSelector,
     expectationState: query.expectationState,
     ratioSelection: query.ratioSelection,
     resultField,
@@ -109,7 +116,7 @@ export const listRuns = Effect.fn("listRuns")(function* (
         "Expectation discovery requires a valid window of at most 90 days and page size 1–100.",
     })
   }
-  const { rows, countRow, asOf } = yield* runTransaction(
+  const { rows, countRow, asOf, total } = yield* runTransaction(
     DatabaseOperation.ListRuns,
     (use) => db.transaction(use, { isolationLevel: "repeatable read" }),
     (tx) =>
@@ -123,6 +130,38 @@ export const listRuns = Effect.fn("listRuns")(function* (
             : {}),
           asOf,
         }
+        if (query.executionSelector !== undefined) {
+          if (
+            !filter.startedAfter ||
+            !filter.startedBefore ||
+            filter.namespace !== "application"
+          ) {
+            return yield* new InvalidResultQuery({
+              message:
+                "Execution discovery requires an application run window.",
+            })
+          }
+          const [population] = yield* runQuery(DatabaseOperation.ListRuns, () =>
+            tx.execute<{ count: number }>(
+              executionSearchCandidateCountSql(projectId, scoped),
+            ),
+          )
+          if (population && population.count > EXECUTION_SEARCH_RUN_CAP) {
+            return yield* new InvalidResultQuery({
+              message:
+                "Execution search exceeds 1,000 candidate runs. Narrow the time window or select a workflow.",
+            })
+          }
+          const rows = yield* runQuery(DatabaseOperation.ListRuns, () =>
+            tx.execute<ListedRun>(listRunsSql(projectId, scoped)),
+          )
+          const [total] = yield* runQuery(DatabaseOperation.ListRuns, () =>
+            tx.execute<{ count: number }>(
+              executionSearchCountSql(projectId, scoped),
+            ),
+          )
+          return { rows, countRow: undefined, asOf, total: total?.count ?? 0 }
+        }
         const rows = yield* runQuery(DatabaseOperation.ListRuns, () =>
           tx.execute<ListedRun>(listRunsSql(projectId, scoped)),
         )
@@ -134,7 +173,7 @@ export const listRuns = Effect.fn("listRuns")(function* (
             overdueExpectations: number
           }>(listRunsCountSql(projectId, scoped)),
         )
-        return { rows, countRow, asOf, bounded }
+        return { rows, countRow, asOf, total: countRow?.count }
       }),
   )
   const page = Array.from(rows)
@@ -154,7 +193,7 @@ export const listRuns = Effect.fn("listRuns")(function* (
       : {}),
     runs,
     nextCursor: hasMore && last ? `${last.startedAt}|${last.id}` : null,
-    total: countRow?.count ?? runs.length,
+    total: total ?? runs.length,
     limit,
   } satisfies ListedRunsPage
 })

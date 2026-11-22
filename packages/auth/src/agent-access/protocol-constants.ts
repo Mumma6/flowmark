@@ -57,6 +57,8 @@ export const AGENT_ACCESS_MCP_TOOLS = [
   "get_run",
   "compare_run",
   "get_workflow_insights",
+  "find_executions",
+  "explain_execution",
 ] as const
 
 export type AgentAccessMcpToolName = (typeof AGENT_ACCESS_MCP_TOOLS)[number]
@@ -67,6 +69,8 @@ export const AGENT_ACCESS_PROJECT_SCOPED_TOOLS = [
   "get_run",
   "compare_run",
   "get_workflow_insights",
+  "find_executions",
+  "explain_execution",
 ] as const satisfies ReadonlyArray<AgentAccessMcpToolName>
 
 export const AGENT_ACCESS_QUERY_BOUNDS = {
