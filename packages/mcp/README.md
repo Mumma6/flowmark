@@ -30,6 +30,7 @@ Do not turn the reference HTTP proof into a universal vendor setup claim.
 | `compare_behavior`           | Compare two deployment windows of one behavior with counts, matching cases and explicit limits. Requires diagnostic access and `version: 1`.                 |
 | `discover_boundaries`        | Reconcile source registrations with deployment receipts and an independent inventory. Does not read executions. Requires diagnostic access and `version: 1`. |
 | `propose_observation_repair` | Choose the smallest in-policy repair for one diagnosed gap. It does not merge the proposal or add capture for a denied read.                                 |
+| `assess_coverage`            | Return discovery, fixture readiness and observed answerability for one question and window. A missing counter does not become a rate.                        |
 | `find_executions`            | Search recorded application executions by workflow, scoped reference digest, artifact or behavior. Requires diagnostic access and `version: 1`.              |
 | `explain_execution`          | Read one execution with a bounded page of observations, events, related runs, operations or settlements. Requires diagnostic access and `version: 1`.        |
 | `find_runs`                  | Run history inside an explicit `startedAfter` / `startedBefore` window of at most 31 days.                                                                   |

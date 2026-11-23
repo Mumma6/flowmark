@@ -82,6 +82,7 @@ export * from "./repository-installation.js"
 export * from "./agent-entry.js"
 export * from "./evidence-estate.js"
 export * from "./observation-repair.js"
+export * from "./coverage-assessment.js"
 
 export type {
   ProcessDefinition,

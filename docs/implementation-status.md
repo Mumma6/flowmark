@@ -78,6 +78,8 @@ not read executions.
 
 `propose_observation_repair` turns one diagnosed gap into the smallest in-policy change: reuse a trusted event, repair a mapping, add a permitted reference, or add one typed observation. A denied read, immature traffic or a restricted field adds no capture. The proposal stays on one branch and does not merge itself. Production evidence stays pending.
 
+`assess_coverage` returns discovery, fixture readiness and observed answerability as separate results for one question, release, environment and window. It joins an independent population to project-scoped evidence, counts each logical case once, and withholds a rate when the counter, sampling, support or join cannot support one. Eligible production traffic is not a CI gate.
+
 Connected repositories can check a versioned receipt question in CI against
 three persisted fixture executions. The API checks an authorized deployment
 mapping, scoped change links and the rollback control. [Fixture readiness](runtime-memory.md#check-a-repository-owned-runtime-question)

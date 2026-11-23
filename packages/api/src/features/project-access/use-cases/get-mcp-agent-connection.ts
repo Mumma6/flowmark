@@ -34,6 +34,7 @@ const MCP_TOOLS_ENABLED = [
   "compare_behavior",
   "discover_boundaries",
   "propose_observation_repair",
+  "assess_coverage",
 ] as const
 const MCP_TOOLS_PENDING = [] as const
 
