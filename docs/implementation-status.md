@@ -77,9 +77,16 @@ Connected repositories can check a versioned receipt question in CI against
 three persisted fixture executions. The API checks an authorized deployment
 mapping, scoped change links and the rollback control. [Fixture readiness](runtime-memory.md#check-a-repository-owned-runtime-question)
 
+Project owners can connect a GitHub repository and Node environment under
+explicit field, retention and overhead policy via Studio and
+`repositoryInstallation` procedures, receive a scoped deployment token and
+deterministic bootstrap PR plan, handle signed installation webhooks at
+`POST /v1/installations/github`, and verify disposable readback with a separate
+diagnostic read identity. [Repository installation](runtime-memory.md#repository-and-environment-installation-under-policy)
+
 ## Planned product capabilities
 
-Repository and environment installation, policy-driven instrumentation repairs,
+Estate discovery, policy-driven instrumentation repairs,
 population-level observed answerability and post-deploy verification remain planned. Current
 Studio includes analytics and collaboration routes slated for removal. See
 [the target surfaces](product.md) and [coverage](runtime-memory.md).
