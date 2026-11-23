@@ -82,7 +82,9 @@ explicit field, retention and overhead policy via Studio and
 `repositoryInstallation` procedures, receive a scoped deployment token and
 deterministic bootstrap PR plan, handle signed installation webhooks at
 `POST /v1/installations/github`, and verify disposable readback with a separate
-diagnostic read identity. [Repository installation](runtime-memory.md#repository-and-environment-installation-under-policy)
+diagnostic read identity. The bootstrap PR installs a Cursor planning and
+review rule plus a repository instruction that preserves unrelated guidance.
+[Repository installation](runtime-memory.md#repository-and-environment-installation-under-policy)
 
 ## Planned product capabilities
 

@@ -79,6 +79,7 @@ export type { SavedEvidenceExport } from "./saved-evidence-export.js"
 export * from "./process-health.js"
 export * from "./runtime-question.js"
 export * from "./repository-installation.js"
+export * from "./agent-entry.js"
 
 export type {
   ProcessDefinition,

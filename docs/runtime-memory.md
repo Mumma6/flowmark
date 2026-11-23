@@ -84,8 +84,11 @@ Each installation declares explicit collection policy: allowed reference
 namespaces (`kind:namespace`), retention window (1–90 days), max event byte
 budget, overhead budget (1–100 ms), rate budget, and `allowRawPayloads: false`.
 The deterministic bootstrap PR plan (`flowmark/connect-<service>-<env>`) adds
-`.flowmark/install.json`, a policy-checked Node helper, manifest script and
-disposable test without writing secret values.
+`.flowmark/install.json`, a policy-checked Node helper, manifest script,
+disposable test, a Cursor planning/review rule and a marked section in
+`AGENTS.md`. Repeating the install replaces that section and leaves the rest
+of the file in place. Cursor is the host whose rule actually runs. Other hosts
+keep the instruction and record the read as unavailable.
 
 Before eligible traffic arrives, cold-start status explicitly distinguishes
 `pending-deployment-receipt` (waiting for the first deployment attestation) from
