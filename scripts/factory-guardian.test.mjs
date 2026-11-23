@@ -3,6 +3,7 @@ import { test } from "node:test"
 import { effectFindings, inspect, regressions } from "./factory/guardian.mjs"
 
 const useCase = "packages/api/src/features/runs/use-cases/read-run.ts"
+const rule = "packages/api/src/features/runs/rules/assess-run.ts"
 const tree = (files) => new Map(Object.entries(files))
 
 test("Effect AST checks ignore comments, strings and unrelated APIs but follow aliases", () => {
@@ -75,6 +76,49 @@ test("regression comparison tolerates old debt and line shifts but rejects incre
       ),
     ).length,
     1,
+  )
+})
+
+test("flags new collection transform chains in use cases and pure rules", () => {
+  const oldChain = "const summaries = items.filter(isReady).map(toSummary)"
+  for (const file of [useCase, rule]) {
+    const before = tree({ [file]: oldChain })
+    assert.deepEqual(inspect(before, tree({ [file]: "\n" + oldChain })), [])
+    const findings = inspect(
+      before,
+      tree({
+        [file]:
+          oldChain +
+          "\nconst expanded = (items.map(toSummary)).flatMap(expand)",
+      }),
+    )
+    assert.equal(findings.length, 1)
+    assert.equal(findings[0].rule, "effect-collection-chain")
+    assert.equal(findings[0].line, 2)
+    assert.match(findings[0].message, /\.map\(\)\.flatMap\(\)/)
+  }
+})
+
+test("collection guard accepts Effect pipelines, single calls and boundary code", () => {
+  const chain = "items.filter(isReady).map(toSummary)"
+  for (const file of [
+    "apps/server/app/api/route.ts",
+    "packages/sdk/src/client/runtime.ts",
+    "packages/api/src/features/runs/adapters/run-reader.ts",
+  ]) {
+    assert.deepEqual(effectFindings(file, chain), [])
+  }
+  assert.deepEqual(
+    effectFindings(
+      rule,
+      `import { Array as A, pipe } from "effect"
+      // ${chain}
+      const example = "${chain}"
+      const ready = items.filter(isReady)
+      const evidence = pipe(items, A.filter(isReady), A.map(toSummary))
+      const ids = items.map(toSummary).join(",")`,
+    ),
+    [],
   )
 })
 

@@ -25,7 +25,9 @@ creating a PR is not permission to merge or deploy.
 4. Extract **task ID**, **title**, and a brief **public-safe** description
    (1–2 sentences on purpose — no confidential detail).
 5. Scan for unrelated files, secrets, `.env` or credential material,
-   temporary debugging code, and accidental edits.
+   temporary debugging code, and accidental edits. For TypeScript changes,
+   review the diff against [flowmark-effect](../flowmark-effect/SKILL.md),
+   including pure logic and tests.
 6. **Run `pnpm check` from the repository root** before the first push for the
    PR and before `gh pr create`. This runs Rust checks, TypeScript format/lint/typecheck/tests and production
    WASM verification; CI also has a separate PostgreSQL integration job. If it fails, fix the failure (including
