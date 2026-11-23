@@ -579,6 +579,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
           "get_workflow_insights",
           "assess_coverage",
           "list_workflows",
+          "maintain_questions",
           "propose_observation_repair",
         ].sort(),
       )
@@ -619,6 +620,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         "discover_boundaries",
         "propose_observation_repair",
         "assess_coverage",
+        "maintain_questions",
       ])
       const resourceUri = "ui://flowmark/run-evidence/v1.html"
       const uiMeta = {
@@ -1350,6 +1352,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         "get_run",
         "get_workflow_insights",
         "list_workflows",
+        "maintain_questions",
         "propose_observation_repair",
       ])
       expect(

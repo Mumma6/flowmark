@@ -35,6 +35,7 @@ const MCP_TOOLS_ENABLED = [
   "discover_boundaries",
   "propose_observation_repair",
   "assess_coverage",
+  "maintain_questions",
 ] as const
 const MCP_TOOLS_PENDING = [] as const
 

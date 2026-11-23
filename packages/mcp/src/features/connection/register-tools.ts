@@ -15,6 +15,10 @@ import {
   assessCoverageForMcp,
 } from "../workflows/assess-coverage.js"
 import {
+  MaintainQuestionSchema,
+  maintainQuestionForMcp,
+} from "../workflows/maintain-question.js"
+import {
   ContextForChangeSchema,
   contextForChangeForMcp,
 } from "../workflows/context-for-change.js"
@@ -316,6 +320,30 @@ export const registerFlowmarkTools = (
           input,
           true,
           contextForChangeForMcp(identity, input),
+          extra.mcpReq.signal,
+        ),
+      ),
+  )
+  server.registerTool(
+    "maintain_questions",
+    {
+      title: "Maintain questions",
+      description:
+        "Version 1. Re-evaluate one question after source, deployment and traffic triggers. A moved probe keeps its meaning. A semantic split creates the next revision. Repeated triggers become one repair. Waiting, a missing grant and an expired case open no instrumentation. The decision never merges.",
+      inputSchema: fromJsonSchema(
+        toJsonSchemaDocument(MaintainQuestionSchema).schema as Parameters<
+          typeof fromJsonSchema
+        >[0],
+      ),
+      annotations: { readOnlyHint: true, destructiveHint: false },
+    },
+    async (input, extra) =>
+      toolResult(
+        await runMcpTool(
+          identity,
+          input,
+          true,
+          maintainQuestionForMcp(identity, input),
           extra.mcpReq.signal,
         ),
       ),

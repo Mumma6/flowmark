@@ -80,6 +80,8 @@ not read executions.
 
 `assess_coverage` returns discovery, fixture readiness and observed answerability as separate results for one question, release, environment and window. It joins an independent population to project-scoped evidence, counts each logical case once, and withholds a rate when the counter, sampling, support or join cannot support one. Eligible production traffic is not a CI gate.
 
+`maintain_questions` re-evaluates that question when source, deployment or traffic changes. A moved probe keeps its meaning. A semantic split records the next revision and leaves earlier cases on the previous meaning. Repeated triggers for the same installation, behavior, question and revision become one repair, attached to the open feature change when that pull request is still the right place. A wait, insufficient authority, revocation or expired support opens no instrumentation. Fixture readback restores readiness. Only eligible observations on the repaired deployment restore live answerability. The fresh read contains no earlier transcript.
+
 Connected repositories can check a versioned receipt question in CI against
 three persisted fixture executions. The API checks an authorized deployment
 mapping, scoped change links and the rollback control. [Fixture readiness](runtime-memory.md#check-a-repository-owned-runtime-question)
