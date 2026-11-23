@@ -9,7 +9,7 @@
     "mobile": {
       "open": "Open navigation",
       "close": "Close navigation",
-      "title": "Explore Flowmark",
+      "title": "Flowmark",
       "description": "Application memory for AI-native software teams.",
       "label": "Mobile navigation",
       "additionalLinks": ["GitHub", "Join the waitlist"]
@@ -38,52 +38,48 @@
     "steps": [
       {
         "title": "Connect",
-        "detail": "Connect your application and give your coding agent scoped access."
+        "detail": "Connect the repository and environment. You set access and collection policy. The agent gets one installation change to review."
       },
       {
-        "title": "Observe",
-        "detail": "Capture meaningful behavior as your application runs."
+        "title": "Understand",
+        "detail": "Start from a ticket, diff, file or symbol. The agent gets the production cases that could change the patch, and what the evidence leaves open."
       },
       {
-        "title": "Remember",
-        "detail": "Keep observed paths and outcomes as structured history."
+        "title": "Improve Memory",
+        "detail": "When a consequential fact is missing, the agent adds the smallest observation in the same pull request and leaves a question the next agent can answer."
       },
       {
-        "title": "Retrieve",
-        "detail": "Let the agent read that history as it plans a change."
+        "title": "Verify Changes",
+        "detail": "The change carries the case behind its test. After release, Flowmark checks that distinction on the artifact that actually ran."
       }
     ]
   },
   "loop": {
     "eyebrow": "The Flowmark loop",
-    "heading": "What runs today informs the next change.",
+    "heading": "One agent's discovery becomes the next agent's evidence.",
     "steps": [
       {
-        "title": "Human sets intent",
-        "detail": "Define constraints and access."
+        "title": "Connect",
+        "detail": "You set the intent. Flowmark connects the repository under the policy you approve."
       },
       {
-        "title": "Agent builds",
-        "detail": "Implement, test and review."
+        "title": "Understand",
+        "detail": "The agent retrieves a real case and a contrary case before choosing the patch."
       },
       {
-        "title": "Application runs",
-        "detail": "A human merges. The change ships."
+        "title": "Improve Memory",
+        "detail": "A missing link is repaired where the application first knows the fact."
       },
       {
-        "title": "Flowmark remembers",
-        "detail": "Record what actually happened."
-      },
-      {
-        "title": "Next agent retrieves",
-        "detail": "Bring production history into the next change."
+        "title": "Verify Changes",
+        "detail": "The next release confirms the distinction, or shows that it is still open."
       }
     ],
     "returnLabel": "Back to the next build"
   },
   "agents": {
     "heading": "Runtime context for coding agents.",
-    "body": "Start with a ticket, diff, file or symbol. Your agent can read production history through MCP today. Automatic lookup for each change is in development.",
+    "body": "Start with a ticket, diff, file or symbol. Flowmark returns the cases that matter for that change, including a contrary case when one was observed, and the question that is still open.",
     "link": "Read the docs",
     "viewLabel": "Explore what a coding agent can read",
     "views": [
@@ -103,25 +99,19 @@
   },
   "coverage": {
     "heading": "Runtime memory coverage",
-    "body": "Planned coverage checks ask whether your agent has enough evidence to answer a runtime question. A tested observation is ready for traffic. An observed one has recorded real behavior.",
-    "states": [
-      "Discovered",
-      "Capture ready",
-      "Observed",
-      "Unknown",
-      "Unsupported"
-    ]
+    "body": "Every maintained question says whether the boundary is known, the fixture passed, and eligible traffic has answered it. A missing population stays unknown. Waiting does not become a rate.",
+    "states": ["Discovered", "Ready", "Observed", "Waiting", "Unsupported"]
   },
   "faq": {
     "heading": "Frequently asked questions",
     "items": [
       {
         "question": "Who maintains the observations?",
-        "answer": "Repository agents can add observations in a normal pull request today. Planned adapters will reuse existing events and help agents repair gaps as the code changes. Your team sets collection policy and approves the merge."
+        "answer": "The coding agent maintains observations in the same pull request as the change. It reuses an existing event when that event already attests the fact, and adds the smallest observation when it does not. You set collection policy and approve the merge."
       },
       {
         "question": "What is Studio for?",
-        "answer": "See what your coding agents know about runtime. Studio lets people inspect evidence and manage access. The planned setup also brings environments, integrations, policies and gaps into one place."
+        "answer": "Studio is where you connect repositories, set policy, and inspect evidence. Open a citation to see the case behind a pull request, or coverage to see a question that is waiting, stale, or unavailable. Asking Flowmark from the coding agent is the ordinary path."
       },
       {
         "question": "Can I inspect the source?",
@@ -131,7 +121,7 @@
   },
   "waitlist": {
     "heading": "Bring production memory to your next change.",
-    "intro": "Join the waitlist for automatic runtime context on your next change.",
+    "intro": "Give your coding agent the production cases its next change needs to handle.",
     "label": "Your email address",
     "placeholder": "you@company.com",
     "button": "Join the Waitlist",
@@ -167,8 +157,8 @@
       "alt": "Flowmark — Application memory for AI-native software teams",
       "brand": "flowmark.",
       "headline": "Application memory for AI-native software teams.",
-      "promise": "Give your coding agent a memory of what your application actually did in production.",
-      "caption": "Source context + runtime memory → the next change"
+      "promise": "Your agent knows the code. Flowmark remembers what actually happened.",
+      "caption": "Connect → Understand → Improve Memory → Verify Changes"
     }
   }
 }
