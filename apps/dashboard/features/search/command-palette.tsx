@@ -17,13 +17,11 @@ import {
   Compass,
   Folder,
   GitBranch,
-  LayoutDashboard,
   LifeBuoy,
-  LineChart,
+  Link2,
   Search,
   Settings,
   ShieldAlert,
-  Workflow,
 } from "lucide-react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useEffect, useState, useSyncExternalStore } from "react"
@@ -49,12 +47,9 @@ import { useProjectSearch } from "./queries"
 import { ProjectSearchResults } from "./project-search-results"
 
 const pageIcons = {
-  explore: Compass,
-  overview: LayoutDashboard,
-  workflows: Workflow,
+  connect: Link2,
   runs: GitBranch,
-  insights: LineChart,
-  issues: CircleAlert,
+  coverage: CircleAlert,
   settings: Settings,
   "setup-help": LifeBuoy,
   documentation: BookOpen,
@@ -63,7 +58,7 @@ const pageIcons = {
   "product-issue": CircleAlert,
   "private-support": LifeBuoy,
   "security-report": ShieldAlert,
-} satisfies Record<CommandPage["id"], typeof Workflow>
+} satisfies Record<CommandPage["id"], typeof Settings>
 
 const subscribe = () => () => {}
 const serverShortcut = () => "⌘K"

@@ -185,11 +185,11 @@ export function AttentionSummary({
         <p className="text-sm leading-6 text-muted-foreground">
           {failedRuns === 0
             ? "No technical failures were recorded in this window. Check confirmations and reported results separately to assess the work your application reported."
-            : "Open Issues to identify affected runs and inspect their evidence. Use Insights to check whether volume or duration changed in the same period."}
+            : "Open Coverage to see whether the question is unavailable, waiting, stale, revoked or forbidden."}
         </p>
         <div className="flex flex-wrap gap-2">
-          <ViewLink href="/issues">Investigate issues</ViewLink>
-          <ViewLink href="/insights">View trends</ViewLink>
+          <ViewLink href="/coverage">Review exceptions</ViewLink>
+          <ViewLink href="/runs">Open evidence</ViewLink>
         </div>
       </CardContent>
     </Card>

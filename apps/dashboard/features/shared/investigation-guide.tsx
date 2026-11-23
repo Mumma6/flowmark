@@ -5,22 +5,22 @@ import Link from "next/link"
 export function InvestigationGuide() {
   const paths = [
     {
-      title: "Find what needs attention",
+      title: "See why a question is unresolved",
       description:
-        "Open Issues for failed runs, missing confirmations and slower operations. Choose a period and workflow to narrow the evidence.",
-      href: "/issues",
-      action: "Investigate issues",
+        "Open Coverage for a question that is unavailable, waiting, stale, revoked or forbidden. Follow the owner action or the repair pull request.",
+      href: "/coverage",
+      action: "Review coverage",
       outcome:
-        "Leave with affected runs and evidence to investigate in your application.",
+        "Leave with the exception and a link to the owner action or repair.",
     },
     {
-      title: "Understand what changed",
+      title: "Inspect the cited evidence",
       description:
-        "Open Insights to compare volume, completion and duration with the previous period. Select a workflow to inspect its reported results.",
-      href: "/insights",
-      action: "Compare periods",
+        "Open Evidence and follow a pull-request citation under your own grant. A refreshed citation stays separate from one that expired or is unavailable.",
+      href: "/runs",
+      action: "Open evidence",
       outcome:
-        "Leave knowing which recorded measurements changed and which runs support the comparison.",
+        "Leave with the execution the citation names, or a clear reason it cannot be opened.",
     },
     {
       title: "Follow a specific execution",

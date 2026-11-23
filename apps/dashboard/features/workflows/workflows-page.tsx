@@ -85,12 +85,11 @@ export function ProjectWorkflows() {
                 <section className="rounded-xl border border-border bg-card p-5">
                   <h2 className="text-lg font-semibold">Compare performance</h2>
                   <p className="mt-3 text-base leading-7 text-muted-foreground">
-                    The directory summarizes all recorded runs. To answer what
-                    changed recently, compare two periods in Insights.
-                    Completion covers finished runs; p95 is the duration at the
-                    95th percentile.
+                    The directory summarizes all recorded runs. Unresolved
+                    questions, stale mappings and pending traffic belong in
+                    Coverage.
                   </p>
-                  <ViewLink href="/insights">Compare in Insights</ViewLink>
+                  <ViewLink href="/coverage">Review coverage</ViewLink>
                 </section>
                 <section className="rounded-xl border border-border bg-card p-5">
                   <h2 className="text-lg font-semibold">
@@ -101,7 +100,7 @@ export function ProjectWorkflows() {
                     missing confirmations. Check reported results and
                     confirmations separately, or start from a failure group.
                   </p>
-                  <ViewLink href="/issues">Investigate in Issues</ViewLink>
+                  <ViewLink href="/coverage">Review exceptions</ViewLink>
                 </section>
               </div>
             ),

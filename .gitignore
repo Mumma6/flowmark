@@ -11,6 +11,10 @@ apps/api/.next-preview/
 .source
 dist
 coverage
+!apps/dashboard/app/(dashboard)/coverage/
+!apps/dashboard/app/(dashboard)/coverage/**
+!apps/dashboard/features/coverage/
+!apps/dashboard/features/coverage/**
 .env
 .env.*
 !.env.example

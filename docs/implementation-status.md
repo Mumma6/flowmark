@@ -7,7 +7,7 @@ Source inventory at staging `01cf413`, 21 November 2026. This is the baseline fo
 | Capability                                                                                                                        | Source owner and authoritative guide                                                                                                                                |
 | --------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Node, Next.js and browser SDK; typed definitions, outcomes, reports, progress, operations, retries, continuation and expectations | `packages/sdk`, `packages/core`; [SDK](../packages/sdk/README.md), [contracts](./sdk/result-contract.md), [expectations](./sdk/expectations.md)                     |
-| Studio Explore, search, run inspector, timelines, comparisons and attention views                                                 | `apps/dashboard/features`; [Studio](../apps/dashboard/README.md)                                                                                                    |
+| Studio connections, evidence inspector, citations and coverage exceptions                                                         | `apps/dashboard/features`; [Studio](../apps/dashboard/README.md)                                                                                                    |
 | Reviewed code-owned result revisions and search-field imports                                                                     | API result-declarations feature; [definition imports](./definition-imports.md)                                                                                      |
 | Qualified reference journeys and linked execution comparisons                                                                     | API workflow use cases, DB query owners; [journeys](./reference-journeys.md), [comparisons](./linked-process-comparisons.md)                                        |
 | Private live investigations, authenticated sharing and bounded business evidence captures                                         | API/store features and Studio; [private selections](./saved-investigations.md), [shared evidence](./shared-investigations.md)                                       |
@@ -101,7 +101,7 @@ review rule plus a repository instruction that preserves unrelated guidance.
 
 ## Planned product capabilities
 
-Estate discovery, policy-driven instrumentation repairs,
-population-level observed answerability and post-deploy verification remain planned. Current
-Studio includes analytics and collaboration routes slated for removal. See
+Estate discovery remains planned. Studio now exposes connections and policy,
+the evidence inspector, and coverage exceptions. Insights, overview, attention
+and shared investigation routes redirect to coverage. See
 [the target surfaces](product.md) and [coverage](runtime-memory.md).

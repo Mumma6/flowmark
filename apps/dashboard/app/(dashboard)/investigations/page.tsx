@@ -1,1 +1,5 @@
-export { InvestigationsPage as default } from "../../../features/investigations/investigations-page"
+import { redirect } from "next/navigation"
+
+export default function InvestigationsPage() {
+  redirect("/coverage")
+}

@@ -1,1 +1,5 @@
-export { IssuesPage as default } from "../../../features/issues/issues-page"
+import { redirect } from "next/navigation"
+
+export default function IssuesPage() {
+  redirect("/coverage")
+}
