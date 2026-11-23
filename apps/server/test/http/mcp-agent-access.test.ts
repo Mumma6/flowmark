@@ -1799,6 +1799,65 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
       })
       expect(deniedContext.result?.isError).toBe(true)
       expect(deniedContext.result?.structuredContent).toBeUndefined()
+      const questionMismatch = await callTool(109, "context_for_change", {
+        ...contextScope,
+        symbols: ["applyReschedule"],
+        question: {
+          version: 1,
+          id: "payments.receipt-before-retry",
+          revision: 1,
+          text: "Did the committed receipt belong to the original payment request?",
+          scope: {
+            repository: "example/payments",
+            service: "receipt-worker",
+            workflow: "payment.reconcile",
+          },
+          behaviorId: "payment.receipt",
+          behaviorRevision: "1",
+          choices: [
+            "Retry the original payment on timeout.",
+            "Reconcile the original request with its committed provider receipt first.",
+          ],
+          eligibleUnit: "logical-request",
+          predicate: "receipt-for-same-change",
+          requestProbe: "payment.request",
+          committedReceiptProbe: "payment.receipt-committed",
+          changeNamespace: "payment.request",
+          maturity: "completed-fixture-transaction",
+          fixture: "payment-receipt-transaction",
+        },
+      })
+      expect(questionMismatch.result?.isError).toBe(true)
+      const questionContext = await callTool(110, "context_for_change", {
+        ...contextScope,
+        symbols: ["applyReschedule"],
+        question: {
+          version: 1,
+          id: "booking.receipt-link",
+          revision: 1,
+          text: "Did the committed receipt reference the same booking change?",
+          scope: { repository, service: "worker", workflow },
+          behaviorId: "booking.reschedule",
+          behaviorRevision: "1",
+          choices: [
+            "Treat the reschedule as a brand-new booking change.",
+            "Reconcile the committed receipt with the original booking change first.",
+          ],
+          eligibleUnit: "logical-request",
+          predicate: "receipt-for-same-change",
+          requestProbe: "booking-delivery",
+          committedReceiptProbe: "booking-receipt-committed",
+          changeNamespace: "booking",
+          maturity: "completed-fixture-transaction",
+          fixture: "acceptance-booking-receipt",
+        },
+      })
+      expect(questionContext.result?.structuredContent).toMatchObject({
+        questionEvidence: expect.objectContaining({
+          status: "unavailable",
+          gap: expect.objectContaining({ reason: "fixture-mapping-changed" }),
+        }),
+      })
       const parallelRun = {
         ...first,
         runId: "runtime-parallel",

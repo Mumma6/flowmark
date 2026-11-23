@@ -140,6 +140,13 @@ adjacent evidence. Ambiguity is visible when competing candidates tie or an
 artifact cannot identify a unique source location. The tool only inspects
 diff paths and rename headers and leaves patch text out of its response.
 
+An optional versioned `question` turns the read toward a supported
+distinction such as `receipt-for-same-change`. The response includes
+`questionEvidence` with a supporting case, a contrary case when observed,
+citation handles, the missing fact or link when evidence supports that
+diagnosis, and explicit scan limits. The ordinary bounded candidate list
+remains available when the field is omitted.
+
 It considers up to 12 deployment receipts and reads up to four ranked probe
 candidates. Each supported candidate can return a representative example
 and a contrasting example with recorded event IDs. The comparison uses

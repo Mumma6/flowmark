@@ -1,9 +1,17 @@
-import type { StoredRuntimeObservation } from "@flowmarkdev/core"
+import type {
+  RuntimeQuestion,
+  StoredRuntimeObservation,
+} from "@flowmarkdev/core"
 import { RuntimeQuestionCheckSchema } from "@flowmarkdev/core"
 import { Schema } from "effect"
 import { expect, it } from "vitest"
-import declaration from "../../../../examples/questions/committed-receipt.json"
-import { verifyQuestionCase } from "../../src/features/workflows/rules/assess-question-fixture.js"
+import declarationImport from "../../../../examples/questions/committed-receipt.json"
+
+const declaration = declarationImport as unknown as RuntimeQuestion
+import {
+  classifyQuestionDistinction,
+  verifyQuestionCase,
+} from "../../src/features/workflows/rules/assess-question-fixture.js"
 
 const check = Schema.decodeUnknownSync(RuntimeQuestionCheckSchema)({
   question: declaration,
@@ -77,6 +85,47 @@ it("requires unique admissible evidence at both reporting sites", () => {
     ),
   ).toMatchObject({ reason: "field-outside-fixture-policy" })
 })
+it("classifies live distinctions without a fixture case target", () => {
+  const context = {
+    allowedChangeNamespaces: check.allowedChangeNamespaces,
+    environment: mapping.environment,
+    bindingId: check.bindingId,
+    deploymentId: check.deploymentId,
+    artifactDigest: check.artifactDigest,
+    sourceRevision: check.sourceRevision,
+  }
+  expect(
+    classifyQuestionDistinction(
+      [request, receipt],
+      declaration,
+      context,
+      mapping,
+    ),
+  ).toMatchObject({
+    status: "observed",
+    distinction: "same-change",
+  })
+  expect(
+    classifyQuestionDistinction(
+      [
+        request,
+        site(declaration.committedReceiptProbe, [
+          { ...reference, digest: "hmac-sha256:" + "b".repeat(64) },
+        ]),
+      ],
+      declaration,
+      context,
+      mapping,
+    ),
+  ).toMatchObject({
+    status: "observed",
+    distinction: "different-change",
+  })
+  expect(
+    classifyQuestionDistinction([request], declaration, context, mapping),
+  ).toMatchObject({ status: "inconclusive", reason: "missing-observation" })
+})
+
 it("keeps loss, stale provenance and contradictory evidence out of verified readiness", () => {
   expect(
     verify(request, receipt, {

@@ -250,5 +250,18 @@ export {
 } from "./features/workflows/use-cases/runtime-citations.js"
 
 export { BehaviorComparisonSchema } from "@flowmarkdev/core"
-export { RuntimeQuestionCheckSchema } from "@flowmarkdev/core"
+export {
+  RuntimeQuestionCheckSchema,
+  RuntimeQuestionSchema,
+  type RuntimeQuestion,
+} from "@flowmarkdev/core"
 export { checkRuntimeQuestion } from "./features/workflows/use-cases/check-runtime-question.js"
+export {
+  classifyQuestionDistinction,
+  questionRecommendedAction,
+} from "./features/workflows/rules/assess-question-fixture.js"
+export {
+  selectQuestionEvidence,
+  type QuestionEvidenceSelection,
+  type SelectedQuestionCase,
+} from "./features/workflows/use-cases/select-question-evidence.js"

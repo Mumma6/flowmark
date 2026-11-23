@@ -1,10 +1,11 @@
 import type {
   DeployedArtifactMapping,
+  RuntimeQuestion,
   RuntimeQuestionCheck,
   StoredRuntimeObservation,
   runtimeQuestionCases,
 } from "@flowmarkdev/core"
-import { Array, pipe } from "effect"
+import { Array, Match, pipe } from "effect"
 
 type FixtureCase = (typeof runtimeQuestionCases)[number]
 type Status = "verified" | "missing" | "stale" | "failed" | "excluded"
@@ -142,4 +143,89 @@ export function verifyQuestionCase(
     return fixtureReadiness("failed", "wrong-request-distinction", fixtureCase)
   }
   return fixtureReadiness("verified", "fixture-case-verified", fixtureCase)
+}
+
+export type QuestionDistinction = Readonly<
+  | {
+      readonly status: "observed"
+      readonly distinction: "same-change" | "different-change"
+      readonly reason: string
+    }
+  | { readonly status: "inconclusive"; readonly reason: string }
+>
+
+export const questionRecommendedAction = (reason: string) =>
+  Match.value(reason).pipe(
+    Match.when("missing-change-link", () => "add-minimal-change-link" as const),
+    Match.when("missing-observation", () => "wait-or-add-observation" as const),
+    Match.when("reported-loss", () => "escalate-capture-loss" as const),
+    Match.whenOr(
+      "observation-mapping-changed",
+      "fixture-mapping-changed",
+      "stale",
+      () => "correct-source-mapping" as const,
+    ),
+    Match.whenOr(
+      "ambiguous-observation",
+      "ambiguous-change-link",
+      () => "narrow-reporting-site" as const,
+    ),
+    Match.when(
+      "field-outside-fixture-policy",
+      () => "escalate-policy" as const,
+    ),
+    Match.when("unbound-observation", () => "wait-for-binding" as const),
+    Match.orElse(() => "reuse-or-investigate" as const),
+  )
+
+/** Classify live observations against a supported runtime question. */
+export function classifyQuestionDistinction(
+  observations: ReadonlyArray<StoredRuntimeObservation>,
+  question: RuntimeQuestion,
+  input: Pick<
+    RuntimeQuestionCheck,
+    | "bindingId"
+    | "deploymentId"
+    | "artifactDigest"
+    | "sourceRevision"
+    | "allowedChangeNamespaces"
+    | "environment"
+  >,
+  mapping: Pick<DeployedArtifactMapping, "manifestDigest" | "environment">,
+): QuestionDistinction {
+  const check: RuntimeQuestionCheck = {
+    question,
+    questionId: question.id,
+    questionRevision: question.revision,
+    fixture: question.fixture,
+    allowedChangeNamespaces: input.allowedChangeNamespaces,
+    environment: input.environment,
+    bindingId: input.bindingId,
+    deploymentId: input.deploymentId,
+    artifactDigest: input.artifactDigest,
+    sourceRevision: input.sourceRevision,
+  }
+  const linked = verifyQuestionCase(check, mapping, "linked", observations)
+  if (linked.status === "verified") {
+    return {
+      status: "observed",
+      distinction: "same-change",
+      reason: linked.reason,
+    }
+  }
+  const other = verifyQuestionCase(check, mapping, "otherRequest", observations)
+  if (other.status === "verified") {
+    return {
+      status: "observed",
+      distinction: "different-change",
+      reason: other.reason,
+    }
+  }
+  const reason =
+    linked.status === "missing"
+      ? linked.reason
+      : other.status === "missing"
+        ? other.reason
+        : linked.reason
+  return { status: "inconclusive", reason }
 }

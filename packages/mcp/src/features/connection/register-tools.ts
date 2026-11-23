@@ -289,7 +289,7 @@ export const registerFlowmarkTools = (
     {
       title: "Context for change",
       description:
-        "Version 1 diagnostic read. Retrieve bounded production examples from a ticket, plan, diff, file or symbol in an authorized repository and project. Results label revision differences and uncertainty. Share the citation URL in a pull request to let authorized reviewers reopen the exact sample.",
+        "Version 1 diagnostic read. Retrieve bounded production examples from a ticket, plan, diff, file or symbol in an authorized repository and project. Optionally supply a versioned runtime question to return supporting and contrary cases for a supported distinction with gap diagnosis and citations. Results label revision differences and uncertainty. Share the citation URL in a pull request to let authorized reviewers reopen the exact sample.",
       inputSchema: fromJsonSchema(
         toJsonSchemaDocument(ContextForChangeSchema).schema as Parameters<
           typeof fromJsonSchema
