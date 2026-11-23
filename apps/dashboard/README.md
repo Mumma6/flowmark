@@ -1,12 +1,10 @@
 # Flowmark Studio
 
-The human control and evidence inspection surface for application memory. The [product definition](../../docs/product.md#the-smallest-useful-studio) owns the target. The following documents the existing application. It starts in Explore: select a process,
-search its execution evidence, inspect a run and return to the same filters.
+The human control and evidence inspection surface for application memory. The [product definition](../../docs/product.md#the-smallest-useful-studio) owns the target. Primary navigation is Connections, Evidence and Coverage. Evidence reuses the run inspector: open a cited execution under the current grant and return to the same filters.
 The package name remains `dashboard`. Hosting and domains keep their existing
 configuration.
 
-Private live investigations, authenticated sharing and business-only evidence
-captures are implemented. Capture admission and physical cleanup have separate
+Shared investigation and analytics routes redirect to Coverage. Capture admission and physical cleanup have separate
 operational gates. Connect supports setup, consent and own-connection revocation;
 copying instructions alone never establishes a connection. Connect shows the
 MCP endpoint when this deployment returns protected-resource metadata, including
@@ -49,10 +47,10 @@ features (`auth`, `platform`, `runs` and `reporting`).
   Failed reads and empty filtered results remain distinct. When evidence arrives,
   the existing polling restores the normal workspace with execution evidence
   before period analytics; no completion gate or celebration is added.
-- **Overview (`/overview`):** four seven-day execution metrics from `project.intelligence`,
-  all-recorded workflow summaries, failures within the latest-100 snapshot,
-  five recent runs with reported results, 30-day trend charts, observed-change
-  evidence and all-recorded diagnostics. Populations are labelled separately.
+- **Coverage (`/coverage`):** unavailable, waiting, stale, revoked and forbidden,
+  using the same words as an agent read. A valid repair link opens the owning
+  pull request. Revoked and forbidden access return to Connections and show no case.
+  `/insights`, `/issues`, `/overview` and `/investigations` redirect here.
 - **Workflows:** namespace/search/sort controls and name-prefix groups under one
   table header; 12 workflow rows per page. Summary counts are all-recorded.
 - **Workflow detail:** all-recorded execution summary, full server-paginated run
@@ -82,8 +80,8 @@ features (`auth`, `platform`, `runs` and `reporting`).
   contract, and exact enabled business references come from `search.project`
   for the selected project. References match configured keys exactly; other
   property values stay unsearchable.
-- **Account and workspace:** the shared Sheet holds navigation to history,
-  overview, Connect, settings and the setup guide, alongside appearance and sign-out.
+- **Account and workspace:** the shared Sheet holds Connections, Evidence,
+  Coverage, settings and the setup guide, alongside appearance and sign-out.
   Project loading failures show retry feedback rather than an empty account.
 - **Onboarding:** three steps cover project creation, saving the ingestion key
   and obtaining AI-assisted or manual SDK instructions. It does not query telemetry
@@ -107,7 +105,7 @@ See [Flowmark design system](../../docs/design-system.md) for typography, spacin
 color/status meanings, ownership and data-scope rules. Use Tailwind utilities,
 semantic theme variables and shared `@flowmark/ui` controls. Dashboard and harness
 use Tailwind 3; web/docs use Tailwind 4. Recharts composes through shared chart
-primitives. Studio uses a top bar and horizontal Explore/Processes/Insights/Attention
+primitives. Studio uses a top bar and horizontal Connections/Evidence/Coverage
 navigation. The account Sheet uses Base UI focus management. Theme
 preferences include system/light/dark with dark as the default.
 

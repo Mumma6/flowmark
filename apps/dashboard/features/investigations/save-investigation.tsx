@@ -97,8 +97,7 @@ function SaveForm({
       )}
       {save.data && (
         <p role="status" className="text-sm">
-          Saved privately.{" "}
-          <ViewLink href="/investigations">Open investigations</ViewLink>
+          Saved privately. <ViewLink href="/coverage">Review coverage</ViewLink>
         </p>
       )}
     </section>

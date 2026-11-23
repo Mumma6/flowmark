@@ -1,1 +1,5 @@
-export { InsightsPage as default } from "../../../features/insights/insights-page"
+import { redirect } from "next/navigation"
+
+export default function InsightsPage() {
+  redirect("/coverage")
+}

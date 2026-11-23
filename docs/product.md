@@ -47,4 +47,4 @@ An answer names its project/environment, artifact, definition revision, time bou
 
 Human intent → source context → change-scoped runtime cases → implementation and observation maintenance → tests and AI review → human merge → deployment → observed cases and gaps for the next change.
 
-The [agent operating model](agent-workflow.md) defines onboarding and daily use. The [runtime memory contract](runtime-memory.md) defines evidence and coverage. The [implementation inventory](implementation-status.md) distinguishes the current MCP reads, including coverage assessment, from Studio presentation that is still planned.
+The [agent operating model](agent-workflow.md) defines onboarding and daily use. The [runtime memory contract](runtime-memory.md) defines evidence and coverage. The [implementation inventory](implementation-status.md) distinguishes the current MCP reads from Studio, where a person reviews connections, cited evidence and coverage exceptions.

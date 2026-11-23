@@ -1,1 +1,5 @@
-export { DashboardOverview as default } from "../../../features/overview/overview-page"
+import { redirect } from "next/navigation"
+
+export default function OverviewPage() {
+  redirect("/coverage")
+}

@@ -110,8 +110,8 @@ function AuthorizedSharedQuestion({
           >
             Retry shared question
           </Button>
-          <a className="underline" href="/investigations">
-            Back to investigations
+          <a className="underline" href="/coverage">
+            Back to coverage
           </a>
         </AlertDescription>
       </Alert>
@@ -136,8 +136,8 @@ function AuthorizedSharedQuestion({
       <Button disabled={open.isPending} onClick={() => open.mutate()}>
         {open.isPending ? "Checking access…" : "Open live evidence"}
       </Button>
-      <a className="text-sm underline" href="/investigations">
-        Back to investigations
+      <a className="text-sm underline" href="/coverage">
+        Back to coverage
       </a>
     </section>
   )

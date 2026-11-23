@@ -34,18 +34,19 @@ export function RuntimeCitation() {
       <DataState pending={citation.isLoading} error={citation.error} />
       {result?.status === "expired-or-invalid" && (
         <p>
-          This citation has expired or is invalid. Ask the agent for a fresh
-          citation.
+          Expired. This citation is no longer valid. Ask the agent for a fresh
+          citation. No production case is shown.
         </p>
       )}
       {result?.status === "evidence-unavailable" && (
         <p>
-          Some cited evidence is no longer available. Ask the agent for a fresh
-          citation.
+          Unavailable. Some cited evidence can no longer be opened. Ask the
+          agent for a fresh citation.
         </p>
       )}
       {result?.status === "exact" && !citation.error && (
         <>
+          <p>Refreshed under your current grant.</p>
           <div className="grid gap-1 text-sm text-muted-foreground">
             <p>
               {result.environment} · {result.probe.probeId}
