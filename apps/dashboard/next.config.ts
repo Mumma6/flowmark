@@ -1,6 +1,15 @@
 import type { NextConfig } from "next"
 
 const nextConfig: NextConfig = {
+  async redirects() {
+    return [
+      {
+        source: "/coverage",
+        destination: "/coverage-exceptions",
+        permanent: false,
+      },
+    ]
+  },
   async headers() {
     return [
       ...["/invitations/:path*", "/sign-in", "/sign-up"].map((source) => ({
