@@ -10,11 +10,10 @@ target
 .vercel
 .source
 dist
-coverage
-!apps/dashboard/app/(dashboard)/coverage/
-!apps/dashboard/app/(dashboard)/coverage/**
-!apps/dashboard/features/coverage/
-!apps/dashboard/features/coverage/**
+# Only the repository-root coverage report. A bare "coverage" pattern also
+# drops apps/dashboard/features/coverage, and Vercel does not honor the
+# gitignore exceptions that keep that Studio feature in git.
+/coverage
 .env
 .env.*
 !.env.example
