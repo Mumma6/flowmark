@@ -22,22 +22,22 @@ When the distinction matters to future changes, identify the boundary that can a
 
 For **self-service booking rescheduling**, the human specifies when the old slot may be released. The coding agent owns the following handoff.
 
-| Step                     | What Flowmark contributes                                                                                                              |
-| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
-| 1. Read the plan         | Identify consequential unanswered questions. Leave product promises such as when a slot may be released with the human.                |
-| 2. Inspect source        | Map booking handlers, slot ownership, message and confirmation consumers to candidate behaviors and deployed artifacts.                |
-| 3. Retrieve history      | Resolve change context without a workflow name. Return matching or adjacent booking cases with provenance.                             |
-| 4. Design                | Supply a normal move, redelivery, legitimate second change and delayed response when observed. Make absent cases explicit.             |
-| 5. Name new questions    | Version questions about commitment, retry identity and confirmation. Start the new self-service path with zero production history.     |
-| 6. Implement             | Use the cases to choose a scoped change identity and test the human's required guarantee.                                              |
-| 7. Maintain observations | Reuse an outbox/worker event. Add the smallest typed observation where an unrecorded consequential fact first becomes known.           |
-| 8. Test                  | Check results and capture through persisted authorized reads, including rollback, duplicate envelopes and legitimate repeated changes. |
-| 9. AI review             | Verify mappings, counterexamples, field policy, independent denominators and evidence limits.                                          |
-| 10. Open the PR          | Attach safe citations, the decision they influenced, capture delta and readiness. Mark live evidence pending.                          |
-| 11. Human merge          | Review the normal feature PR. Request a separate decision only for policy expansion or missing intent.                                 |
-| 12. Deploy               | Bind the emitted manifest to the active artifact and environment, including split traffic or rollback.                                 |
-| 13. Observe              | Reconcile mature eligible changes and confirmations. Distinguish waiting, known loss, unresolved links and unsupported questions.      |
-| 14. Next change          | A fresh agent retrieves the newly observed cases and verified gaps through the same interface.                                         |
+| Step                     | What Flowmark contributes                                                                                                                                                                                                                        |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1. Read the plan         | Identify consequential unanswered questions. Leave product promises such as when a slot may be released with the human.                                                                                                                          |
+| 2. Inspect source        | Map booking handlers, slot ownership, message and confirmation consumers to candidate behaviors and deployed artifacts.                                                                                                                          |
+| 3. Retrieve history      | Resolve change context without a workflow name. Return matching or adjacent booking cases with provenance.                                                                                                                                       |
+| 4. Design                | Supply a normal move, redelivery, legitimate second change and delayed response when observed. Make absent cases explicit.                                                                                                                       |
+| 5. Name new questions    | Version questions about commitment, retry identity and confirmation. Start the new self-service path with zero production history.                                                                                                               |
+| 6. Implement             | Use the cases to choose a scoped change identity and test the human's required guarantee.                                                                                                                                                        |
+| 7. Maintain observations | Reuse an outbox/worker event. Add the smallest typed observation where an unrecorded consequential fact first becomes known.                                                                                                                     |
+| 8. Test                  | Check results and capture through persisted authorized reads, including rollback, duplicate envelopes and legitimate repeated changes.                                                                                                           |
+| 9. AI review             | Verify mappings, counterexamples, field policy, independent denominators and evidence limits.                                                                                                                                                    |
+| 10. Open the PR          | Attach the decision, intended guarantee, ordinary test, safe citation, contrary case and missing evidence. Protected identifiers stay out of the pull request. An expired or denied citation states that limitation. Mark live evidence pending. |
+| 11. Human merge          | Review the normal feature PR. Request a separate decision only for policy expansion or missing intent.                                                                                                                                           |
+| 12. Deploy               | Bind the emitted manifest to the active artifact and environment, including split traffic or rollback.                                                                                                                                           |
+| 13. Observe              | Reconcile mature eligible changes and confirmations. Distinguish waiting, known loss, unresolved links and unsupported questions.                                                                                                                |
+| 14. Next change          | A fresh agent retrieves the newly observed cases and verified gaps through the same interface.                                                                                                                                                   |
 
 ## Existing application onboarding
 

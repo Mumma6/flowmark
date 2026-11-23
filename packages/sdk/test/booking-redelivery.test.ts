@@ -1,6 +1,9 @@
 import assert from "node:assert/strict"
 import { describe, expect, it } from "vitest"
-import { recordBookingRedeliveries } from "../../../examples/booking-redelivery.js"
+import {
+  recordBookingRedeliveries,
+  summarizeBookingRedeliveries,
+} from "../../../examples/booking-redelivery.js"
 import { createFlowmarkWithTransport, MemoryTransport } from "../src/index.js"
 
 async function capture(key: Parameters<typeof recordBookingRedeliveries>[1]) {
@@ -71,6 +74,13 @@ describe("booking redelivery evidence", () => {
       },
     ])
     assertExactlyOneConfirmationPerChange(first)
+    expect(summarizeBookingRedeliveries(second)).toEqual({
+      synthetic: true,
+      suppressions: 1,
+      intents: 2,
+      acceptances: 2,
+      recipientDelivery: "unknown",
+    })
   })
 
   it.each([
@@ -86,5 +96,9 @@ describe("booking redelivery evidence", () => {
     expect(() => assertExactlyOneConfirmationPerChange(events)).toThrow(
       assert.AssertionError,
     )
+    expect(summarizeBookingRedeliveries(events)).toMatchObject({
+      synthetic: true,
+      recipientDelivery: "unknown",
+    })
   })
 })

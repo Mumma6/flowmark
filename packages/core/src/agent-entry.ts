@@ -206,6 +206,8 @@ export function renderAgentEntryInstruction(scope: AgentEntryScope): string {
     "",
     "Planning starts from the ticket. Review starts from the diff. When retained runtime evidence could change the decision, call `context_for_change` with this repository and project. Expand a cited case with `explain_execution` and the returned run id. Carry only the citation URL and the sanitized decision summary into the pull request.",
     "",
+    "Pair the decision and the intended guarantee with the ordinary regression test, the citation, one contrary case and any missing evidence. Leave protected payloads and identifiers out of the pull request. Reopen a citation under the reviewer's own grant. An expired or denied citation states that limitation and carries no case. Label every synthetic execution as synthetic. Test expectations come from the application intent. An observed bug can justify a test that asserts the opposite behavior.",
+    "",
     "Record one state:",
     "- `checked` — the tool call ran under the current grant.",
     "- `deliberately-skipped` — a docs-only change, or evidence cannot change the patch.",

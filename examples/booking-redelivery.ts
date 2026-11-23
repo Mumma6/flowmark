@@ -28,3 +28,31 @@ export function recordBookingRedeliveries(
     flow.done({ outcome: "confirmation-sent" })
   })
 }
+
+const text = (value: unknown) => (typeof value === "string" ? value : undefined)
+
+export function summarizeBookingRedeliveries(
+  events: readonly {
+    readonly changeId?: unknown
+    readonly outcome?: unknown
+    readonly synthetic?: unknown
+  }[],
+) {
+  const changeIds = events.reduce<string[]>((ids, event) => {
+    const changeId = text(event.changeId)
+    return changeId !== undefined && !ids.includes(changeId)
+      ? [...ids, changeId]
+      : ids
+  }, [])
+  return {
+    synthetic: events.every((event) => event.synthetic === true),
+    suppressions: events.filter(
+      (event) => text(event.outcome) === "duplicate-suppressed",
+    ).length,
+    intents: changeIds.length,
+    acceptances: events.filter(
+      (event) => text(event.outcome) === "confirmation-sent",
+    ).length,
+    recipientDelivery: "unknown" as const,
+  }
+}
