@@ -1,4 +1,5 @@
 import { createHash, randomBytes, randomUUID } from "node:crypto"
+import { Effect } from "effect"
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest"
 import {
   createDatabase,
@@ -8,7 +9,11 @@ import {
   repositoryInstallations,
   workspaces,
 } from "@flowmark/db"
-import { hashApiKey } from "@flowmark/db/persistence"
+import {
+  createOwnedProject,
+  Database,
+  hashApiKey,
+} from "@flowmark/db/persistence"
 import {
   createFlowmark,
   createRuntimeObservationEmitter,
@@ -16,6 +21,7 @@ import {
 import { POST as deployment } from "../../app/v1/deployments/route"
 import { POST as ingest } from "../../app/v1/events/route"
 import { POST as githubWebhook } from "../../app/v1/installations/github/route"
+import { getAuth } from "../../src/auth"
 import { appRouter } from "../../src/adapters/trpc/router"
 
 describe.skipIf(!process.env.TEST_DATABASE_URL)(
@@ -229,6 +235,142 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         }),
       )
       expect([401, 503]).toContain(response.status)
+    })
+  },
+)
+
+describe.skipIf(!process.env.TEST_DATABASE_URL)(
+  "repository installation bootstrap preparation",
+  () => {
+    let connection: ReturnType<typeof createDatabase>
+    const permissions = {
+      contents: "write" as const,
+      pullRequests: "write" as const,
+      metadata: "read" as const,
+    }
+    const caller = (cookie?: string) =>
+      appRouter.createCaller({
+        request: new Request("http://localhost:3001/api/trpc", {
+          headers: {
+            origin: "http://localhost:3001",
+            ...(cookie ? { cookie } : {}),
+          },
+        }),
+      })
+
+    beforeAll(() => {
+      vi.stubEnv("DATABASE_URL", process.env.TEST_DATABASE_URL!)
+      connection = createDatabase(process.env.TEST_DATABASE_URL!)
+    })
+
+    afterAll(async () => {
+      await connection.close()
+      vi.unstubAllEnvs()
+    })
+
+    it("returns the file plan and stores no pull request when the host is unconfigured", async () => {
+      const auth = await Effect.runPromise(getAuth())
+      const context = await auth.$context
+      const email = `install-${randomUUID()}@example.test`
+      const password = `${randomUUID()}${randomUUID()}`
+      const created = await context.internalAdapter.createUser(
+        {
+          email,
+          name: "Install owner",
+          emailVerified: true,
+        },
+        { method: "email-password" },
+      )
+      const hash = await context.password.hash(password)
+      await context.internalAdapter.linkAccount({
+        userId: created.id,
+        providerId: "credential",
+        accountId: created.id,
+        password: hash,
+      })
+      const signedIn = await auth.handler(
+        new Request("http://localhost:3001/api/auth/sign-in/email", {
+          method: "POST",
+          headers: {
+            origin: "http://localhost:3001",
+            "content-type": "application/json",
+          },
+          body: JSON.stringify({ email, password }),
+        }),
+      )
+      expect(signedIn.status).toBe(200)
+      const cookie = signedIn.headers
+        .getSetCookie()
+        .map((value) => value.split(";")[0])
+        .join("; ")
+      const owned = await Effect.runPromise(
+        createOwnedProject(created.id, {
+          workspace: "Installation bootstrap",
+          project: "Booking service",
+        }).pipe(Effect.provideService(Database, connection.db)),
+      )
+      const api = caller(cookie)
+      const connected = await api.repositoryInstallation.connect({
+        projectId: owned.projectId,
+        host: "github",
+        runtime: "node",
+        repository: "example/bookings",
+        service: "worker",
+        environment: "staging",
+        externalInstallationId: "gh-local-1",
+        policy: {
+          allowedNamespaces: [
+            { kind: "entity", namespace: "booking" },
+            { kind: "change", namespace: "reschedule" },
+          ],
+          retentionDays: 30,
+          maxEventBytes: 16_384,
+          maxOverheadMs: 10,
+          maxEventsPerMinute: 600,
+          allowRawPayloads: false,
+        },
+      })
+      expect(connected.deploymentToken.startsWith("fmd_")).toBe(true)
+      const prepared = await api.repositoryInstallation.prepareBootstrapPr({
+        projectId: owned.projectId,
+        installationId: connected.installation.id,
+        apiOrigin: "https://api.flowmark.test",
+        permissions,
+      })
+      expect(prepared.status).toBe("pr-not-opened")
+      if (prepared.status !== "pr-not-opened") {
+        return
+      }
+      expect(prepared.installation.bootstrapPr).toBeNull()
+      expect(prepared.plan.files.length).toBeGreaterThan(0)
+      expect(
+        prepared.plan.files
+          .map((file) => file.content)
+          .join("\n")
+          .includes(connected.deploymentToken),
+      ).toBe(false)
+
+      await expect(
+        caller().repositoryInstallation.prepareBootstrapPr({
+          projectId: owned.projectId,
+          installationId: connected.installation.id,
+          apiOrigin: "https://api.flowmark.test",
+          permissions,
+        }),
+      ).rejects.toMatchObject({ code: "UNAUTHORIZED" })
+
+      await api.repositoryInstallation.revoke({
+        projectId: owned.projectId,
+        installationId: connected.installation.id,
+      })
+      await expect(
+        api.repositoryInstallation.prepareBootstrapPr({
+          projectId: owned.projectId,
+          installationId: connected.installation.id,
+          apiOrigin: "https://api.flowmark.test",
+          permissions,
+        }),
+      ).rejects.toMatchObject({ code: "FORBIDDEN" })
     })
   },
 )

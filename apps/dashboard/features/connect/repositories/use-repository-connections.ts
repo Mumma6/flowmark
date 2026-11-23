@@ -3,11 +3,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
 import { useTRPC } from "../../platform/api-trpc"
+import { useApiOrigin } from "../../platform/runtime-config"
 import { useProject } from "../../projects/project-context"
 import {
   buildRepositoryConnectPayload,
   defaultRepositoryConnectDraft,
-  installationBootstrapBranch,
+  installationBootstrapView,
+  repositoryWriterPermissions,
+  type InstallationBootstrapView,
   type RepositoryConnectFormDraft,
 } from "./repository-connection-model"
 
@@ -16,15 +19,14 @@ export interface ConnectReceipt {
   readonly repository: string
   readonly environment: string
   readonly deploymentToken: string
-  readonly bootstrapBranch: string
-  readonly pullRequestUrl: string | null
-  readonly pullRequestNumber: number | null
+  readonly bootstrap: InstallationBootstrapView
 }
 
 export function useRepositoryConnections() {
   const trpc = useTRPC()
   const queryClient = useQueryClient()
   const { current } = useProject()
+  const apiOrigin = useApiOrigin()
   const projectId = current?.id ?? null
 
   const list = useQuery({
@@ -36,6 +38,9 @@ export function useRepositoryConnections() {
 
   const connectMutation = useMutation(
     trpc.repositoryInstallation.connect.mutationOptions(),
+  )
+  const prepareMutation = useMutation(
+    trpc.repositoryInstallation.prepareBootstrapPr.mutationOptions(),
   )
   const revokeMutation = useMutation(
     trpc.repositoryInstallation.revoke.mutationOptions(),
@@ -68,7 +73,7 @@ export function useRepositoryConnections() {
   }
 
   const submitConnect = async () => {
-    if (!projectId || connectMutation.isPending) {
+    if (!projectId || connectMutation.isPending || prepareMutation.isPending) {
       return
     }
     const built = buildRepositoryConnectPayload(projectId, draft)
@@ -79,19 +84,30 @@ export function useRepositoryConnections() {
     setFormError(null)
     try {
       const created = await connectMutation.mutateAsync(built.payload)
+      let bootstrap: InstallationBootstrapView
+      try {
+        const prepared = await prepareMutation.mutateAsync({
+          projectId,
+          installationId: created.installation.id,
+          apiOrigin,
+          permissions: repositoryWriterPermissions,
+        })
+        bootstrap = installationBootstrapView(prepared)
+      } catch (error) {
+        bootstrap = {
+          status: "not-prepared",
+          detail:
+            error instanceof Error
+              ? error.message
+              : "The installation pull request could not be prepared.",
+        }
+      }
       setReceipt({
         installationId: created.installation.id,
         repository: created.installation.repository,
         environment: created.installation.environment,
         deploymentToken: created.deploymentToken,
-        bootstrapBranch:
-          created.installation.bootstrapPr?.branch ??
-          installationBootstrapBranch(
-            created.installation.service,
-            created.installation.environment,
-          ),
-        pullRequestUrl: created.installation.bootstrapPr?.url ?? null,
-        pullRequestNumber: created.installation.bootstrapPr?.number ?? null,
+        bootstrap,
       })
       setCopiedToken(false)
       setDraft(defaultRepositoryConnectDraft)
@@ -152,7 +168,7 @@ export function useRepositoryConnections() {
     draft,
     updateDraft,
     formError,
-    connectPending: connectMutation.isPending,
+    connectPending: connectMutation.isPending || prepareMutation.isPending,
     submitConnect,
     receipt,
     dismissReceipt: () => {
