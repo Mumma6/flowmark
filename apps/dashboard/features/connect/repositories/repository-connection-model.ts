@@ -1,6 +1,5 @@
 import { Array as EffectArray, Match, pipe, Result, Schema } from "effect"
 import {
-  bootstrapBranchName,
   describeColdStartState,
   RepositoryInstallationCreateSchema,
   type RepositoryAllowedNamespace,
@@ -109,11 +108,73 @@ export function installationColdStartSummary(
   return describeColdStartState(coldStartStatus).pending
 }
 
-export function installationBootstrapBranch(
-  service: string,
-  environment: string,
-): string {
-  return bootstrapBranchName(service, environment)
+export const repositoryWriterPermissions = {
+  contents: "write",
+  pullRequests: "write",
+  metadata: "read",
+} as const
+
+export type InstallationBootstrapView =
+  | {
+      readonly status: "opened"
+      readonly branch: string
+      readonly number: number
+      readonly url: string
+    }
+  | {
+      readonly status: "pr-not-opened"
+      readonly detail: string
+      readonly files: readonly {
+        readonly path: string
+        readonly content: string
+      }[]
+    }
+  | {
+      readonly status: "not-prepared"
+      readonly detail: string
+    }
+
+/** Show a branch only when the host returned a pull request. */
+export function installationBootstrapView(preparation: {
+  readonly status: "opened" | "pr-not-opened"
+  readonly detail?: string
+  readonly pullRequest?: {
+    readonly branch: string
+    readonly number: number
+    readonly url: string
+  }
+  readonly plan?: {
+    readonly files: readonly {
+      readonly path: string
+      readonly content: string
+    }[]
+  }
+}): InstallationBootstrapView {
+  return Match.value(preparation.status).pipe(
+    Match.when("opened", () => {
+      const pullRequest = preparation.pullRequest
+      if (!pullRequest) {
+        return {
+          status: "not-prepared" as const,
+          detail: "The host did not return a pull request.",
+        }
+      }
+      return {
+        status: "opened" as const,
+        branch: pullRequest.branch,
+        number: pullRequest.number,
+        url: pullRequest.url,
+      }
+    }),
+    Match.when("pr-not-opened", () => ({
+      status: "pr-not-opened" as const,
+      detail:
+        preparation.detail ??
+        "The repository host did not open a pull request.",
+      files: preparation.plan?.files ?? [],
+    })),
+    Match.exhaustive,
+  )
 }
 
 export type BuildConnectPayloadResult =

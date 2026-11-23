@@ -8,10 +8,20 @@ import {
   containsSecretMaterial,
   describeColdStartState,
   evaluateWriterPermissions,
+  type BootstrapPullRequestPlan,
   type RepositoryCollectionPolicy,
 } from "@flowmarkdev/core"
 import type { StoredRepositoryInstallation } from "@flowmark/db/persistence"
-import { Array, Context, Effect, Layer, Match, Option, Schema } from "effect"
+import {
+  Array,
+  Context,
+  Effect,
+  Layer,
+  Match,
+  Option,
+  Result,
+  Schema,
+} from "effect"
 import { InvalidInput } from "../../../errors.js"
 import { AuthorizeProject } from "../../project-access/use-cases/authorize-project.js"
 import { Deployments } from "../../runtime-deployment/use-cases/deployments.js"
@@ -54,6 +64,26 @@ const presentInstallation = (row: StoredRepositoryInstallation) => ({
 })
 
 export type RepositoryInstallationView = ReturnType<typeof presentInstallation>
+
+export type BootstrapPreparation =
+  | {
+      readonly status: "opened"
+      readonly installation: RepositoryInstallationView
+      readonly pullRequest: {
+        readonly branch: string
+        readonly number: number
+        readonly url: string
+        readonly headSha: string
+      }
+      readonly plan: BootstrapPullRequestPlan
+    }
+  | {
+      readonly status: "pr-not-opened"
+      readonly installation: RepositoryInstallationView
+      readonly plan: BootstrapPullRequestPlan
+      readonly reason: "host-unconfigured"
+      readonly detail: string
+    }
 
 const namespaceAllowed = (
   policy: RepositoryCollectionPolicy,
@@ -135,28 +165,46 @@ export class RepositoryInstallations extends Context.Service<RepositoryInstallat
             detail: "Bootstrap PR plan contained prohibited secret material.",
           })
         }
-        const pullRequest = yield* hostAdapter.upsertBootstrapPullRequest({
-          externalInstallationId: installation.externalInstallationId,
-          repository: installation.repository,
-          branch: plan.branch,
-          title: plan.title,
-          body: plan.body,
-          files: plan.files,
-          permissions: input.permissions,
+        const attempted = yield* hostAdapter
+          .upsertBootstrapPullRequest({
+            externalInstallationId: installation.externalInstallationId,
+            repository: installation.repository,
+            branch: plan.branch,
+            title: plan.title,
+            body: plan.body,
+            files: plan.files,
+            permissions: input.permissions,
+          })
+          .pipe(Effect.result)
+        return yield* Result.match(attempted, {
+          onFailure: (error) =>
+            error.reason === "host-unconfigured"
+              ? Effect.succeed({
+                  status: "pr-not-opened" as const,
+                  installation: presentInstallation(installation),
+                  plan,
+                  reason: error.reason,
+                  detail: error.detail,
+                })
+              : Effect.fail(error),
+          onSuccess: (pullRequest) =>
+            Effect.gen(function* () {
+              const updated = yield* repo.recordPr({
+                projectId: installation.projectId,
+                installationId: installation.id,
+                branch: pullRequest.branch,
+                number: pullRequest.number,
+                url: pullRequest.url,
+                headSha: pullRequest.headSha,
+              })
+              return {
+                status: "opened" as const,
+                installation: presentInstallation(updated ?? installation),
+                pullRequest,
+                plan,
+              }
+            }),
         })
-        const updated = yield* repo.recordPr({
-          projectId: installation.projectId,
-          installationId: installation.id,
-          branch: pullRequest.branch,
-          number: pullRequest.number,
-          url: pullRequest.url,
-          headSha: pullRequest.headSha,
-        })
-        return {
-          installation: presentInstallation(updated ?? installation),
-          pullRequest,
-          plan,
-        }
       })
 
       return {
@@ -357,15 +405,21 @@ export class RepositoryInstallations extends Context.Service<RepositoryInstallat
               Effect.gen(function* () {
                 const mcpOrigin =
                   input.mcpOrigin ?? new URL("/mcp", input.apiOrigin).href
-                const result = yield* runBootstrapPr(installation, {
+                const prepared = yield* runBootstrapPr(installation, {
                   apiOrigin: input.apiOrigin,
                   mcpOrigin,
                   permissions: event.permissions,
                 })
+                if (prepared.status === "pr-not-opened") {
+                  return yield* new RepositoryInstallationRejected({
+                    reason: prepared.reason,
+                    detail: prepared.detail,
+                  })
+                }
                 return {
                   disposition: "processed" as const,
-                  installation: result.installation,
-                  pullRequest: result.pullRequest,
+                  installation: prepared.installation,
+                  pullRequest: prepared.pullRequest,
                 }
               }),
             ),

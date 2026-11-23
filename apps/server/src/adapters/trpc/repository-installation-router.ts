@@ -1,4 +1,5 @@
 import {
+  RepositoryInstallationBootstrapInputSchema,
   RepositoryInstallationCreateSchema,
   RepositoryInstallationRevokeSchema,
   RepositoryInstallationVerifyReadbackSchema,
@@ -49,6 +50,17 @@ export const repositoryInstallationRouter = t.router({
       readQuery(ctx.request, (reader) =>
         Effect.flatMap(RepositoryInstallations, (installations) =>
           installations.verifyDisposableReadback(reader, input),
+        ),
+      ),
+    ),
+  prepareBootstrapPr: t.procedure
+    .input(
+      Schema.toStandardSchemaV1(RepositoryInstallationBootstrapInputSchema),
+    )
+    .mutation(({ ctx, input }) =>
+      sessionQuery(ctx.request, (userId) =>
+        Effect.flatMap(RepositoryInstallations, (installations) =>
+          installations.prepareBootstrapPr(userId, input),
         ),
       ),
     ),

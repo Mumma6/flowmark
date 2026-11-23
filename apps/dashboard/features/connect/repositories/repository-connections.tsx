@@ -97,24 +97,43 @@ export function RepositoryConnections() {
                 </Button>
               </div>
               <p className="text-muted-foreground">
-                Bootstrap PR branch:{" "}
-                <code className="text-foreground">
-                  {receipt.bootstrapBranch}
-                </code>
-                {receipt.pullRequestUrl ? (
+                {receipt.bootstrap.status === "opened" ? (
                   <>
-                    {" · "}
+                    Bootstrap pull request:{" "}
                     <a
-                      href={receipt.pullRequestUrl}
+                      href={receipt.bootstrap.url}
                       target="_blank"
                       rel="noreferrer"
                       className="text-primary underline underline-offset-4"
                     >
-                      Open PR #{receipt.pullRequestNumber}
+                      #{receipt.bootstrap.number} ({receipt.bootstrap.branch})
                     </a>
                   </>
-                ) : null}
+                ) : receipt.bootstrap.status === "pr-not-opened" ? (
+                  "The pull request was not created. Apply these files in the repository."
+                ) : (
+                  receipt.bootstrap.detail
+                )}
               </p>
+              {receipt.bootstrap.status === "pr-not-opened" ? (
+                <div className="grid gap-3">
+                  <p className="text-muted-foreground">
+                    {receipt.bootstrap.detail}
+                  </p>
+                  <ul className="grid gap-3">
+                    {receipt.bootstrap.files.map((file) => (
+                      <li key={file.path} className="grid gap-1">
+                        <p className="font-medium text-foreground">
+                          {file.path}
+                        </p>
+                        <pre className="max-h-48 overflow-auto rounded border border-border bg-muted p-2 text-[11px] text-foreground">
+                          {file.content}
+                        </pre>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
               <Button
                 type="button"
                 size="sm"

@@ -12,7 +12,10 @@ import { Array, Effect, Layer, Option, Result } from "effect"
 import { describe, expect, it } from "vitest"
 import { Unauthorized } from "../../src/errors.js"
 import { AuthorizeProject } from "../../src/features/project-access/use-cases/authorize-project.js"
-import { createLocalGitHubAdapter } from "../../src/features/repository-installations/adapters/local-github-adapter.js"
+import {
+  createLocalGitHubAdapter,
+  UnconfiguredRepositoryHostAdapterLive,
+} from "../../src/features/repository-installations/adapters/local-github-adapter.js"
 import { RepositoryInstallationRepository } from "../../src/features/repository-installations/ports/repository-installation-repository.js"
 import { RepositoryInstallations } from "../../src/features/repository-installations/use-cases/repository-installations.js"
 import { Deployments } from "../../src/features/runtime-deployment/use-cases/deployments.js"
@@ -55,6 +58,7 @@ function makeHarness(options?: {
   readonly observations?: ReadonlyArray<StoredRuntimeObservation>
   readonly mappingPresent?: boolean
   readonly readerAuthorized?: boolean
+  readonly host?: "local" | "unconfigured"
 }) {
   const rows = new Map<string, StoredRepositoryInstallation>()
   const deliveries = new Set<string>()
@@ -367,7 +371,11 @@ function makeHarness(options?: {
 
   const layer = RepositoryInstallations.layer.pipe(
     Layer.provide(Layer.succeed(RepositoryInstallationRepository, repo)),
-    Layer.provide(github.layer),
+    Layer.provide(
+      options?.host === "unconfigured"
+        ? UnconfiguredRepositoryHostAdapterLive
+        : github.layer,
+    ),
     Layer.provide(deploymentsLayer),
     Layer.provide(authLayer),
     Layer.provide(Layer.succeed(GetProjectWorkflowData, workflowData)),
@@ -821,5 +829,176 @@ describe("RepositoryInstallations (RM-010 local GitHub adapter fixture)", () => 
     if (Result.isFailure(denied)) {
       expect(denied.failure).toMatchObject({ _tag: "Unauthorized" })
     }
+  })
+
+  it("stores one pull request from the local host and refuses a second installation write after revocation", async () => {
+    const harness = makeHarness()
+    const connected = await harness.run(
+      Effect.flatMap(RepositoryInstallations, (service) =>
+        service.connect(OWNER_ID, {
+          projectId: PROJECT_ID,
+          host: "github",
+          runtime: "node",
+          repository: "example/bookings",
+          service: "worker",
+          environment: "production",
+          externalInstallationId: "gh-inst-42",
+          policy,
+        }),
+      ),
+    )
+    expect(Result.isSuccess(connected)).toBe(true)
+    if (Result.isFailure(connected)) {
+      return
+    }
+    const installationId = connected.success.installation.id
+    const prepare = (userId: string) =>
+      harness.run(
+        Effect.flatMap(RepositoryInstallations, (service) =>
+          service.prepareBootstrapPr(userId, {
+            projectId: PROJECT_ID,
+            installationId,
+            apiOrigin: "https://api.flowmark.test",
+            permissions: narrowPermissions,
+          }),
+        ),
+      )
+    const opened = await prepare(OWNER_ID)
+    expect(Result.isSuccess(opened)).toBe(true)
+    if (Result.isFailure(opened)) {
+      return
+    }
+    expect(opened.success.status).toBe("opened")
+    if (opened.success.status !== "opened") {
+      return
+    }
+    expect(opened.success.installation.bootstrapPr?.url).toBe(
+      opened.success.pullRequest.url,
+    )
+    expect(
+      opened.success.plan.files
+        .map((file) => file.content)
+        .join("\n")
+        .includes(connected.success.deploymentToken),
+    ).toBe(false)
+    const repeated = await prepare(OWNER_ID)
+    expect(Result.isSuccess(repeated)).toBe(true)
+    if (Result.isFailure(repeated) || repeated.success.status !== "opened") {
+      return
+    }
+    expect(repeated.success.pullRequest.number).toBe(
+      opened.success.pullRequest.number,
+    )
+    expect(harness.github.listPullRequests()).toHaveLength(1)
+
+    const stranger = await prepare("stranger-user")
+    expect(Result.isFailure(stranger)).toBe(true)
+    if (Result.isFailure(stranger)) {
+      expect(stranger.failure).toMatchObject({ _tag: "Unauthorized" })
+    }
+
+    const revoked = await harness.run(
+      Effect.flatMap(RepositoryInstallations, (service) =>
+        service.revoke(OWNER_ID, {
+          projectId: PROJECT_ID,
+          installationId,
+        }),
+      ),
+    )
+    expect(Result.isSuccess(revoked)).toBe(true)
+    const afterRevoke = await prepare(OWNER_ID)
+    expect(Result.isFailure(afterRevoke)).toBe(true)
+    if (Result.isFailure(afterRevoke)) {
+      expect(afterRevoke.failure).toMatchObject({
+        reason: "installation-revoked",
+      })
+    }
+    expect(harness.github.listPullRequests()).toHaveLength(1)
+  })
+
+  it("returns the bootstrap files and no pull request when the host is unconfigured", async () => {
+    const harness = makeHarness({ host: "unconfigured" })
+    const connected = await harness.run(
+      Effect.flatMap(RepositoryInstallations, (service) =>
+        service.connect(OWNER_ID, {
+          projectId: PROJECT_ID,
+          host: "github",
+          runtime: "node",
+          repository: "example/bookings",
+          service: "worker",
+          environment: "production",
+          externalInstallationId: "gh-inst-42",
+          policy,
+        }),
+      ),
+    )
+    expect(Result.isSuccess(connected)).toBe(true)
+    if (Result.isFailure(connected)) {
+      return
+    }
+    const prepared = await harness.run(
+      Effect.flatMap(RepositoryInstallations, (service) =>
+        service.prepareBootstrapPr(OWNER_ID, {
+          projectId: PROJECT_ID,
+          installationId: connected.success.installation.id,
+          apiOrigin: "https://api.flowmark.test",
+          permissions: narrowPermissions,
+        }),
+      ),
+    )
+    expect(Result.isSuccess(prepared)).toBe(true)
+    if (Result.isFailure(prepared)) {
+      return
+    }
+    expect(prepared.success.status).toBe("pr-not-opened")
+    if (prepared.success.status !== "pr-not-opened") {
+      return
+    }
+    expect(prepared.success.installation.bootstrapPr).toBeNull()
+    expect(prepared.success.plan.files.length).toBeGreaterThan(0)
+    expect(prepared.success.reason).toBe("host-unconfigured")
+    expect(
+      prepared.success.plan.files
+        .map((file) => file.content)
+        .join("\n")
+        .includes(connected.success.deploymentToken),
+    ).toBe(false)
+  })
+
+  it("rejects a secret-bearing bootstrap plan before opening a pull request", async () => {
+    const harness = makeHarness()
+    const connected = await harness.run(
+      Effect.flatMap(RepositoryInstallations, (service) =>
+        service.connect(OWNER_ID, {
+          projectId: PROJECT_ID,
+          host: "github",
+          runtime: "node",
+          repository: "example/bookings",
+          service: "worker",
+          environment: "production",
+          externalInstallationId: "gh-inst-42",
+          policy,
+        }),
+      ),
+    )
+    expect(Result.isSuccess(connected)).toBe(true)
+    if (Result.isFailure(connected)) {
+      return
+    }
+    const leaked = await harness.run(
+      Effect.flatMap(RepositoryInstallations, (service) =>
+        service.prepareBootstrapPr(OWNER_ID, {
+          projectId: PROJECT_ID,
+          installationId: connected.success.installation.id,
+          apiOrigin: `https://example.com/fmd_${"ab".repeat(16)}`,
+          permissions: narrowPermissions,
+        }),
+      ),
+    )
+    expect(Result.isFailure(leaked)).toBe(true)
+    if (Result.isFailure(leaked)) {
+      expect(leaked.failure).toMatchObject({ reason: "secret-leak-blocked" })
+    }
+    expect(harness.github.listPullRequests()).toHaveLength(0)
   })
 })

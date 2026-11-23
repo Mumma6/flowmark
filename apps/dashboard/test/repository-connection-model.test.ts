@@ -3,6 +3,7 @@ import {
   buildRepositoryConnectPayload,
   defaultRepositoryConnectDraft,
   formatAllowedNamespaces,
+  installationBootstrapView,
   installationColdStartSummary,
   installationStatusBadgeVariant,
   installationStatusLabel,
@@ -80,5 +81,39 @@ describe("repository connection UI model", () => {
     expect(installationColdStartSummary("pending-eligible-traffic")).toMatch(
       /traffic/i,
     )
+  })
+
+  it("shows a pull request link only when the host opened one", () => {
+    const opened = installationBootstrapView({
+      status: "opened",
+      pullRequest: {
+        branch: "flowmark/connect-checkout-staging",
+        number: 7,
+        url: "https://github.com/acme/checkout/pull/7",
+      },
+    })
+    expect(opened).toEqual({
+      status: "opened",
+      branch: "flowmark/connect-checkout-staging",
+      number: 7,
+      url: "https://github.com/acme/checkout/pull/7",
+    })
+
+    const unavailable = installationBootstrapView({
+      status: "pr-not-opened",
+      detail:
+        "GitHub repository PR adapter is not configured in this environment.",
+      plan: {
+        files: [{ path: ".flowmark/install.json", content: "{\n}\n" }],
+      },
+    })
+    expect(unavailable).toEqual({
+      status: "pr-not-opened",
+      detail:
+        "GitHub repository PR adapter is not configured in this environment.",
+      files: [{ path: ".flowmark/install.json", content: "{\n}\n" }],
+    })
+    expect(unavailable).not.toHaveProperty("branch")
+    expect(unavailable).not.toHaveProperty("url")
   })
 })
