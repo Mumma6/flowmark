@@ -268,12 +268,14 @@ export {
 export { discoverEvidenceBoundaries } from "./features/workflows/use-cases/discover-evidence-boundaries.js"
 export { proposeObservationRepair } from "./features/workflows/use-cases/propose-observation-repair.js"
 export { assessCoverage } from "./features/workflows/use-cases/assess-coverage.js"
+export { maintainQuestionRepair } from "./features/workflows/use-cases/maintain-question.js"
 export {
   DeployedBoundarySchema,
   EvidenceEstateInputSchema,
   ObservationRepairInputSchema,
   CoverageAssessmentInputSchema,
   CoverageObservationQuerySchema,
+  QuestionMaintenanceInputSchema,
   SourceBoundarySchema,
 } from "@flowmarkdev/core"
 

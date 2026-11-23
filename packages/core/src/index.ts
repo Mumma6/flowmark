@@ -83,6 +83,7 @@ export * from "./agent-entry.js"
 export * from "./evidence-estate.js"
 export * from "./observation-repair.js"
 export * from "./coverage-assessment.js"
+export * from "./question-maintenance.js"
 
 export type {
   ProcessDefinition,
