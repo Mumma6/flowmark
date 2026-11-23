@@ -76,6 +76,8 @@ reconciles source registrations with stored deployment receipts and an
 independent inventory. It reports where a fact can first be attested and does
 not read executions.
 
+`propose_observation_repair` turns one diagnosed gap into the smallest in-policy change: reuse a trusted event, repair a mapping, add a permitted reference, or add one typed observation. A denied read, immature traffic or a restricted field adds no capture. The proposal stays on one branch and does not merge itself. Production evidence stays pending.
+
 Connected repositories can check a versioned receipt question in CI against
 three persisted fixture executions. The API checks an authorized deployment
 mapping, scoped change links and the rollback control. [Fixture readiness](runtime-memory.md#check-a-repository-owned-runtime-question)
