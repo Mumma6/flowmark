@@ -7,6 +7,10 @@ import {
   discoverBoundariesForMcp,
 } from "../workflows/discover-boundaries.js"
 import {
+  ProposeObservationRepairSchema,
+  proposeObservationRepairForMcp,
+} from "../workflows/propose-observation-repair.js"
+import {
   ContextForChangeSchema,
   contextForChangeForMcp,
 } from "../workflows/context-for-change.js"
@@ -308,6 +312,29 @@ export const registerFlowmarkTools = (
           input,
           true,
           contextForChangeForMcp(identity, input),
+          extra.mcpReq.signal,
+        ),
+      ),
+  )
+  server.registerTool(
+    "propose_observation_repair",
+    {
+      title: "Propose observation repair",
+      description:
+        "Version 1. Choose the smallest in-policy repair for one diagnosed question gap. Denied reads and immature traffic add no capture. The proposal updates the same branch and never merges itself. Production evidence stays pending.",
+      inputSchema: fromJsonSchema(
+        toJsonSchemaDocument(ProposeObservationRepairSchema)
+          .schema as Parameters<typeof fromJsonSchema>[0],
+      ),
+      annotations: { readOnlyHint: true, destructiveHint: false },
+    },
+    async (input, extra) =>
+      toolResult(
+        await runMcpTool(
+          identity,
+          input,
+          true,
+          proposeObservationRepairForMcp(identity, input),
           extra.mcpReq.signal,
         ),
       ),

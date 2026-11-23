@@ -425,7 +425,7 @@ export const flowmarkBootstrapTarget = ${JSON.stringify(
     service: input.service,
     environment: input.environment,
     mcpOrigin: input.mcpOrigin,
-    capabilities: { question: true, repair: false },
+    capabilities: { question: true, repair: true },
   }
   const agentInstruction = renderAgentEntryInstruction(agentScope)
   const title = `chore(flowmark): connect ${input.service} (${input.environment}) under runtime policy`

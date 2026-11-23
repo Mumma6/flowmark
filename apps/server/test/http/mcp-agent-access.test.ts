@@ -578,6 +578,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
           "get_run",
           "get_workflow_insights",
           "list_workflows",
+          "propose_observation_repair",
         ].sort(),
       )
       const connectionResult = await handleMcpPost(
@@ -615,6 +616,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         "context_for_change",
         "compare_behavior",
         "discover_boundaries",
+        "propose_observation_repair",
       ])
       const resourceUri = "ui://flowmark/run-evidence/v1.html"
       const uiMeta = {
@@ -1345,6 +1347,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         "get_run",
         "get_workflow_insights",
         "list_workflows",
+        "propose_observation_repair",
       ])
       expect(
         toolNames.every(

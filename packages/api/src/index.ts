@@ -266,9 +266,11 @@ export {
   type SelectedQuestionCase,
 } from "./features/workflows/use-cases/select-question-evidence.js"
 export { discoverEvidenceBoundaries } from "./features/workflows/use-cases/discover-evidence-boundaries.js"
+export { proposeObservationRepair } from "./features/workflows/use-cases/propose-observation-repair.js"
 export {
   DeployedBoundarySchema,
   EvidenceEstateInputSchema,
+  ObservationRepairInputSchema,
   SourceBoundarySchema,
 } from "@flowmarkdev/core"
 

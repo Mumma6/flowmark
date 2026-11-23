@@ -33,6 +33,7 @@ const MCP_TOOLS_ENABLED = [
   "context_for_change",
   "compare_behavior",
   "discover_boundaries",
+  "propose_observation_repair",
 ] as const
 const MCP_TOOLS_PENDING = [] as const
 
