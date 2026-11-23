@@ -101,7 +101,7 @@ review rule plus a repository instruction that preserves unrelated guidance.
 
 ## Planned product capabilities
 
-Estate discovery remains planned. Studio now exposes connections and policy,
+A local warehouse-handoff fixture walks installation, repair, readback, coverage, review, release, loss, citation expiry and revocation. It is labeled a fixture and is not an observed production case. Estate discovery remains planned. Studio now exposes connections and policy,
 the evidence inspector, and coverage exceptions. Insights, overview, attention
 and shared investigation routes redirect to coverage. See
 [the target surfaces](product.md) and [coverage](runtime-memory.md).
