@@ -13,14 +13,15 @@ const QuestionId = Schema.String.check(
   Schema.isPattern(/^[a-zA-Z0-9][a-zA-Z0-9._/-]{0,127}$/),
 )
 const RepairUrl = Schema.String.check(
-  Schema.isPattern(/^https:\/\/github\.com\/[A-Za-z0-9._-]+\/[A-Za-z0-9._-]+\/pull\/[1-9][0-9]{0,8}$/),
+  Schema.isPattern(
+    /^https:\/\/github\.com\/[A-Za-z0-9._-]+\/[A-Za-z0-9._-]+\/pull\/[1-9][0-9]{0,8}$/,
+  ),
 )
 
 const copy = {
   unavailable: {
     title: "Unavailable",
-    explanation:
-      "The read is unavailable. No production fact is shown.",
+    explanation: "The read is unavailable. No production fact is shown.",
   },
   waiting: {
     title: "Waiting",

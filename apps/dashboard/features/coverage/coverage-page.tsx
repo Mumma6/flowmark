@@ -20,25 +20,26 @@ export function CoveragePage({
         <h1 className="text-2xl font-semibold tracking-tight">{view.title}</h1>
         {view.question ? (
           <p className="text-sm text-muted-foreground">
-            Question <span className="font-medium text-foreground">{view.question}</span>
+            Question{" "}
+            <span className="font-medium text-foreground">{view.question}</span>
           </p>
         ) : null}
         <p className="text-sm leading-6">{view.explanation}</p>
       </header>
       <ul className="grid gap-2 text-sm sm:grid-cols-2">
-        {(["unavailable", "waiting", "stale", "revoked", "forbidden"] as const).map(
-          (item) => (
-            <li key={item}>
-              <Link
-                href={`/coverage?status=${item}`}
-                aria-current={view.status === item ? "page" : undefined}
-                className="flex min-h-11 items-center rounded-md border border-border px-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                {item}
-              </Link>
-            </li>
-          ),
-        )}
+        {(
+          ["unavailable", "waiting", "stale", "revoked", "forbidden"] as const
+        ).map((item) => (
+          <li key={item}>
+            <Link
+              href={`/coverage?status=${item}`}
+              aria-current={view.status === item ? "page" : undefined}
+              className="flex min-h-11 items-center rounded-md border border-border px-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              {item}
+            </Link>
+          </li>
+        ))}
       </ul>
       <Link
         href={view.action.href}
