@@ -1,4 +1,11 @@
 import { Array, HashSet, Match, Schema } from "effect"
+import {
+  CURSOR_AGENT_ENTRY_PATH,
+  REPOSITORY_INSTRUCTION_PATH,
+  mergeAgentEntryInstruction,
+  renderAgentEntryInstruction,
+  renderCursorAgentEntryRule,
+} from "./agent-entry.js"
 import { ArtifactManifestSchema } from "./artifact-manifest.js"
 import {
   RuntimeProbeReferenceSchema,
@@ -281,6 +288,10 @@ export type BootstrapPullRequestPlan = Readonly<{
   readonly title: string
   readonly body: string
   readonly files: ReadonlyArray<BootstrapPullRequestFile>
+  readonly agentEntry: Readonly<{
+    readonly instructionPath: typeof REPOSITORY_INSTRUCTION_PATH
+    readonly instruction: string
+  }>
 }>
 
 export function buildNodeBootstrapPrPlan(input: {
@@ -294,6 +305,7 @@ export function buildNodeBootstrapPrPlan(input: {
   readonly coldStartStatus: RepositoryColdStartStatus
   readonly apiOrigin: string
   readonly mcpOrigin: string
+  readonly existingInstructions?: string
 }): BootstrapPullRequestPlan {
   const branch = bootstrapBranchName(input.service, input.environment)
   const coldStart = describeColdStartState(input.coldStartStatus)
@@ -407,6 +419,15 @@ export const flowmarkBootstrapTarget = ${JSON.stringify(
     2,
   )} as const
 `
+  const agentScope = {
+    projectId: input.projectId,
+    repository: input.repository,
+    service: input.service,
+    environment: input.environment,
+    mcpOrigin: input.mcpOrigin,
+    capabilities: { question: true, repair: false },
+  }
+  const agentInstruction = renderAgentEntryInstruction(agentScope)
   const title = `chore(flowmark): connect ${input.service} (${input.environment}) under runtime policy`
   const body = [
     `## Flowmark repository installation`,
@@ -424,7 +445,7 @@ export const flowmarkBootstrapTarget = ${JSON.stringify(
     `- **Repository PR writer**: branches and PRs only; cannot merge, read protected runtime payloads, or escalate collection policy.`,
     `- **Deployment attestation**: store \`FLOWMARK_DEPLOYMENT_TOKEN\` in your deploy secret store for \`POST /v1/deployments\` (binding \`${input.bindingId}\`).`,
     `- **Ingestion**: store \`FLOWMARK_API_KEY\` and \`FLOWMARK_REFERENCE_KEY\` in server runtime secrets only.`,
-    `- **Delegated evidence reads**: connect coding agents via MCP at \`${input.mcpOrigin}\` under a separate read grant.`,
+    `- **Delegated evidence reads**: connect coding agents via MCP at \`${input.mcpOrigin}\` under a separate read grant. Cursor loads \`${CURSOR_AGENT_ENTRY_PATH}\`. Planning starts from the ticket and review starts from the diff.`,
     ``,
     `### Cold-start status`,
     `${coldStart.pending}`,
@@ -436,10 +457,25 @@ export const flowmarkBootstrapTarget = ${JSON.stringify(
     branch,
     title,
     body,
+    agentEntry: {
+      instructionPath: REPOSITORY_INSTRUCTION_PATH,
+      instruction: agentInstruction,
+    },
     files: [
       {
         path: ".flowmark/install.json",
         content: `${JSON.stringify(config, null, 2)}\n`,
+      },
+      {
+        path: CURSOR_AGENT_ENTRY_PATH,
+        content: renderCursorAgentEntryRule(agentScope),
+      },
+      {
+        path: REPOSITORY_INSTRUCTION_PATH,
+        content: mergeAgentEntryInstruction(
+          input.existingInstructions ?? "",
+          agentInstruction,
+        ),
       },
       {
         path: "src/flowmark/runtime-memory.ts",
