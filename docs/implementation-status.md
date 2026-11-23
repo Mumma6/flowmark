@@ -84,6 +84,8 @@ not read executions.
 
 Review carries the decision, the intended guarantee, the ordinary regression test, one citation, a contrary case and any missing evidence. Protected payloads and identifiers stay out of the pull request. A reviewer reopens a citation under that reviewer's own grant. An expired or denied citation states the limitation and includes no case. The booking reschedule fixture is synthetic: deduplicating by the logical change yields one suppression, two intents and two acceptances, and recipient delivery stays unknown. Deduplicating by the envelope or the booking reference fails that guarantee. Test expectations come from the application intent, including a test that asserts the opposite of an observed bug.
 
+`evaluate_release` checks that same question after deployment. Each case stays on the artifact that emitted it, including a rollback or two artifacts serving together. Technical success in both windows does not hide a changed business outcome. One contrary case is reported separately from any rate, and a rate is claimed only for a known compatible population. A new feature with no baseline can still report the cases it has. Late evidence waits. A missing population does not become a frequency. An expired citation or a revoked grant returns no current examples. A contrary result asks for investigation, and a missing observation can use the existing repair. The result does not approve or roll back the release.
+
 Connected repositories can check a versioned receipt question in CI against
 three persisted fixture executions. The API checks an authorized deployment
 mapping, scoped change links and the rollback control. [Fixture readiness](runtime-memory.md#check-a-repository-owned-runtime-question)

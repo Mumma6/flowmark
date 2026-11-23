@@ -19,6 +19,10 @@ import {
   maintainQuestionForMcp,
 } from "../workflows/maintain-question.js"
 import {
+  EvaluateReleaseSchema,
+  evaluateReleaseForMcp,
+} from "../workflows/evaluate-release.js"
+import {
   ContextForChangeSchema,
   contextForChangeForMcp,
 } from "../workflows/context-for-change.js"
@@ -320,6 +324,30 @@ export const registerFlowmarkTools = (
           input,
           true,
           contextForChangeForMcp(identity, input),
+          extra.mcpReq.signal,
+        ),
+      ),
+  )
+  server.registerTool(
+    "evaluate_release",
+    {
+      title: "Evaluate release",
+      description:
+        "Version 1 diagnostic read. Check one reviewed distinction against the deployed artifacts. Each case stays on the artifact that emitted it. Technical success and the deployment are not the verdict. A contrary case is separate from any rate. Expired citations and a revoked grant return no examples. The result never approves or rolls back a release.",
+      inputSchema: fromJsonSchema(
+        toJsonSchemaDocument(EvaluateReleaseSchema).schema as Parameters<
+          typeof fromJsonSchema
+        >[0],
+      ),
+      annotations: { readOnlyHint: true, destructiveHint: false },
+    },
+    async (input, extra) =>
+      toolResult(
+        await runMcpTool(
+          identity,
+          input,
+          true,
+          evaluateReleaseForMcp(identity, input),
           extra.mcpReq.signal,
         ),
       ),

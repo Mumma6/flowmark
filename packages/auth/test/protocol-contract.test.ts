@@ -103,8 +103,8 @@ describe("Agent TASK-001.2 protocol contract", () => {
   })
 
   it("freezes the public tool names", () => {
-    assert.equal(AGENT_ACCESS_MCP_TOOLS.length, 14)
-    assert.equal(new Set(AGENT_ACCESS_MCP_TOOLS).size, 14)
+    assert.equal(AGENT_ACCESS_MCP_TOOLS.length, 15)
+    assert.equal(new Set(AGENT_ACCESS_MCP_TOOLS).size, 15)
   })
 
   it("fails closed when the read scope is missing", async () => {

@@ -208,6 +208,8 @@ export function renderAgentEntryInstruction(scope: AgentEntryScope): string {
     "",
     "Pair the decision and the intended guarantee with the ordinary regression test, the citation, one contrary case and any missing evidence. Leave protected payloads and identifiers out of the pull request. Reopen a citation under the reviewer's own grant. An expired or denied citation states that limitation and carries no case. Label every synthetic execution as synthetic. Test expectations come from the application intent. An observed bug can justify a test that asserts the opposite behavior.",
     "",
+    "After release, call `evaluate_release` with that same review question. Bind each case to the artifact that emitted it. Technical success is not the business outcome, and the deployment is not a cause. A contrary case asks for investigation. A missing observation can use the existing repair. A revoked grant returns no examples.",
+    "",
     "Record one state:",
     "- `checked` — the tool call ran under the current grant.",
     "- `deliberately-skipped` — a docs-only change, or evidence cannot change the patch.",
