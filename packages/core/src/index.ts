@@ -86,6 +86,7 @@ export * from "./coverage-assessment.js"
 export * from "./question-maintenance.js"
 export * from "./evidence-review.js"
 export * from "./release-evaluation.js"
+export * from "./independent-lifecycle.js"
 
 export type {
   ProcessDefinition,
