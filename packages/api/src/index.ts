@@ -265,6 +265,12 @@ export {
   type QuestionEvidenceSelection,
   type SelectedQuestionCase,
 } from "./features/workflows/use-cases/select-question-evidence.js"
+export { discoverEvidenceBoundaries } from "./features/workflows/use-cases/discover-evidence-boundaries.js"
+export {
+  DeployedBoundarySchema,
+  EvidenceEstateInputSchema,
+  SourceBoundarySchema,
+} from "@flowmarkdev/core"
 
 export {
   RepositoryCollectionPolicySchema,

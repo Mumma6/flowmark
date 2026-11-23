@@ -192,6 +192,7 @@ const capabilityLines = (capabilities: AgentEntryCapabilities) =>
     capabilities.repair
       ? "- Repair proposals are available. Keep the smallest observation change in the feature PR."
       : "- Repair proposals are not available yet. Do not invent an instrumentation repair.",
+    "- Boundary discovery is available through `discover_boundaries`. It reconciles source registrations with the deployment inventory and does not read a telemetry feed.",
   ].join("\n")
 
 export function renderAgentEntryInstruction(scope: AgentEntryScope): string {

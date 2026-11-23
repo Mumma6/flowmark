@@ -26,6 +26,8 @@ The unit is a **versioned question about consequential behavior in a defined env
 
 Count each eligible logical case once. Compute the numerator by joining resolved admissible cases to the same eligible population. An independent scoped outbox containing 200 mature distinct changes and evidence answering 192 gives 192/200 with eight unresolved. A sampled collector with 192 examples and no independent counter gives 192 retained examples and an unknown rate. Incompatible revisions, biased sampling, overlapping cohorts or a missing population key can invalidate a comparison. Zero independently observed eligible cases means waiting. Missing or stale counters mean unknown. Keep low-volume critical questions visible and give each exclusion an owner and reason. Dropping a question or changing a denominator appears in the PR diff.
 
+`discover_boundaries` performs the discovery row. It reconciles at most 24 source registrations with deployment receipts and an independent inventory, including a renamed route, a deployed-only worker, an ambiguous event, an inaccessible service and an already sufficient signal. It does not read a telemetry feed, so an unexercised path has no observed case.
+
 ## Verification and maintenance
 
 1. **PR.** Diff the inventory, question contracts, mappings and field policy. Exercise the actual emitter, delivery and authorized read path on a local fixture. Test an expected case and a discriminating counterexample, including rollback, redelivery or late confirmation where relevant. A critical applicable question with failed or stale readiness can fail CI. Production traffic is never a pre-merge requirement.

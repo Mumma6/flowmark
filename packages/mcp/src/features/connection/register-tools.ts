@@ -3,6 +3,10 @@ import {
   compareBehaviorForMcp,
 } from "../workflows/compare-behavior.js"
 import {
+  DiscoverBoundariesSchema,
+  discoverBoundariesForMcp,
+} from "../workflows/discover-boundaries.js"
+import {
   ContextForChangeSchema,
   contextForChangeForMcp,
 } from "../workflows/context-for-change.js"
@@ -304,6 +308,30 @@ export const registerFlowmarkTools = (
           input,
           true,
           contextForChangeForMcp(identity, input),
+          extra.mcpReq.signal,
+        ),
+      ),
+  )
+  server.registerTool(
+    "discover_boundaries",
+    {
+      title: "Discover evidence boundaries",
+      description:
+        "Version 1 diagnostic read. Reconcile up to 24 source registrations with deployment receipts and an independent deployment inventory. Returns matched, source-only, deployed-only, unsupported and policy-excluded boundaries. Does not read executions or invent observed cases.",
+      inputSchema: fromJsonSchema(
+        toJsonSchemaDocument(DiscoverBoundariesSchema).schema as Parameters<
+          typeof fromJsonSchema
+        >[0],
+      ),
+      annotations: { readOnlyHint: true, destructiveHint: false },
+    },
+    async (input, extra) =>
+      toolResult(
+        await runMcpTool(
+          identity,
+          input,
+          true,
+          discoverBoundariesForMcp(identity, input),
           extra.mcpReq.signal,
         ),
       ),
