@@ -1,3 +1,11 @@
+import type {
+  ArtifactMappingScope,
+  BehaviorComparison,
+  BehaviorComparisonQuery,
+  CoverageObservationQuery,
+  CoverageStoredEvent,
+  DeployedArtifactMapping,
+} from "@flowmarkdev/core"
 import type { ProcessHealth, ProcessHealthQuery } from "@flowmarkdev/core"
 import type { ReferenceJourneyEvidence } from "../types.js"
 import type { ReferenceJourneyQuery } from "@flowmarkdev/core"
@@ -63,6 +71,30 @@ export interface WorkflowRepositoryRuns {
   readonly workflows: (
     projectId: string,
   ) => Effect.Effect<ReadonlyArray<WorkflowSummary>, PersistenceError>
+  readonly compareBehavior: (
+    projectId: string,
+    query: BehaviorComparisonQuery,
+  ) => Effect.Effect<BehaviorComparison, PersistenceError>
+  readonly artifactMappings: (
+    projectId: string,
+    scope: ArtifactMappingScope,
+  ) => Effect.Effect<
+    {
+      readonly mappings: readonly DeployedArtifactMapping[]
+      readonly truncated: boolean
+    },
+    PersistenceError
+  >
+  readonly coverageObservations: (
+    projectId: string,
+    query: CoverageObservationQuery,
+  ) => Effect.Effect<
+    {
+      readonly events: readonly CoverageStoredEvent[]
+      readonly truncated: boolean
+    },
+    PersistenceError
+  >
   readonly listRuns: (
     projectId: string,
     query: ListRunsQuery,

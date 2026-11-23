@@ -77,6 +77,16 @@ export * from "./evidence-captures.js"
 export type { SavedEvidenceExport } from "./saved-evidence-export.js"
 
 export * from "./process-health.js"
+export * from "./runtime-question.js"
+export * from "./repository-installation.js"
+export * from "./agent-entry.js"
+export * from "./evidence-estate.js"
+export * from "./observation-repair.js"
+export * from "./coverage-assessment.js"
+export * from "./question-maintenance.js"
+export * from "./evidence-review.js"
+export * from "./release-evaluation.js"
+export * from "./independent-lifecycle.js"
 
 export type {
   ProcessDefinition,
@@ -84,3 +94,35 @@ export type {
 } from "./process-definition.js"
 
 export * from "./meaning-proposal.js"
+export {
+  ArtifactManifestSchema,
+  createArtifactManifest,
+  type ArtifactManifest,
+  type ArtifactMappingScope,
+  type DeployedArtifactMapping,
+} from "./artifact-manifest.js"
+export {
+  RUNTIME_OBSERVATION_CAPABILITY,
+  RuntimeObservationSchema,
+  RuntimeProbeReferenceSchema,
+  RuntimeReferenceKindSchema,
+  ExecutionSelectorSchema,
+  RuntimeReferenceSchema,
+  type ExecutionSelector,
+  RuntimeReferenceNamespaceSchema,
+  type RuntimeObservation,
+  type RuntimeObservationBinding,
+  type RuntimeProbeReference,
+  type RuntimeReferenceKind,
+  type StoredRuntimeObservation,
+} from "./runtime-observation.js"
+
+export {
+  BehaviorComparisonSchema,
+  behaviorComparisonMetrics,
+  type BehaviorComparison,
+  type BehaviorComparisonCohort,
+  type BehaviorComparisonExample,
+  type BehaviorComparisonMetric,
+  type BehaviorComparisonQuery,
+} from "./behavior-comparison.js"

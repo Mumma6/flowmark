@@ -71,6 +71,7 @@ export type ListedRun = StoredRun & {
 }
 
 export type ListRunsQuery = {
+  readonly executionSelector?: import("@flowmarkdev/core").ExecutionSelector
   readonly expectationState?: import("@flowmarkdev/core").ExpectationState
   readonly ratioSelection?: RatioSelection
   readonly resultSelection?: ResultSelection
@@ -105,6 +106,8 @@ export type ListedRunsPage = {
 }
 
 export interface RunEventPageQuery {
+  readonly eventIds?: ReadonlyArray<string>
+  readonly observationsOnly?: boolean
   readonly runId: string
   readonly cursor?: string
   readonly limit?: number
@@ -210,6 +213,7 @@ export interface RunOperationsPage {
 }
 
 export type RunTimelineEvent = {
+  readonly runtimeObservation?: import("@flowmarkdev/core").StoredRuntimeObservation
   expectation?: import("@flowmarkdev/core").ExpectationEvent | null
   expectationObservedAt?: string | null
   id: string

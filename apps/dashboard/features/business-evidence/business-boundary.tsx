@@ -16,6 +16,7 @@ export function BusinessBoundary({
     pathname === "/settings" ||
     pathname === "/connect" ||
     pathname === "/investigations" ||
+    pathname === "/runs/citation" ||
     pathname.startsWith("/account")
   if (!utility && pending) {
     return <p role="status">Checking project access…</p>

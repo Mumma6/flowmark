@@ -1,5 +1,4 @@
 import { Button } from "@flowmark/ui"
-import { MotionToggle } from "../../features/product-landing/motion"
 import { Arrow, BrandLink } from "./brand"
 import { MobileNavigation } from "./mobile-navigation"
 import { shellClassName } from "./shell"
@@ -27,7 +26,6 @@ export function SiteHeader() {
           ))}
         </nav>
         <div className="flex items-center gap-1 sm:gap-2">
-          <MotionToggle />
           <Button
             asChild
             variant="outline"

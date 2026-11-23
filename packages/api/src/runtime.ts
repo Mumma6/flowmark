@@ -1,3 +1,8 @@
+import { DeploymentRepositoryLive } from "./features/runtime-deployment/adapters/deployment-repository.js"
+import { Deployments } from "./features/runtime-deployment/use-cases/deployments.js"
+import { UnconfiguredRepositoryHostAdapterLive } from "./features/repository-installations/adapters/local-github-adapter.js"
+import { RepositoryInstallationRepositoryLive } from "./features/repository-installations/adapters/repository-installation-repository.js"
+import { RepositoryInstallations } from "./features/repository-installations/use-cases/repository-installations.js"
 import { DataExportStore } from "@flowmark/db/persistence"
 import { DataExportsLive } from "./features/data-exports/adapters/data-exports.js"
 import { ManageDataExports } from "./features/data-exports/use-cases/manage-data-exports.js"
@@ -48,7 +53,9 @@ import { GetProjectWorkflowData } from "./features/workflows/use-cases/get-proje
 import { IngestBrowserWorkflowEvents } from "./features/workflows/use-cases/ingest-browser-events.js"
 import {
   AgentAccessStore,
+  DeploymentStore,
   ProjectCredentialsStore,
+  RepositoryInstallationStore,
   WorkflowStore,
 } from "@flowmark/db/persistence"
 import { DatabaseLive } from "./adapters/database.js"
@@ -63,6 +70,8 @@ import { JoinWaitlist } from "./features/waitlist/join-waitlist.js"
 import { WaitlistRepositoryLive } from "./features/waitlist/waitlist-live.js"
 
 const persistence = Layer.mergeAll(
+  DeploymentStore.layer,
+  RepositoryInstallationStore.layer,
   WaitlistStore.layer,
   SharedInvestigationStore.layer,
   EvidenceCaptureStore.layer,
@@ -78,6 +87,8 @@ const persistence = Layer.mergeAll(
   AgentAccessStore.layer,
 ).pipe(Layer.provide(DatabaseLive))
 const databaseAdapters = Layer.mergeAll(
+  DeploymentRepositoryLive,
+  RepositoryInstallationRepositoryLive,
   SharedInvestigationsLive,
   EvidenceCapturesLive,
   EvidenceCaptureAdmissionLive,
@@ -106,7 +117,8 @@ const agentAccessAdapter = Layer.mergeAll(
   Layer.provide(persistence),
 )
 
-export const ApiLive = Layer.mergeAll(
+const baseApi = Layer.mergeAll(
+  Deployments.layer,
   JoinWaitlist.layer.pipe(
     Layer.provide(WaitlistWelcomeEmailLive),
     Layer.provide(WaitlistRepositoryLive.pipe(Layer.provide(persistence))),
@@ -136,11 +148,20 @@ export const ApiLive = Layer.mergeAll(
   Layer.provide(Engine.layer),
 )
 
+export const ApiLive = RepositoryInstallations.layer.pipe(
+  Layer.provide(UnconfiguredRepositoryHostAdapterLive),
+  Layer.provideMerge(baseApi),
+  Layer.provide(dependencies),
+  Layer.provide(ApiSettings.layer),
+)
+
 /** Request boundary: acquire dependencies, execute once, then release the scope. */
 export function runApi<A, E>(
   operation: Effect.Effect<
     A,
     E,
+    | Deployments
+    | RepositoryInstallations
     | JoinWaitlist
     | ManageSharedInvestigations
     | ManageEvidenceCaptures

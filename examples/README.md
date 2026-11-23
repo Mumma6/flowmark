@@ -26,6 +26,9 @@ examples show explicit application decisions.
 
 - [Booking expectations](./booking-process.ts), [runnable demo](./SETUP-DEMO.md)
   and [code-owned metadata](./code-owned-booking.ts).
+- [Warehouse handoff](./warehouse-transfer.ts): a pick and a later dock confirmation,
+  with vocabulary and asynchronous boundaries separate from the booking examples.
+  The lifecycle check is a local fixture, not an observed production case.
 - [Explicit trace references](../packages/sdk/examples/trace-context/README.md).
 - [Public read consumer](./read-run.ts):
   [setup and limits](../docs/sdk/public-run-read.md#run-the-repository-consumer).

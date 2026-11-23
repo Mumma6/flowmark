@@ -1,3 +1,18 @@
+import type {
+  BehaviorComparison,
+  BehaviorComparisonQuery,
+} from "@flowmarkdev/core"
+import { getBehaviorComparison } from "./queries/get-behavior-comparison.js"
+import { artifactMappings } from "./queries/artifact-mappings.js"
+import { readCoverageObservations } from "./queries/read-coverage-observations.js"
+import type {
+  CoverageObservationQuery,
+  CoverageStoredEvent,
+} from "@flowmarkdev/core"
+import type {
+  ArtifactMappingScope,
+  DeployedArtifactMapping,
+} from "@flowmarkdev/core"
 import type { ReferenceJourneyEvidence } from "./types.js"
 import { withActiveProject } from "../data-lifecycle/with-active-project.js"
 import type { ReferenceJourneyQuery } from "@flowmarkdev/core"
@@ -140,6 +155,30 @@ export interface WorkflowStoreService {
   readonly workflows: (
     projectId: string,
   ) => Effect.Effect<ReadonlyArray<WorkflowSummary>, DatabaseError>
+  readonly compareBehavior: (
+    projectId: string,
+    query: BehaviorComparisonQuery,
+  ) => Effect.Effect<BehaviorComparison, DatabaseError>
+  readonly artifactMappings: (
+    projectId: string,
+    scope: ArtifactMappingScope,
+  ) => Effect.Effect<
+    {
+      readonly mappings: readonly DeployedArtifactMapping[]
+      readonly truncated: boolean
+    },
+    DatabaseError
+  >
+  readonly coverageObservations: (
+    projectId: string,
+    query: CoverageObservationQuery,
+  ) => Effect.Effect<
+    {
+      readonly events: readonly CoverageStoredEvent[]
+      readonly truncated: boolean
+    },
+    DatabaseError
+  >
   readonly listRuns: (
     projectId: string,
     query: ListRunsQuery,
@@ -254,6 +293,24 @@ export class WorkflowStore extends Context.Service<WorkflowStore>()(
         workflows: (projectId) =>
           provide(
             withActiveProject(projectId, getWorkflowSummaries(projectId)),
+          ),
+        compareBehavior: (projectId, query) =>
+          provide(
+            withActiveProject(
+              projectId,
+              getBehaviorComparison(projectId, query),
+            ),
+          ),
+        artifactMappings: (projectId, scope) =>
+          provide(
+            withActiveProject(projectId, artifactMappings(projectId, scope)),
+          ),
+        coverageObservations: (projectId, query) =>
+          provide(
+            withActiveProject(
+              projectId,
+              readCoverageObservations(projectId, query),
+            ),
           ),
         listRuns: (projectId, query) =>
           provide(withActiveProject(projectId, listRuns(projectId, query))),

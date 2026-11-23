@@ -1,0 +1,1 @@
+ALTER TABLE "workflow_events" ADD COLUMN "runtime_observation" jsonb;

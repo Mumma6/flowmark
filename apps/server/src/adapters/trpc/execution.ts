@@ -2,6 +2,9 @@ import { TRPCError } from "@trpc/server"
 import { Effect, Exit, Match, Option, Schema } from "effect"
 import {
   AgentAccess,
+  Deployments,
+  RepositoryInstallationRejected,
+  RepositoryInstallations,
   ManageProjectSharing,
   ManageDataExports,
   ManageDataLifecycle,
@@ -68,7 +71,8 @@ async function executeQuery<A>(
     | EngineError
     | ConfigurationError
     | InvalidInput
-    | ManagementRateLimited,
+    | ManagementRateLimited
+    | RepositoryInstallationRejected,
     | ManageSharedInvestigations
     | ManageEvidenceCaptures
     | GetBusinessEvidence
@@ -80,6 +84,8 @@ async function executeQuery<A>(
     | AgentAccess
     | GetProjectWorkflowData
     | ManageProject
+    | Deployments
+    | RepositoryInstallations
     | Onboarding
     | ManageResultDeclarations
   >,
@@ -110,6 +116,30 @@ async function executeQuery<A>(
           new TRPCError({
             code: "TOO_MANY_REQUESTS",
             message: `Creation limit reached. Try again in ${error.retryAfter} seconds.`,
+          }),
+        ),
+      ),
+      Effect.catchTag("RepositoryInstallationRejected", (error) =>
+        Effect.fail(
+          new TRPCError({
+            code: Match.value(error.reason).pipe(
+              Match.when("installation-not-found", () => "NOT_FOUND" as const),
+              Match.whenOr(
+                "invalid-signature",
+                "foreign-repository",
+                "grant-narrowed",
+                "policy-escalation-rejected",
+                "installation-revoked",
+                () => "FORBIDDEN" as const,
+              ),
+              Match.when("stale-event", () => "CONFLICT" as const),
+              Match.when(
+                "host-unconfigured",
+                () => "PRECONDITION_FAILED" as const,
+              ),
+              Match.orElse(() => "BAD_REQUEST" as const),
+            ),
+            message: error.detail,
           }),
         ),
       ),
@@ -153,11 +183,13 @@ export function readQuery<A>(
     | PersistenceError
     | EngineError
     | InvalidInput
-    | ManagementRateLimited,
+    | ManagementRateLimited
+    | RepositoryInstallationRejected,
     | GetProjectWorkflowData
     | GetBusinessEvidence
     | ManageSharedInvestigations
     | ManageEvidenceCaptures
+    | RepositoryInstallations
   >,
 ) {
   const projectId = requestedProjectId(request)
@@ -217,8 +249,10 @@ export function sessionQuery<A>(
     | Unauthorized
     | PersistenceError
     | EngineError
+    | ConfigurationError
     | InvalidInput
-    | ManagementRateLimited,
+    | ManagementRateLimited
+    | RepositoryInstallationRejected,
     | ManageSharedInvestigations
     | ManageEvidenceCaptures
     | GetBusinessEvidence
@@ -229,6 +263,8 @@ export function sessionQuery<A>(
     | ManageDataLifecycle
     | GetProjectWorkflowData
     | ManageProject
+    | Deployments
+    | RepositoryInstallations
     | ManageResultDeclarations
     | AgentAccess
   >,

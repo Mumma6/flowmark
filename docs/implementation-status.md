@@ -7,14 +7,14 @@ Source inventory at staging `01cf413`, 21 November 2026. This is the baseline fo
 | Capability                                                                                                                        | Source owner and authoritative guide                                                                                                                                |
 | --------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Node, Next.js and browser SDK; typed definitions, outcomes, reports, progress, operations, retries, continuation and expectations | `packages/sdk`, `packages/core`; [SDK](../packages/sdk/README.md), [contracts](./sdk/result-contract.md), [expectations](./sdk/expectations.md)                     |
-| Studio Explore, search, run inspector, timelines, comparisons and attention views                                                 | `apps/dashboard/features`; [Studio](../apps/dashboard/README.md)                                                                                                    |
+| Studio connections, evidence inspector, citations and coverage exceptions                                                         | `apps/dashboard/features`; [Studio](../apps/dashboard/README.md)                                                                                                    |
 | Reviewed code-owned result revisions and search-field imports                                                                     | API result-declarations feature; [definition imports](./definition-imports.md)                                                                                      |
 | Qualified reference journeys and linked execution comparisons                                                                     | API workflow use cases, DB query owners; [journeys](./reference-journeys.md), [comparisons](./linked-process-comparisons.md)                                        |
 | Private live investigations, authenticated sharing and bounded business evidence captures                                         | API/store features and Studio; [private selections](./saved-investigations.md), [shared evidence](./shared-investigations.md)                                       |
 | Fixed project owner, diagnostic viewers and owner-published business-reader evidence                                              | API project-sharing/business-evidence features; [sharing](./project-sharing.md), [projections](./business-evidence.md)                                              |
 | Account recovery, optional email verification, password/session controls and verified email changes                               | `packages/auth`, API account features; [auth boundary](./auth-perimeter.md), [account security](./account-security.md), [email changes](./account-email-changes.md) |
 | Bounded account/project exports, erasure fencing and resumable deletion                                                           | API lifecycle/export features and DB stores; [exports](./data-exports.md), [lifecycle](./data-lifecycle.md)                                                         |
-| Delegated OAuth discovery, project grants, refresh/revocation and six bounded read-only MCP tools                                 | `packages/auth`, `packages/mcp`, server adapters; [MCP](../packages/mcp/README.md), [security audit](./agent-access-security-audit.md)                              |
+| Delegated OAuth discovery, project grants, refresh/revocation and bounded read-only MCP tools                                     | `packages/auth`, `packages/mcp`, server adapters; [MCP](../packages/mcp/README.md), [security audit](./agent-access-security-audit.md)                              |
 | Ordinary TypeScript public read client and standalone query-to-view example                                                       | `@flowmarkdev/node/read`, server `/v1/read/run` and `/v1/read/period`; [run reads](./sdk/public-run-read.md), [period reads](./sdk/public-period-read.md)           |
 | Supplied-data portable view and one locally tested MCP Apps reference-host boundary                                               | `packages/evidence-view`; [compatibility](../examples/portable-evidence/COMPATIBILITY.md)                                                                           |
 | Deterministic operation summaries, percentiles, peer comparison and cycle detection                                               | Rust `crates/flowmark-engine`, TypeScript `packages/engine`; [Engine](./engine.md)                                                                                  |
@@ -62,6 +62,46 @@ operating cadence. MCP itself is no longer behind an environment flag.
 - Reviewed process definitions and candidate review distinguish source suggestions from recorded examples. The Studio gap handoff can prepare an SDK patch brief. It needs a durable mapping to the artifact that ran. [Definitions](definition-imports.md)
 - A local compatibility probe compared explicit operation, selected dependency signals and trace references. The explicit operation already explained the primary provider failure. General automatic collection remains unshipped. [Probe results](sdk/capture-compatibility-probe.md)
 
+## Runtime context for coding agents
+
+Diagnostic agents can use `find_executions` and `explain_execution` to retrieve
+scoped runtime cases with observations and delayed settlements. See the
+[versioned tool contract](decisions/0021-runtime-execution-reads.md).
+`context_for_change` retrieves bounded candidates and cases from deployment
+receipts for an explicit repository and time window. Ticket and plan matching
+use lexical hints. `compare_behavior` compares retained run counts and
+matching cases across two deployment windows with compatible behavior revisions.
+The existing MCP investigation tools remain available. `discover_boundaries`
+reconciles source registrations with stored deployment receipts and an
+independent inventory. It reports where a fact can first be attested and does
+not read executions.
+
+`propose_observation_repair` turns one diagnosed gap into the smallest in-policy change: reuse a trusted event, repair a mapping, add a permitted reference, or add one typed observation. A denied read, immature traffic or a restricted field adds no capture. The proposal stays on one branch and does not merge itself. Production evidence stays pending.
+
+`assess_coverage` returns discovery, fixture readiness and observed answerability as separate results for one question, release, environment and window. It joins an independent population to project-scoped evidence, counts each logical case once, and withholds a rate when the counter, sampling, support or join cannot support one. Eligible production traffic is not a CI gate.
+
+`maintain_questions` re-evaluates that question when source, deployment or traffic changes. A moved probe keeps its meaning. A semantic split records the next revision and leaves earlier cases on the previous meaning. Repeated triggers for the same installation, behavior, question and revision become one repair, attached to the open feature change when that pull request is still the right place. A wait, insufficient authority, revocation or expired support opens no instrumentation. Fixture readback restores readiness. Only eligible observations on the repaired deployment restore live answerability. The fresh read contains no earlier transcript.
+
+Review carries the decision, the intended guarantee, the ordinary regression test, one citation, a contrary case and any missing evidence. Protected payloads and identifiers stay out of the pull request. A reviewer reopens a citation under that reviewer's own grant. An expired or denied citation states the limitation and includes no case. The booking reschedule fixture is synthetic: deduplicating by the logical change yields one suppression, two intents and two acceptances, and recipient delivery stays unknown. Deduplicating by the envelope or the booking reference fails that guarantee. Test expectations come from the application intent, including a test that asserts the opposite of an observed bug.
+
+`evaluate_release` checks that same question after deployment. Each case stays on the artifact that emitted it, including a rollback or two artifacts serving together. Technical success in both windows does not hide a changed business outcome. One contrary case is reported separately from any rate, and a rate is claimed only for a known compatible population. A new feature with no baseline can still report the cases it has. Late evidence waits. A missing population does not become a frequency. An expired citation or a revoked grant returns no current examples. A contrary result asks for investigation, and a missing observation can use the existing repair. The result does not approve or roll back the release.
+
+Connected repositories can check a versioned receipt question in CI against
+three persisted fixture executions. The API checks an authorized deployment
+mapping, scoped change links and the rollback control. [Fixture readiness](runtime-memory.md#check-a-repository-owned-runtime-question)
+
+Project owners can connect a GitHub repository and Node environment under
+explicit field, retention and overhead policy via Studio and
+`repositoryInstallation` procedures, receive a scoped deployment token and
+deterministic bootstrap PR plan, handle signed installation webhooks at
+`POST /v1/installations/github`, and verify disposable readback with a separate
+diagnostic read identity. The bootstrap PR installs a Cursor planning and
+review rule plus a repository instruction that preserves unrelated guidance.
+[Repository installation](runtime-memory.md#repository-and-environment-installation-under-policy)
+
 ## Planned product capabilities
 
-Repository and environment installation, trusted artifact manifests, change-to-case lookup, policy-driven instrumentation repairs, question-level coverage and post-deploy verification are design targets. Today the MCP entry points are `get_connection`, `list_workflows`, `find_runs`, `get_run`, `compare_run` and `get_workflow_insights`. Current Studio includes analytics and collaboration routes slated for removal. See [target surfaces](product.md) and the [coverage contract](runtime-memory.md).
+A local warehouse-handoff fixture walks installation, repair, readback, coverage, review, release, loss, citation expiry and revocation. It is labeled a fixture and is not an observed production case. Estate discovery remains planned. Studio now exposes connections and policy,
+the evidence inspector, and coverage exceptions. Insights, overview, attention
+and shared investigation routes redirect to coverage. See
+[the target surfaces](product.md) and [coverage](runtime-memory.md).

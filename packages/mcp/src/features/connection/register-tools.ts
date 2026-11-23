@@ -1,3 +1,38 @@
+import {
+  CompareBehaviorSchema,
+  compareBehaviorForMcp,
+} from "../workflows/compare-behavior.js"
+import {
+  DiscoverBoundariesSchema,
+  discoverBoundariesForMcp,
+} from "../workflows/discover-boundaries.js"
+import {
+  ProposeObservationRepairSchema,
+  proposeObservationRepairForMcp,
+} from "../workflows/propose-observation-repair.js"
+import {
+  AssessCoverageSchema,
+  assessCoverageForMcp,
+} from "../workflows/assess-coverage.js"
+import {
+  MaintainQuestionSchema,
+  maintainQuestionForMcp,
+} from "../workflows/maintain-question.js"
+import {
+  EvaluateReleaseSchema,
+  evaluateReleaseForMcp,
+} from "../workflows/evaluate-release.js"
+import {
+  ContextForChangeSchema,
+  contextForChangeForMcp,
+} from "../workflows/context-for-change.js"
+import {
+  ExplainExecutionSchema,
+  FindExecutionsSchema,
+  explainExecutionForMcp,
+  findExecutionsForMcp,
+} from "../workflows/execution-reads.js"
+import { toJsonSchemaDocument } from "effect/Schema"
 import type { AuthorizeAgentRead } from "@flowmark/api"
 import { GetProjectWorkflowData, GetBusinessEvidence } from "@flowmark/api"
 import {
@@ -208,14 +243,238 @@ const registerWorkflowInsightsTool = (
   )
 }
 
+const registerExecutionReadTools = (
+  server: McpServer,
+  identity: FlowmarkMcpAuthInfo,
+) => {
+  server.registerTool(
+    "find_executions",
+    {
+      title: "Find executions",
+      description:
+        "Version 1 diagnostic read. Find application executions in a bounded project window by workflow, scoped reference digest, artifact, or behavior. Use the returned run ID with explain_execution.",
+      inputSchema: fromJsonSchema(
+        toJsonSchemaDocument(FindExecutionsSchema).schema as Parameters<
+          typeof fromJsonSchema
+        >[0],
+      ),
+      annotations: { readOnlyHint: true, destructiveHint: false },
+    },
+    async (input, extra) =>
+      toolResult(
+        await runMcpTool(
+          identity,
+          input,
+          true,
+          readPagedTool(input, (page) => findExecutionsForMcp(identity, page)),
+          extra.mcpReq.signal,
+        ),
+      ),
+  )
+  server.registerTool(
+    "explain_execution",
+    {
+      title: "Explain execution",
+      description:
+        "Version 1 diagnostic read. Inspect one execution and one bounded section: observations, events, related, expectations, or operations.",
+      inputSchema: fromJsonSchema(
+        toJsonSchemaDocument(ExplainExecutionSchema).schema as Parameters<
+          typeof fromJsonSchema
+        >[0],
+      ),
+      annotations: { readOnlyHint: true, destructiveHint: false },
+    },
+    async (input, extra) =>
+      toolResult(
+        await runMcpTool(
+          identity,
+          input,
+          true,
+          readPagedTool(input, (page) =>
+            explainExecutionForMcp(identity, page),
+          ),
+          extra.mcpReq.signal,
+        ),
+      ),
+  )
+}
+
 export const registerFlowmarkTools = (
   server: McpServer,
   identity: FlowmarkMcpAuthInfo,
   uiSupported = false,
 ) => {
+  server.registerTool(
+    "context_for_change",
+    {
+      title: "Context for change",
+      description:
+        "Version 1 diagnostic read. Retrieve bounded production examples from a ticket, plan, diff, file or symbol in an authorized repository and project. Optionally supply a versioned runtime question to return supporting and contrary cases for a supported distinction with gap diagnosis and citations. Results label revision differences and uncertainty. Share the citation URL in a pull request to let authorized reviewers reopen the exact sample.",
+      inputSchema: fromJsonSchema(
+        toJsonSchemaDocument(ContextForChangeSchema).schema as Parameters<
+          typeof fromJsonSchema
+        >[0],
+      ),
+      annotations: { readOnlyHint: true, destructiveHint: false },
+    },
+    async (input, extra) =>
+      toolResult(
+        await runMcpTool(
+          identity,
+          input,
+          true,
+          contextForChangeForMcp(identity, input),
+          extra.mcpReq.signal,
+        ),
+      ),
+  )
+  server.registerTool(
+    "evaluate_release",
+    {
+      title: "Evaluate release",
+      description:
+        "Version 1 diagnostic read. Check one reviewed distinction against the deployed artifacts. Each case stays on the artifact that emitted it. Technical success and the deployment are not the verdict. A contrary case is separate from any rate. Expired citations and a revoked grant return no examples. The result never approves or rolls back a release.",
+      inputSchema: fromJsonSchema(
+        toJsonSchemaDocument(EvaluateReleaseSchema).schema as Parameters<
+          typeof fromJsonSchema
+        >[0],
+      ),
+      annotations: { readOnlyHint: true, destructiveHint: false },
+    },
+    async (input, extra) =>
+      toolResult(
+        await runMcpTool(
+          identity,
+          input,
+          true,
+          evaluateReleaseForMcp(identity, input),
+          extra.mcpReq.signal,
+        ),
+      ),
+  )
+  server.registerTool(
+    "maintain_questions",
+    {
+      title: "Maintain questions",
+      description:
+        "Version 1. Re-evaluate one question after source, deployment and traffic triggers. A moved probe keeps its meaning. A semantic split creates the next revision. Repeated triggers become one repair. Waiting, a missing grant and an expired case open no instrumentation. The decision never merges.",
+      inputSchema: fromJsonSchema(
+        toJsonSchemaDocument(MaintainQuestionSchema).schema as Parameters<
+          typeof fromJsonSchema
+        >[0],
+      ),
+      annotations: { readOnlyHint: true, destructiveHint: false },
+    },
+    async (input, extra) =>
+      toolResult(
+        await runMcpTool(
+          identity,
+          input,
+          true,
+          maintainQuestionForMcp(identity, input),
+          extra.mcpReq.signal,
+        ),
+      ),
+  )
+  server.registerTool(
+    "assess_coverage",
+    {
+      title: "Assess coverage",
+      description:
+        "Version 1 diagnostic read. Return discovery, fixture readiness and observed answerability separately for one question, release and window. Joins an independent population to scoped evidence. Duplicate deliveries count once. A missing counter, immature traffic, loss, expiry or an unsupported join does not invent a rate. Production traffic is not a merge gate.",
+      inputSchema: fromJsonSchema(
+        toJsonSchemaDocument(AssessCoverageSchema).schema as Parameters<
+          typeof fromJsonSchema
+        >[0],
+      ),
+      annotations: { readOnlyHint: true, destructiveHint: false },
+    },
+    async (input, extra) =>
+      toolResult(
+        await runMcpTool(
+          identity,
+          input,
+          true,
+          assessCoverageForMcp(identity, input),
+          extra.mcpReq.signal,
+        ),
+      ),
+  )
+  server.registerTool(
+    "propose_observation_repair",
+    {
+      title: "Propose observation repair",
+      description:
+        "Version 1. Choose the smallest in-policy repair for one diagnosed question gap. Denied reads and immature traffic add no capture. The proposal updates the same branch and never merges itself. Production evidence stays pending.",
+      inputSchema: fromJsonSchema(
+        toJsonSchemaDocument(ProposeObservationRepairSchema)
+          .schema as Parameters<typeof fromJsonSchema>[0],
+      ),
+      annotations: { readOnlyHint: true, destructiveHint: false },
+    },
+    async (input, extra) =>
+      toolResult(
+        await runMcpTool(
+          identity,
+          input,
+          true,
+          proposeObservationRepairForMcp(identity, input),
+          extra.mcpReq.signal,
+        ),
+      ),
+  )
+  server.registerTool(
+    "discover_boundaries",
+    {
+      title: "Discover evidence boundaries",
+      description:
+        "Version 1 diagnostic read. Reconcile up to 24 source registrations with deployment receipts and an independent deployment inventory. Returns matched, source-only, deployed-only, unsupported and policy-excluded boundaries. Does not read executions or invent observed cases.",
+      inputSchema: fromJsonSchema(
+        toJsonSchemaDocument(DiscoverBoundariesSchema).schema as Parameters<
+          typeof fromJsonSchema
+        >[0],
+      ),
+      annotations: { readOnlyHint: true, destructiveHint: false },
+    },
+    async (input, extra) =>
+      toolResult(
+        await runMcpTool(
+          identity,
+          input,
+          true,
+          discoverBoundariesForMcp(identity, input),
+          extra.mcpReq.signal,
+        ),
+      ),
+  )
+  server.registerTool(
+    "compare_behavior",
+    {
+      title: "Compare behavior",
+      description:
+        "Version 1 diagnostic read. Compare retained executions across two deployment windows of the same behavior. Returns exact recorded counts, matching execution examples, and evidence limitations.",
+      inputSchema: fromJsonSchema(
+        toJsonSchemaDocument(CompareBehaviorSchema).schema as Parameters<
+          typeof fromJsonSchema
+        >[0],
+      ),
+      annotations: { readOnlyHint: true, destructiveHint: false },
+    },
+    async (input, extra) =>
+      toolResult(
+        await runMcpTool(
+          identity,
+          input,
+          true,
+          compareBehaviorForMcp(identity, input),
+          extra.mcpReq.signal,
+        ),
+      ),
+  )
   registerConnectionTool(server, identity)
   registerListWorkflowsTool(server, identity)
   registerFindRunsTool(server, identity)
+  registerExecutionReadTools(server, identity)
   registerGetRunTool(server, identity, uiSupported)
   registerEvidenceResource(server, async (signal) => {
     const admitted = await runMcpResourceRead(identity, signal)

@@ -8,7 +8,7 @@ import {
 import { handleAgentConsent } from "../../src/adapters/agent-consent"
 import { createHash, randomBytes, randomUUID } from "node:crypto"
 import assert from "node:assert/strict"
-import { and, eq, like } from "drizzle-orm"
+import { and, eq, like, sql } from "drizzle-orm"
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest"
 import {
   createDatabase,
@@ -26,6 +26,7 @@ import {
 } from "@flowmark/db"
 import {
   createOwnedProject,
+  WorkflowStore,
   Database,
   submitAgentAccessConsent,
   revokeAgentAccessConnection,
@@ -37,6 +38,8 @@ import {
   runSelectionToolInput,
   studioRunSelection,
 } from "../../../dashboard/features/runs/investigation/investigation-selection"
+import { readAuthSecret } from "@flowmark/auth"
+import { resolveRuntimeCitation, runApi } from "@flowmark/api"
 import { appRouter } from "../../src/adapters/trpc/router"
 import {
   LATEST_PROTOCOL_VERSION,
@@ -46,6 +49,7 @@ import {
 } from "@flowmark/mcp"
 import { runMcpRoute } from "../../src/mcp-run"
 import { POST as mcpPost } from "../../app/mcp/route"
+import { POST as recordDeployment } from "../../app/v1/deployments/route"
 import { POST as ingestEvents } from "../../app/v1/events/route"
 import {
   handleMcpPost,
@@ -490,7 +494,18 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
                       jsonrpc: "2.0",
                       id: 98,
                       method: "tools/call",
-                      params: { name: "get_connection", arguments: {} },
+                      params:
+                        mutation.label === "expired access"
+                          ? {
+                              name: "find_executions",
+                              arguments: {
+                                version: 1,
+                                projectId,
+                                startedAfter: "2026-11-01T00:00:00.000Z",
+                                startedBefore: "2026-11-08T00:00:00.000Z",
+                              },
+                            }
+                          : { name: "get_connection", arguments: {} },
                     },
                     {
                       ...sessionHeaders,
@@ -552,12 +567,21 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         [...(tools.result?.tools?.map((tool) => tool.name) ?? [])].sort(),
       ).toEqual(
         [
+          "compare_behavior",
           "compare_run",
+          "context_for_change",
+          "discover_boundaries",
+          "explain_execution",
+          "find_executions",
           "find_runs",
           "get_connection",
           "get_run",
           "get_workflow_insights",
+          "assess_coverage",
+          "evaluate_release",
           "list_workflows",
+          "maintain_questions",
+          "propose_observation_repair",
         ].sort(),
       )
       const connectionResult = await handleMcpPost(
@@ -590,6 +614,15 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         "get_run",
         "compare_run",
         "get_workflow_insights",
+        "find_executions",
+        "explain_execution",
+        "context_for_change",
+        "compare_behavior",
+        "discover_boundaries",
+        "propose_observation_repair",
+        "assess_coverage",
+        "maintain_questions",
+        "evaluate_release",
       ])
       const resourceUri = "ui://flowmark/run-evidence/v1.html"
       const uiMeta = {
@@ -977,7 +1010,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         .delete(verification)
         .where(like(verification.value, `%"userId":"${session.user.id}"%`))
     })
-    it("accepts six-tool reference investigation and denies adjacent authority", async () => {
+    it("accepts reference investigation and denies adjacent authority", async () => {
       const { getAuth } = await import("../../src/auth.js")
       const redirectUri = "http://127.0.0.1:4313/callback"
       const clientId = `mcp-accept-${randomUUID()}`
@@ -1114,6 +1147,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         .from(oauthRefreshToken)
         .where(eq(oauthRefreshToken.clientId, clientId))
       assert.ok(authorizationCodeId)
+      const ownerPassword = randomUUID()
       const ownerSignup = await auth.handler(
         new Request(`${testOrigin}/api/auth/sign-up/email`, {
           method: "POST",
@@ -1121,7 +1155,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
           body: JSON.stringify({
             name: "Fixed project owner",
             email: `${randomUUID()}@example.test`,
-            password: randomUUID(),
+            password: ownerPassword,
           }),
         }),
       )
@@ -1308,12 +1342,21 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         left.name.localeCompare(right.name),
       )
       expect(toolNames.map((tool) => tool.name)).toEqual([
+        "assess_coverage",
+        "compare_behavior",
         "compare_run",
+        "context_for_change",
+        "discover_boundaries",
+        "evaluate_release",
+        "explain_execution",
+        "find_executions",
         "find_runs",
         "get_connection",
         "get_run",
         "get_workflow_insights",
         "list_workflows",
+        "maintain_questions",
+        "propose_observation_repair",
       ])
       expect(
         toolNames.every(
@@ -1350,6 +1393,781 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
       expect(workflowsResult.result?.structuredContent?.discovery).toEqual(
         await studio.workflow.discover({}),
       )
+      const repository = "example/bookings"
+      const runtimeBinding = await ownerStudio.project.rotateDeploymentBinding({
+        projectId: project.projectId,
+        repository,
+        service: "worker",
+        environment: "production",
+      })
+      const site = {
+        kind: "source",
+        path: "src/bookings/reschedule.ts",
+        symbol: "applyReschedule",
+      } as const
+      const deploy = async (
+        id: string,
+        letter: string,
+        behaviorRevision = "1",
+      ) => {
+        const artifactDigest = `sha256:${letter.repeat(64)}`
+        const revision = letter.repeat(40)
+        const result = await recordDeployment(
+          new Request(`${testOrigin}/v1/deployments`, {
+            method: "POST",
+            headers: {
+              authorization: `Bearer ${runtimeBinding.token}`,
+              "content-type": "application/json",
+            },
+            body: JSON.stringify({
+              bindingId: runtimeBinding.bindingId,
+              deploymentId: id,
+              manifest: {
+                version: 1,
+                repository,
+                artifactDigest,
+                revision,
+                probes: [
+                  {
+                    probeId: "booking-delivery",
+                    behaviorId: "booking.reschedule",
+                    behaviorRevision,
+                    location: site,
+                  },
+                ],
+              },
+            }),
+          }),
+        )
+        expect(result.status).toBe(200)
+        return {
+          bindingId: runtimeBinding.bindingId,
+          deploymentId: id,
+          artifactDigest,
+          probeId: "booking-delivery",
+        }
+      }
+      const originalProbe = await deploy("rollout-a", "a")
+      const parallelProbe = await deploy("rollout-b", "b")
+      const executionStore = await Effect.runPromise(
+        WorkflowStore.make.pipe(Effect.provideService(Database, connection.db)),
+      )
+      const reference = (
+        kind: "entity" | "change" | "envelope",
+        label: string,
+      ) => ({
+        kind,
+        namespace: "booking",
+        digest: `hmac-sha256:${createHash("sha256").update(label).digest("hex")}`,
+      })
+      const booking = reference("entity", "same-booking")
+      const firstChange = reference("change", "C41")
+      const nextChange = reference("change", "C42")
+      const workflow = "acceptance.runtime.booking"
+      const timestamp = "2026-11-03T00:00:00.000Z"
+      const first = { workflow, runId: "runtime-first", timestamp }
+      const second = { ...first, runId: "runtime-second" }
+      const store = (event: Parameters<typeof executionStore.append>[2]) =>
+        Effect.runPromise(
+          executionStore.append(project.projectId, randomUUID(), event),
+        )
+      await store({ ...first, type: "started" })
+      await store({ ...second, type: "started" })
+      for (const [run, change, envelope] of [
+        [first, firstChange, "E11"],
+        [first, firstChange, "E12"],
+        [second, nextChange, "E13"],
+      ] as const) {
+        await store({
+          ...run,
+          type: "step",
+          step: "runtime.observation",
+          observation: {
+            kind: "observation",
+            references: [booking, change, reference("envelope", envelope)],
+            probe: originalProbe,
+          },
+        })
+      }
+      await store({
+        ...first,
+        type: "expectation_declared",
+        expectationId: "partner",
+        name: "provider-confirmed",
+        withinMs: 60000,
+      })
+      await store({
+        ...first,
+        type: "completed",
+        outcome: "partial",
+        result: { skipped: 12 },
+      })
+      await store({
+        ...first,
+        type: "expectation_resolved",
+        expectationId: "partner",
+        timestamp: "2026-11-03T00:01:02.000Z",
+        outcome: "confirmed",
+      })
+      await store({ ...second, type: "completed", outcome: "confirmed" })
+      const executionSearch = {
+        version: 1,
+        projectId: project.projectId,
+        workflow,
+        startedAfter: windows.currentStartedAfter,
+        startedBefore: windows.currentStartedBefore,
+        selector: { reference: booking },
+      }
+      const runtimeFirst = await callTool(81, "find_executions", {
+        ...executionSearch,
+        limit: 1,
+      })
+      const runtimePage = runtimeFirst.result?.structuredContent
+      expect(runtimePage).toMatchObject({
+        version: 1,
+        total: 2,
+        executions: [expect.objectContaining({ workflow })],
+      })
+      const runtimeCursor = runtimePage?.nextCursor
+      assert.equal(typeof runtimeCursor, "string")
+      const runtimeSecond = await callTool(82, "find_executions", {
+        ...executionSearch,
+        limit: 1,
+        cursor: runtimeCursor,
+      })
+      expect(runtimeSecond.result?.structuredContent).toMatchObject({
+        total: 2,
+        executions: [expect.objectContaining({ workflow })],
+        nextCursor: null,
+      })
+      expect(runtimeSecond.result?.structuredContent?.executions).not.toEqual(
+        runtimePage?.executions,
+      )
+      const altered = await callTool(83, "find_executions", {
+        ...executionSearch,
+        selector: { reference: firstChange },
+        cursor: runtimeCursor,
+      })
+      expect(altered.result?.isError).toBe(true)
+      expect(altered.result?.structuredContent).toBeUndefined()
+      const excessive = await callTool(84, "find_executions", {
+        ...executionSearch,
+        limit: 26,
+      })
+      expect(
+        excessive.result?.isError === true || excessive.error !== undefined,
+      ).toBe(true)
+
+      const firstCase = await callTool(85, "find_executions", {
+        ...executionSearch,
+        selector: { reference: firstChange },
+      })
+      const cases = firstCase.result?.structuredContent?.executions as Array<{
+        runId: string
+      }>
+      expect(cases).toHaveLength(1)
+      const execution = {
+        version: 1,
+        projectId: project.projectId,
+        runId: cases[0]!.runId,
+      }
+      const detail = await callTool(86, "explain_execution", execution)
+      expect(detail.result?.structuredContent).toMatchObject({
+        summary: { status: "Completed", outcome: "partial" },
+        evidence: {
+          totalEvents: 2,
+          events: [
+            {
+              runtimeObservation: {
+                observation: {
+                  references: [
+                    booking,
+                    firstChange,
+                    reference("envelope", "E11"),
+                  ],
+                },
+              },
+            },
+            {
+              runtimeObservation: {
+                observation: {
+                  references: [
+                    booking,
+                    firstChange,
+                    reference("envelope", "E12"),
+                  ],
+                },
+              },
+            },
+          ],
+        },
+      })
+      const otherChange = await callTool(87, "find_executions", {
+        ...executionSearch,
+        selector: { reference: nextChange },
+      })
+      const secondCase = otherChange.result?.structuredContent
+        ?.executions as Array<{ runId: string }>
+      expect(secondCase).toHaveLength(1)
+      const otherDetail = await callTool(88, "explain_execution", {
+        ...execution,
+        runId: secondCase[0]!.runId,
+      })
+      expect(otherDetail.result?.structuredContent).toMatchObject({
+        evidence: {
+          totalEvents: 1,
+          events: [
+            {
+              runtimeObservation: {
+                observation: {
+                  references: [
+                    booking,
+                    nextChange,
+                    reference("envelope", "E13"),
+                  ],
+                },
+              },
+            },
+          ],
+        },
+      })
+      const settlement = await callTool(89, "explain_execution", {
+        ...execution,
+        section: "expectations",
+      })
+      expect(settlement.result?.structuredContent?.summary).toMatchObject({
+        outcome: "partial",
+      })
+      expect(
+        JSON.stringify(settlement.result?.structuredContent?.evidence),
+      ).toContain('"outcome":"confirmed"')
+      const foreignExecution = await callTool(90, "explain_execution", {
+        ...execution,
+        projectId: foreign.projectId,
+      })
+      expect(foreignExecution.result?.isError).toBe(true)
+      expect(foreignExecution.result?.structuredContent).toBeUndefined()
+      const contextScope = {
+        version: 1,
+        projectId: project.projectId,
+        repository,
+        environment: "production",
+        startedAfter: windows.currentStartedAfter,
+        startedBefore: windows.currentStartedBefore,
+      }
+      const ticketContext = await callTool(101, "context_for_change", {
+        ...contextScope,
+        ticket: "Handle repeated envelopes during booking reschedule",
+      })
+      expect(ticketContext.result?.structuredContent).toMatchObject({
+        status: "observed",
+        candidates: expect.arrayContaining([
+          expect.objectContaining({
+            match: expect.objectContaining({
+              strength: "adjacent",
+              reason: "lexical",
+            }),
+            deployment: expect.objectContaining({ revision: "a".repeat(40) }),
+            examples: [
+              expect.objectContaining({ selection: "representative" }),
+              expect.objectContaining({
+                selection: "contrasting",
+                observedShape: "multiple-envelopes-for-one-change",
+              }),
+            ],
+          }),
+        ]),
+      })
+      const citationCandidates = ticketContext.result?.structuredContent
+        ?.candidates as Array<{
+        citation: string | null
+        examples: Array<{ eventIds: string[] }>
+      }>
+      const cited = citationCandidates.find(({ citation }) => citation !== null)
+      assert.ok(cited?.citation)
+      const citationUrl = new URL(cited.citation)
+      expect(citationUrl.pathname).toBe("/runs/citation")
+      expect(citationUrl.search).toBe("")
+      const handle = citationUrl.hash.slice(1)
+      expect(cited.citation).not.toContain(project.projectId)
+      expect(cited.citation).not.toContain(booking.digest)
+      const reopen = () => ownerStudio.run.citation({ handle })
+      const originalCitation = await reopen()
+      assert.equal(originalCitation.status, "exact")
+      expect(
+        originalCitation.examples.map(({ events }) =>
+          events.map(({ id }) => id),
+        ),
+      ).toEqual(cited.examples.map(({ eventIds }) => eventIds))
+      await expect(
+        ownerStudio.run.citation({ handle: handle + "A" }),
+      ).resolves.toEqual({ status: "expired-or-invalid" })
+      const secret = await Effect.runPromise(readAuthSecret())
+      const expired = await runApi(
+        resolveRuntimeCitation(
+          fixedOwner,
+          secret,
+          handle,
+          Date.now() + 86_400_001,
+        ),
+      )
+      expect(expired).toMatchObject({
+        _tag: "Success",
+        value: { status: "expired-or-invalid" },
+      })
+      // A late event with an earlier occurrence time stays outside the pinned sample.
+      await store({
+        ...first,
+        timestamp: "2026-11-02T23:59:59.000Z",
+        type: "step",
+        step: "runtime.late-observation",
+        observation: {
+          kind: "observation",
+          references: [],
+          probe: originalProbe,
+        },
+      })
+      await expect(reopen()).resolves.toEqual(originalCitation)
+      const renameContext = await callTool(102, "context_for_change", {
+        ...contextScope,
+        diff: "rename from src/bookings/reschedule.ts\nrename to src/domain/move.ts",
+      })
+      expect(renameContext.result?.structuredContent?.candidates).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            match: expect.objectContaining({
+              strength: "linked",
+              reason: "rename",
+            }),
+          }),
+        ]),
+      )
+      const exactDiff = await callTool(103, "context_for_change", {
+        ...contextScope,
+        diff: "+++ b/src/bookings/reschedule.ts\n+const SYNTHETIC_DIFF_CANARY = true",
+      })
+      expect(exactDiff.result?.structuredContent?.candidates).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            match: expect.objectContaining({
+              strength: "exact",
+              reason: "file",
+            }),
+          }),
+        ]),
+      )
+      expect(JSON.stringify(exactDiff)).not.toContain("SYNTHETIC_DIFF_CANARY")
+      const exactSymbol = await callTool(104, "context_for_change", {
+        ...contextScope,
+        symbols: ["applyReschedule"],
+        revision: "a".repeat(40),
+      })
+      expect(exactSymbol.result?.structuredContent?.candidates).toEqual([
+        expect.objectContaining({
+          match: expect.objectContaining({
+            strength: "exact",
+            reason: "symbol",
+          }),
+          deployment: expect.objectContaining({ revision: "a".repeat(40) }),
+        }),
+        expect.objectContaining({
+          match: expect.objectContaining({
+            strength: "adjacent",
+            otherRevision: true,
+          }),
+        }),
+      ])
+      const unreleased = await callTool(105, "context_for_change", {
+        ...contextScope,
+        files: ["src/domain/reschedule-next.ts"],
+        revision: "c".repeat(40),
+      })
+      expect(unreleased.result?.structuredContent).toMatchObject({
+        uncertainty: { requestedRevisionSeen: false },
+        candidates: [
+          expect.objectContaining({
+            match: expect.objectContaining({
+              strength: "adjacent",
+              otherRevision: true,
+            }),
+          }),
+          expect.objectContaining({
+            match: expect.objectContaining({
+              strength: "adjacent",
+              otherRevision: true,
+            }),
+          }),
+        ],
+      })
+      const unknownContext = await callTool(106, "context_for_change", {
+        ...contextScope,
+        plan: "Change orbit altitude",
+      })
+      expect(unknownContext.result?.structuredContent).toMatchObject({
+        status: "no-observed-cases",
+        candidates: [],
+      })
+      const deniedContext = await callTool(107, "context_for_change", {
+        ...contextScope,
+        projectId: foreign.projectId,
+        symbols: ["applyReschedule"],
+      })
+      expect(deniedContext.result?.isError).toBe(true)
+      expect(deniedContext.result?.structuredContent).toBeUndefined()
+      const questionMismatch = await callTool(109, "context_for_change", {
+        ...contextScope,
+        symbols: ["applyReschedule"],
+        question: {
+          version: 1,
+          id: "payments.receipt-before-retry",
+          revision: 1,
+          text: "Did the committed receipt belong to the original payment request?",
+          scope: {
+            repository: "example/payments",
+            service: "receipt-worker",
+            workflow: "payment.reconcile",
+          },
+          behaviorId: "payment.receipt",
+          behaviorRevision: "1",
+          choices: [
+            "Retry the original payment on timeout.",
+            "Reconcile the original request with its committed provider receipt first.",
+          ],
+          eligibleUnit: "logical-request",
+          predicate: "receipt-for-same-change",
+          requestProbe: "payment.request",
+          committedReceiptProbe: "payment.receipt-committed",
+          changeNamespace: "payment.request",
+          maturity: "completed-fixture-transaction",
+          fixture: "payment-receipt-transaction",
+        },
+      })
+      expect(questionMismatch.result?.isError).toBe(true)
+      const questionContext = await callTool(110, "context_for_change", {
+        ...contextScope,
+        symbols: ["applyReschedule"],
+        question: {
+          version: 1,
+          id: "booking.receipt-link",
+          revision: 1,
+          text: "Did the committed receipt reference the same booking change?",
+          scope: { repository, service: "worker", workflow },
+          behaviorId: "booking.reschedule",
+          behaviorRevision: "1",
+          choices: [
+            "Treat the reschedule as a brand-new booking change.",
+            "Reconcile the committed receipt with the original booking change first.",
+          ],
+          eligibleUnit: "logical-request",
+          predicate: "receipt-for-same-change",
+          requestProbe: "booking-delivery",
+          committedReceiptProbe: "booking-receipt-committed",
+          changeNamespace: "booking",
+          maturity: "completed-fixture-transaction",
+          fixture: "acceptance-booking-receipt",
+        },
+      })
+      expect(questionContext.result?.structuredContent).toMatchObject({
+        questionEvidence: expect.objectContaining({
+          status: "unavailable",
+          gap: expect.objectContaining({ reason: "fixture-mapping-changed" }),
+        }),
+      })
+      const parallelRun = {
+        ...first,
+        runId: "runtime-parallel",
+        workflow: "acceptance.runtime.parallel",
+      }
+      await store({ ...parallelRun, type: "started" })
+      await store({
+        ...parallelRun,
+        type: "step",
+        step: "runtime.observation",
+        observation: {
+          kind: "observation",
+          probe: parallelProbe,
+          references: [],
+        },
+      })
+      const mixed = await callTool(108, "context_for_change", {
+        ...contextScope,
+        files: [site.path],
+      })
+      expect(mixed.result?.structuredContent).toMatchObject({
+        status: "mixed-artifacts",
+      })
+      const comparisonWorkflow = "acceptance.runtime.comparison"
+      const comparisonQuery = {
+        version: 1,
+        projectId: project.projectId,
+        bindingId: runtimeBinding.bindingId,
+        workflow: comparisonWorkflow,
+        behaviorId: "booking.reschedule",
+        fallbackStep: "fallback.used",
+        normalStep: "primary.used",
+        partialOutcome: "partial",
+        before: {
+          deploymentId: originalProbe.deploymentId,
+          startedAfter: windows.previousStartedAfter,
+          startedBefore: windows.previousStartedBefore,
+          samplingPolicy: "all-v1",
+        },
+        after: {
+          deploymentId: parallelProbe.deploymentId,
+          startedAfter: windows.currentStartedAfter,
+          startedBefore: windows.currentStartedBefore,
+          samplingPolicy: "all-v1",
+        },
+      }
+      const comparisonRun = async (
+        key: string,
+        timestamp: string,
+        probe: typeof originalProbe,
+        recovered: boolean,
+      ) => {
+        const run = { workflow: comparisonWorkflow, timestamp, runId: key }
+        await store({ ...run, type: "started" })
+        await store({
+          ...run,
+          type: "step",
+          step: "runtime.observation",
+          observation: { kind: "observation", probe, references: [] },
+        })
+        if (recovered) {
+          await store({
+            ...run,
+            type: "error",
+            error: { code: "retry", handled: true },
+          })
+          await store({
+            ...run,
+            type: "error",
+            error: { code: "provider", handled: true },
+          })
+        }
+        await store({
+          ...run,
+          type: "step",
+          step: recovered ? "fallback.used" : "primary.used",
+        })
+        await store({
+          ...run,
+          type: "completed",
+          outcome: recovered ? "partial" : "confirmed",
+        })
+      }
+      for (const index of [0, 1, 2, 3, 4]) {
+        await comparisonRun(
+          `before-${index}`,
+          "2026-10-27T00:00:00.000Z",
+          originalProbe,
+          index < 2,
+        )
+        await comparisonRun(
+          `after-${index}`,
+          timestamp,
+          parallelProbe,
+          index < 1,
+        )
+      }
+      const comparison = await callTool(
+        111,
+        "compare_behavior",
+        comparisonQuery,
+      )
+      expect(comparison.result?.structuredContent).toMatchObject({
+        status: "comparable-recorded-cohorts",
+        environment: "production",
+        before: { eligibleRuns: 5 },
+        after: { eligibleRuns: 5 },
+        limitations: [],
+      })
+      for (const [metric, beforeTotal, afterTotal] of [
+        ["handledError", 2, 1],
+        ["fallback", 2, 1],
+        ["partialOutcome", 2, 1],
+        ["normalPath", 3, 4],
+      ] as const) {
+        for (const [cohort, total] of [
+          ["before", beforeTotal],
+          ["after", afterTotal],
+        ] as const) {
+          // A distinct MCP request proves the drilldown matches the reported population.
+          const compared = await callTool(112, "compare_behavior", {
+            ...comparisonQuery,
+            drilldown: { cohort, metric },
+          })
+          expect(compared.result?.structuredContent).toMatchObject({
+            [cohort]: { counts: { [metric]: { total } } },
+            drilldown: {
+              total,
+              examples: expect.any(Array),
+              nextAfterRunId: null,
+            },
+          })
+          const drilldown = compared.result?.structuredContent?.drilldown as {
+            examples: Array<{
+              runId: string
+              observationEventId: string
+              signalEventId: string
+            }>
+          }
+          expect(
+            new Set(drilldown.examples.map(({ runId }) => runId)).size,
+          ).toBe(total)
+          const [example] = drilldown.examples
+          assert.ok(example)
+          const supportingRun = await callTool(113, "explain_execution", {
+            version: 1,
+            projectId: project.projectId,
+            runId: example.runId,
+            section: "events",
+          })
+          expect(supportingRun.result?.structuredContent).toMatchObject({
+            evidence: {
+              events: expect.arrayContaining([
+                expect.objectContaining({ id: example.observationEventId }),
+                expect.objectContaining({ id: example.signalEventId }),
+              ]),
+            },
+          })
+        }
+      }
+      await comparisonRun("overlap-old", timestamp, originalProbe, false)
+      const ambiguousRun = {
+        workflow: comparisonWorkflow,
+        runId: "overlap-both",
+        timestamp,
+      }
+      await store({ ...ambiguousRun, type: "started" })
+      for (const probe of [originalProbe, parallelProbe]) {
+        await store({
+          ...ambiguousRun,
+          type: "step",
+          step: "runtime.observation",
+          observation: { kind: "observation", probe, references: [] },
+        })
+      }
+      const lossRun = {
+        workflow: comparisonWorkflow,
+        runId: "capture-gap",
+        timestamp,
+      }
+      await store({ ...lossRun, type: "started" })
+      await store({
+        ...lossRun,
+        type: "step",
+        step: "runtime.observation",
+        observation: { kind: "loss", probe: parallelProbe, count: 3 },
+      })
+      const limited = await callTool(114, "compare_behavior", {
+        ...comparisonQuery,
+        after: { ...comparisonQuery.after, samplingPolicy: "sampled-v2" },
+      })
+      expect(limited.result?.structuredContent).toMatchObject({
+        status: "limited",
+        after: {
+          eligibleRuns: 5,
+          otherDeploymentRuns: 2,
+          ambiguousRuns: 1,
+          unattributedRuns: 1,
+          reportedLoss: 3,
+        },
+        limitations: expect.arrayContaining([
+          "sampling-changed",
+          "mixed-deployment-traffic",
+          "unattributed-runs",
+          "reported-loss",
+        ]),
+      })
+      const thin = await callTool(117, "compare_behavior", {
+        ...comparisonQuery,
+        after: {
+          ...comparisonQuery.after,
+          startedBefore: "2026-11-02T00:00:00.000Z",
+          samplingPolicy: undefined,
+        },
+      })
+      expect(thin.result?.structuredContent).toMatchObject({
+        status: "limited",
+        after: { eligibleRuns: 0 },
+        limitations: expect.arrayContaining([
+          "sampling-unknown",
+          "thin-evidence",
+        ]),
+      })
+      const incompatible = await deploy("rollout-new-meaning", "d", "2")
+      const refused = await callTool(115, "compare_behavior", {
+        ...comparisonQuery,
+        after: {
+          ...comparisonQuery.after,
+          deploymentId: incompatible.deploymentId,
+        },
+      })
+      expect(refused.result?.structuredContent).toMatchObject({
+        status: "unsupported",
+        reason: "incompatible-behavior-revisions",
+      })
+      const deniedComparison = await callTool(116, "compare_behavior", {
+        ...comparisonQuery,
+        projectId: foreign.projectId,
+      })
+      expect(deniedComparison.result?.isError).toBe(true)
+      expect(deniedComparison.result?.structuredContent).toBeUndefined()
+      const aborted = new AbortController()
+      aborted.abort()
+      const cancelledRequest = mcpRequest(
+        {
+          jsonrpc: "2.0",
+          id: 92,
+          method: "tools/call",
+          params: { name: "find_executions", arguments: executionSearch },
+        },
+        sessionHeaders,
+      )
+      await expect(
+        handleMcpPost(
+          new Request(cancelledRequest, { signal: aborted.signal }),
+        ),
+      ).rejects.toThrow()
+      const tooWide = await callTool(93, "find_executions", {
+        ...executionSearch,
+        startedAfter: "2025-11-01T00:00:00.000Z",
+      })
+      expect(tooWide.result?.isError).toBe(true)
+      expect(tooWide.result?.structuredContent).toBeUndefined()
+      const cappedWorkflow = randomUUID()
+      await connection.db.insert(workflows).values({
+        id: cappedWorkflow,
+        projectId: project.projectId,
+        name: "acceptance.runtime.cap",
+      })
+      await connection.db.execute(sql`
+        INSERT INTO workflow_runs (workflow_id, external_id, started_at)
+        SELECT ${cappedWorkflow}::uuid, 'capped-' || n, ${timestamp}::timestamptz
+        FROM generate_series(1, 1001) n
+      `)
+      const capped = await callTool(94, "find_executions", {
+        ...executionSearch,
+        workflow: "acceptance.runtime.cap",
+      })
+      expect(capped.result?.isError).toBe(true)
+      expect(capped.result?.structuredContent).toBeUndefined()
+      expect(capped.result?.content?.[0]?.text).toContain("1,000")
+      const cappedComparison = await callTool(118, "compare_behavior", {
+        ...comparisonQuery,
+        workflow: "acceptance.runtime.cap",
+      })
+      expect(cappedComparison.result?.structuredContent).toMatchObject({
+        status: "unsupported",
+        reason: "read-budget",
+      })
+      await connection.db
+        .delete(workflowRuns)
+        .where(eq(workflowRuns.workflowId, cappedWorkflow))
+      await connection.db
+        .delete(workflows)
+        .where(eq(workflows.id, cappedWorkflow))
       const found = await callTool(5, "find_runs", findInput)
       const studioRuns = await studio.run.list({
         workflow: findInput.workflow,
@@ -1879,6 +2697,9 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
             eq(projectMembers.projectId, project.projectId),
           ),
         )
+      await expect(studio.run.citation({ handle })).rejects.toMatchObject({
+        code: "UNAUTHORIZED",
+      })
       const lostMembership = await callTool(54, "get_run", {
         projectId: project.projectId,
         runId,
@@ -2029,6 +2850,13 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
       expect(independentAfterRevoke.result?.structuredContent).toBeUndefined()
       const revoked = await callTool(14, "get_connection", {})
       expect(revoked.result?.isError).toBe(true)
+      const revokedExecution = await callTool(
+        91,
+        "explain_execution",
+        execution,
+      )
+      expect(revokedExecution.result?.isError).toBe(true)
+      expect(revokedExecution.result?.structuredContent).toBeUndefined()
       const revokedPage = await callTool(15, "get_run", {
         projectId: project.projectId,
         runId,
@@ -2043,10 +2871,38 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
       expect(await ownerStudio.run.investigationSummary({ id: runId })).toEqual(
         selected.result?.structuredContent?.summary,
       )
+      await expect(studio.run.citation({ handle })).rejects.toMatchObject({
+        code: "UNAUTHORIZED",
+      })
+      const erasure = await ownerStudio.dataLifecycle.preview({
+        projectId: project.projectId,
+        scope: { kind: "project" },
+      })
+      const erasureInput = {
+        projectId: project.projectId,
+        operationId: erasure.id,
+      }
+      let progress = await ownerStudio.dataLifecycle.confirm({
+        ...erasureInput,
+        confirmation: "Acceptance project",
+        password: ownerPassword,
+      })
+      for (
+        let index = 0;
+        index < 80 && progress.state !== "live_data_deleted";
+        index++
+      ) {
+        progress = await ownerStudio.dataLifecycle.resume(erasureInput)
+      }
+      expect(progress).toMatchObject({
+        state: "live_data_deleted",
+        failureCode: null,
+      })
+      await expect(reopen()).rejects.toMatchObject({ code: "UNAUTHORIZED" })
       await connection.db
         .delete(verification)
         .where(like(verification.value, `%"userId":"${session.user.id}"%`))
-    })
+    }, 45_000)
 
     it("masks provider storage failures in responses and diagnostics", async () => {
       const { getAuth } = await import("../../src/auth.js")

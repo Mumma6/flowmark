@@ -20,6 +20,7 @@ import type { ConnectSetupStage } from "./connect-setup-state"
 import { setupRecoveryCopy } from "./setup-instructions"
 import { connectPageDescription } from "../access/agent-access-guidance"
 import { AgentAccessGuide } from "./agent-access-guide"
+import { RepositoryConnections } from "../repositories/repository-connections"
 import { SetupPathTabs } from "./setup-path-tabs"
 import { useConnectSetup } from "./use-connect-setup"
 import { useProject } from "../../projects/project-context"
@@ -207,6 +208,7 @@ export function ConnectPage() {
           </p>
           <div className="grid gap-6">
             <AgentAccessGuide />
+            <RepositoryConnections />
             <details>
               <summary className="cursor-pointer text-xs text-muted-foreground">
                 Need to instrument your application first?

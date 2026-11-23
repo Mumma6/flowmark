@@ -38,11 +38,10 @@ export function HowSection() {
 }
 
 const loopIcons = [
-  <ProcessIcon key="intent" name="person" />,
-  <ProcessIcon key="build" name="request" />,
-  <ProcessIcon key="run" name="integration" />,
+  <ProcessIcon key="connect" name="person" />,
+  <ProcessIcon key="understand" name="request" />,
   <FlowmarkMark key="memory" className="size-6" />,
-  <ProcessIcon key="change" name="branch" />,
+  <ProcessIcon key="verify" name="branch" />,
 ]
 
 export function FactorySection() {
@@ -96,14 +95,14 @@ export function FactorySection() {
               vectorEffect="non-scaling-stroke"
             />
           </svg>
-          <ol className="relative grid gap-5 md:grid-cols-5 md:gap-0">
+          <ol className="relative grid gap-5 md:grid-cols-4 md:gap-0">
             {copy.loop.steps.map((step, i) => (
               <li
                 key={step.title}
                 className="flex min-h-14 items-center gap-4 pr-5 md:flex-col md:px-2 md:text-center"
               >
                 <span className="relative flex size-11 shrink-0 items-center justify-center rounded-xl border border-primary/30 bg-card text-primary md:size-12">
-                  {i === 3 && (
+                  {i === 2 && (
                     <svg
                       aria-hidden="true"
                       viewBox="0 0 48 48"
@@ -143,17 +142,17 @@ export function FactorySection() {
             preserveAspectRatio="none"
           >
             <SignalPath
-              d="M900 2 V12 Q900 28 883 28 H317 Q300 28 300 12 V3"
+              d="M875 2 V12 Q875 28 858 28 H142 Q125 28 125 12 V3"
               delay="[animation-delay:3s]"
             />
             <path
-              d="m295 9 5-6 5 6"
+              d="m120 9 5-6 5 6"
               fill="none"
               stroke="var(--accent)"
               strokeWidth="1.25"
             />
           </svg>
-          <p className="mt-4 pl-[3.75rem] font-mono text-xs text-primary md:mt-1 md:pl-[20%] md:text-center">
+          <p className="mt-4 pl-[3.75rem] font-mono text-xs text-primary md:mt-1 md:pl-0 md:text-center">
             <span aria-hidden="true">↺ </span>
             {copy.loop.returnLabel}
           </p>

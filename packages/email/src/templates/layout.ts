@@ -83,7 +83,7 @@ export const renderEmailLayout = (content: EmailLayout) => {
           </tr>
         </table>
         <!--[if mso]></td></tr></table><![endif]-->
-        <p style="margin:20px 0 0;color:${brand.muted};font-size:11px;line-height:18px;">Flowmark &nbsp;&middot;&nbsp; Workflow observability</p>
+        <p style="margin:20px 0 0;color:${brand.muted};font-size:11px;line-height:18px;">Flowmark &nbsp;&middot;&nbsp; Application memory</p>
       </td>
     </tr>
   </table>

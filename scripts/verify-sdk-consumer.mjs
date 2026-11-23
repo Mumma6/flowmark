@@ -150,7 +150,11 @@ const receiver = createServer(async (request, response) => {
   response.writeHead(202, { "content-type": "application/json" }).end(
     JSON.stringify({
       accepted: true,
-      capabilities: ["attempts-v1", "expectations-v1"],
+      capabilities: [
+        "attempts-v1",
+        "expectations-v1",
+        "runtime-observations-v1",
+      ],
     }),
   )
 })
@@ -766,6 +770,49 @@ return Response.json(result)
   )
   console.log(
     "PASS standalone Node script, original application error, flush/reuse, shutdown/idempotency and failed delivery",
+  )
+  const observed = received.filter(
+    ({ event }) =>
+      event.type === "step" && event.observation?.kind === "observation",
+  )
+  const [nodeEvidence] = observed.filter(
+    ({ event }) => event.workflow === "consumer.script",
+  )
+  const [nextEvidence] = observed.filter(
+    ({ event }) => event.workflow === "consumer.background",
+  )
+  assert.ok(
+    nodeEvidence && nextEvidence,
+    "both packed entry points emit runtime observations",
+  )
+  assert.deepEqual(
+    nodeEvidence.event.observation,
+    nextEvidence.event.observation,
+  )
+  assert.equal(nodeEvidence.event.observation.references.length, 1)
+  assert.match(
+    nodeEvidence.event.observation.references[0].digest,
+    /^hmac-sha256:[a-f0-9]{64}$/,
+  )
+  assert.ok(
+    received.every(
+      ({ event }) =>
+        event.workflow !== "consumer.disabled-observation" ||
+        !event.observation,
+    ),
+  )
+  assert.ok(
+    received.some(
+      ({ event }) =>
+        event.observation?.kind === "loss" && event.observation.count === 1,
+    ),
+  )
+  assert.doesNotMatch(
+    JSON.stringify(received),
+    /SYNTHETIC_(REFERENCE_KEY|RAW_BOOKING_REFERENCE|UNDECLARED_REFERENCE)/,
+  )
+  console.log(
+    "PASS packed Node and Next runtime observations, explicit loss and reference privacy",
   )
   const operationFailures = received.filter(
     ({ event }) => event.type === "operation_failed",

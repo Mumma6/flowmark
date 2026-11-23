@@ -86,8 +86,8 @@ function AuthorizedCapture({
           error={capture.error}
           retry={() => void capture.refetch()}
         />
-        <a className="underline" href="/investigations">
-          Back to investigations
+        <a className="underline" href="/coverage">
+          Back to coverage
         </a>
       </section>
     )
@@ -104,8 +104,8 @@ function AuthorizedCapture({
           {captureUnavailableReason(capture.data.reason)}. Its previous title
           and evidence are withheld.
         </p>
-        <a className="underline" href="/investigations">
-          Manage captures
+        <a className="underline" href="/coverage">
+          Review coverage
         </a>
       </section>
     )
@@ -156,8 +156,8 @@ function AuthorizedCapture({
       >
         Recheck capture access
       </Button>
-      <a className="underline" href="/investigations">
-        Back to investigations
+      <a className="underline" href="/coverage">
+        Back to coverage
       </a>
     </section>
   )

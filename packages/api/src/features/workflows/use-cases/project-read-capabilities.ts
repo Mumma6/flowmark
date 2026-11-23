@@ -1,3 +1,11 @@
+import type {
+  ArtifactMappingScope,
+  BehaviorComparison,
+  BehaviorComparisonQuery,
+  CoverageObservationQuery,
+  CoverageStoredEvent,
+  DeployedArtifactMapping,
+} from "@flowmarkdev/core"
 import type { ProcessHealth } from "@flowmarkdev/core"
 import type {
   ReferenceJourneyQuery,
@@ -57,6 +65,30 @@ export interface ProjectReadRuns {
     reader: ProjectReader,
   ) => Effect.Effect<
     ProjectSnapshot["workflows"],
+    Unauthorized | PersistenceError
+  >
+  readonly compareBehavior: (
+    reader: ProjectReader,
+    query: BehaviorComparisonQuery,
+  ) => Effect.Effect<BehaviorComparison, Unauthorized | PersistenceError>
+  readonly artifactMappings: (
+    reader: ProjectReader,
+    scope: ArtifactMappingScope,
+  ) => Effect.Effect<
+    {
+      readonly mappings: readonly DeployedArtifactMapping[]
+      readonly truncated: boolean
+    },
+    Unauthorized | PersistenceError
+  >
+  readonly coverageObservations: (
+    reader: ProjectReader,
+    query: CoverageObservationQuery,
+  ) => Effect.Effect<
+    {
+      readonly events: readonly CoverageStoredEvent[]
+      readonly truncated: boolean
+    },
     Unauthorized | PersistenceError
   >
   readonly listRuns: (

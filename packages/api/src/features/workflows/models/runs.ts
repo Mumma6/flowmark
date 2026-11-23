@@ -58,6 +58,7 @@ export interface RunComparison {
 }
 
 export interface RunTimelineEvent {
+  readonly runtimeObservation?: import("@flowmarkdev/core").StoredRuntimeObservation
   readonly expectation?: ExpectationEvent | null
   readonly expectationObservedAt?: string | null
   readonly attempt?: WorkflowAttempt | null
@@ -108,6 +109,7 @@ export interface ListedRun extends StoredRun {
 }
 
 export interface ListRunsQuery {
+  readonly executionSelector?: import("@flowmarkdev/core").ExecutionSelector
   readonly expectationState?: ExpectationState
   readonly ratioSelection?: RatioSelection
   readonly resultSelection?: ResultSelection
@@ -142,6 +144,8 @@ export interface ListedRunsPage {
 }
 
 export interface RunEventPageQuery {
+  readonly eventIds?: ReadonlyArray<string>
+  readonly observationsOnly?: boolean
   readonly runId: string
   readonly cursor?: string
   readonly limit?: number

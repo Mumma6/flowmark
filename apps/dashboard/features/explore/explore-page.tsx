@@ -135,8 +135,8 @@ function ExploreWorkspace() {
         variant="ghost"
         className="h-9 px-0 text-xs text-muted-foreground"
       >
-        <Link href="/overview">
-          Project overview
+        <Link href="/coverage">
+          Coverage and exceptions
           <ArrowUpRight aria-hidden="true" className="size-3.5" />
         </Link>
       </Button>

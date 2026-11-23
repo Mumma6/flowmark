@@ -10,7 +10,7 @@ OAuth, grant families, and issuer discovery stay in `@flowmark/auth`. This
 package calls those use cases; it does not execute, schedule, or retry
 application work.
 
-This adapter exposes the six current project-scoped reads. The [target agent interface](../../docs/product.md#agent-interface-contract) starts at the change and adds artifact-aware case retrieval. Consult the deployed resource metadata and the current grant to establish access.
+This adapter exposes project-scoped reads. The [target agent interface](../../docs/product.md#agent-interface-contract) starts at the change and adds artifact-aware case retrieval. Consult the deployed resource metadata and the current grant to establish access.
 
 ## User setup versus adapter internals
 
@@ -22,14 +22,23 @@ Do not turn the reference HTTP proof into a universal vendor setup claim.
 
 ## Tools
 
-| Tool                    | Behavior                                                                                                       |
-| ----------------------- | -------------------------------------------------------------------------------------------------------------- |
-| `get_connection`        | Current grant, project scope, and which investigation tools this deployment enables.                           |
-| `list_workflows`        | Workflow names in one authorized project. A `workflow` argument also loads bounded declaration meaning.        |
-| `find_runs`             | Run history inside an explicit `startedAfter` / `startedBefore` window of at most 31 days.                     |
-| `get_run`               | Compact run summary plus one page of events, related runs, expectations, or operations.                        |
-| `compare_run`           | Existing peer comparison for one run. Optional `peers` uses the same selection as Studio.                      |
-| `get_workflow_insights` | One mode per call: `technical` period report or `business` declared-result insights. Unsupported filters fail. |
+| Tool                         | Behavior                                                                                                                                                     |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `get_connection`             | Current grant, project scope, and which investigation tools this deployment enables.                                                                         |
+| `list_workflows`             | Workflow names in one authorized project. A `workflow` argument also loads bounded declaration meaning.                                                      |
+| `context_for_change`         | Retrieve observed cases for a ticket, plan, diff, file or symbol in an authorized repository. Requires diagnostic access, `version: 1` and a bounded window. |
+| `compare_behavior`           | Compare two deployment windows of one behavior with counts, matching cases and explicit limits. Requires diagnostic access and `version: 1`.                 |
+| `discover_boundaries`        | Reconcile source registrations with deployment receipts and an independent inventory. Does not read executions. Requires diagnostic access and `version: 1`. |
+| `propose_observation_repair` | Choose the smallest in-policy repair for one diagnosed gap. It does not merge the proposal or add capture for a denied read.                                 |
+| `assess_coverage`            | Return discovery, fixture readiness and observed answerability for one question and window. A missing counter does not become a rate.                        |
+| `maintain_questions`         | Re-evaluate one question after source, deployment and traffic changes. Waiting, a missing grant and expiry open no instrumentation.                          |
+| `evaluate_release`           | Check one reviewed distinction on the artifacts that emitted the cases. A contrary case stays separate from any rate. The deploy is not a cause.             |
+| `find_executions`            | Search recorded application executions by workflow, scoped reference digest, artifact or behavior. Requires diagnostic access and `version: 1`.              |
+| `explain_execution`          | Read one execution with a bounded page of observations, events, related runs, operations or settlements. Requires diagnostic access and `version: 1`.        |
+| `find_runs`                  | Run history inside an explicit `startedAfter` / `startedBefore` window of at most 31 days.                                                                   |
+| `get_run`                    | Compact run summary plus one page of events, related runs, expectations, or operations.                                                                      |
+| `compare_run`                | Existing peer comparison for one run. Optional `peers` uses the same selection as Studio.                                                                    |
+| `get_workflow_insights`      | One mode per call: `technical` period report or `business` declared-result insights. Unsupported filters fail.                                               |
 
 `McpWorkflowTools` exposes the project-scoped tools. They read through
 `GetProjectWorkflowData` with a delegated OAuth reader. Input is decoded with
@@ -119,7 +128,7 @@ Revocation is the persisted grant family, checked on the next authorized call.
 
 Compatible clients can render the read-only `get_run` events presentation through
 `ui://flowmark/run-evidence/v1.html`. UI capability negotiation only selects a
-presentation; it grants no authority. The existing six tools and their complete
+presentation; it grants no authority. The read tools and their complete
 text/structured results remain available without UI support. Live connection and
 admission checks also protect static resource reads. No new public route, key or
 REST client is required. Agent access's disabled mode remains authoritative.

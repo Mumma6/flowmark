@@ -16,17 +16,12 @@ import {
   BookOpen,
   CircleAlert,
   Code2,
-  Compass,
   History,
   LifeBuoy,
-  Bookmark,
-  LayoutGrid,
-  LineChart,
   Link2,
   LogOut,
   Settings,
   UserRound,
-  Workflow,
 } from "lucide-react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
@@ -43,17 +38,12 @@ import { CommandPalette } from "../search/command-palette"
 import { ThemeSelect } from "./theme-select"
 
 const navigation = [
-  { href: "/", label: "Explore", icon: Compass },
-  { href: "/workflows", label: "Processes", icon: Workflow },
-  { href: "/insights", label: "Insights", icon: LineChart },
-  { href: "/issues", label: "Attention", icon: CircleAlert },
+  { href: "/connect", label: "Connections", icon: Link2 },
+  { href: "/runs", label: "Evidence", icon: History },
+  { href: "/coverage", label: "Coverage", icon: CircleAlert },
 ] as const
 
 const utilities = [
-  { href: "/investigations", label: "Your investigations", icon: Bookmark },
-  { href: "/runs", label: "Execution history", icon: History },
-  { href: "/overview", label: "Project overview", icon: LayoutGrid },
-  { href: "/connect", label: "Connect", icon: Link2 },
   { href: "/settings", label: "Settings", icon: Settings },
   { href: "/account/help", label: "Help", icon: LifeBuoy },
   { href: "/onboarding?mode=guide", label: "Setup guide", icon: Code2 },
@@ -171,6 +161,12 @@ export function StudioShell({
           />
           <a
             href="#studio-main"
+            onClick={(event) => {
+              if (pathname === "/runs/citation") {
+                event.preventDefault()
+                document.getElementById("studio-main")?.focus()
+              }
+            }}
             className="sr-only z-[100] rounded-md bg-card px-4 py-3 focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:ring-2 focus:ring-ring"
           >
             Skip to content
@@ -222,10 +218,7 @@ export function StudioShell({
                   className="flex min-w-0 gap-1 overflow-x-auto"
                 >
                   {navigation.map(({ href, label, icon: Icon }) => {
-                    const active =
-                      href === "/"
-                        ? pathname === "/"
-                        : pathname.startsWith(href)
+                    const active = pathname.startsWith(href)
                     return (
                       <Link
                         key={href}
@@ -243,16 +236,7 @@ export function StudioShell({
                   })}
                 </nav>
               }
-              utility={
-                <Link
-                  href="/runs"
-                  className="hidden items-center gap-2 px-2 py-3 text-[11px] text-muted-foreground hover:text-foreground md:flex"
-                >
-                  <History aria-hidden="true" className="size-3.5" />
-                  Execution history
-                  <ArrowUpRight aria-hidden="true" className="size-3" />
-                </Link>
-              }
+              utility={null}
             />
           </header>
           <main

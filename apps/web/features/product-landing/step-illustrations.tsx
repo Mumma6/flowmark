@@ -46,7 +46,7 @@ function Connect() {
   )
 }
 
-function Observe() {
+function Understand() {
   const wave =
     "M7 74 H39 Q46 74 51 62 T63 64 L73 84 L87 77 L99 40 L112 94 L126 61 L139 68 L150 48 L162 78 L174 74 H193 L200 64 L207 74 H244"
   return (
@@ -99,7 +99,7 @@ function Observe() {
   )
 }
 
-function Remember() {
+function ImproveMemory() {
   return (
     <g strokeLinejoin="round">
       {[3, 2, 1, 0].map((depth) => (
@@ -139,7 +139,7 @@ function Remember() {
   )
 }
 
-function Retrieve() {
+function VerifyChanges() {
   return (
     <>
       <SignalPath d="M108 66 H145 Q153 66 159 60 L168 51 Q173 47 180 47 H202" />
@@ -189,7 +189,12 @@ function Retrieve() {
   )
 }
 
-const illustrations = [Connect, Observe, Remember, Retrieve] as const
+const illustrations = [
+  Connect,
+  Understand,
+  ImproveMemory,
+  VerifyChanges,
+] as const
 
 export function StepIllustration({ index }: { index: number }) {
   const Illustration = illustrations[index]

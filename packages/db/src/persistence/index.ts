@@ -120,3 +120,12 @@ export {
 } from "./data-exports/data-export-store.js"
 
 export { RegistrationInvitationStore } from "./registration-invitations/registration-invitation-store.js"
+export { DeploymentStore } from "./runtime-deployment/deployment-store.js"
+export { RepositoryInstallationStore } from "./repository-installations/repository-installation-store.js"
+export type {
+  RecordInstallationDeliveryInput,
+  RecordInstallationDeliveryOutcome,
+  RecordInstallationPrInput,
+  StoredRepositoryInstallation,
+  UpsertRepositoryInstallationInput,
+} from "./repository-installations/types.js"

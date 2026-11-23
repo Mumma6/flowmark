@@ -15,20 +15,31 @@
   <a href="https://flowmark.dev"><img alt="flowmark.dev" src="https://img.shields.io/badge/flowmark.dev-0d1311" /></a>
 </p>
 
-A coding agent begins with a ticket, plan, diff, file or symbol. Flowmark's product is the runtime evidence for that change: what ran, which decisions the application reported, which attempts belonged together, which outcomes arrived later and where evidence is missing. The human owns intent, access, policy and merge. The agent owns the implementation, tests and observation maintenance.
+Your agent knows the code. Flowmark remembers what happened in production.
 
-A booking can be rescheduled twice. A partner can also redeliver the first change under a new callback ID. Deduplicating by booking would lose a legitimate update. Deduplicating by envelope would keep the duplicate. Flowmark exists to give the agent both cases before it chooses a key.
+Every code change starts with a decision about which behavior to preserve,
+what to fix, and what to test. Production history can inform that decision.
+It can show which paths actually ran, which attempts belonged together, and
+which outcomes arrived after the original execution ended.
+
+We’re building Flowmark so an agent can start with a ticket, diff, file or
+symbol and retrieve the production cases that matter for its next change.
+The team sets intent and approves the change. The agent uses the evidence to
+implement and test it. Once the application runs again, its observations
+become evidence for future agents.
+
+Authorized agents can already use MCP to find and inspect recorded executions.
+Automatic retrieval from a code change is in development.
 
 ## Start here
+
+- [Connect a coding agent to Flowmark via MCP](https://docs.flowmark.dev/docs/mcp)
 
 - [Product definition and target agent tools](docs/product.md)
 - [Using runtime memory in the software factory](docs/agent-workflow.md)
 - [Runtime evidence and coverage](docs/runtime-memory.md)
 - [Implemented capabilities and outstanding work](docs/implementation-status.md)
-- [Connect a coding agent using today's MCP interface](https://docs.flowmark.dev/docs/mcp)
 - [SDK integration reference for agents and adapters](packages/sdk/README.md)
-
-The current runtime records workflows, runs, attempts, outcomes and confirmations. Authorized agents can search and inspect this evidence using the existing MCP tools. Repository installation, artifact-backed change lookup and continuous observation repair are planned. The application owns execution and retries. Human inspection and access management live in Studio.
 
 ## Documentation
 

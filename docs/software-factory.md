@@ -20,6 +20,7 @@ and dependency cache. Local-only apps are not build entry points.
 
 `pnpm factory:check <base-ref-or-SHA>` adds deterministic regression checks:
 selected Effect 4 syntax, functional iteration/internal execution boundaries,
+chained collection transforms in package use cases and rules,
 package organization/ownership, local Markdown links and removed documented root
 commands. Existing graph tests additionally enforce declared dependencies,
 public/type entry points, cross-package relative imports and engine/DB direction.

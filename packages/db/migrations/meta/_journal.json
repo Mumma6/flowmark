@@ -274,6 +274,27 @@
       "when": 1795247363243,
       "tag": "0038_meaning-proposals",
       "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1795344816913,
+      "tag": "0039_runtime-deployment-receipts",
+      "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1795345991227,
+      "tag": "0040_bound-runtime-observations",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1795442254471,
+      "tag": "0041_repository-installations",
+      "breakpoints": true
     }
   ]
 }

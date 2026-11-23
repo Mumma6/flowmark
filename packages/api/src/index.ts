@@ -92,7 +92,10 @@ export {
   BusinessValueSchema,
 } from "@flowmarkdev/core"
 
-export type { AppendDisposition } from "@flowmarkdev/core"
+export {
+  RUNTIME_OBSERVATION_CAPABILITY,
+  type AppendDisposition,
+} from "@flowmarkdev/core"
 export type {
   LinkedComparison,
   LinkedComparisonQuery,
@@ -229,3 +232,81 @@ export {
 } from "./features/data-exports/ports/data-exports.js"
 
 export { MeaningProposalSchema } from "@flowmarkdev/core"
+export {
+  Deployments,
+  DeploymentBindingInput,
+  DeploymentReadInput,
+} from "./features/runtime-deployment/use-cases/deployments.js"
+
+export { ExecutionSelectorSchema } from "@flowmarkdev/core"
+
+export type { DeployedArtifactMapping } from "@flowmarkdev/core"
+export { rankChangeMappings } from "./features/workflows/models/change-matching.js"
+
+export {
+  RUNTIME_CITATION_MAX_LENGTH,
+  resolveRuntimeCitation,
+  sealRuntimeCitation,
+} from "./features/workflows/use-cases/runtime-citations.js"
+
+export { BehaviorComparisonSchema } from "@flowmarkdev/core"
+export {
+  RuntimeQuestionCheckSchema,
+  RuntimeQuestionSchema,
+  type RuntimeQuestion,
+} from "@flowmarkdev/core"
+export { checkRuntimeQuestion } from "./features/workflows/use-cases/check-runtime-question.js"
+export {
+  classifyQuestionDistinction,
+  questionRecommendedAction,
+} from "./features/workflows/rules/assess-question-fixture.js"
+export {
+  selectQuestionEvidence,
+  type QuestionEvidenceSelection,
+  type SelectedQuestionCase,
+} from "./features/workflows/use-cases/select-question-evidence.js"
+export { discoverEvidenceBoundaries } from "./features/workflows/use-cases/discover-evidence-boundaries.js"
+export { proposeObservationRepair } from "./features/workflows/use-cases/propose-observation-repair.js"
+export { assessCoverage } from "./features/workflows/use-cases/assess-coverage.js"
+export { maintainQuestionRepair } from "./features/workflows/use-cases/maintain-question.js"
+export { evaluateReleaseChange } from "./features/workflows/use-cases/evaluate-release.js"
+export {
+  DeployedBoundarySchema,
+  EvidenceEstateInputSchema,
+  ObservationRepairInputSchema,
+  CoverageAssessmentInputSchema,
+  CoverageObservationQuerySchema,
+  QuestionMaintenanceInputSchema,
+  ReleaseEvaluationInputSchema,
+  SourceBoundarySchema,
+} from "@flowmarkdev/core"
+
+export {
+  RepositoryCollectionPolicySchema,
+  RepositoryInstallationBootstrapInputSchema,
+  RepositoryInstallationCreateSchema,
+  RepositoryInstallationEventSchema,
+  RepositoryInstallationRevokeSchema,
+  RepositoryInstallationVerifyReadbackSchema,
+} from "@flowmarkdev/core"
+export {
+  RepositoryInstallationRejected,
+  type RepositoryInstallationRejectionReason,
+} from "./features/repository-installations/errors.js"
+export {
+  RepositoryInstallations,
+  type RepositoryInstallationView,
+} from "./features/repository-installations/use-cases/repository-installations.js"
+export {
+  RepositoryHostAdapter,
+  type UpsertBootstrapPullRequestRequest,
+  type UpsertBootstrapPullRequestResult,
+} from "./features/repository-installations/ports/repository-host-adapter.js"
+export { RepositoryInstallationRepository } from "./features/repository-installations/ports/repository-installation-repository.js"
+export {
+  createLocalGitHubAdapter,
+  signGitHubWebhook,
+  verifyGitHubWebhookSignature,
+  UnconfiguredRepositoryHostAdapterLive,
+  type LocalGitHubPullRequestRecord,
+} from "./features/repository-installations/adapters/local-github-adapter.js"

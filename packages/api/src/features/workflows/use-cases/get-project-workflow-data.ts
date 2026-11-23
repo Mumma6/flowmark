@@ -1,3 +1,8 @@
+import type { BehaviorComparisonQuery } from "@flowmarkdev/core"
+import type {
+  ArtifactMappingScope,
+  CoverageObservationQuery,
+} from "@flowmarkdev/core"
 import { ProcessHealthQuerySchema, type ProcessHealth } from "@flowmarkdev/core"
 import {
   compareProcessHealth,
@@ -102,6 +107,30 @@ export class GetProjectWorkflowData extends Context.Service<
             .pipe(Effect.provideService(CurrentProjectReader, reader))
         },
       )
+      const compareBehavior = Effect.fn(
+        "GetProjectWorkflowData.compareBehavior",
+      )(function* (reader: ProjectReader, query: BehaviorComparisonQuery) {
+        const projectId = yield* authorizeReader(reader)
+        return yield* repository
+          .compareBehavior(projectId, query)
+          .pipe(Effect.provideService(CurrentProjectReader, reader))
+      })
+      const artifactMappings = Effect.fn(
+        "GetProjectWorkflowData.artifactMappings",
+      )(function* (reader: ProjectReader, scope: ArtifactMappingScope) {
+        const projectId = yield* authorizeReader(reader)
+        return yield* repository
+          .artifactMappings(projectId, scope)
+          .pipe(Effect.provideService(CurrentProjectReader, reader))
+      })
+      const coverageObservations = Effect.fn(
+        "GetProjectWorkflowData.coverageObservations",
+      )(function* (reader: ProjectReader, query: CoverageObservationQuery) {
+        const projectId = yield* authorizeReader(reader)
+        return yield* repository
+          .coverageObservations(projectId, query)
+          .pipe(Effect.provideService(CurrentProjectReader, reader))
+      })
       const listRuns = Effect.fn("GetProjectWorkflowData.listRuns")(function* (
         reader: ProjectReader,
         query: ListRunsQuery,
@@ -331,6 +360,9 @@ export class GetProjectWorkflowData extends Context.Service<
         businessInsights,
         snapshot,
         workflows,
+        compareBehavior,
+        artifactMappings,
+        coverageObservations,
         listRuns,
         search,
         timeline,

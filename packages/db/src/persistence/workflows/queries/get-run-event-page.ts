@@ -1,5 +1,5 @@
 import type { FlowmarkDatabase } from "../../../client.js"
-import { and, eq, sql } from "drizzle-orm"
+import { and, eq, inArray, isNotNull, sql } from "drizzle-orm"
 import { Effect } from "effect"
 import {
   workflowEvents,
@@ -92,22 +92,29 @@ export const getRunEventPage = Effect.fn("getRunEventPage")(function* (
     Math.max(1, query.limit ?? RUN_EVENT_PAGE_DEFAULT_LIMIT),
   )
   const db = yield* Database
-  const baseWhere = and(
+  const scope = and(
     runTimelineJoins(projectId, query.runId),
-    decoded ? cursorPredicate(decoded) : undefined,
+    query.eventIds
+      ? inArray(workflowEvents.eventId, query.eventIds)
+      : undefined,
+    query.observationsOnly
+      ? isNotNull(workflowEvents.runtimeObservation)
+      : undefined,
   )
+  const baseWhere = and(scope, decoded ? cursorPredicate(decoded) : undefined)
   const [countRow] = yield* runQuery(DatabaseOperation.ReadRun, () =>
     db
       .select({ total: sql<number>`count(*)::int` })
       .from(workflowEvents)
       .innerJoin(workflowRuns, eq(workflowEvents.runId, workflowRuns.id))
       .innerJoin(workflows, eq(workflowRuns.workflowId, workflows.id))
-      .where(runTimelineJoins(projectId, query.runId)),
+      .where(scope),
   )
   const rows = yield* runQuery(DatabaseOperation.ReadRun, () =>
     db
       .select({
         ...runTimelineSelection,
+        runtimeObservation: workflowEvents.runtimeObservation,
         cursorOccurredAt: sql<string>`to_char(${workflowEvents.occurredAt} AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')`,
         cursorReceivedAt: sql<string>`to_char(${workflowEvents.createdAt} AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')`,
       })
@@ -167,7 +174,7 @@ export const getRunEventPage = Effect.fn("getRunEventPage")(function* (
       ),
   ).pipe(Effect.map((result) => result[0]?.latest ?? 0))
   const events = mapRunTimelineRows(mappedRows, latestReportOrder).map(
-    (event) => {
+    (event, index) => {
       const properties = boundJsonPreview(event.properties)
       const result = boundJsonPreview(event.result)
       const error = boundJsonPreview(event.error)
@@ -178,6 +185,9 @@ export const getRunEventPage = Effect.fn("getRunEventPage")(function* (
       ]
       return {
         ...event,
+        ...(query.observationsOnly && pageRows[index]?.runtimeObservation
+          ? { runtimeObservation: pageRows[index].runtimeObservation }
+          : {}),
         properties: properties.value as typeof event.properties,
         result: result.value as typeof event.result,
         error: error.value as typeof event.error,

@@ -78,6 +78,9 @@ export class IngestBrowserWorkflowEvents extends Context.Service<
           ),
         )
         const event = envelope.event
+        if (event.type === "step" && event.observation !== undefined) {
+          return yield* new BrowserForbidden()
+        }
         if (
           isExpectationEvent(event) &&
           event.type !== "expectation_declared" &&

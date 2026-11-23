@@ -14,12 +14,9 @@ export const commandSearchDebounceMs = 300
 
 export type CommandPage = {
   readonly id:
-    | "explore"
-    | "overview"
-    | "workflows"
+    | "connect"
     | "runs"
-    | "insights"
-    | "issues"
+    | "coverage"
     | "settings"
     | "setup-help"
     | "documentation"
@@ -37,45 +34,25 @@ export type CommandPage = {
 export function commandPages(docsUrl: string): readonly CommandPage[] {
   return [
     {
-      id: "explore",
-      label: "Explore",
-      href: "/",
-      keywords: "home studio evidence",
-      external: false,
-    },
-    {
-      id: "overview",
-      label: "Project overview",
-      href: "/overview",
-      keywords: "dashboard summary",
-      external: false,
-    },
-    {
-      id: "workflows",
-      label: "Processes",
-      href: "/workflows",
-      keywords: "directory workflows",
+      id: "connect",
+      label: "Connections and policy",
+      href: "/connect",
+      keywords: "connect access grants policy",
       external: false,
     },
     {
       id: "runs",
-      label: "Execution history",
+      label: "Evidence",
       href: "/runs",
-      keywords: "history executions runs",
+      keywords: "history executions runs citation evidence",
       external: false,
     },
     {
-      id: "insights",
-      label: "Insights",
-      href: "/insights",
-      keywords: "trends outcomes analytics performance",
-      external: false,
-    },
-    {
-      id: "issues",
-      label: "Attention",
-      href: "/issues",
-      keywords: "issues failures problems errors investigate",
+      id: "coverage",
+      label: "Coverage and exceptions",
+      href: "/coverage",
+      keywords:
+        "coverage exceptions unavailable waiting stale revoked forbidden",
       external: false,
     },
     {

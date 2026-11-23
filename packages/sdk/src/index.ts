@@ -55,3 +55,4 @@ export type {
 
 export { createFlowmarkWithTransport } from "./client/create-client.js"
 export { FlowmarkExpectationError } from "./errors/index.js"
+export { createRuntimeObservationEmitter } from "./workflows/runtime-observations.js"

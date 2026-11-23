@@ -19,11 +19,19 @@ import {
   text,
   timestamp,
   uuid,
+  unique,
   uniqueIndex,
 } from "drizzle-orm/pg-core"
 import { user } from "./auth.js"
 import { oauthClient, oauthConsent } from "./oauth-provider.js"
 import type {
+  ArtifactManifest,
+  RepositoryColdStartStatus,
+  RepositoryCollectionPolicy,
+  RepositoryHost,
+  RepositoryInstallationStatus,
+  RepositoryRuntime,
+  StoredRuntimeObservation,
   WorkflowError,
   WorkflowFailure,
   WorkflowProperties,
@@ -207,6 +215,9 @@ export const workflowEvents = pgTable(
     error: jsonb("error").$type<StoredWorkflowError>(),
     result: jsonb("result").$type<WorkflowResult>(),
     outcome: text("outcome"),
+    runtimeObservation: jsonb(
+      "runtime_observation",
+    ).$type<StoredRuntimeObservation>(),
     occurredAt: timestamp("occurred_at", { withTimezone: true }).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
@@ -762,3 +773,139 @@ export { waitlist } from "./waitlist.js"
 export { dataExportRequests } from "./data-exports.js"
 
 export { registrationInvitations } from "./registration-invitations.js"
+
+/** Owner-created scope for a single repository service and runtime environment. */
+export const deploymentBindings = pgTable(
+  "deployment_bindings",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    repository: text("repository").notNull(),
+    service: text("service").notNull(),
+    environment: text("environment").notNull(),
+    secretHash: text("secret_hash").notNull(),
+  },
+  (table) => [
+    unique().on(
+      table.projectId,
+      table.repository,
+      table.service,
+      table.environment,
+    ),
+    unique().on(table.projectId, table.id),
+  ],
+)
+
+export const deploymentReceipts = pgTable(
+  "deployment_receipts",
+  {
+    projectId: uuid("project_id").notNull(),
+    bindingId: uuid("binding_id").notNull(),
+    deploymentId: text("deployment_id").notNull(),
+    manifestDigest: text("manifest_digest").notNull(),
+    manifest: jsonb("manifest").$type<ArtifactManifest>().notNull(),
+    receivedAt: timestamp("received_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    primaryKey({
+      columns: [table.projectId, table.bindingId, table.deploymentId],
+    }),
+    foreignKey({
+      columns: [table.projectId, table.bindingId],
+      foreignColumns: [deploymentBindings.projectId, deploymentBindings.id],
+    }).onDelete("cascade"),
+  ],
+)
+
+/** Owner-authorized repository and environment installation bound to a deployment binding and collection policy. */
+export const repositoryInstallations = pgTable(
+  "repository_installations",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    bindingId: uuid("binding_id").notNull(),
+    host: text("host").$type<RepositoryHost>().notNull(),
+    runtime: text("runtime").$type<RepositoryRuntime>().notNull(),
+    repository: text("repository").notNull(),
+    service: text("service").notNull(),
+    environment: text("environment").notNull(),
+    externalInstallationId: text("external_installation_id").notNull(),
+    policy: jsonb("policy").$type<RepositoryCollectionPolicy>().notNull(),
+    status: text("status")
+      .$type<RepositoryInstallationStatus>()
+      .notNull()
+      .default("pending-verification"),
+    coldStartStatus: text("cold_start_status")
+      .$type<RepositoryColdStartStatus>()
+      .notNull()
+      .default("pending-deployment-receipt"),
+    prBranch: text("pr_branch"),
+    prNumber: integer("pr_number"),
+    prUrl: text("pr_url"),
+    prHeadSha: text("pr_head_sha"),
+    verifiedRunId: uuid("verified_run_id"),
+    verifiedAt: timestamp("verified_at", { withTimezone: true }),
+    delegatedAuthorizationCodeId: text("delegated_authorization_code_id"),
+    delegatedClientId: text("delegated_client_id"),
+    delegatedUserId: text("delegated_user_id"),
+    lastEventAt: timestamp("last_event_at", { withTimezone: true }),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    unique().on(
+      table.projectId,
+      table.host,
+      table.repository,
+      table.service,
+      table.environment,
+    ),
+    unique().on(table.projectId, table.id),
+    index("repository_installations_external_idx").on(
+      table.host,
+      table.externalInstallationId,
+    ),
+    foreignKey({
+      columns: [table.projectId, table.bindingId],
+      foreignColumns: [deploymentBindings.projectId, deploymentBindings.id],
+    }).onDelete("cascade"),
+  ],
+)
+
+/** Deduplication log for repository host installation webhook deliveries. */
+export const repositoryInstallationDeliveries = pgTable(
+  "repository_installation_deliveries",
+  {
+    projectId: uuid("project_id").notNull(),
+    installationId: uuid("installation_id").notNull(),
+    deliveryId: text("delivery_id").notNull(),
+    action: text("action").notNull(),
+    sentAt: timestamp("sent_at", { withTimezone: true }).notNull(),
+    receivedAt: timestamp("received_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    primaryKey({
+      columns: [table.projectId, table.installationId, table.deliveryId],
+    }),
+    foreignKey({
+      columns: [table.projectId, table.installationId],
+      foreignColumns: [
+        repositoryInstallations.projectId,
+        repositoryInstallations.id,
+      ],
+    }).onDelete("cascade"),
+  ],
+)
