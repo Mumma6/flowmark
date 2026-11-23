@@ -10,6 +10,7 @@ import { accountLifecycleRouter } from "./account-lifecycle-router"
 import { t } from "./context"
 import { healthRouter } from "./health-router"
 import { projectRouter } from "./project-router"
+import { repositoryInstallationRouter } from "./repository-installation-router"
 import { onboardingRouter } from "./onboarding-router"
 import { agentAccessRouter } from "./agent-access-router"
 import { resultDeclarationsRouter } from "./result-declarations-router"
@@ -29,6 +30,7 @@ export const appRouter = t.router({
   investigations: investigationsRouter,
   health: healthRouter,
   project: projectRouter,
+  repositoryInstallation: repositoryInstallationRouter,
   onboarding: onboardingRouter,
   agentAccess: agentAccessRouter,
   resultDeclarations: resultDeclarationsRouter,

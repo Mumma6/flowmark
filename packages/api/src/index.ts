@@ -265,3 +265,33 @@ export {
   type QuestionEvidenceSelection,
   type SelectedQuestionCase,
 } from "./features/workflows/use-cases/select-question-evidence.js"
+
+export {
+  RepositoryCollectionPolicySchema,
+  RepositoryInstallationBootstrapInputSchema,
+  RepositoryInstallationCreateSchema,
+  RepositoryInstallationEventSchema,
+  RepositoryInstallationRevokeSchema,
+  RepositoryInstallationVerifyReadbackSchema,
+} from "@flowmarkdev/core"
+export {
+  RepositoryInstallationRejected,
+  type RepositoryInstallationRejectionReason,
+} from "./features/repository-installations/errors.js"
+export {
+  RepositoryInstallations,
+  type RepositoryInstallationView,
+} from "./features/repository-installations/use-cases/repository-installations.js"
+export {
+  RepositoryHostAdapter,
+  type UpsertBootstrapPullRequestRequest,
+  type UpsertBootstrapPullRequestResult,
+} from "./features/repository-installations/ports/repository-host-adapter.js"
+export { RepositoryInstallationRepository } from "./features/repository-installations/ports/repository-installation-repository.js"
+export {
+  createLocalGitHubAdapter,
+  signGitHubWebhook,
+  verifyGitHubWebhookSignature,
+  UnconfiguredRepositoryHostAdapterLive,
+  type LocalGitHubPullRequestRecord,
+} from "./features/repository-installations/adapters/local-github-adapter.js"

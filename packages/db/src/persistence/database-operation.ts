@@ -12,6 +12,8 @@ export enum DatabaseOperation {
   DataLifecycle = "data-lifecycle",
   DeploymentBinding = "deployment-binding",
   DeploymentReceipt = "deployment-receipt",
+  RepositoryInstallation = "repository-installation",
+  RepositoryInstallationDelivery = "repository-installation-delivery",
   ProjectReadFence = "project-read-fence",
   EnsureCursorMcpClient = "ensure-cursor-mcp-client",
   GetAgentConsentClient = "get-agent-consent-client",

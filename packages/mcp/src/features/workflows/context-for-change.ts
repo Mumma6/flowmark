@@ -66,30 +66,32 @@ const deploymentForQuestion = (
   mappings: ReadonlyArray<DeployedArtifactMapping>,
   question: RuntimeQuestion,
   environment: string | undefined,
-) =>
-  Array.findFirst(mappings, (deployment) => {
-    if (
-      deployment.manifest.repository !== question.scope.repository ||
-      deployment.service !== question.scope.service
-    ) {
-      return false
-    }
-    if (environment && deployment.environment !== environment) {
-      return false
-    }
-    return Array.every(
-      [question.requestProbe, question.committedReceiptProbe],
-      (probeId) =>
-        Array.some(
-          deployment.manifest.probes,
-          (probe) =>
-            probe.probeId === probeId &&
-            probe.location.kind === "source" &&
-            probe.behaviorId === question.behaviorId &&
-            probe.behaviorRevision === question.behaviorRevision,
-        ),
-    )
-  })
+) => {
+  const scoped = Array.filter(
+    mappings,
+    (deployment) =>
+      deployment.manifest.repository === question.scope.repository &&
+      deployment.service === question.scope.service &&
+      (!environment || deployment.environment === environment),
+  )
+  return Option.orElse(
+    Array.findFirst(scoped, (deployment) =>
+      Array.every(
+        [question.requestProbe, question.committedReceiptProbe],
+        (probeId) =>
+          Array.some(
+            deployment.manifest.probes,
+            (probe) =>
+              probe.probeId === probeId &&
+              probe.location.kind === "source" &&
+              probe.behaviorId === question.behaviorId &&
+              probe.behaviorRevision === question.behaviorRevision,
+          ),
+      ),
+    ),
+    () => Array.head(scoped),
+  )
+}
 
 const questionCitation = (
   issuer: string,

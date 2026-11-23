@@ -64,6 +64,38 @@ environment. Store the returned token in the secret store of the deployment
 system that can attest which artifact it deployed. Rotating the token keeps
 the binding ID and its receipt history. The system stores a hash of the token.
 
+### Repository and environment installation under policy
+
+A project owner connects a GitHub repository and Node runtime to a project and
+environment from Studio (`Connect`) or via `repositoryInstallation.connect`.
+Connecting binds four authorities separately:
+
+- **Repository PR writer**: narrow `contents:write`, `pullRequests:write` and
+  `metadata:read` permissions on the selected repository only. Merge and
+  repository administration permissions are rejected.
+- **Deployment attestation**: reuses the project's scoped deployment binding
+  (`FLOWMARK_DEPLOYMENT_TOKEN`, stored hashed and revealed once at creation).
+- **Ingestion**: ordinary server write key (`FLOWMARK_API_KEY`) scoped to the
+  project; kept out of bootstrap PR files and chat.
+- **Diagnostic reads**: separate delegated OAuth/API read identity used to
+  verify disposable readback (`repositoryInstallation.verifyDisposableReadback`).
+
+Each installation declares explicit collection policy: allowed reference
+namespaces (`kind:namespace`), retention window (1–90 days), max event byte
+budget, overhead budget (1–100 ms), rate budget, and `allowRawPayloads: false`.
+The deterministic bootstrap PR plan (`flowmark/connect-<service>-<env>`) adds
+`.flowmark/install.json`, a policy-checked Node helper, manifest script and
+disposable test without writing secret values.
+
+Before eligible traffic arrives, cold-start status explicitly distinguishes
+`pending-deployment-receipt` (waiting for the first deployment attestation) from
+`pending-eligible-traffic` (bootstrap readback verified, waiting for live
+traffic). Webhook deliveries at `POST /v1/installations/github` verify the
+HMAC-SHA256 `x-hub-signature-256` signature, validate installation and
+repository ownership, deduplicate repeated delivery IDs, reject stale
+timestamps, and revoke only the installation's linked delegated grant family on
+uninstall while leaving independently issued credentials intact.
+
 After a successful deployment, that system sends `POST /v1/deployments` with
 `Authorization: Bearer <token>` and a JSON body of up to 64 KiB:
 

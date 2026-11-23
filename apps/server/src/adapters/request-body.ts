@@ -5,7 +5,7 @@ const maximumBodyBytes = 65536
 const JsonSchema = Schema.fromJsonString(Schema.Unknown)
 
 /** Web streams and their resource lifetime belong to the HTTP adapter. */
-export const readJsonBody = Effect.fn("Http.readJsonBody")(function* (
+export const readRawTextBody = Effect.fn("Http.readRawTextBody")(function* (
   request: Request,
 ) {
   if (Number(request.headers.get("content-length")) > maximumBodyBytes) {
@@ -13,7 +13,7 @@ export const readJsonBody = Effect.fn("Http.readJsonBody")(function* (
       new InvalidInput({ cause: "Request body exceeds 64 KiB" }),
     )
   }
-  const text = yield* Effect.acquireUseRelease(
+  return yield* Effect.acquireUseRelease(
     Effect.sync(() => request.body?.getReader()),
     (reader) =>
       Effect.gen(function* () {
@@ -23,24 +23,30 @@ export const readJsonBody = Effect.fn("Http.readJsonBody")(function* (
           )
         }
         const decoder = new TextDecoder()
-        let size = 0
-        let text = ""
-        while (true) {
-          const { done, value } = yield* Effect.tryPromise({
-            try: () => reader.read(),
-            catch: (cause) => new InvalidInput({ cause }),
-          })
-          if (done) {
-            return text + decoder.decode()
-          }
-          size += value.byteLength
-          if (size > maximumBodyBytes) {
-            return yield* Effect.fail(
-              new InvalidInput({ cause: "Request body exceeds 64 KiB" }),
+        const readChunk = (
+          size: number,
+          text: string,
+        ): Effect.Effect<string, InvalidInput> =>
+          Effect.gen(function* () {
+            const { done, value } = yield* Effect.tryPromise({
+              try: () => reader.read(),
+              catch: (cause) => new InvalidInput({ cause }),
+            })
+            if (done) {
+              return text + decoder.decode()
+            }
+            const nextSize = size + value.byteLength
+            if (nextSize > maximumBodyBytes) {
+              return yield* Effect.fail(
+                new InvalidInput({ cause: "Request body exceeds 64 KiB" }),
+              )
+            }
+            return yield* readChunk(
+              nextSize,
+              text + decoder.decode(value, { stream: true }),
             )
-          }
-          text += decoder.decode(value, { stream: true })
-        }
+          })
+        return yield* readChunk(0, "")
       }),
     (reader) =>
       reader
@@ -58,6 +64,12 @@ export const readJsonBody = Effect.fn("Http.readJsonBody")(function* (
           )
         : Effect.void,
   )
+})
+
+export const readJsonBody = Effect.fn("Http.readJsonBody")(function* (
+  request: Request,
+) {
+  const text = yield* readRawTextBody(request)
   return yield* Schema.decodeUnknownEffect(JsonSchema)(text).pipe(
     Effect.mapError((cause) => new InvalidInput({ cause })),
   )
