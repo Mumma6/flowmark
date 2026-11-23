@@ -15,6 +15,8 @@ import { Effect, Schema } from "effect"
 import {
   ConfigurationError,
   GetProjectWorkflowData,
+  checkRuntimeQuestion,
+  RuntimeQuestionCheckSchema,
   RUNTIME_CITATION_MAX_LENGTH,
   resolveRuntimeCitation,
 } from "@flowmark/api"
@@ -23,6 +25,15 @@ import { UuidSchema } from "./schemas"
 import { readQuery, sessionQuery } from "./execution"
 
 export const runRouter = t.router({
+  questionReadiness: t.procedure
+    .input(
+      Schema.toStandardSchemaV1(RuntimeQuestionCheckSchema, {
+        parseOptions: { onExcessProperty: "error" },
+      }),
+    )
+    .mutation(({ ctx, input }) =>
+      readQuery(ctx.request, (reader) => checkRuntimeQuestion(reader, input)),
+    ),
   citation: t.procedure
     .input(
       Schema.toStandardSchemaV1(

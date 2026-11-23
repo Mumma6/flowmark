@@ -36,6 +36,8 @@ Count each eligible logical case once. Compute the numerator by joining resolved
 
 ### Build artifact manifest
 
+See also the [repository-owned question check](#check-a-repository-owned-runtime-question) for verifying these mappings with fixture events.
+
 The version 1 manifest records a repository, full Git revision, SHA-256 digest
 of the built file and up to 1,024 declared probes. Keep the probe and behavior
 IDs when moving code. Update the behavior revision when its meaning changes.
@@ -200,3 +202,27 @@ produce explicit limits. The tool reports retained counts and examples.
 It cannot verify a sampling policy, estimate rates across all traffic or
 attribute a difference to the deployment. If either window exceeds 1,000
 candidate runs or 20,000 events, narrow the selection to get a complete count.
+
+### Check a repository-owned runtime question
+
+The [receipt declaration](../examples/questions/committed-receipt.json) asks whether the application committed a receipt for the original logical request. Version 1 supports one predicate, `receipt-for-same-change`. It checks the scoped change reference reported at two stable probe sites within a controlled execution. Both sites must resolve to source in the fixture artifact. File and symbol moves can preserve their IDs. Change the question revision when the choice, eligibility, linkage, or exclusion changes. Change the behavior revision when the reporting sites change meaning.
+
+In a disposable fixture, commit a receipt for the same request, commit one for a different request, and force a transaction rollback. Assert the actual database effects independently. Report the receipt only after commit. Close each run, drain SDK delivery, and fail the fixture on lost or failed delivery. Resolve each fresh external run ID to its internal execution ID using an authorized run read. The [executable fixture](../apps/server/test/http/runtime-question.test.ts) includes two deliberately broken observation placements. Run it with `pnpm test:integration`.
+
+Call `POST /api/trpc/run.questionReadiness` with a diagnostic project read credential and a JSON body. The fixture supplies the following inputs:
+
+- `question` is the checked-in declaration. For an existing question, supply `previousQuestion` from the reviewed base revision. Removing a required declaration should fail the repository's CI check.
+- `questionId`, `questionRevision`, `fixture` and `allowedChangeNamespaces` come from the reviewed CI policy, independently of the candidate declaration. Only scoped change digests are supported. For deliberate retirement, retain the revised declaration with `excludedReason` and supply the matching `approvedExclusion` from policy. These inputs constrain this check. They grant no collection or read authority.
+- `environment`, `bindingId`, `deploymentId`, `sourceRevision` and `artifactDigest` identify the fixture build and its deployment receipt. The question can keep its meaning across environments. `runs` maps `linked`, `otherRequest` and `rollback` to three distinct internal IDs. Use the runs from this fixture invocation.
+
+The response contains a status, a reason and, for a case-specific limitation, the fixture case name. A check looks up the exact deployment receipt and reads at most 25 observation events per case.
+
+| CI status  | Meaning                                                                                                                      |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `verified` | Both committed cases contain the required distinction. The rolled-back run contains the request marker and no commit marker. |
+| `missing`  | A fixture, receipt, observation or required reference is absent from the checked scope.                                      |
+| `stale`    | The declaration or source mapping disagrees with the fixture build or its observations.                                      |
+| `failed`   | The fixture contradicts the expected distinction, violates field policy, reports loss or exceeds the read budget.            |
+| `excluded` | The declaration and reviewed CI policy explicitly agree on the exclusion.                                                    |
+
+For a required active question, require `result.data.status === "verified"`. Keep authorization, malformed input and transport failures as errors. Report only the safe verdict in public CI. Fixture readiness applies to the tested build and collection path. A production claim requires separately observed eligible traffic.

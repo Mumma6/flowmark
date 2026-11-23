@@ -1,6 +1,8 @@
 import ts from "typescript"
 import { posix } from "node:path"
 
+const collectionTransforms = new Set(["filter", "map", "flatMap", "reduce"])
+
 // These are explicit syntax rules, not a substitute for contextual review.
 export const effectFindings = (file, text) => {
   if (!text || !/^packages\/[^/]+\/src\/.*\.tsx?$/.test(file)) {
@@ -100,6 +102,27 @@ export const effectFindings = (file, text) => {
       )
     }
     if (/\/(use-cases|rules)\//.test(file)) {
+      if (
+        ts.isCallExpression(node) &&
+        ts.isPropertyAccessExpression(node.expression) &&
+        collectionTransforms.has(node.expression.name.text)
+      ) {
+        const previous = ts.skipOuterExpressions(node.expression.expression)
+        if (
+          ts.isCallExpression(previous) &&
+          ts.isPropertyAccessExpression(previous.expression) &&
+          collectionTransforms.has(previous.expression.name.text) &&
+          moduleName(previous.expression.expression) !== "Array"
+        ) {
+          own.push(
+            issue(
+              node,
+              "effect-collection-chain",
+              `Use Effect collection operators for .${previous.expression.name.text}().${node.expression.name.text}(); see flowmark-effect.`,
+            ),
+          )
+        }
+      }
       if (
         ts.isForStatement(node) ||
         ts.isForOfStatement(node) ||

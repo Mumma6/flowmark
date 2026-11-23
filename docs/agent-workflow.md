@@ -4,6 +4,10 @@ Start in the repository with the human's intent. Inspect source and the deployed
 
 ## Daily use
 
+Before choosing between two plausible patches, name the production fact that would make you pick one. Start with `context_for_change` and inspect the relevant cases under your grant. If both answers lead to the same patch, skip capture. If existing evidence settles a one-off question, cite it and continue.
+
+When the distinction matters to future changes, identify the boundary that can attest it and the closest case that could be mistaken for it. For example, a committed receipt for a different request cannot settle the original payment. Prefer fixing a missing link at an existing reporting site. Keep the reviewed question, fixture and tests in the feature PR. Exercise a positive case, its look-alike and a rollback, then check what an authorized reader actually received. The next session can repeat the check from the repository. [Question declaration and CI readback](runtime-memory.md#check-a-repository-owned-runtime-question)
+
 | Work                | When to query                                                            | What to carry into implementation and review                                                                                                        |
 | ------------------- | ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
 | New feature         | During planning, before a new path exists                                | Adjacent behaviors, constraints suggested by real cases and unresolved product intent. Author new questions and capture fixtures.                   |
@@ -44,4 +48,4 @@ For **self-service booking rescheduling**, the human specifies when the old slot
 5. The installation PR includes a compact source manifest, allowlisted observation changes, an agent planning instruction, CI verification, delivery budgets and a representative case plus counterexample. A human reviews and merges once. A collector outage must preserve application results and error identity.
 6. Read back evidence on a disposable test or staging run, then wait for matching deployed traffic. Flag unsupported integrations, ambiguous domain meaning and inaccessible sources explicitly. Move to the next consequential slice. Reconcile discovery and repair mappings whenever code or deployments change.
 
-**Available path today.** Provide the repo agent with the [served setup guide](../apps/server/src/instrumentation-guide.ts), configure a scoped write key and grant a read connection. Use the documented workflow discovery and bounded run reads to verify the first observation. The fully managed installation, change resolver and post-deployment reconciliation are delivery work.
+**Available path today.** Provide the repo agent with the [served setup guide](../apps/server/src/instrumentation-guide.ts), configure a scoped write key and grant a read connection. Use change context and bounded execution reads to inspect cases. Verify a maintained receipt question with its repository fixture. Managed installation and post-deployment reconciliation are delivery work.

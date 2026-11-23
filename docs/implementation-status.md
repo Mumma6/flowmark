@@ -73,9 +73,13 @@ use lexical hints. `compare_behavior` compares retained run counts and
 matching cases across two deployment windows with compatible behavior revisions.
 The existing MCP investigation tools remain available.
 
+Connected repositories can check a versioned receipt question in CI against
+three persisted fixture executions. The API checks an authorized deployment
+mapping, scoped change links and the rollback control. [Fixture readiness](runtime-memory.md#check-a-repository-owned-runtime-question)
+
 ## Planned product capabilities
 
 Repository and environment installation, policy-driven instrumentation repairs,
-question-level coverage and post-deploy verification remain planned. Current
+population-level observed answerability and post-deploy verification remain planned. Current
 Studio includes analytics and collaboration routes slated for removal. See
 [the target surfaces](product.md) and [coverage](runtime-memory.md).

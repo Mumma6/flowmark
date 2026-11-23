@@ -17,6 +17,7 @@ export const expectedServerFiles = [
   "business-insights",
   "peer-comparison",
   "safe-operation-errors",
+  "runtime-question",
   "expectations",
   "auth-perimeter",
   "durable-auth-limits",

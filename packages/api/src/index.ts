@@ -250,3 +250,5 @@ export {
 } from "./features/workflows/use-cases/runtime-citations.js"
 
 export { BehaviorComparisonSchema } from "@flowmarkdev/core"
+export { RuntimeQuestionCheckSchema } from "@flowmarkdev/core"
+export { checkRuntimeQuestion } from "./features/workflows/use-cases/check-runtime-question.js"
