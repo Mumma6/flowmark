@@ -28,6 +28,7 @@ Do not turn the reference HTTP proof into a universal vendor setup claim.
 | `list_workflows`        | Workflow names in one authorized project. A `workflow` argument also loads bounded declaration meaning.                                                      |
 | `context_for_change`    | Retrieve observed cases for a ticket, plan, diff, file or symbol in an authorized repository. Requires diagnostic access, `version: 1` and a bounded window. |
 | `compare_behavior`      | Compare two deployment windows of one behavior with counts, matching cases and explicit limits. Requires diagnostic access and `version: 1`.                 |
+| `discover_boundaries`   | Reconcile source registrations with deployment receipts and an independent inventory. Does not read executions. Requires diagnostic access and `version: 1`. |
 | `find_executions`       | Search recorded application executions by workflow, scoped reference digest, artifact or behavior. Requires diagnostic access and `version: 1`.              |
 | `explain_execution`     | Read one execution with a bounded page of observations, events, related runs, operations or settlements. Requires diagnostic access and `version: 1`.        |
 | `find_runs`             | Run history inside an explicit `startedAfter` / `startedBefore` window of at most 31 days.                                                                   |

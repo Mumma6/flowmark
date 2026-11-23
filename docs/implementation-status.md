@@ -71,7 +71,10 @@ scoped runtime cases with observations and delayed settlements. See the
 receipts for an explicit repository and time window. Ticket and plan matching
 use lexical hints. `compare_behavior` compares retained run counts and
 matching cases across two deployment windows with compatible behavior revisions.
-The existing MCP investigation tools remain available.
+The existing MCP investigation tools remain available. `discover_boundaries`
+reconciles source registrations with stored deployment receipts and an
+independent inventory. It reports where a fact can first be attested and does
+not read executions.
 
 Connected repositories can check a versioned receipt question in CI against
 three persisted fixture executions. The API checks an authorized deployment

@@ -61,6 +61,7 @@ export const AGENT_ACCESS_MCP_TOOLS = [
   "explain_execution",
   "context_for_change",
   "compare_behavior",
+  "discover_boundaries",
 ] as const
 
 export type AgentAccessMcpToolName = (typeof AGENT_ACCESS_MCP_TOOLS)[number]
@@ -75,6 +76,7 @@ export const AGENT_ACCESS_PROJECT_SCOPED_TOOLS = [
   "explain_execution",
   "context_for_change",
   "compare_behavior",
+  "discover_boundaries",
 ] as const satisfies ReadonlyArray<AgentAccessMcpToolName>
 
 export const AGENT_ACCESS_QUERY_BOUNDS = {

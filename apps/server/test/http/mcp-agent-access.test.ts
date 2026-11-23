@@ -570,6 +570,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
           "compare_behavior",
           "compare_run",
           "context_for_change",
+          "discover_boundaries",
           "explain_execution",
           "find_executions",
           "find_runs",
@@ -613,6 +614,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         "explain_execution",
         "context_for_change",
         "compare_behavior",
+        "discover_boundaries",
       ])
       const resourceUri = "ui://flowmark/run-evidence/v1.html"
       const uiMeta = {
@@ -1335,6 +1337,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         "compare_behavior",
         "compare_run",
         "context_for_change",
+        "discover_boundaries",
         "explain_execution",
         "find_executions",
         "find_runs",
