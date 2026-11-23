@@ -1,4 +1,4 @@
-import { CoveragePage } from "../../../features/coverage/coverage-page"
+import { CoveragePage } from "../../../features/coverage-exceptions/coverage-page"
 
 export default async function Page({
   searchParams,

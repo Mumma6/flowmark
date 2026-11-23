@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { coverageDestination } from "../features/coverage/coverage-destination"
+import { coverageDestination } from "../features/coverage-exceptions/coverage-destination"
 
 describe("coverage destinations", () => {
   it("names the same statuses as an agent read and follows a repair without a payload", () => {
