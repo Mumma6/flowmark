@@ -269,6 +269,7 @@ export { discoverEvidenceBoundaries } from "./features/workflows/use-cases/disco
 export { proposeObservationRepair } from "./features/workflows/use-cases/propose-observation-repair.js"
 export { assessCoverage } from "./features/workflows/use-cases/assess-coverage.js"
 export { maintainQuestionRepair } from "./features/workflows/use-cases/maintain-question.js"
+export { evaluateReleaseChange } from "./features/workflows/use-cases/evaluate-release.js"
 export {
   DeployedBoundarySchema,
   EvidenceEstateInputSchema,
@@ -276,6 +277,7 @@ export {
   CoverageAssessmentInputSchema,
   CoverageObservationQuerySchema,
   QuestionMaintenanceInputSchema,
+  ReleaseEvaluationInputSchema,
   SourceBoundarySchema,
 } from "@flowmarkdev/core"
 

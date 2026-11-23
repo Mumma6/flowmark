@@ -578,6 +578,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
           "get_run",
           "get_workflow_insights",
           "assess_coverage",
+          "evaluate_release",
           "list_workflows",
           "maintain_questions",
           "propose_observation_repair",
@@ -621,6 +622,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         "propose_observation_repair",
         "assess_coverage",
         "maintain_questions",
+        "evaluate_release",
       ])
       const resourceUri = "ui://flowmark/run-evidence/v1.html"
       const uiMeta = {
@@ -1345,6 +1347,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         "compare_run",
         "context_for_change",
         "discover_boundaries",
+        "evaluate_release",
         "explain_execution",
         "find_executions",
         "find_runs",
