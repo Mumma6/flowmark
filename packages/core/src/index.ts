@@ -77,6 +77,7 @@ export * from "./evidence-captures.js"
 export type { SavedEvidenceExport } from "./saved-evidence-export.js"
 
 export * from "./process-health.js"
+export * from "./runtime-question.js"
 
 export type {
   ProcessDefinition,

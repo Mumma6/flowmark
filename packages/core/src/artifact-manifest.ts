@@ -94,4 +94,5 @@ export type DeployedArtifactMapping = {
 export type ArtifactMappingScope = {
   readonly repository: string
   readonly environment?: string
+  readonly receipt?: Pick<DeployedArtifactMapping, "bindingId" | "deploymentId">
 }

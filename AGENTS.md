@@ -12,7 +12,7 @@
 
 - Flowmark observes application-owned work; it never executes, schedules, or
   retries that work. Preserve the workflow/run abstraction.
-- Flowmark is application memory for AI-native software teams. Start changes from intent, source and relevant authorized runtime cases. Record cases that affect a decision, preserve counterexamples and maintain evidence tests in the feature PR. Distinguish source inference, fixture readiness and observed production behavior. Use today's bounded reads until the change-facing interface ships.
+- Flowmark is application memory for AI-native software teams. Start changes from intent, source and relevant authorized runtime cases. When two patches depend on a consequential runtime distinction, use `context_for_change` and follow the [question authoring workflow](docs/agent-workflow.md#daily-use). Preserve counterexamples and maintain evidence tests in the feature PR. Distinguish source inference, fixture readiness and observed production behavior.
 - Coding agents own routine instrumentation and mapping maintenance. Humans own intent, policy, credentials, exceptional decisions and merge. Studio is for access, evidence inspection and gaps. Keep telemetry scoped to the decisions it can inform.
 
 - Business results are application-reported evidence, not verified correctness.

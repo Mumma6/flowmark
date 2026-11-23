@@ -38,6 +38,9 @@ export const artifactMappings = Effect.fn("artifactMappings")(function* (
         and(
           eq(deploymentBindings.projectId, projectId),
           eq(deploymentBindings.repository, scope.repository),
+          scope.receipt && eq(deploymentBindings.id, scope.receipt.bindingId),
+          scope.receipt &&
+            eq(deploymentReceipts.deploymentId, scope.receipt.deploymentId),
           scope.environment === undefined
             ? undefined
             : eq(deploymentBindings.environment, scope.environment),
