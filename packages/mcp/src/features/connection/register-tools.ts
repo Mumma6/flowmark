@@ -11,6 +11,10 @@ import {
   proposeObservationRepairForMcp,
 } from "../workflows/propose-observation-repair.js"
 import {
+  AssessCoverageSchema,
+  assessCoverageForMcp,
+} from "../workflows/assess-coverage.js"
+import {
   ContextForChangeSchema,
   contextForChangeForMcp,
 } from "../workflows/context-for-change.js"
@@ -312,6 +316,30 @@ export const registerFlowmarkTools = (
           input,
           true,
           contextForChangeForMcp(identity, input),
+          extra.mcpReq.signal,
+        ),
+      ),
+  )
+  server.registerTool(
+    "assess_coverage",
+    {
+      title: "Assess coverage",
+      description:
+        "Version 1 diagnostic read. Return discovery, fixture readiness and observed answerability separately for one question, release and window. Joins an independent population to scoped evidence. Duplicate deliveries count once. A missing counter, immature traffic, loss, expiry or an unsupported join does not invent a rate. Production traffic is not a merge gate.",
+      inputSchema: fromJsonSchema(
+        toJsonSchemaDocument(AssessCoverageSchema).schema as Parameters<
+          typeof fromJsonSchema
+        >[0],
+      ),
+      annotations: { readOnlyHint: true, destructiveHint: false },
+    },
+    async (input, extra) =>
+      toolResult(
+        await runMcpTool(
+          identity,
+          input,
+          true,
+          assessCoverageForMcp(identity, input),
           extra.mcpReq.signal,
         ),
       ),

@@ -2,6 +2,8 @@ import type {
   ArtifactMappingScope,
   BehaviorComparison,
   BehaviorComparisonQuery,
+  CoverageObservationQuery,
+  CoverageStoredEvent,
   DeployedArtifactMapping,
 } from "@flowmarkdev/core"
 import type { ProcessHealth } from "@flowmarkdev/core"
@@ -75,6 +77,16 @@ export interface ProjectReadRuns {
   ) => Effect.Effect<
     {
       readonly mappings: readonly DeployedArtifactMapping[]
+      readonly truncated: boolean
+    },
+    Unauthorized | PersistenceError
+  >
+  readonly coverageObservations: (
+    reader: ProjectReader,
+    query: CoverageObservationQuery,
+  ) => Effect.Effect<
+    {
+      readonly events: readonly CoverageStoredEvent[]
       readonly truncated: boolean
     },
     Unauthorized | PersistenceError

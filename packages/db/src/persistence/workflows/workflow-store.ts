@@ -4,6 +4,11 @@ import type {
 } from "@flowmarkdev/core"
 import { getBehaviorComparison } from "./queries/get-behavior-comparison.js"
 import { artifactMappings } from "./queries/artifact-mappings.js"
+import { readCoverageObservations } from "./queries/read-coverage-observations.js"
+import type {
+  CoverageObservationQuery,
+  CoverageStoredEvent,
+} from "@flowmarkdev/core"
 import type {
   ArtifactMappingScope,
   DeployedArtifactMapping,
@@ -164,6 +169,16 @@ export interface WorkflowStoreService {
     },
     DatabaseError
   >
+  readonly coverageObservations: (
+    projectId: string,
+    query: CoverageObservationQuery,
+  ) => Effect.Effect<
+    {
+      readonly events: readonly CoverageStoredEvent[]
+      readonly truncated: boolean
+    },
+    DatabaseError
+  >
   readonly listRuns: (
     projectId: string,
     query: ListRunsQuery,
@@ -289,6 +304,13 @@ export class WorkflowStore extends Context.Service<WorkflowStore>()(
         artifactMappings: (projectId, scope) =>
           provide(
             withActiveProject(projectId, artifactMappings(projectId, scope)),
+          ),
+        coverageObservations: (projectId, query) =>
+          provide(
+            withActiveProject(
+              projectId,
+              readCoverageObservations(projectId, query),
+            ),
           ),
         listRuns: (projectId, query) =>
           provide(withActiveProject(projectId, listRuns(projectId, query))),

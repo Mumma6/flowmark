@@ -577,6 +577,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
           "get_connection",
           "get_run",
           "get_workflow_insights",
+          "assess_coverage",
           "list_workflows",
           "propose_observation_repair",
         ].sort(),
@@ -617,6 +618,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         "compare_behavior",
         "discover_boundaries",
         "propose_observation_repair",
+        "assess_coverage",
       ])
       const resourceUri = "ui://flowmark/run-evidence/v1.html"
       const uiMeta = {
@@ -1336,6 +1338,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         left.name.localeCompare(right.name),
       )
       expect(toolNames.map((tool) => tool.name)).toEqual([
+        "assess_coverage",
         "compare_behavior",
         "compare_run",
         "context_for_change",
