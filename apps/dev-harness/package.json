@@ -15,7 +15,7 @@
     "@flowmark/ui": "workspace:*",
     "effect": "4.1.0",
     "@flowmarkdev/node": "workspace:*",
-    "next": "^16.4.2",
+    "next": "16.4.6",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "@flowmark/evidence-view": "workspace:*"
