@@ -1,21 +1,28 @@
 import { requireAgentAccessProjectId } from "@flowmark/auth/agent-access"
 import {
-  ObservationRepairInputSchema,
+  StoredObservationRepairSchema,
   proposeObservationRepair,
 } from "@flowmark/api"
 import { Effect, Schema } from "effect"
 import type { FlowmarkMcpAuthInfo } from "../../auth/claims.js"
-import { McpToolInputError } from "../../errors.js"
+import { McpToolInputError, McpToolReadError } from "../../errors.js"
+import { resolveMcpGrantFamily } from "../delegated/grant-family.js"
+import { mcpDelegatedReader } from "../delegated/reader.js"
 
 export const ProposeObservationRepairSchema = Schema.Struct({
   version: Schema.Literal(1),
   projectId: Schema.String.check(Schema.isUUID()),
-  ...ObservationRepairInputSchema.fields,
+  ...StoredObservationRepairSchema.fields,
 })
 
 export const proposeObservationRepairForMcp = Effect.fn(
   "ProposeObservationRepair.execute",
 )(function* (identity: FlowmarkMcpAuthInfo, raw: unknown) {
+  if (typeof raw === "object" && raw !== null && Object.hasOwn(raw, "gap")) {
+    return yield* new McpToolInputError({
+      reason: "A caller-supplied diagnosis is not accepted.",
+    })
+  }
   const input = yield* Schema.decodeUnknownEffect(
     ProposeObservationRepairSchema,
     { onExcessProperty: "error" },
@@ -24,7 +31,7 @@ export const proposeObservationRepairForMcp = Effect.fn(
       () =>
         new McpToolInputError({
           reason:
-            "Supply version 1, an authorized project, and one diagnosed question gap.",
+            "Supply version 1, an authorized project, the question, repository, approved namespaces, candidate reporting sites, access and traffic.",
         }),
     ),
   )
@@ -32,19 +39,26 @@ export const proposeObservationRepairForMcp = Effect.fn(
     "propose_observation_repair",
     input.projectId,
   )
-  const proposal = yield* proposeObservationRepair(input).pipe(
+  const family = yield* resolveMcpGrantFamily(identity)
+  const reader = mcpDelegatedReader(identity, family.familyId, input.projectId)
+  const { version, projectId, ...request } = input
+  const proposal = yield* proposeObservationRepair(reader, request).pipe(
     Effect.mapError(
-      () =>
-        new McpToolInputError({
-          reason: "The repair input is outside the supported contract.",
+      (error) =>
+        new McpToolReadError({
+          reason:
+            error._tag === "InvalidInput"
+              ? String(error.cause)
+              : "Stored question evidence could not be read.",
+          cause: error,
         }),
     ),
   )
   return {
     tool: "propose_observation_repair",
-    version: input.version,
-    projectId: input.projectId,
-    repository: input.repository,
+    version,
+    projectId,
+    repository: request.repository,
     proposal,
   }
 })

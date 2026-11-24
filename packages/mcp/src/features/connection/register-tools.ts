@@ -405,7 +405,7 @@ export const registerFlowmarkTools = (
     {
       title: "Propose observation repair",
       description:
-        "Version 1. Choose the smallest in-policy repair for one diagnosed question gap. Denied reads and immature traffic add no capture. The proposal updates the same branch and never merges itself. Production evidence stays pending.",
+        "Version 1. Choose the smallest in-policy repair from the question's stored evidence. A caller-supplied gap is rejected. Denied reads, immature traffic and policy exclusions add no capture. The proposal stays on the caller's branch and never merges itself. Production evidence stays pending.",
       inputSchema: fromJsonSchema(
         toJsonSchemaDocument(ProposeObservationRepairSchema)
           .schema as Parameters<typeof fromJsonSchema>[0],
