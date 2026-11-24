@@ -76,8 +76,17 @@ test("dev commands check ownership/readiness and keep database mutation explicit
 
 test("every application dev server binds to the documented loopback host", () => {
   for (const pkg of packages.values()) {
-    if (pkg.path.startsWith("apps/")) {
-      assert.match(pkg.scripts.dev, /next dev --hostname 127\.0\.0\.1/)
+    if (!pkg.path.startsWith("apps/")) {
+      continue
     }
+    if (pkg.path.startsWith("apps/sample-payments/")) {
+      assert.equal(pkg.scripts.dev, undefined)
+      assert.match(
+        readFileSync(join(root, "apps/sample-payments/src/server.ts"), "utf8"),
+        /listen\(port, "127\.0\.0\.1"\)/,
+      )
+      continue
+    }
+    assert.match(pkg.scripts.dev, /next dev --hostname 127\.0\.0\.1/)
   }
 })

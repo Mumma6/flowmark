@@ -18,7 +18,7 @@
 - Business results are application-reported evidence, not verified correctness.
   Completed does not mean every record succeeded. Progress is last reported;
   missing terminal telemetry does not prove a run is active or failed.
-- `apps/dev-harness` and `apps/internal-docs` are local-only. Never deploy them.
+- `apps/dev-harness`, `apps/internal-docs`, and `apps/sample-payments` are local-only. Never deploy them.
 - Discuss fundamental SDK/model redesign, new major dependencies, telemetry
   migrations, and significant product-scope changes before implementing.
 
