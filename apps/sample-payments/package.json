@@ -1,0 +1,23 @@
+{
+  "license": "FSL-1.1-ALv2",
+  "name": "@flowmark/sample-payments",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Synthetic payment service used to exercise Flowmark. Not deployed.",
+  "type": "module",
+  "scripts": {
+    "start": "tsx src/server.ts",
+    "lint": "eslint src test",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node --import tsx --test test/*.test.ts"
+  },
+  "dependencies": {
+    "@flowmarkdev/node": "workspace:*",
+    "effect": "4.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.18.6",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.2"
+  }
+}
