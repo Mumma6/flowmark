@@ -260,7 +260,9 @@ export { BehaviorComparisonSchema } from "@flowmarkdev/core"
 export {
   RuntimeQuestionCheckSchema,
   RuntimeQuestionSchema,
+  questionProbeIds,
   type RuntimeQuestion,
+  type RuntimeQuestionCheck,
 } from "@flowmarkdev/core"
 export { checkRuntimeQuestion } from "./features/workflows/use-cases/check-runtime-question.js"
 export {

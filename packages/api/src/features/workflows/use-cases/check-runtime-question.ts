@@ -1,9 +1,11 @@
 import {
+  confirmationQuestionCases,
   isRuntimeQuestionSuccessor,
+  questionProbeIds,
   runtimeQuestionCases,
   type RuntimeQuestionCheck,
 } from "@flowmarkdev/core"
-import { Array, Effect, Match, Option } from "effect"
+import { Array, Effect, Option } from "effect"
 import type { ProjectReader } from "../models/project-reader.js"
 import {
   fixtureReadiness,
@@ -13,7 +15,7 @@ import { GetProjectWorkflowData } from "./get-project-workflow-data.js"
 
 export const checkRuntimeQuestion = Effect.fn("checkRuntimeQuestion")(
   function* (reader: ProjectReader, input: RuntimeQuestionCheck) {
-    const { question, runs } = input
+    const { question } = input
     const reads = yield* GetProjectWorkflowData
     // This path applies the existing diagnostic grant even for excluded or missing fixtures.
     const scope = yield* reads.artifactMappings(reader, {
@@ -43,7 +45,7 @@ export const checkRuntimeQuestion = Effect.fn("checkRuntimeQuestion")(
       }
       return fixtureReadiness("excluded", question.excludedReason)
     }
-    if (!runs) {
+    if (!input.runs) {
       return fixtureReadiness("missing", "fixture-runs-missing")
     }
     const [mapping] = scope.mappings
@@ -55,25 +57,27 @@ export const checkRuntimeQuestion = Effect.fn("checkRuntimeQuestion")(
       mapping.service !== question.scope.service ||
       manifest.artifactDigest !== input.artifactDigest ||
       manifest.revision !== input.sourceRevision ||
-      !Array.every(
-        [question.requestProbe, question.committedReceiptProbe],
-        (site) =>
-          Array.some(
-            manifest.probes,
-            (p) =>
-              p.probeId === site &&
-              p.location.kind === "source" &&
-              p.behaviorId === question.behaviorId &&
-              p.behaviorRevision === question.behaviorRevision,
-          ),
+      !Array.every(questionProbeIds(question), (site) =>
+        Array.some(
+          manifest.probes,
+          (p) =>
+            p.probeId === site &&
+            p.location.kind === "source" &&
+            p.behaviorId === question.behaviorId &&
+            p.behaviorRevision === question.behaviorRevision,
+        ),
       )
     ) {
       return fixtureReadiness("stale", "fixture-mapping-changed")
     }
-    const cases = yield* Effect.forEach(
-      runtimeQuestionCases,
-      Effect.fn("checkRuntimeQuestion.readCase")(function* (fixtureCase) {
-        const runId = runs[fixtureCase]
+    const readFixtureCase = (
+      fixtureCase:
+        | (typeof runtimeQuestionCases)[number]
+        | (typeof confirmationQuestionCases)[number],
+      runId: string,
+      expectedStatus: "Completed" | "Failed",
+    ) =>
+      Effect.gen(function* () {
         const summary = yield* reads.runInvestigationSummary(reader, runId)
         if (
           summary.workflow !== question.scope.workflow ||
@@ -81,11 +85,6 @@ export const checkRuntimeQuestion = Effect.fn("checkRuntimeQuestion")(
         ) {
           return fixtureReadiness("stale", "wrong-fixture-scope", fixtureCase)
         }
-        const expectedStatus = Match.value(fixtureCase).pipe(
-          Match.when("rollback", () => "Failed" as const),
-          Match.whenOr("linked", "otherRequest", () => "Completed" as const),
-          Match.exhaustive,
-        )
         if (summary.status !== expectedStatus) {
           return fixtureReadiness(
             "failed",
@@ -113,14 +112,65 @@ export const checkRuntimeQuestion = Effect.fn("checkRuntimeQuestion")(
           return fixtureReadiness("failed", "incomplete-read", fixtureCase)
         }
         return verifyQuestionCase(input, mapping, fixtureCase, observations)
-      }),
-    )
-    return Array.findFirst(
-      cases,
-      (checked) => checked.status !== "verified",
-    ).pipe(
-      Option.getOrElse(() =>
-        fixtureReadiness("verified", "persisted-fixture-distinction"),
+      })
+    const readReceiptCases = (
+      receiptRuns: Extract<
+        RuntimeQuestionCheck,
+        { question: { predicate: "receipt-for-same-change" } }
+      >["runs"],
+    ) => {
+      if (!receiptRuns) {
+        return Effect.die("Fixture runs were already required.")
+      }
+      return Effect.forEach(runtimeQuestionCases, (fixtureCase) =>
+        readFixtureCase(
+          fixtureCase,
+          receiptRuns[fixtureCase],
+          fixtureCase === "rollback" ? "Failed" : "Completed",
+        ),
+      )
+    }
+    const readConfirmationCases = (
+      confirmationRuns: Extract<
+        RuntimeQuestionCheck,
+        { question: { predicate: "confirmation-for-same-change" } }
+      >["runs"],
+    ) => {
+      if (!confirmationRuns) {
+        return Effect.die("Fixture runs were already required.")
+      }
+      return Effect.forEach(confirmationQuestionCases, (fixtureCase) =>
+        readFixtureCase(
+          fixtureCase,
+          confirmationRuns[fixtureCase],
+          "Completed",
+        ),
+      )
+    }
+    const finish = (
+      checked: ReadonlyArray<ReturnType<typeof fixtureReadiness>>,
+    ) =>
+      Array.findFirst(checked, (item) => item.status !== "verified").pipe(
+        Option.getOrElse(() =>
+          fixtureReadiness("verified", "persisted-fixture-distinction"),
+        ),
+      )
+    if (input.question.predicate === "receipt-for-same-change") {
+      return finish(
+        yield* readReceiptCases(
+          input.runs as Extract<
+            RuntimeQuestionCheck,
+            { question: { predicate: "receipt-for-same-change" } }
+          >["runs"],
+        ),
+      )
+    }
+    return finish(
+      yield* readConfirmationCases(
+        input.runs as Extract<
+          RuntimeQuestionCheck,
+          { question: { predicate: "confirmation-for-same-change" } }
+        >["runs"],
       ),
     )
   },

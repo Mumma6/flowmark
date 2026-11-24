@@ -8,7 +8,10 @@ import { describe, expect, it } from "vitest"
 import declarationImport from "../../../../examples/questions/committed-receipt.json"
 import type { GetProjectWorkflowDataService } from "../../src/features/workflows/use-cases/get-project-workflow-data.js"
 
-const declaration = declarationImport as unknown as RuntimeQuestion
+const declaration = declarationImport as unknown as Extract<
+  RuntimeQuestion,
+  { predicate: "receipt-for-same-change" }
+>
 import { GetProjectWorkflowData } from "../../src/features/workflows/use-cases/get-project-workflow-data.js"
 import { selectQuestionEvidence } from "../../src/features/workflows/use-cases/select-question-evidence.js"
 
@@ -166,6 +169,7 @@ describe("selectQuestionEvidence", () => {
     expect(result.selection).toMatchObject({
       contraryBeyondRecentSample: true,
       examinedRuns: 5,
+      scanLimit: 100,
     })
     expect(result.gap).toBeNull()
   })
