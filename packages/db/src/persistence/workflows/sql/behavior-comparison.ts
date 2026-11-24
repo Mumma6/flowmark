@@ -44,6 +44,18 @@ export const behaviorCohortSql = (
       coalesce(bool_or(e.kind = 'observation' AND e.deployment <> ${cohort.deploymentId}), false) AS "otherDeployment",
       coalesce(bool_or(e.kind = 'observation' AND e.deployment <> ${cohort.deploymentId}
         AND e.behavior = ${query.behaviorId}), false) AS "otherBehaviorDeployment",
+      min(e.event_id) FILTER (
+        WHERE e.kind = 'observation' AND e.deployment IS NOT NULL
+          AND e.deployment <> ${cohort.deploymentId}
+      ) AS "otherObservationEventId",
+      min(e.deployment) FILTER (
+        WHERE e.kind = 'observation' AND e.deployment IS NOT NULL
+          AND e.deployment <> ${cohort.deploymentId}
+      ) AS "otherDeploymentId",
+      min(e.artifact) FILTER (
+        WHERE e.kind = 'observation' AND e.deployment IS NOT NULL
+          AND e.deployment <> ${cohort.deploymentId}
+      ) AS "otherArtifactDigest",
       coalesce(sum(e.lost) FILTER (
         WHERE e.kind = 'loss' AND e.deployment = ${cohort.deploymentId}
           AND e.artifact = ${artifactDigest} AND e.behavior = ${query.behaviorId}

@@ -126,3 +126,10 @@ export {
   type BehaviorComparisonMetric,
   type BehaviorComparisonQuery,
 } from "./behavior-comparison.js"
+export {
+  classifyReceiptCohort,
+  receiptCohortClasses,
+  receiptCohortStatement,
+  type ReceiptCohort,
+  type ReceiptCohortClass,
+} from "./receipt-cohort.js"
