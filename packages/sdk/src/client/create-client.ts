@@ -1,6 +1,7 @@
 import { fetchClientLayer } from "../delivery/adapters/fetch-client.js"
 import { Layer } from "effect"
 import { HttpTransportLive } from "../delivery/adapters/http.js"
+import { resolveDeploymentProbe } from "../config/deployment-binding.js"
 import { FlowmarkSettings, resolveSettings } from "../config/settings.js"
 import { FlowmarkConfigError } from "../errors/index.js"
 import { makeClient } from "./runtime.js"
@@ -35,6 +36,9 @@ export function createFlowmark(config: FlowmarkConfig = {}): FlowmarkClient {
       release: config.release,
     },
     config.delivery,
+    "server",
+    undefined,
+    resolveDeploymentProbe(config.deployment),
   )
 }
 
@@ -77,11 +81,15 @@ export function createFlowmarkWithTransport(config: {
   readonly transport: WorkflowTransport
   readonly onInstrumentationError?: import("../types/index.js").InstrumentationErrorHandler
   readonly delivery?: import("../types/index.js").DeliveryOptions
+  readonly deployment?: import("../config/deployment-binding.js").DeploymentBindingConfig
 }): FlowmarkClient {
   return makeClient(
     Layer.succeed(WorkflowTransport, config.transport),
     config.onInstrumentationError,
     {},
     config.delivery,
+    "server",
+    undefined,
+    resolveDeploymentProbe(config.deployment),
   )
 }

@@ -1,4 +1,5 @@
 import { ExpectationReferenceSchema } from "@flowmarkdev/core"
+import type { RuntimeProbeReference } from "@flowmarkdev/core"
 import type {
   ExpectationReference,
   ExpectationResolution,
@@ -54,6 +55,8 @@ export function makeClient(
   source: "server" | "browser" | "proxy" = "server",
   /** Runs once after this client's run records its terminal event. */
   releaseOnTerminal?: () => void,
+  /** Server-only probe. Browser and proxy clients never receive one. */
+  boundProbe?: RuntimeProbeReference,
 ): InternalClient {
   const options = Result.match(
     Schema.decodeUnknownResult(
@@ -181,6 +184,17 @@ export function makeClient(
               }),
         ),
       )
+      if (source === "server" && boundProbe !== undefined) {
+        runMarker(
+          handle.step("runtime.observation", {
+            observation: {
+              kind: "observation",
+              references: [],
+              probe: boundProbe,
+            },
+          }),
+        )
+      }
       function operation(
         name: WorkflowStepName,
         options?: WorkflowOperationOptions,
