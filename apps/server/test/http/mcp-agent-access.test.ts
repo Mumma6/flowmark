@@ -1970,6 +1970,15 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
           index < 1,
         )
       }
+      await connection.db.execute(sql`
+        UPDATE deployment_receipts
+        SET received_at = CASE deployment_id
+          WHEN 'rollout-a' THEN '2026-10-01T00:00:00.000Z'::timestamptz
+          WHEN 'rollout-b' THEN '2026-11-01T00:00:00.000Z'::timestamptz
+          ELSE received_at
+        END
+        WHERE deployment_id IN ('rollout-a', 'rollout-b')
+      `)
       const comparison = await callTool(
         111,
         "compare_behavior",
@@ -1978,10 +1987,28 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
       expect(comparison.result?.structuredContent).toMatchObject({
         status: "comparable-recorded-cohorts",
         environment: "production",
-        before: { eligibleRuns: 5 },
-        after: { eligibleRuns: 5 },
+        before: {
+          eligibleRuns: 5,
+          receiptCohort: {
+            receiptClass: "historical",
+            receiptIds: ["rollout-a"],
+          },
+        },
+        after: {
+          eligibleRuns: 5,
+          receiptCohort: {
+            receiptClass: "reported-current",
+            receiptIds: ["rollout-b"],
+          },
+        },
         limitations: [],
       })
+      expect(
+        JSON.stringify(comparison.result?.structuredContent),
+      ).not.toContain("was serving")
+      expect(JSON.stringify(comparison.result?.structuredContent)).toContain(
+        "not an interval during which that code served",
+      )
       for (const [metric, beforeTotal, afterTotal] of [
         ["handledError", 2, 1],
         ["fallback", 2, 1],
@@ -2078,8 +2105,19 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
           "mixed-deployment-traffic",
           "unattributed-runs",
           "reported-loss",
+          "mixed-receipts",
         ]),
       })
+      const limitedAfter = limited.result?.structuredContent?.after as {
+        rate: null
+        examplesByArtifact: Array<{ artifactDigest: string }>
+      }
+      expect(limitedAfter.rate).toBeNull()
+      expect(
+        new Set(
+          limitedAfter.examplesByArtifact.map((item) => item.artifactDigest),
+        ).size,
+      ).toBeGreaterThan(1)
       const thin = await callTool(117, "compare_behavior", {
         ...comparisonQuery,
         after: {

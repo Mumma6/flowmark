@@ -1,4 +1,5 @@
 import { Schema } from "effect"
+import type { ReceiptCohort } from "./receipt-cohort.js"
 import { RuntimeProbeReferenceSchema } from "./runtime-observation.js"
 
 const bounded = (max: number) =>
@@ -63,6 +64,13 @@ export type BehaviorComparisonCohort = {
       }
     >
   >
+  readonly receiptCohort: ReceiptCohort
+  readonly rate: null | Readonly<Record<BehaviorComparisonMetric, number>>
+  readonly examplesByArtifact: readonly {
+    readonly artifactDigest: string
+    readonly deploymentId: string
+    readonly examples: readonly BehaviorComparisonExample[]
+  }[]
 }
 
 export type BehaviorComparison =

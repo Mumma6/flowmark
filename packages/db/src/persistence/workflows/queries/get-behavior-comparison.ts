@@ -1,12 +1,14 @@
 import {
+  classifyReceiptCohort,
   type BehaviorComparison,
   type BehaviorComparisonCohort,
   type BehaviorComparisonExample,
   type BehaviorComparisonMetric,
   type BehaviorComparisonQuery,
+  type ReceiptCohort,
 } from "@flowmarkdev/core"
-import { and, eq, inArray, sql } from "drizzle-orm"
-import { Array, Effect, Record } from "effect"
+import { and, desc, eq, inArray, sql } from "drizzle-orm"
+import { Array, Effect, Option, Record } from "effect"
 import {
   deploymentBindings,
   deploymentReceipts,
@@ -25,6 +27,9 @@ type ClassifiedRun = Readonly<
   readonly reportedLoss: number
   readonly otherDeployment: boolean
   readonly otherBehaviorDeployment: boolean
+  readonly otherObservationEventId: string | null
+  readonly otherDeploymentId: string | null
+  readonly otherArtifactDigest: string | null
 }
 
 const examples = (
@@ -53,7 +58,10 @@ const eligible = (rows: readonly ClassifiedRun[]) =>
 const summarize = (
   rows: readonly ClassifiedRun[],
   artifact: Pick<BehaviorComparisonCohort, "artifactDigest" | "revision">,
-): BehaviorComparisonCohort => {
+): Omit<
+  BehaviorComparisonCohort,
+  "receiptCohort" | "rate" | "examplesByArtifact"
+> => {
   const population = eligible(rows)
   return {
     artifactDigest: artifact.artifactDigest,
@@ -182,6 +190,56 @@ export const getBehaviorComparison = Effect.fn("getBehaviorComparison")(
     if (beforeRead.exceeded || afterRead.exceeded) {
       return { status: "unsupported", reason: "read-budget" }
     }
+    const scanned = yield* runQuery(
+      DatabaseOperation.ReadBehaviorComparison,
+      () =>
+        db
+          .select({
+            deploymentId: deploymentReceipts.deploymentId,
+            receivedAt: deploymentReceipts.receivedAt,
+          })
+          .from(deploymentReceipts)
+          .where(
+            and(
+              eq(deploymentReceipts.projectId, projectId),
+              eq(deploymentReceipts.bindingId, query.bindingId),
+            ),
+          )
+          .orderBy(
+            desc(deploymentReceipts.receivedAt),
+            desc(deploymentReceipts.deploymentId),
+          )
+          .limit(13),
+    )
+    const scanTruncated = scanned.length > 12
+    const considered = scanTruncated ? scanned.slice(0, 12) : scanned
+    const newest = considered[0]?.receivedAt.getTime()
+    const latestDeploymentIds =
+      newest === undefined
+        ? []
+        : considered
+            .filter((receipt) => receipt.receivedAt.getTime() === newest)
+            .map((receipt) => receipt.deploymentId)
+    const cohortFor = (
+      deploymentId: string,
+      rows: readonly ClassifiedRun[],
+    ): ReceiptCohort =>
+      classifyReceiptCohort({
+        deploymentIds: Array.dedupe([
+          deploymentId,
+          ...Array.getSomes(
+            Array.map(rows, (row) =>
+              row.otherDeploymentId
+                ? Option.some(row.otherDeploymentId)
+                : Option.none(),
+            ),
+          ),
+        ]),
+        latestDeploymentIds,
+        scanTruncated,
+      })
+    const beforeCohort = cohortFor(before.deploymentId, beforeRead.rows)
+    const afterCohort = cohortFor(after.deploymentId, afterRead.rows)
     const baseline = summarize(beforeRead.rows, before.manifest)
     const successor = summarize(afterRead.rows, after.manifest)
     const both = [baseline, successor]
@@ -205,7 +263,102 @@ export const getBehaviorComparison = Effect.fn("getBehaviorComparison")(
       ...(both.some((cohort) => cohort.reportedLoss > 0)
         ? ["reported-loss"]
         : []),
+      ...(beforeCohort.receiptClass === "mixed-receipts" ||
+      afterCohort.receiptClass === "mixed-receipts"
+        ? ["mixed-receipts"]
+        : []),
+      ...(beforeCohort.classMayBeIncomplete || afterCohort.classMayBeIncomplete
+        ? ["receipt-scan-truncated"]
+        : []),
     ]
+    const withhold = limitations.length > 0
+    const exampleOf = (
+      runId: string,
+      eventId: string,
+    ): BehaviorComparisonExample => ({
+      runId,
+      observationEventId: eventId,
+      signalEventId: eventId,
+    })
+    const described = (
+      summary: ReturnType<typeof summarize>,
+      rows: readonly ClassifiedRun[],
+      deploymentId: string,
+      cohort: ReceiptCohort,
+    ): BehaviorComparisonCohort => {
+      const primary = Array.getSomes(
+        Array.map(eligible(rows), (row) =>
+          row.observationEventId
+            ? Option.some(exampleOf(row.runId, row.observationEventId))
+            : Option.none(),
+        ),
+      ).slice(0, 2)
+      const other = Array.getSomes(
+        Array.map(rows, (row) =>
+          row.otherObservationEventId &&
+          row.otherDeploymentId &&
+          row.otherArtifactDigest
+            ? Option.some({
+                artifactDigest: row.otherArtifactDigest,
+                deploymentId: row.otherDeploymentId,
+                example: exampleOf(row.runId, row.otherObservationEventId),
+              })
+            : Option.none(),
+        ),
+      )
+      const otherGroups = Array.reduce(
+        other,
+        [] as BehaviorComparisonCohort["examplesByArtifact"][number][],
+        (groups, item) => {
+          const index = groups.findIndex(
+            (group) => group.artifactDigest === item.artifactDigest,
+          )
+          if (index < 0) {
+            return [
+              ...groups,
+              {
+                artifactDigest: item.artifactDigest,
+                deploymentId: item.deploymentId,
+                examples: [item.example],
+              },
+            ]
+          }
+          const current = groups[index]
+          if (!current || current.examples.length >= 2) {
+            return groups
+          }
+          return Array.map(groups, (group, groupIndex) =>
+            groupIndex === index
+              ? { ...group, examples: [...group.examples, item.example] }
+              : group,
+          )
+        },
+      )
+      return {
+        ...summary,
+        receiptCohort: cohort,
+        rate:
+          withhold || summary.eligibleRuns === 0
+            ? null
+            : {
+                handledError:
+                  summary.counts.handledError.total / summary.eligibleRuns,
+                fallback: summary.counts.fallback.total / summary.eligibleRuns,
+                partialOutcome:
+                  summary.counts.partialOutcome.total / summary.eligibleRuns,
+                normalPath:
+                  summary.counts.normalPath.total / summary.eligibleRuns,
+              },
+        examplesByArtifact: [
+          {
+            artifactDigest: summary.artifactDigest,
+            deploymentId,
+            examples: primary,
+          },
+          ...otherGroups,
+        ],
+      }
+    }
     const selection = query.drilldown
     const drilldown =
       selection &&
@@ -233,8 +386,18 @@ export const getBehaviorComparison = Effect.fn("getBehaviorComparison")(
       service: before.service,
       behaviorRevision,
       limitations,
-      before: baseline,
-      after: successor,
+      before: described(
+        baseline,
+        beforeRead.rows,
+        before.deploymentId,
+        beforeCohort,
+      ),
+      after: described(
+        successor,
+        afterRead.rows,
+        after.deploymentId,
+        afterCohort,
+      ),
       ...(drilldown ? { drilldown } : {}),
     }
   },

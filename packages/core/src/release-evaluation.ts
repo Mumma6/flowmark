@@ -1,4 +1,5 @@
 import { Array, Option, Schema } from "effect"
+import { classifyReceiptCohort } from "./receipt-cohort.js"
 
 const Identifier = Schema.String.check(
   Schema.isPattern(/^[a-zA-Z0-9][a-zA-Z0-9._:/-]{0,159}$/),
@@ -85,6 +86,25 @@ const emptyFollow = (
  * Technical success and the deploy itself are not the verdict. No release is approved.
  */
 export const evaluateRelease = (input: ReleaseEvaluationInput) => {
+  const latestDeploymentId = Array.findFirst(
+    input.artifacts,
+    (artifact) => artifact.role === "successor",
+  ).pipe(Option.map((artifact) => artifact.deploymentId))
+  const receiptCohort = classifyReceiptCohort({
+    deploymentIds:
+      input.rollout === "mixed"
+        ? Array.map(input.artifacts, (artifact) => artifact.deploymentId)
+        : Option.match(latestDeploymentId, {
+            onNone: () =>
+              Array.map(input.artifacts, (artifact) => artifact.deploymentId),
+            onSome: (deploymentId) => [deploymentId],
+          }),
+    latestDeploymentIds: Option.match(latestDeploymentId, {
+      onNone: () => [],
+      onSome: (deploymentId) => [deploymentId],
+    }),
+    scanTruncated: false,
+  })
   const follow = emptyFollow(
     input,
     input.citation.status === "open" ? input.citation.url : null,
@@ -97,6 +117,7 @@ export const evaluateRelease = (input: ReleaseEvaluationInput) => {
     causalClaim: false as const,
     follow,
     repair: "none" as const,
+    receiptCohort,
   }
   if (input.access === "revoked") {
     return {
@@ -174,7 +195,8 @@ export const evaluateRelease = (input: ReleaseEvaluationInput) => {
     input.population === "known-compatible" &&
     input.rollout === "single" &&
     input.baseline === "present" &&
-    input.maturity === "mature"
+    input.maturity === "mature" &&
+    !receiptCohort.rateWithheld
   const rate = comparable
     ? { supporting: verdictSupporting.length, observed: verdictCases.length }
     : null
@@ -246,5 +268,5 @@ export const evaluateRelease = (input: ReleaseEvaluationInput) => {
       repair: "missing-observation" as const,
     })),
   )
-  return { ...examples, ...decided }
+  return { ...examples, ...decided, receiptCohort }
 }
