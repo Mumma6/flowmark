@@ -631,15 +631,12 @@ describe("API Effect services", () => {
     const result = await Effect.runPromise(
       Effect.flatMap(GetProjectWorkflowData, (service) =>
         Effect.result(
-          service.periodReport(
-            User({ userId: "user-1" }),
-            {
-              currentStartedAfter: "2026-10-01T00:00:00.000Z",
-              currentStartedBefore: "2026-12-01T00:00:00.000Z",
-              previousStartedAfter: "2026-09-01T00:00:00.000Z",
-              previousStartedBefore: "2026-10-01T00:00:00.000Z",
-            },
-          ),
+          service.periodReport(User({ userId: "user-1" }), {
+            currentStartedAfter: "2026-10-01T00:00:00.000Z",
+            currentStartedBefore: "2026-12-01T00:00:00.000Z",
+            previousStartedAfter: "2026-09-01T00:00:00.000Z",
+            previousStartedBefore: "2026-10-01T00:00:00.000Z",
+          }),
         ),
       ).pipe(
         Effect.provide(
@@ -1149,10 +1146,7 @@ describe("API Effect services", () => {
     const discoverWorkflows = vi.fn(repository().discoverWorkflows)
     const result = await Effect.runPromise(
       Effect.flatMap(GetProjectWorkflowData, (service) =>
-        service.discoverWorkflows(
-          Key({ header: "Bearer key" }),
-          { limit: 25 },
-        ),
+        service.discoverWorkflows(Key({ header: "Bearer key" }), { limit: 25 }),
       ).pipe(
         Effect.provide(
           GetProjectWorkflowData.layer.pipe(

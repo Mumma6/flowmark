@@ -116,8 +116,7 @@ export const runEvidenceView = Effect.fn("EvidenceView.run")(
             onSuccess: () =>
               send(
                 EvidenceEvents.Connected({
-                  canRead:
-                    app.getHostCapabilities()?.serverTools !== undefined,
+                  canRead: app.getHostCapabilities()?.serverTools !== undefined,
                 }),
               ),
           }),

@@ -1,6 +1,10 @@
 import { Effect, Layer, Option } from "effect"
 import { describe, expect, it, vi } from "vitest"
-import { InvalidInput, PersistenceError, Unauthorized } from "../../src/errors.js"
+import {
+  InvalidInput,
+  PersistenceError,
+  Unauthorized,
+} from "../../src/errors.js"
 import { AuthorizeProject } from "../../src/features/project-access/use-cases/authorize-project.js"
 import { ResultDeclarations } from "../../src/features/result-declarations/ports/result-declarations.js"
 import { ManageResultDeclarations } from "../../src/features/result-declarations/use-cases/manage-result-declarations.js"

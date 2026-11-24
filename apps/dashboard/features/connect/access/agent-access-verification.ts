@@ -44,9 +44,7 @@ export const interpretAgentReadVerification = (input: {
   readonly projectId: string | undefined
 }): AgentReadVerification =>
   Match.value(input).pipe(
-    Match.when({ clientSupported: false }, () =>
-      AgentRead.UnsupportedClient(),
-    ),
+    Match.when({ clientSupported: false }, () => AgentRead.UnsupportedClient()),
     Match.when({ deployment: "unavailable" }, () => AgentRead.Unavailable()),
     Match.when({ connections: "unavailable" }, () => AgentRead.Unavailable()),
     Match.when({ connections: "unauthorized" }, () => AgentRead.Denied()),

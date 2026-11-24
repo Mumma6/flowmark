@@ -66,9 +66,7 @@ export class ReadPublicPeriod extends Context.Service<
           const selection = { ...input, projectId }
           const report = yield* repository
             .periodRead(projectId, selection)
-            .pipe(
-              Effect.provideService(CurrentProjectReader, Key({ header })),
-            )
+            .pipe(Effect.provideService(CurrentProjectReader, Key({ header })))
           return yield* Schema.decodeUnknownEffect(PeriodReadResponseSchema)({
             version: 1,
             mode: "technical",

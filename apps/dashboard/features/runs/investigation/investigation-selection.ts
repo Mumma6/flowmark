@@ -57,8 +57,7 @@ export const interpretRunSelection = (input: {
     return RunSelection.Absent()
   }
   return Result.match(parseSelectionJson(input.raw), {
-    onFailure: () =>
-      RunSelection.Rejected({ message: unsupportedSelection }),
+    onFailure: () => RunSelection.Rejected({ message: unsupportedSelection }),
     onSuccess: (value) =>
       decodeRunInvestigationSelection(value).pipe(
         Result.match({

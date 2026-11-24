@@ -434,10 +434,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
       const result = await client.readPeriod(period)
       const studio = await api(
         Effect.flatMap(GetProjectWorkflowData, (data) =>
-          data.periodReport(
-            Key({ header: `Bearer ${readKey}` }),
-            period,
-          ),
+          data.periodReport(Key({ header: `Bearer ${readKey}` }), period),
         ),
       )
       const canonical = (value: typeof studio.current) => ({
