@@ -7,8 +7,8 @@ description: "Choose responsibility and language ownership for Flowmark computat
 
 Apply this skill when implementing or refactoring Flowmark's application,
 persistence or Rust architecture, including choosing the owner of computations.
-For TypeScript Effect API style (pipe, Match,
-Result.match, catchTags, Layers, Scope, services), also apply
+For TypeScript Effect API style (pipe, Match, Data.taggedEnum,
+Data.TaggedError, Result.match, catchTags, Layers, Scope, services), also apply
 [flowmark-effect](../flowmark-effect/SKILL.md).
 
 ## Choose the responsibility and language owner
@@ -150,6 +150,8 @@ uses the native error and ownership conventions in the Rust skill.
   causes.
 - Keep pure TypeScript transformations synchronous, using Effect collection, Option, Result,
   Match and Schema operators under [flowmark-effect](../flowmark-effect/SKILL.md).
+  Construct tagged unions and errors with those Effect constructors. Do not
+  write or read the discriminator field by hand.
   Do not wrap pure calculations in an Effect runtime or service.
 
 ## File and folder organization
