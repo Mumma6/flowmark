@@ -1,4 +1,5 @@
 import { Match, Schema } from "effect"
+import { RuntimeQuestionSchema } from "./runtime-question.js"
 
 const Identifier = Schema.String.check(
   Schema.isPattern(/^[a-zA-Z0-9][a-zA-Z0-9._/-]{0,127}$/),
@@ -44,6 +45,39 @@ export const ObservationRepairInputSchema = Schema.Struct({
   attempt: Schema.Int.check(Schema.isBetween({ minimum: 1, maximum: 100 })),
 })
 export type ObservationRepairInput = typeof ObservationRepairInputSchema.Type
+
+const Branch = Schema.String.check(
+  Schema.isPattern(/^[a-zA-Z0-9][a-zA-Z0-9._/-]{0,120}$/),
+)
+const WindowInstant = Schema.String.check(
+  Schema.isMinLength(1),
+  Schema.isMaxLength(40),
+)
+
+/** Caller context for a repair. The stored evidence supplies the gap. */
+export const StoredObservationRepairSchema = Schema.Struct({
+  question: Schema.suspend(() => RuntimeQuestionSchema),
+  repository: Identifier,
+  branch: Branch,
+  access: RepairAccessSchema,
+  traffic: Schema.Literals(["fixture-ready", "immature"]),
+  approvedNamespaces: Schema.Array(Namespace).check(
+    Schema.isMinLength(1),
+    Schema.isMaxLength(12),
+  ),
+  reportingSites: Schema.Array(Identifier).check(
+    Schema.isMinLength(1),
+    Schema.isMaxLength(12),
+  ),
+  maxOverheadMs: Schema.Int.check(
+    Schema.isBetween({ minimum: 1, maximum: 100 }),
+  ),
+  attempt: Schema.Int.check(Schema.isBetween({ minimum: 1, maximum: 100 })),
+  startedAfter: WindowInstant,
+  startedBefore: WindowInstant,
+  environment: Schema.optional(Identifier),
+})
+export type StoredObservationRepair = typeof StoredObservationRepairSchema.Type
 
 export const RepairRemedySchema = Schema.Literals([
   "reuse-event",
