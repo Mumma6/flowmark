@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "id": "payments.confirmation-for-attempt",
+  "revision": 1,
+  "text": "Did the later provider confirmation belong to the original payment attempt?",
+  "scope": {
+    "repository": "example/payments",
+    "service": "receipt-worker",
+    "workflow": "payment.reconcile"
+  },
+  "behaviorId": "payment.receipt",
+  "behaviorRevision": "1",
+  "choices": [
+    "Keep the attempt until a confirmation names the same change.",
+    "Treat a confirmation for a different change as a separate payment."
+  ],
+  "eligibleUnit": "logical-request",
+  "predicate": "confirmation-for-same-change",
+  "attemptProbe": "payment.attempt",
+  "confirmationProbe": "payment.confirmation",
+  "changeNamespace": "payment.request",
+  "maturity": "completed-fixture-transaction",
+  "fixture": "payment-confirmation-transaction"
+}

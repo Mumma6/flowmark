@@ -6,8 +6,16 @@ import { RuntimeQuestionCheckSchema } from "@flowmarkdev/core"
 import { Schema } from "effect"
 import { expect, it } from "vitest"
 import declarationImport from "../../../../examples/questions/committed-receipt.json"
+import confirmationImport from "../../../../examples/questions/later-confirmation.json"
 
-const declaration = declarationImport as unknown as RuntimeQuestion
+const declaration = declarationImport as unknown as Extract<
+  RuntimeQuestion,
+  { predicate: "receipt-for-same-change" }
+>
+const confirmation = confirmationImport as unknown as Extract<
+  RuntimeQuestion,
+  { predicate: "confirmation-for-same-change" }
+>
 import {
   classifyQuestionDistinction,
   verifyQuestionCase,
@@ -43,7 +51,10 @@ const reference = {
 }
 function site(
   probeId: string,
-  references = [reference],
+  references: Extract<
+    StoredRuntimeObservation["observation"],
+    { kind: "observation" }
+  >["references"] = [reference],
 ): StoredRuntimeObservation {
   return {
     binding,
@@ -145,4 +156,79 @@ it("keeps loss, stale provenance and contradictory evidence out of verified read
   expect(
     verifyQuestionCase(check, mapping, "otherRequest", [request, receipt]),
   ).toMatchObject({ status: "failed", reason: "wrong-request-distinction" })
+})
+
+it("classifies a later confirmation as supporting, contrary, or an unlinked gap", () => {
+  const confirmationCheck = Schema.decodeUnknownSync(
+    RuntimeQuestionCheckSchema,
+  )({
+    question: confirmation,
+    environment: "fixture",
+    questionId: confirmation.id,
+    questionRevision: 1,
+    fixture: confirmation.fixture,
+    allowedChangeNamespaces: ["payment.request"],
+    bindingId: check.bindingId,
+    deploymentId: check.deploymentId,
+    artifactDigest: check.artifactDigest,
+    sourceRevision: check.sourceRevision,
+  })
+  const context = {
+    allowedChangeNamespaces: confirmationCheck.allowedChangeNamespaces,
+    environment: mapping.environment,
+    bindingId: confirmationCheck.bindingId,
+    deploymentId: confirmationCheck.deploymentId,
+    artifactDigest: confirmationCheck.artifactDigest,
+    sourceRevision: confirmationCheck.sourceRevision,
+  }
+  const attempt = site(confirmation.attemptProbe)
+  const linked = site(confirmation.confirmationProbe)
+  const other = site(confirmation.confirmationProbe, [
+    { ...reference, digest: "hmac-sha256:" + "b".repeat(64) },
+  ])
+  const customerOnly = site(confirmation.confirmationProbe, [
+    {
+      kind: "entity",
+      namespace: "customer",
+      digest: "hmac-sha256:" + "c".repeat(64),
+    },
+  ])
+  expect(
+    classifyQuestionDistinction(
+      [attempt, linked],
+      confirmation,
+      context,
+      mapping,
+    ),
+  ).toMatchObject({ status: "observed", distinction: "same-change" })
+  expect(
+    classifyQuestionDistinction(
+      [attempt, other],
+      confirmation,
+      context,
+      mapping,
+    ),
+  ).toMatchObject({ status: "observed", distinction: "different-change" })
+  expect(
+    classifyQuestionDistinction(
+      [attempt, customerOnly],
+      confirmation,
+      context,
+      mapping,
+    ),
+  ).toMatchObject({ status: "inconclusive", reason: "missing-change-link" })
+  expect(
+    classifyQuestionDistinction(
+      [linked, attempt],
+      confirmation,
+      context,
+      mapping,
+    ),
+  ).toMatchObject({ status: "inconclusive", reason: "missing-change-link" })
+  expect(
+    verifyQuestionCase(confirmationCheck, mapping, "unlinked", [
+      attempt,
+      customerOnly,
+    ]),
+  ).toMatchObject({ status: "verified", reason: "unlinked-confirmation" })
 })

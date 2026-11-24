@@ -3,6 +3,7 @@ import type {
   RuntimeQuestion,
   StoredRuntimeObservation,
 } from "@flowmarkdev/core"
+import { questionProbeIds } from "@flowmarkdev/core"
 import { Array, Effect, Option } from "effect"
 import {
   InvalidInput,
@@ -46,6 +47,7 @@ export type QuestionEvidenceSelection = Readonly<{
     readonly recentSampleSize: number
     readonly contraryBeyondRecentSample: boolean
     readonly truncated: boolean
+    readonly scanLimit: number
   }>
 }>
 
@@ -53,17 +55,15 @@ const probeSitesDeclared = (
   deployment: DeployedArtifactMapping,
   question: RuntimeQuestion,
 ) =>
-  Array.every(
-    [question.requestProbe, question.committedReceiptProbe],
-    (probeId) =>
-      Array.some(
-        deployment.manifest.probes,
-        (probe) =>
-          probe.probeId === probeId &&
-          probe.location.kind === "source" &&
-          probe.behaviorId === question.behaviorId &&
-          probe.behaviorRevision === question.behaviorRevision,
-      ),
+  Array.every(questionProbeIds(question), (probeId) =>
+    Array.some(
+      deployment.manifest.probes,
+      (probe) =>
+        probe.probeId === probeId &&
+        probe.location.kind === "source" &&
+        probe.behaviorId === question.behaviorId &&
+        probe.behaviorRevision === question.behaviorRevision,
+    ),
   )
 
 const observationsForRun = (
@@ -129,6 +129,7 @@ export const selectQuestionEvidence: (
           recentSampleSize: RECENT_CONTEXT_SAMPLE,
           contraryBeyondRecentSample: false,
           truncated: false,
+          scanLimit: QUESTION_SCAN_CAP,
         },
       } satisfies QuestionEvidenceSelection
     }
@@ -344,6 +345,7 @@ export const selectQuestionEvidence: (
         recentSampleSize: RECENT_CONTEXT_SAMPLE,
         contraryBeyondRecentSample,
         truncated,
+        scanLimit: QUESTION_SCAN_CAP,
       },
     } satisfies QuestionEvidenceSelection
   },

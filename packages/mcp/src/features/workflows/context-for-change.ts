@@ -13,6 +13,7 @@ import {
   type DeployedArtifactMapping,
   type ProjectReader,
   type QuestionEvidenceSelection,
+  questionProbeIds,
   type RuntimeQuestion,
   type SelectedQuestionCase,
 } from "@flowmark/api"
@@ -79,17 +80,15 @@ const deploymentForQuestion = (
   )
   return Option.orElse(
     Array.findFirst(scoped, (deployment) =>
-      Array.every(
-        [question.requestProbe, question.committedReceiptProbe],
-        (probeId) =>
-          Array.some(
-            deployment.manifest.probes,
-            (probe) =>
-              probe.probeId === probeId &&
-              probe.location.kind === "source" &&
-              probe.behaviorId === question.behaviorId &&
-              probe.behaviorRevision === question.behaviorRevision,
-          ),
+      Array.every(questionProbeIds(question), (probeId) =>
+        Array.some(
+          deployment.manifest.probes,
+          (probe) =>
+            probe.probeId === probeId &&
+            probe.location.kind === "source" &&
+            probe.behaviorId === question.behaviorId &&
+            probe.behaviorRevision === question.behaviorRevision,
+        ),
       ),
     ),
     () => Array.head(scoped),
@@ -115,7 +114,7 @@ const questionCitation = (
           bindingId: deployment.bindingId,
           deploymentId: deployment.deploymentId,
           artifactDigest: deployment.manifest.artifactDigest,
-          probeId: question.requestProbe,
+          probeId: questionProbeIds(question)[0],
         },
         revision: deployment.manifest.revision,
         environment: deployment.environment,
@@ -487,7 +486,7 @@ export const contextForChangeForMcp: (
           const questionClass = classifyQuestionEvidence({
             deployment,
             mappings,
-            probeIds: [question.requestProbe, question.committedReceiptProbe],
+            probeIds: questionProbeIds(question),
             diff: input.diff,
             requestedRevision: input.revision,
           })
@@ -533,8 +532,7 @@ export const contextForChangeForMcp: (
             gap: selected.gap,
             selection: {
               ...selected.selection,
-              description:
-                "Counts and examples are bounded. They do not establish prevalence or absence across eligible traffic.",
+              description: `Counts and examples stop at ${selected.selection.scanLimit} examined runs. They do not establish prevalence, and a missing confirmation inside that scan does not establish that no confirmation exists beyond it.`,
             },
           }
         }

@@ -1,6 +1,7 @@
 import { Schema } from "effect"
 import { describe, expect, it } from "vitest"
 import question from "../../../examples/questions/committed-receipt.json"
+import confirmation from "../../../examples/questions/later-confirmation.json"
 import {
   isRuntimeQuestionSuccessor,
   RuntimeQuestionSchema,
@@ -54,5 +55,32 @@ describe("repository-owned runtime questions", () => {
     { maturity: "whenever" },
   ])("rejects unsupported semantics or fields", (override) => {
     expect(() => decode({ ...question, ...override })).toThrow()
+  })
+
+  it("accepts a later confirmation and rejects mixed probe roles", () => {
+    expect(decode(confirmation)).toEqual(confirmation)
+    expect(() =>
+      decode({
+        ...confirmation,
+        attemptProbe: confirmation.confirmationProbe,
+      }),
+    ).toThrow()
+    expect(() =>
+      decode({
+        ...question,
+        attemptProbe: confirmation.attemptProbe,
+        confirmationProbe: confirmation.confirmationProbe,
+      }),
+    ).toThrow()
+    expect(() =>
+      decode({
+        ...confirmation,
+        requestProbe: question.requestProbe,
+        committedReceiptProbe: question.committedReceiptProbe,
+      }),
+    ).toThrow()
+    expect(() =>
+      decode({ ...confirmation, predicate: "model-authored" }),
+    ).toThrow()
   })
 })

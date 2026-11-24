@@ -2,7 +2,10 @@ import { createHash, randomBytes, randomUUID } from "node:crypto"
 import { sql } from "drizzle-orm"
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest"
 import { Schema } from "effect"
-import { RuntimeQuestionCheckSchema } from "@flowmark/api"
+import {
+  RuntimeQuestionCheckSchema,
+  type RuntimeQuestionCheck,
+} from "@flowmark/api"
 import {
   createDatabase,
   deploymentBindings,
@@ -16,6 +19,7 @@ import {
   createRuntimeObservationEmitter,
 } from "../../../../packages/sdk/src/index.js"
 import declaration from "../../../../examples/questions/committed-receipt.json"
+import confirmation from "../../../../examples/questions/later-confirmation.json"
 import { POST as deployment } from "../../app/v1/deployments/route"
 import { POST as ingest } from "../../app/v1/events/route"
 import { POST as readFixture } from "../../app/api/trpc/[trpc]/route"
@@ -54,7 +58,10 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
     const input = Schema.decodeUnknownSync(RuntimeQuestionCheckSchema)({
       ...policy,
       question: declaration,
-    })
+    }) as Extract<
+      RuntimeQuestionCheck,
+      { question: { predicate: "receipt-for-same-change" } }
+    >
     const caller = (key: string) =>
       appRouter.createCaller({
         request: new Request("http://localhost/api/trpc", {
@@ -76,18 +83,21 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
               repository: "example/payments",
               artifactDigest: target.artifactDigest,
               revision: target.sourceRevision,
-              probes: ["payment.request", "payment.receipt-committed"].map(
-                (probeId) => ({
-                  probeId,
-                  behaviorId: "payment.receipt",
-                  behaviorRevision: "1",
-                  location: {
-                    kind: "source",
-                    path: sourcePath,
-                    symbol: probeId,
-                  },
-                }),
-              ),
+              probes: [
+                "payment.request",
+                "payment.receipt-committed",
+                "payment.attempt",
+                "payment.confirmation",
+              ].map((probeId) => ({
+                probeId,
+                behaviorId: "payment.receipt",
+                behaviorRevision: "1",
+                location: {
+                  kind: "source",
+                  path: sourcePath,
+                  symbol: probeId,
+                },
+              })),
             },
           }),
         }),
@@ -304,6 +314,69 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
       expect(response.status).toBe(200)
       expect(await response.json()).toMatchObject({
         result: { data: { status: "verified" } },
+      })
+    })
+
+    it("requires the linked, other-change and unlinked confirmation fixtures", async () => {
+      const confirm = async (which: "linked" | "otherChange" | "unlinked") => {
+        const attempt = randomUUID()
+        const confirmed = which === "otherChange" ? randomUUID() : attempt
+        const client = createFlowmark({
+          apiUrl: "http://localhost",
+          apiKey: writeKey,
+          environment: "fixture",
+        })
+        const flow = client.workflow(workflow)
+        const emitter = (probeId: string) =>
+          createRuntimeObservationEmitter({
+            key: referenceKey,
+            namespaces: [{ kind: "change", namespace: "payment.request" }],
+            probe: {
+              bindingId,
+              deploymentId: policy.deploymentId,
+              artifactDigest: policy.artifactDigest,
+              probeId,
+            },
+          })
+        emitter("payment.attempt").observe(flow, {
+          change: { "payment.request": attempt },
+        })
+        emitter("payment.confirmation").observe(
+          flow,
+          which === "unlinked"
+            ? {}
+            : { change: { "payment.request": confirmed } },
+        )
+        flow.done()
+        await client.shutdown()
+        const found = await api.run.list({ workflow, externalId: flow.runId })
+        expect(found.total).toBe(1)
+        return found.runs[0]!.id
+      }
+      expect(
+        await api.run.questionReadiness({
+          environment: input.environment,
+          questionId: confirmation.id,
+          questionRevision: confirmation.revision,
+          fixture: confirmation.fixture,
+          allowedChangeNamespaces: input.allowedChangeNamespaces,
+          bindingId: input.bindingId,
+          deploymentId: input.deploymentId,
+          artifactDigest: input.artifactDigest,
+          sourceRevision: input.sourceRevision,
+          question: confirmation as unknown as Extract<
+            RuntimeQuestionCheck,
+            { question: { predicate: "confirmation-for-same-change" } }
+          >["question"],
+          runs: {
+            linked: await confirm("linked"),
+            otherChange: await confirm("otherChange"),
+            unlinked: await confirm("unlinked"),
+          },
+        }),
+      ).toEqual({
+        status: "verified",
+        reason: "persisted-fixture-distinction",
       })
     })
   },
