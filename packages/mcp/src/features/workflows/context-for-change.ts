@@ -2,7 +2,10 @@ import { readAuthSecret } from "@flowmark/auth"
 import { requireAgentAccessProjectId } from "@flowmark/auth/agent-access"
 import {
   GetProjectWorkflowData,
+  classifyObservedCase,
+  classifyQuestionEvidence,
   rankChangeMappings,
+  revisionClassNote,
   sealRuntimeCitation,
   RuntimeQuestionSchema,
   selectQuestionEvidence,
@@ -304,12 +307,33 @@ export const contextForChangeForMcp: (
               (item.outcome !== ordinary.outcome ||
                 item.status !== ordinary.status)),
         )
+        const observedClass = classifyObservedCase({
+          deployment,
+          probe,
+          mappings,
+          diff: input.diff,
+          matchReason: reason,
+          strength,
+          otherRevision,
+        })
         const examples = [
           ...(ordinary
-            ? [{ ...ordinary, selection: "representative" as const }]
+            ? [
+                {
+                  ...ordinary,
+                  selection: "representative" as const,
+                  ...observedClass,
+                },
+              ]
             : []),
           ...(contrast
-            ? [{ ...contrast, selection: "contrasting" as const }]
+            ? [
+                {
+                  ...contrast,
+                  selection: "contrasting" as const,
+                  ...observedClass,
+                },
+              ]
             : []),
         ]
         const sampleIncomplete =
@@ -460,11 +484,19 @@ export const contextForChangeForMcp: (
                 ),
             }),
           )
+          const questionClass = classifyQuestionEvidence({
+            deployment,
+            mappings,
+            probeIds: [question.requestProbe, question.committedReceiptProbe],
+            diff: input.diff,
+            requestedRevision: input.revision,
+          })
           const attachCitation = (item: SelectedQuestionCase | null) =>
             item === null
               ? null
               : {
                   ...item,
+                  ...questionClass,
                   selection:
                     item.distinction === "same-change"
                       ? ("supporting" as const)
@@ -535,8 +567,10 @@ export const contextForChangeForMcp: (
             : mappings.some(
                 ({ manifest }) => manifest.revision === input.revision,
               ),
-        description:
+        description: [
           "Mappings identify candidates. Examples are a bounded sample of observed events and do not establish current traffic or the intended behavior.",
+          revisionClassNote(truncated),
+        ].join(" "),
       },
     }
   },

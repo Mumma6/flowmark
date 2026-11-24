@@ -63,6 +63,17 @@ const diffPaths = (diff: string) => {
   return { files, renamed }
 }
 
+/** A diff path or a rename touches the probe. Ticket text is not a diff. */
+export function diffTouchesPaths(
+  diff: string,
+  paths: readonly string[],
+): boolean {
+  const parsed = diffPaths(diff)
+  return paths.some(
+    (path) => parsed.files.has(path) || parsed.renamed.has(path),
+  )
+}
+
 type SourceMatch = {
   readonly score: number
   readonly reason: "file-and-symbol" | "file" | "symbol" | "rename" | "lexical"
