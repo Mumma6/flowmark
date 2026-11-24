@@ -2,7 +2,11 @@ import { inspect } from "node:util"
 import { Effect, Result, Layer, Match, Redacted } from "effect"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import * as database from "@flowmark/db"
-import { Database, DatabaseOperation } from "@flowmark/db/persistence"
+import {
+  Database,
+  DatabaseError,
+  DatabaseOperation,
+} from "@flowmark/db/persistence"
 import { DatabaseLive } from "../../src/adapters/database"
 import { ApiSettings } from "../../src/config"
 
@@ -60,12 +64,13 @@ describe("API request resource scope", () => {
       ),
     )
     Result.match(result, {
-      onFailure: (error) =>
-        expect(error).toMatchObject({
-          _tag: "DatabaseError",
-          operation: DatabaseOperation.Connect,
-          cause,
-        }),
+      onFailure: (error) => {
+        expect(error).toBeInstanceOf(DatabaseError)
+        if (error instanceof DatabaseError) {
+          expect(error.operation).toBe(DatabaseOperation.Connect)
+          expect(error.cause).toBe(cause)
+        }
+      },
       onSuccess: () => expect.fail("expected a database connect failure"),
     })
   })
@@ -91,13 +96,13 @@ describe("API request resource scope", () => {
       ),
     )
     Match.value(result?.reasons[0]).pipe(
-      Match.tag("Die", ({ defect }) =>
-        expect(defect).toMatchObject({
-          _tag: "DatabaseError",
-          operation: DatabaseOperation.Close,
-          cause,
-        }),
-      ),
+      Match.tag("Die", ({ defect }) => {
+        expect(defect).toBeInstanceOf(DatabaseError)
+        if (defect instanceof DatabaseError) {
+          expect(defect.operation).toBe(DatabaseOperation.Close)
+          expect(defect.cause).toBe(cause)
+        }
+      }),
       Match.orElse(() => expect.fail("expected a connection cleanup defect")),
     )
   })
@@ -116,7 +121,14 @@ describe("API request resource scope", () => {
       Effect.result(ApiSettings.pipe(Effect.provide(ApiSettings.layer))),
     )
     Result.match(result, {
-      onFailure: (error) => expect(error._tag).toBe("ConfigurationError"),
+      onFailure: (error) => {
+        Match.value(error).pipe(
+          Match.tag("ConfigurationError", () => undefined),
+          Match.orElse(() => {
+            throw new Error("expected ConfigurationError")
+          }),
+        )
+      },
       onSuccess: () => expect.fail("Empty database URL must fail"),
     })
   })
@@ -129,7 +141,14 @@ describe("API request resource scope", () => {
       Effect.result(ApiSettings.pipe(Effect.provide(ApiSettings.layer))),
     )
     Result.match(result, {
-      onFailure: (error) => expect(error._tag).toBe("ConfigurationError"),
+      onFailure: (error) => {
+        Match.value(error).pipe(
+          Match.tag("ConfigurationError", () => undefined),
+          Match.orElse(() => {
+            throw new Error("expected ConfigurationError")
+          }),
+        )
+      },
       onSuccess: () => expect.fail("Production demo mode must fail"),
     })
   })
@@ -146,7 +165,12 @@ describe("API request resource scope", () => {
     )
     Result.match(result, {
       onFailure: (error) => {
-        expect(error._tag).toBe("ConfigurationError")
+        Match.value(error).pipe(
+          Match.tag("ConfigurationError", () => undefined),
+          Match.orElse(() => {
+            throw new Error("expected ConfigurationError")
+          }),
+        )
         expect(String(error.cause)).not.toContain("secret")
       },
       onSuccess: () =>

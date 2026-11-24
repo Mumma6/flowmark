@@ -2,7 +2,7 @@
 
 import { feedbackCopy, type ListedConnection } from "./connection-model"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { Array as EffectArray, Effect } from "effect"
+import { Array as EffectArray, Effect, Match } from "effect"
 import { useCallback, useRef, useState } from "react"
 import { useTRPC } from "../../platform/api-trpc"
 import { useProject } from "../../projects/project-context"
@@ -10,7 +10,9 @@ import {
   confirmConnectionRevocation,
   connectionListRecovery,
   interpretOwnedConnection,
+  OwnedConnection,
   revokeAndConfirmConnection,
+  RevokeFeedbackState,
   type RevokeFeedback,
 } from "./connection-revocation"
 
@@ -20,7 +22,9 @@ export function useAgentConnections() {
   const { projects } = useProject()
   const list = useQuery(trpc.agentAccess.list.queryOptions())
   const [selected, setSelected] = useState<ListedConnection | null>(null)
-  const [feedback, setFeedback] = useState<RevokeFeedback>({ _tag: "Idle" })
+  const [feedback, setFeedback] = useState<RevokeFeedback>(
+    RevokeFeedbackState.Idle(),
+  )
   const [feedbackTarget, setFeedbackTarget] = useState<ListedConnection | null>(
     null,
   )
@@ -64,9 +68,17 @@ export function useAgentConnections() {
               ? "present"
               : "absent",
       })
-    : { _tag: "Hidden" as const }
+    : OwnedConnection.Hidden()
   const message = feedbackCopy(feedback)
-  const busy = feedback._tag === "Pending"
+  const busy = Match.value(feedback).pipe(
+    Match.tag("Pending", () => true),
+    Match.orElse(() => false),
+  )
+  const confirmedRevocation = (result: RevokeFeedback) =>
+    Match.value(result).pipe(
+      Match.tag("Revoked", () => true),
+      Match.orElse(() => false),
+    )
   const observation = (target: ListedConnection) => ({
     target,
     cancelRead: () =>
@@ -85,12 +97,12 @@ export function useAgentConnections() {
     if (!feedbackTarget || busy) {
       return
     }
-    setFeedback({ _tag: "Pending" })
+    setFeedback(RevokeFeedbackState.Pending())
     const result = await Effect.runPromise(
       confirmConnectionRevocation(observation(feedbackTarget)),
     )
     setFeedback(result)
-    if (result._tag === "Revoked") {
+    if (confirmedRevocation(result)) {
       setSelected(null)
     }
   }
@@ -100,7 +112,7 @@ export function useAgentConnections() {
     }
     const target = confirming
     setFeedbackTarget(target)
-    setFeedback({ _tag: "Pending" })
+    setFeedback(RevokeFeedbackState.Pending())
     const result = await Effect.runPromise(
       revokeAndConfirmConnection({
         ...observation(target),
@@ -113,7 +125,7 @@ export function useAgentConnections() {
     )
     setFeedback(result)
     setConfirming(null)
-    if (result._tag === "Revoked") {
+    if (confirmedRevocation(result)) {
       setSelected(null)
     }
   }

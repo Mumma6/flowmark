@@ -16,6 +16,9 @@ import {
   GetBusinessEvidence,
   ManageSharedInvestigations,
   ManageEvidenceCaptures,
+  DelegatedUser,
+  Key,
+  User,
   type ProjectReader,
   InvalidInput,
   ManageProject,
@@ -216,23 +219,21 @@ export function readQuery<A>(
             }),
           ),
         )
-        return yield* read({
-          _tag: "DelegatedUser",
-          userId,
-          clientId: grantClientId,
-          authorizationCodeId: grantAuthorizationCodeId,
-          projectId,
-        })
+        return yield* read(
+          DelegatedUser({
+            userId,
+            clientId: grantClientId,
+            authorizationCodeId: grantAuthorizationCodeId,
+            projectId,
+          }),
+        )
       }
       return yield* sessionUserId(request).pipe(
         Effect.flatMap(
           Option.match({
             onNone: () =>
-              read({
-                _tag: "Key",
-                header: request.headers.get("authorization"),
-              }),
-            onSome: (userId) => read({ _tag: "User", userId, projectId }),
+              read(Key({ header: request.headers.get("authorization") })),
+            onSome: (userId) => read(User({ userId, projectId })),
           }),
         ),
       )

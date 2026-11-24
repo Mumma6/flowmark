@@ -6,8 +6,10 @@ import {
   privateInvestigationKey,
 } from "../features/investigations/saved-selection"
 import {
-  interpretRunSelection,
   interpretPeriodCohort,
+  interpretRunSelection,
+  PeriodCohort,
+  RunSelection,
 } from "../features/runs/investigation/investigation-selection"
 import { readLinkedSelection } from "../features/insights/linked/linked-selection"
 const projectId = "11111111-1111-4111-8111-111111111111"
@@ -39,7 +41,7 @@ describe("private live selection navigation", () => {
         projectId,
         runId: run.runId,
       }),
-    ).toEqual({ _tag: "Accepted", selection: run })
+    ).toEqual(RunSelection.Accepted({ selection: run }))
     expect(
       Result.isFailure(
         decodeSavedSelection({
@@ -73,7 +75,7 @@ describe("private live selection navigation", () => {
         definitionRevision: "",
         environment: "",
       }),
-    ).toEqual({ _tag: "Accepted", selection })
+    ).toEqual(PeriodCohort.Accepted({ selection }))
   })
   it("preserves the linked comparison class and page and isolates private cache scopes", () => {
     const selection = {

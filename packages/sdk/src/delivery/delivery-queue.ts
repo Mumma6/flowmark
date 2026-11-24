@@ -1,4 +1,4 @@
-import { Context, Effect, FiberSet, Layer, Ref, Semaphore } from "effect"
+import { Context, Effect, FiberSet, Layer, Match, Ref, Semaphore } from "effect"
 import { decodeWorkflowEvent, type WorkflowEvent } from "@flowmarkdev/core"
 import {
   FlowmarkDeliveryError,
@@ -75,13 +75,35 @@ export class DeliveryQueue extends Context.Service<
             sample:
               sample.length < failureSampleSize ? [...sample, error] : sample,
           }))
+          const failureType = Match.value(error).pipe(
+            Match.tag(
+              "FlowmarkQueueError",
+              () => "FlowmarkQueueError" as const,
+            ),
+            Match.tag(
+              "FlowmarkExpectationError",
+              () => "FlowmarkExpectationError" as const,
+            ),
+            Match.tag(
+              "WorkflowTransportError",
+              () => "WorkflowTransportError" as const,
+            ),
+            Match.tag(
+              "WorkflowEventValidationError",
+              () => "WorkflowEventValidationError" as const,
+            ),
+            Match.tag(
+              "FlowmarkErrorMappingError",
+              () => "FlowmarkErrorMappingError" as const,
+            ),
+            Match.exhaustive,
+          )
+          const queueError = failureType === "FlowmarkQueueError"
           yield* Ref.update(counters, (health) => ({
             ...health,
-            dropped:
-              health.dropped + (error._tag === "FlowmarkQueueError" ? 1 : 0),
-            failed:
-              health.failed + (error._tag === "FlowmarkQueueError" ? 0 : 1),
-            lastFailure: { type: error._tag },
+            dropped: health.dropped + (queueError ? 1 : 0),
+            failed: health.failed + (queueError ? 0 : 1),
+            lastFailure: { type: failureType },
           }))
           if (onError) {
             yield* Effect.sync(() => onError(error, event)).pipe(
@@ -94,7 +116,7 @@ export class DeliveryQueue extends Context.Service<
           } else {
             yield* Effect.logWarning(
               `[Flowmark] Could not deliver ${event.type} for ${event.workflow}`,
-              { error: error._tag },
+              { error: failureType },
             )
           }
         })

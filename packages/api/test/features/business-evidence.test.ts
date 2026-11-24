@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest"
+import { InvalidInput } from "../../src/errors.js"
 import { Effect, Result, Schema } from "effect"
 import { BusinessEvidenceQuerySchema } from "@flowmarkdev/core"
 import {
@@ -136,7 +137,7 @@ describe("business evidence allowlist", () => {
           choices,
         ),
       ),
-    ).rejects.toMatchObject({ _tag: "InvalidInput" })
+    ).rejects.toBeInstanceOf(InvalidInput)
     await expect(
       Effect.runPromise(
         validatePublication(
@@ -147,7 +148,7 @@ describe("business evidence allowlist", () => {
           choices,
         ),
       ),
-    ).rejects.toMatchObject({ _tag: "InvalidInput" })
+    ).rejects.toBeInstanceOf(InvalidInput)
     await expect(
       Effect.runPromise(
         validatePublication(
@@ -158,7 +159,7 @@ describe("business evidence allowlist", () => {
           choices,
         ),
       ),
-    ).rejects.toMatchObject({ _tag: "InvalidInput" })
+    ).rejects.toBeInstanceOf(InvalidInput)
   })
   it("binds continuation to the project, selected query and current publication", async () => {
     const cursor = encodeBusinessCursor("project", 3, "fingerprint", "next")!
@@ -171,15 +172,15 @@ describe("business evidence allowlist", () => {
       Effect.runPromise(
         decodeBusinessCursor(cursor, "foreign", 3, "fingerprint"),
       ),
-    ).rejects.toMatchObject({ _tag: "InvalidInput" })
+    ).rejects.toBeInstanceOf(InvalidInput)
     await expect(
       Effect.runPromise(
         decodeBusinessCursor(cursor, "project", 4, "fingerprint"),
       ),
-    ).rejects.toMatchObject({ _tag: "InvalidInput" })
+    ).rejects.toBeInstanceOf(InvalidInput)
     await expect(
       Effect.runPromise(decodeBusinessCursor(cursor, "project", 3, "changed")),
-    ).rejects.toMatchObject({ _tag: "InvalidInput" })
+    ).rejects.toBeInstanceOf(InvalidInput)
   })
 })
 

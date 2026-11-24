@@ -104,15 +104,17 @@ export const authorizeUser = Effect.fn("AuthorizeProject.authorizeUser")(
 
 ## Pattern matching
 
-Use Effect's matchers instead of nested `if`, `switch`, or `result._tag ===`.
+Use Effect's matchers instead of nested `if`, `switch`, or reading a tag field.
 
-| Value                | Use                                                                                                |
-| -------------------- | -------------------------------------------------------------------------------------------------- |
-| Tagged error / union | `Match.value(error).pipe(Match.tag(...), Match.orElse(...))`                                       |
-| `Result`             | `Result.match({ onFailure, onSuccess })`                                                           |
-| `Exit`               | `Exit.match({ onSuccess, onFailure })`                                                             |
-| `Option`             | `Option.match({ onNone, onSome })`                                                                 |
-| Cause                | Inspect `cause.reasons` with `Cause.isFailReason` / `Cause.isDieReason`; match individual reasons. |
+| Value                | Use                                                                                                                          |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Tagged error / union | `Match.value(error).pipe(Match.tag(...), Match.orElse(...))`, or `Effect.catchTag` / `catchTags` while it is still an Effect |
+| `Result`             | `Result.isSuccess` / `isFailure`, `getOrElse`, `getOrNull`, `getOrThrow`; `Result.match` when both sides transform the value |
+| `Exit`               | `Exit.isSuccess` / `isFailure`; `Exit.match` when both sides transform the value                                             |
+| `Option`             | `Option.isSome` / `isNone`, `getOrElse`, `getOrNull`, `getOrUndefined`; `Option.match` when both sides transform the value   |
+| Cause                | Inspect `cause.reasons` with `Cause.isFailReason` / `Cause.isDieReason`; match individual reasons.                           |
+
+Do not match `None`, `Some`, `Success` or `Failure` with `Match.tag` when that module already has a getter or guard. `getOrElse` supplies a fallback. `getOrNull` and `getOrUndefined` unwrap for a nullable boundary. `match` is for two different transformations, not for reading the inner value unchanged.
 
 Prefer `Match.exhaustive` when every member of a closed union must be handled.
 
@@ -262,8 +264,8 @@ behavior changes instead of recreating v3 compatibility helpers.
 
 - `try` / `catch` / `async` / `await` for domain or use-case control flow
 - `.then()` / `.catch()` chains
-- `result._tag === "Failure"` when `Result.match` or `Match` exists
-- `switch (error._tag)` when `catchTags` or `Match.tag` exists
+- comparing a Result by its failure label when `Result.isFailure` or `Result.match` exists
+- switching on an error label when `catchTags` or `Match.tag` exists
 - Mutable service classes, locators, or singleton clients
 - `Effect.runPromise` inside helpers, adapters, or React components
 - Wrapping a completed Promise workflow in `Effect.succeed` / `tryPromise`

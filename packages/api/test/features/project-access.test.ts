@@ -1,4 +1,9 @@
 import { Effect, Result, Layer, Redacted } from "effect"
+import {
+  InvalidInput,
+  ManagementRateLimited,
+  Unauthorized,
+} from "../../src/errors.js"
 import { describe, expect, it, vi } from "vitest"
 import { ApiSettings } from "../../src/config"
 import { AuthorizeProject } from "../../src/features/project-access/use-cases/authorize-project"
@@ -8,9 +13,18 @@ import {
   ProjectCredentials,
   type ProjectCredentialsService,
 } from "../../src/features/project-access/ports/project-credentials"
-const expectLeft = <E>(result: Result.Result<unknown, E>, expected: unknown) =>
+const expectLeft = (
+  result: Result.Result<unknown, unknown>,
+  ErrorClass: abstract new (...args: never[]) => object,
+  fields?: object,
+) =>
   Result.match(result, {
-    onFailure: (error) => expect(error).toMatchObject(expected as object),
+    onFailure: (error) => {
+      expect(error).toBeInstanceOf(ErrorClass)
+      if (fields) {
+        expect(error).toMatchObject(fields)
+      }
+    },
     onSuccess: () => expect.fail("expected a failure"),
   })
 
@@ -139,7 +153,7 @@ describe("ManageProject", () => {
       await Effect.runPromise(
         Effect.result(create).pipe(Effect.provide(provide(denied))),
       ),
-      { _tag: "Unauthorized" },
+      Unauthorized,
     )
     expect(createApiKey).not.toHaveBeenCalled()
     const limited = projectCredentials({
@@ -151,7 +165,7 @@ describe("ManageProject", () => {
       await Effect.runPromise(
         Effect.result(create).pipe(Effect.provide(provide(limited))),
       ),
-      { _tag: "ManagementRateLimited" },
+      ManagementRateLimited,
     )
     expect(createApiKey).not.toHaveBeenCalled()
   })
@@ -187,8 +201,7 @@ describe("ManageProject", () => {
             .rotateWriteKey("user-1", "project-1", "key-1")
             .pipe(Effect.asVoid),
         ]) {
-          expectLeft(yield* Effect.result(operation), {
-            _tag: "ManagementRateLimited",
+          expectLeft(yield* Effect.result(operation), ManagementRateLimited, {
             retryAfter: 42,
           })
         }
@@ -229,7 +242,7 @@ describe("ManageProject", () => {
         Effect.result(manage.create("user-1", "   ")),
       ).pipe(Effect.provide(provide())),
     )
-    expectLeft(result, { _tag: "InvalidInput" })
+    expectLeft(result, InvalidInput)
   })
 
   it("creates a write key after membership is confirmed", async () => {
@@ -323,7 +336,7 @@ describe("ManageProject", () => {
         ),
       ),
     )
-    expectLeft(result, { _tag: "InvalidInput" })
+    expectLeft(result, InvalidInput)
     expect(createApiKey).not.toHaveBeenCalled()
     expect(rotateWriteKey).toHaveBeenCalledOnce()
   })
@@ -344,7 +357,7 @@ describe("ManageProject", () => {
         ),
       ),
     )
-    expectLeft(result, { _tag: "Unauthorized" })
+    expectLeft(result, Unauthorized)
     expect(rotateWriteKey).not.toHaveBeenCalled()
   })
 
@@ -359,7 +372,7 @@ describe("ManageProject", () => {
         ),
       ).pipe(Effect.provide(provide())),
     )
-    expectLeft(result, { _tag: "InvalidInput" })
+    expectLeft(result, InvalidInput)
   })
 })
 
@@ -392,7 +405,7 @@ describe("Onboarding", () => {
           Effect.result,
         ),
       )
-      expectLeft(result, { _tag: "InvalidInput" })
+      expectLeft(result, InvalidInput)
       expect(update).not.toHaveBeenCalled()
     },
   )
@@ -450,7 +463,7 @@ describe("Onboarding", () => {
         Effect.result,
       ),
     )
-    expectLeft(result, { _tag: "InvalidInput" })
+    expectLeft(result, InvalidInput)
     expect(fallback).not.toHaveBeenCalled()
   })
 
@@ -478,7 +491,7 @@ describe("Onboarding", () => {
         Effect.result,
       ),
     )
-    expectLeft(result, { _tag: "InvalidInput" })
+    expectLeft(result, InvalidInput)
   })
 
   it("returns the persisted onboarding state", async () => {
@@ -514,7 +527,7 @@ describe("Onboarding", () => {
       ),
     )
 
-    expectLeft(result, { _tag: "InvalidInput" })
+    expectLeft(result, InvalidInput)
   })
 
   it("requires a write key before completing", async () => {
@@ -530,6 +543,6 @@ describe("Onboarding", () => {
       ),
     )
 
-    expectLeft(result, { _tag: "InvalidInput" })
+    expectLeft(result, InvalidInput)
   })
 })

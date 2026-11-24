@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
-import { Cause, Effect, Exit, Schema } from "effect"
+import { Cause, Effect, Exit, Match, Schema } from "effect"
 import {
   AGENT_ACCESS_MCP_TOOLS,
   AGENT_ACCESS_OAUTH_SCOPE_READ,
@@ -27,8 +27,15 @@ const expectFailure = async <A>(
   assert.equal(Exit.isFailure(exit), true)
   if (Exit.isFailure(exit)) {
     const failed = exit.cause.reasons.find(Cause.isFailReason)
-    assert.equal(failed?.error._tag, "AgentAccessContractError")
-    return failed!.error
+    if (!failed) {
+      throw new Error("expected AgentAccessContractError")
+    }
+    return Match.value(failed.error).pipe(
+      Match.tag("AgentAccessContractError", (error) => error),
+      Match.orElse(() => {
+        throw new Error("expected AgentAccessContractError")
+      }),
+    )
   }
   throw new Error("unreachable")
 }

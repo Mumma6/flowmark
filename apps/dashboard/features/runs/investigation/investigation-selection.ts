@@ -4,7 +4,7 @@ import {
   type PeriodCohortSelection,
   type RunInvestigationSelection,
 } from "@flowmarkdev/core"
-import { Match, Option, Result } from "effect"
+import { Data, Match, Option, Result } from "effect"
 
 /** Studio's internal route run id, never the application's external SDK run id. */
 export const studioRunSelection = (projectId: string, runId: string) =>
@@ -29,14 +29,14 @@ const otherProject =
 const otherRun =
   "This selection names a different run from the page address. The page keeps the run in the path."
 
-export type RunSelectionRoundTrip =
-  | { readonly _tag: "Absent" }
-  | { readonly _tag: "Pending" }
-  | { readonly _tag: "Rejected"; readonly message: string }
-  | {
-      readonly _tag: "Accepted"
-      readonly selection: RunInvestigationSelection
-    }
+export type RunSelectionRoundTrip = Data.TaggedEnum<{
+  Absent: Record<never, never>
+  Pending: Record<never, never>
+  Rejected: { readonly message: string }
+  Accepted: { readonly selection: RunInvestigationSelection }
+}>
+
+export const RunSelection = Data.taggedEnum<RunSelectionRoundTrip>()
 
 const sameId = (left: string, right: string) =>
   left.toLowerCase() === right.toLowerCase()
@@ -54,35 +54,33 @@ export const interpretRunSelection = (input: {
   readonly runId: string
 }): RunSelectionRoundTrip => {
   if (input.raw === null || input.raw.trim() === "") {
-    return { _tag: "Absent" }
+    return RunSelection.Absent()
   }
   return Result.match(parseSelectionJson(input.raw), {
-    onFailure: () => ({ _tag: "Rejected", message: unsupportedSelection }),
+    onFailure: () =>
+      RunSelection.Rejected({ message: unsupportedSelection }),
     onSuccess: (value) =>
       decodeRunInvestigationSelection(value).pipe(
         Result.match({
-          onFailure: () => ({
-            _tag: "Rejected" as const,
-            message: unsupportedSelection,
-          }),
+          onFailure: () =>
+            RunSelection.Rejected({ message: unsupportedSelection }),
           onSuccess: (selection) => {
             if (!input.projectId) {
-              return { _tag: "Pending" as const }
+              return RunSelection.Pending()
             }
             const projectId = input.projectId
             return Match.value(selection).pipe(
               Match.when(
                 (item) => !sameId(item.projectId, projectId),
-                () => ({ _tag: "Rejected" as const, message: otherProject }),
+                () => RunSelection.Rejected({ message: otherProject }),
               ),
               Match.when(
                 (item) => !sameId(item.runId, input.runId),
-                () => ({ _tag: "Rejected" as const, message: otherRun }),
+                () => RunSelection.Rejected({ message: otherRun }),
               ),
-              Match.orElse((item) => ({
-                _tag: "Accepted" as const,
-                selection: item,
-              })),
+              Match.orElse((item) =>
+                RunSelection.Accepted({ selection: item }),
+              ),
             )
           },
         }),
@@ -94,12 +92,17 @@ export const evidencePageForSection = (
   roundTrip: RunSelectionRoundTrip,
   section: RunInvestigationSelection["section"],
 ) =>
-  roundTrip._tag === "Accepted" && roundTrip.selection.section === section
-    ? Option.some({
-        cursor: roundTrip.selection.cursor,
-        limit: roundTrip.selection.limit,
-      })
-    : Option.none()
+  Match.value(roundTrip).pipe(
+    Match.tag("Accepted", (accepted) =>
+      accepted.selection.section === section
+        ? Option.some({
+            cursor: accepted.selection.cursor,
+            limit: accepted.selection.limit,
+          })
+        : Option.none(),
+    ),
+    Match.orElse(() => Option.none()),
+  )
 
 export const periodCohortReturnHref = (selection: PeriodCohortSelection) => {
   const params = new URLSearchParams({
@@ -114,14 +117,14 @@ export const periodCohortReturnHref = (selection: PeriodCohortSelection) => {
 const periodFilterConflict =
   "This period selection does not match the filters on the page. Those filters stay in place."
 
-export type PeriodCohortRoundTrip =
-  | { readonly _tag: "Absent" }
-  | { readonly _tag: "Pending" }
-  | { readonly _tag: "Rejected"; readonly message: string }
-  | {
-      readonly _tag: "Accepted"
-      readonly selection: PeriodCohortSelection
-    }
+export type PeriodCohortRoundTrip = Data.TaggedEnum<{
+  Absent: Record<never, never>
+  Pending: Record<never, never>
+  Rejected: { readonly message: string }
+  Accepted: { readonly selection: PeriodCohortSelection }
+}>
+
+export const PeriodCohort = Data.taggedEnum<PeriodCohortRoundTrip>()
 
 export const interpretPeriodCohort = (input: {
   readonly raw: string | null
@@ -134,33 +137,28 @@ export const interpretPeriodCohort = (input: {
 }): PeriodCohortRoundTrip => {
   const raw = input.raw
   if (raw === null || raw.trim() === "") {
-    return { _tag: "Absent" }
+    return PeriodCohort.Absent()
   }
   const parsed = Result.try({
     try: () => JSON.parse(raw) as unknown,
     catch: () => unsupportedSelection,
   })
   return Result.match(parsed, {
-    onFailure: () => ({
-      _tag: "Rejected" as const,
-      message: unsupportedSelection,
-    }),
+    onFailure: () => PeriodCohort.Rejected({ message: unsupportedSelection }),
     onSuccess: (value) => {
       if (Result.isSuccess(decodeRunInvestigationSelection(value))) {
-        return { _tag: "Absent" as const }
+        return PeriodCohort.Absent()
       }
       return decodePeriodCohortSelection(value).pipe(
         Result.match({
-          onFailure: () => ({
-            _tag: "Rejected" as const,
-            message: unsupportedSelection,
-          }),
+          onFailure: () =>
+            PeriodCohort.Rejected({ message: unsupportedSelection }),
           onSuccess: (selection) => {
             if (!input.projectId) {
-              return { _tag: "Pending" as const }
+              return PeriodCohort.Pending()
             }
             if (!sameId(selection.projectId, input.projectId)) {
-              return { _tag: "Rejected" as const, message: otherProject }
+              return PeriodCohort.Rejected({ message: otherProject })
             }
             const agrees =
               input.workflow === selection.workflow &&
@@ -169,8 +167,8 @@ export const interpretPeriodCohort = (input: {
               input.definitionRevision === "" &&
               input.environment === ""
             return agrees
-              ? { _tag: "Accepted" as const, selection }
-              : { _tag: "Rejected" as const, message: periodFilterConflict }
+              ? PeriodCohort.Accepted({ selection })
+              : PeriodCohort.Rejected({ message: periodFilterConflict })
           },
         }),
       )
@@ -206,12 +204,14 @@ export const initialTimelineView = (
   if (linkedEventId) {
     return "events"
   }
-  if (selection._tag !== "Accepted") {
-    return "timeline"
-  }
-  return Match.value(selection.selection.section).pipe(
-    Match.when("operations", () => "waterfall" as const),
-    Match.when("events", () => "events" as const),
+  return Match.value(selection).pipe(
+    Match.tag("Accepted", (accepted) =>
+      Match.value(accepted.selection.section).pipe(
+        Match.when("operations", () => "waterfall" as const),
+        Match.when("events", () => "events" as const),
+        Match.orElse(() => "timeline" as const),
+      ),
+    ),
     Match.orElse(() => "timeline" as const),
   )
 }

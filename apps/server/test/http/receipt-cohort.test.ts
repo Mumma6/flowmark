@@ -2,7 +2,7 @@ import { createHash, randomBytes, randomUUID } from "node:crypto"
 import { eq } from "drizzle-orm"
 import { Exit } from "effect"
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest"
-import { GetProjectWorkflowData, runApi } from "@flowmark/api"
+import { GetProjectWorkflowData, Key, runApi } from "@flowmark/api"
 import {
   createDatabase,
   deploymentBindings,
@@ -22,7 +22,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
     const bindingId = randomUUID()
     const readKey = randomUUID()
     const token = "fmd_" + randomBytes(32).toString("hex")
-    const reader = { _tag: "Key" as const, header: `Bearer ${readKey}` }
+    const reader = Key({ header: `Bearer ${readKey}` })
     const ids = Array.from({ length: 13 }, (_, index) => `cohort-${index}`)
     let connection: ReturnType<typeof createDatabase>
 

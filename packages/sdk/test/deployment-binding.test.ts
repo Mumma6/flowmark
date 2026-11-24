@@ -1,7 +1,10 @@
 import { Effect } from "effect"
 import { describe, expect, it, vi } from "vitest"
 import { MemoryTransport } from "../src/delivery/adapters/memory-transport.js"
-import { createFlowmarkWithTransport } from "../src/index.js"
+import {
+  createFlowmarkWithTransport,
+  FlowmarkDeliveryError,
+} from "../src/index.js"
 import type { WorkflowEvent } from "../src/index.js"
 
 const probe = {
@@ -77,9 +80,9 @@ describe("deployment binding", () => {
     await expect(
       client.workflow("checkout.place", async () => "paid"),
     ).resolves.toBe("paid")
-    await expect(client.shutdown()).rejects.toMatchObject({
-      _tag: "FlowmarkDeliveryError",
-    })
+    await expect(client.shutdown()).rejects.toBeInstanceOf(
+      FlowmarkDeliveryError,
+    )
     warn.mockRestore()
   })
 })

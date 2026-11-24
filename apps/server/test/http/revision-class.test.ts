@@ -5,6 +5,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest"
 import {
   classifyObservedCase,
   GetProjectWorkflowData,
+  Key,
   revisionClassNote,
   runApi,
 } from "@flowmark/api"
@@ -31,7 +32,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
     const latestId = "latest-" + randomUUID()
     const olderDigest = "sha256:" + "a".repeat(64)
     const latestDigest = "sha256:" + "b".repeat(64)
-    const reader = { _tag: "Key" as const, header: `Bearer ${readKey}` }
+    const reader = Key({ header: `Bearer ${readKey}` })
     let connection: ReturnType<typeof createDatabase>
 
     const read = async <A>(

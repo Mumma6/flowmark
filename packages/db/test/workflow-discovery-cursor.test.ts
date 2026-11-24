@@ -3,8 +3,10 @@ import { describe, it } from "node:test"
 import {
   encodeRevisionDiscoveryCursor,
   encodeWorkflowDiscoveryCursor,
+  RevisionCursor,
   scopeRevisionDiscoveryCursor,
   scopeWorkflowDiscoveryCursor,
+  WorkflowCursor,
 } from "../src/persistence/workflows/workflow-discovery-cursor.js"
 
 const project = "11111111-1111-4111-8111-111111111111"
@@ -17,10 +19,10 @@ describe("workflow discovery cursors", () => {
       projectId: project,
       name: "customer.import",
     })
-    assert.deepEqual(scopeWorkflowDiscoveryCursor(encoded, project), {
-      _tag: "Continue",
-      name: "customer.import",
-    })
+    assert.deepEqual(
+      scopeWorkflowDiscoveryCursor(encoded, project),
+      WorkflowCursor.Continue({ name: "customer.import" }),
+    )
   })
 
   it("rejects a workflow cursor from another project", () => {
@@ -28,12 +30,15 @@ describe("workflow discovery cursors", () => {
       projectId: other,
       name: "customer.import",
     })
-    assert.deepEqual(scopeWorkflowDiscoveryCursor(encoded, project), {
-      _tag: "Invalid",
-    })
+    assert.deepEqual(
+      scopeWorkflowDiscoveryCursor(encoded, project),
+      WorkflowCursor.Invalid(),
+    )
     assert.equal(
-      scopeWorkflowDiscoveryCursor("not-a-cursor", project)._tag,
-      "Invalid",
+      WorkflowCursor.$is("Invalid")(
+        scopeWorkflowDiscoveryCursor("not-a-cursor", project),
+      ),
+      true,
     )
   })
 
@@ -49,30 +54,33 @@ describe("workflow discovery cursors", () => {
         projectId: project,
         workflow: "alpha",
       }),
-      {
-        _tag: "Continue",
+      RevisionCursor.Continue({
         createdAt: "2026-01-01T00:00:00.000Z",
         id: revisionId,
-      },
+      }),
     )
     assert.equal(
-      scopeRevisionDiscoveryCursor(encoded, {
-        projectId: project,
-        workflow: "beta",
-      })._tag,
-      "Invalid",
-    )
-    assert.equal(
-      scopeRevisionDiscoveryCursor(
-        encodeRevisionDiscoveryCursor({
-          projectId: other,
-          workflow: "alpha",
-          createdAt: "2026-01-01T00:00:00.000Z",
-          id: revisionId,
+      RevisionCursor.$is("Invalid")(
+        scopeRevisionDiscoveryCursor(encoded, {
+          projectId: project,
+          workflow: "beta",
         }),
-        { projectId: project, workflow: "alpha" },
-      )._tag,
-      "Invalid",
+      ),
+      true,
+    )
+    assert.equal(
+      RevisionCursor.$is("Invalid")(
+        scopeRevisionDiscoveryCursor(
+          encodeRevisionDiscoveryCursor({
+            projectId: other,
+            workflow: "alpha",
+            createdAt: "2026-01-01T00:00:00.000Z",
+            id: revisionId,
+          }),
+          { projectId: project, workflow: "alpha" },
+        ),
+      ),
+      true,
     )
   })
 })

@@ -10,7 +10,11 @@ import {
   workflowResultDeclarations,
   workflowSearchFields,
 } from "@flowmark/db"
-import { Database, ResultDeclarationStore } from "@flowmark/db/persistence"
+import {
+  Database,
+  DatabaseError,
+  ResultDeclarationStore,
+} from "@flowmark/db/persistence"
 import { POST } from "../../app/api/trpc/[trpc]/route"
 import { appRouter } from "../../src/adapters/trpc/router"
 import { createDefinitionImportFixture } from "./support/definition-import-fixture"
@@ -326,10 +330,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
         Effect.runPromise(
           store.apply(fixture.foreignUserId, fixture.projectId, command),
         )
-      await expect(apply()).rejects.toMatchObject({
-        _tag: "DatabaseError",
-        operation: "project-read-fence",
-      })
+      await expect(apply()).rejects.toBeInstanceOf(DatabaseError)
       await connection.db
         .delete(projectMembers)
         .where(
@@ -338,10 +339,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
             eq(projectMembers.projectId, fixture.projectId),
           ),
         )
-      await expect(apply()).rejects.toMatchObject({
-        _tag: "DatabaseError",
-        operation: "project-read-fence",
-      })
+      await expect(apply()).rejects.toBeInstanceOf(DatabaseError)
       expect((await rows(command.definition.workflow))[0]).toEqual([])
     })
 

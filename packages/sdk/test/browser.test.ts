@@ -1,6 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { createFlowmark } from "../src/browser/index.js"
-import { FlowmarkConfigError } from "../src/errors/index.js"
+import {
+  FlowmarkConfigError,
+  FlowmarkDeliveryError,
+} from "../src/errors/index.js"
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -191,9 +194,7 @@ describe("browser client", () => {
     const client = createFlowmark({ onInstrumentationError: diagnostic })
     const flow = client.workflow("browser.callback", { id: "already-finished" })
     flow.done()
-    await expect(client.flush()).rejects.toMatchObject({
-      _tag: "FlowmarkDeliveryError",
-    })
+    await expect(client.flush()).rejects.toBeInstanceOf(FlowmarkDeliveryError)
     expect(fetcher).toHaveBeenCalledTimes(2)
     expect(diagnostic).toHaveBeenCalledOnce()
     expect(diagnostic.mock.calls[0]?.[1]).toMatchObject({ type: "completed" })

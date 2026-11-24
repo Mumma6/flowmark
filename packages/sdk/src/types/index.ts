@@ -45,7 +45,14 @@ export interface DeliveryHealth {
   readonly coalesced: number
   readonly dropped: number
   readonly failed: number
-  readonly lastFailure: { readonly type: DeliveryFailure["_tag"] } | null
+  readonly lastFailure: {
+    readonly type:
+      | "FlowmarkExpectationError"
+      | "WorkflowTransportError"
+      | "WorkflowEventValidationError"
+      | "FlowmarkQueueError"
+      | "FlowmarkErrorMappingError"
+  } | null
 }
 
 /** Server-only client options. Omit values to read FLOWMARK_* environment variables. */

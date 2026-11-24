@@ -4,7 +4,10 @@ import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { after, before, describe, it } from "node:test"
 import { Effect } from "effect"
-import { createFlowmarkWithTransport } from "@flowmarkdev/node"
+import {
+  createFlowmarkWithTransport,
+  FlowmarkDeliveryError,
+} from "@flowmarkdev/node"
 import { confirmPayment } from "../src/confirm.js"
 import { recordsSameChange } from "../src/decision.js"
 import { flowmarkBinding } from "../src/flowmark.js"
@@ -105,7 +108,10 @@ describe("sample payments", () => {
     const { stored } = await payment(directory, "none", "linked", client)
     assert.equal(stored.outcome, "timeout")
     assert.equal(stored.status, "pending")
-    await assert.rejects(client.shutdown(), { _tag: "FlowmarkDeliveryError" })
+    await assert.rejects(
+      client.shutdown(),
+      (error) => error instanceof FlowmarkDeliveryError,
+    )
   })
 
   it("runs with no Flowmark binding", () => {

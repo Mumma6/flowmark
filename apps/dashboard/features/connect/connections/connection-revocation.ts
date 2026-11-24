@@ -45,45 +45,58 @@ export const connectionProjectLabels = (
     (id) => names[id.toLowerCase()] ?? "Former project",
   )
 
-export type OwnedConnectionView =
-  | { readonly _tag: "Hidden" }
-  | { readonly _tag: "Owned" }
-  | { readonly _tag: "Loading" }
-  | { readonly _tag: "UnavailableToAccount" }
-  | { readonly _tag: "Unavailable" }
+export type OwnedConnectionView = Data.TaggedEnum<{
+  Hidden: Record<never, never>
+  Owned: Record<never, never>
+  Loading: Record<never, never>
+  UnavailableToAccount: Record<never, never>
+  Unavailable: Record<never, never>
+}>
+
+export const OwnedConnection = Data.taggedEnum<OwnedConnectionView>()
 
 export const interpretOwnedConnection = (input: {
   readonly listed: boolean
   readonly detail: "pending" | "present" | "absent" | "unavailable"
 }): OwnedConnectionView =>
   Match.value(input).pipe(
-    Match.when({ listed: false }, () => ({ _tag: "Hidden" as const })),
-    Match.when({ detail: "pending" }, () => ({ _tag: "Loading" as const })),
-    Match.when({ detail: "unavailable" }, () => ({
-      _tag: "Unavailable" as const,
-    })),
-    Match.when({ detail: "absent" }, () => ({
-      _tag: "UnavailableToAccount" as const,
-    })),
-    Match.orElse(() => ({ _tag: "Owned" as const })),
+    Match.when({ listed: false }, () => OwnedConnection.Hidden()),
+    Match.when({ detail: "pending" }, () => OwnedConnection.Loading()),
+    Match.when({ detail: "unavailable" }, () => OwnedConnection.Unavailable()),
+    Match.when({ detail: "absent" }, () =>
+      OwnedConnection.UnavailableToAccount(),
+    ),
+    Match.orElse(() => OwnedConnection.Owned()),
   )
 
-export type RevokeFeedback =
-  | { readonly _tag: "Idle" }
-  | { readonly _tag: "Pending" }
-  | { readonly _tag: "Revoked" }
-  | { readonly _tag: "StillActive" }
-  | { readonly _tag: "Unknown" }
+export type RevokeFeedback = Data.TaggedEnum<{
+  Idle: Record<never, never>
+  Pending: Record<never, never>
+  Revoked: Record<never, never>
+  StillActive: Record<never, never>
+  Unknown: Record<never, never>
+}>
+
+export const RevokeFeedbackState = Data.taggedEnum<RevokeFeedback>()
 
 /** Success is the persisted absence of the connection, not the mutation response alone. */
 export const interpretRevokeResult = (input: {
   readonly stillListed: boolean | "unknown"
 }): RevokeFeedback =>
   Match.value(input.stillListed).pipe(
-    Match.when("unknown", () => ({ _tag: "Unknown" as const })),
-    Match.when(false, () => ({ _tag: "Revoked" as const })),
-    Match.orElse(() => ({ _tag: "StillActive" as const })),
+    Match.when("unknown", () => RevokeFeedbackState.Unknown()),
+    Match.when(false, () => RevokeFeedbackState.Revoked()),
+    Match.orElse(() => RevokeFeedbackState.StillActive()),
   )
+
+export type ConnectionListRecovery = Data.TaggedEnum<{
+  Unavailable: { readonly message: string }
+  StaleSession: { readonly message: string }
+}>
+
+export const ConnectionList = Data.taggedEnum<ConnectionListRecovery>()
+const connectionsUnavailable =
+  "Connections could not be read. Retry before revoking anything."
 
 export const connectionListRecovery = (error: unknown) =>
   Schema.decodeUnknownResult(
@@ -91,23 +104,14 @@ export const connectionListRecovery = (error: unknown) =>
   )(error).pipe(
     Result.match({
       onFailure: () =>
-        ({
-          _tag: "Unavailable" as const,
-          message:
-            "Connections could not be read. Retry before revoking anything.",
-        }) as const,
+        ConnectionList.Unavailable({ message: connectionsUnavailable }),
       onSuccess: ({ data }) =>
         data.code === "UNAUTHORIZED" || data.code === "FORBIDDEN"
-          ? ({
-              _tag: "StaleSession" as const,
+          ? ConnectionList.StaleSession({
               message:
                 "This Studio session has ended. Sign in again before inspecting or revoking a connection.",
-            } as const)
-          : ({
-              _tag: "Unavailable" as const,
-              message:
-                "Connections could not be read. Retry before revoking anything.",
-            } as const),
+            })
+          : ConnectionList.Unavailable({ message: connectionsUnavailable }),
     }),
   )
 

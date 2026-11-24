@@ -1,6 +1,11 @@
 import { Effect } from "effect"
 import { describe, expect, it, vi } from "vitest"
-import { MemoryTransport, type WorkflowEvent, workflow } from "../src/index.js"
+import {
+  MemoryTransport,
+  WorkflowTransportError,
+  type WorkflowEvent,
+  workflow,
+} from "../src/index.js"
 
 describe("workflow", () => {
   it("releases delivery resources after the terminal event", async () => {
@@ -439,9 +444,9 @@ describe("workflow", () => {
       expect(transport.emit).toHaveBeenCalledTimes(3)
       expect(onInstrumentationError).toHaveBeenCalledTimes(3)
     })
-    expect(onInstrumentationError.mock.calls[0]?.[0]).toMatchObject({
-      _tag: "WorkflowTransportError",
-    })
+    expect(onInstrumentationError.mock.calls[0]?.[0]).toBeInstanceOf(
+      WorkflowTransportError,
+    )
     expect(onInstrumentationError.mock.calls[0]?.[0]).toHaveProperty("cause")
   })
 
@@ -496,9 +501,9 @@ describe("workflow", () => {
     await vi.waitFor(() => {
       expect(onInstrumentationError).toHaveBeenCalledTimes(2)
     })
-    expect(onInstrumentationError.mock.calls[1]?.[0]).toMatchObject({
-      _tag: "WorkflowTransportError",
-    })
+    expect(onInstrumentationError.mock.calls[1]?.[0]).toBeInstanceOf(
+      WorkflowTransportError,
+    )
   })
 
   it("timestamps markers before waiting for earlier deliveries", async () => {

@@ -6,7 +6,11 @@ import {
 } from "@flowmarkdev/core"
 import { InvalidInput, Unauthorized } from "../../../errors.js"
 import { savedEvidenceAuthorization } from "../../project-access/use-cases/authorize-saved-evidence.js"
-import type { ProjectReader } from "../../workflows/models/project-reader.js"
+import {
+  isUserReader,
+  readerPrincipal,
+  type ProjectReader,
+} from "../../workflows/models/project-reader.js"
 import { CurrentProjectReader } from "../../workflows/models/current-project-reader.js"
 import {
   decodeBusinessCursor,
@@ -79,7 +83,7 @@ export class ManageEvidenceCaptures extends Context.Service<ManageEvidenceCaptur
               projectId,
               access,
               row,
-              reader._tag === "User",
+              isUserReader(reader),
             )
             return read ?? (yield* unavailable())
           }),
@@ -100,8 +104,8 @@ export class ManageEvidenceCaptures extends Context.Service<ManageEvidenceCaptur
             .withAccess(projectId, false, (access) =>
               Effect.succeed({
                 enabled: true,
-                canCreate: reader._tag === "User",
-                canPurge: reader._tag === "User" && access.role === "owner",
+                canCreate: isUserReader(reader),
+                canPurge: isUserReader(reader) && access.role === "owner",
               }),
             )
             .pipe(Effect.provideService(CurrentProjectReader, reader))
@@ -112,7 +116,7 @@ export class ManageEvidenceCaptures extends Context.Service<ManageEvidenceCaptur
           raw: unknown,
         ) {
           const projectId = requestedProjectId.toLowerCase()
-          if (reader._tag !== "User") {
+          if (!isUserReader(reader)) {
             return yield* new Unauthorized({ permission: "write" })
           }
           const input = yield* decode(CaptureRunSchema, raw)
@@ -148,10 +152,7 @@ export class ManageEvidenceCaptures extends Context.Service<ManageEvidenceCaptur
                 kind: "captures",
                 userId: access.userId,
                 role: access.role,
-                principal:
-                  reader._tag === "DelegatedUser"
-                    ? [reader._tag, reader.clientId, reader.authorizationCodeId]
-                    : reader._tag,
+                principal: readerPrincipal(reader),
                 limit,
               })
               const after = yield* decodeBusinessCursor(
@@ -163,7 +164,7 @@ export class ManageEvidenceCaptures extends Context.Service<ManageEvidenceCaptur
               const rows = yield* visibleCaptures(
                 projectId,
                 access,
-                reader._tag === "User",
+                isUserReader(reader),
               )
               const ids = Array.map(rows, (read) =>
                 read.available ? read.capture.id : read.id,
@@ -203,7 +204,7 @@ export class ManageEvidenceCaptures extends Context.Service<ManageEvidenceCaptur
           reader: ProjectReader,
           requestedProjectId: string,
         ) {
-          if (reader._tag !== "User") {
+          if (!isUserReader(reader)) {
             return yield* new Unauthorized({ permission: "write" })
           }
           return yield* use(
@@ -219,7 +220,7 @@ export class ManageEvidenceCaptures extends Context.Service<ManageEvidenceCaptur
           raw: unknown,
         ) {
           const projectId = requestedProjectId.toLowerCase()
-          if (reader._tag !== "User") {
+          if (!isUserReader(reader)) {
             return yield* new Unauthorized({ permission: "write" })
           }
           const id = (yield* decode(Id, raw)).toLowerCase()

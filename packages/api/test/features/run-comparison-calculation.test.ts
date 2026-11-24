@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { Effect } from "effect"
+import { Effect, Result } from "effect"
 import { Engine, EngineError } from "@flowmark/engine"
 import { calculateRunComparison } from "../../src/features/workflows/use-cases/calculate-run-comparison.js"
 import type { StoredRun } from "../../src/features/workflows/types.js"
@@ -126,6 +126,9 @@ describe("application comparison calculation", () => {
         ),
       ),
     )
-    expect(result).toMatchObject({ _tag: "Failure", failure })
+    expect(Result.isFailure(result)).toBe(true)
+    if (Result.isFailure(result)) {
+      expect(result.failure).toBe(failure)
+    }
   })
 })

@@ -9,9 +9,12 @@ import {
   initialTimelineView,
   interpretPeriodCohort,
   interpretRunSelection,
+  PeriodCohort,
   periodCohortReturnHref,
+  RunSelection,
   studioRunSelection,
 } from "../features/runs/investigation/investigation-selection"
+
 import {
   investigationReturn,
   runInvestigationPath,
@@ -169,10 +172,15 @@ it("round-trips a supported selection and refuses a wider or foreign context", (
     projectId,
     runId,
   })
-  expect(accepted).toMatchObject({
-    _tag: "Accepted",
-    selection: { cursor: "page-2", limit: 25, projectId, runId },
-  })
+  expect(RunSelection.$is("Accepted")(accepted)).toBe(true)
+  if (RunSelection.$is("Accepted")(accepted)) {
+    expect(accepted.selection).toMatchObject({
+      cursor: "page-2",
+      limit: 25,
+      projectId,
+      runId,
+    })
+  }
   expect(investigationReturn(target.searchParams.get("from")).href).toBe(from)
   expect(
     buildRunListInput(readExplorerFilters(target.searchParams)),
@@ -182,22 +190,28 @@ it("round-trips a supported selection and refuses a wider or foreign context", (
   })
   expect(target.searchParams.has("projectId")).toBe(false)
   expect(
-    interpretRunSelection({
-      raw: target.searchParams.get("selection"),
-      projectId: "00000000-0000-4000-8000-000000000099",
-      runId,
-    })._tag,
-  ).toBe("Rejected")
+    RunSelection.$is("Rejected")(
+      interpretRunSelection({
+        raw: target.searchParams.get("selection"),
+        projectId: "00000000-0000-4000-8000-000000000099",
+        runId,
+      }),
+    ),
+  ).toBe(true)
   expect(
-    interpretRunSelection({
-      raw: JSON.stringify({ ...selection, version: 2, cohort: "all" }),
-      projectId,
-      runId,
-    })._tag,
-  ).toBe("Rejected")
-  expect(interpretRunSelection({ raw: null, projectId, runId })._tag).toBe(
-    "Absent",
-  )
+    RunSelection.$is("Rejected")(
+      interpretRunSelection({
+        raw: JSON.stringify({ ...selection, version: 2, cohort: "all" }),
+        projectId,
+        runId,
+      }),
+    ),
+  ).toBe(true)
+  expect(
+    RunSelection.$is("Absent")(
+      interpretRunSelection({ raw: null, projectId, runId }),
+    ),
+  ).toBe(true)
   expect(
     runInvestigationPath(runId, "/connect/agent/consent?continue=1"),
   ).toContain("from=%2Fconnect%2Fagent%2Fconsent%3Fcontinue%3D1")
@@ -227,38 +241,44 @@ it("returns a period cohort to the same workflow and absolute window", () => {
     cursor: "cursor-page-2",
   })
   expect(
-    interpretPeriodCohort({
-      raw: params.get("selection"),
-      projectId,
-      workflow: filters.workflow,
-      startedAfterExact: filters.startedAfterExact,
-      startedBeforeExclusive: filters.startedBeforeExclusive,
-      definitionRevision: filters.definitionRevision,
-      environment: filters.environment,
-    })._tag,
-  ).toBe("Accepted")
+    PeriodCohort.$is("Accepted")(
+      interpretPeriodCohort({
+        raw: params.get("selection"),
+        projectId,
+        workflow: filters.workflow,
+        startedAfterExact: filters.startedAfterExact,
+        startedBeforeExclusive: filters.startedBeforeExclusive,
+        definitionRevision: filters.definitionRevision,
+        environment: filters.environment,
+      }),
+    ),
+  ).toBe(true)
   expect(
-    interpretPeriodCohort({
-      raw: params.get("selection"),
-      projectId: "00000000-0000-4000-8000-000000000099",
-      workflow: filters.workflow,
-      startedAfterExact: filters.startedAfterExact,
-      startedBeforeExclusive: filters.startedBeforeExclusive,
-      definitionRevision: "",
-      environment: "",
-    })._tag,
-  ).toBe("Rejected")
+    PeriodCohort.$is("Rejected")(
+      interpretPeriodCohort({
+        raw: params.get("selection"),
+        projectId: "00000000-0000-4000-8000-000000000099",
+        workflow: filters.workflow,
+        startedAfterExact: filters.startedAfterExact,
+        startedBeforeExclusive: filters.startedBeforeExclusive,
+        definitionRevision: "",
+        environment: "",
+      }),
+    ),
+  ).toBe(true)
   expect(
-    interpretPeriodCohort({
-      raw: params.get("selection"),
-      projectId,
-      workflow: filters.workflow,
-      startedAfterExact: filters.startedAfterExact,
-      startedBeforeExclusive: filters.startedBeforeExclusive,
-      definitionRevision: "r1",
-      environment: "",
-    })._tag,
-  ).toBe("Rejected")
+    PeriodCohort.$is("Rejected")(
+      interpretPeriodCohort({
+        raw: params.get("selection"),
+        projectId,
+        workflow: filters.workflow,
+        startedAfterExact: filters.startedAfterExact,
+        startedBeforeExclusive: filters.startedBeforeExclusive,
+        definitionRevision: "r1",
+        environment: "",
+      }),
+    ),
+  ).toBe(true)
   expect(runInvestigationPath("recorded-run", href)).toContain("from=")
 })
 

@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { inspect } from "node:util"
+import { WorkflowEventValidationError } from "@flowmarkdev/core"
 import { createFlowmark, FlowmarkConfigError } from "../src/index.js"
 
 afterEach(() => {
@@ -195,9 +196,9 @@ describe("configured HTTP client", () => {
     flow.done()
     await expect(client.flush()).rejects.toThrow()
     expect(onInstrumentationError).toHaveBeenCalledOnce()
-    expect(onInstrumentationError.mock.calls[0]?.[0]).toMatchObject({
-      _tag: "WorkflowEventValidationError",
-    })
+    expect(onInstrumentationError.mock.calls[0]?.[0]).toBeInstanceOf(
+      WorkflowEventValidationError,
+    )
     const types = await Promise.all(
       fetcher.mock.calls.map(
         async ([, options]) =>

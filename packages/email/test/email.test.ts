@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import test from "node:test"
-import { Array, Effect, Result } from "effect"
+import { Array, Effect, Match, Result } from "effect"
 import {
   Email,
   emailSettings,
@@ -181,7 +181,12 @@ test("invalid input fails before network access and errors redact supplied secre
   )
   Array.forEach(results, (result) => {
     const error = failure(result)
-    assert.equal(error._tag, "EmailError")
+    Match.value(error).pipe(
+      Match.tag("EmailError", () => undefined),
+      Match.orElse(() => {
+        throw new Error("expected EmailError")
+      }),
+    )
     assert.ok(!JSON.stringify(error).includes("synthetic"))
   })
   assert.equal(calls, 0)

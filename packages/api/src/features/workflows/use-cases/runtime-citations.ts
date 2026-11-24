@@ -7,6 +7,7 @@ import {
 import { RuntimeProbeReferenceSchema } from "@flowmarkdev/core"
 import { Effect, Schema } from "effect"
 import { GetProjectWorkflowData } from "./get-project-workflow-data.js"
+import { User } from "../models/project-reader.js"
 
 const Uuid = Schema.String.check(Schema.isUUID())
 const CitationSelection = Schema.Struct({
@@ -97,11 +98,10 @@ export const resolveRuntimeCitation = Effect.fn("resolveRuntimeCitation")(
       return { status: "expired-or-invalid" as const }
     }
     const queries = yield* GetProjectWorkflowData
-    const reader = {
-      _tag: "User" as const,
+    const reader = User({
       userId,
       projectId: selection.projectId,
-    }
+    })
     const pages = yield* Effect.forEach(selection.examples, (example) =>
       queries
         .runEventPage(reader, {

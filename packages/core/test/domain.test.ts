@@ -1,4 +1,4 @@
-import { Effect, Result, Schema } from "effect"
+import { Effect, Match, Result, Schema } from "effect"
 import { describe, expect, it } from "vitest"
 import { decodeWorkflowEvent, EventEnvelopeSchema } from "../src/index.js"
 
@@ -55,7 +55,12 @@ describe("workflow event schema", () => {
     const result = Effect.runSync(Effect.result(decodeWorkflowEvent(input)))
     Result.match(result, {
       onFailure: (error) => {
-        expect(error._tag).toBe("WorkflowEventValidationError")
+        Match.value(error).pipe(
+          Match.tag("WorkflowEventValidationError", () => undefined),
+          Match.orElse(() => {
+            throw new Error("expected WorkflowEventValidationError")
+          }),
+        )
         expect(error.input).toBe(input)
         expect(error.cause).toBeDefined()
       },

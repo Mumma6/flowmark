@@ -1,4 +1,5 @@
 import { CurrentProjectReader } from "../../workflows/models/current-project-reader.js"
+import { Key } from "../../workflows/models/project-reader.js"
 import {
   PeriodReadInputSchema,
   PeriodReadResponseSchema,
@@ -66,10 +67,7 @@ export class ReadPublicPeriod extends Context.Service<
           const report = yield* repository
             .periodRead(projectId, selection)
             .pipe(
-              Effect.provideService(CurrentProjectReader, {
-                _tag: "Key",
-                header,
-              }),
+              Effect.provideService(CurrentProjectReader, Key({ header })),
             )
           return yield* Schema.decodeUnknownEffect(PeriodReadResponseSchema)({
             version: 1,

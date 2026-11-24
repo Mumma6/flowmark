@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest"
 import {
   buildRunListInput,
   decodeResultPath,
+  InvalidResultPath,
   parseResultPath,
   readExplorerFilters,
 } from "../features/runs/explorer/explorer-filters"
@@ -111,12 +112,13 @@ describe("run history request contract", () => {
 
 it("retains a typed schema failure instead of hiding malformed result paths", () => {
   Result.match(decodeResultPath('{"wrong":"shape"}'), {
-    onFailure: (error) =>
-      expect(error).toMatchObject({
-        _tag: "InvalidResultPath",
-        operation: "decodeResultPath",
-        cause: expect.anything(),
-      }),
+    onFailure: (error) => {
+      expect(error).toBeInstanceOf(InvalidResultPath)
+      if (error instanceof InvalidResultPath) {
+        expect(error.operation).toBe("decodeResultPath")
+        expect(error.cause).toBeDefined()
+      }
+    },
     onSuccess: () => {
       throw new Error("Invalid path unexpectedly accepted")
     },

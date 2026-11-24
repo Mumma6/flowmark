@@ -1,4 +1,4 @@
-import { Effect, Layer } from "effect"
+import { Cause, Effect, Layer } from "effect"
 import { afterEach, describe, expect, expectTypeOf, it, vi } from "vitest"
 import type {
   WorkflowAttempt,
@@ -7,7 +7,13 @@ import type {
 } from "@flowmarkdev/core"
 import { makeClient } from "../src/client/runtime.js"
 import { WorkflowTransport } from "../src/delivery/ports/workflow-transport.js"
-import { createFlowmark, workflow } from "../src/index.js"
+import {
+  createFlowmark,
+  FlowmarkDeliveryError,
+  FlowmarkHttpError,
+  WorkflowTransportError,
+  workflow,
+} from "../src/index.js"
 import type { WorkflowAttempt as BrowserAttempt } from "../src/browser/index.js"
 import type { WorkflowRetryReference as NextReference } from "../src/adapters/next.js"
 
@@ -117,17 +123,27 @@ describe("application-owned attempt metadata", () => {
         await client.shutdown()
         expect(diagnostic).not.toHaveBeenCalled()
       } else {
-        await expect(client.shutdown()).rejects.toMatchObject({
-          _tag: "FlowmarkDeliveryError",
-          failureCount: 1,
-        })
-        expect(diagnostic).toHaveBeenCalledWith(
-          expect.objectContaining({ _tag: "WorkflowTransportError" }),
-          expect.objectContaining({ type: "started" }),
+        const shutdown = await client.shutdown().then(
+          () => undefined,
+          (caught: unknown) => caught,
         )
-        expect(diagnostic.mock.calls[0]?.[0].cause.reasons).toMatchObject([
-          { _tag: "Fail", error: { _tag: "FlowmarkHttpError", status: 202 } },
-        ])
+        expect(shutdown).toBeInstanceOf(FlowmarkDeliveryError)
+        if (shutdown instanceof FlowmarkDeliveryError) {
+          expect(shutdown.failureCount).toBe(1)
+        }
+        const reported = diagnostic.mock.calls[0]?.[0]
+        expect(reported).toBeInstanceOf(WorkflowTransportError)
+        expect(diagnostic.mock.calls[0]?.[1]).toMatchObject({ type: "started" })
+        if (reported instanceof WorkflowTransportError) {
+          const reason = reported.cause.reasons[0]
+          expect(Cause.isFailReason(reason)).toBe(true)
+          if (Cause.isFailReason(reason)) {
+            expect(reason.error).toBeInstanceOf(FlowmarkHttpError)
+            if (reason.error instanceof FlowmarkHttpError) {
+              expect(reason.error.status).toBe(202)
+            }
+          }
+        }
       }
     },
   )

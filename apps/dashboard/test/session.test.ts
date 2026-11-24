@@ -1,6 +1,7 @@
 import { Effect, Option, Result } from "effect"
 import { afterEach, beforeEach, expect, it, vi } from "vitest"
 import {
+  DashboardSessionError,
   readDashboardOnboarding,
   readDashboardSession,
 } from "../features/auth/auth-session"
@@ -93,8 +94,7 @@ it("fails explicitly on an upstream redirect instead of following it with creden
     Effect.result(provideDashboardServer(readDashboardSession())),
   )
   Result.match(result, {
-    onFailure: (error) =>
-      expect(error).toMatchObject({ _tag: "DashboardSessionError" }),
+    onFailure: (error) => expect(error).toBeInstanceOf(DashboardSessionError),
     onSuccess: () => {
       throw new Error("Redirect must fail session lookup")
     },

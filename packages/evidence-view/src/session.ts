@@ -1,4 +1,5 @@
 import * as Context from "effect/Context"
+import * as Data from "effect/Data"
 import * as Effect from "effect/Effect"
 import * as Fiber from "effect/Fiber"
 import * as Match from "effect/Match"
@@ -28,19 +29,21 @@ export class EvidenceReader extends Context.Service<
   }
 >()("@flowmark/evidence-view/EvidenceReader") {}
 
-export type EvidenceEvent =
-  | { readonly _tag: "Input"; readonly args: unknown }
-  | { readonly _tag: "Result"; readonly result: unknown }
-  | { readonly _tag: "Action"; readonly action: EvidenceAction }
-  | {
-      readonly _tag: "Read"
-      readonly revision: number
-      readonly invocation: EvidenceInvocation
-      readonly result: Result.Result<unknown, EvidenceReadError>
-    }
-  | { readonly _tag: "Connected"; readonly canRead: boolean }
-  | { readonly _tag: "Clear"; readonly state: EvidenceMessage }
-  | { readonly _tag: "Close" }
+export type EvidenceEvent = Data.TaggedEnum<{
+  Input: { readonly args: unknown }
+  Result: { readonly result: unknown }
+  Action: { readonly action: EvidenceAction }
+  Read: {
+    readonly revision: number
+    readonly invocation: EvidenceInvocation
+    readonly result: Result.Result<unknown, EvidenceReadError>
+  }
+  Connected: { readonly canRead: boolean }
+  Clear: { readonly state: EvidenceMessage }
+  Close: Record<never, never>
+}>
+
+export const EvidenceEvents = Data.taggedEnum<EvidenceEvent>()
 
 type Session = {
   readonly revision: number
@@ -185,12 +188,13 @@ export const makeEvidenceSession = Effect.fn("EvidenceView.makeSession")(
               const request = yield* reader.read(invocation).pipe(
                 Effect.result,
                 Effect.andThen((result) =>
-                  emit({
-                    _tag: "Read",
-                    revision: current.revision,
-                    invocation,
-                    result,
-                  }),
+                  emit(
+                    EvidenceEvents.Read({
+                      revision: current.revision,
+                      invocation,
+                      result,
+                    }),
+                  ),
                 ),
                 Effect.asVoid,
                 Effect.forkScoped,

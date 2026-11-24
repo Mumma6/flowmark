@@ -1,7 +1,7 @@
 "use client"
 
 import { Alert, AlertDescription, AlertTitle } from "@flowmark/ui"
-import { Option } from "effect"
+import { Match, Option } from "effect"
 import { useSearchParams } from "next/navigation"
 import { PageSections } from "../../shared/page-sections"
 import { runSelectionQueryKey } from "./investigation-selection"
@@ -70,12 +70,15 @@ function RunInvestigationContent({
   } = model.value
   return (
     <div className="grid min-w-0 gap-6">
-      {roundTrip._tag === "Rejected" ? (
-        <Alert>
-          <AlertTitle>Selection not applied</AlertTitle>
-          <AlertDescription>{roundTrip.message}</AlertDescription>
-        </Alert>
-      ) : null}
+      {Match.value(roundTrip).pipe(
+        Match.tag("Rejected", (rejected) => (
+          <Alert>
+            <AlertTitle>Selection not applied</AlertTitle>
+            <AlertDescription>{rejected.message}</AlertDescription>
+          </Alert>
+        )),
+        Match.orElse(() => null),
+      )}
       <PageSections
         compact={contextual}
         history={contextual ? "replace" : "push"}

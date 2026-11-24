@@ -3,7 +3,12 @@ import { describe, expect, expectTypeOf, it, vi } from "vitest"
 import type { WorkflowEvent, WorkflowFailure } from "@flowmarkdev/core"
 import { makeClient } from "../src/client/runtime.js"
 import { WorkflowTransport } from "../src/delivery/ports/workflow-transport.js"
-import { workflow, type OperationErrorMapper } from "../src/index.js"
+import {
+  FlowmarkDeliveryError,
+  FlowmarkErrorMappingError,
+  workflow,
+  type OperationErrorMapper,
+} from "../src/index.js"
 
 function setup() {
   const events: WorkflowEvent[] = []
@@ -122,15 +127,20 @@ describe("per-operation safe callback failure mapping", () => {
         }),
       ).rejects.toBe(original)
       flow.done()
-      await expect(client.flush()).rejects.toMatchObject({
-        failureCount: 1,
-        failures: [
-          {
-            _tag: "FlowmarkErrorMappingError",
-            reason: kind === "throws" ? "threw" : "invalid",
-          },
-        ],
-      })
+      const flushed = await client.flush().then(
+        () => undefined,
+        (caught: unknown) => caught,
+      )
+      expect(flushed).toBeInstanceOf(FlowmarkDeliveryError)
+      if (flushed instanceof FlowmarkDeliveryError) {
+        expect(flushed.failureCount).toBe(1)
+        expect(flushed.failures[0]).toBeInstanceOf(FlowmarkErrorMappingError)
+        if (flushed.failures[0] instanceof FlowmarkErrorMappingError) {
+          expect(flushed.failures[0].reason).toBe(
+            kind === "throws" ? "threw" : "invalid",
+          )
+        }
+      }
       expect(diagnostic).toHaveBeenCalledOnce()
       expect(JSON.stringify(diagnostic.mock.calls)).not.toContain("SECRET_008")
       expect(JSON.stringify(events)).not.toContain("SECRET_008")

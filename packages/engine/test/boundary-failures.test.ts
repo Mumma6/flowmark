@@ -1,5 +1,5 @@
 import { beforeEach, expect, it, vi } from "vitest"
-import { Effect } from "effect"
+import { Effect, Result } from "effect"
 import { Engine } from "../src/index.js"
 import { loadBindings } from "../src/loader.js"
 
@@ -16,10 +16,11 @@ it("keeps initialization failures explicit", async () => {
   vi.mocked(loadBindings).mockReturnValue(
     Effect.fail(new Error("missing asset")),
   )
-  expect(await invoke()).toMatchObject({
-    _tag: "Failure",
-    failure: { stage: "initialization" },
-  })
+  const initialized = await invoke()
+  expect(Result.isFailure(initialized)).toBe(true)
+  if (Result.isFailure(initialized)) {
+    expect(initialized.failure).toMatchObject({ stage: "initialization" })
+  }
 })
 it.each([
   "not json",
@@ -34,10 +35,11 @@ it.each([
       percentile_json: () => response,
     }),
   )
-  expect(await invoke()).toMatchObject({
-    _tag: "Failure",
-    failure: { stage: "output" },
-  })
+  const decoded = await invoke()
+  expect(Result.isFailure(decoded)).toBe(true)
+  if (Result.isFailure(decoded)) {
+    expect(decoded.failure).toMatchObject({ stage: "output" })
+  }
 })
 it("keeps WASM traps in the failure channel", async () => {
   vi.mocked(loadBindings).mockReturnValue(
@@ -50,8 +52,9 @@ it("keeps WASM traps in the failure channel", async () => {
       percentile_json: () => "",
     }),
   )
-  expect(await invoke()).toMatchObject({
-    _tag: "Failure",
-    failure: { stage: "invocation" },
-  })
+  const trapped = await invoke()
+  expect(Result.isFailure(trapped)).toBe(true)
+  if (Result.isFailure(trapped)) {
+    expect(trapped.failure).toMatchObject({ stage: "invocation" })
+  }
 })

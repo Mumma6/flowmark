@@ -1,5 +1,5 @@
 import { Effect, Schema } from "effect"
-import { GetProjectWorkflowData, Onboarding } from "@flowmark/api"
+import { GetProjectWorkflowData, Onboarding, User } from "@flowmark/api"
 import { t } from "./context"
 import { onboardingQuery, sessionQuery } from "./execution"
 import { UuidSchema } from "./schemas"
@@ -17,7 +17,7 @@ export const onboardingRouter = t.router({
     .query(({ ctx, input }) =>
       sessionQuery(ctx.request, (userId) =>
         Effect.flatMap(GetProjectWorkflowData, (queries) =>
-          queries.snapshot({ _tag: "User", userId, projectId: input }),
+          queries.snapshot(User({ userId, projectId: input })),
         ),
       ),
     ),

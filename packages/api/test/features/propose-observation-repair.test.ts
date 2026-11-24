@@ -9,6 +9,7 @@ import confirmationImport from "../../../../examples/questions/later-confirmatio
 import declarationImport from "../../../../examples/questions/committed-receipt.json"
 import { PersistenceError } from "../../src/errors.js"
 import { GetProjectWorkflowData } from "../../src/features/workflows/use-cases/get-project-workflow-data.js"
+import { Key } from "../../src/features/workflows/models/project-reader.js"
 import type { GetProjectWorkflowDataService } from "../../src/features/workflows/use-cases/get-project-workflow-data.js"
 import { proposeObservationRepair } from "../../src/features/workflows/use-cases/propose-observation-repair.js"
 
@@ -112,7 +113,7 @@ const run = (id: string, workflow: string) => ({
   failCode: null,
 })
 
-const reader = { _tag: "Key" as const, header: "Bearer key" }
+const reader = Key({ header: "Bearer key" })
 
 const requestFor = (
   question: RuntimeQuestion,

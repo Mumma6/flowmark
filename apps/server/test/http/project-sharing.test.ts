@@ -22,6 +22,7 @@ import {
 } from "@flowmark/db"
 import {
   Database,
+  SharingRejected,
   ProjectCredentialsStore,
   ProjectSharingStore,
   WorkflowStore,
@@ -706,19 +707,21 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
           Effect.provideService(Database, connection.db),
         ),
       )
-      await expect(
-        run(
-          store.invite(
-            f.owner.userId,
-            f.projectId,
-            f.viewer.email,
-            "a".repeat(64),
-          ),
+      const rejected = await run(
+        store.invite(
+          f.owner.userId,
+          f.projectId,
+          f.viewer.email,
+          "a".repeat(64),
         ),
-      ).rejects.toMatchObject({
-        _tag: "SharingRejected",
-        reason: "LimitReached",
-      })
+      ).then(
+        () => undefined,
+        (caught: unknown) => caught,
+      )
+      expect(rejected).toBeInstanceOf(SharingRejected)
+      if (rejected instanceof SharingRejected) {
+        expect(rejected.reason).toBe("LimitReached")
+      }
     })
 
     it("keeps submission failures pending, enforces budgets and supports a recipient that registers after invitation", async () => {

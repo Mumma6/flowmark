@@ -9,7 +9,11 @@ import {
 } from "@flowmarkdev/core"
 import { InvalidInput, Unauthorized } from "../../../errors.js"
 import { savedEvidenceAuthorization } from "../../project-access/use-cases/authorize-saved-evidence.js"
-import type { ProjectReader } from "../../workflows/models/project-reader.js"
+import {
+  isUserReader,
+  readerPrincipal,
+  type ProjectReader,
+} from "../../workflows/models/project-reader.js"
 import { CurrentProjectReader } from "../../workflows/models/current-project-reader.js"
 import {
   decodePublication,
@@ -67,7 +71,7 @@ export class ManageSharedInvestigations extends Context.Service<ManageSharedInve
           visibleSharedInvestigations(
             projectId,
             access,
-            reader._tag === "User",
+            isUserReader(reader),
           ).pipe(
             Effect.flatMap(({ rows }) =>
               Array.findFirst(rows, (row) => row.id === id).pipe(
@@ -86,7 +90,7 @@ export class ManageSharedInvestigations extends Context.Service<ManageSharedInve
         write: boolean,
         run: Parameters<typeof repository.withAccess<A>>[2],
       ) =>
-        reader._tag === "User"
+        isUserReader(reader)
           ? use(reader, projectId, write, run)
           : Effect.fail(
               new Unauthorized({ permission: write ? "write" : "read" }),
@@ -248,7 +252,7 @@ export class ManageSharedInvestigations extends Context.Service<ManageSharedInve
           projectId: string,
           raw: unknown,
         ) {
-          if (reader._tag !== "User") {
+          if (!isUserReader(reader)) {
             return yield* new Unauthorized({ permission: "write" })
           }
           const input = yield* decode(ShareInvestigationSchema, raw)
@@ -291,10 +295,7 @@ export class ManageSharedInvestigations extends Context.Service<ManageSharedInve
               const limit = query.limit ?? 25
               const fingerprint = queryFingerprint({
                 kind: "shared-investigations",
-                principal:
-                  reader._tag === "DelegatedUser"
-                    ? [reader._tag, reader.clientId, reader.authorizationCodeId]
-                    : reader._tag,
+                principal: readerPrincipal(reader),
                 userId: access.userId,
                 role: access.role,
                 limit,
@@ -308,7 +309,7 @@ export class ManageSharedInvestigations extends Context.Service<ManageSharedInve
               const { summaries: rows } = yield* visibleSharedInvestigations(
                 projectId,
                 access,
-                reader._tag === "User",
+                isUserReader(reader),
               )
               const start =
                 after === undefined
@@ -345,7 +346,7 @@ export class ManageSharedInvestigations extends Context.Service<ManageSharedInve
           projectId: string,
           raw: unknown,
         ) {
-          if (reader._tag !== "User") {
+          if (!isUserReader(reader)) {
             return yield* new Unauthorized({ permission: "write" })
           }
           const id = yield* decode(Id, raw)

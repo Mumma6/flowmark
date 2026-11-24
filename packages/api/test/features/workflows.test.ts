@@ -13,7 +13,18 @@ import {
   WorkflowStore,
   type WorkflowStoreService,
 } from "@flowmark/db/persistence"
-import { PersistenceError, RunNotFound } from "../../src/errors"
+import {
+  BrowserUnauthorized,
+  InvalidInput,
+  PersistenceError,
+  RunNotFound,
+  Unauthorized,
+} from "../../src/errors"
+import {
+  DelegatedUser,
+  Key,
+  User,
+} from "../../src/features/workflows/models/project-reader"
 import { WorkflowRepositoryLive } from "../../src/features/workflows/adapters/workflow-repository"
 import { ApiSettings } from "../../src/config"
 import {
@@ -37,9 +48,18 @@ afterEach(() => {
   vi.unstubAllEnvs()
   vi.restoreAllMocks()
 })
-const expectLeft = <E>(result: Result.Result<unknown, E>, expected: unknown) =>
+const expectLeft = (
+  result: Result.Result<unknown, unknown>,
+  ErrorClass: abstract new (...args: never[]) => object,
+  fields?: object,
+) =>
   Result.match(result, {
-    onFailure: (error) => expect(error).toMatchObject(expected as object),
+    onFailure: (error) => {
+      expect(error).toBeInstanceOf(ErrorClass)
+      if (fields) {
+        expect(error).toMatchObject(fields)
+      }
+    },
     onSuccess: () => expect.fail("expected a failure"),
   })
 
@@ -394,7 +414,7 @@ describe("API Effect services", () => {
         ),
       ),
     )
-    expectLeft(result, { _tag: "Unauthorized" })
+    expectLeft(result, Unauthorized)
     expect(authenticate).not.toHaveBeenCalled()
   })
 
@@ -431,7 +451,7 @@ describe("API Effect services", () => {
         ),
       ),
     )
-    expectLeft(result, { _tag: "BrowserUnauthorized" })
+    expectLeft(result, BrowserUnauthorized)
     expect(authenticateBrowser).not.toHaveBeenCalled()
     expect(body).not.toHaveBeenCalled()
   })
@@ -474,7 +494,7 @@ describe("API Effect services", () => {
         ),
       ),
     )
-    expectLeft(result, { _tag: "Unauthorized", permission: "write" })
+    expectLeft(result, Unauthorized, { permission: "write" })
     expect(body).not.toHaveBeenCalled()
     expect(append).not.toHaveBeenCalled()
   })
@@ -500,7 +520,7 @@ describe("API Effect services", () => {
           ),
         ),
       )
-      expectLeft(result, { _tag: "Unauthorized" })
+      expectLeft(result, Unauthorized)
       expect(authenticate).not.toHaveBeenCalled()
     },
   )
@@ -541,7 +561,7 @@ describe("API Effect services", () => {
       Effect.flatMap(GetProjectWorkflowData, (service) =>
         Effect.result(
           service.businessInsights(
-            { _tag: "User", userId: "user-1", projectId: "foreign-project" },
+            User({ userId: "user-1", projectId: "foreign-project" }),
             query,
           ),
         ),
@@ -561,7 +581,7 @@ describe("API Effect services", () => {
         ),
       ),
     )
-    expectLeft(result, { _tag: "Unauthorized", permission: "read" })
+    expectLeft(result, Unauthorized, { permission: "read" })
     expect(businessInsights).not.toHaveBeenCalled()
   })
 
@@ -580,7 +600,7 @@ describe("API Effect services", () => {
       Effect.flatMap(GetProjectWorkflowData, (service) =>
         Effect.result(
           service.periodReport(
-            { _tag: "User", userId: "user-1", projectId: "foreign-project" },
+            User({ userId: "user-1", projectId: "foreign-project" }),
             query,
           ),
         ),
@@ -600,7 +620,7 @@ describe("API Effect services", () => {
         ),
       ),
     )
-    expectLeft(result, { _tag: "Unauthorized", permission: "read" })
+    expectLeft(result, Unauthorized, { permission: "read" })
     expect(periodReport).not.toHaveBeenCalled()
   })
 
@@ -612,7 +632,7 @@ describe("API Effect services", () => {
       Effect.flatMap(GetProjectWorkflowData, (service) =>
         Effect.result(
           service.periodReport(
-            { _tag: "User", userId: "user-1" },
+            User({ userId: "user-1" }),
             {
               currentStartedAfter: "2026-10-01T00:00:00.000Z",
               currentStartedBefore: "2026-12-01T00:00:00.000Z",
@@ -629,7 +649,7 @@ describe("API Effect services", () => {
         ),
       ),
     )
-    expectLeft(result, { _tag: "InvalidInput" })
+    expectLeft(result, InvalidInput)
     expect(periodReport).not.toHaveBeenCalled()
   })
 
@@ -676,7 +696,7 @@ describe("API Effect services", () => {
     )
     const result = await Effect.runPromise(
       Effect.flatMap(GetProjectWorkflowData, (service) =>
-        service.periodReport({ _tag: "User", userId: "user-1" }, query),
+        service.periodReport(User({ userId: "user-1" }), query),
       ).pipe(
         Effect.provide(
           GetProjectWorkflowData.layer.pipe(
@@ -724,7 +744,7 @@ describe("API Effect services", () => {
         ),
       ),
     )
-    expectLeft(result, { _tag: "Unauthorized", permission: "read" })
+    expectLeft(result, Unauthorized, { permission: "read" })
   })
 
   it("rejects a signed-in user without project membership", async () => {
@@ -743,7 +763,7 @@ describe("API Effect services", () => {
         ),
       ),
     )
-    expectLeft(result, { _tag: "Unauthorized", permission: "read" })
+    expectLeft(result, Unauthorized, { permission: "read" })
   })
 
   it("authorizes a delegated reader only when grant and membership intersect", async () => {
@@ -794,7 +814,7 @@ describe("API Effect services", () => {
         ),
       ),
     )
-    expectLeft(result, { _tag: "Unauthorized", permission: "read" })
+    expectLeft(result, Unauthorized, { permission: "read" })
   })
 
   it("keeps workflow reads behind delegated grant intersection", async () => {
@@ -803,13 +823,14 @@ describe("API Effect services", () => {
     const recordLastAuthenticated = vi.fn(() => Effect.void)
     await Effect.runPromise(
       Effect.flatMap(GetProjectWorkflowData, (service) =>
-        service.snapshot({
-          _tag: "DelegatedUser",
-          userId: "user-1",
-          clientId: "client-1",
-          authorizationCodeId: "fam-1",
-          projectId: "p-delegated",
-        }),
+        service.snapshot(
+          DelegatedUser({
+            userId: "user-1",
+            clientId: "client-1",
+            authorizationCodeId: "fam-1",
+            projectId: "p-delegated",
+          }),
+        ),
       ).pipe(
         Effect.provide(
           GetProjectWorkflowData.layer.pipe(
@@ -880,7 +901,7 @@ describe("API Effect services", () => {
         ),
       ),
     )
-    expectLeft(result, { _tag: "InvalidInput", cause: expect.anything() })
+    expectLeft(result, InvalidInput, { cause: expect.anything() })
     expect(append).not.toHaveBeenCalled()
   })
 
@@ -922,7 +943,10 @@ describe("API Effect services", () => {
         ),
       ),
     )
-    expectLeft(result, error)
+    expect(Result.isFailure(result)).toBe(true)
+    if (Result.isFailure(result)) {
+      expect(result.failure).toBe(error)
+    }
   })
 
   it("uses read authorization and project-scoped query methods", async () => {
@@ -931,7 +955,7 @@ describe("API Effect services", () => {
     const workflows = vi.fn(repository().workflows)
     const operation = Effect.gen(function* () {
       const queries = yield* GetProjectWorkflowData
-      const reader = { _tag: "Key" as const, header: "Bearer key" }
+      const reader = Key({ header: "Bearer key" })
       yield* queries.snapshot(reader)
       yield* queries.workflows(reader)
       yield* queries.timeline(reader, "run-id")
@@ -967,7 +991,7 @@ describe("API Effect services", () => {
     const workflows = vi.fn(() => Effect.succeed(summaries))
     const result = await Effect.runPromise(
       Effect.flatMap(GetProjectWorkflowData, (queries) =>
-        queries.workflows({ _tag: "Key", header: "Bearer key" }),
+        queries.workflows(Key({ header: "Bearer key" })),
       ).pipe(
         Effect.provide(
           GetProjectWorkflowData.layer.pipe(
@@ -985,11 +1009,12 @@ describe("API Effect services", () => {
     const snapshot = vi.fn(repository().snapshot)
     await Effect.runPromise(
       Effect.flatMap(GetProjectWorkflowData, (queries) =>
-        queries.snapshot({
-          _tag: "User",
-          userId: "user-1",
-          projectId: "requested-project",
-        }),
+        queries.snapshot(
+          User({
+            userId: "user-1",
+            projectId: "requested-project",
+          }),
+        ),
       ).pipe(
         Effect.provide(
           GetProjectWorkflowData.layer.pipe(
@@ -1014,7 +1039,7 @@ describe("API Effect services", () => {
     const result = await Effect.runPromise(
       Effect.flatMap(GetProjectWorkflowData, (queries) =>
         Effect.result(
-          queries.timeline({ _tag: "Key", header: "Bearer bad-key" }, "run-id"),
+          queries.timeline(Key({ header: "Bearer bad-key" }), "run-id"),
         ),
       ).pipe(
         Effect.provide(
@@ -1032,7 +1057,7 @@ describe("API Effect services", () => {
         ),
       ),
     )
-    expectLeft(result, { _tag: "Unauthorized" })
+    expectLeft(result, Unauthorized)
     expect(timeline).not.toHaveBeenCalled()
   })
 
@@ -1047,11 +1072,10 @@ describe("API Effect services", () => {
     const result = await Effect.runPromise(
       Effect.flatMap(GetProjectWorkflowData, (queries) =>
         queries.search(
-          {
-            _tag: "User",
+          User({
             userId: "user-1",
             projectId: "requested-project",
-          },
+          }),
           "  customer  ",
         ),
       ).pipe(
@@ -1081,7 +1105,7 @@ describe("API Effect services", () => {
     const search = vi.fn(repository().search)
     const result = await Effect.runPromise(
       Effect.flatMap(GetProjectWorkflowData, (queries) =>
-        queries.search({ _tag: "Key", header: "Bearer key" }, "   "),
+        queries.search(Key({ header: "Bearer key" }), "   "),
       ).pipe(
         Effect.provide(
           GetProjectWorkflowData.layer.pipe(
@@ -1099,7 +1123,7 @@ describe("API Effect services", () => {
     const result = await Effect.runPromise(
       Effect.flatMap(GetProjectWorkflowData, (queries) =>
         Effect.result(
-          queries.search({ _tag: "Key", header: "Bearer bad-key" }, "customer"),
+          queries.search(Key({ header: "Bearer bad-key" }), "customer"),
         ),
       ).pipe(
         Effect.provide(
@@ -1117,7 +1141,7 @@ describe("API Effect services", () => {
         ),
       ),
     )
-    expectLeft(result, { _tag: "Unauthorized" })
+    expectLeft(result, Unauthorized)
     expect(search).not.toHaveBeenCalled()
   })
 
@@ -1126,7 +1150,7 @@ describe("API Effect services", () => {
     const result = await Effect.runPromise(
       Effect.flatMap(GetProjectWorkflowData, (service) =>
         service.discoverWorkflows(
-          { _tag: "Key", header: "Bearer key" },
+          Key({ header: "Bearer key" }),
           { limit: 25 },
         ),
       ).pipe(
@@ -1167,7 +1191,7 @@ describe("API Effect services", () => {
       Effect.flatMap(GetProjectWorkflowData, (service) =>
         Effect.result(
           service.discoverWorkflows(
-            { _tag: "User", userId: "user-1", projectId: "foreign-project" },
+            User({ userId: "user-1", projectId: "foreign-project" }),
             {},
           ),
         ),
@@ -1187,7 +1211,7 @@ describe("API Effect services", () => {
         ),
       ),
     )
-    expectLeft(result, { _tag: "Unauthorized", permission: "read" })
+    expectLeft(result, Unauthorized, { permission: "read" })
     expect(discoverWorkflows).not.toHaveBeenCalled()
   })
 
@@ -1218,8 +1242,7 @@ describe("API Effect services", () => {
         ),
       ),
     )
-    expectLeft(result, {
-      _tag: "InvalidInput",
+    expectLeft(result, InvalidInput, {
       cause: "Invalid workflow discovery cursor.",
     })
     expect(discoverWorkflows).toHaveBeenCalledWith("project-a", {
@@ -1257,8 +1280,7 @@ describe("API Effect services", () => {
         ),
       ),
     )
-    expectLeft(result, {
-      _tag: "PersistenceError",
+    expectLeft(result, PersistenceError, {
       operation: DatabaseOperation.ReadDeclarationDiscovery,
     })
   })

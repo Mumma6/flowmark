@@ -1,4 +1,4 @@
-import { Result, Schema } from "effect"
+import { Data, Result, Schema } from "effect"
 
 const Uuid = Schema.String.check(
   Schema.isPattern(
@@ -22,19 +22,21 @@ const RevisionDiscoveryCursorSchema = Schema.Struct({
   id: Uuid,
 })
 
-export type WorkflowDiscoveryCursorScope =
-  | { readonly _tag: "Start" }
-  | { readonly _tag: "Continue"; readonly name: string }
-  | { readonly _tag: "Invalid" }
+export type WorkflowDiscoveryCursorScope = Data.TaggedEnum<{
+  Start: Record<never, never>
+  Continue: { readonly name: string }
+  Invalid: Record<never, never>
+}>
 
-export type RevisionDiscoveryCursorScope =
-  | { readonly _tag: "Start" }
-  | {
-      readonly _tag: "Continue"
-      readonly createdAt: string
-      readonly id: string
-    }
-  | { readonly _tag: "Invalid" }
+export const WorkflowCursor = Data.taggedEnum<WorkflowDiscoveryCursorScope>()
+
+export type RevisionDiscoveryCursorScope = Data.TaggedEnum<{
+  Start: Record<never, never>
+  Continue: { readonly createdAt: string; readonly id: string }
+  Invalid: Record<never, never>
+}>
+
+export const RevisionCursor = Data.taggedEnum<RevisionDiscoveryCursorScope>()
 
 const parseCursor = (cursor: string): unknown => {
   if (cursor.length > 4096) {
@@ -79,20 +81,20 @@ export const scopeWorkflowDiscoveryCursor = (
   projectId: string,
 ): WorkflowDiscoveryCursorScope => {
   if (!cursor) {
-    return { _tag: "Start" }
+    return WorkflowCursor.Start()
   }
   const parsed = parseCursor(cursor)
   if (parsed === null) {
-    return { _tag: "Invalid" }
+    return WorkflowCursor.Invalid()
   }
   return Result.match(
     Schema.decodeUnknownResult(WorkflowDiscoveryCursorSchema)(parsed),
     {
-      onFailure: () => ({ _tag: "Invalid" }),
+      onFailure: () => WorkflowCursor.Invalid(),
       onSuccess: (value) =>
         value.projectId === projectId
-          ? { _tag: "Continue", name: value.name }
-          : { _tag: "Invalid" },
+          ? WorkflowCursor.Continue({ name: value.name })
+          : WorkflowCursor.Invalid(),
     },
   )
 }
@@ -102,24 +104,23 @@ export const scopeRevisionDiscoveryCursor = (
   scope: { readonly projectId: string; readonly workflow: string },
 ): RevisionDiscoveryCursorScope => {
   if (!cursor) {
-    return { _tag: "Start" }
+    return RevisionCursor.Start()
   }
   const parsed = parseCursor(cursor)
   if (parsed === null) {
-    return { _tag: "Invalid" }
+    return RevisionCursor.Invalid()
   }
   return Result.match(
     Schema.decodeUnknownResult(RevisionDiscoveryCursorSchema)(parsed),
     {
-      onFailure: () => ({ _tag: "Invalid" }),
+      onFailure: () => RevisionCursor.Invalid(),
       onSuccess: (value) =>
         value.projectId === scope.projectId && value.workflow === scope.workflow
-          ? {
-              _tag: "Continue",
+          ? RevisionCursor.Continue({
               createdAt: value.createdAt,
               id: value.id,
-            }
-          : { _tag: "Invalid" },
+            })
+          : RevisionCursor.Invalid(),
     },
   )
 }

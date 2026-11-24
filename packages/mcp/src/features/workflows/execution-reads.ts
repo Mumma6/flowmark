@@ -139,8 +139,8 @@ export const findExecutionsForMcp: (
       limit: limit ?? 10,
     })
     .pipe(
-      Effect.mapError((error) =>
-        error._tag === "PersistenceError" ? persistenceFailure() : error,
+      Effect.catchTag("PersistenceError", () =>
+        Effect.fail(persistenceFailure()),
       ),
     )
   return {

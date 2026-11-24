@@ -1,4 +1,5 @@
 import { CurrentProjectReader } from "../../workflows/models/current-project-reader.js"
+import { Key } from "../../workflows/models/project-reader.js"
 import {
   RunReadInputSchema,
   RunReadResponseSchema,
@@ -65,10 +66,7 @@ export class ReadPublicRun extends Context.Service<
             limit: input.limit ?? 50,
           }
           const evidence = yield* repository.runRead(projectId, selection).pipe(
-            Effect.provideService(CurrentProjectReader, {
-              _tag: "Key",
-              header,
-            }),
+            Effect.provideService(CurrentProjectReader, Key({ header })),
           )
           return yield* Schema.decodeUnknownEffect(RunReadResponseSchema)({
             version: 1,

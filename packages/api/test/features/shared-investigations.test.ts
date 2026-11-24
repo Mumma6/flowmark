@@ -1,4 +1,5 @@
 import { expect, it } from "vitest"
+import { InvalidInput } from "../../src/errors.js"
 import { Effect, Result, Schema } from "effect"
 import {
   ShareInvestigationSchema,
@@ -63,7 +64,7 @@ it("uses current publication and aggregation permissions before disclosing a sav
         meaning,
       ),
     ),
-  ).rejects.toMatchObject({ _tag: "InvalidInput" })
+  ).rejects.toBeInstanceOf(InvalidInput)
   await expect(
     Effect.runPromise(
       validateSharedSelection(
@@ -73,7 +74,7 @@ it("uses current publication and aggregation permissions before disclosing a sav
         { results: [], references: [] },
       ),
     ),
-  ).rejects.toMatchObject({ _tag: "InvalidInput" })
+  ).rejects.toBeInstanceOf(InvalidInput)
 })
 it("does not widen or strip diagnostic scopes and continuation boundaries", async () => {
   const selection = {
@@ -96,12 +97,12 @@ it("does not widen or strip diagnostic scopes and continuation boundaries", asyn
     Effect.runPromise(
       validateSharedSelection(projectId, "business", selection, meaning),
     ),
-  ).rejects.toMatchObject({ _tag: "InvalidInput" })
+  ).rejects.toBeInstanceOf(InvalidInput)
   await expect(
     Effect.runPromise(
       validateSharedSelection(runId, "owner", selection, meaning),
     ),
-  ).rejects.toMatchObject({ _tag: "InvalidInput" })
+  ).rejects.toBeInstanceOf(InvalidInput)
   await expect(
     Effect.runPromise(
       validateSharedSelection(
@@ -111,7 +112,7 @@ it("does not widen or strip diagnostic scopes and continuation boundaries", asyn
         meaning,
       ),
     ),
-  ).rejects.toMatchObject({ _tag: "InvalidInput" })
+  ).rejects.toBeInstanceOf(InvalidInput)
 })
 it("rejects client payloads and credentials instead of persisting a richer shared object", () => {
   const decode = Schema.decodeUnknownResult(ShareInvestigationSchema, {

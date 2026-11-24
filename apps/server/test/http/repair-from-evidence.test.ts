@@ -1,7 +1,7 @@
 import { createHash, randomBytes, randomUUID } from "node:crypto"
 import { Exit } from "effect"
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest"
-import { proposeObservationRepair, runApi } from "@flowmark/api"
+import { Key, proposeObservationRepair, runApi } from "@flowmark/api"
 import confirmation from "../../../../examples/questions/later-confirmation.json"
 import {
   createDatabase,
@@ -30,7 +30,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
     const token = "fmd_" + randomBytes(32).toString("hex")
     const deploymentId = "repair-" + randomUUID()
     const artifactDigest = "sha256:" + "e".repeat(64)
-    const reader = { _tag: "Key" as const, header: `Bearer ${readKey}` }
+    const reader = Key({ header: `Bearer ${readKey}` })
     let connection: ReturnType<typeof createDatabase>
 
     beforeAll(async () => {
