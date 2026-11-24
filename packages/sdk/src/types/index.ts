@@ -68,6 +68,12 @@ export interface FlowmarkConfig {
   readonly release?: string
   /** Receives typed failures. If omitted, the SDK logs delivery warnings. */
   readonly onInstrumentationError?: InstrumentationErrorHandler
+  /**
+   * Deployment executing this process. Present and valid values emit one
+   * bound observation per workflow run. Absent, disabled or partial values
+   * emit nothing. Server and Next only — never a browser client.
+   */
+  readonly deployment?: import("../config/deployment-binding.js").DeploymentBindingConfig
 }
 
 /** Optional metadata for one execution of a workflow. */

@@ -310,3 +310,8 @@ export {
   UnconfiguredRepositoryHostAdapterLive,
   type LocalGitHubPullRequestRecord,
 } from "./features/repository-installations/adapters/local-github-adapter.js"
+export {
+  createGitHubRepositoryWriter,
+  readGitHubWriterConfig,
+  repositoryHostAdapterLayer,
+} from "./features/repository-installations/adapters/github-repository-writer.js"

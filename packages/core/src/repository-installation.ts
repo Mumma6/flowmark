@@ -349,13 +349,26 @@ export function buildNodeBootstrapPrPlan(input: {
 } from "@flowmarkdev/node"
 
 const allowedNamespaces = ${namespacesLiteral} as const
+const deploymentId = process.env.FLOWMARK_DEPLOYMENT_ID
+const artifactDigest = process.env.FLOWMARK_ARTIFACT_DIGEST
+const probeId = process.env.FLOWMARK_PROBE_ID
 
-export const flowmark = createFlowmark()
+// Stays unbound until deployment id, artifact digest and probe id are all set.
+export const flowmark = createFlowmark(
+  deploymentId && artifactDigest && probeId
+    ? {
+        deployment: {
+          bindingId: ${JSON.stringify(input.bindingId)},
+          deploymentId,
+          artifactDigest,
+          probeId,
+        },
+      }
+    : {},
+)
 
-export function createServiceObservationEmitter(probeId: string) {
+export function createServiceObservationEmitter(serviceProbeId: string) {
   const referenceKey = process.env.FLOWMARK_REFERENCE_KEY
-  const deploymentId = process.env.FLOWMARK_DEPLOYMENT_ID
-  const artifactDigest = process.env.FLOWMARK_ARTIFACT_DIGEST
   if (!referenceKey || !deploymentId || !artifactDigest) {
     return createRuntimeObservationEmitter({
       enabled: false,
@@ -365,7 +378,7 @@ export function createServiceObservationEmitter(probeId: string) {
         bindingId: ${JSON.stringify(input.bindingId)},
         deploymentId: "unconfigured",
         artifactDigest: "sha256:${"0".repeat(64)}",
-        probeId,
+        probeId: serviceProbeId,
       },
     })
   }
@@ -376,7 +389,7 @@ export function createServiceObservationEmitter(probeId: string) {
       bindingId: ${JSON.stringify(input.bindingId)},
       deploymentId,
       artifactDigest,
-      probeId,
+      probeId: serviceProbeId,
     },
   })
 }

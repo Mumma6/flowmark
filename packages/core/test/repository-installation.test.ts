@@ -114,6 +114,13 @@ describe("repository installation core contract", () => {
     expect(combined).toContain("FLOWMARK_DEPLOYMENT_TOKEN")
     expect(combined).toContain("Awaiting first deployment receipt")
     expect(combined).toContain("context_for_change")
+    const runtime = plan.files.find(
+      (file) => file.path === "src/flowmark/runtime-memory.ts",
+    )?.content
+    expect(runtime).toContain("FLOWMARK_DEPLOYMENT_ID")
+    expect(runtime).toContain("FLOWMARK_ARTIFACT_DIGEST")
+    expect(runtime).toContain("FLOWMARK_PROBE_ID")
+    expect(runtime).toContain(": {}")
     expect(containsSecretMaterial(`token fmd_${"a".repeat(64)}`)).toBe(true)
     expect(
       containsSecretMaterial("leaked-secret-value-1234", [

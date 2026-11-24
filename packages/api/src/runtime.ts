@@ -1,6 +1,6 @@
 import { DeploymentRepositoryLive } from "./features/runtime-deployment/adapters/deployment-repository.js"
 import { Deployments } from "./features/runtime-deployment/use-cases/deployments.js"
-import { UnconfiguredRepositoryHostAdapterLive } from "./features/repository-installations/adapters/local-github-adapter.js"
+import { repositoryHostAdapterLayer } from "./features/repository-installations/adapters/github-repository-writer.js"
 import { RepositoryInstallationRepositoryLive } from "./features/repository-installations/adapters/repository-installation-repository.js"
 import { RepositoryInstallations } from "./features/repository-installations/use-cases/repository-installations.js"
 import { DataExportStore } from "@flowmark/db/persistence"
@@ -149,7 +149,7 @@ const baseApi = Layer.mergeAll(
 )
 
 export const ApiLive = RepositoryInstallations.layer.pipe(
-  Layer.provide(UnconfiguredRepositoryHostAdapterLive),
+  Layer.provide(repositoryHostAdapterLayer(process.env)),
   Layer.provideMerge(baseApi),
   Layer.provide(dependencies),
   Layer.provide(ApiSettings.layer),

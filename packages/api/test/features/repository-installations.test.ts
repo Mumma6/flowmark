@@ -12,10 +12,12 @@ import { Array, Effect, Layer, Option, Result } from "effect"
 import { describe, expect, it } from "vitest"
 import { Unauthorized } from "../../src/errors.js"
 import { AuthorizeProject } from "../../src/features/project-access/use-cases/authorize-project.js"
+import { RepositoryInstallationRejected } from "../../src/features/repository-installations/errors.js"
 import {
   createLocalGitHubAdapter,
   UnconfiguredRepositoryHostAdapterLive,
 } from "../../src/features/repository-installations/adapters/local-github-adapter.js"
+import { RepositoryHostAdapter } from "../../src/features/repository-installations/ports/repository-host-adapter.js"
 import { RepositoryInstallationRepository } from "../../src/features/repository-installations/ports/repository-installation-repository.js"
 import { RepositoryInstallations } from "../../src/features/repository-installations/use-cases/repository-installations.js"
 import { Deployments } from "../../src/features/runtime-deployment/use-cases/deployments.js"
@@ -58,7 +60,7 @@ function makeHarness(options?: {
   readonly observations?: ReadonlyArray<StoredRuntimeObservation>
   readonly mappingPresent?: boolean
   readonly readerAuthorized?: boolean
-  readonly host?: "local" | "unconfigured"
+  readonly host?: "local" | "unconfigured" | "write-fails"
 }) {
   const rows = new Map<string, StoredRepositoryInstallation>()
   const deliveries = new Set<string>()
@@ -374,7 +376,21 @@ function makeHarness(options?: {
     Layer.provide(
       options?.host === "unconfigured"
         ? UnconfiguredRepositoryHostAdapterLive
-        : github.layer,
+        : options?.host === "write-fails"
+          ? Layer.succeed(
+              RepositoryHostAdapter,
+              RepositoryHostAdapter.of({
+                verifyWebhookSignature: () => Effect.void,
+                upsertBootstrapPullRequest: () =>
+                  Effect.fail(
+                    new RepositoryInstallationRejected({
+                      reason: "verification-failed",
+                      detail: "GitHub refused the bootstrap write.",
+                    }),
+                  ),
+              }),
+            )
+          : github.layer,
     ),
     Layer.provide(deploymentsLayer),
     Layer.provide(authLayer),
@@ -1000,5 +1016,47 @@ describe("RepositoryInstallations (RM-010 local GitHub adapter fixture)", () => 
       expect(leaked.failure).toMatchObject({ reason: "secret-leak-blocked" })
     }
     expect(harness.github.listPullRequests()).toHaveLength(0)
+  })
+
+  it("stores no pull request when the repository host rejects the write", async () => {
+    const harness = makeHarness({ host: "write-fails" })
+    const connected = await harness.run(
+      Effect.flatMap(RepositoryInstallations, (service) =>
+        service.connect(OWNER_ID, {
+          projectId: PROJECT_ID,
+          host: "github",
+          runtime: "node",
+          repository: "example/bookings",
+          service: "worker",
+          environment: "production",
+          externalInstallationId: "gh-inst-42",
+          policy,
+        }),
+      ),
+    )
+    expect(Result.isSuccess(connected)).toBe(true)
+    if (Result.isFailure(connected)) {
+      return
+    }
+    const failed = await harness.run(
+      Effect.flatMap(RepositoryInstallations, (service) =>
+        service.prepareBootstrapPr(OWNER_ID, {
+          projectId: PROJECT_ID,
+          installationId: connected.success.installation.id,
+          apiOrigin: "https://api.flowmark.test",
+          permissions: narrowPermissions,
+        }),
+      ),
+    )
+    expect(Result.isFailure(failed)).toBe(true)
+    const stored = await harness.run(
+      Effect.flatMap(RepositoryInstallations, (service) =>
+        service.get(OWNER_ID, PROJECT_ID, connected.success.installation.id),
+      ),
+    )
+    expect(Result.isSuccess(stored)).toBe(true)
+    if (Result.isSuccess(stored)) {
+      expect(stored.success.bootstrapPr).toBeNull()
+    }
   })
 })
