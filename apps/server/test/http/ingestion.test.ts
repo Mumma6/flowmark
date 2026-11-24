@@ -1,5 +1,6 @@
 import {
   createFlowmark,
+  FlowmarkDeliveryError,
   type WorkflowRunReference,
 } from "../../../../packages/sdk/src/index.js"
 import { Effect } from "effect"
@@ -665,9 +666,9 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
             result: { reserved: 0 },
           })
           yield* Effect.promise(() =>
-            expect(duplicateCallback.flush()).rejects.toMatchObject({
-              _tag: "FlowmarkDeliveryError",
-            }),
+            expect(duplicateCallback.flush()).rejects.toBeInstanceOf(
+              FlowmarkDeliveryError,
+            ),
           )
           expect(diagnostic).toHaveBeenCalledOnce()
           expect(diagnostic.mock.calls[0]?.[1]).toMatchObject({

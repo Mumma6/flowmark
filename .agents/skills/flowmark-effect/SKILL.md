@@ -2,7 +2,8 @@
 name: flowmark-effect
 description: >-
   Flowmark TypeScript code conventions: use modern Effect as much as possible
-  (Effect.fn, pipe, Match, Result.match, catchTag/catchTags, Layers, Scope,
+  (Effect.fn, pipe, Match, Data.taggedEnum, Data.TaggedError, Result.match,
+  catchTag/catchTags, Layers, Scope,
   Context.Service). Use when writing or refactoring TypeScript, Effect, API,
   db, CLI, server, SDK, ordinary pure TypeScript, or other internal Flowmark code.
 ---
@@ -102,17 +103,51 @@ export const authorizeUser = Effect.fn("AuthorizeProject.authorizeUser")(
 )
 ```
 
+## Constructing tagged values
+
+Create every tagged value with the Effect constructor that owns it. Do not write
+a discriminator field by hand, and do not read that field to branch, narrow, or
+assert. The constructor inserts it. Tests use the same constructors, `$is`,
+`instanceof`, or the module guard.
+
+| What you create                                | Constructor                                                                                   | How to tell variants apart                                                                                       |
+| ---------------------------------------------- | --------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Closed union of plain objects                  | `Data.TaggedEnum` plus `Data.taggedEnum()`                                                    | `$is("Hidden")`, `$match`, or `Match.tag`                                                                        |
+| One class that only carries a tag              | `class Person extends Data.TaggedClass("Person")<{ ... }> {}`                                 | `instanceof` or `Match.tag`                                                                                      |
+| Domain error                                   | `class NotFound extends Data.TaggedError("NotFound")<{ ... }> {}`                             | `new NotFound(...)`, then `Effect.catchTag` / `catchTags` while it is an Effect. `instanceof` once it is a value |
+| Value decoded from unknown input               | `Schema.TaggedStruct`, `Schema.TaggedClass`, or `Schema.TaggedError`                          | `Schema.decodeUnknownEffect` or `decodeUnknownResult`. `make` fills the tag                                      |
+| Absence, success/failure, or a finished Effect | `Option.none` / `Option.some`, `Result.fail` / `Result.succeed`, `Exit.fail` / `Exit.succeed` | That module's guard or `match`. Not `Match.tag`                                                                  |
+
+An empty variant is `Record<never, never>`, not `{}`. Call it with no arguments:
+`Hidden()`. `Data.taggedEnum` copies any argument onto the object, so never pass
+the matched value into an empty constructor. Use `() => Hidden()`.
+
+```ts
+export type OwnedConnection = Data.TaggedEnum<{
+  Hidden: Record<never, never>
+  Owned: { readonly clientId: string }
+}>
+
+const Connection = Data.taggedEnum<OwnedConnection>()
+
+const hidden = Connection.Hidden()
+const owned = Connection.Owned({ clientId })
+const isHidden = Connection.$is("Hidden")
+```
+
 ## Pattern matching
 
-Use Effect's matchers instead of nested `if`, `switch`, or `result._tag ===`.
+Use Effect's matchers instead of nested `if`, `switch`, or reading a tag field.
 
-| Value                | Use                                                                                                |
-| -------------------- | -------------------------------------------------------------------------------------------------- |
-| Tagged error / union | `Match.value(error).pipe(Match.tag(...), Match.orElse(...))`                                       |
-| `Result`             | `Result.match({ onFailure, onSuccess })`                                                           |
-| `Exit`               | `Exit.match({ onSuccess, onFailure })`                                                             |
-| `Option`             | `Option.match({ onNone, onSome })`                                                                 |
-| Cause                | Inspect `cause.reasons` with `Cause.isFailReason` / `Cause.isDieReason`; match individual reasons. |
+| Value                | Use                                                                                                                          |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Tagged error / union | `Match.value(error).pipe(Match.tag(...), Match.orElse(...))`, or `Effect.catchTag` / `catchTags` while it is still an Effect |
+| `Result`             | `Result.isSuccess` / `isFailure`, `getOrElse`, `getOrNull`, `getOrThrow`; `Result.match` when both sides transform the value |
+| `Exit`               | `Exit.isSuccess` / `isFailure`; `Exit.match` when both sides transform the value                                             |
+| `Option`             | `Option.isSome` / `isNone`, `getOrElse`, `getOrNull`, `getOrUndefined`; `Option.match` when both sides transform the value   |
+| Cause                | Inspect `cause.reasons` with `Cause.isFailReason` / `Cause.isDieReason`; match individual reasons.                           |
+
+Do not match `None`, `Some`, `Success` or `Failure` with `Match.tag` when that module already has a getter or guard. `getOrElse` supplies a fallback. `getOrNull` and `getOrUndefined` unwrap for a nullable boundary. `match` is for two different transformations, not for reading the inner value unchanged.
 
 Prefer `Match.exhaustive` when every member of a closed union must be handled.
 
@@ -262,8 +297,11 @@ behavior changes instead of recreating v3 compatibility helpers.
 
 - `try` / `catch` / `async` / `await` for domain or use-case control flow
 - `.then()` / `.catch()` chains
-- `result._tag === "Failure"` when `Result.match` or `Match` exists
-- `switch (error._tag)` when `catchTags` or `Match.tag` exists
+- Hand-written `{ _tag: "..." }` objects, `value._tag ===`, or `expect(error._tag)`
+- `Match.tag("Some" | "None" | "Success" | "Failure")` when that module has a guard
+- `{}` as an empty tagged-enum variant; use `Record<never, never>`
+- comparing a Result by its failure label when `Result.isFailure` or `Result.match` exists
+- switching on an error label when `catchTags` or `Match.tag` exists
 - Mutable service classes, locators, or singleton clients
 - `Effect.runPromise` inside helpers, adapters, or React components
 - Wrapping a completed Promise workflow in `Effect.succeed` / `tryPromise`
@@ -278,7 +316,9 @@ until that edge.
 
 1. Is the new logic an Effect until an explicit boundary?
 2. Are dependencies in `R` via a tag/service and provided by a Layer?
-3. Are failures tagged and handled with `catchTag` / `Match` / `Result.match`?
+3. Are tagged values constructed with `taggedEnum`, `TaggedError`, or the
+   Option/Result/Exit constructors, and handled with `catchTag`, `$match`,
+   `Match`, or the module guard rather than a hand-written discriminator?
 4. Are resources scoped with `acquireRelease`?
 5. Is the pipeline written with `Effect.fn` and `.pipe` rather than nested
    Promises?

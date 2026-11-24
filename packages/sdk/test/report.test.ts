@@ -1,4 +1,4 @@
-import { Effect, Layer, Schema } from "effect"
+import { Effect, Exit, Layer, Schema } from "effect"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { WorkflowEventSchema } from "@flowmarkdev/core"
 import { makeClient } from "../src/client/runtime.js"
@@ -92,7 +92,7 @@ describe("business snapshots", () => {
         const drained = yield* Effect.promise(() => client.flush()).pipe(
           Effect.exit,
         )
-        expect(drained._tag).toBe("Failure")
+        expect(Exit.isFailure(drained)).toBe(true)
         expect(diagnostic).toHaveBeenCalledOnce()
         expect(diagnostic.mock.calls[0]?.[1]).toMatchObject({ type: "report" })
         expect(events).toEqual(["started", "report", "completed"])

@@ -1,4 +1,4 @@
-import { Effect, Layer, Result } from "effect"
+import { Effect, Layer, Match, Result } from "effect"
 import { describe, expect, it } from "vitest"
 import { PersistenceError } from "../../src/errors.js"
 import { DelegatedAccessRepository } from "../../src/features/project-access/ports/delegated-access-repository.js"
@@ -42,7 +42,14 @@ describe("delegated read use cases", () => {
     )
     Result.match(result, {
       onSuccess: () => expect.fail("Absent family must be denied"),
-      onFailure: (error) => expect(error._tag).toBe("Unauthorized"),
+      onFailure: (error) => {
+        Match.value(error).pipe(
+          Match.tag("Unauthorized", () => undefined),
+          Match.orElse(() => {
+            throw new Error("expected Unauthorized")
+          }),
+        )
+      },
     })
   })
   it("preserves persistence failures and exact signed selections", async () => {

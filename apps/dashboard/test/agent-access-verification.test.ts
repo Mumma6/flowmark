@@ -1,5 +1,8 @@
 import { expect, it } from "vitest"
-import { interpretAgentReadVerification } from "../features/connect/access/agent-access-verification"
+import {
+  AgentRead,
+  interpretAgentReadVerification,
+} from "../features/connect/access/agent-access-verification"
 
 const projectId = "00000000-0000-4000-8000-000000000001"
 const base = {
@@ -23,59 +26,73 @@ it("reports connection authentication without claiming a project evidence read",
         },
       ],
     }),
-  ).toEqual({ _tag: "Authenticated" })
+  ).toEqual(AgentRead.Authenticated())
 })
 
 it("keeps a copied configuration and a failed copy unverified", () => {
   expect(
-    interpretAgentReadVerification({
-      ...base,
-      configurationCopied: true,
-    })._tag,
-  ).toBe("WrongProject")
+    AgentRead.$is("WrongProject")(
+      interpretAgentReadVerification({
+        ...base,
+        configurationCopied: true,
+      }),
+    ),
+  ).toBe(true)
   expect(
-    interpretAgentReadVerification({
-      ...base,
-      configurationCopied: true,
-      copyFailed: true,
-      connections: "pending",
-    })._tag,
-  ).toBe("CopyFailed")
+    AgentRead.$is("CopyFailed")(
+      interpretAgentReadVerification({
+        ...base,
+        configurationCopied: true,
+        copyFailed: true,
+        connections: "pending",
+      }),
+    ),
+  ).toBe(true)
   expect(
-    interpretAgentReadVerification({
-      ...base,
-      grants: [{ projectIds: [projectId], lastAuthenticatedAt: null }],
-      configurationCopied: true,
-    })._tag,
-  ).toBe("Granted")
+    AgentRead.$is("Granted")(
+      interpretAgentReadVerification({
+        ...base,
+        grants: [{ projectIds: [projectId], lastAuthenticatedAt: null }],
+        configurationCopied: true,
+      }),
+    ),
+  ).toBe(true)
 })
 
 it("separates a missing grant, a rejected read, and an unavailable service", () => {
   expect(
-    interpretAgentReadVerification({
-      ...base,
-      grants: [
-        {
-          projectIds: ["00000000-0000-4000-8000-000000000099"],
-          lastAuthenticatedAt: "2026-11-08T12:00:00.000Z",
-        },
-      ],
-    })._tag,
-  ).toBe("WrongProject")
+    AgentRead.$is("WrongProject")(
+      interpretAgentReadVerification({
+        ...base,
+        grants: [
+          {
+            projectIds: ["00000000-0000-4000-8000-000000000099"],
+            lastAuthenticatedAt: "2026-11-08T12:00:00.000Z",
+          },
+        ],
+      }),
+    ),
+  ).toBe(true)
   expect(
-    interpretAgentReadVerification({ ...base, connections: "unauthorized" })
-      ._tag,
-  ).toBe("Denied")
+    AgentRead.$is("Denied")(
+      interpretAgentReadVerification({ ...base, connections: "unauthorized" }),
+    ),
+  ).toBe(true)
   expect(
-    interpretAgentReadVerification({ ...base, connections: "unavailable" })
-      ._tag,
-  ).toBe("Unavailable")
+    AgentRead.$is("Unavailable")(
+      interpretAgentReadVerification({ ...base, connections: "unavailable" }),
+    ),
+  ).toBe(true)
   expect(
-    interpretAgentReadVerification({ ...base, clientSupported: false })._tag,
-  ).toBe("UnsupportedClient")
+    AgentRead.$is("UnsupportedClient")(
+      interpretAgentReadVerification({ ...base, clientSupported: false }),
+    ),
+  ).toBe(true)
   expect(
-    interpretAgentReadVerification({ ...base, deployment: "unavailable" })._tag,
-  ).toBe("Unavailable")
+    AgentRead.$is("Unavailable")(
+      interpretAgentReadVerification({ ...base, deployment: "unavailable" }),
+    ),
+  ).toBe(true)
 })
 
 it("does not promote a multi-project grant timestamp into project-specific verification", () => {
@@ -85,21 +102,21 @@ it("does not promote a multi-project grant timestamp into project-specific verif
       lastAuthenticatedAt: "2026-11-08T12:00:00.000Z",
     },
   ]
-  expect(interpretAgentReadVerification({ ...base, grants })).toEqual({
-    _tag: "Authenticated",
-  })
+  expect(interpretAgentReadVerification({ ...base, grants })).toEqual(
+    AgentRead.Authenticated(),
+  )
   expect(
     interpretAgentReadVerification({
       ...base,
       grants,
       projectId: grants[0]!.projectIds[1],
     }),
-  ).toEqual({ _tag: "Authenticated" })
+  ).toEqual(AgentRead.Authenticated())
   expect(
     interpretAgentReadVerification({
       ...base,
       grants,
       connections: "unauthorized",
     }),
-  ).toEqual({ _tag: "Denied" })
+  ).toEqual(AgentRead.Denied())
 })

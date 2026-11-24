@@ -1,5 +1,6 @@
 import { expect, it } from "vitest"
 import {
+  DashboardPublicConfigurationError,
   publicConfig,
   resolveDocumentationUrl,
 } from "../features/platform/config-public"
@@ -24,6 +25,6 @@ it.each([
   "https://user:secret@docs.example",
 ])("fails explicitly on invalid documentation configuration", (value) => {
   expect(() => resolveDocumentationUrl(value, false)).toThrow(
-    expect.objectContaining({ _tag: "DashboardPublicConfigurationError" }),
+    DashboardPublicConfigurationError,
   )
 })

@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs"
 import { describe, expect, it } from "vitest"
-import { Effect, Schema } from "effect"
+import { Effect, Result, Schema } from "effect"
 import {
   Engine,
   OperationEventSchema,
@@ -97,10 +97,10 @@ describe("compiled Rust operation evidence", () => {
           )
         }),
       )
-      expect(result).toMatchObject({
-        _tag: "Failure",
-        failure: { _tag: "EngineError", stage: "input" },
-      })
+      expect(Result.isFailure(result)).toBe(true)
+      if (Result.isFailure(result)) {
+        expect(result.failure.stage).toBe("input")
+      }
     },
   )
   it("reports an invalid percentile and numeric overflow as calculation failures", async () => {
@@ -123,14 +123,10 @@ describe("compiled Rust operation evidence", () => {
         ])
       }),
     )
-    expect(results).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          _tag: "Failure",
-          failure: expect.objectContaining({ stage: "calculation" }),
-        }),
-      ]),
-    )
-    expect(results.every((r) => r._tag === "Failure")).toBe(true)
+    expect(Result.isFailure(results[0])).toBe(true)
+    expect(Result.isFailure(results[1])).toBe(true)
+    if (Result.isFailure(results[1])) {
+      expect(results[1].failure.stage).toBe("calculation")
+    }
   })
 })

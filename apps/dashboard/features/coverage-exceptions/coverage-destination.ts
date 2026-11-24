@@ -1,4 +1,4 @@
-import { Match, Schema } from "effect"
+import { Option, Schema } from "effect"
 
 export const CoverageStatusSchema = Schema.Literals([
   "unavailable",
@@ -51,25 +51,27 @@ export function coverageDestination(input: {
   const status = Schema.decodeUnknownOption(CoverageStatusSchema)(input.status)
   const question = Schema.decodeUnknownOption(QuestionId)(input.question)
   const repair = Schema.decodeUnknownOption(RepairUrl)(input.repair)
-  return Match.value(status).pipe(
-    Match.tag("None", () => ({
+  return Option.match(status, {
+    onNone: () => ({
       status: null,
       question: null,
       title: "Coverage and exceptions",
       explanation:
         "Choose a question to see whether it is unavailable, waiting, stale, revoked or forbidden.",
       action: { href: "/connect", label: "Review connections and policy" },
-    })),
-    Match.tag("Some", ({ value }) => ({
-      status: value,
-      question: question._tag === "Some" ? question.value : null,
-      title: copy[value].title,
-      explanation: copy[value].explanation,
-      action:
-        repair._tag === "Some" && value !== "revoked" && value !== "forbidden"
-          ? { href: repair.value, label: "Open the repair pull request" }
-          : { href: "/connect", label: "Review access" },
-    })),
-    Match.exhaustive,
-  )
+    }),
+    onSome: (value) => {
+      const repairUrl = Option.getOrNull(repair)
+      return {
+        status: value,
+        question: Option.getOrNull(question),
+        title: copy[value].title,
+        explanation: copy[value].explanation,
+        action:
+          repairUrl !== null && value !== "revoked" && value !== "forbidden"
+            ? { href: repairUrl, label: "Open the repair pull request" }
+            : { href: "/connect", label: "Review access" },
+      }
+    },
+  })
 }

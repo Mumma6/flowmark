@@ -3,7 +3,7 @@
 // FLOWMARK_API_URL=http://127.0.0.1:3103 FLOWMARK_API_KEY=<test key> \
 //   node packages/sdk/examples/booking-continuation.mjs
 import assert from "node:assert/strict"
-import { createFlowmark } from "../dist/index.js"
+import { createFlowmark, FlowmarkDeliveryError } from "../dist/index.js"
 
 const origin = new URL(process.env.FLOWMARK_API_URL ?? "http://127.0.0.1:3103")
 assert.ok(
@@ -53,7 +53,10 @@ duplicateClient.workflow(reference.workflow, { id: reference.runId }).fail({
   outcome: "rejected",
   result: { reserved: 0 },
 })
-await assert.rejects(duplicateClient.flush(), { _tag: "FlowmarkDeliveryError" })
+await assert.rejects(
+  duplicateClient.flush(),
+  (error) => error instanceof FlowmarkDeliveryError,
+)
 assert.equal(diagnostics.length, 1)
 await duplicateClient.shutdown()
 

@@ -210,26 +210,22 @@ const revisionChange = (
   if (!previous) {
     return null
   }
-  const prior = byId(previous, source.id)
-  if (prior._tag === "None") {
-    return unresolved ? "unresolved" : "added"
-  }
-  if (
-    prior.value.path !== source.path ||
-    prior.value.symbol !== source.symbol
-  ) {
-    return "moved"
-  }
-  return unresolved ? "unresolved" : "unchanged"
+  return Option.match(byId(previous, source.id), {
+    onNone: () => (unresolved ? "unresolved" : "added"),
+    onSome: (prior) =>
+      prior.path !== source.path || prior.symbol !== source.symbol
+        ? "moved"
+        : unresolved
+          ? "unresolved"
+          : "unchanged",
+  })
 }
 
 const dedupeDeployed = (deployed: readonly DeployedBoundary[]) =>
   Array.reduce(deployed, [] as DeployedBoundary[], (collected, entry) => {
-    const existing = byId(collected, entry.id)
-    if (existing._tag === "None") {
-      return [...collected, entry]
-    }
-    return collected
+    return Option.isNone(byId(collected, entry.id))
+      ? [...collected, entry]
+      : collected
   })
 
 export function reconcileEvidenceBoundaries(
@@ -238,7 +234,7 @@ export function reconcileEvidenceBoundaries(
   const deployed = dedupeDeployed(input.deployed)
   const fromSource = Array.map(input.source, (source) => {
     const match = byId(deployed, source.id)
-    const matched = match._tag === "Some"
+    const matched = Option.isSome(match)
     const status = statusFor(source, matched)
     const unresolved =
       source.ambiguous ||
@@ -276,7 +272,7 @@ export function reconcileEvidenceBoundaries(
   })
   const fromDeployment = Array.getSomes(
     Array.map(deployed, (entry) =>
-      byId(input.source, entry.id)._tag === "Some"
+      Option.isSome(byId(input.source, entry.id))
         ? Option.none<EvidenceBoundaryView>()
         : Option.some<EvidenceBoundaryView>({
             id: entry.id,

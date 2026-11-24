@@ -57,8 +57,7 @@ describe("HTTP boundaries", () => {
       ),
     )
     Result.match(result, {
-      onFailure: (error) =>
-        expect(error).toMatchObject({ _tag: "InvalidInput" }),
+      onFailure: (error) => expect(error).toBeInstanceOf(InvalidInput),
       onSuccess: () => expect.fail("expected invalid JSON"),
     })
   })

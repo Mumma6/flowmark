@@ -1,6 +1,10 @@
 import { Effect, Layer, Option } from "effect"
 import { describe, expect, it, vi } from "vitest"
-import { Unauthorized, PersistenceError } from "../../src/errors.js"
+import {
+  InvalidInput,
+  PersistenceError,
+  Unauthorized,
+} from "../../src/errors.js"
 import { AuthorizeProject } from "../../src/features/project-access/use-cases/authorize-project.js"
 import { ResultDeclarations } from "../../src/features/result-declarations/ports/result-declarations.js"
 import { ManageResultDeclarations } from "../../src/features/result-declarations/use-cases/manage-result-declarations.js"
@@ -97,9 +101,7 @@ describe("session-owned metadata preview", () => {
 
   it("rejects unauthorized users before decoding or accessing metadata", async () => {
     const f = fixture()
-    await expect(f.run(null, "stranger")).rejects.toMatchObject({
-      _tag: "Unauthorized",
-    })
+    await expect(f.run(null, "stranger")).rejects.toBeInstanceOf(Unauthorized)
     expect(f.find).not.toHaveBeenCalled()
     expect(f.searchFields).not.toHaveBeenCalled()
   })
@@ -111,7 +113,7 @@ describe("session-owned metadata preview", () => {
         ...definition,
         result: { ...definition.result, overwrite: true },
       }),
-    ).rejects.toMatchObject({ _tag: "InvalidInput" })
+    ).rejects.toBeInstanceOf(InvalidInput)
     expect(f.searchFields).not.toHaveBeenCalled()
   })
 
@@ -125,7 +127,7 @@ describe("session-owned metadata preview", () => {
         }),
       ),
     )
-    await expect(f.run()).rejects.toMatchObject({ _tag: "PersistenceError" })
+    await expect(f.run()).rejects.toBeInstanceOf(PersistenceError)
   })
 
   it("binds fingerprints to project, source, request and current state", async () => {

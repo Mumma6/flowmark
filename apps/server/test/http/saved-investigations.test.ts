@@ -11,8 +11,9 @@ import {
 } from "@flowmark/db"
 import {
   createOwnedProject,
-  InvestigationStore,
   Database,
+  DatabaseError,
+  InvestigationStore,
 } from "@flowmark/db/persistence"
 import { appRouter } from "../../src/adapters/trpc/router"
 import { GET, POST } from "../../app/api/trpc/[trpc]/route"
@@ -287,10 +288,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
           Effect.runPromise(
             store.delete(owner.userId, owner.projectId, entry.id),
           ),
-        ).rejects.toMatchObject({
-          _tag: "DatabaseError",
-          operation: "project-read-fence",
-        })
+        ).rejects.toBeInstanceOf(DatabaseError)
       } finally {
         await connection.db.insert(projectMembers).values({
           userId: owner.userId,

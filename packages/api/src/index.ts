@@ -51,6 +51,11 @@ export {
   type ProjectReader,
 } from "./features/workflows/use-cases/get-project-workflow-data.js"
 export {
+  DelegatedUser,
+  Key,
+  User,
+} from "./features/workflows/models/project-reader.js"
+export {
   IngestBrowserWorkflowEvents,
   type IngestBrowserWorkflowEventsService,
 } from "./features/workflows/use-cases/ingest-browser-events.js"

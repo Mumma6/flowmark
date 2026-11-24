@@ -1,6 +1,7 @@
 import { Schema } from "effect"
 import {
   ManageEvidenceCaptures,
+  User,
   CaptureRunSchema,
   SharedInvestigationListSchema,
 } from "@flowmark/api"
@@ -33,7 +34,7 @@ export const evidenceCapturesRouter = t.router({
           userId,
           ManageEvidenceCaptures.use((service) =>
             service.purgeExpired(
-              { _tag: "User", userId, projectId: input.projectId },
+              User({ userId, projectId: input.projectId }),
               input.projectId,
             ),
           ),
@@ -49,7 +50,7 @@ export const evidenceCapturesRouter = t.router({
           userId,
           ManageEvidenceCaptures.use((service) =>
             service.create(
-              { _tag: "User", userId, projectId: input.projectId },
+              User({ userId, projectId: input.projectId }),
               input.projectId,
               input.command,
             ),
@@ -95,7 +96,7 @@ export const evidenceCapturesRouter = t.router({
           userId,
           ManageEvidenceCaptures.use((service) =>
             service.delete(
-              { _tag: "User", userId, projectId: input.projectId },
+              User({ userId, projectId: input.projectId }),
               input.projectId,
               input.id,
             ),

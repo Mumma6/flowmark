@@ -17,11 +17,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@flowmark/ui"
+import { Match } from "effect"
 import Link from "next/link"
 import {
   coarsenLastAuthenticated,
   connectionListRecovery,
   connectionProjectLabels,
+  RevokeFeedbackState,
 } from "./connection-revocation"
 import { useAgentConnections } from "./use-agent-connections"
 
@@ -71,33 +73,39 @@ export function AgentConnections() {
               Loading connections…
             </p>
           ) : null}
-          {listRecovery ? (
-            <Alert>
-              <AlertTitle>
-                {listRecovery._tag === "StaleSession"
-                  ? "Sign in again"
-                  : "Connections are unavailable"}
-              </AlertTitle>
-              <AlertDescription>
-                {listRecovery.message}
-                {listRecovery._tag === "StaleSession" ? (
-                  <Button asChild size="sm" className="mt-3 min-h-10">
-                    <Link href="/sign-in">Sign in</Link>
-                  </Button>
-                ) : (
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    className="mt-3 min-h-10"
-                    onClick={() => void list.refetch()}
-                  >
-                    Retry
-                  </Button>
-                )}
-              </AlertDescription>
-            </Alert>
-          ) : null}
+          {listRecovery
+            ? Match.value(listRecovery).pipe(
+                Match.tag("StaleSession", (recovery) => (
+                  <Alert>
+                    <AlertTitle>Sign in again</AlertTitle>
+                    <AlertDescription>
+                      {recovery.message}
+                      <Button asChild size="sm" className="mt-3 min-h-10">
+                        <Link href="/sign-in">Sign in</Link>
+                      </Button>
+                    </AlertDescription>
+                  </Alert>
+                )),
+                Match.tag("Unavailable", (recovery) => (
+                  <Alert>
+                    <AlertTitle>Connections are unavailable</AlertTitle>
+                    <AlertDescription>
+                      {recovery.message}
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="mt-3 min-h-10"
+                        onClick={() => void list.refetch()}
+                      >
+                        Retry
+                      </Button>
+                    </AlertDescription>
+                  </Alert>
+                )),
+                Match.exhaustive,
+              )
+            : null}
           {!list.isPending && !list.isError && connections.length === 0 ? (
             <p className="text-sm leading-6 text-muted-foreground">
               No active connections yet. Enable Flowmark in Cursor, sign in and
@@ -143,7 +151,7 @@ export function AgentConnections() {
                     className="min-h-10"
                     onClick={(event) => {
                       returnFocus.current = event.currentTarget
-                      setFeedback({ _tag: "Idle" })
+                      setFeedback(RevokeFeedbackState.Idle())
                       setConfirming(connection)
                     }}
                   >
@@ -153,82 +161,115 @@ export function AgentConnections() {
               </li>
             ))}
           </ul>
-          {owned._tag === "Loading" ? (
-            <p role="status" className="text-sm text-muted-foreground">
-              Loading connection detail…
-            </p>
-          ) : null}
-          {owned._tag === "Unavailable" ? (
-            <Alert>
-              <AlertTitle>Connection detail is unavailable</AlertTitle>
-              <AlertDescription>
-                {connectionListRecovery(detail.error).message}
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  className="mt-3 min-h-10"
-                  onClick={() => void detail.refetch()}
-                >
-                  Retry detail
-                </Button>
-              </AlertDescription>
-            </Alert>
-          ) : null}
-          {owned._tag === "Owned" && detail.data ? (
-            <div
-              key={`${selected?.clientId}:${selected?.authorizationCodeId}`}
-              ref={focusDetail}
-              tabIndex={-1}
-              className="grid gap-1 text-sm leading-6 text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              <p className="font-medium text-foreground">Connection detail</p>
-              <p>
-                {detail.data.clientName ?? "Unnamed client"} ·{" "}
-                {detail.data.clientId}
+          {Match.value(owned).pipe(
+            Match.tag("Loading", () => (
+              <p role="status" className="text-sm text-muted-foreground">
+                Loading connection detail…
               </p>
-              <p>
-                {connectionProjectLabels(detail.data.projectIds, names).join(
-                  ", ",
-                )}
-              </p>
-              <p>{coarsenLastAuthenticated(detail.data.lastAuthenticatedAt)}</p>
-            </div>
-          ) : null}
-          {owned._tag === "UnavailableToAccount" ? (
-            <Alert>
-              <AlertTitle>Connection not available</AlertTitle>
-              <AlertDescription>
-                The signed-in account cannot read that connection. It may belong
-                to someone else or already be revoked.
-              </AlertDescription>
-            </Alert>
-          ) : null}
-          {message ? (
-            <Alert>
-              <AlertTitle>
-                {feedback._tag === "Revoked"
-                  ? "Revocation confirmed"
-                  : "Revocation not confirmed"}
-              </AlertTitle>
-              <AlertDescription>
-                {message}
-                {feedback._tag === "Unknown" ||
-                feedback._tag === "StillActive" ? (
+            )),
+            Match.tag("Unavailable", () => (
+              <Alert>
+                <AlertTitle>Connection detail is unavailable</AlertTitle>
+                <AlertDescription>
+                  {connectionListRecovery(detail.error).message}
                   <Button
                     type="button"
-                    variant="outline"
                     size="sm"
+                    variant="outline"
                     className="mt-3 min-h-10"
-                    disabled={busy}
-                    onClick={() => void refreshFeedback()}
+                    onClick={() => void detail.refetch()}
                   >
-                    Refresh connections
+                    Retry detail
                   </Button>
-                ) : null}
-              </AlertDescription>
-            </Alert>
-          ) : null}
+                </AlertDescription>
+              </Alert>
+            )),
+            Match.tag("Owned", () =>
+              detail.data ? (
+                <div
+                  key={`${selected?.clientId}:${selected?.authorizationCodeId}`}
+                  ref={focusDetail}
+                  tabIndex={-1}
+                  className="grid gap-1 text-sm leading-6 text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <p className="font-medium text-foreground">
+                    Connection detail
+                  </p>
+                  <p>
+                    {detail.data.clientName ?? "Unnamed client"} ·{" "}
+                    {detail.data.clientId}
+                  </p>
+                  <p>
+                    {connectionProjectLabels(
+                      detail.data.projectIds,
+                      names,
+                    ).join(", ")}
+                  </p>
+                  <p>
+                    {coarsenLastAuthenticated(detail.data.lastAuthenticatedAt)}
+                  </p>
+                </div>
+              ) : null,
+            ),
+            Match.tag("UnavailableToAccount", () => (
+              <Alert>
+                <AlertTitle>Connection not available</AlertTitle>
+                <AlertDescription>
+                  The signed-in account cannot read that connection. It may
+                  belong to someone else or already be revoked.
+                </AlertDescription>
+              </Alert>
+            )),
+            Match.tag("Hidden", () => null),
+            Match.exhaustive,
+          )}
+          {message
+            ? Match.value(feedback).pipe(
+                Match.tag("Revoked", () => (
+                  <Alert>
+                    <AlertTitle>Revocation confirmed</AlertTitle>
+                    <AlertDescription>{message}</AlertDescription>
+                  </Alert>
+                )),
+                Match.tag("Unknown", () => (
+                  <Alert>
+                    <AlertTitle>Revocation not confirmed</AlertTitle>
+                    <AlertDescription>
+                      {message}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="mt-3 min-h-10"
+                        disabled={busy}
+                        onClick={() => void refreshFeedback()}
+                      >
+                        Refresh connections
+                      </Button>
+                    </AlertDescription>
+                  </Alert>
+                )),
+                Match.tag("StillActive", () => (
+                  <Alert>
+                    <AlertTitle>Revocation not confirmed</AlertTitle>
+                    <AlertDescription>
+                      {message}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="mt-3 min-h-10"
+                        disabled={busy}
+                        onClick={() => void refreshFeedback()}
+                      >
+                        Refresh connections
+                      </Button>
+                    </AlertDescription>
+                  </Alert>
+                )),
+                Match.orElse(() => null),
+              )
+            : null}
         </div>
       </CardContent>
       <Dialog

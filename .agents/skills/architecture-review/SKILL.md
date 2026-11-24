@@ -150,8 +150,14 @@ entry points.
 `Context.Service` with an explicit `Layer.effect` layer. Resources use
 `Effect.acquireRelease` in the owning scope. `Effect.tryPromise` appears only
 at a real Promise boundary and maps to a tagged error with operation and cause.
-Matchers are `Match`, `Result.match`, `catchTag`, and `catchTags`. Effects run
-only at a process, request, CLI, or public SDK boundary.
+Tagged values are constructed with `Data.taggedEnum`, `Data.TaggedError`,
+`Data.TaggedClass`, or `Schema.TaggedStruct` / `Schema.TaggedError`. Option,
+Result, and Exit use their own guards and `match`, not `Match.tag` on `Some`,
+`None`, `Success`, or `Failure`. Empty variants are `Record<never, never>` and
+their constructors are called with no arguments. Matchers for a custom union
+are `$is`, `$match`, `Match.tag`, `catchTag`, and `catchTags`. A hand-written
+discriminator field, or a test that asserts one, is a standards violation.
+Effects run only at a process, request, CLI, or public SDK boundary.
 
 **Persistence.** Reads are `queries/get-*.ts`. Writes use domain verbs. Shared
 SQL lives in `sql/` without an extra `-sql` suffix. Store files only wire

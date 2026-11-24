@@ -1,6 +1,9 @@
 import { Array as EffectArray, Effect, Layer, Result } from "effect"
 import { afterEach, expect, it, vi } from "vitest"
-import { DashboardApi } from "../features/platform/api-server-client"
+import {
+  DashboardApi,
+  DashboardRequestError,
+} from "../features/platform/api-server-client"
 import { DashboardServerConfig } from "../features/platform/config-server"
 
 const api = (apiUrl: string, protectionBypass?: string) =>
@@ -62,12 +65,13 @@ it("keeps transport failures typed with operation and original cause", async () 
     }).pipe(Effect.provide(api("https://preview.example")), Effect.result),
   )
   Result.match(result, {
-    onFailure: (error) =>
-      expect(error).toMatchObject({
-        _tag: "DashboardRequestError",
-        operation: "/api/auth/get-session",
-        cause,
-      }),
+    onFailure: (error) => {
+      expect(error).toBeInstanceOf(DashboardRequestError)
+      if (error instanceof DashboardRequestError) {
+        expect(error.operation).toBe("/api/auth/get-session")
+        expect(error.cause).toBe(cause)
+      }
+    },
     onSuccess: () => {
       throw new Error("Unexpected successful request")
     },

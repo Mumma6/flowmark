@@ -1,4 +1,5 @@
-import { Effect, Layer, Redacted, Schema } from "effect"
+import { Effect, Layer, Redacted, Result, Schema } from "effect"
+import { ManagementRateLimited, Unauthorized } from "../../src/errors.js"
 import { describe, expect, it, vi } from "vitest"
 import {
   ErasureScopeSchema,
@@ -81,17 +82,17 @@ describe("lifecycle trust boundary", () => {
     "rejects mismatched, missing or stale provider identity",
     async (verified) => {
       const test = setup(verified)
-      await expect(Effect.runPromise(test.execute)).rejects.toMatchObject({
-        _tag: "Unauthorized",
-      })
+      await expect(Effect.runPromise(test.execute)).rejects.toBeInstanceOf(
+        Unauthorized,
+      )
       expect(test.confirm).not.toHaveBeenCalled()
     },
   )
   it("stops before password verification when the actor budget is exhausted", async () => {
     const test = setup(identity, false)
-    await expect(Effect.runPromise(test.execute)).rejects.toMatchObject({
-      _tag: "ManagementRateLimited",
-    })
+    await expect(Effect.runPromise(test.execute)).rejects.toBeInstanceOf(
+      ManagementRateLimited,
+    )
     expect(test.verify).not.toHaveBeenCalled()
     expect(test.confirm).not.toHaveBeenCalled()
   })
@@ -114,9 +115,11 @@ describe("lifecycle trust boundary", () => {
     { kind: "unknown" },
   ])("rejects invalid scopes without widening them", (input) => {
     expect(
-      Schema.decodeUnknownResult(ErasureScopeSchema, {
-        onExcessProperty: "error",
-      })(input)._tag,
-    ).toBe("Failure")
+      Result.isFailure(
+        Schema.decodeUnknownResult(ErasureScopeSchema, {
+          onExcessProperty: "error",
+        })(input),
+      ),
+    ).toBe(true)
   })
 })

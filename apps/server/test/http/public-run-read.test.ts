@@ -21,7 +21,12 @@ import {
   user,
   authRateLimits,
 } from "@flowmark/db"
-import { ManageProject, GetProjectWorkflowData, runApi } from "@flowmark/api"
+import {
+  GetProjectWorkflowData,
+  Key,
+  ManageProject,
+  runApi,
+} from "@flowmark/api"
 import {
   createFlowmarkReadClient,
   type RunReadInput,
@@ -186,7 +191,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
       const studio = await api(
         Effect.flatMap(GetProjectWorkflowData, (data) =>
           data.runInvestigationSummary(
-            { _tag: "Key", header: `Bearer ${readKey}` },
+            Key({ header: `Bearer ${readKey}` }),
             runId,
           ),
         ),
@@ -429,10 +434,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
       const result = await client.readPeriod(period)
       const studio = await api(
         Effect.flatMap(GetProjectWorkflowData, (data) =>
-          data.periodReport(
-            { _tag: "Key", header: `Bearer ${readKey}` },
-            period,
-          ),
+          data.periodReport(Key({ header: `Bearer ${readKey}` }), period),
         ),
       )
       const canonical = (value: typeof studio.current) => ({

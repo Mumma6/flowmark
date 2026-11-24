@@ -1,4 +1,4 @@
-import { Effect, Layer, Option, Result } from "effect"
+import { Effect, Layer, Match, Option, Result } from "effect"
 import { expect, it, vi } from "vitest"
 import { InvalidInput, Unauthorized } from "../../src/errors.js"
 import { DataExports } from "../../src/features/data-exports/ports/data-exports.js"
@@ -47,8 +47,11 @@ it("does not deliver materialized bytes after the live delivery authorization fa
       manage.part("owner", "current-session", "request", "cursor"),
     ).pipe(Effect.provide(live), Effect.result),
   )
-  expect(result.pipe(Result.getFailure, Option.getOrThrow)._tag).toBe(
-    "Unauthorized",
+  Match.value(result.pipe(Result.getFailure, Option.getOrThrow)).pipe(
+    Match.tag("Unauthorized", () => undefined),
+    Match.orElse(() => {
+      throw new Error("expected Unauthorized")
+    }),
   )
   expect(part).toHaveBeenCalledOnce()
   expect(check).toHaveBeenCalledOnce()

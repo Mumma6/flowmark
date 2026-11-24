@@ -3,6 +3,7 @@ import {
   createFlowmark,
   createRuntimeObservationEmitter,
   FlowmarkConfigError,
+  FlowmarkDeliveryError,
 } from "@flowmarkdev/node"
 import { importInvoices, originalFailure } from "./lib/import-invoices.js"
 
@@ -48,7 +49,7 @@ assert.deepEqual(await importInvoices(retry, "partial"), {
 if (rejectedDelivery) {
   await assert.rejects(
     client.shutdown(),
-    (error) => error._tag === "FlowmarkDeliveryError",
+    (error) => error instanceof FlowmarkDeliveryError,
   )
   assert.equal(client.deliveryHealth().pending, 0)
   assert.ok(client.deliveryHealth().failed > 0)

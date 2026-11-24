@@ -11,6 +11,7 @@ import type {
 import { Array, Effect, Layer, Option, Result } from "effect"
 import { describe, expect, it } from "vitest"
 import { Unauthorized } from "../../src/errors.js"
+import { User } from "../../src/features/workflows/models/project-reader.js"
 import { AuthorizeProject } from "../../src/features/project-access/use-cases/authorize-project.js"
 import { RepositoryInstallationRejected } from "../../src/features/repository-installations/errors.js"
 import {
@@ -656,7 +657,7 @@ describe("RepositoryInstallations (RM-010 local GitHub adapter fixture)", () => 
     const verified = await harness.run(
       Effect.flatMap(RepositoryInstallations, (service) =>
         service.verifyDisposableReadback(
-          { _tag: "User", userId: READER_ID, projectId: PROJECT_ID },
+          User({ userId: READER_ID, projectId: PROJECT_ID }),
           {
             projectId: PROJECT_ID,
             installationId,
@@ -788,7 +789,7 @@ describe("RepositoryInstallations (RM-010 local GitHub adapter fixture)", () => 
     const policyRejected = await violatingHarness.run(
       Effect.flatMap(RepositoryInstallations, (service) =>
         service.verifyDisposableReadback(
-          { _tag: "User", userId: READER_ID, projectId: PROJECT_ID },
+          User({ userId: READER_ID, projectId: PROJECT_ID }),
           {
             projectId: PROJECT_ID,
             installationId: connected.success.installation.id,
@@ -829,7 +830,7 @@ describe("RepositoryInstallations (RM-010 local GitHub adapter fixture)", () => 
     const denied = await unauthorizedHarness.run(
       Effect.flatMap(RepositoryInstallations, (service) =>
         service.verifyDisposableReadback(
-          { _tag: "User", userId: "denied-user", projectId: PROJECT_ID },
+          User({ userId: "denied-user", projectId: PROJECT_ID }),
           {
             projectId: PROJECT_ID,
             installationId: unauthConnected.success.installation.id,
@@ -843,7 +844,7 @@ describe("RepositoryInstallations (RM-010 local GitHub adapter fixture)", () => 
     )
     expect(Result.isFailure(denied)).toBe(true)
     if (Result.isFailure(denied)) {
-      expect(denied.failure).toMatchObject({ _tag: "Unauthorized" })
+      expect(denied.failure).toBeInstanceOf(Unauthorized)
     }
   })
 
@@ -910,7 +911,7 @@ describe("RepositoryInstallations (RM-010 local GitHub adapter fixture)", () => 
     const stranger = await prepare("stranger-user")
     expect(Result.isFailure(stranger)).toBe(true)
     if (Result.isFailure(stranger)) {
-      expect(stranger.failure).toMatchObject({ _tag: "Unauthorized" })
+      expect(stranger.failure).toBeInstanceOf(Unauthorized)
     }
 
     const revoked = await harness.run(

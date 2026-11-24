@@ -43,13 +43,18 @@ export const proposeObservationRepairForMcp = Effect.fn(
   const reader = mcpDelegatedReader(identity, family.familyId, input.projectId)
   const { version, projectId, ...request } = input
   const proposal = yield* proposeObservationRepair(reader, request).pipe(
+    Effect.catchTag("InvalidInput", (invalid) =>
+      Effect.fail(
+        new McpToolReadError({
+          reason: String(invalid.cause),
+          cause: invalid,
+        }),
+      ),
+    ),
     Effect.mapError(
       (error) =>
         new McpToolReadError({
-          reason:
-            error._tag === "InvalidInput"
-              ? String(error.cause)
-              : "Stored question evidence could not be read.",
+          reason: "Stored question evidence could not be read.",
           cause: error,
         }),
     ),

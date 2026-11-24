@@ -3,6 +3,7 @@ import { Exit } from "effect"
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest"
 import {
   GetProjectWorkflowData,
+  Key,
   rankChangeMappings,
   runApi,
 } from "@flowmark/api"
@@ -33,7 +34,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
     const sourceRevision = "a".repeat(40)
     const boundRunId = randomUUID()
     const unknownRunId = randomUUID()
-    const reader = { _tag: "Key" as const, header: `Bearer ${readKey}` }
+    const reader = Key({ header: `Bearer ${readKey}` })
     let connection: ReturnType<typeof createDatabase>
 
     const read = async <A>(

@@ -1,5 +1,5 @@
 import { McpHostConfiguration } from "@flowmark/mcp"
-import { Effect, Result } from "effect"
+import { Effect, Match, Result } from "effect"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { McpHostConfigurationLive } from "../src/adapters/mcp/mcp-host-configuration"
 import { resolveAgentAccessRuntime } from "../src/agent-access-runtime"
@@ -28,8 +28,13 @@ describe("MCP configuration composition", () => {
     Result.match(result, {
       onSuccess: () => expect.fail("Missing hosted origins must fail"),
       onFailure: (error) => {
-        expect(error._tag).toBe("AgentAccessRuntimeError")
-        expect(error.reason).toBe(
+        const runtime = Match.value(error).pipe(
+          Match.tag("AgentAccessRuntimeError", (value) => value),
+          Match.orElse(() => {
+            throw new Error("expected AgentAccessRuntimeError")
+          }),
+        )
+        expect(runtime.reason).toBe(
           "FLOWMARK_DASHBOARD_ORIGIN is required in hosted environments.",
         )
       },

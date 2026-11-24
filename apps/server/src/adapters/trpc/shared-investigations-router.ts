@@ -1,6 +1,7 @@
 import { Schema } from "effect"
 import {
   ManageSharedInvestigations,
+  User,
   MeaningProposalSchema,
   ShareInvestigationSchema,
   SharedInvestigationListSchema,
@@ -25,7 +26,7 @@ export const sharedInvestigationsRouter = t.router({
           userId,
           ManageSharedInvestigations.use((service) =>
             service.submitProposal(
-              { _tag: "User", userId, projectId: input.projectId },
+              User({ userId, projectId: input.projectId }),
               input.projectId,
               input.command,
             ),
@@ -42,7 +43,7 @@ export const sharedInvestigationsRouter = t.router({
           userId,
           ManageSharedInvestigations.use((service) =>
             service.listProposals(
-              { _tag: "User", userId, projectId: input.projectId },
+              User({ userId, projectId: input.projectId }),
               input.projectId,
             ),
           ),
@@ -66,7 +67,7 @@ export const sharedInvestigationsRouter = t.router({
           userId,
           ManageSharedInvestigations.use((service) =>
             service.resolveProposal(
-              { _tag: "User", userId, projectId: input.projectId },
+              User({ userId, projectId: input.projectId }),
               input.projectId,
               input.id,
               input.resolution,
@@ -87,7 +88,7 @@ export const sharedInvestigationsRouter = t.router({
           userId,
           ManageSharedInvestigations.use((service) =>
             service.create(
-              { _tag: "User", userId, projectId: input.projectId },
+              User({ userId, projectId: input.projectId }),
               input.projectId,
               input.command,
             ),
@@ -133,7 +134,7 @@ export const sharedInvestigationsRouter = t.router({
           userId,
           ManageSharedInvestigations.use((service) =>
             service.revoke(
-              { _tag: "User", userId, projectId: input.projectId },
+              User({ userId, projectId: input.projectId }),
               input.projectId,
               input.id,
             ),

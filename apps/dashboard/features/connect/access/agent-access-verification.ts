@@ -1,20 +1,23 @@
-import { Array as EffectArray, Match } from "effect"
+import { Array as EffectArray, Data, Match } from "effect"
 
 export type AgentGrantObservation = {
   readonly projectIds: readonly string[]
   readonly lastAuthenticatedAt: string | null
 }
 
-export type AgentReadVerification =
-  | { readonly _tag: "Idle" }
-  | { readonly _tag: "Copied" }
-  | { readonly _tag: "CopyFailed" }
-  | { readonly _tag: "Granted" }
-  | { readonly _tag: "Authenticated" }
-  | { readonly _tag: "Denied" }
-  | { readonly _tag: "WrongProject" }
-  | { readonly _tag: "UnsupportedClient" }
-  | { readonly _tag: "Unavailable" }
+export type AgentReadVerification = Data.TaggedEnum<{
+  Idle: Record<never, never>
+  Copied: Record<never, never>
+  CopyFailed: Record<never, never>
+  Granted: Record<never, never>
+  Authenticated: Record<never, never>
+  Denied: Record<never, never>
+  WrongProject: Record<never, never>
+  UnsupportedClient: Record<never, never>
+  Unavailable: Record<never, never>
+}>
+
+export const AgentRead = Data.taggedEnum<AgentReadVerification>()
 
 const sameProject = (left: string, right: string) =>
   left.toLowerCase() === right.toLowerCase()
@@ -41,37 +44,29 @@ export const interpretAgentReadVerification = (input: {
   readonly projectId: string | undefined
 }): AgentReadVerification =>
   Match.value(input).pipe(
-    Match.when({ clientSupported: false }, () => ({
-      _tag: "UnsupportedClient" as const,
-    })),
-    Match.when({ deployment: "unavailable" }, () => ({
-      _tag: "Unavailable" as const,
-    })),
-    Match.when({ connections: "unavailable" }, () => ({
-      _tag: "Unavailable" as const,
-    })),
-    Match.when({ connections: "unauthorized" }, () => ({
-      _tag: "Denied" as const,
-    })),
+    Match.when({ clientSupported: false }, () => AgentRead.UnsupportedClient()),
+    Match.when({ deployment: "unavailable" }, () => AgentRead.Unavailable()),
+    Match.when({ connections: "unavailable" }, () => AgentRead.Unavailable()),
+    Match.when({ connections: "unauthorized" }, () => AgentRead.Denied()),
     Match.orElse((value) => {
       if (!value.projectId || value.connections !== "ready") {
         return value.copyFailed
-          ? { _tag: "CopyFailed" as const }
+          ? AgentRead.CopyFailed()
           : value.configurationCopied
-            ? { _tag: "Copied" as const }
-            : { _tag: "Idle" as const }
+            ? AgentRead.Copied()
+            : AgentRead.Idle()
       }
       const matching = grantsForProject(value.grants, value.projectId)
       if (matching.length === 0) {
-        return { _tag: "WrongProject" as const }
+        return AgentRead.WrongProject()
       }
       const authenticated = EffectArray.some(
         matching,
         (grant) => grant.lastAuthenticatedAt !== null,
       )
       if (!authenticated) {
-        return { _tag: "Granted" as const }
+        return AgentRead.Granted()
       }
-      return { _tag: "Authenticated" as const }
+      return AgentRead.Authenticated()
     }),
   )

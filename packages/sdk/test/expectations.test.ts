@@ -1,8 +1,10 @@
 import { Effect } from "effect"
 import { afterEach, describe, expect, expectTypeOf, it, vi } from "vitest"
 import {
-  createFlowmarkWithTransport,
   createFlowmark,
+  createFlowmarkWithTransport,
+  FlowmarkDeliveryError,
+  FlowmarkExpectationError,
   type ExpectationReference,
 } from "../src/index.js"
 import type { WorkflowEvent } from "@flowmarkdev/core"
@@ -77,10 +79,14 @@ describe("expectation markers and client settlement lifecycle", () => {
     expect(await flow.operation("work", () => Promise.resolve(42))).toBe(42)
     flow.done()
     flow.expect("closed", { id: "closed", within: "1m" })
-    await expect(client.shutdown()).rejects.toMatchObject({
-      _tag: "FlowmarkDeliveryError",
-      failureCount: 4,
-    })
+    const shutdown = await client.shutdown().then(
+      () => undefined,
+      (caught: unknown) => caught,
+    )
+    expect(shutdown).toBeInstanceOf(FlowmarkDeliveryError)
+    if (shutdown instanceof FlowmarkDeliveryError) {
+      expect(shutdown.failureCount).toBe(4)
+    }
     expect(errors).toHaveBeenCalledTimes(4)
     expect(events.some((e) => e.type === "expectation_declared")).toBe(false)
   })
@@ -110,13 +116,11 @@ describe("expectation markers and client settlement lifecycle", () => {
     await client.flush()
     client.resolveExpectation({ ...ref, workflow: "booking" })
     await expect(client.shutdown()).rejects.toMatchObject({ failureCount: 1 })
-    expect(errors).toHaveBeenCalledWith(
-      expect.objectContaining({
-        _tag: "FlowmarkExpectationError",
-        reason: "source-forbidden",
-      }),
-      expect.anything(),
-    )
+    const reported = errors.mock.calls.at(-1)?.[0]
+    expect(reported).toBeInstanceOf(FlowmarkExpectationError)
+    if (reported instanceof FlowmarkExpectationError) {
+      expect(reported.reason).toBe("source-forbidden")
+    }
     expect(fetcher).toHaveBeenCalledTimes(3)
   })
   it.each([false, true])(

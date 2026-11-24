@@ -2,6 +2,7 @@ import { Effect } from "effect"
 import { describe, expect, expectTypeOf, it, vi } from "vitest"
 import {
   createFlowmarkWithTransport,
+  FlowmarkDeliveryError,
   MemoryTransport,
   type Flow,
   type FlowmarkClient,
@@ -169,9 +170,9 @@ describe("single-invocation workflow callbacks", () => {
     await expect(client.workflow("briefing.generate", () => 42)).resolves.toBe(
       42,
     )
-    await expect(client.shutdown()).rejects.toMatchObject({
-      _tag: "FlowmarkDeliveryError",
-    })
+    await expect(client.shutdown()).rejects.toBeInstanceOf(
+      FlowmarkDeliveryError,
+    )
   })
 
   it("retains manual continuation and rejects use after shutdown before invoking application code", async () => {

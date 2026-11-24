@@ -1,5 +1,5 @@
 import { expect, it } from "vitest"
-import { Effect } from "effect"
+import { Effect, Result } from "effect"
 import { Engine, EngineError } from "@flowmark/engine"
 import { calculateReferenceJourney } from "../../src/features/workflows/use-cases/calculate-reference-journey.js"
 import type { ReferenceJourneyEvidence } from "../../src/features/workflows/types.js"
@@ -93,7 +93,10 @@ it("keeps graph initialization failures explicit", async () => {
       )
     }).pipe(Effect.provide(Engine.layer)),
   )
-  expect(result).toMatchObject({ _tag: "Failure", failure })
+  expect(Result.isFailure(result)).toBe(true)
+  if (Result.isFailure(result)) {
+    expect(result.failure).toBe(failure)
+  }
 })
 
 it("keeps an unselected journey unchanged without invoking graph analysis", async () => {

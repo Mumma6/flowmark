@@ -13,6 +13,7 @@ const declaration = declarationImport as unknown as Extract<
   { predicate: "receipt-for-same-change" }
 >
 import { GetProjectWorkflowData } from "../../src/features/workflows/use-cases/get-project-workflow-data.js"
+import { User } from "../../src/features/workflows/models/project-reader.js"
 import { selectQuestionEvidence } from "../../src/features/workflows/use-cases/select-question-evidence.js"
 
 const deployment = {
@@ -140,11 +141,7 @@ describe("selectQuestionEvidence", () => {
         })
       },
     }
-    const reader = {
-      _tag: "User" as const,
-      userId: "user",
-      projectId: "project",
-    }
+    const reader = User({ userId: "user", projectId: "project" })
     const result = await Effect.runPromise(
       selectQuestionEvidence(
         reader,

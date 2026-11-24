@@ -11,7 +11,7 @@ import {
   AlertDescription,
   AlertTitle,
 } from "@flowmark/ui"
-import { Array as EffectArray } from "effect"
+import { Array as EffectArray, Match } from "effect"
 import {
   ArrowDown,
   ArrowLeft,
@@ -98,7 +98,10 @@ function ExploreWorkspace() {
     total === 0 &&
     pageIndex === 0 &&
     activeFilters.length === 0 &&
-    periodSelection._tag === "Absent" &&
+    Match.value(periodSelection).pipe(
+      Match.tag("Absent", () => true),
+      Match.orElse(() => false),
+    ) &&
     !params.has(journeyQueryKey)
   const historyParams = new URLSearchParams(params.toString())
   historyParams.delete(exploreAnalyticsQueryKey)
@@ -153,15 +156,21 @@ function ExploreWorkspace() {
   return (
     <div id="explore-workspace" className="grid gap-7">
       {heading}
-      {periodSelection._tag === "Rejected" ? (
-        <Alert>
-          <AlertTitle>Period selection not applied</AlertTitle>
-          <AlertDescription>{periodSelection.message}</AlertDescription>
-        </Alert>
-      ) : null}
+      {Match.value(periodSelection).pipe(
+        Match.tag("Rejected", (selection) => (
+          <Alert>
+            <AlertTitle>Period selection not applied</AlertTitle>
+            <AlertDescription>{selection.message}</AlertDescription>
+          </Alert>
+        )),
+        Match.orElse(() => null),
+      )}
 
-      {periodSelection._tag === "Accepted" && (
-        <SaveInvestigation selection={periodSelection.selection} />
+      {Match.value(periodSelection).pipe(
+        Match.tag("Accepted", (selection) => (
+          <SaveInvestigation selection={selection.selection} />
+        )),
+        Match.orElse(() => null),
       )}
       <ReferenceJourney />
       {current &&

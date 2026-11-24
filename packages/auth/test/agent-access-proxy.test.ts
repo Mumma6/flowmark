@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
-import { Array as EffectArray, Effect, Option } from "effect"
+import { Array as EffectArray, Effect, Option, Result } from "effect"
 import { createDatabase } from "@flowmark/db"
 import { createFlowmarkAuth } from "../src/create-auth.js"
 import { AGENT_ACCESS_REFERENCE_DEPLOYMENTS } from "../src/agent-access/protocol-contract.js"
@@ -96,7 +96,7 @@ describe("issuer proxy routes", () => {
       ),
     )
     assert.equal(
-      EffectArray.every(denied, (result) => result._tag === "Failure"),
+      EffectArray.every(denied, (result) => Result.isFailure(result)),
       true,
     )
   })
@@ -125,7 +125,7 @@ describe("issuer proxy routes", () => {
         }),
       ),
     )
-    assert.equal(conflict._tag, "Failure")
+    assert.equal(Result.isFailure(conflict), true)
   })
 })
 

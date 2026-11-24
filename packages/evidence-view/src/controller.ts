@@ -1,5 +1,6 @@
 import { App, PostMessageTransport } from "@modelcontextprotocol/ext-apps"
 import * as Cause from "effect/Cause"
+import * as Data from "effect/Data"
 import * as Effect from "effect/Effect"
 import * as Match from "effect/Match"
 import * as Queue from "effect/Queue"
@@ -11,14 +12,18 @@ import {
   type EvidenceViewState,
 } from "./lifecycle.js"
 import {
+  EvidenceEvents,
   EvidenceReader,
   makeEvidenceSession,
   type EvidenceEvent,
 } from "./session.js"
 
 export type { EvidenceViewState } from "./lifecycle.js"
-type HostEvent =
-  EvidenceEvent | { readonly _tag: "Theme"; readonly theme?: string }
+type ThemeEvent = Data.TaggedEnum<{
+  Theme: { readonly theme?: string }
+}>
+const { Theme } = Data.taggedEnum<ThemeEvent>()
+type HostEvent = EvidenceEvent | ThemeEvent
 
 /** SDK/React boundary. One scope owns the channel, observers and all read fibers. */
 export const runEvidenceView = Effect.fn("EvidenceView.run")(
@@ -58,36 +63,39 @@ export const runEvidenceView = Effect.fn("EvidenceView.run")(
           Effect.sync(() => {
             // Register before connecting. SDK validates message source and protocol envelopes.
             app.ontoolinput = ({ arguments: args }) =>
-              send({ _tag: "Input", args })
-            app.ontoolresult = (result) => send({ _tag: "Result", result })
+              send(EvidenceEvents.Input({ args }))
+            app.ontoolresult = (result) =>
+              send(EvidenceEvents.Result({ result }))
             app.ontoolcancelled = () =>
-              send({
-                _tag: "Clear",
-                state: {
-                  kind: "message",
-                  status: "unavailable",
-                  message:
-                    "The evidence read was cancelled. Previous evidence and actions have been cleared.",
-                },
-              })
+              send(
+                EvidenceEvents.Clear({
+                  state: {
+                    kind: "message",
+                    status: "unavailable",
+                    message:
+                      "The evidence read was cancelled. Previous evidence and actions have been cleared.",
+                  },
+                }),
+              )
             app.onhostcontextchanged = (context) =>
-              send({ _tag: "Theme", theme: context.theme })
+              send(Theme({ theme: context.theme }))
             app.onerror = () =>
-              send({
-                _tag: "Clear",
-                state: {
-                  kind: "message",
-                  status: "invalid",
-                  message:
-                    "Invalid host message. Use the host's complete structured/text result. Previous evidence and actions have been cleared.",
-                },
-              })
-            app.onclose = () => send({ _tag: "Close" })
+              send(
+                EvidenceEvents.Clear({
+                  state: {
+                    kind: "message",
+                    status: "invalid",
+                    message:
+                      "Invalid host message. Use the host's complete structured/text result. Previous evidence and actions have been cleared.",
+                  },
+                }),
+              )
+            app.onclose = () => send(EvidenceEvents.Close())
             app.onteardown = () => {
-              send({ _tag: "Close" })
+              send(EvidenceEvents.Close())
               return {}
             }
-            actions((action) => send({ _tag: "Action", action }))
+            actions((action) => send(EvidenceEvents.Action({ action })))
           }),
           () =>
             Effect.gen(function* () {
@@ -104,12 +112,13 @@ export const runEvidenceView = Effect.fn("EvidenceView.run")(
         }).pipe(
           Effect.match({
             onFailure: () =>
-              send({ _tag: "Clear", state: readFailure(undefined) }),
+              send(EvidenceEvents.Clear({ state: readFailure(undefined) })),
             onSuccess: () =>
-              send({
-                _tag: "Connected",
-                canRead: app.getHostCapabilities()?.serverTools !== undefined,
-              }),
+              send(
+                EvidenceEvents.Connected({
+                  canRead: app.getHostCapabilities()?.serverTools !== undefined,
+                }),
+              ),
           }),
           Effect.forkScoped,
         )

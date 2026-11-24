@@ -1,3 +1,4 @@
+import type { Option } from "effect"
 import type { AppRouter } from "@flowmark/server/trpc"
 import type { inferRouterOutputs } from "@trpc/server"
 import type { RunEvent } from "../../platform/api-types"
@@ -20,8 +21,7 @@ export type InvestigationSectionProps = Omit<
 > & {
   readonly contextual: boolean
   readonly comparisonLoading: boolean
-} & Extract<
-    ReturnType<typeof buildInvestigation>,
-    { readonly _tag: "Some" }
-  >["value"] &
+} & (ReturnType<typeof buildInvestigation> extends Option.Option<infer Value>
+    ? Value
+    : never) &
   ReturnType<typeof useRunInvestigation>

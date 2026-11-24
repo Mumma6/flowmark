@@ -6,7 +6,25 @@ import {
   WaitlistWelcomeEmail,
   WaitlistWelcomeError,
 } from "../../src/features/waitlist/welcome-email.js"
-import { PersistenceError } from "../../src/errors.js"
+import {
+  InvalidInput,
+  ManagementRateLimited,
+  PersistenceError,
+} from "../../src/errors.js"
+
+const expectJoinFailure = (
+  result: Result.Result<unknown, unknown>,
+  ErrorClass: abstract new (...args: never[]) => object,
+  fields?: object,
+) => {
+  expect(Result.isFailure(result)).toBe(true)
+  if (Result.isFailure(result)) {
+    expect(result.failure).toBeInstanceOf(ErrorClass)
+    if (fields) {
+      expect(result.failure).toMatchObject(fields)
+    }
+  }
+}
 
 const fixture = (
   overrides: Partial<WaitlistRepository["Service"]> = {},
@@ -77,20 +95,18 @@ it.each([
   const f = fixture({
     budget: () => Effect.die("invalid input must not consume budget"),
   })
-  expect(await f.join(input)).toMatchObject({
-    _tag: "Failure",
-    failure: { _tag: "InvalidInput" },
-  })
+  expectJoinFailure(await f.join(input), InvalidInput)
   expect(f.emails).toEqual([])
 })
 it("does not insert after a denied budget and preserves retry timing", async () => {
   const f = fixture({
     budget: () => Effect.succeed({ allowed: false, retryAfter: 17 }),
   })
-  expect(await f.join({ email: "person@example.com" })).toMatchObject({
-    _tag: "Failure",
-    failure: { _tag: "ManagementRateLimited", retryAfter: 17 },
-  })
+  expectJoinFailure(
+    await f.join({ email: "person@example.com" }),
+    ManagementRateLimited,
+    { retryAfter: 17 },
+  )
   expect(f.emails).toEqual([])
 })
 it("does not convert a storage failure into a successful subscription", async () => {
@@ -103,10 +119,10 @@ it("does not convert a storage failure into a successful subscription", async ()
         }),
       ),
   })
-  expect(await f.join({ email: "person@example.com" })).toMatchObject({
-    _tag: "Failure",
-    failure: { _tag: "PersistenceError" },
-  })
+  expectJoinFailure(
+    await f.join({ email: "person@example.com" }),
+    PersistenceError,
+  )
 })
 
 it("does not resend an uncertain submission after the provider retry window", async () => {
@@ -118,10 +134,11 @@ it("does not resend an uncertain submission after the provider retry window", as
         submitted: false,
       }),
   })
-  expect(await f.join({ email: "person@example.com" })).toMatchObject({
-    _tag: "Failure",
-    failure: { _tag: "WaitlistWelcomeError", reason: "retry-window-expired" },
-  })
+  expectJoinFailure(
+    await f.join({ email: "person@example.com" }),
+    WaitlistWelcomeError,
+    { reason: "retry-window-expired" },
+  )
   expect(f.sent).toEqual([])
 })
 
@@ -141,10 +158,10 @@ it("preserves registration and reuses the same message identity after delivery f
         }),
     },
   )
-  expect(await f.join({ email: "person@example.com" })).toMatchObject({
-    _tag: "Failure",
-    failure: { _tag: "WaitlistWelcomeError" },
-  })
+  expectJoinFailure(
+    await f.join({ email: "person@example.com" }),
+    WaitlistWelcomeError,
+  )
   expect(await f.join({ email: "person@example.com" })).toEqual(
     Result.succeed({ ok: true }),
   )
@@ -165,9 +182,9 @@ it("does not report success when recording accepted delivery fails", async () =>
         }),
       ),
   })
-  expect(await f.join({ email: "person@example.com" })).toMatchObject({
-    _tag: "Failure",
-    failure: { _tag: "PersistenceError" },
-  })
+  expectJoinFailure(
+    await f.join({ email: "person@example.com" }),
+    PersistenceError,
+  )
   expect(f.sent).toHaveLength(1)
 })

@@ -42,14 +42,16 @@ export function useRunInvestigation({
   const relatedPage = Option.getOrUndefined(
     evidencePageForSection(roundTrip, "related"),
   )
-  const selectionTab =
-    roundTrip._tag === "Accepted"
-      ? Match.value(roundTrip.selection.section).pipe(
-          Match.when("related", () => "related"),
-          Match.when("expectations", () => "confirmations"),
-          Match.orElse(() => "timeline"),
-        )
-      : undefined
+  const selectionTab = Match.value(roundTrip).pipe(
+    Match.tag("Accepted", (accepted) =>
+      Match.value(accepted.selection.section).pipe(
+        Match.when("related", () => "related"),
+        Match.when("expectations", () => "confirmations"),
+        Match.orElse(() => "timeline"),
+      ),
+    ),
+    Match.orElse(() => undefined),
+  )
   const linkedEventId = events.find(
     (event) => event.id === routeParams.get("event"),
   )?.id

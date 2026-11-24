@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
-import { Effect, Result } from "effect"
+import { Effect, Match, Result } from "effect"
 import { LOCAL_DEV_AUTH_SECRET } from "@flowmark/db/demo"
 import { readAuthSecret } from "../src/create-auth.js"
 
@@ -25,7 +25,14 @@ test("falls back to the local demo secret outside production", () => {
 
 test("refuses a missing secret outside local demo mode", () => {
   Result.match(Effect.runSync(Effect.result(readAuthSecret({}))), {
-    onFailure: (error) => assert.equal(error._tag, "AuthConfigurationError"),
+    onFailure: (error) => {
+      Match.value(error).pipe(
+        Match.tag("AuthConfigurationError", () => undefined),
+        Match.orElse(() => {
+          throw new Error("expected AuthConfigurationError")
+        }),
+      )
+    },
     onSuccess: () => {
       throw new Error("expected AuthConfigurationError")
     },

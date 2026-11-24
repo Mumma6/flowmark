@@ -32,7 +32,7 @@ import {
   revokeAgentAccessConnection,
   consumeMcpBudget,
 } from "@flowmark/db/persistence"
-import { Array as EffectArray, Effect, Result, Schema } from "effect"
+import { Array as EffectArray, Effect, Exit, Result, Schema } from "effect"
 import {
   periodCohortToolInput,
   runSelectionToolInput,
@@ -1711,10 +1711,10 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
           Date.now() + 86_400_001,
         ),
       )
-      expect(expired).toMatchObject({
-        _tag: "Success",
-        value: { status: "expired-or-invalid" },
-      })
+      expect(Exit.isSuccess(expired)).toBe(true)
+      if (Exit.isSuccess(expired)) {
+        expect(expired.value).toEqual({ status: "expired-or-invalid" })
+      }
       // A late event with an earlier occurrence time stays outside the pinned sample.
       await store({
         ...first,

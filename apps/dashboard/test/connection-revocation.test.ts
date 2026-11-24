@@ -3,11 +3,14 @@ import { expect, it } from "vitest"
 import {
   coarsenLastAuthenticated,
   confirmConnectionRevocation,
+  ConnectionList,
   connectionListRecovery,
   connectionProjectLabels,
   interpretOwnedConnection,
   interpretRevokeResult,
+  OwnedConnection,
   revokeAndConfirmConnection,
+  RevokeFeedbackState,
 } from "../features/connect/connections/connection-revocation"
 
 it("coarsens the last authenticated request to a UTC day", () => {
@@ -24,42 +27,72 @@ it("coarsens the last authenticated request to a UTC day", () => {
 
 it("hides a connection the server will not detail for this account", () => {
   expect(
-    interpretOwnedConnection({ listed: true, detail: "absent" })._tag,
-  ).toBe("UnavailableToAccount")
+    OwnedConnection.$is("UnavailableToAccount")(
+      interpretOwnedConnection({ listed: true, detail: "absent" }),
+    ),
+  ).toBe(true)
   expect(
-    interpretOwnedConnection({ listed: true, detail: "present" })._tag,
-  ).toBe("Owned")
+    OwnedConnection.$is("Owned")(
+      interpretOwnedConnection({ listed: true, detail: "present" }),
+    ),
+  ).toBe(true)
   expect(connectionProjectLabels(["abc"], { abc: "Billing" })).toEqual([
     "Billing",
   ])
 })
 
 it("separates a stale Studio session from a temporarily unavailable list", () => {
-  expect(connectionListRecovery({ data: { code: "UNAUTHORIZED" } })._tag).toBe(
-    "StaleSession",
-  )
-  expect(connectionListRecovery({ data: { code: "FORBIDDEN" } })._tag).toBe(
-    "StaleSession",
-  )
-  expect(connectionListRecovery(new Error("network"))._tag).toBe("Unavailable")
+  expect(
+    ConnectionList.$is("StaleSession")(
+      connectionListRecovery({ data: { code: "UNAUTHORIZED" } }),
+    ),
+  ).toBe(true)
+  expect(
+    ConnectionList.$is("StaleSession")(
+      connectionListRecovery({ data: { code: "FORBIDDEN" } }),
+    ),
+  ).toBe(true)
+  expect(
+    ConnectionList.$is("Unavailable")(
+      connectionListRecovery(new Error("network")),
+    ),
+  ).toBe(true)
 })
 
 it("acknowledges revoke only after the connection is gone", () => {
-  expect(interpretRevokeResult({ stillListed: false })._tag).toBe("Revoked")
-  expect(interpretRevokeResult({ stillListed: true })._tag).toBe("StillActive")
-  expect(interpretRevokeResult({ stillListed: "unknown" })._tag).toBe("Unknown")
+  expect(
+    RevokeFeedbackState.$is("Revoked")(
+      interpretRevokeResult({ stillListed: false }),
+    ),
+  ).toBe(true)
+  expect(
+    RevokeFeedbackState.$is("StillActive")(
+      interpretRevokeResult({ stillListed: true }),
+    ),
+  ).toBe(true)
+  expect(
+    RevokeFeedbackState.$is("Unknown")(
+      interpretRevokeResult({ stillListed: "unknown" }),
+    ),
+  ).toBe(true)
 })
 
 it("distinguishes pending detail, unavailable detail and stale list data", () => {
   expect(
-    interpretOwnedConnection({ listed: true, detail: "pending" })._tag,
-  ).toBe("Loading")
+    OwnedConnection.$is("Loading")(
+      interpretOwnedConnection({ listed: true, detail: "pending" }),
+    ),
+  ).toBe(true)
   expect(
-    interpretOwnedConnection({ listed: true, detail: "unavailable" })._tag,
-  ).toBe("Unavailable")
+    OwnedConnection.$is("Unavailable")(
+      interpretOwnedConnection({ listed: true, detail: "unavailable" }),
+    ),
+  ).toBe(true)
   expect(
-    interpretOwnedConnection({ listed: false, detail: "present" })._tag,
-  ).toBe("Hidden")
+    OwnedConnection.$is("Hidden")(
+      interpretOwnedConnection({ listed: false, detail: "present" }),
+    ),
+  ).toBe(true)
 })
 
 it("confirms persisted revocation after a lost response and cancels older reads first", async () => {
@@ -81,7 +114,7 @@ it("confirms persisted revocation after a lost response and cancels older reads 
     }),
   )
   expect(operations).toEqual(["revoke", "cancel old read", "read fresh state"])
-  expect(result._tag).toBe("Revoked")
+  expect(RevokeFeedbackState.$is("Revoked")(result)).toBe(true)
 })
 
 it("never confirms a revoke from the mutation alone or from a failed refresh", async () => {
@@ -92,14 +125,14 @@ it("never confirms a revoke from the mutation alone or from a failed refresh", a
     cancelRead: async () => undefined,
   }
   expect(
-    (
+    RevokeFeedbackState.$is("StillActive")(
       await Effect.runPromise(
         revokeAndConfirmConnection({ ...base, read: async () => [target] }),
-      )
-    )._tag,
-  ).toBe("StillActive")
+      ),
+    ),
+  ).toBe(true)
   expect(
-    (
+    RevokeFeedbackState.$is("Unknown")(
       await Effect.runPromise(
         revokeAndConfirmConnection({
           ...base,
@@ -107,9 +140,9 @@ it("never confirms a revoke from the mutation alone or from a failed refresh", a
             throw new Error("offline")
           },
         }),
-      )
-    )._tag,
-  ).toBe("Unknown")
+      ),
+    ),
+  ).toBe(true)
 })
 
 it("recovers an unknown result using a fresh read without resending revoke", async () => {
@@ -126,5 +159,5 @@ it("recovers an unknown result using a fresh read without resending revoke", asy
     }),
   )
   expect(reads).toBe(1)
-  expect(result._tag).toBe("Revoked")
+  expect(RevokeFeedbackState.$is("Revoked")(result)).toBe(true)
 })
