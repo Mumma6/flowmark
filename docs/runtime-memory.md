@@ -272,3 +272,21 @@ The response contains a status, a reason and, for a case-specific limitation, th
 | `excluded` | The declaration and reviewed CI policy explicitly agree on the exclusion.                                                    |
 
 For a required active question, require `result.data.status === "verified"`. Keep authorization, malformed input and transport failures as errors. Report only the safe verdict in public CI. Fixture readiness applies to the tested build and collection path. A production claim requires separately observed eligible traffic.
+
+### Stored coverage contract
+
+`assess_coverage` requires `version: 2`. It accepts an independently described
+population and observation window. Population metadata describes the application's
+counter and does not verify that counter. The API reads authorized retained
+observations for the requested environment, artifact and behavior revision.
+Caller `deliveries`, `discovery`, `readiness`, `stored` and version 1 payloads
+are rejected. Duplicate population handles and observation deliveries count once.
+Missing observations leave cases unresolved or waiting and cannot manufacture a
+resolved rate. Truncated reads withhold the rate. Outcome handles are restricted
+to the permitted set. Failed authorization returns no assessment or population.
+
+Boundary reconciliation and question fixture checks currently return their
+results without persisting a reusable result record. Coverage therefore reports
+both discovery and fixture readiness as `unknown`. A supplied label cannot
+establish either state. The pure fixture evaluator remains available to local
+contract fixtures, separate from the authorized public read.

@@ -80,6 +80,47 @@ const assess = (overrides: Partial<CoverageAssessmentInput> = {}) =>
   )
 
 describe("assessLiveCoverage", () => {
+  it("resolves stored handles once and keeps unpermitted outcomes private", () => {
+    const stored = {
+      eventId: eventId(500),
+      handle: handle(0),
+      kind: "observation" as const,
+      artifactDigest: release,
+      environment: "production",
+      behaviorRevision: "receipt-v1",
+      occurredAt: "2026-11-01T02:00:00.000Z",
+    }
+    const result = assess({
+      deliveries: [],
+      discovery: "unknown",
+      readiness: "unknown",
+      population: [
+        base.population[0]!,
+        base.population[0]!,
+        base.population[1]!,
+      ],
+      stored: [stored, { ...stored, eventId: eventId(501) }],
+    })
+    expect(result.discovery.status).toBe("unknown")
+    expect(result.readiness.status).toBe("unknown")
+    expect(result.answerability).toMatchObject({
+      eligible: 2,
+      resolved: 1,
+      unresolved: 1,
+      outcomes: [],
+    })
+    expect(
+      assess({ deliveries: [], stored: [stored], storedTruncated: true })
+        .answerability.rate,
+    ).toBeNull()
+    expect(
+      assess({
+        deliveries: [],
+        stored: [{ ...stored, artifactDigest: otherRelease }],
+      }).answerability,
+    ).toMatchObject({ resolved: 0, rate: null })
+  })
+
   it("returns 192/200 with a matching unresolved drilldown", () => {
     const result = assess()
     expect(result.discovery.status).toBe("matched")
@@ -117,6 +158,7 @@ describe("assessLiveCoverage", () => {
       deliveries: [],
     })
     const confirmed = assess({
+      permittedHandles: [handle(0)],
       deliveries: [
         ...base.deliveries,
         {
@@ -155,7 +197,7 @@ describe("assessLiveCoverage", () => {
     expect(later.answerability).toMatchObject({
       eligible: 1,
       resolved: 0,
-      status: "partial",
+      status: "waiting-for-eligible-traffic",
     })
     expect(confirmed.answerability.outcomes[0]).toEqual({
       handle: handle(0),

@@ -1387,6 +1387,54 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)(
       expect(connectionResult.result?.structuredContent?.projects).toEqual([
         expect.objectContaining({ id: project.projectId }),
       ])
+      const coverageInput = {
+        version: 2,
+        projectId: project.projectId,
+        questionId: "acceptance.confirmation",
+        questionRevision: 1,
+        release: `sha256:${"a".repeat(64)}`,
+        behaviorRevision: "1",
+        environment: "production",
+        provenance: "fixture",
+        populationSource: { id: "acceptance-outbox", kind: "outbox" },
+        window: {
+          start: windows.currentStartedAfter,
+          end: windows.currentStartedBefore,
+        },
+        maturityDelayMs: 0,
+        observedAt: windows.currentStartedBefore,
+        supportExpiresAt: null,
+        sampling: "complete",
+        join: "case-handle",
+        drilldownLimit: 8,
+        permittedHandles: ["case-a"],
+        population: [
+          { handle: "case-a", eligibleAt: windows.currentStartedAfter },
+        ],
+      }
+      const coverageResult = await callTool(
+        901,
+        "assess_coverage",
+        coverageInput,
+      )
+      expect(coverageResult.result?.isError).toBeUndefined()
+      expect(
+        coverageResult.result?.structuredContent?.assessment,
+      ).toMatchObject({
+        discovery: { status: "unknown" },
+        readiness: { status: "unknown" },
+        answerability: { resolved: 0, rate: null },
+      })
+      const manufactured = await callTool(902, "assess_coverage", {
+        ...coverageInput,
+        deliveries: [],
+        discovery: "matched",
+        readiness: "verified",
+      })
+      expect(
+        manufactured.result?.isError === true ||
+          manufactured.error !== undefined,
+      ).toBe(true)
       const workflowsResult = await callTool(4, "list_workflows", {
         projectId: project.projectId,
       })
