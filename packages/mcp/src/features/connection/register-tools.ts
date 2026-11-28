@@ -381,7 +381,7 @@ export const registerFlowmarkTools = (
     {
       title: "Assess coverage",
       description:
-        "Version 1 diagnostic read. Return discovery, fixture readiness and observed answerability separately for one question, release and window. Joins an independent population to scoped evidence. Duplicate deliveries count once. A missing counter, immature traffic, loss, expiry or an unsupported join does not invent a rate. Production traffic is not a merge gate.",
+        "Version 2 diagnostic read. Joins an independently described population to stored scoped observations only. Caller delivery, discovery and readiness claims are rejected. Missing persisted discovery or fixture checks remain unknown. Duplicate logical cases count once. Missing counters, immature traffic, truncation, loss, expiry or unsupported joins limit rates. Production traffic is not a merge gate.",
       inputSchema: fromJsonSchema(
         toJsonSchemaDocument(AssessCoverageSchema).schema as Parameters<
           typeof fromJsonSchema

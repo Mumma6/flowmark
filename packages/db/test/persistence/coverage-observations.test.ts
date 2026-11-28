@@ -126,8 +126,8 @@ test(
         join: "case-handle",
         drilldownLimit: 8,
         permittedHandles: [],
-        discovery: "matched",
-        readiness: "verified",
+        discovery: "unknown",
+        readiness: "unknown",
         population: [{ handle, eligibleAt: "2026-11-01T01:00:00.000Z" }],
         deliveries: [],
         stored: page.events,
@@ -136,6 +136,26 @@ test(
       assert.equal(assessed.answerability.resolved, 1)
       assert.equal(assessed.answerability.eligible, 1)
       assert.equal(assessed.answerability.rate?.resolved, 1)
+      assert.equal(assessed.discovery.status, "unknown")
+      assert.equal(assessed.readiness.status, "unknown")
+      assert.deepEqual(assessed.answerability.outcomes, [])
+      await db.execute(sql`
+        INSERT INTO workflow_events(event_id, run_id, type, occurred_at, runtime_observation)
+        SELECT gen_random_uuid(), ${runId}::uuid, 'step', ${start}::timestamptz,
+          ${JSON.stringify(observation("observation"))}::jsonb
+        FROM generate_series(1, 401)
+      `)
+      const truncated = await Effect.runPromise(
+        store.coverageObservations(projectId, {
+          environment: "production",
+          artifactDigest: release,
+          behaviorRevision: "receipt-v1",
+          startedAt: start,
+          endedAt: end,
+        }),
+      )
+      assert.equal(truncated.truncated, true)
+      assert.equal(truncated.events.length, 400)
     } finally {
       await close()
     }

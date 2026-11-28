@@ -15,6 +15,7 @@ const revision = Schema.Int.check(
 )
 
 export const CoverageDiscoveryStatusSchema = Schema.Literals([
+  "unknown",
   "matched",
   "source-only",
   "deployed-only",
@@ -22,6 +23,7 @@ export const CoverageDiscoveryStatusSchema = Schema.Literals([
   "policy-excluded",
 ])
 export const CoverageReadinessStatusSchema = Schema.Literals([
+  "unknown",
   "verified",
   "missing",
   "stale",
@@ -174,10 +176,15 @@ export const assessLiveCoverage = (input: CoverageAssessmentInput) => {
       event.handle === null &&
       event.artifactDigest === input.release &&
       event.environment === input.environment &&
+      event.behaviorRevision === input.behaviorRevision &&
       inWindow(event.occurredAt, input.window.start, input.window.end),
   ).length
-  const eligible = Array.filter(input.population, (item) =>
-    inWindow(item.eligibleAt, input.window.start, input.window.end),
+  const eligible = Array.filter(
+    Array.dedupeWith(
+      input.population,
+      (left, right) => left.handle === right.handle,
+    ),
+    (item) => inWindow(item.eligibleAt, input.window.start, input.window.end),
   )
   const cases = Array.map(eligible, (item) => {
     const rows = Array.filter(
@@ -281,6 +288,12 @@ export const assessLiveCoverage = (input: CoverageAssessmentInput) => {
             limitation: "truncated" as const,
           })
         : Option.none(),
+      retained.length === 0 && losses === 0 && eligible.length > 0
+        ? Option.some({
+            status: "waiting-for-eligible-traffic" as const,
+            limitation: "none" as const,
+          })
+        : Option.none(),
       eligible.length === 0
         ? Option.some({
             status: "waiting-for-eligible-traffic" as const,
@@ -315,9 +328,8 @@ export const assessLiveCoverage = (input: CoverageAssessmentInput) => {
     })),
   )
   const rate =
-    decided.status === "observed" ||
-    decided.status === "partial" ||
-    decided.status === "known-loss"
+    (decided.status === "observed" || decided.status === "partial") &&
+    decided.limitation === "none"
       ? { resolved: resolved.length, eligible: eligible.length }
       : null
   const visible = Array.filter(unresolved, (item) =>
@@ -360,11 +372,16 @@ export const assessLiveCoverage = (input: CoverageAssessmentInput) => {
       rate,
       redacted: unresolved.length - visible.length,
       drilldown: Array.take(visible, input.drilldownLimit),
-      outcomes: Array.map(resolved, (item) => ({
-        handle: item.handle,
-        outcome: item.outcome,
-        confirmation: item.confirmation,
-      })),
+      outcomes: Array.map(
+        Array.filter(resolved, (item) =>
+          Array.contains(input.permittedHandles, item.handle),
+        ),
+        (item) => ({
+          handle: item.handle,
+          outcome: item.outcome,
+          confirmation: item.confirmation,
+        }),
+      ),
       repair,
     },
   }
